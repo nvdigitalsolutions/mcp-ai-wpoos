@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides access to JetEngine registered post types.
  */
 class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether JetEngine is available.
 	 *
@@ -140,13 +141,16 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: number of items, 2: content type */
+			__( 'Found %1$d %2$s item(s)', 'mcp-ai-wpoos' ),
+			count( $results ),
+			$content_type
+		);
+		
 		return array(
-			'summary' => sprintf(
-				/* translators: 1: number of items, 2: content type */
-				__( 'Found %1$d %2$s item(s)', 'mcp-ai-wpoos' ),
-				count( $results ),
-				$content_type
-			),
+			'message' => $summary_text,
+			'summary' => $summary_text,
 			'items'   => $results,
 			'count'   => count( $results ),
 		);

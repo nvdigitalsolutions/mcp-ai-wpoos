@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Enables AI-powered location-based queries with map context and rich insights.
  */
 class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -207,7 +208,10 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 		}
 
 		$response = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary, // Chat client.
+				'summary' => $summary, // Backward compatibility.
+			),
 			$response
 		);
 

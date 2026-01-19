@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Gets profession statistics.
  */
 class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -42,7 +43,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			'properties'           => new stdClass(),
 			'additionalProperties' => false,
 		);
 	}

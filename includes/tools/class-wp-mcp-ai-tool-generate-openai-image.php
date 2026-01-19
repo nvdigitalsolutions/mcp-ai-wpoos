@@ -15,12 +15,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for generating images via OpenAI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL           = 'gpt-image-1.5';
 	const DEFAULT_SIZE            = '1024x1024';
@@ -355,6 +357,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$quality
 		);
 
+		$message = implode( ' ', $text_parts );
+
 		$result = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -370,7 +374,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			'response_format' => $response_format,
 			'revised_prompt'  => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
 			'created'         => isset( $image['created'] ) ? $image['created'] : 0,
-			'text'            => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+			'text'            => $message, // Descriptive message for LLM context.
+			'message'         => $message, // Message for chat UI display.
 		);
 
 		// Add estimated usage metadata for UI display.

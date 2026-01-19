@@ -21,6 +21,8 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Performs lightweight web searches and returns the top results.
  *
@@ -76,6 +78,7 @@ if ( ! interface_exists( 'WP_MCP_AI_Tool_LLM_Sanitizer_Interface' ) ) {
  * @package WP_MCP_AI
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Maximum number of results to include in LLM payload.
 	 *
@@ -503,18 +506,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( empty( $results ) ) {
 			$task_id = $this->generate_task_id( $query, 'duckduckgo' );
-			return array(
-				'task_id'        => $task_id,
-				'query'          => $query,
-				'results'        => array(),
-				'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
-				'cached'         => false,
-				'provider'       => 'duckduckgo',
-				'system_message' => sprintf(
+			return $this->ensure_response_message(
+				array(
+					'task_id'        => $task_id,
+					'query'          => $query,
+					'results'        => array(),
+					'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
+					'cached'         => false,
+					'provider'       => 'duckduckgo',
+					'system_message' => sprintf(
+						/* translators: %s: search query */
+						__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+						$query
+					),
+				),
+				sprintf(
 					/* translators: %s: search query */
 					__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
 					$query
-				),
+				)
 			);
 		}
 
@@ -544,15 +554,22 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		$task_id = $this->generate_task_id( $query, 'duckduckgo' );
-		return array(
-			'task_id'        => $task_id,
-			'query'          => $query,
-			'results'        => $results,
-			'result_count'   => count( $results ),
-			'cached'         => false,
-			'provider'       => 'duckduckgo',
-			'timestamp'      => time(),
-			'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
+		return $this->ensure_response_message(
+			array(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => $results,
+				'result_count'   => count( $results ),
+				'cached'         => false,
+				'provider'       => 'duckduckgo',
+				'timestamp'      => time(),
+				'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
+			),
+			sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d results', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
 		);
 	}
 
@@ -676,18 +693,25 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		if ( empty( $results ) ) {
 			$task_id = $this->generate_task_id( $query, 'brave' );
-			return array(
-				'task_id'        => $task_id,
-				'query'          => $query,
-				'results'        => array(),
-				'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
-				'cached'         => false,
-				'provider'       => 'brave',
-				'system_message' => sprintf(
+			return $this->ensure_response_message(
+				array(
+					'task_id'        => $task_id,
+					'query'          => $query,
+					'results'        => array(),
+					'note'           => __( 'No web search results were found for this query.', 'mcp-ai-wpoos' ),
+					'cached'         => false,
+					'provider'       => 'brave',
+					'system_message' => sprintf(
+						/* translators: %s: search query */
+						__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
+						$query
+					),
+				),
+				sprintf(
 					/* translators: %s: search query */
 					__( 'Web search completed for "%s" but no results were found.', 'mcp-ai-wpoos' ),
 					$query
-				),
+				)
 			);
 		}
 
@@ -715,15 +739,22 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		}
 
 		$task_id = $this->generate_task_id( $query, 'brave' );
-		return array(
-			'task_id'        => $task_id,
-			'query'          => $query,
-			'results'        => $results,
-			'result_count'   => count( $results ),
-			'cached'         => false,
-			'provider'       => 'brave',
-			'timestamp'      => time(),
-			'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
+		return $this->ensure_response_message(
+			array(
+				'task_id'        => $task_id,
+				'query'          => $query,
+				'results'        => $results,
+				'result_count'   => count( $results ),
+				'cached'         => false,
+				'provider'       => 'brave',
+				'timestamp'      => time(),
+				'system_message' => implode( ' ', $text_parts ), // System message for chat client (not extracted as assistant content).
+			),
+			sprintf(
+				/* translators: %d: number of results */
+				__( 'Found %d results', 'mcp-ai-wpoos' ),
+				count( $results )
+			)
 		);
 	}
 

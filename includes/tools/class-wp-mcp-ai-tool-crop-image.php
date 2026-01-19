@@ -197,6 +197,14 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'height' => $crop_params['height'],
 		);
 
+		$message = sprintf(
+			/* translators: 1: crop dimensions, 2: original dimensions, 3: output format */
+			__( 'Successfully cropped image to %1$s from %2$s%3$s.', 'mcp-ai-wpoos' ),
+			$new_size['width'] . 'x' . $new_size['height'],
+			$original_size['width'] . 'x' . $original_size['height'],
+			'svg' === $output_format ? ' and converted to SVG' : ''
+		);
+
 		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -212,13 +220,8 @@ class WP_MCP_AI_Tool_Crop_Image extends WP_MCP_AI_Tool_Image_Base {
 			'crop_height'     => $crop_params['height'],
 			'operation'       => 'crop',
 			'output_format'   => $output_format,
-			'text'            => sprintf(
-				/* translators: 1: crop dimensions, 2: original dimensions, 3: output format */
-				__( 'Successfully cropped image to %1$s from %2$s%3$s.', 'mcp-ai-wpoos' ),
-				$new_size['width'] . 'x' . $new_size['height'],
-				$original_size['width'] . 'x' . $original_size['height'],
-				'svg' === $output_format ? ' and converted to SVG' : ''
-			),
+			'text'            => $message,
+			'message'         => $message,
 		);
 
 		// Add vectorization metadata if SVG output was used.

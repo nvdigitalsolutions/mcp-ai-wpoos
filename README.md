@@ -213,6 +213,8 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
+> **📌 JANUARY 18, 2026 UPDATE:** **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page. The button was silently failing to update tool multipliers when users selected presets (Conservative, Balanced, Performance, Aggressive). Root cause: `get_all_recommendations()` only queried tool registry which returned empty array. Solution: Refactored to iterate through tool categories first (200+ tools), then check registry for dynamic tools. [Fix Details](docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md) | [Testing Plan](docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md)
+
 > **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/fixes/gmail-oauth-fix-summary.md)
 
 > **📌 JANUARY 13, 2026 UPDATE:** **Root Directory Organization** - Consolidated 14 markdown files from root to organized subdirectories:
@@ -640,6 +642,24 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 ---
 
 ## 📦 Installation
+
+### Requirements
+
+**Minimum Requirements:**
+- WordPress 6.0+
+- PHP 7.4+ (PHP 8.0+ recommended)
+- MySQL 5.7+ or MariaDB 10.3+
+
+**Optional Requirements for Enhanced Features:**
+- **Node.js 14+**: Required for image vectorization tools (`vectorize_image` tool)
+- **PHP Functions**: `proc_open`, `proc_close`, `proc_terminate` (for Node.js integration and Process Service)
+  - These functions are often disabled on shared hosting for security
+  - Can be enabled on Cloudways via Application Settings (see [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md))
+- **JetEngine Plugin**: For CCT storage and advanced content management tools
+- **WooCommerce**: For e-commerce integration tools
+- **Elementor**: For visual page builder widgets
+
+**Note**: The plugin works without optional requirements, but some features will be disabled. See [deployment troubleshooting](docs/getting-started/installation-setup/deployment-troubleshooting.md) for enabling disabled PHP functions.
 
 ### For Developers (GitHub Clone)
 

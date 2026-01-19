@@ -18,7 +18,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Record a chat transcript when storage is enabled.
 	 *
-	 * @param int             $assistant_id Assistant identifier.
+	 * @param int|string      $assistant_id Assistant identifier. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".
 	 * @param array           $messages     Sanitised chat messages.
 	 * @param array           $options      Prepared chat options.
 	 * @param array           $response     Language model response payload.
@@ -32,10 +32,29 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			return null;
 		}
 
-		$assistant_id = absint( $assistant_id );
-		$user_id      = absint( $user_id );
+		// Check if this is a virtual team assistant ID.
+		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
+		// Format: unified_team_{digits} or team_{digits}_member_{digits}
+		$is_virtual_team_assistant = is_string( $assistant_id ) && 
+			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id );
 
-		if ( ! $assistant_id || empty( $messages ) || empty( $response ) ) {
+		// Sanitize assistant_id based on type.
+		if ( $is_virtual_team_assistant ) {
+			// Keep as string for virtual team IDs.
+			$assistant_id = sanitize_text_field( $assistant_id );
+		} else {
+			// Convert to integer for real assistant post IDs.
+			$assistant_id = absint( $assistant_id );
+		}
+
+		$user_id = absint( $user_id );
+
+		// Validate assistant_id is provided.
+		// For string IDs, check it's not empty. For integer IDs, check it's non-zero.
+		if ( ( is_string( $assistant_id ) && '' === trim( $assistant_id ) ) || 
+			 ( is_int( $assistant_id ) && ! $assistant_id ) ||
+			 empty( $messages ) || 
+			 empty( $response ) ) {
 			return null;
 		}
 
@@ -61,7 +80,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		 * Returning an empty value prevents the transcript from being saved.
 		 *
 		 * @param array           $record       Prepared transcript payload.
-		 * @param int             $assistant_id Assistant identifier.
+		 * @param int|string      $assistant_id Assistant identifier. Can be an integer or a string like "unified_team_123".
 		 * @param array           $messages     Sanitised chat messages.
 		 * @param array           $options      Prepared chat options.
 		 * @param array           $response     Language model response payload.
@@ -158,7 +177,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Determine whether the transcript should be persisted.
 	 *
-	 * @param int             $assistant_id Assistant identifier.
+	 * @param int|string      $assistant_id Assistant identifier. Can be an integer or a string like "unified_team_123".
 	 * @param array           $messages     Sanitised chat messages.
 	 * @param array           $options      Prepared chat options.
 	 * @param array           $response     Language model response payload.
@@ -182,7 +201,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		 * Filter whether the current chat transcript should be saved.
 		 *
 		 * @param bool            $save_transcript Whether the transcript should be persisted.
-		 * @param int             $assistant_id    Assistant identifier.
+		 * @param int|string      $assistant_id    Assistant identifier. Can be an integer or a string like "unified_team_123".
 		 * @param array           $messages        Sanitised chat messages.
 		 * @param array           $options         Prepared chat options.
 		 * @param array           $response        Language model response payload.
@@ -197,7 +216,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Resolve the JetEngine handler responsible for storing the transcript.
 	 *
-	 * @param int             $assistant_id Assistant identifier.
+	 * @param int|string      $assistant_id Assistant identifier. Can be an integer or a string like "unified_team_123".
 	 * @param array           $messages     Sanitised chat messages.
 	 * @param array           $options      Prepared chat options.
 	 * @param array           $response     Language model response payload.
@@ -212,7 +231,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 		 * Returning a truthy value short-circuits the default JetEngine handler lookup.
 		 *
 		 * @param object|null     $handler       Custom handler instance.
-		 * @param int             $assistant_id  Assistant identifier.
+		 * @param int|string      $assistant_id  Assistant identifier. Can be an integer or a string like "unified_team_123".
 		 * @param array           $messages      Sanitised chat messages.
 		 * @param array           $options       Prepared chat options.
 		 * @param array           $response      Language model response payload.
@@ -329,7 +348,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Build the payload sent to JetEngine for storage.
 	 *
-	 * @param int             $assistant_id Assistant identifier.
+	 * @param int|string      $assistant_id Assistant identifier. Can be an integer or a string like "unified_team_123".
 	 * @param array           $messages     Sanitised chat messages.
 	 * @param array           $options      Prepared chat options.
 	 * @param array           $response     Language model response payload.
@@ -558,7 +577,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 	/**
 	 * Generate a fallback session key when none was provided.
 	 *
-	 * @param int $assistant_id Assistant identifier.
+	 * @param int|string $assistant_id Assistant identifier. Can be an integer or a string like "unified_team_123".
 	 * @return string
 	 */
 	protected static function generate_session_key( $assistant_id ) {

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Generates vector embeddings for text using OpenAI's embedding models.
  */
 class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -205,12 +206,18 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 			),
 			'stored'     => $store_in_meta && $post_id,
 			'post_id'    => $post_id,
+			'message'    => sprintf(
+				/* translators: 1: number of embeddings, 2: model name */
+				__( 'Created %1$d embeddings using model %2$s.', 'mcp-ai-wpoos' ),
+				count( $embeddings ),
+				$model
+			), // Chat client display
 			'summary'    => sprintf(
 				/* translators: 1: number of embeddings, 2: model name */
 				__( 'Created %1$d embeddings using model %2$s.', 'mcp-ai-wpoos' ),
 				count( $embeddings ),
 				$model
-			),
+			), // Backward compatibility
 		);
 	}
 

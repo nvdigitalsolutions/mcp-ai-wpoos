@@ -19,6 +19,8 @@ require_once __DIR__ . '/../validators/arguments/class-search-content-arguments.
  */
 class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -222,13 +224,16 @@ class WP_MCP_AI_Tool_Search_Content_Validated extends WP_MCP_AI_Validated_Tool i
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: number of results, 2: search term */
+			__( 'Found %1$d result(s) for "%2$s"', 'mcp-ai-wpoos' ),
+			count( $results ),
+			$search_term
+		);
+
 		return array(
-			'summary' => sprintf(
-				/* translators: 1: number of results, 2: search term */
-				__( 'Found %1$d result(s) for "%2$s"', 'mcp-ai-wpoos' ),
-				count( $results ),
-				$search_term
-			),
+			'message' => $summary_text,
+			'summary' => $summary_text,
 			'results' => $results,
 			'count'   => count( $results ),
 		);

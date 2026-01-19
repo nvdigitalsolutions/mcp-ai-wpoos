@@ -18,6 +18,7 @@ require_once __DIR__ . '/../validators/arguments/class-save-post-arguments.php';
  * Creates a new post or updates an existing one using Symfony Validator.
  */
 class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -199,13 +200,16 @@ class WP_MCP_AI_Tool_Save_Post_Validated extends WP_MCP_AI_Validated_Tool implem
 			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was saved but could not be retrieved.', 'mcp-ai-wpoos' ) );
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: post ID, 2: post title */
+			__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
+			get_the_title( $updated_post ),
+			$updated_post->ID
+		);
+
 		$response = array(
-			'summary'   => sprintf(
-				/* translators: 1: post ID, 2: post title */
-				__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
-				get_the_title( $updated_post ),
-				$updated_post->ID
-			),
+			'message'   => $summary_text,
+			'summary'   => $summary_text,
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),

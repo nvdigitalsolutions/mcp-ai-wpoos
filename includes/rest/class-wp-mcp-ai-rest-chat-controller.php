@@ -62,6 +62,41 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
+	 * Get the main REST controller with fallback to global scope.
+	 *
+	 * This method provides a defensive fallback for scenarios where the main controller
+	 * reference may be lost due to caching, opcache, or other environmental issues.
+	 *
+	 * @return WP_MCP_AI_REST|null Main REST controller or null if unavailable.
+	 */
+	private function get_main_controller() {
+		// Return the stored reference if available.
+		if ( null !== $this->main_controller ) {
+			return $this->main_controller;
+		}
+
+		// Fallback: Try to get from global scope.
+		if ( isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) && $GLOBALS['wp_mcp_ai_rest_controller'] instanceof WP_MCP_AI_REST ) {
+			// Cache the reference for future use.
+			$this->main_controller = $GLOBALS['wp_mcp_ai_rest_controller'];
+
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'debug',
+					'Chat Controller: Retrieved main_controller from global scope',
+					array(
+						'context' => 'get_main_controller_fallback',
+					)
+				);
+			}
+
+			return $this->main_controller;
+		}
+
+		return null;
+	}
+
+	/**
 	 * Register chat routes.
 	 *
 	 * Registers all chat-related REST API endpoints:
@@ -155,10 +190,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'assistant_id'      => array(
-							'description'       => __( 'ID of the assistant for this chat transcript.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
+							'description'       => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => true,
-							'sanitize_callback' => 'absint',
 						),
 						'session_key'       => array(
 							'description'       => __( 'Session key for this conversation.', 'mcp-ai-wpoos' ),
@@ -232,10 +266,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'absint',
 						),
 						'assistant_id' => array(
-							'description'       => __( 'Assistant ID to filter transcripts by.', 'mcp-ai-wpoos' ),
-							'type'              => 'integer',
+							'description'       => __( 'Assistant ID to filter transcripts by. Can be an integer or string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => false,
-							'sanitize_callback' => 'absint',
+							'sanitize_callback' => 'sanitize_text_field',
 						),
 					),
 				),
@@ -372,9 +406,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
 	public function chat_transcripts_permissions_check( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Try main controller first for full functionality.
-		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'chat_transcripts_permissions_check' ) ) {
-			return $this->main_controller->chat_transcripts_permissions_check( $request );
+		if ( null !== $main_controller && method_exists( $main_controller, 'chat_transcripts_permissions_check' ) ) {
+			return $main_controller->chat_transcripts_permissions_check( $request );
 		}
 
 		// Fallback: Use base class authentication.
@@ -395,9 +431,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
 	public function permissions_check( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Try main controller first for full functionality.
-		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'permissions_check' ) ) {
-			return $this->main_controller->permissions_check( $request );
+		if ( null !== $main_controller && method_exists( $main_controller, 'permissions_check' ) ) {
+			return $main_controller->permissions_check( $request );
 		}
 
 		// Fallback: Use base class authentication.
@@ -415,9 +453,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_request( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Delegate to main controller if available.
-		if ( null !== $this->main_controller && method_exists( $this->main_controller, 'handle_chat_request' ) ) {
-			return $this->main_controller->handle_chat_request( $request );
+		if ( null !== $main_controller && method_exists( $main_controller, 'handle_chat_request' ) ) {
+			return $main_controller->handle_chat_request( $request );
 		}
 
 		// Self-contained fallback: Chat requires AI model integration.
@@ -554,8 +594,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcripts( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Defensive check for main controller.
-		if ( ! $this->main_controller ) {
+		if ( ! $main_controller ) {
 			WP_MCP_AI_Logger::log_event(
 				'error',
 				'Chat Controller: main_controller is null in handle_chat_transcripts',
@@ -596,8 +638,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$session_key     = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$assistant_id_raw = $request->get_param( 'assistant_id' );
+		
+		// Handle both integer and string assistant IDs (for unified teams and team members).
+		if ( is_string( $assistant_id_raw ) && ! empty( $assistant_id_raw ) ) {
+			$assistant_id = sanitize_text_field( $assistant_id_raw );
+		} else {
+			$assistant_id = absint( $assistant_id_raw );
+		}
 
 		WP_MCP_AI_Logger::log_event(
 			'debug',
@@ -611,7 +660,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		);
 
 		if ( '' !== $session_key ) {
-			$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+			$session = $main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
 
 			if ( is_wp_error( $session ) ) {
 				WP_MCP_AI_Logger::log_event(
@@ -658,7 +707,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$page = 1;
 		}
 
-		$sessions = $this->main_controller->get_transcript_sessions( $user_id, $per_page, $page, $assistant_id );
+		$sessions = $main_controller->get_transcript_sessions( $user_id, $per_page, $page, $assistant_id );
 
 		if ( is_wp_error( $sessions ) ) {
 			if ( 'wp_mcp_ai_transcripts_unavailable' === $sessions->get_error_code() ) {
@@ -696,8 +745,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_save( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Defensive check for main controller.
-		if ( ! $this->main_controller ) {
+		if ( ! $main_controller ) {
 			WP_MCP_AI_Logger::log_event(
 				'error',
 				'Chat Controller: main_controller is null in handle_chat_transcript_save',
@@ -714,13 +765,30 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$this->main_controller->hydrate_request_body_params( $request );
+		$main_controller->hydrate_request_body_params( $request );
 
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
-		$session_key  = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
-		$messages     = $request->get_param( 'messages' );
+		// Get assistant_id as raw value first to check for virtual team IDs.
+		$assistant_id_raw = $request->get_param( 'assistant_id' );
+		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$messages         = $request->get_param( 'messages' );
 
-		if ( ! $assistant_id ) {
+		// Check if this is a virtual team assistant ID.
+		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
+		// Format: unified_team_{digits} or team_{digits}_member_{digits}
+		$is_virtual_team_assistant = is_string( $assistant_id_raw ) && 
+			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id_raw );
+		
+		// Sanitize assistant_id based on type.
+		if ( $is_virtual_team_assistant ) {
+			// Keep as string for virtual team IDs.
+			$assistant_id = sanitize_text_field( $assistant_id_raw );
+		} else {
+			// Convert to integer for real assistant post IDs.
+			$assistant_id = absint( $assistant_id_raw );
+		}
+
+		// Validate assistant_id is provided.
+		if ( ! $assistant_id || ( is_string( $assistant_id ) && '' === trim( $assistant_id ) ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_transcripts_missing_assistant',
 				__( 'Assistant ID is required to save a transcript.', 'mcp-ai-wpoos' ),
@@ -744,10 +812,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		// Validate assistant access.
-		$assistant_post = $this->main_controller->validate_assistant_access( $assistant_id );
-		if ( is_wp_error( $assistant_post ) ) {
-			return $assistant_post;
+		// Validate assistant access for real assistant IDs only.
+		if ( ! $is_virtual_team_assistant ) {
+			// For real assistant IDs, validate that the post exists and user has access.
+			$assistant_post = $main_controller->validate_assistant_access( $assistant_id );
+			if ( is_wp_error( $assistant_post ) ) {
+				return $assistant_post;
+			}
 		}
 
 		// Sanitize messages.
@@ -899,8 +970,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_get( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Defensive check for main controller.
-		if ( ! $this->main_controller ) {
+		if ( ! $main_controller ) {
 			WP_MCP_AI_Logger::log_event(
 				'error',
 				'Chat Controller: main_controller is null in handle_chat_transcript_get',
@@ -917,7 +990,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key  = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$session_key  = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
 		$user_id      = absint( $request->get_param( 'user_id' ) );
 
@@ -962,7 +1035,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		$session = $this->main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
+		$session = $main_controller->get_transcript_session( $user_id, $session_key, $assistant_id );
 
 		if ( is_wp_error( $session ) ) {
 			WP_MCP_AI_Logger::log_event(
@@ -1002,8 +1075,10 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_transcript_delete( WP_REST_Request $request ) {
+		$main_controller = $this->get_main_controller();
+
 		// Defensive check for main controller.
-		if ( ! $this->main_controller ) {
+		if ( ! $main_controller ) {
 			WP_MCP_AI_Logger::log_event(
 				'error',
 				'Chat Controller: main_controller is null in handle_chat_transcript_delete',
@@ -1020,7 +1095,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key = $this->main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$session_key = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 
 		if ( '' === $session_key ) {
 			return new WP_Error(
@@ -1050,7 +1125,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			)
 		);
 
-		$repository = $this->main_controller->get_transcript_repository();
+		$repository = $main_controller->get_transcript_repository();
 		$table      = $repository->get_table_name();
 
 		if ( '' === $table ) {
@@ -1293,8 +1368,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$info['jetengine_cct_class_exists'] = class_exists( 'WP_MCP_AI_JetEngine_CCT' );
 
 		// Check transcript repository and table.
-		if ( $this->main_controller && method_exists( $this->main_controller, 'get_transcript_repository' ) ) {
-			$repository = $this->main_controller->get_transcript_repository();
+		$main_controller = $this->get_main_controller();
+		if ( $main_controller && method_exists( $main_controller, 'get_transcript_repository' ) ) {
+			$repository = $main_controller->get_transcript_repository();
 			if ( $repository ) {
 				$info['table_name']   = $repository->get_table_name();
 				$info['table_exists'] = $repository->table_exists();

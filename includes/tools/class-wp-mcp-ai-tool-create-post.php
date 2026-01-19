@@ -18,6 +18,7 @@ require_once __DIR__ . '/trait-wp-mcp-ai-tool-content-media.php';
  * post creation, not updates. Use save_post for update operations.
  */
 class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Content_Media;
 
 	/**
@@ -306,13 +307,16 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			return $post_meta_result;
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: post title, 2: post ID */
+			__( 'Post created: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
+			get_the_title( $created_post ),
+			$created_post->ID
+		);
+
 		$response = array(
-			'summary'   => sprintf(
-				/* translators: 1: post title, 2: post ID */
-				__( 'Post created: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
-				get_the_title( $created_post ),
-				$created_post->ID
-			),
+			'message'   => $summary_text, // Chat client display
+			'summary'   => $summary_text, // Backward compatibility
 			'ID'        => $created_post->ID,
 			'title'     => get_the_title( $created_post ),
 			'status'    => get_post_status( $created_post ),

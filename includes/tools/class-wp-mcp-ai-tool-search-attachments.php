@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Searches for accessible attachments and returns metadata plus download links.
  */
 class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Maximum number of attachments that can be returned in a single call.
 	 */
@@ -188,12 +189,15 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 			}
 		} while ( $results_count < $limit );
 
+		$summary_text = sprintf(
+			/* translators: %d: number of attachments found */
+			__( 'Found %d attachment(s)', 'mcp-ai-wpoos' ),
+			count( $results )
+		);
+
 		return array(
-			'summary'     => sprintf(
-				/* translators: %d: number of attachments found */
-				__( 'Found %d attachment(s)', 'mcp-ai-wpoos' ),
-				count( $results )
-			),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 			'attachments' => $results,
 			'count'       => count( $results ),
 		);

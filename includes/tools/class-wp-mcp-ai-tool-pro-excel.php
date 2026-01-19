@@ -29,6 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}

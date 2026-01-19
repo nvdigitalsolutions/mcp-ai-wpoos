@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Executes a probe request against a published assistant.
  */
 class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */

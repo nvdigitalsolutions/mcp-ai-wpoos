@@ -1,0 +1,58 @@
+{
+    "name": "@types/pdfkit",
+    "version": "0.17.4",
+    "description": "TypeScript definitions for pdfkit",
+    "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/pdfkit",
+    "license": "MIT",
+    "contributors": [
+        {
+            "name": "Eric Hillah",
+            "githubUsername": "erichillah",
+            "url": "https://github.com/erichillah"
+        },
+        {
+            "name": "Jeroen Vervaeke",
+            "githubUsername": "jeroenvervaeke",
+            "url": "https://github.com/jeroenvervaeke"
+        },
+        {
+            "name": "Thales Agapito",
+            "githubUsername": "thalesagapito",
+            "url": "https://github.com/thalesagapito"
+        },
+        {
+            "name": "Evgeny Baram",
+            "githubUsername": "r4tz52",
+            "url": "https://github.com/r4tz52"
+        },
+        {
+            "name": "Benjamin Just",
+            "githubUsername": "BamButz",
+            "url": "https://github.com/BamButz"
+        },
+        {
+            "name": "Joanna Gabis",
+            "githubUsername": "jg-mms",
+            "url": "https://github.com/jg-mms"
+        },
+        {
+            "name": "Robin Guinant",
+            "githubUsername": "Foohx",
+            "url": "https://github.com/Foohx"
+        }
+    ],
+    "main": "",
+    "types": "index.d.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+        "directory": "types/pdfkit"
+    },
+    "scripts": {},
+    "dependencies": {
+        "@types/node": "*"
+    },
+    "peerDependencies": {},
+    "typesPublisherContentHash": "7e7bef7085e472fe122cdc771c3598e68f373e903201a2ce61e0332c7769d8e2",
+    "typeScriptVersion": "5.2"
+}

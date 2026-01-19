@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides functionality to create newsletter emails in the Newsletter plugin.
  */
 class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether Newsletter plugin is available.
 	 *

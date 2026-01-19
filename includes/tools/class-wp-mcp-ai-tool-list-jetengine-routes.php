@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provide reference details for JetEngine REST API routes.
  */
 class WP_MCP_AI_Tool_List_JetEngine_Routes implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * JetEngine REST API namespace.
 	 *
