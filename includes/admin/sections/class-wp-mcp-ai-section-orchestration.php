@@ -2034,10 +2034,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Only process fields from the active view to prevent clearing
 		 * settings from other views when saving.
 		 *
-		 * @param array $input Raw input from form.
+		 * @param array  $input Raw input from form.
+		 * @param string $active_subtab Optional. Not used for orchestration (uses views instead).
+		 * @param bool   $is_active_tab Optional. Whether this section's tab is the active tab being saved.
 		 * @return array Sanitized input.
 		 */
-		public function sanitize( $input ) {
+		public function sanitize( $input, $active_subtab = null, $is_active_tab = false ) {
+			// Orchestration section uses views, not subtabs.
+			// The view is handled internally by sanitize_with_views().
 			return $this->sanitize_with_views( $input );
 		}
 
