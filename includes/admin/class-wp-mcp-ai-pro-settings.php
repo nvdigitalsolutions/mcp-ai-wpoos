@@ -265,7 +265,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for Pro addon packages in vendor directory.
 			$pro_vendor_packages = array(
-				'@turf/turf'     => 'turf/turf.min.js',
+				'@turf/turf'     => 'turf/dist/esm/index.js',
 				'@types/pdfkit'  => false, // TypeScript types only, no runtime file
 				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
 				'ics'            => 'ics/index.js',

@@ -92,8 +92,10 @@ if (!fs.existsSync(vendorPath)) {
 const dependencies = [
 	{
 		name: '@turf/turf',
+		dirs: [
+			{ src: 'dist', dest: 'turf/dist' }, // Include both cjs and esm
+		],
 		files: [
-			{ src: 'dist/turf.min.js', dest: 'turf/turf.min.js' },
 			{ src: 'package.json', dest: 'turf/package.json' },
 		],
 	},

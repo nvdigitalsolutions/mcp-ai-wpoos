@@ -251,8 +251,8 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function check_turf_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/turf/turf.min.js';
-		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/@turf/turf/dist/turf.min.js';
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/turf/dist/esm/index.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/@turf/turf/dist/esm/index.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
