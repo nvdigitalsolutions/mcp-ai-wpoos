@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-pro-plugin-activation-error',
-        'version' => 'dev-copilot/fix-pro-plugin-activation-error',
-        'reference' => '372cdd56fe565fab39a38ca2d748d95bbc3a66fb',
+        'pretty_version' => 'dev-copilot/fix-settings-page-issues',
+        'version' => 'dev-copilot/fix-settings-page-issues',
+        'reference' => '6bbda50bba90412c7c299207bf7f93975fe85447',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-pro-plugin-activation-error',
-            'version' => 'dev-copilot/fix-pro-plugin-activation-error',
-            'reference' => '372cdd56fe565fab39a38ca2d748d95bbc3a66fb',
+            'pretty_version' => 'dev-copilot/fix-settings-page-issues',
+            'version' => 'dev-copilot/fix-settings-page-issues',
+            'reference' => '6bbda50bba90412c7c299207bf7f93975fe85447',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

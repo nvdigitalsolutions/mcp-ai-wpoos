@@ -255,16 +255,39 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
 			// Provider keys should only come from the Providers tab sections, never from General or other tabs.
 			$sensitive_keys = array(
+				// OpenAI Provider.
 				'openai_api_key',
-				'gemini_api_key',
+				'openai_organization_id',
+				// Anthropic Provider.
 				'anthropic_api_key',
+				// Google Gemini Provider.
+				'gemini_api_key',
+				// Hugging Face Provider.
 				'huggingface_api_key',
+				'huggingface_endpoint_url',
+				'huggingface_datasets_api_token',
+				// Ollama Provider (Local).
 				'ollama_endpoint_url',
+				// LM Studio Provider (Local).
 				'lm_studio_endpoint_url',
+				// Cloudflare Provider.
 				'cloudflare_account_id',
 				'cloudflare_api_token',
+				// Brave Search Integration.
 				'brave_search_api_key',
+				// Mubert Integration.
 				'mubert_api_key',
+				// Google Maps Integration.
+				'google_maps_api_key',
+				// OAuth and Auth0 Integration.
+				'auth0_domain',
+				'auth0_client_id',
+				'auth0_client_secret',
+				'oauth_google_client_id',
+				'oauth_google_client_secret',
+				// External Service Keys (may exist in other sections).
+				'cloudways_api_key',
+				'cloudways_api_email',
 			);
 
 			foreach ( $sensitive_keys as $key ) {
@@ -281,6 +304,36 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						);
 					}
 					unset( $sanitized_new[ $key ] );
+				}
+			}
+
+			// ADDITIONAL PROTECTION: Prevent any empty string from overwriting an existing non-empty value.
+			// This is a safety net for cases where subtab logic might not properly isolate fields.
+			// Exception: We allow intentional clearing when the active tab matches the setting's tab.
+			foreach ( $sanitized_new as $key => $value ) {
+				// Skip if value is not an empty string (empty arrays, false, 0 are allowed).
+				if ( '' !== $value ) {
+					continue;
+				}
+
+				// If there's an existing non-empty value, don't overwrite it with empty string.
+				if ( isset( $existing_settings[ $key ] ) && '' !== $existing_settings[ $key ] ) {
+					// Allow clearing values only when we're on the relevant tab.
+					// This prevents cross-tab pollution while allowing intentional field clearing.
+					$setting_belongs_to_active_tab = $this->is_setting_in_tab( $key, $active_tab );
+					
+					if ( ! $setting_belongs_to_active_tab ) {
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] PROTECTION: Preventing empty string for %s from overwriting existing value (not in active tab %s)',
+									$key,
+									$active_tab
+								)
+							);
+						}
+						unset( $sanitized_new[ $key ] );
+					}
 				}
 			}
 
@@ -613,6 +666,41 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				</form>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Check if a setting key belongs to fields in the specified tab.
+		 *
+		 * @param string $key Setting key to check.
+		 * @param string $tab Tab ID to check against.
+		 * @return bool True if the setting belongs to the tab, false otherwise.
+		 */
+		private function is_setting_in_tab( $key, $tab ) {
+			if ( empty( $tab ) ) {
+				return false;
+			}
+
+			$sections = WP_MCP_AI_Settings_Registry::get_sections( $tab );
+			
+			foreach ( $sections as $section ) {
+				$fields = $section->get_fields();
+				
+				if ( isset( $fields[ $key ] ) ) {
+					return true;
+				}
+
+				// For sections with subtabs, check all subtab fields.
+				if ( method_exists( $section, 'get_subtab_groups' ) ) {
+					$subtab_groups = $section->get_subtab_groups();
+					foreach ( $subtab_groups as $group ) {
+						if ( isset( $group['fields'] ) && in_array( $key, $group['fields'], true ) ) {
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
 		}
 
 		/**
