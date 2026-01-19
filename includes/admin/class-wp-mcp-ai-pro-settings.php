@@ -127,7 +127,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'            => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'              => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
-				'enable_elementor_widgets'            => __( 'Elementor Widgets', 'mcp-ai-wpoos' ),
+				'enable_site_creator'                 => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'enable_ai_cpt_management'            => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
 			);
 
