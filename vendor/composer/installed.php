@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-undefined-function-error-one-more-time',
-        'version' => 'dev-copilot/fix-undefined-function-error-one-more-time',
-        'reference' => '81f95d544013383fae47749ece3d90cfb951b51d',
+        'pretty_version' => 'dev-copilot/fix-jetengine-inactive-status',
+        'version' => 'dev-copilot/fix-jetengine-inactive-status',
+        'reference' => 'e79fad968ad8c4a5dd8c16ce459caa94415d7549',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-undefined-function-error-one-more-time',
-            'version' => 'dev-copilot/fix-undefined-function-error-one-more-time',
-            'reference' => '81f95d544013383fae47749ece3d90cfb951b51d',
+            'pretty_version' => 'dev-copilot/fix-jetengine-inactive-status',
+            'version' => 'dev-copilot/fix-jetengine-inactive-status',
+            'reference' => 'e79fad968ad8c4a5dd8c16ce459caa94415d7549',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
