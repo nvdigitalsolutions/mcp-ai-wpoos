@@ -28,6 +28,13 @@ function wp_mcp_ai_is_nodejs_available() {
 	static $available = null;
 
 	if ( null === $available ) {
+		// Check if shell_exec is available (may be disabled in shared hosting).
+		if ( ! function_exists( 'shell_exec' ) ) {
+			$available = false;
+			return $available;
+		}
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
 		$node_check = shell_exec( 'which node 2>/dev/null' );
 		$available  = ! empty( $node_check );
 	}
@@ -45,6 +52,14 @@ function wp_mcp_ai_is_nodejs_available() {
  * @return array|WP_Error Result or error.
  */
 function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout = 30 ) {
+	// Check if exec function is available (may be disabled in shared hosting).
+	if ( ! function_exists( 'exec' ) ) {
+		return new WP_Error(
+			'shell_functions_disabled',
+			__( 'Shell execution functions are disabled on this server. Please contact your hosting provider to enable the exec() function.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
 	if ( ! wp_mcp_ai_is_nodejs_available() ) {
 		return new WP_Error(
 			'nodejs_not_available',
@@ -73,6 +88,7 @@ function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout 
 	);
 
 	// Execute command.
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 	exec( $cmd, $output, $return_code );
 
 	// Handle timeout (return code 124).
