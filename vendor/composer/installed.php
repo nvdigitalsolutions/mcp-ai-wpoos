@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-fatal-error-plugin-enable',
-        'version' => 'dev-copilot/fix-fatal-error-plugin-enable',
-        'reference' => 'e53784dae63661516e30bced4582d95aff0d5782',
+        'pretty_version' => 'dev-copilot/fix-pro-plugin-activation-error',
+        'version' => 'dev-copilot/fix-pro-plugin-activation-error',
+        'reference' => '372cdd56fe565fab39a38ca2d748d95bbc3a66fb',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-fatal-error-plugin-enable',
-            'version' => 'dev-copilot/fix-fatal-error-plugin-enable',
-            'reference' => 'e53784dae63661516e30bced4582d95aff0d5782',
+            'pretty_version' => 'dev-copilot/fix-pro-plugin-activation-error',
+            'version' => 'dev-copilot/fix-pro-plugin-activation-error',
+            'reference' => '372cdd56fe565fab39a38ca2d748d95bbc3a66fb',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
