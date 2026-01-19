@@ -255,148 +255,148 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 	 * @return array Toolkit details grouped by system.
 	 */
 	public static function get_toolkit_details() {
-			$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 
-			$toolkits = array(
-				'media_toolkit' => array(
-					'name'        => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_media_toolkit'] ),
-					'category'    => 'specialized',
-					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate' ),
-					'npm_packages' => array( 'sharp', 'fluent-ffmpeg', 'katex', '@neplex/vectorizer' ),
-					'tools_count' => 4,
-					'tools'       => array(
-						__( 'optimize_image tool', 'mcp-ai-wpoos' ),
-						__( 'process_video tool', 'mcp-ai-wpoos' ),
-						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
-						__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
-					),
+		$toolkits = array(
+			'media_toolkit' => array(
+				'name'        => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+				'description' => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_media_toolkit'] ),
+				'category'    => 'specialized',
+				'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate' ),
+				'npm_packages' => array( 'sharp', 'fluent-ffmpeg', 'katex', '@neplex/vectorizer' ),
+				'tools_count' => 4,
+				'tools'       => array(
+					__( 'optimize_image tool', 'mcp-ai-wpoos' ),
+					__( 'process_video tool', 'mcp-ai-wpoos' ),
+					__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
+					__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
 				),
-				'document_generation' => array(
-					'name'        => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_document_generation_toolkit'] ),
-					'category'    => 'specialized',
-					'php_functions' => array( 'exec' ),
-					'npm_packages' => array( 'pdfkit', 'docx', 'exceljs' ),
-					'tools_count' => 3,
-					'tools'       => array(
-						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
-						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
-						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'document_generation' => array(
+				'name'        => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+				'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_document_generation_toolkit'] ),
+				'category'    => 'specialized',
+				'php_functions' => array( 'exec' ),
+				'npm_packages' => array( 'pdfkit', 'docx', 'exceljs' ),
+				'tools_count' => 3,
+				'tools'       => array(
+					__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
+					__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
+					__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
 				),
-				'project_management' => array(
-					'name'        => __( 'Project Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_project_management'] ),
-					'category'    => 'specialized',
-					'php_functions' => array(),
-					'npm_packages' => array( 'ics' ),
-					'tools_count' => 1,
-					'tools'       => array(
-						__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'project_management' => array(
+				'name'        => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_project_management'] ),
+				'category'    => 'specialized',
+				'php_functions' => array(),
+				'npm_packages' => array( 'ics' ),
+				'tools_count' => 1,
+				'tools'       => array(
+					__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
 				),
-				'places_management' => array(
-					'name'        => __( 'Places Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_places_management'] ),
-					'category'    => 'specialized',
-					'php_functions' => array(),
-					'npm_packages' => array( '@turf/turf' ),
-					'tools_count' => 1,
-					'tools'       => array(
-						__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'places_management' => array(
+				'name'        => __( 'Places Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_places_management'] ),
+				'category'    => 'specialized',
+				'php_functions' => array(),
+				'npm_packages' => array( '@turf/turf' ),
+				'tools_count' => 1,
+				'tools'       => array(
+					__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
 				),
-				'health_wellness_management' => array(
-					'name'        => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_health_wellness_management'] ),
-					'category'    => 'specialized',
-					'php_functions' => array(),
-					'npm_packages' => array( 'chart.js' ),
-					'tools_count' => 1,
-					'tools'       => array(
-						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'health_wellness_management' => array(
+				'name'        => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_health_wellness_management'] ),
+				'category'    => 'specialized',
+				'php_functions' => array(),
+				'npm_packages' => array( 'chart.js' ),
+				'tools_count' => 1,
+				'tools'       => array(
+					__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
 				),
-				'quiz_system' => array(
-					'name'        => __( 'Quiz System', 'mcp-ai-wpoos' ),
-					'description' => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_quiz_system'] ),
-					'category'    => 'specialized',
-					'php_functions' => array(),
-					'npm_packages' => array( 'katex' ),
-					'tools_count' => 2,
-					'tools'       => array(
-						__( 'create_quiz tool', 'mcp-ai-wpoos' ),
-						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'quiz_system' => array(
+				'name'        => __( 'Quiz System', 'mcp-ai-wpoos' ),
+				'description' => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_quiz_system'] ),
+				'category'    => 'specialized',
+				'php_functions' => array(),
+				'npm_packages' => array( 'katex' ),
+				'tools_count' => 2,
+				'tools'       => array(
+					__( 'create_quiz tool', 'mcp-ai-wpoos' ),
+					__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
 				),
-				'eca_management' => array(
-					'name'        => __( 'ECA Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_eca_management'] ),
-					'category'    => 'core',
-					'php_functions' => array(),
-					'npm_packages' => array(),
-					'tools_count' => 3,
-					'tools'       => array(
-						__( 'manage_eca tool', 'mcp-ai-wpoos' ),
-						__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
-						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'eca_management' => array(
+				'name'        => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
+				'enabled'     => ! empty( $settings['enable_eca_management'] ),
+				'category'    => 'core',
+				'php_functions' => array(),
+				'npm_packages' => array(),
+				'tools_count' => 3,
+				'tools'       => array(
+					__( 'manage_eca tool', 'mcp-ai-wpoos' ),
+					__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
+					__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
 				),
-				'code_formatting' => array(
-					'name'        => __( 'Code Formatting', 'mcp-ai-wpoos' ),
-					'description' => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
-					'enabled'     => true,
-					'category'    => 'infrastructure',
-					'php_functions' => array( 'proc_open', 'proc_close' ),
-					'npm_packages' => array( 'prettier', 'mjml' ),
-					'tools_count' => 2,
-					'tools'       => array(
-						__( 'format_code tool', 'mcp-ai-wpoos' ),
-						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
-					),
+			),
+			'code_formatting' => array(
+				'name'        => __( 'Code Formatting', 'mcp-ai-wpoos' ),
+				'description' => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
+				'enabled'     => true,
+				'category'    => 'infrastructure',
+				'php_functions' => array( 'proc_open', 'proc_close' ),
+				'npm_packages' => array( 'prettier', 'mjml' ),
+				'tools_count' => 2,
+				'tools'       => array(
+					__( 'format_code tool', 'mcp-ai-wpoos' ),
+					__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
 				),
-			);
+			),
+		);
 
-			// Check PHP function availability for each toolkit.
-			foreach ( $toolkits as $toolkit_id => &$toolkit ) {
-				$toolkit['php_available'] = true;
-				$toolkit['php_status'] = array();
-				
-				foreach ( $toolkit['php_functions'] as $func_name ) {
-					$available = function_exists( $func_name );
-					$toolkit['php_status'][ $func_name ] = $available;
-					if ( ! $available ) {
-						$toolkit['php_available'] = false;
-					}
+		// Check PHP function availability for each toolkit.
+		foreach ( $toolkits as $toolkit_id => &$toolkit ) {
+			$toolkit['php_available'] = true;
+			$toolkit['php_status'] = array();
+			
+			foreach ( $toolkit['php_functions'] as $func_name ) {
+				$available = function_exists( $func_name );
+				$toolkit['php_status'][ $func_name ] = $available;
+				if ( ! $available ) {
+					$toolkit['php_available'] = false;
 				}
-
-				// Check NPM package availability.
-				$toolkit['npm_available'] = true;
-				$toolkit['npm_status'] = array();
-				
-				foreach ( $toolkit['npm_packages'] as $package ) {
-					$installed = self::check_package_installed( $package );
-					$toolkit['npm_status'][ $package ] = $installed;
-					if ( ! $installed ) {
-						$toolkit['npm_available'] = false;
-					}
-				}
-
-				// Overall status.
-				$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'];
-				$toolkit['has_issues'] = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
 			}
 
-			return $toolkits;
+			// Check NPM package availability.
+			$toolkit['npm_available'] = true;
+			$toolkit['npm_status'] = array();
+			
+			foreach ( $toolkit['npm_packages'] as $package ) {
+				$installed = self::check_package_installed( $package );
+				$toolkit['npm_status'][ $package ] = $installed;
+				if ( ! $installed ) {
+					$toolkit['npm_available'] = false;
+				}
+			}
+
+			// Overall status.
+			$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'];
+			$toolkit['has_issues'] = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
 		}
+
+		return $toolkits;
+	}
 
 	/**
 	 * Render a toolkit card with detailed information.
