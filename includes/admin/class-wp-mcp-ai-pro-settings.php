@@ -246,15 +246,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		);
 	}
 
-		/**
-		 * Get comprehensive toolkit details grouped by system.
-		 *
-		 * Returns detailed information about each toolkit including status,
-		 * PHP requirements, NPM dependencies, tools count, and categorization.
-		 *
-		 * @return array Toolkit details grouped by system.
-		 */
-		public static function get_toolkit_details() {
+	/**
+	 * Get comprehensive toolkit details grouped by system.
+	 *
+	 * Returns detailed information about each toolkit including status,
+	 * PHP requirements, NPM dependencies, tools count, and categorization.
+	 *
+	 * @return array Toolkit details grouped by system.
+	 */
+	public static function get_toolkit_details() {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
@@ -398,21 +398,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			return $toolkits;
 		}
 
-		/**
-		 * Render a toolkit card with detailed information.
-		 *
-		 * Displays toolkit status, requirements, dependencies, and tools list.
-		 *
-		 * @param string $toolkit_id Toolkit identifier.
-		 * @param array  $toolkit    Toolkit details.
-		 * @return void
-		 */
-		private static function render_toolkit_card( $toolkit_id, $toolkit ) {
-			$status_class = $toolkit['fully_operational'] ? 'operational' : ( $toolkit['enabled'] ? 'partial' : 'disabled' );
-			$status_text = $toolkit['fully_operational'] ? __( 'Operational', 'mcp-ai-wpoos' ) : ( $toolkit['enabled'] ? __( 'Enabled (Issues)', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) );
-			$category_badge = $toolkit['category'];
-			?>
-			<div class="wp-mcp-ai-toolkit-card" data-toolkit="<?php echo esc_attr( $toolkit_id ); ?>">
+	/**
+	 * Render a toolkit card with detailed information.
+	 *
+	 * Displays toolkit status, requirements, dependencies, and tools list.
+	 *
+	 * @param string $toolkit_id Toolkit identifier.
+	 * @param array  $toolkit    Toolkit details.
+	 * @return void
+	 */
+	private static function render_toolkit_card( $toolkit_id, $toolkit ) {
+		$status_class = $toolkit['fully_operational'] ? 'operational' : ( $toolkit['enabled'] ? 'partial' : 'disabled' );
+		$status_text = $toolkit['fully_operational'] ? __( 'Operational', 'mcp-ai-wpoos' ) : ( $toolkit['enabled'] ? __( 'Enabled (Issues)', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) );
+		$category_badge = $toolkit['category'];
+		?>
+		<div class="wp-mcp-ai-toolkit-card" data-toolkit="<?php echo esc_attr( $toolkit_id ); ?>">
 				<div class="toolkit-header">
 					<h3>
 						<?php echo esc_html( $toolkit['name'] ); ?>
@@ -508,8 +508,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</ul>
 				</details>
 			</div>
-			<?php
-		}
+		<?php
+	}
 
 		/**
 		 * Get pro toolkit status information.
