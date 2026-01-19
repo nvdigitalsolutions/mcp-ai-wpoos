@@ -674,21 +674,18 @@ JAVASCRIPT;
 	 * @return string|WP_Error Node.js binary path or error.
 	 */
 	protected function get_node_binary() {
-		// Try to find Node.js binary.
-		$node_paths = array( 'node', '/usr/bin/node', '/usr/local/bin/node' );
+		// Use Process Service to get Node.js binary path.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$node_path       = $process_service->get_command_path( 'node' );
 
-		foreach ( $node_paths as $path ) {
-			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
-			$result = shell_exec( "which {$path} 2>/dev/null" );
-			if ( ! empty( $result ) ) {
-				return trim( $result );
-			}
+		if ( false === $node_path ) {
+			return new WP_Error(
+				'wp_mcp_ai_node_not_found',
+				__( 'Node.js is not installed or not found in PATH. PDF generation requires Node.js.', 'mcp-ai-wpoos' )
+			);
 		}
 
-		return new WP_Error(
-			'wp_mcp_ai_node_not_found',
-			__( 'Node.js is not installed or not found in PATH. PDF generation requires Node.js.', 'mcp-ai-wpoos' )
-		);
+		return $node_path;
 	}
 
 	/**

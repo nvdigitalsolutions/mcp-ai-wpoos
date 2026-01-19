@@ -43,15 +43,14 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 			return false;
 		}
 
-		// Check if Node.js is available.
-		$node_check = shell_exec( 'which node 2>/dev/null' );
-		if ( empty( $node_check ) ) {
+		// Use Process Service to check for Node.js and FFmpeg availability.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+
+		if ( ! $process_service->is_command_available( 'node' ) ) {
 			return false;
 		}
 
-		// Check if FFmpeg binary is available.
-		$ffmpeg_check = shell_exec( 'which ffmpeg 2>/dev/null' );
-		if ( empty( $ffmpeg_check ) ) {
+		if ( ! $process_service->is_command_available( 'ffmpeg' ) ) {
 			return false;
 		}
 

@@ -227,13 +227,9 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 			return false;
 		}
 
-		// Check if Node.js is available.
-		$node_check = shell_exec( 'which node 2>/dev/null' );
-		if ( empty( $node_check ) ) {
-			return false;
-		}
-
-		return true;
+		// Use Process Service to check for Node.js availability.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		return $process_service->is_command_available( 'node' );
 	}
 
 	/**

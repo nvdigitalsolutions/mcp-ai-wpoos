@@ -28,8 +28,9 @@ function wp_mcp_ai_is_nodejs_available() {
 	static $available = null;
 
 	if ( null === $available ) {
-		$node_check = shell_exec( 'which node 2>/dev/null' );
-		$available  = ! empty( $node_check );
+		// Use Process Service to check for Node.js availability.
+		$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+		$available       = $process_service->is_command_available( 'node' );
 	}
 
 	return $available;
@@ -42,7 +43,7 @@ function wp_mcp_ai_is_nodejs_available() {
  * @param string $action       Action to perform.
  * @param array  $params       Parameters to pass.
  * @param int    $timeout      Timeout in seconds (default: 30).
- * @return array|WP_Error Result or error.
+ * @return string|WP_Error Result or error.
  */
 function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout = 30 ) {
 	if ( ! wp_mcp_ai_is_nodejs_available() ) {
@@ -63,20 +64,22 @@ function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout 
 		);
 	}
 
-	// Build command.
-	$cmd = sprintf(
-		'timeout %d node %s %s %s 2>&1',
-		absint( $timeout ),
-		escapeshellarg( $service_file ),
-		escapeshellarg( $action ),
-		escapeshellarg( wp_json_encode( $params ) )
+	// Get Process Service.
+	$process_service = \WP_MCP_AI\Services\WP_MCP_AI_Process_Service::get_instance();
+
+	// Build command as array for better security.
+	$command = array(
+		'node',
+		$service_file,
+		$action,
+		wp_json_encode( $params ),
 	);
 
-	// Execute command.
-	exec( $cmd, $output, $return_code );
+	// Execute command using Process Service.
+	$result = $process_service->run_silent( $command, array( 'timeout' => $timeout ) );
 
-	// Handle timeout (return code 124).
-	if ( 124 === $return_code ) {
+	// Check for timeout.
+	if ( isset( $result['timeout'] ) && $result['timeout'] ) {
 		return new WP_Error(
 			'node_timeout',
 			sprintf(
@@ -88,8 +91,8 @@ function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout 
 	}
 
 	// Handle errors.
-	if ( 0 !== $return_code ) {
-		$output_text = implode( "\n", $output );
+	if ( ! $result['success'] ) {
+		$output_text = $result['output'] . $result['error'];
 		$error_data  = json_decode( $output_text, true );
 
 		if ( isset( $error_data['error'] ) ) {
@@ -109,7 +112,7 @@ function wp_mcp_ai_exec_node_service( $service_file, $action, $params, $timeout 
 		);
 	}
 
-	return implode( "\n", $output );
+	return $result['output'];
 }
 
 /**
