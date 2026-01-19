@@ -43,13 +43,20 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 			return false;
 		}
 
+		// Check if shell_exec is available (may be disabled in shared hosting).
+		if ( ! function_exists( 'shell_exec' ) ) {
+			return false;
+		}
+
 		// Check if Node.js is available.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
 		$node_check = shell_exec( 'which node 2>/dev/null' );
 		if ( empty( $node_check ) ) {
 			return false;
 		}
 
 		// Check if FFmpeg binary is available.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
 		$ffmpeg_check = shell_exec( 'which ffmpeg 2>/dev/null' );
 		if ( empty( $ffmpeg_check ) ) {
 			return false;
