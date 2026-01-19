@@ -552,11 +552,14 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
 		file_put_contents( $json_file, wp_json_encode( $document_data ) );
 
-		// Create Node.js script to generate Word document.
-		$node_script = $this->create_word_generation_script();
-		$script_file = $temp_file . '.js';
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
-		file_put_contents( $script_file, $node_script );
+		// Get bundled Word generation script.
+		$script_file = $this->get_word_generation_script_path();
+		if ( is_wp_error( $script_file ) ) {
+			// Clean up temp files.
+			@unlink( $docx_file );
+			@unlink( $json_file );
+			return $script_file;
+		}
 
 		// Execute Node.js script to generate document.
 		$node_binary = $this->get_node_binary();
@@ -564,7 +567,6 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			// Clean up temp files.
 			@unlink( $docx_file );
 			@unlink( $json_file );
-			@unlink( $script_file );
 			return $node_binary;
 		}
 
@@ -583,7 +585,6 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 
 		// Clean up temp files.
 		@unlink( $json_file );
-		@unlink( $script_file );
 
 		if ( 0 !== $return_code ) {
 			@unlink( $docx_file );
@@ -668,8 +669,32 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	}
 
 	/**
+	 * Get path to bundled Word generation script.
+	 *
+	 * @return string|WP_Error Path to script or error if not found.
+	 */
+	protected function get_word_generation_script_path() {
+		// Use bundled script that includes all dependencies.
+		$script_path = WP_MCP_AI_PRO_PATH . 'bin/generate-word.bundle.js';
+		
+		if ( ! file_exists( $script_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_script_not_found',
+				sprintf(
+					/* translators: %s: script path */
+					__( 'Word generation script not found: %s. Run "npm run build:js:pro" to build it.', 'mcp-ai-wpoos' ),
+					$script_path
+				)
+			);
+		}
+		
+		return $script_path;
+	}
+
+	/**
 	 * Create Node.js script for Word document generation.
 	 *
+	 * @deprecated Use bundled script instead.
 	 * @return string Node.js script content.
 	 */
 	protected function create_word_generation_script() {

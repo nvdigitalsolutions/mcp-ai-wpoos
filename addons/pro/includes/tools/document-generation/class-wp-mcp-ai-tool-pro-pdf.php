@@ -480,11 +480,14 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
 		file_put_contents( $json_file, wp_json_encode( $document_data ) );
 
-		// Create Node.js script to generate PDF.
-		$node_script = $this->create_pdf_generation_script();
-		$script_file = $temp_file . '.js';
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_put_contents_file_put_contents
-		file_put_contents( $script_file, $node_script );
+		// Get bundled PDF generation script.
+		$script_file = $this->get_pdf_generation_script_path();
+		if ( is_wp_error( $script_file ) ) {
+			// Clean up temp files.
+			@unlink( $pdf_file );
+			@unlink( $json_file );
+			return $script_file;
+		}
 
 		// Execute Node.js script to generate PDF.
 		$node_binary = $this->get_node_binary();
@@ -492,7 +495,6 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			// Clean up temp files.
 			@unlink( $pdf_file );
 			@unlink( $json_file );
-			@unlink( $script_file );
 			return $node_binary;
 		}
 
@@ -511,7 +513,6 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 
 		// Clean up temp files.
 		@unlink( $json_file );
-		@unlink( $script_file );
 
 		if ( 0 !== $return_code ) {
 			@unlink( $pdf_file );
@@ -596,8 +597,32 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	}
 
 	/**
+	 * Get path to bundled PDF generation script.
+	 *
+	 * @return string|WP_Error Path to script or error if not found.
+	 */
+	protected function get_pdf_generation_script_path() {
+		// Use bundled script that includes all dependencies.
+		$script_path = WP_MCP_AI_PRO_PATH . 'bin/generate-pdf.bundle.js';
+		
+		if ( ! file_exists( $script_path ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_script_not_found',
+				sprintf(
+					/* translators: %s: script path */
+					__( 'PDF generation script not found: %s. Run "npm run build:js:pro" to build it.', 'mcp-ai-wpoos' ),
+					$script_path
+				)
+			);
+		}
+		
+		return $script_path;
+	}
+
+	/**
 	 * Create Node.js script for PDF generation.
 	 *
+	 * @deprecated Use bundled script instead.
 	 * @return string Node.js script content.
 	 */
 	protected function create_pdf_generation_script() {
