@@ -257,44 +257,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 			}
 
-			// CRITICAL FIX: Filter out empty provider keys from sanitized data to prevent accidental deletion.
-			// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
-			// Provider keys should only come from the Providers tab sections, never from General or other tabs.
-			$sensitive_keys = array(
-				// OpenAI Provider.
-				'openai_api_key',
-				'openai_organization_id',
-				// Anthropic Provider.
-				'anthropic_api_key',
-				// Google Gemini Provider.
-				'gemini_api_key',
-				// Hugging Face Provider.
-				'huggingface_api_key',
-				'huggingface_endpoint_url',
-				'huggingface_datasets_api_token',
-				// Ollama Provider (Local).
-				'ollama_endpoint_url',
-				// LM Studio Provider (Local).
-				'lm_studio_endpoint_url',
-				// Cloudflare Provider.
-				'cloudflare_account_id',
-				'cloudflare_api_token',
-				// Brave Search Integration.
-				'brave_search_api_key',
-				// Mubert Integration.
-				'mubert_api_key',
-				// Google Maps Integration.
-				'google_maps_api_key',
-				// OAuth and Auth0 Integration.
-				'auth0_domain',
-				'auth0_client_id',
-				'auth0_client_secret',
-				'oauth_google_client_id',
-				'oauth_google_client_secret',
-				// External Service Keys (may exist in other sections).
-				'cloudways_api_key',
-				'cloudways_api_email',
-			);
+			// CRITICAL FIX: Filter out empty sensitive keys from sanitized data to prevent accidental deletion.
+			// This protects against bugs where subtab sanitization might incorrectly include empty sensitive fields.
+			// Sensitive keys should only be cleared when the user is actually on the relevant tab/subtab.
+			$sensitive_keys = $this->get_sensitive_keys();
 
 			foreach ( $sensitive_keys as $key ) {
 				// If a sensitive key is present in sanitized data but is empty/null,
@@ -311,6 +277,38 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						);
 					}
 					unset( $sanitized_new[ $key ] );
+				}
+			}
+
+			// PATTERN-BASED PROTECTION: Also catch any keys that follow sensitive naming patterns.
+			// This provides additional protection for keys that might be added in the future.
+			$sensitive_patterns = $this->get_sensitive_key_patterns();
+
+			foreach ( $sanitized_new as $key => $value ) {
+				// Skip if already processed or not an empty string.
+				if ( ! isset( $sanitized_new[ $key ] ) || '' !== $value ) {
+					continue;
+				}
+
+				// Check if key matches any sensitive pattern.
+				foreach ( $sensitive_patterns as $pattern ) {
+					if ( preg_match( $pattern, $key ) ) {
+						// Check if existing value exists and is not empty.
+						if ( isset( $existing_settings[ $key ] ) && '' !== $existing_settings[ $key ] ) {
+							if ( $enable_logging ) {
+								error_log(
+									sprintf(
+										'[NV oOS Settings] PATTERN-BASED PROTECTION: Removing empty %s (matched pattern %s) to prevent data loss (tab=%s)',
+										$key,
+										$pattern,
+										$active_tab
+									)
+								);
+							}
+							unset( $sanitized_new[ $key ] );
+							break; // Stop checking other patterns for this key.
+						}
+					}
 				}
 			}
 
@@ -673,6 +671,102 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				</form>
 			</div>
 			<?php
+		}
+
+		/**
+		 * Get list of all sensitive keys that should be protected from accidental clearing.
+		 *
+		 * This method returns a comprehensive list of all API keys, credentials, tokens,
+		 * and other sensitive settings that should never be cleared by empty form submissions.
+		 *
+		 * @return array List of sensitive setting keys.
+		 */
+		private function get_sensitive_keys() {
+			return array(
+				// OpenAI Provider.
+				'openai_api_key',
+				'openai_organization_id',
+				// Anthropic Provider.
+				'anthropic_api_key',
+				// Google Gemini Provider.
+				'gemini_api_key',
+				// Hugging Face Provider.
+				'huggingface_api_key',
+				'huggingface_endpoint_url',
+				'huggingface_datasets_api_token',
+				// Ollama Provider (Local).
+				'ollama_endpoint_url',
+				// LM Studio Provider (Local).
+				'lm_studio_endpoint_url',
+				// Cloudflare Provider.
+				'cloudflare_account_id',
+				'cloudflare_api_token',
+				'cloudflare_zone_id',
+				// Brave Search Integration.
+				'brave_search_api_key',
+				// Mubert Integration.
+				'mubert_api_key',
+				// Google Maps Integration.
+				'google_maps_api_key',
+				// OAuth and Auth0 Integration.
+				'auth0_domain',
+				'auth0_client_id',
+				'auth0_client_secret',
+				'auth0_management_client_id',
+				'auth0_management_client_secret',
+				'oauth_google_client_id',
+				'oauth_google_client_secret',
+				'gmail_client_id',
+				'gmail_client_secret',
+				'google_drive_client_id',
+				'google_drive_client_secret',
+				'github_client_id',
+				'github_client_secret',
+				// External Service Keys.
+				'cloudways_api_key',
+				'cloudways_api_email',
+				'cloudways_server_id',
+				'cloudways_app_id',
+				'crawl4ai_api_key',
+				'removebg_api_key',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'mailjet_client_id',
+				'mailjet_client_secret',
+				'ita_tariff_api_key',
+				'google_analytics_credentials',
+				'google_analytics_credentials_json',
+				'mesh_inbound_api_key',
+				'quickbooks_api_key',
+				'quickbooks_client_id',
+				'quickbooks_client_secret',
+				'meta_app_id',
+				'meta_business_account_id',
+				'tiktok_client_secret',
+			);
+		}
+
+		/**
+		 * Get list of regex patterns that match sensitive keys.
+		 *
+		 * This provides additional protection for keys added in the future
+		 * that follow standard naming conventions.
+		 *
+		 * @return array List of regex patterns.
+		 */
+		private function get_sensitive_key_patterns() {
+			return array(
+				'/_api_key$/',
+				'/_api_secret$/',
+				'/_api_token$/',
+				'/_client_id$/',
+				'/_client_secret$/',
+				'/_access_token$/',
+				'/_refresh_token$/',
+				'/_private_key$/',
+				'/_credentials$/',
+				'/_credentials_json$/',
+			);
 		}
 
 		/**
