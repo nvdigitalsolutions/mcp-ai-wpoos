@@ -496,8 +496,10 @@ To create plugin ZIP files locally for testing:
 Or use npm scripts:
 
 ```bash
-npm run build:zip           # All three main versions (base, pro, combined)
-npm run rebuild:all         # ALL versions including core-only
+npm run build:zip                # All three main versions (base, pro, combined)
+npm run rebuild:all              # ALL versions (base, pro, combined, core) with full asset rebuild
+npm run rebuild:assets-and-zips  # Same as rebuild:all - rebuilds all assets and ZIPs
+npm run rebuild:clean            # Clean build + rebuild all assets and ZIPs
 npm run build:zip:base      # Base version only
 npm run build:zip:pro       # Pro add-on only
 npm run build:zip:combined  # Base + Pro combined
@@ -513,6 +515,50 @@ ZIP files will be created in the `build/` directory:
 - Node.js and npm (for asset building)
 - Composer (for PHP dependencies)
 - zip command
+
+### Comprehensive Rebuild Process
+
+The `rebuild-all-zips.sh` script provides a comprehensive rebuild that:
+
+1. **Rebuilds all frontend assets:**
+   - CSS minification (6 CSS files)
+   - JavaScript bundling with esbuild (12+ JS files)
+   - Pro add-on Node.js script bundling (PDF, Word, Excel generators)
+
+2. **Installs production PHP dependencies:**
+   - Symfony components (HTTP Client, Process, Validator, Cache, Filesystem)
+   - Tiktoken-PHP for AI token counting
+   - PSR-7 HTTP message implementation
+
+3. **Creates all plugin ZIP files:**
+   - `mcp-ai-wpoos-base-X.Y.Z.zip` - Standalone base (works independently)
+   - `mcp-ai-wpoos-pro-X.Y.Z.zip` - Pro add-on (requires base)
+   - `mcp-ai-wpoos-X.Y.Z.zip` - Base + Pro combined
+   - `mcp-ai-wpoos-core-X.Y.Z.zip` - Lightweight core plugin (4 basic tools)
+
+**When to use:**
+- Before creating a release
+- After making changes to JavaScript, CSS, or PHP code
+- When switching between development and production builds
+- To ensure a clean, production-ready build
+
+**Examples:**
+
+```bash
+# Standard rebuild - all assets and all ZIP files
+./bin/rebuild-all-zips.sh
+
+# Or via npm
+npm run rebuild:all
+
+# Clean build (removes build/ directory first)
+npm run rebuild:clean
+
+# Rebuild with specific version
+./bin/rebuild-all-zips.sh --version 1.2.0
+```
+
+The script outputs detailed information about what's being rebuilt and shows file sizes for all generated ZIPs.
 
 ### Creating a Release
 
