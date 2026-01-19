@@ -56,6 +56,19 @@ This installs:
 
 ### PHP Dependencies
 
+**⚠️ Important: Repository Production State**
+
+The repository is maintained in a **production-ready state** with only production dependencies committed. This ensures:
+- The plugin can be cloned and used directly as a production plugin
+- Repository size stays minimal (~5.6 MB vendor vs ~145 MB with dev dependencies)
+- No dev-only files are accidentally deployed to WordPress.org
+
+**Before committing changes to `vendor/`:**
+```bash
+# Always run with --no-dev to keep the repository production-ready
+composer install --no-dev --prefer-dist --optimize-autoloader
+```
+
 #### Production Dependencies
 
 Install only production dependencies (automatically included in the repository):
