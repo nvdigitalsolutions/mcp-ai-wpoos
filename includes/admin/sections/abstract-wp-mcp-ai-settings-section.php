@@ -250,6 +250,93 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		}
 
 		/**
+		 * Check if a field is a sensitive field that should be protected.
+		 *
+		 * @param string $key Field key to check.
+		 * @return bool True if sensitive, false otherwise.
+		 */
+		protected function is_sensitive_field( $key ) {
+			// List of sensitive field names.
+			$sensitive_fields = array(
+				'openai_api_key',
+				'openai_organization_id',
+				'anthropic_api_key',
+				'gemini_api_key',
+				'huggingface_api_key',
+				'huggingface_endpoint_url',
+				'huggingface_datasets_api_token',
+				'ollama_endpoint_url',
+				'lm_studio_endpoint_url',
+				'cloudflare_account_id',
+				'cloudflare_api_token',
+				'cloudflare_zone_id',
+				'brave_search_api_key',
+				'mubert_api_key',
+				'google_maps_api_key',
+				'auth0_domain',
+				'auth0_client_id',
+				'auth0_client_secret',
+				'auth0_management_client_id',
+				'auth0_management_client_secret',
+				'oauth_google_client_id',
+				'oauth_google_client_secret',
+				'gmail_client_id',
+				'gmail_client_secret',
+				'google_drive_client_id',
+				'google_drive_client_secret',
+				'github_client_id',
+				'github_client_secret',
+				'cloudways_api_key',
+				'cloudways_api_email',
+				'cloudways_server_id',
+				'cloudways_app_id',
+				'crawl4ai_api_key',
+				'removebg_api_key',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'mailjet_client_id',
+				'mailjet_client_secret',
+				'ita_tariff_api_key',
+				'google_analytics_credentials',
+				'google_analytics_credentials_json',
+				'mesh_inbound_api_key',
+				'quickbooks_api_key',
+				'quickbooks_client_id',
+				'quickbooks_client_secret',
+				'meta_app_id',
+				'meta_business_account_id',
+				'tiktok_client_secret',
+			);
+
+			// Check exact match first.
+			if ( in_array( $key, $sensitive_fields, true ) ) {
+				return true;
+			}
+
+			// Check pattern match for sensitive field names.
+			$sensitive_patterns = array(
+				'/_api_key$/',
+				'/_api_secret$/',
+				'/_api_token$/',
+				'/_client_id$/',
+				'/_client_secret$/',
+				'/_access_token$/',
+				'/_refresh_token$/',
+				'/_private_key$/',
+				'/_credentials$/',
+				'/_credentials_json$/',
+			);
+
+			foreach ( $sensitive_patterns as $pattern ) {
+				if ( preg_match( $pattern, $key ) ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		/**
 		 * Render a field based on its configuration.
 		 *
 		 * @param string $key Field key.
@@ -265,11 +352,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
+			
+			// Check if this is a sensitive field that should be protected.
+			$is_sensitive = $this->is_sensitive_field( $key );
 
 			?>
 			<tr>
 				<th scope="row">
 					<label for="<?php echo esc_attr( $key ); ?>">
+						<?php if ( $is_sensitive ) : ?>
+							<span class="dashicons dashicons-lock" style="color: #d63638; font-size: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Sensitive field - protected from accidental clearing', 'mcp-ai-wpoos' ); ?>"></span>
+						<?php endif; ?>
 						<?php echo esc_html( $label ); ?>
 						<?php if ( $required ) : ?>
 							<span class="required">*</span>
@@ -294,8 +387,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								id="<?php echo esc_attr( $key ); ?>"
 								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 								value="<?php echo esc_attr( $value ); ?>"
-								class="regular-text"
+								class="regular-text<?php echo esc_attr( $is_sensitive ? ' wp-mcp-ai-sensitive-field' : '' ); ?>"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( $is_sensitive && ! empty( $value ) ) : ?>
+									data-original-value="<?php echo esc_attr( $value ); ?>"
+								<?php endif; ?>
 								<?php if ( ! empty( $autocomplete ) ) : ?>
 									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
 								<?php endif; ?>
@@ -311,8 +407,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								id="<?php echo esc_attr( $key ); ?>"
 								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 								value="<?php echo esc_attr( $value ); ?>"
-								class="regular-text"
+								class="regular-text<?php echo esc_attr( $is_sensitive ? ' wp-mcp-ai-sensitive-field' : '' ); ?>"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( $is_sensitive && ! empty( $value ) ) : ?>
+									data-original-value="<?php echo esc_attr( $value ); ?>"
+								<?php endif; ?>
 								autocomplete="<?php echo esc_attr( ! empty( $autocomplete ) ? $autocomplete : 'new-password' ); ?>"
 								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							/>
