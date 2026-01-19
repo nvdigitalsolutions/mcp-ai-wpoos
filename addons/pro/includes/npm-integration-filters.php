@@ -341,26 +341,35 @@ function wp_mcp_ai_register_all_npm_filters() {
  */
 
 /**
- * Check if auto-registration is enabled
+ * Auto-register NPM filters on init hook
  *
- * Auto-registration can be controlled via constant or filter.
- * Default is enabled if Node.js is available.
+ * Deferred to init hook to avoid instantiating Process Service during plugin activation.
+ * This prevents fatal errors when proc_open is not available on the server.
  */
-$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' ) 
-	? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
-	: true;
+function wp_mcp_ai_auto_register_npm_filters() {
+	/**
+	 * Check if auto-registration is enabled
+	 *
+	 * Auto-registration can be controlled via constant or filter.
+	 * Default is enabled if Node.js is available.
+	 */
+	$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' ) 
+		? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
+		: true;
 
-/**
- * Filter to control auto-registration of NPM filters.
- *
- * @param bool $auto_register Whether to auto-register filters.
- */
-$auto_register = apply_filters( 'wp_mcp_ai_auto_register_npm_filters', $auto_register );
+	/**
+	 * Filter to control auto-registration of NPM filters.
+	 *
+	 * @param bool $auto_register Whether to auto-register filters.
+	 */
+	$auto_register = apply_filters( 'wp_mcp_ai_auto_register_npm_filters', $auto_register );
 
-// Auto-register if enabled and Node.js is available.
-if ( $auto_register && wp_mcp_ai_is_nodejs_available() ) {
-	wp_mcp_ai_register_all_npm_filters();
+	// Auto-register if enabled and Node.js is available.
+	if ( $auto_register && wp_mcp_ai_is_nodejs_available() ) {
+		wp_mcp_ai_register_all_npm_filters();
+	}
 }
+add_action( 'init', 'wp_mcp_ai_auto_register_npm_filters', 20 );
 
 /**
  * ============================================================================
