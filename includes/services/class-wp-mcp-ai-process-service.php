@@ -220,6 +220,11 @@ class WP_MCP_AI_Process_Service {
 
 		$result = $this->run_silent( array( $check_command, $command ), array( 'timeout' => 5 ) );
 
+		// If process functions are disabled, command checking is not available.
+		if ( isset( $result['disabled'] ) && $result['disabled'] ) {
+			return false;
+		}
+
 		return $result['success'] && ! empty( $result['output'] );
 	}
 
@@ -233,6 +238,11 @@ class WP_MCP_AI_Process_Service {
 		$check_command = stripos( PHP_OS, 'WIN' ) === 0 ? 'where' : 'which';
 
 		$result = $this->run_silent( array( $check_command, $command ), array( 'timeout' => 5 ) );
+
+		// If process functions are disabled, command path detection is not available.
+		if ( isset( $result['disabled'] ) && $result['disabled'] ) {
+			return false;
+		}
 
 		if ( $result['success'] && ! empty( $result['output'] ) ) {
 			$paths = explode( "\n", trim( $result['output'] ) );
