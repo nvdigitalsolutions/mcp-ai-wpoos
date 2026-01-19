@@ -20,7 +20,7 @@ class WP_MCP_AI_Tool_Get_JetFormBuilder_Forms implements WP_MCP_AI_Tool_Interfac
 	 * @return bool
 	 */
 	public static function is_available() {
-		return WP_MCP_AI_JetFormBuilder_Tool_Handlers::is_available();
+		return class_exists( 'WP_MCP_AI_JetFormBuilder_Tool_Handlers' ) && WP_MCP_AI_JetFormBuilder_Tool_Handlers::is_available();
 	}
 
 	/**
