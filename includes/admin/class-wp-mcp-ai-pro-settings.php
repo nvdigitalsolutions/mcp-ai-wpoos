@@ -396,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			return $toolkits;
-	}
+		}
 
 		/**
 		 * Render a toolkit card with detailed information.
@@ -509,7 +509,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</details>
 				</div>
 			<?php
-	}
+		}
 
 		/**
 		 * Get pro toolkit status information.
