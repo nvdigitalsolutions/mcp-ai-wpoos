@@ -104,7 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check optional integrations.
 			$status['integrations'] = array(
-				'jetengine'  => defined( 'JET_ENGINE_VERSION' ),
+				'jetengine'  => class_exists( 'Jet_Engine' ),
 				'woocommerce' => class_exists( 'WooCommerce' ),
 				'elementor'  => defined( 'ELEMENTOR_VERSION' ),
 				'rankmath'   => defined( 'RANK_MATH_VERSION' ),
