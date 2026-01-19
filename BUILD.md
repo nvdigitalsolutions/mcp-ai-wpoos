@@ -60,7 +60,7 @@ This installs:
 
 The repository is maintained in a **production-ready state** with only production dependencies committed. This ensures:
 - The plugin can be cloned and used directly as a production plugin
-- Repository size stays minimal (~5.6 MB vendor vs ~145 MB with dev dependencies)
+- Repository size stays minimal (~7 MB vendor vs ~145 MB with dev dependencies)
 - No dev-only files are accidentally deployed to WordPress.org
 
 **Before committing changes to `vendor/`:**
@@ -77,7 +77,7 @@ Install only production dependencies (automatically included in the repository):
 composer install --no-dev
 ```
 
-Production packages (~5.6 MB):
+Production packages (~7 MB):
 - `rahul900day/tiktoken-php` - Token counting for AI models
 - `symfony/http-client` - HTTP client for API requests
 - `symfony/validator` - Input validation framework
