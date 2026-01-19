@@ -202,7 +202,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		/**
 		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
-		 * Checks for packages in vendor directories or bundled into built JavaScript files.
+		 * Checks for packages in vendor directories, bundled into built JavaScript files,
+		 * bundled into local scripts, or in node_modules (both base and Pro addon locations).
 		 *
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
@@ -227,7 +228,37 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/chat-bundle.min.js' );
 			}
 
-			// For other packages, check node_modules (if present).
+			// Check for document generation packages bundled into local scripts.
+			$script_bundled_packages = array(
+				'pdfkit'  => 'generate-pdf.bundle.js',
+				'docx'    => 'generate-word.bundle.js',
+				'exceljs' => 'generate-excel.bundle.js',
+			);
+			if ( isset( $script_bundled_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$script_path = WP_MCP_AI_PRO_PATH . 'bin/' . $script_bundled_packages[ $package ];
+				if ( file_exists( $script_path ) ) {
+					return true;
+				}
+			}
+
+			// Check for other Pro addon packages.
+			$pro_packages = array(
+				'@turf/turf',
+				'fluent-ffmpeg',
+				'ics',
+				'katex',
+				'mjml',
+				'prettier',
+				'sharp',
+			);
+			if ( in_array( $package, $pro_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+			}
+
+			// Check base node_modules (if present).
 			$node_modules_path = WP_MCP_AI_PATH . 'node_modules/' . $package;
 			return file_exists( $node_modules_path );
 		}
