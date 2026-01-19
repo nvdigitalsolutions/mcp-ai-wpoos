@@ -643,6 +643,24 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ## 📦 Installation
 
+### Requirements
+
+**Minimum Requirements:**
+- WordPress 6.0+
+- PHP 7.4+ (PHP 8.0+ recommended)
+- MySQL 5.7+ or MariaDB 10.3+
+
+**Optional Requirements for Enhanced Features:**
+- **Node.js 14+**: Required for image vectorization tools (`vectorize_image` tool)
+- **PHP Functions**: `proc_open`, `proc_close`, `proc_terminate` (for Node.js integration and Process Service)
+  - These functions are often disabled on shared hosting for security
+  - Can be enabled on Cloudways via Application Settings (see [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md))
+- **JetEngine Plugin**: For CCT storage and advanced content management tools
+- **WooCommerce**: For e-commerce integration tools
+- **Elementor**: For visual page builder widgets
+
+**Note**: The plugin works without optional requirements, but some features will be disabled. See [deployment troubleshooting](docs/getting-started/installation-setup/deployment-troubleshooting.md) for enabling disabled PHP functions.
+
 ### For Developers (GitHub Clone)
 
 If you're cloning from GitHub for development:

@@ -152,7 +152,32 @@ To verify the fix works on a server with disabled functions:
 For hosting providers or server administrators who encounter this issue:
 
 ### Option 1: Enable Process Functions (Recommended)
-If your hosting environment allows, enable the required functions by removing them from `disable_functions` in `php.ini`:
+
+#### On Cloudways Hosting
+
+Cloudways users can enable these functions through the Application Settings page:
+
+1. Log in to your Cloudways platform
+2. Go to **Servers** → Select your server
+3. Go to **Settings & Packages** → **Application Settings**
+4. Scroll to the **PHP FPM** tab
+5. Find the `disable_functions` directive
+6. Remove `proc_open`, `proc_close`, and `proc_terminate` from the disabled list
+7. Save changes and restart PHP-FPM
+
+**Before:**
+```ini
+disable_functions = proc_open,proc_close,proc_terminate,exec,shell_exec,...
+```
+
+**After:**
+```ini
+disable_functions = exec,shell_exec,...
+```
+
+#### On Standard Hosting / VPS
+
+If your hosting environment allows, edit `php.ini` to enable the required functions:
 
 ```ini
 ; Before
@@ -161,6 +186,8 @@ disable_functions = proc_open,proc_close,proc_terminate,...
 ; After (remove these three)
 disable_functions = ...
 ```
+
+After making changes, restart your web server (Apache/Nginx) or PHP-FPM.
 
 ### Option 2: Use Plugin Without Process Features
 The plugin will work without these functions, but features requiring external command execution (like Node.js integration) will not be available.
