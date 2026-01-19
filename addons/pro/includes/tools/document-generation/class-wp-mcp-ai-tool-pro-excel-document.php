@@ -718,6 +718,14 @@ JAVASCRIPT;
 	 * @return string|WP_Error Node.js binary path or error.
 	 */
 	protected function get_node_binary() {
+		// Check if shell_exec is available (may be disabled in shared hosting).
+		if ( ! function_exists( 'shell_exec' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_shell_exec_disabled',
+				__( 'Shell execution functions are disabled on this server. Excel document generation requires shell_exec to be enabled.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		// Try to find Node.js binary.
 		$node_paths = array( 'node', '/usr/bin/node', '/usr/local/bin/node' );
 
