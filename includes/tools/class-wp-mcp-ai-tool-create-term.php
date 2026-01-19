@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * hierarchical taxonomies, term metadata, and descriptions.
  */
 class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -173,14 +174,17 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Prepare response.
+		$summary_text = sprintf(
+			/* translators: 1: term name, 2: taxonomy name, 3: term ID */
+			__( 'Term created: %1$s in %2$s (ID: %3$d)', 'mcp-ai-wpoos' ),
+			$term->name,
+			$taxonomy,
+			$term->term_id
+		);
+
 		$response = array(
-			'summary'     => sprintf(
-				/* translators: 1: term name, 2: taxonomy name, 3: term ID */
-				__( 'Term created: %1$s in %2$s (ID: %3$d)', 'mcp-ai-wpoos' ),
-				$term->name,
-				$taxonomy,
-				$term->term_id
-			),
+			'message'     => $summary_text, // Chat client display
+			'summary'     => $summary_text, // Backward compatibility
 			'term_id'     => $term->term_id,
 			'name'        => $term->name,
 			'slug'        => $term->slug,

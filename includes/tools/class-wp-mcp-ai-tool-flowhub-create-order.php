@@ -22,6 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for creating orders in Flowhub dispensary system.
  */
 class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -211,7 +212,10 @@ class WP_MCP_AI_Tool_Flowhub_Create_Order implements WP_MCP_AI_Tool_Interface, W
 		);
 
 		$result = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$result
 		);
 

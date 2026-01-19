@@ -22,6 +22,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
  * Allows privileged users to create WP-Cron jobs using Symfony Validator.
  */
 class WP_MCP_AI_Tool_Create_Cron_Job_Validated extends WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}

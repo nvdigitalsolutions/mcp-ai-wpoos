@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves detailed metadata about a specific OpenAI file.
  */
 class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -108,15 +109,18 @@ class WP_MCP_AI_Tool_Get_OpenAI_File_Details implements WP_MCP_AI_Tool_Interface
 			'status_details' => isset( $result['status_details'] ) ? $result['status_details'] : null,
 		);
 
+		$summary = sprintf(
+			/* translators: 1: filename, 2: file size in bytes */
+			__( 'Retrieved details for file "%1$s" (%2$d bytes).', 'mcp-ai-wpoos' ),
+			$file_details['filename'],
+			$file_details['bytes']
+		);
+
 		return array(
 			'success' => true,
 			'file'    => $file_details,
-			'summary' => sprintf(
-				/* translators: 1: filename, 2: file size in bytes */
-				__( 'Retrieved details for file "%1$s" (%2$d bytes).', 'mcp-ai-wpoos' ),
-				$file_details['filename'],
-				$file_details['bytes']
-			),
+			'message' => $summary, // Chat client.
+			'summary' => $summary, // Backward compatibility.
 		);
 	}
 

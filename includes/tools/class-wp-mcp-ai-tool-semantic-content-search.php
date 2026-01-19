@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Performs semantic search across WordPress content using vector embeddings.
  */
 class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Maximum posts to query for semantic search.
 	 *
@@ -224,6 +225,13 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		// Limit results.
 		$results = array_slice( $results, 0, $limit );
 
+		$summary_text = sprintf(
+			/* translators: 1: number of results, 2: search query */
+			__( 'Found %1$d semantically similar results for "%2$s".', 'mcp-ai-wpoos' ),
+			count( $results ),
+			$query
+		);
+
 		return array(
 			'success'               => true,
 			'results'               => $results,
@@ -231,12 +239,8 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'query'                 => $query,
 			'query_embedding_model' => $embedding_model,
 			'threshold'             => $threshold,
-			'summary'               => sprintf(
-				/* translators: 1: number of results, 2: search query */
-				__( 'Found %1$d semantically similar results for "%2$s".', 'mcp-ai-wpoos' ),
-				count( $results ),
-				$query
-			),
+			'message'               => $summary_text,
+			'summary'               => $summary_text,
 		);
 	}
 

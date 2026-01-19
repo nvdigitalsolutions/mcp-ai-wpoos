@@ -17,10 +17,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Web_Search' ) ) {
 	require_once WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php';
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Finds pricing information for BJ's, Sam's Club, and Costco by querying Crawl4AI's web search endpoint.
  */
 class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MAX_RESULTS = 5;
 
@@ -173,14 +176,29 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 				$results[] = $this->lookup_brand_price_local( $brand, $product, $max_results, $settings, $context );
 			}
 
-			return array(
-				'product'  => $product,
-				'queried'  => current_time( 'mysql', true ),
-				'brands'   => $results,
-				'metadata' => array(
-					'max_results'     => $max_results,
-					'lookup_provider' => 'local',
+			$found_count = 0;
+			foreach ( $results as $brand_result ) {
+				if ( isset( $brand_result['status'] ) && 'success' === $brand_result['status'] ) {
+					++$found_count;
+				}
+			}
+
+			return $this->ensure_response_message(
+				array(
+					'product'  => $product,
+					'queried'  => current_time( 'mysql', true ),
+					'brands'   => $results,
+					'metadata' => array(
+						'max_results'     => $max_results,
+						'lookup_provider' => 'local',
+					),
 				),
+				sprintf(
+					/* translators: 1: number of stores, 2: product name */
+					__( 'Successfully retrieved pricing for %1$d stores for "%2$s"', 'mcp-ai-wpoos' ),
+					$found_count,
+					$product
+				)
 			);
 		}
 
@@ -188,14 +206,29 @@ class WP_MCP_AI_Tool_Crawl4AI_Price_Lookup implements WP_MCP_AI_Tool_Interface, 
 			$results[] = $this->lookup_brand_price( $brand, $product, $max_results, $settings, $context, $base_url );
 		}
 
-		return array(
-			'product'  => $product,
-			'queried'  => current_time( 'mysql', true ),
-			'brands'   => $results,
-			'metadata' => array(
-				'max_results'     => $max_results,
-				'lookup_provider' => 'crawl4ai',
+		$found_count = 0;
+		foreach ( $results as $brand_result ) {
+			if ( isset( $brand_result['status'] ) && 'success' === $brand_result['status'] ) {
+				++$found_count;
+			}
+		}
+
+		return $this->ensure_response_message(
+			array(
+				'product'  => $product,
+				'queried'  => current_time( 'mysql', true ),
+				'brands'   => $results,
+				'metadata' => array(
+					'max_results'     => $max_results,
+					'lookup_provider' => 'crawl4ai',
+				),
 			),
+			sprintf(
+				/* translators: 1: number of stores, 2: product name */
+				__( 'Successfully retrieved pricing for %1$d stores for "%2$s"', 'mcp-ai-wpoos' ),
+				$found_count,
+				$product
+			)
 		);
 	}
 

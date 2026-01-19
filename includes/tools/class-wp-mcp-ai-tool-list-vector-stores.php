@@ -12,11 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Lists OpenAI vector stores.
  */
 class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -104,11 +107,24 @@ class WP_MCP_AI_Tool_List_Vector_Stores implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		$vector_stores = isset( $result['data'] ) ? $result['data'] : array();
+		$count         = count( $vector_stores );
+		$has_more      = isset( $result['has_more'] ) ? $result['has_more'] : false;
+
+		$message = $this->format_collection_response(
+			$count,
+			__( 'vector store', 'mcp-ai-wpoos' ),
+			__( 'vector stores', 'mcp-ai-wpoos' ),
+			$has_more
+		);
+
 		return array(
 			'success' => true,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
-				'vector_stores' => isset( $result['data'] ) ? $result['data'] : array(),
-				'has_more'      => isset( $result['has_more'] ) ? $result['has_more'] : false,
+				'vector_stores' => $vector_stores,
+				'has_more'      => $has_more,
 				'first_id'      => isset( $result['first_id'] ) ? $result['first_id'] : null,
 				'last_id'       => isset( $result['last_id'] ) ? $result['last_id'] : null,
 			),

@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Integrates with WP_MCP_AI_Model_Config for persistent storage.
  */
 class WP_MCP_AI_Tool_Add_Model_Config implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}

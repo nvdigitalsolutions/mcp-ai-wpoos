@@ -173,6 +173,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 								$default_model    = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_DEFAULT_MODEL, true );
 								$edit_url         = get_edit_post_link( $team->ID );
 
+								// Get orchestration settings for multi-agent coordination.
+								$orchestration_mode  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+								$result_aggregation  = get_post_meta( $team->ID, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+								$multi_agent_enabled = class_exists( 'WP_MCP_AI_Settings_Registry' ) ? WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true ) : true;
+
 								$member_count = is_array( $team_members ) ? count( $team_members ) : 0;
 
 								$provider_labels = array(
@@ -186,16 +191,52 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 								$provider_display = $default_provider && isset( $provider_labels[ $default_provider ] ) ? $provider_labels[ $default_provider ] : __( 'Default', 'mcp-ai-wpoos' );
 								$model_display    = $default_model ? $default_model : __( 'Default', 'mcp-ai-wpoos' );
 
-								// Get member names.
+								// Build complete member data array.
 								$member_names = array();
+								$members_data = array();
 								if ( is_array( $team_members ) && ! empty( $team_members ) ) {
 									foreach ( $team_members as $member_id ) {
 										$member = get_post( $member_id );
 										if ( $member && 'mcp_ai_profession' === $member->post_type ) {
 											$member_names[] = $member->post_title;
+
+											// Get profession metadata (only if Profession CPT class is loaded).
+											$category  = '';
+											$expertise = array();
+											if ( class_exists( 'WP_MCP_AI_Profession_CPT' ) ) {
+												$category  = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
+												$expertise = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+											}
+
+											$category_labels = array(
+												'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+												'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
+												'technical'  => __( 'Technical', 'mcp-ai-wpoos' ),
+												'healthcare' => __( 'Healthcare', 'mcp-ai-wpoos' ),
+												'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
+												'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
+												'other'      => __( 'Other', 'mcp-ai-wpoos' ),
+											);
+
+											$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '' );
+
+											$members_data[] = array(
+												'id'       => $member_id,
+												'title'    => $member->post_title,
+												'category' => $category_display,
+											);
 										}
 									}
 								}
+
+								// Build team data for JavaScript.
+								$team_data = array(
+									'members'                => $members_data,
+									'orchestration_mode'     => $orchestration_mode ? $orchestration_mode : 'sequential',
+									'result_aggregation'     => $result_aggregation ? $result_aggregation : 'consensus',
+									'multi_agent_enabled'    => $multi_agent_enabled,
+									'supports_unified_mode'  => $multi_agent_enabled && $member_count > 1,
+								);
 								?>
 								<tr>
 									<td>
@@ -236,8 +277,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											class="button button-primary wp-mcp-ai-test-team-btn"
 											data-team-id="<?php echo esc_attr( $team->ID ); ?>"
 											data-team-title="<?php echo esc_attr( $team->post_title ); ?>"
-											data-member-count="<?php echo esc_attr( $member_count ); ?>"
-											<?php echo esc_attr( ( 0 === $member_count ) ? 'disabled' : '' ); ?>
+											data-team-data="<?php echo esc_attr( wp_json_encode( $team_data ) ); ?>"
+											<?php disabled( 0, $member_count ); ?>
 										>
 											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>
@@ -261,7 +302,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 						<div class="wp-mcp-ai-test-modal__body">
 							<div class="wp-mcp-ai-test-team-info">
 								<p class="description">
-									<?php echo esc_html__( 'Testing team by creating temporary assistants for each team member. Select a team member below to start chatting and validate the team configuration.', 'mcp-ai-wpoos' ); ?>
+									<?php echo esc_html__( 'Test team coordination with DeepSeek V4 multi-agent orchestration. When multi-agent mode is enabled, the entire team responds as one coordinated unit. You can also test individual team members separately.', 'mcp-ai-wpoos' ); ?>
 								</p>
 							</div>
 							<!-- Team member selector -->

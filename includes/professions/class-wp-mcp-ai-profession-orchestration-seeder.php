@@ -103,8 +103,19 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 
 		foreach ( $professions as $profession ) {
 			try {
-				$role = $this->determine_agent_role( $profession );
-				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $role );
+				$role_data = $this->determine_agent_role( $profession );
+				
+				// Handle both single role (backward compatibility) and multi-role return.
+				if ( is_array( $role_data ) ) {
+					$primary_role     = $role_data['primary'];
+					$secondary_roles  = isset( $role_data['secondary'] ) ? $role_data['secondary'] : array();
+				} else {
+					$primary_role     = $role_data;
+					$secondary_roles  = array();
+				}
+				
+				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $primary_role );
+				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_SECONDARY_ROLES, wp_json_encode( $secondary_roles ) );
 				++$seeded;
 
 				// Batch processing - flush cache every 50 items.
@@ -130,13 +141,24 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	/**
 	 * Determine agent role based on profession attributes.
 	 *
-	 * Implements research-backed heuristics:
-	 * - Category-based: advisory→planner, legal/healthcare/financial→specialist
-	 * - Keyword-based: "editor/reviewer"→critic, "project manager"→planner
-	 * - Fallback: technical/creative→executor, unknown→generalist
+	 * Implements industry-standard multi-agent orchestration patterns based on:
+	 * - DeepSeek V4 agent role taxonomy
+	 * - AutoGen multi-agent framework best practices
+	 * - MetaGPT software development agent patterns
+	 *
+	 * Role Definitions (Industry Standard):
+	 * - PLANNER: Strategic planning, coordination, workflow design, resource allocation
+	 * - EXECUTOR: Implementation, technical execution, hands-on work, building/creating
+	 * - CRITIC: Validation, review, quality assurance, testing, compliance checking
+	 * - SPECIALIST: Domain expertise requiring deep knowledge (legal, medical, financial, scientific)
+	 * - GENERALIST: Multi-domain tasks, general assistance, broad capabilities
+	 *
+	 * Multi-Role Support (New):
+	 * Some professions naturally combine roles (e.g., QA Engineer = Critic + Planner).
+	 * Returns array with 'primary' and 'secondary' roles when applicable.
 	 *
 	 * @param WP_Post $profession Profession post object.
-	 * @return string Agent role (planner, executor, critic, specialist, generalist).
+	 * @return string|array Single role string OR array with 'primary' and 'secondary' keys.
 	 */
 	protected function determine_agent_role( $profession ) {
 		$category  = get_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
@@ -150,37 +172,128 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		// Convert expertise to lowercase for matching.
 		$expertise_lower = array_map( 'strtolower', $expertise );
 
-		// Check for planner keywords.
-		if ( $this->has_keywords( $title, array( 'project manager', 'coordinator', 'planner', 'strategist', 'product manager' ) ) ||
-			$this->has_keywords( $expertise_lower, array( 'project management', 'coordination', 'planning', 'strategy' ) ) ||
+		// Track potential roles for multi-role professions.
+		$matched_roles = array();
+
+		// 1. Check CRITIC capabilities.
+		if ( $this->has_keywords( $title, array(
+			// Quality Assurance & Testing
+			'qa engineer', 'quality assurance', 'quality engineer', 'tester', 'test engineer',
+			// Editorial & Review
+			'editor', 'reviewer', 'proofreader', 'copy editor',
+			// Audit & Compliance
+			'auditor', 'inspector', 'compliance officer', 'validator',
+			// Evaluation & Assessment
+			'evaluator', 'assessor', 'judge', 'critic',
+		) ) ||
+			$this->has_keywords( $expertise_lower, array(
+				'quality assurance', 'qa', 'testing', 'test automation',
+				'editing', 'reviewing', 'proofreading',
+				'validation', 'inspection', 'audit', 'compliance',
+				'quality control', 'peer review'
+			) ) ) {
+			$matched_roles[] = 'critic';
+		}
+
+		// 2. Check SPECIALIST capabilities.
+		if ( in_array( $category, array( 'legal', 'healthcare', 'financial', 'scientific', 'regulatory' ), true ) ||
+			$this->has_keywords( $title, array(
+				// Legal
+				'attorney', 'lawyer', 'paralegal', 'legal advisor', 'judge',
+				// Medical/Healthcare
+				'doctor', 'physician', 'surgeon', 'nurse', 'dentist', 'veterinarian', 'pharmacist',
+				'therapist', 'psychologist', 'psychiatrist',
+				// Financial
+				'accountant', 'financial advisor', 'tax advisor', 'bookkeeper',
+				// Scientific/Research
+				'scientist', 'researcher', 'physicist', 'chemist', 'biologist',
+				'geologist', 'meteorologist', 'oceanographer', 'toxicologist',
+				// Regulatory/Compliance
+				'regulatory affairs', 'compliance specialist', 'drug safety',
+			) ) ||
+			$this->has_keywords( $expertise_lower, array(
+				'legal', 'law', 'litigation',
+				'medical', 'healthcare', 'clinical', 'pharmacy',
+				'financial', 'accounting', 'taxation',
+				'scientific research', 'laboratory', 'clinical trials',
+				'regulatory', 'compliance', 'pharmaceutical'
+			) ) ) {
+			$matched_roles[] = 'specialist';
+		}
+
+		// 3. Check PLANNER capabilities.
+		if ( $this->has_keywords( $title, array(
+			// Project/Product Management
+			'project manager', 'product manager', 'program manager', 'scrum master',
+			// Strategic Planning
+			'planner', 'strategist', 'strategic planner', 'urban planner', 'event planner',
+			// Coordination
+			'coordinator', 'logistics coordinator', 'research coordinator',
+			// Architecture (system design, not implementation)
+			'architect', 'cloud architect', 'solutions architect', 'systems architect',
+			'enterprise architect', 'landscape architect',
+			// Management/Leadership
+			'director', 'manager', 'administrator', 'supervisor',
+		) ) ||
+			$this->has_keywords( $expertise_lower, array(
+				'project management', 'product management', 'program management',
+				'planning', 'strategy', 'strategic planning',
+				'coordination', 'logistics',
+				'architecture', 'system design', 'solution design',
+				'management', 'administration', 'leadership'
+			) ) ||
 			'advisory' === $category ) {
-			return 'planner';
+			$matched_roles[] = 'planner';
 		}
 
-		// Check for critic keywords.
-		if ( $this->has_keywords( $title, array( 'editor', 'reviewer', 'qa', 'quality', 'validator', 'inspector', 'auditor' ) ) ||
-			$this->has_keywords( $expertise_lower, array( 'editing', 'reviewing', 'quality assurance', 'validation', 'inspection' ) ) ) {
-			return 'critic';
+		// 4. Check EXECUTOR capabilities.
+		if ( in_array( $category, array( 'technical', 'creative', 'trades', 'operations' ), true ) ||
+			$this->has_keywords( $title, array(
+				// Software Development
+				'developer', 'programmer', 'coder', 'software engineer',
+				// Engineering (implementation)
+				'engineer', 'drafter', 'technician', 'mechanic',
+				// Creative Execution
+				'designer', 'artist', 'photographer', 'videographer', 'animator',
+				'editor', 'producer', 'cinematographer',
+				// Trades/Crafts
+				'electrician', 'plumber', 'carpenter', 'welder', 'mason',
+				'machinist', 'painter', 'roofer',
+				// Operations
+				'operator', 'driver', 'pilot', 'captain',
+			) ) ||
+			$this->has_keywords( $expertise_lower, array(
+				'development', 'programming', 'coding', 'software development',
+				'engineering', 'technical implementation',
+				'design', 'creative', 'multimedia production',
+				'construction', 'fabrication', 'installation',
+				'operations', 'execution'
+			) ) ) {
+			$matched_roles[] = 'executor';
 		}
 
-		// Check for specialist categories.
-		if ( in_array( $category, array( 'legal', 'healthcare', 'financial' ), true ) ) {
-			return 'specialist';
+		// Determine primary and secondary roles based on matches.
+		if ( empty( $matched_roles ) ) {
+			return 'generalist';
+		} elseif ( count( $matched_roles ) === 1 ) {
+			return $matched_roles[0];
+		} else {
+			// Multi-role profession - apply priority order.
+			// Priority: Specialist > Critic > Planner > Executor.
+			$priority = array( 'specialist', 'critic', 'planner', 'executor' );
+			$sorted   = array();
+			
+			foreach ( $priority as $role ) {
+				if ( in_array( $role, $matched_roles, true ) ) {
+					$sorted[] = $role;
+				}
+			}
+			
+			return array(
+				'primary'   => $sorted[0],
+				'secondary' => array_slice( $sorted, 1 ),
+			);
 		}
-
-		// Check for specialist keywords.
-		if ( $this->has_keywords( $title, array( 'attorney', 'lawyer', 'doctor', 'physician', 'surgeon', 'analyst', 'consultant' ) ) ||
-			$this->has_keywords( $expertise_lower, array( 'legal', 'medical', 'financial', 'compliance', 'regulatory' ) ) ) {
-			return 'specialist';
-		}
-
-		// Default to executor for technical/creative (implementation roles).
-		if ( in_array( $category, array( 'technical', 'creative' ), true ) ) {
-			return 'executor';
-		}
-
-		// Final fallback.
-		return 'generalist';
 	}
 
 	/**

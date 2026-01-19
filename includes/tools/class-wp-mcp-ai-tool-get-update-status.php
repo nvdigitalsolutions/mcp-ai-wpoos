@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides a structured snapshot of available WordPress updates.
  */
 class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -187,6 +188,14 @@ class WP_MCP_AI_Tool_Get_Update_Status implements WP_MCP_AI_Tool_Interface, WP_M
 				$component_key => isset( $response['components'][ $component_key ] ) ? $response['components'][ $component_key ] : array(),
 			);
 		}
+
+		$summary_text = sprintf(
+			/* translators: %d: number of updates */
+			__( 'Found %d update(s) available', 'mcp-ai-wpoos' ),
+			$response['summary']['total']
+		);
+
+		$response['message'] = $summary_text;
 
 		return $response;
 	}

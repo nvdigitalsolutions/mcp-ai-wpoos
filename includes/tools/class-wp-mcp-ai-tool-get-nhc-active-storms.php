@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides the JSON summary of active storms from the National Hurricane Center.
  */
 class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const ENDPOINT = 'https://www.nhc.noaa.gov/CurrentStorms.json';
 
 	/**
@@ -106,13 +107,15 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$sanitized = $this->sanitize_payload( $decoded );
+		$summary   = sprintf(
+			/* translators: %d: number of active storms */
+			__( 'Found %d active storm(s)', 'mcp-ai-wpoos' ),
+			is_countable( $sanitized ) ? count( $sanitized ) : 0
+		);
 
 		return array(
-			'summary' => sprintf(
-				/* translators: %d: number of active storms */
-				__( 'Found %d active storm(s)', 'mcp-ai-wpoos' ),
-				is_countable( $sanitized ) ? count( $sanitized ) : 0
-			),
+			'message' => $summary, // Chat client.
+			'summary' => $summary, // Backward compatibility.
 			'storms'  => $sanitized,
 		);
 	}

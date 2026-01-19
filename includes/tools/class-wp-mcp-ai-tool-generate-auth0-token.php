@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Generates an Auth0 bearer token using OAuth 2.0 client credentials flow.
  */
 class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether the tool can be registered.
 	 *
@@ -255,8 +256,11 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			$expires_at = gmdate( 'c', time() + $expires_in );
 		}
 
+		$summary_text = __( 'Auth0 token generated successfully', 'mcp-ai-wpoos' );
+
 		return array(
-			'summary'      => __( 'Auth0 token generated successfully', 'mcp-ai-wpoos' ),
+			'message'      => $summary_text, // Chat client display
+			'summary'      => $summary_text, // Backward compatibility
 			'access_token' => $token,
 			'token_type'   => $token_type,
 			'expires_in'   => $expires_in,

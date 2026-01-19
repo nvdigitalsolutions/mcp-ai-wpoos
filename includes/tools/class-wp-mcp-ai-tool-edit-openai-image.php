@@ -14,6 +14,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for editing images via OpenAI's DALL-E API.
@@ -21,6 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.ph
 class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -216,6 +218,22 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
+		// Build descriptive text message.
+		$text_parts   = array();
+		$text_parts[] = sprintf(
+			/* translators: 1: count of images, 2: original image ID */
+			__( 'Successfully edited %1$d image(s) from original image ID: %2$d.', 'mcp-ai-wpoos' ),
+			count( $saved_images ),
+			$image_id
+		);
+		
+		if ( 'svg' === $output_format ) {
+			$text_parts[] = __( 'Images converted to SVG format.', 'mcp-ai-wpoos' );
+		}
+
+		$text    = implode( ' ', $text_parts );
+		$message = $text;
+
 		return array(
 			'success' => true,
 			'data'    => array(
@@ -223,6 +241,8 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'count'          => count( $saved_images ),
 				'original_image' => $image_id,
 				'output_format'  => $output_format,
+				'text'           => $text,
+				'message'        => $message,
 			),
 		);
 	}

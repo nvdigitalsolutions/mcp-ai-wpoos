@@ -12,11 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Creates OpenAI vector stores.
  */
 class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -132,11 +135,22 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
+		$vector_store_id   = isset( $result['id'] ) ? $result['id'] : null;
+		$vector_store_name = isset( $result['name'] ) ? $result['name'] : $name;
+		$message           = sprintf(
+			/* translators: 1: vector store name, 2: vector store ID */
+			__( 'Successfully created vector store "%1$s" (ID: %2$s)', 'mcp-ai-wpoos' ),
+			$vector_store_name,
+			$vector_store_id
+		);
+
 		return array(
 			'success' => true,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
-				'id'            => isset( $result['id'] ) ? $result['id'] : null,
-				'name'          => isset( $result['name'] ) ? $result['name'] : $name,
+				'id'            => $vector_store_id,
+				'name'          => $vector_store_name,
 				'status'        => isset( $result['status'] ) ? $result['status'] : null,
 				'file_counts'   => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
 				'created_at'    => isset( $result['created_at'] ) ? $result['created_at'] : null,

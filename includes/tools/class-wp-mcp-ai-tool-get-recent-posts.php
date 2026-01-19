@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns a list of recent posts.
  */
 class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -105,13 +106,16 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: number of posts, 2: post type */
+			__( 'Found %1$d recent %2$s', 'mcp-ai-wpoos' ),
+			count( $results ),
+			$post_type
+		);
+
 		return array(
-			'summary' => sprintf(
-				/* translators: 1: number of posts, 2: post type */
-				__( 'Found %1$d recent %2$s', 'mcp-ai-wpoos' ),
-				count( $results ),
-				$post_type
-			),
+			'message' => $summary_text, // Chat client display
+			'summary' => $summary_text, // Backward compatibility
 			'posts'   => $results,
 			'count'   => count( $results ),
 		);

@@ -2,6 +2,40 @@
 
 This directory contains detailed documentation for bug fixes and issue resolutions in the NV oOS plugin.
 
+## Tool Preset Multiplier Application Fix
+
+**Issue Date**: January 18, 2026  
+**Status**: ✅ Fixed (PR #2990)  
+**Severity**: High (Core functionality broken for token management)
+
+### Quick Links
+- [Tool Preset Multiplier Fix](TOOL_PRESET_MULTIPLIER_FIX.md) - Detailed fix documentation
+- [Testing Plan](TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md) - Comprehensive manual testing procedures
+
+### Summary
+Fixed a critical issue where the "Apply Preset" button on the Token Manager page was not working. When users selected a preset (Conservative, Balanced, Performance, or Aggressive) and clicked "Apply Preset", nothing happened - no tool multipliers were updated.
+
+**Root Cause**: The `get_all_recommendations()` method only queried the tool registry, which returned an empty array during preset application, causing 0 tools to be processed.
+
+### Solution
+Modified `get_all_recommendations()` to iterate through the `$tool_categories` static property first (containing all 200+ defined tools), then check the registry as a fallback for dynamically registered tools.
+
+### Files Changed
+1. `includes/class-wp-mcp-ai-tool-recommendations.php` - Refactored into helper methods
+   - Added `process_tools_from_categories()` private method
+   - Added `add_tools_from_registry()` private method
+   - Modified `get_all_recommendations()` to use both sources
+2. Documentation files (this directory)
+
+### Impact
+- ✅ Preset application now works correctly for all 200+ tools
+- ✅ Maintains backward compatibility with dynamically registered tools
+- ✅ Better code organization with extracted private methods
+- ✅ No security vulnerabilities introduced
+- ✅ Improved maintainability and code clarity
+
+---
+
 ## Chart Rendering and Display Fixes
 
 **Issue Date**: December 2024  

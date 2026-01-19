@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 	/**
 	 * Lists available splits and configurations for a dataset.
@@ -16,6 +18,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -164,10 +168,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			}
 
 			// Format response.
+			$splits = isset( $result['splits'] ) ? $result['splits'] : array();
+			$count = count( $splits );
+
+			/* translators: %d: number of splits */
+			$message = sprintf( __( 'Found %d splits in dataset.', 'mcp-ai-wpoos' ), $count );
+
 			return array(
+				'message'      => $message,
 				'dataset'      => $dataset,
-				'splits'       => isset( $result['splits'] ) ? $result['splits'] : array(),
-				'total_splits' => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
+				'splits'       => $splits,
+				'total_splits' => $count,
 			);
 		}
 	}

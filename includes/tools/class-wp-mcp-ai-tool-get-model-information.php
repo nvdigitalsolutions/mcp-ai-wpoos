@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves detailed information about a specific OpenAI model.
  */
 class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -115,15 +116,18 @@ class WP_MCP_AI_Tool_Get_Model_Information implements WP_MCP_AI_Tool_Interface, 
 			$model_info['parent'] = $result['parent'];
 		}
 
+		$summary = sprintf(
+			/* translators: 1: model ID, 2: owner */
+			__( 'Retrieved information for model "%1$s" owned by %2$s.', 'mcp-ai-wpoos' ),
+			$model_info['id'],
+			$model_info['owned_by']
+		);
+
 		return array(
 			'success' => true,
 			'model'   => $model_info,
-			'summary' => sprintf(
-				/* translators: 1: model ID, 2: owner */
-				__( 'Retrieved information for model "%1$s" owned by %2$s.', 'mcp-ai-wpoos' ),
-				$model_info['id'],
-				$model_info['owned_by']
-			),
+			'message' => $summary, // Chat client.
+			'summary' => $summary, // Backward compatibility.
 		);
 	}
 

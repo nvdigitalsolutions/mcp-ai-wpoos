@@ -14,10 +14,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	return;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 /**
  * Gets the status of a WP All Import operation.
  */
 class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether WP All Import is available.
 	 *
@@ -131,20 +134,28 @@ class WP_MCP_AI_Tool_Get_All_Import_Status implements WP_MCP_AI_Tool_Interface, 
 			$status = 'completed';
 		}
 
-		return array(
-			'import_id'     => $import_id,
-			'import_name'   => $import->post_title,
-			'status'        => $status,
-			'processing'    => (bool) $processing,
-			'stats'         => array(
-				'imported' => absint( $imported ),
-				'created'  => absint( $created ),
-				'updated'  => absint( $updated ),
-				'skipped'  => absint( $skipped ),
-				'deleted'  => absint( $deleted ),
+		return $this->ensure_response_message(
+			array(
+				'import_id'     => $import_id,
+				'import_name'   => $import->post_title,
+				'status'        => $status,
+				'processing'    => (bool) $processing,
+				'stats'         => array(
+					'imported' => absint( $imported ),
+					'created'  => absint( $created ),
+					'updated'  => absint( $updated ),
+					'skipped'  => absint( $skipped ),
+					'deleted'  => absint( $deleted ),
+				),
+				'iteration'     => absint( $iteration ),
+				'last_activity' => $last_activity ? gmdate( DATE_W3C, strtotime( $last_activity ) ) : '',
 			),
-			'iteration'     => absint( $iteration ),
-			'last_activity' => $last_activity ? gmdate( DATE_W3C, strtotime( $last_activity ) ) : '',
+			sprintf(
+				/* translators: 1: import name, 2: status */
+				__( 'Successfully retrieved import status for "%1$s": %2$s', 'mcp-ai-wpoos' ),
+				$import->post_title,
+				$status
+			)
 		);
 	}
 

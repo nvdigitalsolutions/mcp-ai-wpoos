@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Wraps the WP_MCP_AI_Remote_Tester inside a callable assistant tool.
  */
 class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -161,6 +162,7 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$result['checked_at'] = gmdate( 'c' );
 		$result['summary']    = $this->build_summary( $result );
+		$result['message']    = $result['summary'];
 
 		return $result;
 	}

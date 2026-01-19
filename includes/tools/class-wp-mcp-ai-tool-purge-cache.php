@@ -20,6 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
  * Provides a master tool for purging all configured cache layers.
  */
 class WP_MCP_AI_Tool_Purge_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_TIMEOUT = 30;
 
 	const MAX_TIMEOUT = 120;

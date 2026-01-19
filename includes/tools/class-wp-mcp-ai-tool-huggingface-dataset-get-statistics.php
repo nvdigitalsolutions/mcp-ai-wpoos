@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 	/**
 	 * Retrieves statistical information about a dataset split.
@@ -16,6 +18,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -185,7 +189,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Statistics' ) ) {
 				return $result;
 			}
 
-			return $result;
+			// Add message field for chat response.
+			/* translators: 1: dataset name, 2: split name */
+			$message = sprintf( __( 'Successfully retrieved statistics for dataset "%1$s" split "%2$s".', 'mcp-ai-wpoos' ), $dataset, $split );
+
+			return $this->ensure_response_message( $result, $message );
 		}
 	}
 }

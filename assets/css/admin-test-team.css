@@ -3,6 +3,7 @@
  *
  * Styles for the test team modal, member selector, and interface.
  * Reuses base modal styles for consistency.
+ * Enhanced with DeepSeek V4 multi-agent orchestration UI.
  *
  * @package WP_MCP_AI
  */
@@ -26,6 +27,85 @@
 	color: #1d2327;
 	font-size: 14px;
 	line-height: 1.6;
+}
+
+/* Unified Team Mode Section - DeepSeek V4 Integration */
+.wp-mcp-ai-unified-mode-section {
+	background: linear-gradient(135deg, #f0f6fc 0%, #e3f2fd 100%);
+	border: 2px solid #2271b1;
+	border-radius: 8px;
+	padding: 24px;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.wp-mcp-ai-unified-mode-section h3 {
+	margin: 0 0 12px 0;
+	font-size: 18px;
+	font-weight: 700;
+	color: #1d2327;
+}
+
+.wp-mcp-ai-unified-mode-section .description {
+	font-size: 14px;
+	color: #3c434a;
+	margin-bottom: 16px;
+	line-height: 1.6;
+}
+
+.wp-mcp-ai-unified-team-btn {
+	font-size: 16px !important;
+	padding: 12px 32px !important;
+	height: auto !important;
+	line-height: 1.4 !important;
+	box-shadow: 0 2px 8px rgba(34, 113, 177, 0.3) !important;
+}
+
+.wp-mcp-ai-unified-team-btn:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(34, 113, 177, 0.4) !important;
+}
+
+.wp-mcp-ai-unified-team-btn.active {
+	background: #135e96 !important;
+	border-color: #0a4d7d !important;
+}
+
+.wp-mcp-ai-unified-team-btn .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	vertical-align: middle;
+	margin-right: 8px;
+}
+
+/* Mode divider */
+.wp-mcp-ai-mode-divider {
+	text-align: center;
+	margin: 24px 0;
+	position: relative;
+}
+
+.wp-mcp-ai-mode-divider::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 0;
+	right: 0;
+	height: 1px;
+	background: #dcdcde;
+}
+
+.wp-mcp-ai-mode-divider span {
+	position: relative;
+	display: inline-block;
+	background: #fff;
+	padding: 0 16px;
+	color: #646970;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
 /* Team member selector */
@@ -138,6 +218,10 @@
 	.wp-mcp-ai-team-members-grid {
 		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
 	}
+
+	.wp-mcp-ai-unified-mode-section {
+		padding: 20px;
+	}
 }
 
 /* Mobile responsive */
@@ -158,6 +242,19 @@
 	.wp-mcp-ai-test-team-info {
 		padding: 10px 12px;
 		font-size: 13px;
+	}
+
+	.wp-mcp-ai-unified-mode-section {
+		padding: 16px;
+	}
+
+	.wp-mcp-ai-unified-mode-section h3 {
+		font-size: 16px;
+	}
+
+	.wp-mcp-ai-unified-team-btn {
+		font-size: 14px !important;
+		padding: 10px 24px !important;
 	}
 }
 

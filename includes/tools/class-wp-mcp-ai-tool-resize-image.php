@@ -198,6 +198,14 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'height' => $height,
 		);
 
+		$message = sprintf(
+			/* translators: 1: original dimensions, 2: new dimensions, 3: output format */
+			__( 'Successfully resized image from %1$s to %2$s%3$s.', 'mcp-ai-wpoos' ),
+			$original_size['width'] . 'x' . $original_size['height'],
+			$new_size['width'] . 'x' . $new_size['height'],
+			'svg' === $output_format ? ' and converted to SVG' : ''
+		);
+
 		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
 			'url'             => $storage['url'],
@@ -211,13 +219,8 @@ class WP_MCP_AI_Tool_Resize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'new_height'      => $new_size['height'],
 			'operation'       => 'resize',
 			'output_format'   => $output_format,
-			'text'            => sprintf(
-				/* translators: 1: original dimensions, 2: new dimensions, 3: output format */
-				__( 'Successfully resized image from %1$s to %2$s%3$s.', 'mcp-ai-wpoos' ),
-				$original_size['width'] . 'x' . $original_size['height'],
-				$new_size['width'] . 'x' . $new_size['height'],
-				'svg' === $output_format ? ' and converted to SVG' : ''
-			),
+			'text'            => $message,
+			'message'         => $message,
 		);
 
 		// Add vectorization metadata if SVG output was used.

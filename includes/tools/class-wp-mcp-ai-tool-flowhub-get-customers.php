@@ -22,6 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Provides a tool for retrieving customer profiles from Flowhub.
  */
 class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -175,7 +176,10 @@ class WP_MCP_AI_Tool_Flowhub_Get_Customers implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$result = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$result
 		);
 

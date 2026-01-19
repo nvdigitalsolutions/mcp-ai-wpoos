@@ -20,6 +20,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  * Provides a tool for generating videos via OpenAI Sora and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_MODEL    = 'sora-2';
 	const DEFAULT_SIZE     = '1080p';
 	const DEFAULT_DURATION = 5;

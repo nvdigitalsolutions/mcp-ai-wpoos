@@ -11,12 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Analyzes video content using AI vision models that support video understanding.
  */
 class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -187,9 +189,18 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$model    = is_array( $api_response ) && isset( $api_response['model'] ) ? $api_response['model'] : '';
 		$provider = is_array( $api_response ) && isset( $api_response['provider'] ) ? $api_response['provider'] : $default_provider;
 
+		// Generate descriptive message.
+		$message = $analysis_type === 'general'
+			? __( 'Video analysis completed.', 'mcp-ai-wpoos' )
+			: sprintf(
+				/* translators: %s: analysis type */
+				__( 'Video %s analysis completed.', 'mcp-ai-wpoos' ),
+				str_replace( '_', ' ', $analysis_type )
+			);
+
 		$result = array(
 			'analysis' => $analysis,
-			'success'  => true,
+			'text'     => $analysis, // For LLM context.
 		);
 
 		// Include provider/model/usage metadata for accurate cost tracking.
@@ -205,7 +216,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$result['usage'] = $usage;
 		}
 
-		return $result;
+		return $this->format_chat_response( $result, $message );
 	}
 
 	/**

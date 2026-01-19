@@ -914,7 +914,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $request->get_param( 'assistant_id' );
 			if ( $assistant_id ) {
-				$assistant_id = absint( $assistant_id );
+				// Use the shared sanitization method from Tools Controller.
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+				$assistant_id = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( $assistant_id );
 			}
 
 			// Get status summary and counts with optional assistant filter.
@@ -2253,9 +2256,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function handle_chat_request( WP_REST_Request $request ) {
 			$this->hydrate_request_body_params( $request );
 
-			// Check if this is a profession test request.
+			// Check if this is a unified team, profession test, or regular assistant request.
 			$raw_assistant_id = $request->get_param( 'assistant_id' );
+			$team_id          = $this->extract_team_id( $raw_assistant_id );
 			$profession_id    = $this->extract_profession_id( $raw_assistant_id );
+
+			// If this is a unified team request, handle it through team orchestration.
+			if ( $team_id ) {
+				return $this->handle_unified_team_request( $request, $team_id );
+			}
 
 			$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
@@ -3624,7 +3633,35 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// that might be nested in tool results or response data.
 			$payload = $this->normalize_data_recursive( $payload );
 
+			// Log final SSE message sending for diagnostics.
+			WP_MCP_AI_Logger::log_event(
+				'sse_final_message_sending',
+				'Sending final SSE message event to client',
+				array(
+					'assistant_id'           => $assistant_id,
+					'has_data'               => isset( $payload['data'] ),
+					'has_tool_results'       => isset( $payload['tool_results'] ),
+					'has_session_key'        => isset( $payload['sessionKey'] ),
+					'has_cost'               => isset( $payload['cost'] ),
+					'payload_keys'           => array_keys( $payload ),
+					'data_has_choices'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0,
+					'data_has_message'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0 && isset( $payload['data']['choices'][0]['message'] ),
+					'endpoint'               => $request->get_route(),
+				)
+			);
+
 			$this->send_sse_event( 'message', $payload );
+			
+			// Log that [DONE] marker is being sent.
+			WP_MCP_AI_Logger::log_event(
+				'sse_done_marker_sending',
+				'Sending SSE [DONE] marker',
+				array(
+					'assistant_id' => $assistant_id,
+					'endpoint'     => $request->get_route(),
+				)
+			);
+			
 			$this->send_sse_done();
 
 			exit;
@@ -4718,6 +4755,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return int
 		 */
 		protected function resolve_assistant_id( $assistant_id ) {
+			// Check if this is a unified team request with format "unified_team_123".
+			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'unified_team_' ) ) {
+				// Extract team ID.
+				$team_id = $this->extract_team_id( $assistant_id );
+
+				if ( $team_id ) {
+					// Return 0 to signal this is a team coordination request.
+					// The team will be handled by the orchestration workflow.
+					return 0;
+				}
+			}
+
+			// Check if this is a team member test request with format "team_123_member_456".
+			// This format is used when testing individual team members from the test team page.
+			if ( is_string( $assistant_id ) && preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$team_id   = absint( $matches[1] );
+				$member_id = absint( $matches[2] );
+
+				if ( $member_id > 0 ) {
+					// Verify the member (profession) exists.
+					$profession_post = get_post( $member_id );
+					if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+						// Check if profession has an associated assistant.
+						$associated_assistant = get_post_meta( $member_id, '_wp_mcp_ai_profession_associated_assistant', true );
+						$associated_assistant = absint( $associated_assistant );
+
+						if ( $associated_assistant > 0 ) {
+							// Verify the associated assistant exists and is published.
+							$assistant_post = get_post( $associated_assistant );
+							if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+								// Use the profession's associated assistant.
+								return $associated_assistant;
+							}
+						}
+
+						// No valid associated assistant - return 0 to allow profession-only testing.
+						// The profession will be treated as a temporary primary role.
+						return 0;
+					}
+				}
+			}
+
 			// Check if this is a profession test request with format "profession_123".
 			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
 				// Extract profession ID.
@@ -4757,17 +4836,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Extract profession ID from assistant_id parameter if it has profession_ prefix.
+		 * Extract team ID from assistant_id parameter if it has unified_team_ prefix.
+		 *
+		 * @param mixed $assistant_id Assistant ID parameter from request.
+		 * @return int|false Team ID or false if not a unified team request.
+		 */
+		protected function extract_team_id( $assistant_id ) {
+			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'unified_team_' ) ) {
+				return false;
+			}
+
+			$team_id = absint( str_replace( 'unified_team_', '', $assistant_id ) );
+			if ( ! $team_id ) {
+				return false;
+			}
+
+			// Verify it's actually a team post.
+			$team_post = get_post( $team_id );
+			if ( ! $team_post || 'mcp_ai_team' !== $team_post->post_type ) {
+				return false;
+			}
+
+			return $team_id;
+		}
+
+		/**
+		 * Extract profession ID from assistant_id parameter if it has profession_ prefix
+		 * or team_XXX_member_YYY pattern.
 		 *
 		 * @param mixed $assistant_id Assistant ID parameter from request.
 		 * @return int|false Profession ID or false if not a profession test request.
 		 */
 		protected function extract_profession_id( $assistant_id ) {
-			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'profession_' ) ) {
+			if ( ! is_string( $assistant_id ) ) {
 				return false;
 			}
 
-			$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			$profession_id = false;
+
+			// Check for team_XXX_member_YYY pattern (individual team member testing).
+			if ( preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$profession_id = absint( $matches[2] );
+			} elseif ( 0 === strpos( $assistant_id, 'profession_' ) ) {
+				// Check for profession_XXX pattern (direct profession testing).
+				$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			}
+
 			if ( ! $profession_id ) {
 				return false;
 			}
@@ -4779,6 +4893,479 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $profession_id;
+		}
+
+		/**
+		 * Handle unified team chat request with multi-agent orchestration.
+		 *
+		 * Routes the request through the Agent Team Orchestrator for coordinated
+		 * multi-agent execution following DeepSeek V4 patterns.
+		 *
+		 * @param WP_REST_Request $request REST request object.
+		 * @param int             $team_id Team post ID.
+		 * @return WP_REST_Response|WP_Error Response or error.
+		 */
+		protected function handle_unified_team_request( $request, $team_id ) {
+			// Load team configuration.
+			$team_post = get_post( $team_id );
+			if ( ! $team_post || 'mcp_ai_team' !== $team_post->post_type ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_team',
+					__( 'Invalid team ID provided.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Check if multi-agent teams are enabled.
+			$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+			if ( ! $enable_multi_agent_teams ) {
+				return new WP_Error(
+					'wp_mcp_ai_teams_disabled',
+					__( 'Multi-agent teams are disabled. Enable them in Settings → Orchestration.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+
+
+			// Get driver assistant (optional - for logging/tracking only).
+			$driver_assistant_id = get_post_meta( $team_id, '_wp_mcp_ai_team_driver_assistant', true );
+
+			// If not set on team, try global default.
+			if ( ! $driver_assistant_id ) {
+				$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+			}
+
+			// Get team members.
+			$team_members = get_post_meta( $team_id, '_wp_mcp_ai_team_members', true );
+			if ( ! is_array( $team_members ) || empty( $team_members ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_team',
+					__( 'Team has no members configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get orchestration settings.
+			$orchestration_mode = get_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', true );
+			$result_aggregation = get_post_meta( $team_id, '_wp_mcp_ai_team_result_aggregation', true );
+
+			$orchestration_mode = $orchestration_mode ? $orchestration_mode : 'sequential';
+			$result_aggregation = $result_aggregation ? $result_aggregation : 'consensus';
+
+			// Sanitize messages.
+			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
+			if ( is_wp_error( $sanitized_messages ) ) {
+				return $sanitized_messages;
+			}
+
+			$messages    = $sanitized_messages['messages'];
+			$attachments = $sanitized_messages['attachments'];
+
+			if ( empty( $messages ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_messages',
+					__( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'rest_unified_team_request',
+				'Unified team chat request initiated',
+				array(
+					'team_id'            => $team_id,
+					'team_name'          => $team_post->post_title,
+					'driver_assistant'   => $driver_assistant_id,
+				'member_count'       => count( $team_members ),
+					'orchestration_mode' => $orchestration_mode,
+					'result_aggregation' => $result_aggregation,
+					'message_count'      => count( $messages ),
+				)
+			);
+
+			// Load agent team orchestrator.
+			if ( ! class_exists( 'WP_MCP_AI_Agent_Team_Orchestrator' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-team-orchestrator.php';
+			}
+
+			// Initialize orchestrator.
+			$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+
+			// Execute team orchestration based on mode.
+			$team_response = $this->execute_team_orchestration(
+				$orchestrator,
+				$team_id,
+				$team_members,
+				$messages,
+				$orchestration_mode,
+				$result_aggregation,
+				$request
+			);
+
+			if ( is_wp_error( $team_response ) ) {
+				return $team_response;
+			}
+
+			// Return the unified team response.
+			return rest_ensure_response( $team_response );
+		}
+
+		/**
+		 * Execute team orchestration workflow.
+		 *
+		 * @param WP_MCP_AI_Agent_Team_Orchestrator $orchestrator       Orchestrator instance.
+		 * @param int                               $team_id            Team ID.
+		 * @param array                             $team_members       Array of profession IDs.
+		 * @param array                             $messages           Chat messages.
+		 * @param string                            $orchestration_mode Orchestration mode (sequential/parallel/swarm).
+		 * @param string                            $result_aggregation Result aggregation strategy.
+		 * @param WP_REST_Request                   $request            Original request.
+		 * @return array|WP_Error Response array or error.
+		 */
+		protected function execute_team_orchestration( $orchestrator, $team_id, $team_members, $messages, $orchestration_mode, $result_aggregation, $request ) {
+			$member_responses = array();
+			$errors           = array();
+
+			// Get the user's message (last message in the array).
+			$user_message = end( $messages );
+			$task_content = isset( $user_message['content'] ) ? $user_message['content'] : '';
+
+			// Execute based on orchestration mode.
+			switch ( $orchestration_mode ) {
+				case 'sequential':
+					// Execute members sequentially, each building on previous results.
+					$member_responses = $this->execute_sequential_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'parallel':
+					// Execute all members in parallel (simulate concurrency in PHP).
+					$member_responses = $this->execute_parallel_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'swarm':
+					// Swarm intelligence - members collaborate and iterate.
+					$member_responses = $this->execute_swarm_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'single':
+				default:
+					// Single member handles the request (first member).
+					$member_responses = $this->execute_single_orchestration( $team_members, $messages, $request );
+					break;
+			}
+
+			if ( is_wp_error( $member_responses ) ) {
+				return $member_responses;
+			}
+
+			// Aggregate results based on strategy.
+			$aggregated_response = $this->aggregate_team_results( $member_responses, $result_aggregation );
+
+			if ( is_wp_error( $aggregated_response ) ) {
+				return $aggregated_response;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'rest_unified_team_complete',
+				'Unified team orchestration completed',
+				array(
+					'team_id'             => $team_id,
+					'orchestration_mode'  => $orchestration_mode,
+					'result_aggregation'  => $result_aggregation,
+					'members_responded'   => count( $member_responses ),
+					'response_length'     => strlen( $aggregated_response ),
+				)
+			);
+
+			// Format response similar to regular assistant response.
+			return array(
+				'role'    => 'assistant',
+				'content' => $aggregated_response,
+				'metadata' => array(
+					'team_id'            => $team_id,
+					'orchestration_mode' => $orchestration_mode,
+					'result_aggregation' => $result_aggregation,
+					'members_involved'   => count( $member_responses ),
+				),
+			);
+		}
+
+		/**
+		 * Execute sequential orchestration - members process in order.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_sequential_orchestration( $team_members, $messages, $request ) {
+			$responses       = array();
+			$context_messages = $messages;
+
+			foreach ( $team_members as $member_id ) {
+				// Each member builds on previous responses.
+				$member_response = $this->invoke_team_member( $member_id, $context_messages, $request );
+
+				if ( is_wp_error( $member_response ) ) {
+					// Log error but continue with other members.
+					WP_MCP_AI_Logger::log_warning(
+						'Team member failed in sequential orchestration',
+						array(
+							'member_id' => $member_id,
+							'error'     => $member_response->get_error_message(),
+						)
+					);
+					continue;
+				}
+
+				$responses[] = $member_response;
+
+				// Add this member's response to context for next member.
+				$context_messages[] = array(
+					'role'    => 'assistant',
+					'content' => $member_response['content'],
+				);
+			}
+
+			return $responses;
+		}
+
+		/**
+		 * Execute parallel orchestration - all members process independently.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_parallel_orchestration( $team_members, $messages, $request ) {
+			$responses = array();
+
+			// In PHP, we simulate parallel execution by invoking all members with same context.
+			foreach ( $team_members as $member_id ) {
+				$member_response = $this->invoke_team_member( $member_id, $messages, $request );
+
+				if ( is_wp_error( $member_response ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Team member failed in parallel orchestration',
+						array(
+							'member_id' => $member_id,
+							'error'     => $member_response->get_error_message(),
+						)
+					);
+					continue;
+				}
+
+				$responses[] = $member_response;
+			}
+
+			return $responses;
+		}
+
+		/**
+		 * Execute swarm orchestration - collaborative iteration.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_swarm_orchestration( $team_members, $messages, $request ) {
+			// Swarm: Initial parallel execution, then refinement round.
+			$initial_responses = $this->execute_parallel_orchestration( $team_members, $messages, $request );
+
+			if ( is_wp_error( $initial_responses ) || empty( $initial_responses ) ) {
+				return $initial_responses;
+			}
+
+			// Add all initial responses to context.
+			$refinement_context = $messages;
+			$refinement_context[] = array(
+				'role'    => 'assistant',
+				'content' => "Initial team responses:\n\n" . implode( "\n\n---\n\n", array_column( $initial_responses, 'content' ) ),
+			);
+
+			// Have first member (critic or leader) refine based on all inputs.
+			$leader_id = $team_members[0];
+			$refined_response = $this->invoke_team_member( $leader_id, $refinement_context, $request );
+
+			if ( is_wp_error( $refined_response ) ) {
+				// Fall back to parallel aggregation.
+				return $initial_responses;
+			}
+
+			// Return refined response as primary, with initial responses as context.
+			return array( $refined_response );
+		}
+
+		/**
+		 * Execute single member orchestration - first member handles request.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_single_orchestration( $team_members, $messages, $request ) {
+			$member_id = $team_members[0];
+			$response  = $this->invoke_team_member( $member_id, $messages, $request );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			return array( $response );
+		}
+
+		/**
+		 * Invoke a single team member (profession) with the given messages.
+		 *
+		 * @param int             $member_id Member profession ID.
+		 * @param array           $messages  Chat messages.
+		 * @param WP_REST_Request $request   Original request.
+		 * @return array|WP_Error Member response or error.
+		 */
+		protected function invoke_team_member( $member_id, $messages, $request ) {
+			// Load profession configuration.
+			$profession_config = $this->load_profession_configuration( $member_id, array() );
+
+			// Use profession's provider/model or defaults.
+			$provider = isset( $profession_config['provider'] ) ? $profession_config['provider'] : '';
+			$model    = isset( $profession_config['model'] ) ? $profession_config['model'] : '';
+
+			// Get default settings if not set on profession.
+			if ( empty( $provider ) ) {
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
+			}
+
+			// Prepare options for create_chat_completion.
+			$options = array(
+				'provider' => $provider,
+				'model'    => $model,
+			);
+
+			// Add system prompt if available.
+			if ( ! empty( $profession_config['system_prompt'] ) ) {
+				// Check if first message is already a system message.
+				$has_system_message = false;
+				if ( ! empty( $messages ) && isset( $messages[0]['role'] ) && 'system' === $messages[0]['role'] ) {
+					$has_system_message = true;
+				}
+
+				// Only prepend system message if one doesn't already exist.
+				if ( ! $has_system_message ) {
+					// Prepend system message to messages array.
+					$messages = array_merge(
+						array(
+							array(
+								'role'    => 'system',
+								'content' => $profession_config['system_prompt'],
+							),
+						),
+						$messages
+					);
+				}
+			}
+
+			// Add tools if available.
+			if ( ! empty( $profession_config['tools'] ) && is_array( $profession_config['tools'] ) ) {
+				$options['tools'] = $profession_config['tools'];
+			}
+
+			// Make the AI request using the router.
+			try {
+				$response = $this->client->create_chat_completion( $messages, $options );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				// Extract content from response.
+				$content = '';
+				if ( isset( $response['choices'][0]['message']['content'] ) ) {
+					$content = $response['choices'][0]['message']['content'];
+				} elseif ( isset( $response['content'] ) ) {
+					$content = $response['content'];
+				}
+
+				return array(
+					'member_id' => $member_id,
+					'content'   => $content,
+					'metadata'  => array(
+						'provider' => $provider,
+						'model'    => $model,
+					),
+				);
+
+			} catch ( Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_member_invocation_failed',
+					sprintf(
+						/* translators: %s: Error message */
+						__( 'Team member invocation failed: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					)
+				);
+			}
+		}
+
+		/**
+		 * Aggregate team member results based on strategy.
+		 *
+		 * @param array  $responses         Array of member responses.
+		 * @param string $aggregation_strategy Aggregation strategy.
+		 * @return string|WP_Error Aggregated response or error.
+		 */
+		protected function aggregate_team_results( $responses, $aggregation_strategy ) {
+			if ( empty( $responses ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_no_responses',
+					__( 'No team members provided responses.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			switch ( $aggregation_strategy ) {
+				case 'consensus':
+					// Combine all responses with clear attribution.
+					$aggregated = "# Team Response (Consensus)\n\n";
+					foreach ( $responses as $index => $response ) {
+						$member_num = $index + 1;
+						$aggregated .= "## Team Member {$member_num}\n\n";
+						$aggregated .= $response['content'] . "\n\n";
+					}
+					return $aggregated;
+
+				case 'weighted':
+					// First response gets priority (leader/planner).
+					$primary = $responses[0]['content'];
+					if ( count( $responses ) > 1 ) {
+						$primary .= "\n\n---\n\n## Additional Perspectives\n\n";
+						for ( $i = 1; $i < count( $responses ); $i++ ) {
+							$primary .= $responses[ $i ]['content'] . "\n\n";
+						}
+					}
+					return $primary;
+
+				case 'hierarchical':
+					// Last response (after refinement) takes precedence.
+					return end( $responses )['content'];
+
+				case 'first':
+					// First member's response only.
+					return $responses[0]['content'];
+
+				case 'best':
+					// Longest response (proxy for most comprehensive).
+					usort( $responses, function( $a, $b ) {
+						return strlen( $b['content'] ) - strlen( $a['content'] );
+					});
+					return $responses[0]['content'];
+
+				default:
+					// Default to consensus.
+					return $this->aggregate_team_results( $responses, 'consensus' );
+			}
 		}
 
 		/**
@@ -7064,6 +7651,60 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->openai_client = $container->get( 'client.openai' );
 			}
 			return $this->openai_client;
+		}
+
+		/**
+		 * Get AI provider instance by provider name.
+		 *
+		 * @param string $provider Provider name (openai, anthropic, google, ollama).
+		 * @return object|WP_Error Provider instance or error.
+		 */
+		protected function get_ai_provider_instance( $provider ) {
+			$provider = sanitize_key( $provider );
+			$container = wp_mcp_ai_container();
+
+			try {
+				switch ( $provider ) {
+					case 'openai':
+						return $container->get( 'client.openai' );
+
+					case 'anthropic':
+						return $container->get( 'client.anthropic' );
+
+					case 'google':
+					case 'gemini':
+						if ( $container->has( 'client.google' ) ) {
+							return $container->get( 'client.google' );
+						}
+						return new WP_Error(
+							'wp_mcp_ai_provider_unavailable',
+							__( 'Google/Gemini provider is not available.', 'mcp-ai-wpoos' )
+						);
+
+					case 'ollama':
+						if ( $container->has( 'client.ollama' ) ) {
+							return $container->get( 'client.ollama' );
+						}
+						return new WP_Error(
+							'wp_mcp_ai_provider_unavailable',
+							__( 'Ollama provider is not available.', 'mcp-ai-wpoos' )
+						);
+
+					default:
+						// Default to OpenAI for unknown providers.
+						return $container->get( 'client.openai' );
+				}
+			} catch ( Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_provider_init_failed',
+					sprintf(
+						/* translators: %1$s: Provider name, %2$s: Error message */
+						__( 'Failed to initialize %1$s provider: %2$s', 'mcp-ai-wpoos' ),
+						$provider,
+						$e->getMessage()
+					)
+				);
+			}
 		}
 
 		/**
