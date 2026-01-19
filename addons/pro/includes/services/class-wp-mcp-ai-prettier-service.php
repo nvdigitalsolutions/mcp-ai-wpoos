@@ -34,9 +34,9 @@ class WP_MCP_AI_Prettier_Service {
 	 */
 	public function is_available() {
 		// Check if prettier package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/prettier/standalone.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/prettier/standalone.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/prettier/index.js';
-		
+
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}

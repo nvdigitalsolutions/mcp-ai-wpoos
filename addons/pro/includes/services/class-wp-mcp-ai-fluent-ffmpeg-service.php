@@ -38,9 +38,9 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 	 */
 	public function is_available() {
 		// Check if fluent-ffmpeg package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/fluent-ffmpeg/index.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/fluent-ffmpeg/index.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/fluent-ffmpeg/index.js';
-		
+
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}

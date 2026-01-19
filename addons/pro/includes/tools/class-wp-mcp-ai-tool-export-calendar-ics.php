@@ -136,6 +136,9 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if project management is enabled.
@@ -209,7 +212,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		$download_file = isset( $arguments['download_file'] ) ? (bool) $arguments['download_file'] : true;
 		if ( $download_file && isset( $result['content'] ) ) {
 			$file_info = $this->save_ics_file( $result['content'], $project_id );
-			
+
 			return array(
 				'success'      => true,
 				'message'      => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
@@ -330,7 +333,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$timestamp = strtotime( $date );
-		
+
 		if ( $start_date && $timestamp < strtotime( $start_date ) ) {
 			return false;
 		}
@@ -380,7 +383,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		$file_path  = $upload_dir['path'] . '/' . $filename;
 
 		// Save file.
-		file_put_contents( $file_path, $content );
+		file_put_contents( $file_path, $content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		return array(
 			'url'      => $upload_dir['url'] . '/' . $filename,

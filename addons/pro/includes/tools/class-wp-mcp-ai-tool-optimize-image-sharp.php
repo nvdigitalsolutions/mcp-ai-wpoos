@@ -149,6 +149,9 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.
@@ -249,14 +252,14 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'success'          => true,
-			'message'          => __( 'Image optimized successfully with Sharp.', 'mcp-ai-wpoos-pro' ),
-			'attachment_id'    => isset( $result['attachment_id'] ) ? $result['attachment_id'] : null,
-			'url'              => isset( $result['url'] ) ? $result['url'] : null,
-			'original_size'    => isset( $result['original_size'] ) ? $result['original_size'] : null,
-			'optimized_size'   => isset( $result['optimized_size'] ) ? $result['optimized_size'] : null,
-			'reduction_percent'=> isset( $result['reduction_percent'] ) ? $result['reduction_percent'] : null,
-			'dimensions'       => isset( $result['dimensions'] ) ? $result['dimensions'] : null,
+			'success'           => true,
+			'message'           => __( 'Image optimized successfully with Sharp.', 'mcp-ai-wpoos-pro' ),
+			'attachment_id'     => isset( $result['attachment_id'] ) ? $result['attachment_id'] : null,
+			'url'               => isset( $result['url'] ) ? $result['url'] : null,
+			'original_size'     => isset( $result['original_size'] ) ? $result['original_size'] : null,
+			'optimized_size'    => isset( $result['optimized_size'] ) ? $result['optimized_size'] : null,
+			'reduction_percent' => isset( $result['reduction_percent'] ) ? $result['reduction_percent'] : null,
+			'dimensions'        => isset( $result['dimensions'] ) ? $result['dimensions'] : null,
 		);
 	}
 
@@ -287,9 +290,9 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function process_with_sharp( $params ) {
 		// In a production implementation, this would:
-		// 1. Call a Node.js script that uses Sharp
-		// 2. Pass parameters as JSON
-		// 3. Return the processed image path and metadata
+		// 1. Call a Node.js script that uses Sharp.
+		// 2. Pass parameters as JSON.
+		// 3. Return the processed image path and metadata.
 		//
 		// For this implementation, we'll create a placeholder that demonstrates
 		// the pattern. In production, you would set up a Node.js service or
