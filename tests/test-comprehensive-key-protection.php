@@ -21,10 +21,10 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Initialize settings dashboard.
 		$this->dashboard = new WP_MCP_AI_Settings_Dashboard();
-		
+
 		// Clear any existing settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
@@ -34,14 +34,14 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function test_provider_api_keys_protected() {
 		$provider_keys = array(
-			'openai_api_key'                => 'sk-test-openai-key',
-			'anthropic_api_key'             => 'sk-test-anthropic-key',
-			'gemini_api_key'                => 'test-gemini-key',
-			'huggingface_api_key'           => 'hf_test_key',
+			'openai_api_key'                 => 'sk-test-openai-key',
+			'anthropic_api_key'              => 'sk-test-anthropic-key',
+			'gemini_api_key'                 => 'test-gemini-key',
+			'huggingface_api_key'            => 'hf_test_key',
 			'huggingface_datasets_api_token' => 'hf_dataset_token',
-			'ollama_endpoint_url'           => 'http://localhost:11434',
-			'lm_studio_endpoint_url'        => 'http://localhost:1234',
-			'huggingface_endpoint_url'      => 'https://api.huggingface.co',
+			'ollama_endpoint_url'            => 'http://localhost:11434',
+			'lm_studio_endpoint_url'         => 'http://localhost:1234',
+			'huggingface_endpoint_url'       => 'https://api.huggingface.co',
 		);
 
 		// Save initial settings with API keys.
@@ -49,8 +49,8 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 
 		// Simulate form submission with empty API key values.
 		$posted_input = array(
-			'openai_api_key'     => '', // Attempt to clear.
-			'gemini_api_key'     => '', // Attempt to clear.
+			'openai_api_key'      => '', // Attempt to clear.
+			'gemini_api_key'      => '', // Attempt to clear.
 			'ollama_endpoint_url' => '', // Attempt to clear.
 		);
 
@@ -68,14 +68,14 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function test_integration_api_keys_protected() {
 		$integration_keys = array(
-			'crawl4ai_api_key'               => 'crawl4ai-test-key',
-			'brave_search_api_key'           => 'brave-test-key',
-			'removebg_api_key'               => 'removebg-test-key',
-			'mailjet_api_key'                => 'mailjet-api-key',
-			'mailjet_api_secret'             => 'mailjet-secret',
-			'ita_tariff_api_key'             => 'ita-tariff-key',
-			'google_analytics_credentials'   => 'ga-credentials',
-			'mesh_inbound_api_key'           => 'mesh-key-123',
+			'crawl4ai_api_key'             => 'crawl4ai-test-key',
+			'brave_search_api_key'         => 'brave-test-key',
+			'removebg_api_key'             => 'removebg-test-key',
+			'mailjet_api_key'              => 'mailjet-api-key',
+			'mailjet_api_secret'           => 'mailjet-secret',
+			'ita_tariff_api_key'           => 'ita-tariff-key',
+			'google_analytics_credentials' => 'ga-credentials',
+			'mesh_inbound_api_key'         => 'mesh-key-123',
 		);
 
 		// Save initial settings with integration keys.
@@ -83,9 +83,9 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 
 		// Simulate form submission with empty key values.
 		$posted_input = array(
-			'crawl4ai_api_key'    => '', // Attempt to clear.
-			'removebg_api_key'    => '', // Attempt to clear.
-			'mailjet_api_secret'  => '', // Attempt to clear.
+			'crawl4ai_api_key'   => '', // Attempt to clear.
+			'removebg_api_key'   => '', // Attempt to clear.
+			'mailjet_api_secret' => '', // Attempt to clear.
 		);
 
 		// Sanitize (could be from any tab).
@@ -102,16 +102,16 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function test_oauth_credentials_protected() {
 		$oauth_keys = array(
-			'auth0_client_id'               => 'auth0-client-id',
-			'auth0_client_secret'           => 'auth0-client-secret',
-			'gmail_client_id'               => 'gmail-client-id',
-			'gmail_client_secret'           => 'gmail-client-secret',
-			'google_drive_client_id'        => 'drive-client-id',
-			'google_drive_client_secret'    => 'drive-client-secret',
-			'github_client_id'              => 'github-client-id',
-			'github_client_secret'          => 'github-client-secret',
-			'quickbooks_client_id'          => 'qb-client-id',
-			'quickbooks_client_secret'      => 'qb-client-secret',
+			'auth0_client_id'            => 'auth0-client-id',
+			'auth0_client_secret'        => 'auth0-client-secret',
+			'gmail_client_id'            => 'gmail-client-id',
+			'gmail_client_secret'        => 'gmail-client-secret',
+			'google_drive_client_id'     => 'drive-client-id',
+			'google_drive_client_secret' => 'drive-client-secret',
+			'github_client_id'           => 'github-client-id',
+			'github_client_secret'       => 'github-client-secret',
+			'quickbooks_client_id'       => 'qb-client-id',
+			'quickbooks_client_secret'   => 'qb-client-secret',
 		);
 
 		// Save initial settings with OAuth credentials.
@@ -138,13 +138,13 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function test_cloudflare_cloudways_protected() {
 		$cloud_keys = array(
-			'cloudflare_account_id'  => 'cf-account-123',
-			'cloudflare_api_token'   => 'cf-token-abc',
-			'cloudflare_zone_id'     => 'cf-zone-xyz',
-			'cloudways_api_key'      => 'cw-api-key',
-			'cloudways_api_email'    => 'test@example.com',
-			'cloudways_server_id'    => 'cw-server-123',
-			'cloudways_app_id'       => 'cw-app-456',
+			'cloudflare_account_id' => 'cf-account-123',
+			'cloudflare_api_token'  => 'cf-token-abc',
+			'cloudflare_zone_id'    => 'cf-zone-xyz',
+			'cloudways_api_key'     => 'cw-api-key',
+			'cloudways_api_email'   => 'test@example.com',
+			'cloudways_server_id'   => 'cw-server-123',
+			'cloudways_app_id'      => 'cw-app-456',
 		);
 
 		// Save initial settings with cloud credentials.
@@ -171,10 +171,10 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	 */
 	public function test_pattern_based_protection() {
 		$existing_settings = array(
-			'future_service_api_key'    => 'future-key-123',
-			'new_provider_api_secret'   => 'secret-abc',
-			'custom_service_api_token'  => 'token-xyz',
-			'oauth_provider_client_id'  => 'client-123',
+			'future_service_api_key'       => 'future-key-123',
+			'new_provider_api_secret'      => 'secret-abc',
+			'custom_service_api_token'     => 'token-xyz',
+			'oauth_provider_client_id'     => 'client-123',
 			'oauth_provider_client_secret' => 'secret-456',
 		);
 
@@ -254,8 +254,8 @@ class Test_Comprehensive_Key_Protection extends WP_UnitTestCase {
 	public function test_false_and_zero_values_allowed() {
 		// Simulate form submission with false and 0 values.
 		$posted_input = array(
-			'enable_openai'  => false, // Checkbox unchecked.
-			'max_tokens'     => 0,     // Numeric zero.
+			'enable_openai' => false, // Checkbox unchecked.
+			'max_tokens'    => 0,     // Numeric zero.
 		);
 
 		// Sanitize.

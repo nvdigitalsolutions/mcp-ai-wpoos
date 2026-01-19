@@ -67,7 +67,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		public function get_fields() {
 			// Cache provider options to avoid duplicate method calls.
 			$provider_options = array( '' => __( '-- Use Global Default --', 'mcp-ai-wpoos' ) ) + WP_MCP_AI_Admin_Settings::get_available_providers();
-			
+
 			return array(
 				'orchestration_intro'             => array(
 					'type'    => 'html',
@@ -594,7 +594,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Load monitoring not available. Phase 2.1 implementation required.', 'mcp-ai-wpoos' ) . '</p></div>';
 				}
 
-				$monitor = new WP_MCP_AI_Tool_Load_Monitor();
+				$monitor        = new WP_MCP_AI_Tool_Load_Monitor();
 				$system_metrics = $monitor->get_system_load_metrics();
 
 				ob_start();
@@ -667,7 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									if ( ++$count > 10 ) {
 										break;
 									}
-									$utilization_pct = $metrics['utilization'] * 100;
+									$utilization_pct   = $metrics['utilization'] * 100;
 									$utilization_class = $utilization_pct > 85 ? 'critical' : ( $utilization_pct > 70 ? 'warning' : 'good' );
 									?>
 									<tr>
@@ -831,13 +831,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					return '<div class="notice notice-info inline"><p>' . esc_html__( 'Performance statistics not available.', 'mcp-ai-wpoos' ) . '</p></div>';
 				}
 
-				$monitor = new WP_MCP_AI_Tool_Load_Monitor();
+				$monitor        = new WP_MCP_AI_Tool_Load_Monitor();
 				$system_metrics = $monitor->get_system_load_metrics();
 
 				// Get performance stats for top 5 tools.
 				$top_tools = array_slice( $system_metrics['top_tools'], 0, 5, true );
-				$stats = array();
-				
+				$stats     = array();
+
 				foreach ( $top_tools as $tool_slug => $metrics ) {
 					$stats[ $tool_slug ] = $monitor->get_tool_performance_stats( $tool_slug, 24 );
 				}
@@ -1192,7 +1192,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 <a href="<?php echo esc_url( $this->get_view_url( 'agents' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'agents' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-groups"></span>
-			<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Agents', 'mcp-ai-wpoos' ); ?>
 </a>
 				<?php
 			endif;
@@ -1203,18 +1203,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 <a href="<?php echo esc_url( $this->get_view_url( 'professions' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'professions' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-businessperson"></span>
-			<?php esc_html_e( 'Professions', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Professions', 'mcp-ai-wpoos' ); ?>
 </a>
 				<?php
 			endif;
-			
+
 			// Conditionally show Teams tab if multi-agent teams are enabled.
 			$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 			if ( $enable_multi_agent_teams ) :
 				?>
 <a href="<?php echo esc_url( $this->get_view_url( 'teams' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'teams' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-networking"></span>
-			<?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?>
+				<?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?>
 </a>
 				<?php
 			endif;
@@ -1313,19 +1313,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			$professions = $this->get_professions_list();
 			$agent_roles = $this->get_available_agent_roles();
 			$role_counts = $this->count_professions_by_role( $professions );
-			
+
 			// Calculate executive metrics.
 			$total_tools = 0;
 			foreach ( $professions as $prof ) {
 				$total_tools += $prof['tools_count'];
 			}
-			
+
 			// Team readiness check.
 			$has_planner  = isset( $role_counts['planner'] ) && $role_counts['planner'] > 0;
 			$has_executor = isset( $role_counts['executor'] ) && $role_counts['executor'] > 0;
 			$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
 			$team_ready   = $has_planner && $has_executor && $has_critic;
-			
+
 			?>
 			<div class="wp-mcp-ai-overview-dashboard">
 				<!-- Executive Header -->
@@ -1538,7 +1538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				$enable_professions              = WP_MCP_AI_Settings_Registry::get_setting( 'enable_professions', true );
 				$enable_multi_agent_teams        = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 				$enable_agent_coordination_tools = WP_MCP_AI_Settings_Registry::get_setting( 'enable_agent_coordination_tools', true );
-				
+
 				$disabled_features = array();
 				if ( ! $enable_agent_roles ) {
 					$disabled_features[] = __( 'Agent Roles', 'mcp-ai-wpoos' );
@@ -1552,7 +1552,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				if ( ! $enable_agent_coordination_tools ) {
 					$disabled_features[] = __( 'Agent Coordination Tools', 'mcp-ai-wpoos' );
 				}
-				
+
 				if ( ! empty( $disabled_features ) ) :
 					?>
 					<div class="notice notice-info inline" style="margin: 20px 0;">
@@ -2087,7 +2087,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 */
 		protected function get_view_groups() {
 			return array(
-				'overview'   => array(
+				'overview'    => array(
 					'label'  => __( 'Overview', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'orchestration_intro',
@@ -2096,7 +2096,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'orchestration_stats',
 					),
 				),
-				'settings'   => array(
+				'settings'    => array(
 					'label'  => __( 'Settings', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'enable_budget_management',
@@ -2108,7 +2108,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'cron_job_retention_period',
 					),
 				),
-				'thresholds' => array(
+				'thresholds'  => array(
 					'label'  => __( 'Thresholds', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						'slider_section_health',
@@ -2136,13 +2136,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						'prediction_safety_buffer',
 					),
 				),
-				'tools'      => array(
+				'tools'       => array(
 					'label'  => __( 'Tools', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Tools view is read-only, no editable fields.
 					),
 				),
-				'agents'     => array(
+				'agents'      => array(
 					'label'  => __( 'Agents', 'mcp-ai-wpoos' ),
 					'fields' => array(
 						// Agents view is read-only, no editable fields.
@@ -2185,18 +2185,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
 
-	/**
-	 * Render agents view.
-	 *
-	 * Displays all available agent roles and their orchestration capabilities.
-	 * Shows DeepSeek V4-inspired multi-agent coordination features with real-time metrics.
-	 */
-	private function render_agents_view() {
-		$agent_roles = $this->get_available_agent_roles();
-		$health      = $this->get_orchestration_health_metrics();
-		$professions = $this->get_professions_list();
-		
-		?>
+		/**
+		 * Render agents view.
+		 *
+		 * Displays all available agent roles and their orchestration capabilities.
+		 * Shows DeepSeek V4-inspired multi-agent coordination features with real-time metrics.
+		 */
+		private function render_agents_view() {
+			$agent_roles = $this->get_available_agent_roles();
+			$health      = $this->get_orchestration_health_metrics();
+			$professions = $this->get_professions_list();
+
+			?>
 		<div class="wp-mcp-ai-agents-view">
 			<!-- Header with Real-Time Status -->
 			<div class="wp-mcp-ai-orchestration-header">
@@ -2301,7 +2301,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<?php
 			// Get available agent roles.
 			$agent_roles = $this->get_available_agent_roles();
-			
+
 			if ( ! empty( $agent_roles ) ) {
 				?>
 				<div class="wp-mcp-ai-agents-grid">
@@ -2821,124 +2821,124 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			/* ]]> */
 			</script>
 		</div>
-		<?php
-	}
+			<?php
+		}
 
-	/**
-	 * Get available agent roles.
-	 *
-	 * @return array Array of agent role data.
-	 */
-	private function get_available_agent_roles() {
-		$roles = array();
+		/**
+		 * Get available agent roles.
+		 *
+		 * @return array Array of agent role data.
+		 */
+		private function get_available_agent_roles() {
+			$roles = array();
 
-		// Check if agent role classes are available.
-		$agent_classes = array(
-			'planner'    => 'WP_MCP_AI_Agent_Role_Planner',
-			'executor'   => 'WP_MCP_AI_Agent_Role_Executor',
-			'critic'     => 'WP_MCP_AI_Agent_Role_Critic',
-			'specialist' => 'WP_MCP_AI_Agent_Role_Base', // Generic specialist.
-		);
+			// Check if agent role classes are available.
+			$agent_classes = array(
+				'planner'    => 'WP_MCP_AI_Agent_Role_Planner',
+				'executor'   => 'WP_MCP_AI_Agent_Role_Executor',
+				'critic'     => 'WP_MCP_AI_Agent_Role_Critic',
+				'specialist' => 'WP_MCP_AI_Agent_Role_Base', // Generic specialist.
+			);
 
-		foreach ( $agent_classes as $role_type => $class_name ) {
-			if ( class_exists( $class_name ) ) {
-				try {
-					if ( 'specialist' === $role_type ) {
-						// Generic specialist role.
-						$roles[] = array(
-							'type'               => 'specialist',
-							'name'               => __( 'Specialist', 'mcp-ai-wpoos' ),
-							'description'        => __( 'Domain-specific expert agent that handles specialized tasks requiring deep knowledge in a particular area.', 'mcp-ai-wpoos' ),
-							'icon'               => 'dashicons-lightbulb',
-							'capabilities'       => array(
-								__( 'Domain expertise', 'mcp-ai-wpoos' ),
-								__( 'Technical accuracy', 'mcp-ai-wpoos' ),
-								__( 'Specialized problem solving', 'mcp-ai-wpoos' ),
-							),
-							'recommended_tools'  => array(),
-						);
-					} else {
-						$role_instance = new $class_name();
-						
-						$roles[] = array(
-							'type'               => $role_type,
-							'name'               => $role_instance->get_role_name(),
-							'description'        => $role_instance->get_role_description(),
-							'icon'               => $this->get_role_icon( $role_type ),
-							'capabilities'       => $this->format_capabilities( $role_instance->get_capabilities() ),
-							'recommended_tools'  => $role_instance->get_recommended_tools(),
-						);
+			foreach ( $agent_classes as $role_type => $class_name ) {
+				if ( class_exists( $class_name ) ) {
+					try {
+						if ( 'specialist' === $role_type ) {
+							// Generic specialist role.
+							$roles[] = array(
+								'type'              => 'specialist',
+								'name'              => __( 'Specialist', 'mcp-ai-wpoos' ),
+								'description'       => __( 'Domain-specific expert agent that handles specialized tasks requiring deep knowledge in a particular area.', 'mcp-ai-wpoos' ),
+								'icon'              => 'dashicons-lightbulb',
+								'capabilities'      => array(
+									__( 'Domain expertise', 'mcp-ai-wpoos' ),
+									__( 'Technical accuracy', 'mcp-ai-wpoos' ),
+									__( 'Specialized problem solving', 'mcp-ai-wpoos' ),
+								),
+								'recommended_tools' => array(),
+							);
+						} else {
+							$role_instance = new $class_name();
+
+							$roles[] = array(
+								'type'              => $role_type,
+								'name'              => $role_instance->get_role_name(),
+								'description'       => $role_instance->get_role_description(),
+								'icon'              => $this->get_role_icon( $role_type ),
+								'capabilities'      => $this->format_capabilities( $role_instance->get_capabilities() ),
+								'recommended_tools' => $role_instance->get_recommended_tools(),
+							);
+						}
+					} catch ( Exception $e ) {
+						// Skip roles that fail to instantiate.
+						continue;
 					}
-				} catch ( Exception $e ) {
-					// Skip roles that fail to instantiate.
-					continue;
 				}
 			}
-		}
 
-		// If no agent roles loaded, provide default generic role.
-		if ( empty( $roles ) ) {
-			$roles[] = array(
-				'type'              => 'generalist',
-				'name'              => __( 'Generalist Agent', 'mcp-ai-wpoos' ),
-				'description'       => __( 'General-purpose AI agent capable of handling a wide variety of tasks.', 'mcp-ai-wpoos' ),
-				'icon'              => 'dashicons-admin-generic',
-				'capabilities'      => array(
-					__( 'Multi-domain tasks', 'mcp-ai-wpoos' ),
-					__( 'Flexible problem solving', 'mcp-ai-wpoos' ),
-				),
-				'recommended_tools' => array(),
-			);
-		}
-
-		return $roles;
-	}
-
-	/**
-	 * Get icon for agent role type.
-	 *
-	 * @param string $role_type Role type identifier.
-	 * @return string Dashicon class.
-	 */
-	private function get_role_icon( $role_type ) {
-		$icons = array(
-			'planner'    => 'dashicons-list-view',
-			'executor'   => 'dashicons-hammer',
-			'critic'     => 'dashicons-yes-alt',
-			'specialist' => 'dashicons-lightbulb',
-		);
-
-		return isset( $icons[ $role_type ] ) ? $icons[ $role_type ] : 'dashicons-admin-generic';
-	}
-
-	/**
-	 * Format capabilities for display.
-	 *
-	 * @param array $capabilities Raw capability flags.
-	 * @return array Formatted capability descriptions.
-	 */
-	private function format_capabilities( $capabilities ) {
-		$formatted = array();
-		
-		$capability_labels = array(
-			'can-delegate'      => __( 'Can delegate tasks to other agents', 'mcp-ai-wpoos' ),
-			'can-plan'          => __( 'Can create execution plans', 'mcp-ai-wpoos' ),
-			'can-execute'       => __( 'Can execute tasks directly', 'mcp-ai-wpoos' ),
-			'can-critique'      => __( 'Can validate and improve results', 'mcp-ai-wpoos' ),
-			'requires-feedback' => __( 'Requires validation from other agents', 'mcp-ai-wpoos' ),
-			'can-coordinate'    => __( 'Can coordinate team workflows', 'mcp-ai-wpoos' ),
-		);
-
-		foreach ( $capabilities as $capability ) {
-			if ( isset( $capability_labels[ $capability ] ) ) {
-				$formatted[] = $capability_labels[ $capability ];
-			} else {
-				$formatted[] = ucfirst( str_replace( array( '-', '_' ), ' ', $capability ) );
+			// If no agent roles loaded, provide default generic role.
+			if ( empty( $roles ) ) {
+				$roles[] = array(
+					'type'              => 'generalist',
+					'name'              => __( 'Generalist Agent', 'mcp-ai-wpoos' ),
+					'description'       => __( 'General-purpose AI agent capable of handling a wide variety of tasks.', 'mcp-ai-wpoos' ),
+					'icon'              => 'dashicons-admin-generic',
+					'capabilities'      => array(
+						__( 'Multi-domain tasks', 'mcp-ai-wpoos' ),
+						__( 'Flexible problem solving', 'mcp-ai-wpoos' ),
+					),
+					'recommended_tools' => array(),
+				);
 			}
+
+			return $roles;
 		}
 
-		return $formatted;
-	}
+		/**
+		 * Get icon for agent role type.
+		 *
+		 * @param string $role_type Role type identifier.
+		 * @return string Dashicon class.
+		 */
+		private function get_role_icon( $role_type ) {
+			$icons = array(
+				'planner'    => 'dashicons-list-view',
+				'executor'   => 'dashicons-hammer',
+				'critic'     => 'dashicons-yes-alt',
+				'specialist' => 'dashicons-lightbulb',
+			);
+
+			return isset( $icons[ $role_type ] ) ? $icons[ $role_type ] : 'dashicons-admin-generic';
+		}
+
+		/**
+		 * Format capabilities for display.
+		 *
+		 * @param array $capabilities Raw capability flags.
+		 * @return array Formatted capability descriptions.
+		 */
+		private function format_capabilities( $capabilities ) {
+			$formatted = array();
+
+			$capability_labels = array(
+				'can-delegate'      => __( 'Can delegate tasks to other agents', 'mcp-ai-wpoos' ),
+				'can-plan'          => __( 'Can create execution plans', 'mcp-ai-wpoos' ),
+				'can-execute'       => __( 'Can execute tasks directly', 'mcp-ai-wpoos' ),
+				'can-critique'      => __( 'Can validate and improve results', 'mcp-ai-wpoos' ),
+				'requires-feedback' => __( 'Requires validation from other agents', 'mcp-ai-wpoos' ),
+				'can-coordinate'    => __( 'Can coordinate team workflows', 'mcp-ai-wpoos' ),
+			);
+
+			foreach ( $capabilities as $capability ) {
+				if ( isset( $capability_labels[ $capability ] ) ) {
+					$formatted[] = $capability_labels[ $capability ];
+				} else {
+					$formatted[] = ucfirst( str_replace( array( '-', '_' ), ' ', $capability ) );
+				}
+			}
+
+			return $formatted;
+		}
 
 		/**
 		 * Get health icon for status.
@@ -2947,17 +2947,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * @return string Icon name.
 
 	/**
-	 * Render professions view.
-	 *
-	 * Displays all configured AI professions (concrete agent instances).
-	 * Shows profession details, assigned roles, tools, and expertise.
-	 */
-	private function render_professions_view() {
-		$professions = $this->get_professions_list();
-		$health      = $this->get_orchestration_health_metrics();
-		$role_counts = $this->count_professions_by_role( $professions );
-		
-		?>
+		 * Render professions view.
+		 *
+		 * Displays all configured AI professions (concrete agent instances).
+		 * Shows profession details, assigned roles, tools, and expertise.
+		 */
+		private function render_professions_view() {
+			$professions = $this->get_professions_list();
+			$health      = $this->get_orchestration_health_metrics();
+			$role_counts = $this->count_professions_by_role( $professions );
+
+			?>
 		<div class="wp-mcp-ai-professions-view">
 			<!-- Header with Status -->
 			<div class="wp-mcp-ai-orchestration-header">
@@ -3020,7 +3020,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							$specialist_count = isset( $role_counts['specialist'] ) ? $role_counts['specialist'] : 0;
 							$spec_rate        = count( $professions ) > 0 ? round( ( $specialist_count / count( $professions ) ) * 100 ) : 0;
 							echo esc_html( $spec_rate );
-							?>%
+							?>
+							%
 						</div>
 						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Domain Experts', 'mcp-ai-wpoos' ); ?></div>
 					</div>
@@ -3053,13 +3054,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				<p>
 					<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
 					<strong><?php esc_html_e( 'Professions vs Agent Roles:', 'mcp-ai-wpoos' ); ?></strong>
-					<?php esc_html_e( 'Agent Roles are abstract templates (Planner, Executor, etc.). Professions are concrete implementations - specific AI assistants configured for particular domains like "WordPress Developer", "SEO Consultant", or "Legal Advisor".', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Agent Roles are abstract templates (Planner, Executor, etc.). Professions are concrete implementations - specific AI assistants configured for particular domains like "WordPress Developer", "SEO Consultant", or "Legal Advisor".', 'mcp-ai-wpoos' ); ?>
 				</p>
 			</div>
 
-			<?php
-			if ( ! empty( $professions ) ) {
-				?>
+				<?php
+				if ( ! empty( $professions ) ) {
+					?>
 				<!-- Charts Section -->
 				<div class="orchestration-charts-section">
 					<h4>
@@ -3152,9 +3153,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					<?php endforeach; ?>
 				</div>
-				<?php
-			} else {
-				?>
+					<?php
+				} else {
+					?>
 				<div class="notice notice-warning inline">
 					<p>
 						<?php
@@ -3168,9 +3169,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						?>
 					</p>
 				</div>
-				<?php
-			}
-			?>
+					<?php
+				}
+				?>
 
 			<!-- Profession Management Section -->
 			<div class="wp-mcp-ai-profession-management" style="margin-top: 30px;">
@@ -3589,20 +3590,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			/* ]]> */
 			</script>
 		</div>
-		<?php
-	}
+			<?php
+		}
 
-	/**
-	 * Render teams view.
-	 *
-	 * Displays all configured AI teams (groups of professions).
-	 * Shows team details, assigned professions, orchestration mode, and workflow.
-	 */
-	private function render_teams_view() {
-		$teams = $this->get_teams_list();
-		$health = $this->get_orchestration_health_metrics();
-		
-		?>
+		/**
+		 * Render teams view.
+		 *
+		 * Displays all configured AI teams (groups of professions).
+		 * Shows team details, assigned professions, orchestration mode, and workflow.
+		 */
+		private function render_teams_view() {
+			$teams  = $this->get_teams_list();
+			$health = $this->get_orchestration_health_metrics();
+
+			?>
 		<div class="wp-mcp-ai-teams-view">
 			<!-- Header with Status -->
 			<div class="wp-mcp-ai-orchestration-header">
@@ -3697,7 +3698,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				</div>
 			</div>
 
-			<?php if ( ! empty( $teams ) ) : ?>
+				<?php if ( ! empty( $teams ) ) : ?>
 				<!-- Teams Grid -->
 				<div class="wp-mcp-ai-teams-grid">
 					<?php foreach ( $teams as $team ) : ?>
@@ -3778,7 +3779,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			<div class="wp-mcp-ai-team-management" style="margin-top: 30px;">
 				<h3><?php esc_html_e( 'Team Management', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Create and configure AI teams to enable multi-agent collaboration.', 'mcp-ai-wpoos' ); ?>
+						<?php esc_html_e( 'Create and configure AI teams to enable multi-agent collaboration.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<div class="management-grid">
@@ -3977,417 +3978,417 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 			</style>
 		</div>
-		<?php
-	}
+			<?php
+		}
 
-	/**
-	 * Get list of teams.
-	 *
-	 * @return array Array of team data.
-	 */
-	private function get_teams_list() {
-		$teams = array();
+		/**
+		 * Get list of teams.
+		 *
+		 * @return array Array of team data.
+		 */
+		private function get_teams_list() {
+			$teams = array();
 
-		$query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_team',
-				'post_status'    => 'publish',
-				'posts_per_page' => 100,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			)
-		);
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_team',
+					'post_status'    => 'publish',
+					'posts_per_page' => 100,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$post_id = get_the_ID();
+			if ( $query->have_posts() ) {
+				while ( $query->have_posts() ) {
+					$query->the_post();
+					$post_id = get_the_ID();
 
-				// Get team metadata.
-				$members              = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
-				$description          = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_DESCRIPTION, true );
-				$orchestration_mode   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
-				$result_aggregation   = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+					// Get team metadata.
+					$members            = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_MEMBERS, true );
+					$description        = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_TEAM_DESCRIPTION, true );
+					$orchestration_mode = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+					$result_aggregation = get_post_meta( $post_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
 
-				// Get agent role composition from team members.
-				$role_composition = array();
-				if ( is_array( $members ) && ! empty( $members ) ) {
-					foreach ( $members as $member_id ) {
-						$primary_role = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
-						if ( ! empty( $primary_role ) ) {
-							$normalized = strtolower( trim( $primary_role ) );
-							if ( ! isset( $role_composition[ $normalized ] ) ) {
-								$role_composition[ $normalized ] = 0;
+					// Get agent role composition from team members.
+					$role_composition = array();
+					if ( is_array( $members ) && ! empty( $members ) ) {
+						foreach ( $members as $member_id ) {
+							$primary_role = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+							if ( ! empty( $primary_role ) ) {
+								$normalized = strtolower( trim( $primary_role ) );
+								if ( ! isset( $role_composition[ $normalized ] ) ) {
+									$role_composition[ $normalized ] = 0;
+								}
+								++$role_composition[ $normalized ];
 							}
-							++$role_composition[ $normalized ];
 						}
 					}
-				}
 
-				$teams[] = array(
-					'id'                  => $post_id,
-					'title'               => get_the_title(),
-					'description'         => $description ? $description : get_the_excerpt(),
-					'member_count'        => is_array( $members ) ? count( $members ) : 0,
-					'orchestration_mode'  => $orchestration_mode ? $orchestration_mode : 'sequential',
-					'result_aggregation'  => $result_aggregation ? $result_aggregation : '',
-					'role_composition'    => $role_composition,
-					'edit_url'            => get_edit_post_link( $post_id ),
-				);
+					$teams[] = array(
+						'id'                 => $post_id,
+						'title'              => get_the_title(),
+						'description'        => $description ? $description : get_the_excerpt(),
+						'member_count'       => is_array( $members ) ? count( $members ) : 0,
+						'orchestration_mode' => $orchestration_mode ? $orchestration_mode : 'sequential',
+						'result_aggregation' => $result_aggregation ? $result_aggregation : '',
+						'role_composition'   => $role_composition,
+						'edit_url'           => get_edit_post_link( $post_id ),
+					);
+				}
+				wp_reset_postdata();
 			}
-			wp_reset_postdata();
+
+			return $teams;
 		}
 
-		return $teams;
-	}
+		/**
+		 * Get list of professions.
+		 *
+		 * @return array Array of profession data.
+		 */
+		private function get_professions_list() {
+			$professions = array();
 
-	/**
-	 * Get list of professions.
-	 *
-	 * @return array Array of profession data.
-	 */
-	private function get_professions_list() {
-		$professions = array();
+			$query = new WP_Query(
+				array(
+					'post_type'      => 'mcp_ai_profession',
+					'post_status'    => 'publish',
+					'posts_per_page' => 100,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
 
-		$query = new WP_Query(
-			array(
-				'post_type'      => 'mcp_ai_profession',
-				'post_status'    => 'publish',
-				'posts_per_page' => 100,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			)
-		);
+			if ( $query->have_posts() ) {
+				while ( $query->have_posts() ) {
+					$query->the_post();
+					$post_id = get_the_ID();
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$post_id = get_the_ID();
+					// Get profession metadata.
+					$agent_role      = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
+					$secondary_roles = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_SECONDARY_ROLES, true );
+					$expertise       = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
+					$tools           = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
+					$description     = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
 
-				// Get profession metadata.
-				$agent_role        = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, true );
-				$secondary_roles   = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_AGENT_SECONDARY_ROLES, true );
-				$expertise         = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_EXPERTISE, true );
-				$tools             = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
-				$description       = get_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
+					// Normalize role to lowercase for consistency.
+					$normalized_role = $agent_role ? strtolower( trim( $agent_role ) ) : 'generalist';
 
-				// Normalize role to lowercase for consistency.
-				$normalized_role = $agent_role ? strtolower( trim( $agent_role ) ) : 'generalist';
-				
-				// Parse secondary roles (stored as JSON array).
-				$secondary_roles_array = array();
-				if ( ! empty( $secondary_roles ) ) {
-					$decoded = is_string( $secondary_roles ) ? json_decode( $secondary_roles, true ) : $secondary_roles;
-					// Check for JSON errors.
-					if ( is_string( $secondary_roles ) && json_last_error() !== JSON_ERROR_NONE ) {
-						$decoded = array();
+					// Parse secondary roles (stored as JSON array).
+					$secondary_roles_array = array();
+					if ( ! empty( $secondary_roles ) ) {
+						$decoded = is_string( $secondary_roles ) ? json_decode( $secondary_roles, true ) : $secondary_roles;
+						// Check for JSON errors.
+						if ( is_string( $secondary_roles ) && json_last_error() !== JSON_ERROR_NONE ) {
+							$decoded = array();
+						}
+						if ( is_array( $decoded ) ) {
+							$secondary_roles_array = array_map( 'strtolower', array_map( 'trim', $decoded ) );
+						}
 					}
-					if ( is_array( $decoded ) ) {
-						$secondary_roles_array = array_map( 'strtolower', array_map( 'trim', $decoded ) );
-					}
+
+					$professions[] = array(
+						'id'              => $post_id,
+						'title'           => get_the_title(),
+						'description'     => $description ? $description : get_the_excerpt(),
+						'role'            => $normalized_role,
+						'secondary_roles' => $secondary_roles_array,
+						'expertise'       => is_array( $expertise ) ? $expertise : array(),
+						'tools_count'     => is_array( $tools ) ? count( $tools ) : 0,
+						'edit_url'        => get_edit_post_link( $post_id ),
+					);
 				}
-
-				$professions[] = array(
-					'id'              => $post_id,
-					'title'           => get_the_title(),
-					'description'     => $description ? $description : get_the_excerpt(),
-					'role'            => $normalized_role,
-					'secondary_roles' => $secondary_roles_array,
-					'expertise'       => is_array( $expertise ) ? $expertise : array(),
-					'tools_count'     => is_array( $tools ) ? count( $tools ) : 0,
-					'edit_url'        => get_edit_post_link( $post_id ),
-				);
+				wp_reset_postdata();
 			}
-			wp_reset_postdata();
+
+			return $professions;
 		}
 
-		return $professions;
-	}
+		/**
+		 * Count professions by role.
+		 *
+		 * @param array $professions Array of profession data.
+		 * @return array Role counts.
+		 */
+		private function count_professions_by_role( $professions ) {
+			$counts = array(
+				'planner'    => 0,
+				'executor'   => 0,
+				'critic'     => 0,
+				'specialist' => 0,
+				'generalist' => 0,
+			);
 
-	/**
-	 * Count professions by role.
-	 *
-	 * @param array $professions Array of profession data.
-	 * @return array Role counts.
-	 */
-	private function count_professions_by_role( $professions ) {
-		$counts = array(
-			'planner'    => 0,
-			'executor'   => 0,
-			'critic'     => 0,
-			'specialist' => 0,
-			'generalist' => 0,
-		);
+			foreach ( $professions as $profession ) {
+				$role = isset( $profession['role'] ) ? $profession['role'] : 'generalist';
+				if ( isset( $counts[ $role ] ) ) {
+					++$counts[ $role ];
+				}
+			}
 
-		foreach ( $professions as $profession ) {
+			return $counts;
+		}
+
+		/**
+		 * Get icon for profession based on role.
+		 *
+		 * @param array $profession Profession data.
+		 * @return string Dashicon class.
+		 */
+		private function get_profession_icon( $profession ) {
 			$role = isset( $profession['role'] ) ? $profession['role'] : 'generalist';
-			if ( isset( $counts[ $role ] ) ) {
-				++$counts[ $role ];
-			}
+
+			$icons = array(
+				'planner'    => 'dashicons-list-view',
+				'executor'   => 'dashicons-hammer',
+				'critic'     => 'dashicons-yes-alt',
+				'specialist' => 'dashicons-lightbulb',
+				'generalist' => 'dashicons-admin-generic',
+			);
+
+			return isset( $icons[ $role ] ) ? $icons[ $role ] : 'dashicons-businessperson';
 		}
 
-		return $counts;
-	}
+		/**
+		 * Get agent role distribution data for pie chart.
+		 *
+		 * @return array Chart.js formatted data.
+		 */
+		private function get_agent_role_distribution_data() {
+			$professions = $this->get_professions_list();
+			$role_counts = $this->count_professions_by_role( $professions );
 
-	/**
-	 * Get icon for profession based on role.
-	 *
-	 * @param array $profession Profession data.
-	 * @return string Dashicon class.
-	 */
-	private function get_profession_icon( $profession ) {
-		$role = isset( $profession['role'] ) ? $profession['role'] : 'generalist';
-		
-		$icons = array(
-			'planner'    => 'dashicons-list-view',
-			'executor'   => 'dashicons-hammer',
-			'critic'     => 'dashicons-yes-alt',
-			'specialist' => 'dashicons-lightbulb',
-			'generalist' => 'dashicons-admin-generic',
-		);
+			$labels = array();
+			$data   = array();
+			$colors = array(
+				'rgba(33, 150, 243, 0.8)',  // Blue - Planner.
+				'rgba(255, 152, 0, 0.8)',   // Orange - Executor.
+				'rgba(156, 39, 176, 0.8)',  // Purple - Critic.
+				'rgba(76, 175, 80, 0.8)',   // Green - Specialist.
+				'rgba(158, 158, 158, 0.8)', // Gray - Generalist.
+			);
 
-		return isset( $icons[ $role ] ) ? $icons[ $role ] : 'dashicons-businessperson';
-	}
+			$role_labels = array(
+				'planner'    => __( 'Planners', 'mcp-ai-wpoos' ),
+				'executor'   => __( 'Executors', 'mcp-ai-wpoos' ),
+				'critic'     => __( 'Critics', 'mcp-ai-wpoos' ),
+				'specialist' => __( 'Specialists', 'mcp-ai-wpoos' ),
+				'generalist' => __( 'Generalists', 'mcp-ai-wpoos' ),
+			);
 
-	/**
-	 * Get agent role distribution data for pie chart.
-	 *
-	 * @return array Chart.js formatted data.
-	 */
-	private function get_agent_role_distribution_data() {
-		$professions = $this->get_professions_list();
-		$role_counts = $this->count_professions_by_role( $professions );
-		
-		$labels = array();
-		$data   = array();
-		$colors = array(
-			'rgba(33, 150, 243, 0.8)',  // Blue - Planner.
-			'rgba(255, 152, 0, 0.8)',   // Orange - Executor.
-			'rgba(156, 39, 176, 0.8)',  // Purple - Critic.
-			'rgba(76, 175, 80, 0.8)',   // Green - Specialist.
-			'rgba(158, 158, 158, 0.8)', // Gray - Generalist.
-		);
-		
-		$role_labels = array(
-			'planner'    => __( 'Planners', 'mcp-ai-wpoos' ),
-			'executor'   => __( 'Executors', 'mcp-ai-wpoos' ),
-			'critic'     => __( 'Critics', 'mcp-ai-wpoos' ),
-			'specialist' => __( 'Specialists', 'mcp-ai-wpoos' ),
-			'generalist' => __( 'Generalists', 'mcp-ai-wpoos' ),
-		);
-		
-		$chart_colors = array();
-		foreach ( $role_counts as $role => $count ) {
-			if ( $count > 0 ) {
-				$labels[]       = isset( $role_labels[ $role ] ) ? $role_labels[ $role ] : ucfirst( $role );
-				$data[]         = $count;
-				$chart_colors[] = array_shift( $colors );
+			$chart_colors = array();
+			foreach ( $role_counts as $role => $count ) {
+				if ( $count > 0 ) {
+					$labels[]       = isset( $role_labels[ $role ] ) ? $role_labels[ $role ] : ucfirst( $role );
+					$data[]         = $count;
+					$chart_colors[] = array_shift( $colors );
+				}
 			}
-		}
-		
-		return array(
-			'labels'   => $labels,
-			'datasets' => array(
-				array(
-					'data'            => $data,
-					'backgroundColor' => $chart_colors,
-					'borderWidth'     => 1,
-				),
-			),
-		);
-	}
 
-	/**
-	 * Get orchestration health metrics data.
-	 *
-	 * @return array Health metrics.
-	 */
-	private function get_orchestration_health_metrics() {
-		$health = array(
-			'memory_usage'      => 0,
-			'memory_status'     => 'good',
-			'error_rate'        => 0,
-			'error_status'      => 'good',
-			'active_jobs'       => 0,
-			'queue_depth'       => 0,
-			'avg_response_time' => 0,
-			'sla_compliance'    => 100,
-		);
-		
-		// Get memory usage.
-		if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
-			$resource_manager   = WP_MCP_AI_Resource_Manager::instance();
-			$memory_limit       = $resource_manager->get_memory_limit();
-			$memory_usage       = memory_get_usage();
-			$health['memory_usage'] = ( $memory_usage / $memory_limit ) * 100;
-			
-			$memory_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
-			$memory_critical = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
-			
-			if ( $health['memory_usage'] >= $memory_critical ) {
-				$health['memory_status'] = 'critical';
-			} elseif ( $health['memory_usage'] >= $memory_warning ) {
-				$health['memory_status'] = 'warning';
-			}
-		}
-		
-		// Get active cron jobs.
-		if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
-			$cached_count = WP_MCP_AI_Cache_Helper::get( 'active_cron_count' );
-			$health['active_jobs'] = $cached_count !== false ? $cached_count : 0;
-		}
-		
-		// Get error rate from recent logs.
-		$recent_errors   = get_option( 'wp_mcp_ai_recent_errors', array() );
-		$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
-		
-		$total_events = count( $recent_activity );
-		$total_errors = count( $recent_errors );
-		
-		if ( $total_events > 0 ) {
-			$health['error_rate'] = ( $total_errors / $total_events ) * 100;
-			
-			$error_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 5 );
-			$error_critical = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 10 );
-			
-			if ( $health['error_rate'] >= $error_critical ) {
-				$health['error_status'] = 'critical';
-			} elseif ( $health['error_rate'] >= $error_warning ) {
-				$health['error_status'] = 'warning';
-			}
-		}
-		
-		return $health;
-	}
-
-	/**
-	 * Get profession tool distribution data.
-	 *
-	 * @return array Chart.js formatted data.
-	 */
-	private function get_profession_tool_distribution_data() {
-		$professions = $this->get_professions_list();
-		
-		// Group professions by tool count ranges.
-		$ranges = array(
-			'0'      => 0,
-			'1-3'    => 0,
-			'4-6'    => 0,
-			'7-10'   => 0,
-			'10+'    => 0,
-		);
-		
-		foreach ( $professions as $profession ) {
-			$tool_count = $profession['tools_count'];
-			
-			if ( 0 === $tool_count ) {
-				++$ranges['0'];
-			} elseif ( $tool_count >= 1 && $tool_count <= 3 ) {
-				++$ranges['1-3'];
-			} elseif ( $tool_count >= 4 && $tool_count <= 6 ) {
-				++$ranges['4-6'];
-			} elseif ( $tool_count >= 7 && $tool_count <= 10 ) {
-				++$ranges['7-10'];
-			} else {
-				++$ranges['10+'];
-			}
-		}
-		
-		return array(
-			'labels'   => array(
-				__( 'No Tools', 'mcp-ai-wpoos' ),
-				__( '1-3 Tools', 'mcp-ai-wpoos' ),
-				__( '4-6 Tools', 'mcp-ai-wpoos' ),
-				__( '7-10 Tools', 'mcp-ai-wpoos' ),
-				__( '10+ Tools', 'mcp-ai-wpoos' ),
-			),
-			'datasets' => array(
-				array(
-					'label'           => __( 'Profession Count', 'mcp-ai-wpoos' ),
-					'data'            => array_values( $ranges ),
-					'backgroundColor' => array(
-						'rgba(158, 158, 158, 0.8)', // Gray - No tools.
-						'rgba(255, 193, 7, 0.8)',   // Amber - Few tools.
-						'rgba(33, 150, 243, 0.8)',  // Blue - Moderate.
-						'rgba(76, 175, 80, 0.8)',   // Green - Good.
-						'rgba(156, 39, 176, 0.8)',  // Purple - Many.
-					),
-					'borderWidth'     => 1,
-				),
-			),
-		);
-	}
-
-	/**
-	 * Get workload tier distribution data.
-	 *
-	 * @return array Chart.js formatted data.
-	 */
-	private function get_workload_tier_distribution_data() {
-		// Determine current tier.
-		if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
-			$resource_manager = WP_MCP_AI_Resource_Manager::instance();
-			$memory_limit     = $resource_manager->get_memory_limit();
-			
-			$low_threshold    = 128 * 1024 * 1024;    // 128MB.
-			$medium_threshold = 512 * 1024 * 1024; // 512MB.
-			
-			if ( $memory_limit < $low_threshold ) {
-				$current_tier = 'low';
-			} elseif ( $memory_limit < $medium_threshold ) {
-				$current_tier = 'medium';
-			} else {
-				$current_tier = 'high';
-			}
-			
-			// Get token limits for each tier.
-			$low_tokens    = WP_MCP_AI_Settings_Registry::get_setting( 'low_tier_max_tokens', 2000 );
-			$medium_tokens = WP_MCP_AI_Settings_Registry::get_setting( 'medium_tier_max_tokens', 8000 );
-			$high_tokens   = WP_MCP_AI_Settings_Registry::get_setting( 'high_tier_max_tokens', 32000 );
-			
 			return array(
-				'current_tier' => $current_tier,
-				'labels'       => array(
-					__( 'Low Tier', 'mcp-ai-wpoos' ),
-					__( 'Medium Tier', 'mcp-ai-wpoos' ),
-					__( 'High Tier', 'mcp-ai-wpoos' ),
-				),
-				'tokens'       => array( $low_tokens, $medium_tokens, $high_tokens ),
-				'datasets'     => array(
+				'labels'   => $labels,
+				'datasets' => array(
 					array(
-						'label'           => __( 'Token Capacity', 'mcp-ai-wpoos' ),
-						'data'            => array( $low_tokens, $medium_tokens, $high_tokens ),
+						'data'            => $data,
+						'backgroundColor' => $chart_colors,
+						'borderWidth'     => 1,
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get orchestration health metrics data.
+		 *
+		 * @return array Health metrics.
+		 */
+		private function get_orchestration_health_metrics() {
+			$health = array(
+				'memory_usage'      => 0,
+				'memory_status'     => 'good',
+				'error_rate'        => 0,
+				'error_status'      => 'good',
+				'active_jobs'       => 0,
+				'queue_depth'       => 0,
+				'avg_response_time' => 0,
+				'sla_compliance'    => 100,
+			);
+
+			// Get memory usage.
+			if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				$resource_manager       = WP_MCP_AI_Resource_Manager::instance();
+				$memory_limit           = $resource_manager->get_memory_limit();
+				$memory_usage           = memory_get_usage();
+				$health['memory_usage'] = ( $memory_usage / $memory_limit ) * 100;
+
+				$memory_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'memory_warning_threshold', 70 );
+				$memory_critical = WP_MCP_AI_Settings_Registry::get_setting( 'memory_critical_threshold', 85 );
+
+				if ( $health['memory_usage'] >= $memory_critical ) {
+					$health['memory_status'] = 'critical';
+				} elseif ( $health['memory_usage'] >= $memory_warning ) {
+					$health['memory_status'] = 'warning';
+				}
+			}
+
+			// Get active cron jobs.
+			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
+				$cached_count          = WP_MCP_AI_Cache_Helper::get( 'active_cron_count' );
+				$health['active_jobs'] = $cached_count !== false ? $cached_count : 0;
+			}
+
+			// Get error rate from recent logs.
+			$recent_errors   = get_option( 'wp_mcp_ai_recent_errors', array() );
+			$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
+
+			$total_events = count( $recent_activity );
+			$total_errors = count( $recent_errors );
+
+			if ( $total_events > 0 ) {
+				$health['error_rate'] = ( $total_errors / $total_events ) * 100;
+
+				$error_warning  = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_warning_threshold', 5 );
+				$error_critical = WP_MCP_AI_Settings_Registry::get_setting( 'error_rate_critical_threshold', 10 );
+
+				if ( $health['error_rate'] >= $error_critical ) {
+					$health['error_status'] = 'critical';
+				} elseif ( $health['error_rate'] >= $error_warning ) {
+					$health['error_status'] = 'warning';
+				}
+			}
+
+			return $health;
+		}
+
+		/**
+		 * Get profession tool distribution data.
+		 *
+		 * @return array Chart.js formatted data.
+		 */
+		private function get_profession_tool_distribution_data() {
+			$professions = $this->get_professions_list();
+
+			// Group professions by tool count ranges.
+			$ranges = array(
+				'0'    => 0,
+				'1-3'  => 0,
+				'4-6'  => 0,
+				'7-10' => 0,
+				'10+'  => 0,
+			);
+
+			foreach ( $professions as $profession ) {
+				$tool_count = $profession['tools_count'];
+
+				if ( 0 === $tool_count ) {
+					++$ranges['0'];
+				} elseif ( $tool_count >= 1 && $tool_count <= 3 ) {
+					++$ranges['1-3'];
+				} elseif ( $tool_count >= 4 && $tool_count <= 6 ) {
+					++$ranges['4-6'];
+				} elseif ( $tool_count >= 7 && $tool_count <= 10 ) {
+					++$ranges['7-10'];
+				} else {
+					++$ranges['10+'];
+				}
+			}
+
+			return array(
+				'labels'   => array(
+					__( 'No Tools', 'mcp-ai-wpoos' ),
+					__( '1-3 Tools', 'mcp-ai-wpoos' ),
+					__( '4-6 Tools', 'mcp-ai-wpoos' ),
+					__( '7-10 Tools', 'mcp-ai-wpoos' ),
+					__( '10+ Tools', 'mcp-ai-wpoos' ),
+				),
+				'datasets' => array(
+					array(
+						'label'           => __( 'Profession Count', 'mcp-ai-wpoos' ),
+						'data'            => array_values( $ranges ),
 						'backgroundColor' => array(
-							'rgba(255, 193, 7, 0.8)',  // Amber - Low.
-							'rgba(33, 150, 243, 0.8)', // Blue - Medium.
-							'rgba(76, 175, 80, 0.8)',  // Green - High.
+							'rgba(158, 158, 158, 0.8)', // Gray - No tools.
+							'rgba(255, 193, 7, 0.8)',   // Amber - Few tools.
+							'rgba(33, 150, 243, 0.8)',  // Blue - Moderate.
+							'rgba(76, 175, 80, 0.8)',   // Green - Good.
+							'rgba(156, 39, 176, 0.8)',  // Purple - Many.
 						),
 						'borderWidth'     => 1,
 					),
 				),
 			);
 		}
-		
-		return array(
-			'current_tier' => 'medium',
-			'labels'       => array( __( 'Low', 'mcp-ai-wpoos' ), __( 'Medium', 'mcp-ai-wpoos' ), __( 'High', 'mcp-ai-wpoos' ) ),
-			'tokens'       => array( 2000, 8000, 32000 ),
-			'datasets'     => array(
-				array(
-					'data'            => array( 2000, 8000, 32000 ),
-					'backgroundColor' => array( '#FFC107', '#2196F3', '#4CAF50' ),
-				),
-			),
-		);
-	}
 
-	/**
-	 * Get health icon for status.
-	 *
-	 * @param string $status Health status.
-	 * @return string Icon name.
-	 */
-	protected function get_health_icon( $status ) {
+		/**
+		 * Get workload tier distribution data.
+		 *
+		 * @return array Chart.js formatted data.
+		 */
+		private function get_workload_tier_distribution_data() {
+			// Determine current tier.
+			if ( class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {
+				$resource_manager = WP_MCP_AI_Resource_Manager::instance();
+				$memory_limit     = $resource_manager->get_memory_limit();
+
+				$low_threshold    = 128 * 1024 * 1024;    // 128MB.
+				$medium_threshold = 512 * 1024 * 1024; // 512MB.
+
+				if ( $memory_limit < $low_threshold ) {
+					$current_tier = 'low';
+				} elseif ( $memory_limit < $medium_threshold ) {
+					$current_tier = 'medium';
+				} else {
+					$current_tier = 'high';
+				}
+
+				// Get token limits for each tier.
+				$low_tokens    = WP_MCP_AI_Settings_Registry::get_setting( 'low_tier_max_tokens', 2000 );
+				$medium_tokens = WP_MCP_AI_Settings_Registry::get_setting( 'medium_tier_max_tokens', 8000 );
+				$high_tokens   = WP_MCP_AI_Settings_Registry::get_setting( 'high_tier_max_tokens', 32000 );
+
+				return array(
+					'current_tier' => $current_tier,
+					'labels'       => array(
+						__( 'Low Tier', 'mcp-ai-wpoos' ),
+						__( 'Medium Tier', 'mcp-ai-wpoos' ),
+						__( 'High Tier', 'mcp-ai-wpoos' ),
+					),
+					'tokens'       => array( $low_tokens, $medium_tokens, $high_tokens ),
+					'datasets'     => array(
+						array(
+							'label'           => __( 'Token Capacity', 'mcp-ai-wpoos' ),
+							'data'            => array( $low_tokens, $medium_tokens, $high_tokens ),
+							'backgroundColor' => array(
+								'rgba(255, 193, 7, 0.8)',  // Amber - Low.
+								'rgba(33, 150, 243, 0.8)', // Blue - Medium.
+								'rgba(76, 175, 80, 0.8)',  // Green - High.
+							),
+							'borderWidth'     => 1,
+						),
+					),
+				);
+			}
+
+			return array(
+				'current_tier' => 'medium',
+				'labels'       => array( __( 'Low', 'mcp-ai-wpoos' ), __( 'Medium', 'mcp-ai-wpoos' ), __( 'High', 'mcp-ai-wpoos' ) ),
+				'tokens'       => array( 2000, 8000, 32000 ),
+				'datasets'     => array(
+					array(
+						'data'            => array( 2000, 8000, 32000 ),
+						'backgroundColor' => array( '#FFC107', '#2196F3', '#4CAF50' ),
+					),
+				),
+			);
+		}
+
+		/**
+		 * Get health icon for status.
+		 *
+		 * @param string $status Health status.
+		 * @return string Icon name.
+		 */
+		protected function get_health_icon( $status ) {
 			$icons = array(
 				'good'     => 'yes-alt',
 				'fair'     => 'info',

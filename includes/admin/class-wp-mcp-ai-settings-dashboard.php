@@ -144,7 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// P0 FIX #1 & #2: Pass section-specific subtab and whether this is the active tab.
 				$section_subtab = isset( $active_subtabs[ $section->get_id() ] ) ? $active_subtabs[ $section->get_id() ] : null;
 				$is_active_tab  = ( $section->get_tab() === $active_tab );
-				
+
 				// Pass both subtab and active status to section sanitize method.
 				$section_input = $section->sanitize( $input, $section_subtab, $is_active_tab );
 				$validated     = $section->validate( $section_input );
@@ -189,7 +189,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_subtabs = array();
 			foreach ( $_POST as $key => $value ) {
 				if ( preg_match( '/^subtab_([a-z_]+)$/i', $key, $matches ) && ! empty( $value ) ) {
-					$section_id = $matches[1];
+					$section_id                    = $matches[1];
 					$active_subtabs[ $section_id ] = sanitize_key( $value );
 				}
 			}
@@ -210,6 +210,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Log save attempt for debugging (only if logging enabled).
 			if ( $enable_logging ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 				error_log(
 					sprintf(
 						'[NV oOS Settings] Save attempt - Tab: %s, Subtabs: %s, Posted fields: %d, Posted keys: %s',
@@ -227,6 +228,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Log sanitization results.
 			if ( $enable_logging ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 				error_log(
 					sprintf(
 						'[NV oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
@@ -243,8 +245,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Log critical provider keys BEFORE merge to help diagnose data loss issues.
 			if ( $enable_logging ) {
-				$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
-				$existing_providers = array();
+				$provider_keys       = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+				$existing_providers  = array();
 				$sanitized_providers = array();
 				foreach ( $provider_keys as $key ) {
 					if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
@@ -255,6 +257,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					}
 				}
 				if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 					error_log(
 						sprintf(
 							'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
@@ -276,6 +279,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// BUT allow false values (for checkboxes) and 0 values.
 				if ( isset( $sanitized_new[ $key ] ) && '' === $sanitized_new[ $key ] ) {
 					if ( $enable_logging ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 						error_log(
 							sprintf(
 								'[NV oOS Settings] CRITICAL: Removing empty %s from sanitized data to prevent data loss (tab=%s)',
@@ -304,6 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						// Check if existing value exists and is not empty.
 						if ( isset( $existing_settings[ $key ] ) && '' !== $existing_settings[ $key ] ) {
 							if ( $enable_logging ) {
+								// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 								error_log(
 									sprintf(
 										'[NV oOS Settings] PATTERN-BASED PROTECTION: Removing empty %s (matched pattern %s) to prevent data loss (tab=%s)',
@@ -334,9 +339,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					// Allow clearing values only when we're on the relevant tab.
 					// This prevents cross-tab pollution while allowing intentional field clearing.
 					$setting_belongs_to_active_tab = $this->is_setting_in_tab( $key, $active_tab );
-					
+
 					if ( ! $setting_belongs_to_active_tab ) {
 						if ( $enable_logging ) {
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 							error_log(
 								sprintf(
 									'[NV oOS Settings] PROTECTION: Preventing empty string for %s from overwriting existing value (not in active tab %s)',
@@ -350,13 +356,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 			}
 
-			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+			$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
 			// Save to database and log result.
 			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
 
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 			if ( $enable_logging ) {
 				error_log(
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 					sprintf(
 						'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
 						$update_result ? 'SUCCESS' : 'UNCHANGED',
@@ -376,6 +384,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 					if ( $enable_logging ) {
 						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+						// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when enabled.
 					}
 				}
 			}
@@ -599,7 +608,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * @return string Active tab ID.
 		 */
 		private function get_active_tab() {
-			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
+			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Tab parameter is read-only, not security-sensitive.
 			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 
 			if ( ! isset( $tabs[ $active_tab ] ) ) {
@@ -789,10 +799,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			$sections = WP_MCP_AI_Settings_Registry::get_sections( $tab );
-			
+
 			foreach ( $sections as $section ) {
 				$fields = $section->get_fields();
-				
+
 				if ( isset( $fields[ $key ] ) ) {
 					return true;
 				}

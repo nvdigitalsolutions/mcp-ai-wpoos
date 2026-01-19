@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-protected-keys-issue',
         'version' => 'dev-copilot/fix-protected-keys-issue',
-        'reference' => 'ead410d74572ecf817b3f8545c6c2b6a60f85c66',
+        'reference' => '831271466d944bc8914209ec962e3cc2c50ff68d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-protected-keys-issue',
             'version' => 'dev-copilot/fix-protected-keys-issue',
-            'reference' => 'ead410d74572ecf817b3f8545c6c2b6a60f85c66',
+            'reference' => '831271466d944bc8914209ec962e3cc2c50ff68d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

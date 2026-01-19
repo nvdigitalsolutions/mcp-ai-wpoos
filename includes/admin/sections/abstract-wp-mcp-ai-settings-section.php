@@ -3,6 +3,8 @@
  * Abstract base class for settings sections.
  *
  * @package WP_MCP_AI
+ *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Abstract class, naming is intentional.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -123,7 +125,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			} else {
 				$active_subtab = $this->get_active_subtab();
 			}
-			
+
 			$subtab_groups = $this->get_subtab_groups();
 
 			// Get fields that belong to the active sub-tab.
@@ -144,9 +146,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Check if we're actually processing a form submission for this subtab.
 			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
 			$subtab_field_name = 'subtab_' . $this->get_id();
-			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
@@ -246,6 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							}
 						}
 						// Use non-strict comparison to handle string/int type juggling.
+						// phpcs:ignore WordPress.PHP.StrictInArray.FoundNonStrictFalse -- Intentional for type juggling.
 						if ( in_array( $typed_value, $options, false ) ) {
 							$sanitized[ $key ] = $typed_value;
 						}
@@ -363,7 +366,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
-			
+
 			// Check if this is a sensitive field that should be protected.
 			$is_sensitive = $this->is_sensitive_field( $key );
 
