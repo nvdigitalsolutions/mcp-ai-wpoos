@@ -89,17 +89,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		/**
 		 * Sanitize input for this section.
 		 *
-		 * @param array $input Raw input from form.
+		 * @param array  $input Raw input from form.
+		 * @param string $active_subtab Optional. Explicit subtab to process (for sections with subtabs).
+		 * @param bool   $is_active_tab Optional. Whether this section's tab is the active tab being saved.
 		 * @return array Sanitized input.
 		 */
-		public function sanitize( $input ) {
+		public function sanitize( $input, $active_subtab = null, $is_active_tab = false ) {
 			// Check if this section has subtabs by looking for get_subtab_groups method.
 			if ( method_exists( $this, 'get_subtab_groups' ) ) {
-				return $this->sanitize_with_subtabs( $input );
+				return $this->sanitize_with_subtabs( $input, $active_subtab );
 			}
 
-			// Default sanitization for sections without subtabs.
-			return $this->sanitize_fields( $input, $this->get_fields() );
+			// P0 FIX #2: Default sanitization for sections without subtabs.
+			// Only treat as form submission if this section's tab is active to prevent
+			// checkbox clearing on non-active tabs.
+			return $this->sanitize_fields( $input, $this->get_fields(), $is_active_tab );
 		}
 
 		/**
@@ -108,11 +112,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * Only processes fields from the active sub-tab to prevent clearing
 		 * settings from inactive sub-tabs when saving.
 		 *
-		 * @param array $input Raw input from form.
+		 * @param array  $input Raw input from form.
+		 * @param string $explicit_subtab Optional. Explicit subtab to process (passed from dashboard).
 		 * @return array Sanitized input for active sub-tab only.
 		 */
-		protected function sanitize_with_subtabs( $input ) {
-			$active_subtab = $this->get_active_subtab();
+		protected function sanitize_with_subtabs( $input, $explicit_subtab = null ) {
+			// P0 FIX #1: Use explicit subtab if provided, otherwise detect from POST/GET.
+			if ( null !== $explicit_subtab ) {
+				$active_subtab = $explicit_subtab;
+			} else {
+				$active_subtab = $this->get_active_subtab();
+			}
+			
 			$subtab_groups = $this->get_subtab_groups();
 
 			// Get fields that belong to the active sub-tab.

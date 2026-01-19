@@ -127,9 +127,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 *
 		 * @param array  $input Raw settings input.
 		 * @param string $active_tab Optional. The active tab to process. If not provided, processes all tabs.
+		 * @param array  $active_subtabs Optional. Map of section IDs to their active subtabs.
 		 * @return array Sanitized settings.
 		 */
-		public function sanitize_settings( $input, $active_tab = '' ) {
+		public function sanitize_settings( $input, $active_tab = '', $active_subtabs = array() ) {
 			$sanitized = array();
 
 			// Get sections to process - either from a specific tab or all sections.
@@ -140,7 +141,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			foreach ( $sections as $section ) {
-				$section_input = $section->sanitize( $input );
+				// P0 FIX #1 & #2: Pass section-specific subtab and whether this is the active tab.
+				$section_subtab = isset( $active_subtabs[ $section->get_id() ] ) ? $active_subtabs[ $section->get_id() ] : null;
+				$is_active_tab  = ( $section->get_tab() === $active_tab );
+				
+				// Pass both subtab and active status to section sanitize method.
+				$section_input = $section->sanitize( $input, $section_subtab, $is_active_tab );
 				$validated     = $section->validate( $section_input );
 
 				if ( is_wp_error( $validated ) ) {
@@ -177,25 +183,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
 
-			// Find subtab from section-specific subtab fields (subtab_sectionid format).
-			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
-			$active_subtab = '';
-			$active_section_id = '';
+			// P0 FIX #1: Collect ALL subtabs from all sections on the tab.
+			// Multiple sections on same tab may have subtabs, so we collect all subtab_* fields.
+			// Previous code broke after finding first subtab, causing data loss in other sections.
+			$active_subtabs = array();
 			foreach ( $_POST as $key => $value ) {
-				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-					$active_subtab = sanitize_key( $value );
-					// Extract section ID from field name (e.g., subtab_providers => providers).
-					$active_section_id = sanitize_key( str_replace( 'subtab_', '', $key ) );
-					break; // Use the first subtab found.
+				if ( preg_match( '/^subtab_([a-z_]+)$/i', $key, $matches ) && ! empty( $value ) ) {
+					$section_id = $matches[1];
+					$active_subtabs[ $section_id ] = sanitize_key( $value );
 				}
 			}
 
 			// Fallback to legacy 'subtab' and 'connection' fields for backward compatibility.
-			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
-				$active_subtab = sanitize_key( $_POST['subtab'] );
-			}
-			if ( empty( $active_subtab ) && isset( $_POST['connection'] ) ) {
-				$active_subtab = sanitize_key( $_POST['connection'] );
+			// Only use if no section-specific subtabs were found.
+			if ( empty( $active_subtabs ) ) {
+				if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
+					$active_subtabs['_legacy'] = sanitize_key( $_POST['subtab'] );
+				} elseif ( isset( $_POST['connection'] ) && ! empty( $_POST['connection'] ) ) {
+					$active_subtabs['_legacy'] = sanitize_key( $_POST['connection'] );
+				}
 			}
 
 			// Check if logging is enabled for diagnostic purposes.
@@ -206,8 +212,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[NV oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						'[NV oOS Settings] Save attempt - Tab: %s, Subtabs: %s, Posted fields: %d, Posted keys: %s',
 						$active_tab,
+						wp_json_encode( $active_subtabs ),
 						count( $posted_settings ),
 						implode( ', ', array_keys( $posted_settings ) )
 					)
@@ -215,7 +222,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
-			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+			// Pass active subtabs so each section can find its specific subtab.
+			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab, $active_subtabs );
 
 			// Log sanitization results.
 			if ( $enable_logging ) {
@@ -372,15 +380,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				}
 			}
 
-			// Clear caches when settings are updated.
-			if ( 'orchestration' === $active_tab ) {
-				// Clear orchestration-related caches using Cache Helper.
-				WP_MCP_AI_Cache_Helper::invalidate_orchestration_caches();
-
-				if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
-					WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
-				}
-			}
+			// P0 FIX #3: Clear caches when settings are updated (comprehensive).
+			$this->invalidate_tab_caches( $active_tab, $merged_settings );
 
 			// Redirect back to the same tab that was being edited.
 			$redirect_args = array(
@@ -392,9 +393,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_args['tab'] = $active_tab;
 			}
 
-			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
-			if ( ! empty( $active_subtab ) ) {
-				$redirect_args['subtab'] = $active_subtab;
+			// Preserve subtab parameter for sections with sub-navigation.
+			// Use legacy subtab if available, or the first subtab from the array.
+			if ( ! empty( $active_subtabs ) ) {
+				if ( isset( $active_subtabs['_legacy'] ) ) {
+					$redirect_args['subtab'] = $active_subtabs['_legacy'];
+				} else {
+					// Use the first subtab for redirect (maintains backward compatibility).
+					$redirect_args['subtab'] = reset( $active_subtabs );
+				}
 			}
 
 			// Preserve view parameter for sections with view-based navigation (e.g., Orchestration, Token Manager).
@@ -850,6 +857,74 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Check if we're on the settings dashboard.
 			// The screen ID format is 'toplevel_page_{page_slug}'.
 			return 'toplevel_page_' . self::PAGE_SLUG === $screen->id;
+		}
+
+		/**
+		 * Invalidate caches based on which tab was modified.
+		 *
+		 * P0 FIX #3: Comprehensive cache invalidation for all tabs.
+		 * Previous code only cleared orchestration caches, leaving stale data
+		 * when providers, tools, or auth settings changed.
+		 *
+		 * @param string $active_tab The tab that was saved.
+		 * @param array  $merged_settings The merged settings after save.
+		 */
+		private function invalidate_tab_caches( $active_tab, $merged_settings ) {
+			switch ( $active_tab ) {
+				case 'providers':
+					// Clear provider and model caches.
+					wp_cache_delete( 'wp_mcp_ai_providers' );
+					wp_cache_delete( 'wp_mcp_ai_models' );
+					wp_cache_delete( 'wp_mcp_ai_provider_priority' );
+					do_action( 'wp_mcp_ai_providers_updated' );
+					break;
+
+				case 'tools':
+					// Clear tool-related caches.
+					if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+						WP_MCP_AI_Cache_Helper::invalidate_tool_caches();
+					}
+					wp_cache_delete( 'wp_mcp_ai_available_tools' );
+					wp_cache_delete( 'wp_mcp_ai_tool_limits' );
+					do_action( 'wp_mcp_ai_tools_updated' );
+					break;
+
+				case 'authentication':
+					// Clear authentication caches.
+					wp_cache_delete( 'wp_mcp_ai_auth_config' );
+					wp_cache_delete( 'wp_mcp_ai_oauth_tokens' );
+					do_action( 'wp_mcp_ai_authentication_updated' );
+					break;
+
+				case 'orchestration':
+					// Clear orchestration caches (existing code).
+					if ( class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
+						WP_MCP_AI_Cache_Helper::invalidate_orchestration_caches();
+					}
+					if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+						WP_MCP_AI_Orchestration_Health_Service::clear_health_cache();
+					}
+					break;
+
+				case 'advanced':
+					// Clear advanced settings caches.
+					if ( isset( $merged_settings['enable_logging'] ) ||
+						isset( $merged_settings['enable_extended_logging'] ) ) {
+						wp_cache_delete( 'wp_mcp_ai_logging_config' );
+					}
+					if ( isset( $merged_settings['mesh_peer_sites'] ) ) {
+						wp_cache_delete( 'wp_mcp_ai_mesh_peers' );
+					}
+					break;
+
+				case 'general':
+					// Clear general settings cache.
+					wp_cache_delete( 'wp_mcp_ai_general_config' );
+					break;
+			}
+
+			// Always clear the settings cache.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
 		}
 	}
 }
