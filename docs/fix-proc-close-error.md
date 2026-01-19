@@ -2,17 +2,25 @@
 
 ## Problem
 
-After the recent PR that introduced the Symfony Process Service, the plugin was experiencing a fatal error on production servers:
+After the recent PR that introduced the Symfony Process Service, the plugin was experiencing fatal errors on production servers:
 
+### Error 1: During Runtime (proc_close)
 ```
 Fatal error: Uncaught Error: Call to undefined function Symfony\Component\Process\proc_close() 
 in /vendor/symfony/process/Process.php:1389
 ```
 
-This error occurred because PHP's process control functions (`proc_open`, `proc_close`, `proc_terminate`) are disabled on some hosting environments for security reasons via the `disable_functions` directive in `php.ini`.
+### Error 2: During Plugin Activation (proc_open)
+```
+PHP Fatal error: Uncaught Symfony\Component\Process\Exception\LogicException: 
+The Process class relies on proc_open, which is not available on your PHP installation.
+```
 
-## Root Cause
+These errors occurred because PHP's process control functions (`proc_open`, `proc_close`, `proc_terminate`) are disabled on some hosting environments for security reasons via the `disable_functions` directive in `php.ini`.
 
+## Root Causes
+
+### Issue 1: Runtime Process Instantiation
 The Symfony Process Service was being invoked during plugin initialization to check for Node.js availability:
 
 ```php
@@ -26,7 +34,24 @@ function wp_mcp_ai_is_nodejs_available() {
 
 When `is_command_available()` tried to run a `which` command using the Process Service, it attempted to instantiate a Symfony `Process` object, which internally requires `proc_open()` and `proc_close()`. If these functions are disabled, a fatal error occurs.
 
-## Solution
+### Issue 2: Activation-Time Instantiation
+The npm-integration-filters.php file had top-level code that executed immediately when loaded:
+
+```php
+// OLD CODE (line 361): Executed at file load time
+$auto_register = defined('WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS') ? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS : true;
+$auto_register = apply_filters('wp_mcp_ai_auto_register_npm_filters', $auto_register);
+
+if ($auto_register && wp_mcp_ai_is_nodejs_available()) {
+    wp_mcp_ai_register_all_npm_filters();
+}
+```
+
+This caused Process instantiation during plugin activation, before WordPress hooks were available and before the Process Service's safety checks could run.
+
+## Solutions
+
+### Solution 1: Process Service Safety Checks (Runtime Protection)
 
 Added proactive checks for process function availability before attempting to use the Symfony Process library:
 
@@ -85,6 +110,32 @@ public function is_command_available($command) {
     return $result['success'] && !empty($result['output']);
 }
 ```
+
+### Solution 2: Deferred Auto-Registration (Activation Protection)
+
+Moved the auto-registration logic from top-level code into a function hooked to WordPress `init` action:
+
+```php
+// NEW CODE: Wrapped in function and hooked to init
+function wp_mcp_ai_auto_register_npm_filters() {
+    $auto_register = defined('WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS') 
+        ? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
+        : true;
+    
+    $auto_register = apply_filters('wp_mcp_ai_auto_register_npm_filters', $auto_register);
+    
+    if ($auto_register && wp_mcp_ai_is_nodejs_available()) {
+        wp_mcp_ai_register_all_npm_filters();
+    }
+}
+add_action('init', 'wp_mcp_ai_auto_register_npm_filters', 20);
+```
+
+**Benefits:**
+- Process Service is not instantiated during plugin file loading
+- Auto-registration only runs after WordPress is fully initialized
+- Prevents fatal errors during plugin activation
+- Maintains exact same functionality, just deferred to appropriate hook
 
 ## Behavior
 
