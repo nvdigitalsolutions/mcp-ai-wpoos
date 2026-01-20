@@ -162,6 +162,9 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if places management is enabled.
@@ -250,9 +253,11 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return bool True if Turf.js is available.
 	 */
 	private function check_turf_availability() {
-		// Check if @turf/turf package exists in node_modules.
-		$turf_path = WP_MCP_AI_PRO_PATH . 'node_modules/@turf/turf/dist/turf.min.js';
-		if ( ! file_exists( $turf_path ) ) {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/turf/dist/esm/index.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/@turf/turf/dist/esm/index.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}
 
@@ -274,7 +279,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 			if ( get_post_type( $place_id ) === 'place' ) {
 				$lat = get_post_meta( $place_id, '_place_latitude', true );
 				$lng = get_post_meta( $place_id, '_place_longitude', true );
-				
+
 				if ( $lat && $lng ) {
 					return array(
 						'latitude'  => floatval( $lat ),
@@ -308,7 +313,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function calculate_distance( $source, $arguments ) {
 		$target = $this->get_coordinates_from_arguments( $arguments, 'target_place_id', 'target_coordinates' );
-		
+
 		if ( ! $target ) {
 			return array( 'error' => __( 'Target location required for distance calculation.', 'mcp-ai-wpoos-pro' ) );
 		}
@@ -316,11 +321,14 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		$units = isset( $arguments['units'] ) ? sanitize_text_field( $arguments['units'] ) : 'miles';
 
 		// Use Turf.js for distance calculation.
-		$result = $this->execute_turf_operation( 'distance', array(
-			'from'  => array( $source['longitude'], $source['latitude'] ),
-			'to'    => array( $target['longitude'], $target['latitude'] ),
-			'units' => $units,
-		) );
+		$result = $this->execute_turf_operation(
+			'distance',
+			array(
+				'from'  => array( $source['longitude'], $source['latitude'] ),
+				'to'    => array( $target['longitude'], $target['latitude'] ),
+				'units' => $units,
+			)
+		);
 
 		if ( isset( $result['error'] ) ) {
 			return $result;
@@ -345,11 +353,14 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		$radius = isset( $arguments['radius'] ) ? floatval( $arguments['radius'] ) : 1;
 		$units  = isset( $arguments['units'] ) ? sanitize_text_field( $arguments['units'] ) : 'miles';
 
-		$result = $this->execute_turf_operation( 'buffer', array(
-			'point'  => array( $source['longitude'], $source['latitude'] ),
-			'radius' => $radius,
-			'units'  => $units,
-		) );
+		$result = $this->execute_turf_operation(
+			'buffer',
+			array(
+				'point'  => array( $source['longitude'], $source['latitude'] ),
+				'radius' => $radius,
+				'units'  => $units,
+			)
+		);
 
 		if ( isset( $result['error'] ) ) {
 			return $result;
@@ -413,15 +424,18 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function find_nearest( $source, $arguments ) {
 		$places = $this->find_places_in_buffer( $source, 100, 'miles', $arguments );
-		
+
 		if ( empty( $places ) ) {
 			return array( 'error' => __( 'No places found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Sort by distance and get nearest.
-		usort( $places, function( $a, $b ) {
-			return $a['distance'] <=> $b['distance'];
-		} );
+		usort(
+			$places,
+			function( $a, $b ) {
+				return $a['distance'] <=> $b['distance'];
+			}
+		);
 
 		return array(
 			'source'        => $source,
@@ -438,15 +452,18 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function calculate_bearing( $source, $arguments ) {
 		$target = $this->get_coordinates_from_arguments( $arguments, 'target_place_id', 'target_coordinates' );
-		
+
 		if ( ! $target ) {
 			return array( 'error' => __( 'Target location required for bearing calculation.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$result = $this->execute_turf_operation( 'bearing', array(
-			'from' => array( $source['longitude'], $source['latitude'] ),
-			'to'   => array( $target['longitude'], $target['latitude'] ),
-		) );
+		$result = $this->execute_turf_operation(
+			'bearing',
+			array(
+				'from' => array( $source['longitude'], $source['latitude'] ),
+				'to'   => array( $target['longitude'], $target['latitude'] ),
+			)
+		);
 
 		if ( isset( $result['error'] ) ) {
 			return $result;
@@ -497,20 +514,23 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 
 			if ( $lat && $lng ) {
 				// Calculate distance using Turf.js.
-				$distance_result = $this->execute_turf_operation( 'distance', array(
-					'from'  => array( $center['longitude'], $center['latitude'] ),
-					'to'    => array( floatval( $lng ), floatval( $lat ) ),
-					'units' => $units,
-				) );
+				$distance_result = $this->execute_turf_operation(
+					'distance',
+					array(
+						'from'  => array( $center['longitude'], $center['latitude'] ),
+						'to'    => array( floatval( $lng ), floatval( $lat ) ),
+						'units' => $units,
+					)
+				);
 
 				if ( ! isset( $distance_result['error'] ) && $distance_result['distance'] <= $radius ) {
 					$places[] = array(
-						'id'       => $place->ID,
-						'title'    => $place->post_title,
-						'latitude' => floatval( $lat ),
-						'longitude'=> floatval( $lng ),
-						'distance' => $distance_result['distance'],
-						'units'    => $units,
+						'id'        => $place->ID,
+						'title'     => $place->post_title,
+						'latitude'  => floatval( $lat ),
+						'longitude' => floatval( $lng ),
+						'distance'  => $distance_result['distance'],
+						'units'     => $units,
 					);
 				}
 			}

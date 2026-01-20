@@ -4,7 +4,8 @@
 	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, Geospatial Analysis, and Video Processing",
 	"private": true,
 	"scripts": {
-		"postinstall": "echo 'Pro addon dependencies installed successfully'"
+		"postinstall": "node scripts/copy-dependencies.js",
+		"build": "node scripts/copy-dependencies.js"
 	},
 	"dependencies": {
 		"@turf/turf": "^7.3.2",
