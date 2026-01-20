@@ -6,8 +6,8 @@
  * of all saved settings values for easy verification and editing.
  * 
  * This page displays fields from multiple tabs (General and Providers)
- * organized in separate tab sections. Each tab has its own form to avoid
- * browser warnings about multiple forms in a single form element.
+ * organized in logical groups. Uses the save_all_tabs flag to ensure
+ * all visible fields are saved together, preventing data loss.
  *
  * @package WP_MCP_AI
  */
@@ -22,6 +22,11 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 	 */
 	class WP_MCP_AI_Simple_Settings_Page {
 		const PAGE_SLUG = 'wp-mcp-ai-simple-settings';
+
+		/**
+		 * Field key for provider priority list (array field that needs special handling).
+		 */
+		const PROVIDER_PRIORITY_FIELD = 'provider_priority_list';
 
 		/**
 		 * Initialize the simple settings page.
@@ -77,16 +82,11 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			<div class="wrap">
 				<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 				
-				<?php settings_errors( 'wp_mcp_ai_settings' ); ?>
-
 				<?php
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
-				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
-					?>
-					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
-					</div>
-				<?php endif; ?>
+				// Display settings errors/updates from WordPress Settings API.
+				// This automatically shows "Settings saved." message when updated=true query param is present.
+				settings_errors( 'wp_mcp_ai_settings' );
+				?>
 
 				<div class="notice notice-info">
 					<p>
@@ -135,6 +135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
 					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 					<input type="hidden" name="redirect_page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
+					<input type="hidden" name="save_all_tabs" value="1" />
 
 					<?php foreach ( $grouped_fields as $group_name => $group_fields ) : ?>
 						<?php if ( ! empty( $group_fields ) ) : ?>
@@ -240,6 +241,42 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			// Build the input name attribute.
 			$input_name = 'wp_mcp_ai_settings[' . esc_attr( $key ) . ']';
 
+			// Special handling for provider_priority_list - it's an array field.
+			if ( self::PROVIDER_PRIORITY_FIELD === $key ) {
+				$dashboard_url = add_query_arg(
+					array(
+						'page'   => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
+						'tab'    => 'providers',
+						'subtab' => 'priority',
+					),
+					admin_url( 'admin.php' )
+				);
+				?>
+				<div class="notice notice-warning inline" style="margin: 0; padding: 8px 12px;">
+					<p style="margin: 0;">
+						<?php
+						printf(
+							/* translators: %s: Link to main dashboard */
+							esc_html__( 'This field uses a drag-and-drop interface. Please use the %s to modify the provider priority order.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( $dashboard_url ) . '">' . esc_html__( 'main settings dashboard', 'mcp-ai-wpoos' ) . '</a>'
+						);
+						?>
+					</p>
+					<?php if ( is_array( $value ) && ! empty( $value ) ) : ?>
+						<p style="margin: 8px 0 0 0; color: #666;">
+							<strong><?php esc_html_e( 'Current order:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php
+							// Ensure all array elements are strings to prevent conversion warnings.
+							$safe_values = array_map( 'strval', array_filter( $value, 'is_scalar' ) );
+							echo esc_html( implode( ' > ', $safe_values ) );
+							?>
+						</p>
+					<?php endif; ?>
+				</div>
+				<?php
+				return;
+			}
+
 			// Render different input types.
 			switch ( $type ) {
 				case 'checkbox':
@@ -317,11 +354,13 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				case 'slider':
 					$min = isset( $field['min'] ) ? $field['min'] : '';
 					$max = isset( $field['max'] ) ? $field['max'] : '';
+					// Ensure value is numeric to prevent array-to-string conversion.
+					$numeric_value = is_numeric( $value ) ? $value : '';
 					?>
 					<input 
 						type="number" 
 						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>" 
+						value="<?php echo esc_attr( $numeric_value ); ?>" 
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						<?php if ( '' !== $min ) : ?>min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
 						<?php if ( '' !== $max ) : ?>max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
@@ -369,11 +408,13 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					if ( $is_sensitive && ! empty( $value ) ) {
 						echo '<p style="margin: 0 0 5px 0; color: #4caf50;"><em>' . esc_html__( '••• Current value is set', 'mcp-ai-wpoos' ) . '</em></p>';
 					}
+					// Ensure value is scalar (string, int, float, bool) to prevent array-to-string conversion.
+					$safe_value = is_scalar( $value ) ? $value : '';
 					?>
 					<input 
 						type="text" 
 						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>" 
+						value="<?php echo esc_attr( $safe_value ); ?>" 
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						style="width: 100%;"
 					/>
