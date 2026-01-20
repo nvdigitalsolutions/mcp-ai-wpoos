@@ -86,6 +86,16 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				// Display settings errors/updates from WordPress Settings API.
 				// This automatically shows "Settings saved." message when updated=true query param is present.
 				settings_errors( 'wp_mcp_ai_settings' );
+
+				// Also show explicit success message if settings were just updated.
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
+				if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) {
+					?>
+					<div class="notice notice-success is-dismissible">
+						<p><strong><?php esc_html_e( 'Settings saved successfully!', 'mcp-ai-wpoos' ); ?></strong></p>
+					</div>
+					<?php
+				}
 				?>
 
 				<div class="notice notice-info">

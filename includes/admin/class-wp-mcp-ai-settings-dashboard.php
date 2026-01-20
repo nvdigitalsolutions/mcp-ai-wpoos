@@ -210,110 +210,147 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Sanitize settings - use all tabs if save_all_tabs flag is set (e.g., from simple settings page).
-			// Otherwise only sanitize the active tab to avoid clearing checkboxes from other tabs.
-			$sanitized_new = $save_all_tabs ? $this->sanitize_settings( $posted_settings, '' ) : $this->sanitize_settings( $posted_settings, $active_tab );
+			// Use Simple Settings Saver for flat settings page (save_all_tabs flag).
+			// This provides individual field-level sanitization for better performance and clarity.
+			// For the main dashboard, use the section-based system for complex validation.
+			if ( $save_all_tabs && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
+				// Initialize field types for the Simple Settings Saver.
+				WP_MCP_AI_Simple_Settings_Saver::init_field_types();
 
-			// Log sanitization results.
-			if ( $enable_logging ) {
-				error_log(
-					sprintf(
-						'[NV oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
-						count( $sanitized_new ),
-						implode( ', ', array_keys( $sanitized_new ) )
-					)
-				);
-			}
+				// Use Simple Settings Saver for optimized individual field sanitization.
+				$sanitized_new = WP_MCP_AI_Simple_Settings_Saver::save_settings( $posted_settings, true );
 
-			// Merge with existing settings to avoid wiping unrelated fields.
-			// This is critical for display-only sections (like Overview) that have no editable fields,.
-			// and for preserving settings from other tabs.
-			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-
-			// Log critical provider keys BEFORE merge to help diagnose data loss issues.
-			if ( $enable_logging ) {
-				$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
-				$existing_providers = array();
-				$sanitized_providers = array();
-				foreach ( $provider_keys as $key ) {
-					if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
-						$existing_providers[ $key ] = '(exists)';
-					}
-					if ( isset( $sanitized_new[ $key ] ) ) {
-						$sanitized_providers[ $key ] = empty( $sanitized_new[ $key ] ) ? '(EMPTY!)' : '(has value)';
-					}
-				}
-				if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
+				// Log that we used the simplified saver.
+				if ( $enable_logging ) {
 					error_log(
 						sprintf(
-							'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
-							empty( $existing_providers ) ? 'none' : wp_json_encode( $existing_providers ),
-							empty( $sanitized_providers ) ? 'none' : wp_json_encode( $sanitized_providers )
+							'[NV oOS Settings] Using Simple Settings Saver - Sanitized fields: %d, Keys: %s',
+							count( $sanitized_new ),
+							implode( ', ', array_keys( $sanitized_new ) )
+						)
+					);
+				}
+
+				// Since Simple Settings Saver already saves to database, we skip the merge below.
+				// Set flag to skip the database update step.
+				$already_saved = true;
+			} else {
+				// Use section-based sanitization for main dashboard.
+				// Only sanitize the active tab to avoid clearing checkboxes from other tabs.
+				$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+				$already_saved = false;
+
+				// Log sanitization results.
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Settings] After section-based sanitization - Sanitized fields: %d, Sanitized keys: %s',
+							count( $sanitized_new ),
+							implode( ', ', array_keys( $sanitized_new ) )
 						)
 					);
 				}
 			}
 
-			// CRITICAL FIX: Filter out empty provider keys from sanitized data to prevent accidental deletion.
-			// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
-			// Provider keys should only come from the Providers tab sections, never from General or other tabs.
-			$sensitive_keys = array(
-				'openai_api_key',
-				'gemini_api_key',
-				'anthropic_api_key',
-				'huggingface_api_key',
-				'ollama_endpoint_url',
-				'lm_studio_endpoint_url',
-				'cloudflare_account_id',
-				'cloudflare_api_token',
-				'brave_search_api_key',
-				'mubert_api_key',
-			);
+			// Skip database operations if Simple Settings Saver already saved.
+			if ( ! isset( $already_saved ) || ! $already_saved ) {
+				// Merge with existing settings to avoid wiping unrelated fields.
+				// This is critical for display-only sections (like Overview) that have no editable fields,.
+				// and for preserving settings from other tabs.
+				$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-			foreach ( $sensitive_keys as $key ) {
-				// If a sensitive key is present in sanitized data but is empty/null,
-				// remove it to prevent overwriting existing values during merge.
-				if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
-					if ( $enable_logging ) {
+				// Log critical provider keys BEFORE merge to help diagnose data loss issues.
+				if ( $enable_logging ) {
+					$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+					$existing_providers = array();
+					$sanitized_providers = array();
+					foreach ( $provider_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
+							$existing_providers[ $key ] = '(exists)';
+						}
+						if ( isset( $sanitized_new[ $key ] ) ) {
+							$sanitized_providers[ $key ] = empty( $sanitized_new[ $key ] ) ? '(EMPTY!)' : '(has value)';
+						}
+					}
+					if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
 						error_log(
 							sprintf(
-								'[NV oOS Settings] CRITICAL: Removing empty %s from sanitized data to prevent data loss (tab=%s)',
-								$key,
-								$active_tab
+								'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
+								empty( $existing_providers ) ? 'none' : wp_json_encode( $existing_providers ),
+								empty( $sanitized_providers ) ? 'none' : wp_json_encode( $sanitized_providers )
 							)
 						);
 					}
-					unset( $sanitized_new[ $key ] );
 				}
-			}
 
-			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
-
-			// Save to database and log result.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
-
-			if ( $enable_logging ) {
-				error_log(
-					sprintf(
-						'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
-						$update_result ? 'SUCCESS' : 'UNCHANGED',
-						count( $existing_settings ),
-						count( $merged_settings )
-					)
+				// CRITICAL FIX: Filter out empty provider keys from sanitized data to prevent accidental deletion.
+				// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
+				// Provider keys should only come from the Providers tab sections, never from General or other tabs.
+				$sensitive_keys = array(
+					'openai_api_key',
+					'gemini_api_key',
+					'anthropic_api_key',
+					'huggingface_api_key',
+					'ollama_endpoint_url',
+					'lm_studio_endpoint_url',
+					'cloudflare_account_id',
+					'cloudflare_api_token',
+					'brave_search_api_key',
+					'mubert_api_key',
 				);
-			}
 
-			// Check if media toolkit was just enabled and seed presets if needed.
-			$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
-			$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
-			if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
-				// Media toolkit was just enabled, seed the template presets.
-				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
-					WP_MCP_AI_Media_Template_Presets::seed_presets();
-
-					if ( $enable_logging ) {
-						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+				foreach ( $sensitive_keys as $key ) {
+					// If a sensitive key is present in sanitized data but is empty/null,
+					// remove it to prevent overwriting existing values during merge.
+					if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] CRITICAL: Removing empty %s from sanitized data to prevent data loss (tab=%s)',
+									$key,
+									$active_tab
+								)
+							);
+						}
+						unset( $sanitized_new[ $key ] );
 					}
+				}
+
+				$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+
+				// Save to database and log result.
+				$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
+							$update_result ? 'SUCCESS' : 'UNCHANGED',
+							count( $existing_settings ),
+							count( $merged_settings )
+						)
+					);
+				}
+
+				// Check if media toolkit was just enabled and seed presets if needed.
+				$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
+				$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
+				if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
+					// Media toolkit was just enabled, seed the template presets.
+					if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+						WP_MCP_AI_Media_Template_Presets::seed_presets();
+
+						if ( $enable_logging ) {
+							error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+						}
+					}
+				}
+			} else {
+				// Get the merged settings from database (Simple Settings Saver already saved).
+				$merged_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+				if ( $enable_logging ) {
+					error_log( '[NV oOS Settings] Skipped database update - Simple Settings Saver already saved' );
 				}
 			}
 

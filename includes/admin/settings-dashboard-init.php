@@ -25,6 +25,9 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
+// Load simple settings saver (for optimized flat settings page).
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-saver.php';
+
 // Load simple settings page (Settings menu diagnostic page).
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-page.php';
 
