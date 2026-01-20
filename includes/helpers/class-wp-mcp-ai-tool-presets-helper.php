@@ -8,7 +8,7 @@
  *
  * @package WP_MCP_AI
  * @since 1.9.0
- * @updated 2026-01-18
+ * @updated 2026-01-19 - Fixed cloudflareai tool slug mismatch, verified all tools present
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,10 +26,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	/**
 	 * Get the tool presets configuration.
 	 *
-	 * Updated 2026-01-18 to include all 170+ current tools organized by:
+	 * Updated 2026-01-19 to include all 170+ current tools organized by:
 	 * - Core functionality (AI/ML, Media, Content, etc.)
 	 * - Profession categories (Healthcare, Legal, Education, etc.)
 	 * - Agentic workflows (including 3 coordination tools)
+	 * - Fixed cloudflareai_text_to_image slug (was generate_cloudflareai_image)
 	 *
 	 * @return array Array of presets with name, description, and tools.
 	 */
@@ -109,7 +110,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_openai_image_validated',
 					'generate_gemini_image',
 					'generate_gemini_image_validated',
-					'generate_cloudflareai_image',
+					'cloudflareai_text_to_image',
 					// Image editing.
 					'edit_gemini_image',
 					'edit_gemini_image_validated',
@@ -390,7 +391,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Image generation.
 					'generate_openai_image',
 					'generate_gemini_image',
-					'generate_cloudflareai_image',
+					'cloudflareai_text_to_image',
 					// Image editing.
 					'edit_gemini_image',
 					'edit_openai_image',

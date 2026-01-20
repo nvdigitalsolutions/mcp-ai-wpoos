@@ -22,9 +22,9 @@ var __copyProps = (to, from, except, desc) => {
 };
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// node_modules/crypto-js/core.js
+// addons/pro/node_modules/crypto-js/core.js
 var require_core = __commonJS({
-  "node_modules/crypto-js/core.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/core.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory();
@@ -630,9 +630,9 @@ var require_core = __commonJS({
   }
 });
 
-// node_modules/crypto-js/x64-core.js
+// addons/pro/node_modules/crypto-js/x64-core.js
 var require_x64_core = __commonJS({
-  "node_modules/crypto-js/x64-core.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/x64-core.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -887,9 +887,9 @@ var require_x64_core = __commonJS({
   }
 });
 
-// node_modules/crypto-js/lib-typedarrays.js
+// addons/pro/node_modules/crypto-js/lib-typedarrays.js
 var require_lib_typedarrays = __commonJS({
-  "node_modules/crypto-js/lib-typedarrays.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/lib-typedarrays.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -932,9 +932,9 @@ var require_lib_typedarrays = __commonJS({
   }
 });
 
-// node_modules/crypto-js/enc-utf16.js
+// addons/pro/node_modules/crypto-js/enc-utf16.js
 var require_enc_utf16 = __commonJS({
-  "node_modules/crypto-js/enc-utf16.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/enc-utf16.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1050,9 +1050,9 @@ var require_enc_utf16 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/enc-base64.js
+// addons/pro/node_modules/crypto-js/enc-base64.js
 var require_enc_base64 = __commonJS({
-  "node_modules/crypto-js/enc-base64.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/enc-base64.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1158,9 +1158,9 @@ var require_enc_base64 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/enc-base64url.js
+// addons/pro/node_modules/crypto-js/enc-base64url.js
 var require_enc_base64url = __commonJS({
-  "node_modules/crypto-js/enc-base64url.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/enc-base64url.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1277,9 +1277,9 @@ var require_enc_base64url = __commonJS({
   }
 });
 
-// node_modules/crypto-js/md5.js
+// addons/pro/node_modules/crypto-js/md5.js
 var require_md5 = __commonJS({
-  "node_modules/crypto-js/md5.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/md5.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1456,9 +1456,9 @@ var require_md5 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha1.js
+// addons/pro/node_modules/crypto-js/sha1.js
 var require_sha1 = __commonJS({
-  "node_modules/crypto-js/sha1.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha1.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1547,9 +1547,9 @@ var require_sha1 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha256.js
+// addons/pro/node_modules/crypto-js/sha256.js
 var require_sha256 = __commonJS({
-  "node_modules/crypto-js/sha256.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha256.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -1668,9 +1668,9 @@ var require_sha256 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha224.js
+// addons/pro/node_modules/crypto-js/sha224.js
 var require_sha224 = __commonJS({
-  "node_modules/crypto-js/sha224.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha224.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_sha256());
@@ -1713,9 +1713,9 @@ var require_sha224 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha512.js
+// addons/pro/node_modules/crypto-js/sha512.js
 var require_sha512 = __commonJS({
-  "node_modules/crypto-js/sha512.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha512.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_x64_core());
@@ -1995,9 +1995,9 @@ var require_sha512 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha384.js
+// addons/pro/node_modules/crypto-js/sha384.js
 var require_sha384 = __commonJS({
-  "node_modules/crypto-js/sha384.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha384.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_x64_core(), require_sha512());
@@ -2041,9 +2041,9 @@ var require_sha384 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/sha3.js
+// addons/pro/node_modules/crypto-js/sha3.js
 var require_sha3 = __commonJS({
-  "node_modules/crypto-js/sha3.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/sha3.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_x64_core());
@@ -2243,9 +2243,9 @@ var require_sha3 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/ripemd160.js
+// addons/pro/node_modules/crypto-js/ripemd160.js
 var require_ripemd160 = __commonJS({
-  "node_modules/crypto-js/ripemd160.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/ripemd160.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -2714,9 +2714,9 @@ var require_ripemd160 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/hmac.js
+// addons/pro/node_modules/crypto-js/hmac.js
 var require_hmac = __commonJS({
-  "node_modules/crypto-js/hmac.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/hmac.js"(exports2, module2) {
     (function(root, factory) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core());
@@ -2821,9 +2821,9 @@ var require_hmac = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pbkdf2.js
+// addons/pro/node_modules/crypto-js/pbkdf2.js
 var require_pbkdf2 = __commonJS({
-  "node_modules/crypto-js/pbkdf2.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pbkdf2.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_sha256(), require_hmac());
@@ -2919,9 +2919,9 @@ var require_pbkdf2 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/evpkdf.js
+// addons/pro/node_modules/crypto-js/evpkdf.js
 var require_evpkdf = __commonJS({
-  "node_modules/crypto-js/evpkdf.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/evpkdf.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_sha1(), require_hmac());
@@ -3010,9 +3010,9 @@ var require_evpkdf = __commonJS({
   }
 });
 
-// node_modules/crypto-js/cipher-core.js
+// addons/pro/node_modules/crypto-js/cipher-core.js
 var require_cipher_core = __commonJS({
-  "node_modules/crypto-js/cipher-core.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/cipher-core.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_evpkdf());
@@ -3654,9 +3654,9 @@ var require_cipher_core = __commonJS({
   }
 });
 
-// node_modules/crypto-js/mode-cfb.js
+// addons/pro/node_modules/crypto-js/mode-cfb.js
 var require_mode_cfb = __commonJS({
-  "node_modules/crypto-js/mode-cfb.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/mode-cfb.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3706,9 +3706,9 @@ var require_mode_cfb = __commonJS({
   }
 });
 
-// node_modules/crypto-js/mode-ctr.js
+// addons/pro/node_modules/crypto-js/mode-ctr.js
 var require_mode_ctr = __commonJS({
-  "node_modules/crypto-js/mode-ctr.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/mode-ctr.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3746,9 +3746,9 @@ var require_mode_ctr = __commonJS({
   }
 });
 
-// node_modules/crypto-js/mode-ctr-gladman.js
+// addons/pro/node_modules/crypto-js/mode-ctr-gladman.js
 var require_mode_ctr_gladman = __commonJS({
-  "node_modules/crypto-js/mode-ctr-gladman.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/mode-ctr-gladman.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3821,9 +3821,9 @@ var require_mode_ctr_gladman = __commonJS({
   }
 });
 
-// node_modules/crypto-js/mode-ofb.js
+// addons/pro/node_modules/crypto-js/mode-ofb.js
 var require_mode_ofb = __commonJS({
-  "node_modules/crypto-js/mode-ofb.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/mode-ofb.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3859,9 +3859,9 @@ var require_mode_ofb = __commonJS({
   }
 });
 
-// node_modules/crypto-js/mode-ecb.js
+// addons/pro/node_modules/crypto-js/mode-ecb.js
 var require_mode_ecb = __commonJS({
-  "node_modules/crypto-js/mode-ecb.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/mode-ecb.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3890,9 +3890,9 @@ var require_mode_ecb = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pad-ansix923.js
+// addons/pro/node_modules/crypto-js/pad-ansix923.js
 var require_pad_ansix923 = __commonJS({
-  "node_modules/crypto-js/pad-ansix923.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pad-ansix923.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3922,9 +3922,9 @@ var require_pad_ansix923 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pad-iso10126.js
+// addons/pro/node_modules/crypto-js/pad-iso10126.js
 var require_pad_iso10126 = __commonJS({
-  "node_modules/crypto-js/pad-iso10126.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pad-iso10126.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3950,9 +3950,9 @@ var require_pad_iso10126 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pad-iso97971.js
+// addons/pro/node_modules/crypto-js/pad-iso97971.js
 var require_pad_iso97971 = __commonJS({
-  "node_modules/crypto-js/pad-iso97971.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pad-iso97971.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -3977,9 +3977,9 @@ var require_pad_iso97971 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pad-zeropadding.js
+// addons/pro/node_modules/crypto-js/pad-zeropadding.js
 var require_pad_zeropadding = __commonJS({
-  "node_modules/crypto-js/pad-zeropadding.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pad-zeropadding.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -4011,9 +4011,9 @@ var require_pad_zeropadding = __commonJS({
   }
 });
 
-// node_modules/crypto-js/pad-nopadding.js
+// addons/pro/node_modules/crypto-js/pad-nopadding.js
 var require_pad_nopadding = __commonJS({
-  "node_modules/crypto-js/pad-nopadding.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/pad-nopadding.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -4034,9 +4034,9 @@ var require_pad_nopadding = __commonJS({
   }
 });
 
-// node_modules/crypto-js/format-hex.js
+// addons/pro/node_modules/crypto-js/format-hex.js
 var require_format_hex = __commonJS({
-  "node_modules/crypto-js/format-hex.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/format-hex.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_cipher_core());
@@ -4094,9 +4094,9 @@ var require_format_hex = __commonJS({
   }
 });
 
-// node_modules/crypto-js/aes.js
+// addons/pro/node_modules/crypto-js/aes.js
 var require_aes = __commonJS({
-  "node_modules/crypto-js/aes.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/aes.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -4248,9 +4248,9 @@ var require_aes = __commonJS({
   }
 });
 
-// node_modules/crypto-js/tripledes.js
+// addons/pro/node_modules/crypto-js/tripledes.js
 var require_tripledes = __commonJS({
-  "node_modules/crypto-js/tripledes.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/tripledes.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -5029,9 +5029,9 @@ var require_tripledes = __commonJS({
   }
 });
 
-// node_modules/crypto-js/rc4.js
+// addons/pro/node_modules/crypto-js/rc4.js
 var require_rc4 = __commonJS({
-  "node_modules/crypto-js/rc4.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/rc4.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -5112,9 +5112,9 @@ var require_rc4 = __commonJS({
   }
 });
 
-// node_modules/crypto-js/rabbit.js
+// addons/pro/node_modules/crypto-js/rabbit.js
 var require_rabbit = __commonJS({
-  "node_modules/crypto-js/rabbit.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/rabbit.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -5241,9 +5241,9 @@ var require_rabbit = __commonJS({
   }
 });
 
-// node_modules/crypto-js/rabbit-legacy.js
+// addons/pro/node_modules/crypto-js/rabbit-legacy.js
 var require_rabbit_legacy = __commonJS({
-  "node_modules/crypto-js/rabbit-legacy.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/rabbit-legacy.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -5367,9 +5367,9 @@ var require_rabbit_legacy = __commonJS({
   }
 });
 
-// node_modules/crypto-js/blowfish.js
+// addons/pro/node_modules/crypto-js/blowfish.js
 var require_blowfish = __commonJS({
-  "node_modules/crypto-js/blowfish.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/blowfish.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_enc_base64(), require_md5(), require_evpkdf(), require_cipher_core());
@@ -6556,9 +6556,9 @@ var require_blowfish = __commonJS({
   }
 });
 
-// node_modules/crypto-js/index.js
+// addons/pro/node_modules/crypto-js/index.js
 var require_crypto_js = __commonJS({
-  "node_modules/crypto-js/index.js"(exports2, module2) {
+  "addons/pro/node_modules/crypto-js/index.js"(exports2, module2) {
     (function(root, factory, undef) {
       if (typeof exports2 === "object") {
         module2.exports = exports2 = factory(require_core(), require_x64_core(), require_lib_typedarrays(), require_enc_utf16(), require_enc_base64(), require_enc_base64url(), require_md5(), require_sha1(), require_sha256(), require_sha224(), require_sha512(), require_sha384(), require_sha3(), require_ripemd160(), require_hmac(), require_pbkdf2(), require_evpkdf(), require_cipher_core(), require_mode_cfb(), require_mode_ctr(), require_mode_ctr_gladman(), require_mode_ofb(), require_mode_ecb(), require_pad_ansix923(), require_pad_iso10126(), require_pad_iso97971(), require_pad_zeropadding(), require_pad_nopadding(), require_format_hex(), require_aes(), require_tripledes(), require_rc4(), require_rabbit(), require_rabbit_legacy(), require_blowfish());
@@ -6573,9 +6573,9 @@ var require_crypto_js = __commonJS({
   }
 });
 
-// node_modules/restructure/dist/main.cjs
+// addons/pro/node_modules/restructure/dist/main.cjs
 var require_main = __commonJS({
-  "node_modules/restructure/dist/main.cjs"(exports2, module2) {
+  "addons/pro/node_modules/restructure/dist/main.cjs"(exports2, module2) {
     function $parcel$exportWildcard(dest, source) {
       Object.keys(source).forEach(function(key) {
         if (key === "default" || key === "__esModule" || Object.prototype.hasOwnProperty.call(dest, key)) {
@@ -7515,9 +7515,9 @@ var require_main = __commonJS({
   }
 });
 
-// node_modules/@swc/helpers/cjs/_define_property.cjs
+// addons/pro/node_modules/@swc/helpers/cjs/_define_property.cjs
 var require_define_property = __commonJS({
-  "node_modules/@swc/helpers/cjs/_define_property.cjs"(exports2) {
+  "addons/pro/node_modules/@swc/helpers/cjs/_define_property.cjs"(exports2) {
     "use strict";
     function _define_property(obj, key, value) {
       if (key in obj) {
@@ -7529,7 +7529,7 @@ var require_define_property = __commonJS({
   }
 });
 
-// node_modules/tslib/tslib.es6.mjs
+// addons/pro/node_modules/tslib/tslib.es6.mjs
 var tslib_es6_exports = {};
 __export(tslib_es6_exports, {
   __addDisposableResource: () => __addDisposableResource,
@@ -7968,7 +7968,7 @@ function __rewriteRelativeImportExtension(path, preserveJsx) {
 }
 var extendStatics, __assign, __createBinding, __setModuleDefault, ownKeys, _SuppressedError, tslib_es6_default;
 var init_tslib_es6 = __esm({
-  "node_modules/tslib/tslib.es6.mjs"() {
+  "addons/pro/node_modules/tslib/tslib.es6.mjs"() {
     extendStatics = function(d, b) {
       extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
         d2.__proto__ = b2;
@@ -8054,17 +8054,17 @@ var init_tslib_es6 = __esm({
   }
 });
 
-// node_modules/@swc/helpers/cjs/_ts_decorate.cjs
+// addons/pro/node_modules/@swc/helpers/cjs/_ts_decorate.cjs
 var require_ts_decorate = __commonJS({
-  "node_modules/@swc/helpers/cjs/_ts_decorate.cjs"(exports2) {
+  "addons/pro/node_modules/@swc/helpers/cjs/_ts_decorate.cjs"(exports2) {
     "use strict";
     exports2._ = (init_tslib_es6(), __toCommonJS(tslib_es6_exports)).__decorate;
   }
 });
 
-// node_modules/fast-deep-equal/index.js
+// addons/pro/node_modules/fast-deep-equal/index.js
 var require_fast_deep_equal = __commonJS({
-  "node_modules/fast-deep-equal/index.js"(exports2, module2) {
+  "addons/pro/node_modules/fast-deep-equal/index.js"(exports2, module2) {
     "use strict";
     module2.exports = function equal(a, b) {
       if (a === b) return true;
@@ -8097,9 +8097,9 @@ var require_fast_deep_equal = __commonJS({
   }
 });
 
-// node_modules/base64-js/index.js
+// addons/pro/node_modules/base64-js/index.js
 var require_base64_js = __commonJS({
-  "node_modules/base64-js/index.js"(exports2) {
+  "addons/pro/node_modules/base64-js/index.js"(exports2) {
     "use strict";
     exports2.byteLength = byteLength;
     exports2.toByteArray = toByteArray;
@@ -8198,9 +8198,9 @@ var require_base64_js = __commonJS({
   }
 });
 
-// node_modules/tiny-inflate/index.js
+// addons/pro/node_modules/tiny-inflate/index.js
 var require_tiny_inflate = __commonJS({
-  "node_modules/tiny-inflate/index.js"(exports2, module2) {
+  "addons/pro/node_modules/tiny-inflate/index.js"(exports2, module2) {
     var TINF_OK = 0;
     var TINF_DATA_ERROR = -3;
     function Tree() {
@@ -8441,9 +8441,9 @@ var require_tiny_inflate = __commonJS({
   }
 });
 
-// node_modules/unicode-trie/swap.js
+// addons/pro/node_modules/unicode-trie/swap.js
 var require_swap = __commonJS({
-  "node_modules/unicode-trie/swap.js"(exports2, module2) {
+  "addons/pro/node_modules/unicode-trie/swap.js"(exports2, module2) {
     var isBigEndian = new Uint8Array(new Uint32Array([305419896]).buffer)[0] === 18;
     var swap = (b, n, m) => {
       let i = b[n];
@@ -8468,9 +8468,9 @@ var require_swap = __commonJS({
   }
 });
 
-// node_modules/unicode-trie/index.js
+// addons/pro/node_modules/unicode-trie/index.js
 var require_unicode_trie = __commonJS({
-  "node_modules/unicode-trie/index.js"(exports2, module2) {
+  "addons/pro/node_modules/unicode-trie/index.js"(exports2, module2) {
     var inflate = require_tiny_inflate();
     var { swap32LE } = require_swap();
     var SHIFT_1 = 6 + 5;
@@ -8540,9 +8540,9 @@ var require_unicode_trie = __commonJS({
   }
 });
 
-// node_modules/unicode-properties/dist/main.cjs
+// addons/pro/node_modules/unicode-properties/dist/main.cjs
 var require_main2 = __commonJS({
-  "node_modules/unicode-properties/dist/main.cjs"(exports2, module2) {
+  "addons/pro/node_modules/unicode-properties/dist/main.cjs"(exports2, module2) {
     var $c5L0i$base64js = require_base64_js();
     var $c5L0i$unicodetrie = require_unicode_trie();
     function $parcel$interopDefault(a) {
@@ -8683,9 +8683,9 @@ var require_main2 = __commonJS({
   }
 });
 
-// node_modules/dfa/index.js
+// addons/pro/node_modules/dfa/index.js
 var require_dfa = __commonJS({
-  "node_modules/dfa/index.js"(exports2, module2) {
+  "addons/pro/node_modules/dfa/index.js"(exports2, module2) {
     "use strict";
     var INITIAL_STATE = 1;
     var FAIL_STATE = 0;
@@ -8753,9 +8753,9 @@ var require_dfa = __commonJS({
   }
 });
 
-// node_modules/clone/clone.js
+// addons/pro/node_modules/clone/clone.js
 var require_clone = __commonJS({
-  "node_modules/clone/clone.js"(exports2, module2) {
+  "addons/pro/node_modules/clone/clone.js"(exports2, module2) {
     var clone = (function() {
       "use strict";
       function _instanceof(obj, type) {
@@ -8949,9 +8949,9 @@ var require_clone = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/streams.js
+// addons/pro/node_modules/brotli/dec/streams.js
 var require_streams = __commonJS({
-  "node_modules/brotli/dec/streams.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/streams.js"(exports2) {
     function BrotliInput(buffer) {
       this.buffer = buffer;
       this.pos = 0;
@@ -8981,9 +8981,9 @@ var require_streams = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/bit_reader.js
+// addons/pro/node_modules/brotli/dec/bit_reader.js
 var require_bit_reader = __commonJS({
-  "node_modules/brotli/dec/bit_reader.js"(exports2, module2) {
+  "addons/pro/node_modules/brotli/dec/bit_reader.js"(exports2, module2) {
     var BROTLI_READ_SIZE = 4096;
     var BROTLI_IBUF_SIZE = 2 * BROTLI_READ_SIZE + 32;
     var BROTLI_IBUF_MASK = 2 * BROTLI_READ_SIZE - 1;
@@ -9083,9 +9083,9 @@ var require_bit_reader = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/dictionary-data.js
+// addons/pro/node_modules/brotli/dec/dictionary-data.js
 var require_dictionary_data = __commonJS({
-  "node_modules/brotli/dec/dictionary-data.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/dictionary-data.js"(exports2) {
     exports2.dictionary = new Uint8Array([
       116,
       105,
@@ -131878,9 +131878,9 @@ var require_dictionary_data = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/dictionary.js
+// addons/pro/node_modules/brotli/dec/dictionary.js
 var require_dictionary = __commonJS({
-  "node_modules/brotli/dec/dictionary.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/dictionary.js"(exports2) {
     var data = require_dictionary_data();
     exports2.init = function() {
       exports2.dictionary = data.init();
@@ -131944,9 +131944,9 @@ var require_dictionary = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/huffman.js
+// addons/pro/node_modules/brotli/dec/huffman.js
 var require_huffman = __commonJS({
-  "node_modules/brotli/dec/huffman.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/huffman.js"(exports2) {
     function HuffmanCode(bits, value) {
       this.bits = bits;
       this.value = value;
@@ -132044,9 +132044,9 @@ var require_huffman = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/context.js
+// addons/pro/node_modules/brotli/dec/context.js
 var require_context = __commonJS({
-  "node_modules/brotli/dec/context.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/context.js"(exports2) {
     exports2.lookup = new Uint8Array([
       /* CONTEXT_UTF8, last byte. */
       /* ASCII range. */
@@ -133871,9 +133871,9 @@ var require_context = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/prefix.js
+// addons/pro/node_modules/brotli/dec/prefix.js
 var require_prefix = __commonJS({
-  "node_modules/brotli/dec/prefix.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/prefix.js"(exports2) {
     function PrefixCodeRange(offset, nbits) {
       this.offset = offset;
       this.nbits = nbits;
@@ -133983,9 +133983,9 @@ var require_prefix = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/transform.js
+// addons/pro/node_modules/brotli/dec/transform.js
 var require_transform = __commonJS({
-  "node_modules/brotli/dec/transform.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/transform.js"(exports2) {
     var BrotliDictionary = require_dictionary();
     var kIdentity = 0;
     var kOmitLast1 = 1;
@@ -134197,9 +134197,9 @@ var require_transform = __commonJS({
   }
 });
 
-// node_modules/brotli/dec/decode.js
+// addons/pro/node_modules/brotli/dec/decode.js
 var require_decode = __commonJS({
-  "node_modules/brotli/dec/decode.js"(exports2) {
+  "addons/pro/node_modules/brotli/dec/decode.js"(exports2) {
     var BrotliInput = require_streams().BrotliInput;
     var BrotliOutput = require_streams().BrotliOutput;
     var BrotliBitReader = require_bit_reader();
@@ -135049,9 +135049,9 @@ var require_decode = __commonJS({
   }
 });
 
-// node_modules/brotli/decompress.js
+// addons/pro/node_modules/brotli/decompress.js
 var require_decompress = __commonJS({
-  "node_modules/brotli/decompress.js"(exports2, module2) {
+  "addons/pro/node_modules/brotli/decompress.js"(exports2, module2) {
     module2.exports = require_decode().BrotliDecompressBuffer;
   }
 });
@@ -148816,9 +148816,9 @@ var require_main4 = __commonJS({
   }
 });
 
-// node_modules/jpeg-exif/lib/tags.json
+// addons/pro/node_modules/jpeg-exif/lib/tags.json
 var require_tags = __commonJS({
-  "node_modules/jpeg-exif/lib/tags.json"(exports2, module2) {
+  "addons/pro/node_modules/jpeg-exif/lib/tags.json"(exports2, module2) {
     module2.exports = {
       ifd: {
         "010e": "ImageDescription",
@@ -148962,9 +148962,9 @@ var require_tags = __commonJS({
   }
 });
 
-// node_modules/jpeg-exif/lib/index.js
+// addons/pro/node_modules/jpeg-exif/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/jpeg-exif/lib/index.js"(exports2) {
+  "addons/pro/node_modules/jpeg-exif/lib/index.js"(exports2) {
     "use strict";
     var _fs = require("fs");
     var _fs2 = _interopRequireDefault(_fs);

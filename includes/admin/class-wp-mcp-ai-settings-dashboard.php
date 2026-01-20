@@ -63,6 +63,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_apply_preset', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_usage_trend', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_tier_distribution', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+
+			// Settings management AJAX handlers.
+			add_action( 'wp_ajax_wp_mcp_ai_export_settings', array( $this, 'handle_export_settings' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_import_settings', array( $this, 'handle_import_settings' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_clear_settings_cache', array( $this, 'handle_clear_cache' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_reset_settings', array( $this, 'handle_reset_settings' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_check_settings_health', array( $this, 'handle_check_settings_health' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_tool_breakdown', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_provider_distribution', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_get_model_distribution', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -108,16 +115,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			);
 		}
 
-		/**
-		 * Register settings with WordPress.
-		 */
+	/**
+	 * Register settings with WordPress.
+	 *
+	 * IMPORTANT: We do NOT register a sanitize_callback here because:
+	 * 1. We manually sanitize in handle_save_settings() with proper context
+	 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
+	 * 3. The callback has no POST context during update_option(), breaking subtab protection
+	 * 4. This would cause provider keys to be cleared when navigating tabs
+	 *
+	 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
+	 */
 		public function register_settings() {
 			register_setting(
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
 					'type'              => 'array',
-					'sanitize_callback' => array( $this, 'sanitize_settings' ),
+				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
 				)
 			);
 		}
@@ -176,9 +191,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
 
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
+			// IMPORTANT: Many sections use subtabs with critical data tables:
+			// - Providers tab: Each provider (OpenAI, Gemini, Ollama, etc.) has its own subtab
+			// - Advanced tab: Performance, Logging, Federation, Data Management, Settings Management
+			// - Integrations tab: Various third-party integrations
+			// - Tools tab: Tool categories and individual tool configurations
+			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
 			foreach ( $_POST as $key => $value ) {
 				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
@@ -200,59 +222,254 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[NV oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						'[NV oOS Settings] Save attempt - Tab: %s, Subtab: %s, Save all tabs: %s, Posted fields: %d, Posted keys: %s',
 						$active_tab,
+						$active_subtab,
+						$save_all_tabs ? 'YES' : 'NO',
 						count( $posted_settings ),
 						implode( ', ', array_keys( $posted_settings ) )
 					)
 				);
 			}
 
-			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
-			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+			// DEPRECATED: Simple Settings Saver is disabled because it's incompatible with partial forms.
+			// All settings pages in this plugin use tabs/subtabs that only show partial fields.
+			// The Simple Settings Saver's checkbox handling (setting all unposted checkboxes to false)
+			// causes data loss when saving from tabs/subtabs. Use section-based sanitization instead.
+			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX
+			$use_simple_settings_saver = false; // Force disabled.
 
-			// Log sanitization results.
-			if ( $enable_logging ) {
-				error_log(
-					sprintf(
-						'[NV oOS Settings] After sanitization - Sanitized fields: %d, Sanitized keys: %s',
-						count( $sanitized_new ),
-						implode( ', ', array_keys( $sanitized_new ) )
-					)
-				);
+			if ( $use_simple_settings_saver && $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
+				// Initialize field types for the Simple Settings Saver.
+				WP_MCP_AI_Simple_Settings_Saver::init_field_types();
+
+				// Use Simple Settings Saver for optimized individual field sanitization.
+				$sanitized_new = WP_MCP_AI_Simple_Settings_Saver::save_settings( $posted_settings, true );
+
+				// Log that we used the simplified saver.
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Settings] Using Simple Settings Saver - Sanitized fields: %d, Keys: %s',
+							count( $sanitized_new ),
+							implode( ', ', array_keys( $sanitized_new ) )
+						)
+					);
+				}
+
+				// Since Simple Settings Saver already saves to database, we skip the merge below.
+				// Set flag to skip the database update step.
+				$already_saved = true;
+			} else {
+				// Use section-based sanitization for main dashboard.
+				// When save_all_tabs is true (e.g., from Simple Settings page), sanitize ALL tabs.
+				// Otherwise, only sanitize the active tab to avoid clearing checkboxes from other tabs.
+				//
+				// CLARIFICATION FOR save_all_tabs FLAG:
+				// - When save_all_tabs=1: $tab_to_sanitize is empty string ''
+				// - Empty string '' in sanitize_settings() triggers ALL sections across ALL tabs (see line 139)
+				// - This is safe for Simple Settings Page because it displays ALL fields from multiple tabs
+				// - For regular tab-based saves, we only sanitize the active tab to preserve other tabs' data
+				//
+				// SUBTAB HANDLING (VERY IMPORTANT):
+				// - When saving from a subtab (e.g., Providers → Gemini), only that subtab's fields are posted
+				// - Section-based sanitization knows which fields belong to each subtab
+				// - The merge strategy below (line 326+) preserves data from OTHER subtabs
+				// - Sensitive key protection (line 329+) prevents empty values from overwriting existing keys
+				// - This ensures subtabbed views with important tables save correctly without data loss
+				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
+				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
+				$already_saved   = false;
+
+				// Log sanitization results.
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Settings] After section-based sanitization - Sanitized fields: %d, Sanitized keys: %s',
+							count( $sanitized_new ),
+							implode( ', ', array_keys( $sanitized_new ) )
+						)
+					);
+				}
 			}
 
-			// Merge with existing settings to avoid wiping unrelated fields.
-			// This is critical for display-only sections (like Overview) that have no editable fields,.
-			// and for preserving settings from other tabs.
-			$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+			// Skip database operations if Simple Settings Saver already saved.
+			if ( ! isset( $already_saved ) || ! $already_saved ) {
+				// ========================================================================
+				// CRITICAL SETTINGS PERSISTENCE FIX
+				// ========================================================================
+				// This section implements robust settings handling to prevent data loss:
+				// 1. Cache invalidation BEFORE reading to prevent stale data
+				// 2. Backup current settings before merge for rollback capability
+				// 3. Atomic update with validation
+				// 4. Clear all related caches (object cache, transients)
+				// ========================================================================
 
-			// Save to database and log result.
-			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
+				// Step 1: Clear ALL caches before reading existing settings.
+				// This prevents race conditions and ensures we have the latest database values.
+				WP_MCP_AI_Admin_Settings::reset_settings_cache();
+				
+				// Also clear any object cache entries for this option.
+				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+				
+				// Clear any transients that might cache settings.
+				delete_transient( 'wp_mcp_ai_settings_cache' );
 
-			if ( $enable_logging ) {
-				error_log(
-					sprintf(
-						'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d',
-						$update_result ? 'SUCCESS' : 'UNCHANGED',
-						count( $existing_settings ),
-						count( $merged_settings )
-					)
+				// Step 2: Read current settings from database (bypassing all caches).
+				// Use get_option() directly to ensure we get fresh data.
+				$existing_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+				// Step 3: Create a backup of current settings for potential rollback.
+				// Store with timestamp for auditing purposes.
+				$backup_key = 'wp_mcp_ai_settings_backup_' . time();
+				update_option( $backup_key, $existing_settings, false ); // No autoload for backups.
+				
+				// Clean up old backups (keep last 5).
+				$this->cleanup_old_setting_backups( 5 );
+
+				// Log critical provider keys BEFORE merge to help diagnose data loss issues.
+				if ( $enable_logging ) {
+					$provider_keys       = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+					$existing_providers  = array();
+					$sanitized_providers = array();
+					foreach ( $provider_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
+							$existing_providers[ $key ] = '(exists)';
+						}
+						if ( isset( $sanitized_new[ $key ] ) ) {
+							$sanitized_providers[ $key ] = empty( $sanitized_new[ $key ] ) ? '(EMPTY!)' : '(has value)';
+						}
+					}
+					if ( ! empty( $existing_providers ) || ! empty( $sanitized_providers ) ) {
+						error_log(
+							sprintf(
+								'[NV oOS Settings] Provider keys - Existing: %s, Sanitized: %s',
+								empty( $existing_providers ) ? 'none' : wp_json_encode( $existing_providers ),
+								empty( $sanitized_providers ) ? 'none' : wp_json_encode( $sanitized_providers )
+							)
+						);
+					}
+				}
+
+				// ========================================================================
+				// STEP 4: Enhanced Sensitive Key Protection
+				// ========================================================================
+				// Filter out empty provider keys from sanitized data to prevent accidental deletion.
+				// This protects against bugs where subtab sanitization might incorrectly include empty provider fields.
+				// Provider keys should only come from the Providers tab sections, never from General or other tabs.
+				$sensitive_keys = array(
+					'openai_api_key',
+					'gemini_api_key',
+					'anthropic_api_key',
+					'huggingface_api_key',
+					'ollama_endpoint_url',
+					'lm_studio_endpoint_url',
+					'cloudflare_account_id',
+					'cloudflare_api_token',
+					'brave_search_api_key',
+					'mubert_api_key',
+					// Add more sensitive keys from integrations.
+					'gmail_client_secret',
+					'gmail_refresh_token',
+					'google_drive_refresh_token',
+					'auth0_management_client_secret',
+					'rabbitmq_password',
+					'meta_app_secret',
+					'meta_access_token',
+					'tiktok_access_token',
+					'tiktok_client_secret',
 				);
-			}
 
-			// Check if media toolkit was just enabled and seed presets if needed.
-			$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
-			$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
-			if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
-				// Media toolkit was just enabled, seed the template presets.
-				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
-					WP_MCP_AI_Media_Template_Presets::seed_presets();
+				foreach ( $sensitive_keys as $key ) {
+					// If a sensitive key is present in sanitized data but is empty/null,
+					// remove it to prevent overwriting existing values during merge.
+					if ( isset( $sanitized_new[ $key ] ) && empty( $sanitized_new[ $key ] ) ) {
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] PROTECTION: Removing empty %s from sanitized data to prevent data loss (tab=%s, save_all=%s)',
+									$key,
+									$active_tab,
+									$save_all_tabs ? 'YES' : 'NO'
+								)
+							);
+						}
+						unset( $sanitized_new[ $key ] );
+					}
+				}
+
+				// ========================================================================
+				// STEP 5: Merge Settings with Validation
+				// ========================================================================
+				$merged_settings = array_merge( $existing_settings, $sanitized_new );
+
+				// Validate merged settings before saving.
+				$validation_errors = $this->validate_merged_settings( $merged_settings, $existing_settings );
+				if ( ! empty( $validation_errors ) ) {
+					if ( $enable_logging ) {
+						error_log(
+							sprintf(
+								'[NV oOS Settings] VALIDATION ERRORS: %s',
+								implode( '; ', $validation_errors )
+							)
+						);
+					}
+					// Add settings errors for display to user.
+					foreach ( $validation_errors as $error ) {
+						add_settings_error( 'wp_mcp_ai_settings', 'validation_error', $error, 'error' );
+					}
+					// Rollback: Don't save if validation failed.
+					$update_result = false;
+				} else {
+					// ========================================================================
+					// STEP 6: Atomic Database Update
+					// ========================================================================
+					// Save to database with autoload=yes for performance.
+					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
 
 					if ( $enable_logging ) {
-						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+						error_log(
+							sprintf(
+								'[NV oOS Settings] Database update - Result: %s, Existing fields: %d, Merged fields: %d, Changed keys: %s',
+								$update_result ? 'SUCCESS' : 'UNCHANGED',
+								count( $existing_settings ),
+								count( $merged_settings ),
+								implode( ', ', array_keys( array_diff_assoc( $merged_settings, $existing_settings ) ) )
+							)
+						);
 					}
+
+					// ========================================================================
+					// STEP 7: Post-Save Cache Invalidation
+					// ========================================================================
+					// Clear all caches again after successful save.
+					WP_MCP_AI_Admin_Settings::reset_settings_cache();
+					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+					delete_transient( 'wp_mcp_ai_settings_cache' );
+					
+					// Fire action hook for extensions to clear their own caches.
+					do_action( 'wp_mcp_ai_settings_saved', $merged_settings, $existing_settings, $sanitized_new );
+				}
+
+				// Check if media toolkit was just enabled and seed presets if needed.
+				$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
+				$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
+				if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
+					// Media toolkit was just enabled, seed the template presets.
+					if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+						WP_MCP_AI_Media_Template_Presets::seed_presets();
+
+						if ( $enable_logging ) {
+							error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+						}
+					}
+				}
+			} else {
+				// Get the merged settings from database (Simple Settings Saver already saved).
+				$merged_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+				if ( $enable_logging ) {
+					error_log( '[NV oOS Settings] Skipped database update - Simple Settings Saver already saved' );
 				}
 			}
 
@@ -267,8 +484,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Redirect back to the same tab that was being edited.
+			// Check if a custom redirect page is specified (e.g., for simple settings page).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( $_POST['redirect_page'] ) : self::PAGE_SLUG;
+
 			$redirect_args = array(
-				'page'    => self::PAGE_SLUG,
+				'page'    => $redirect_page,
 				'updated' => 'true',
 			);
 
@@ -286,10 +507,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_args['view'] = $active_view;
 			}
 
+			// Add count of saved fields for user feedback.
+			if ( isset( $sanitized_new ) && is_array( $sanitized_new ) ) {
+				$redirect_args['saved'] = count( $sanitized_new );
+			}
+
+			// Determine redirect URL based on page type.
+			if ( self::PAGE_SLUG === $redirect_page ) {
+				// Main dashboard - use admin.php.
+				$redirect_url = admin_url( 'admin.php' );
+			} else {
+				// Simple settings page - use options-general.php.
+				$redirect_url = admin_url( 'options-general.php' );
+			}
+
 			wp_safe_redirect(
 				add_query_arg(
 					$redirect_args,
-					admin_url( 'admin.php' )
+					$redirect_url
 				)
 			);
 			exit;
@@ -603,6 +838,413 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Check if we're on the settings dashboard.
 			// The screen ID format is 'toplevel_page_{page_slug}'.
 			return 'toplevel_page_' . self::PAGE_SLUG === $screen->id;
+		}
+
+		/**
+		 * Validate merged settings before saving.
+		 *
+		 * Performs integrity checks to prevent corrupt or invalid data from being saved.
+		 *
+		 * @param array $merged_settings The settings after merging new values with existing.
+		 * @param array $existing_settings The previous settings from database.
+		 * @return array Array of validation error messages (empty if valid).
+		 */
+		private function validate_merged_settings( $merged_settings, $existing_settings ) {
+			$errors = array();
+
+			// Check 1: Ensure merged settings is an array.
+			if ( ! is_array( $merged_settings ) ) {
+				$errors[] = 'Merged settings must be an array.';
+				return $errors; // Fatal error, return immediately.
+			}
+
+			// Check 2: Verify no critical settings were accidentally removed.
+			$critical_keys = array( 'default_provider', 'default_model', 'provider_priority_list' );
+			foreach ( $critical_keys as $key ) {
+				if ( isset( $existing_settings[ $key ] ) && ! isset( $merged_settings[ $key ] ) ) {
+					$errors[] = sprintf( 'Critical setting "%s" was removed during merge.', $key );
+				}
+			}
+
+			// Check 3: Validate provider priority list structure.
+			if ( isset( $merged_settings['provider_priority_list'] ) && ! is_array( $merged_settings['provider_priority_list'] ) ) {
+				$errors[] = 'Provider priority list must be an array.';
+			}
+
+			// Check 4: Validate mesh peer sites structure if present.
+			if ( isset( $merged_settings['mesh_peer_sites'] ) && ! is_array( $merged_settings['mesh_peer_sites'] ) ) {
+				$errors[] = 'Mesh peer sites must be an array.';
+			}
+
+			// Check 5: Ensure numeric settings are actually numeric.
+			$numeric_keys = array( 'default_assistant', 'max_history_messages', 'request_timeout', 'memory_max_file_bytes' );
+			foreach ( $numeric_keys as $key ) {
+				if ( isset( $merged_settings[ $key ] ) && ! is_numeric( $merged_settings[ $key ] ) ) {
+					$errors[] = sprintf( 'Setting "%s" must be numeric, got: %s', $key, gettype( $merged_settings[ $key ] ) );
+				}
+			}
+
+			// Check 6: Validate URL format for endpoint settings.
+			$url_keys = array( 'ollama_endpoint_url', 'lm_studio_endpoint_url', 'crawl4ai_base_url', 'playwright_service_url' );
+			foreach ( $url_keys as $key ) {
+				if ( ! empty( $merged_settings[ $key ] ) && false === filter_var( $merged_settings[ $key ], FILTER_VALIDATE_URL ) ) {
+					$errors[] = sprintf( 'Setting "%s" must be a valid URL: %s', $key, esc_html( $merged_settings[ $key ] ) );
+				}
+			}
+
+			// Check 7: Validate email format for email settings.
+			$email_keys = array( 'cloudways_email', 'mailjet_from_email', 'gmail_user_email' );
+			foreach ( $email_keys as $key ) {
+				if ( ! empty( $merged_settings[ $key ] ) && ! is_email( $merged_settings[ $key ] ) ) {
+					$errors[] = sprintf( 'Setting "%s" must be a valid email address: %s', $key, esc_html( $merged_settings[ $key ] ) );
+				}
+			}
+
+			/**
+			 * Filter validation errors before saving settings.
+			 *
+			 * Allows plugins to add custom validation rules.
+			 *
+			 * @param array $errors Array of error messages.
+			 * @param array $merged_settings Settings after merge.
+			 * @param array $existing_settings Previous settings.
+			 */
+			return apply_filters( 'wp_mcp_ai_validate_settings', $errors, $merged_settings, $existing_settings );
+		}
+
+		/**
+		 * Clean up old settings backups.
+		 *
+		 * Keeps only the most recent N backups to prevent database bloat.
+		 *
+		 * @param int $keep_count Number of backups to keep.
+		 */
+		private function cleanup_old_setting_backups( $keep_count = 5 ) {
+			global $wpdb;
+
+			// Find all backup options.
+			$backup_options = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT option_name FROM {$wpdb->options} 
+					WHERE option_name LIKE %s 
+					ORDER BY option_name DESC",
+					'wp_mcp_ai_settings_backup_%'
+				)
+			);
+
+			// If we have more backups than we want to keep, delete the oldest ones.
+			if ( count( $backup_options ) > $keep_count ) {
+				$backups_to_delete = array_slice( $backup_options, $keep_count );
+				foreach ( $backups_to_delete as $backup_option ) {
+					delete_option( $backup_option );
+				}
+			}
+		}
+
+		/**
+		 * Handle settings export AJAX request.
+		 *
+		 * Exports all plugin settings as a JSON file for backup or migration.
+		 */
+		public function handle_export_settings() {
+			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Clear cache before export to ensure fresh data.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+
+			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+			// Add export metadata.
+			$export_data = array(
+				'version'      => '1.0',
+				'exported_at'  => current_time( 'mysql' ),
+				'exported_by'  => wp_get_current_user()->user_login,
+				'site_url'     => get_site_url(),
+				'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+				'settings'     => $settings,
+			);
+
+			// Create JSON with pretty print.
+			$json = wp_json_encode( $export_data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+
+			if ( false === $json ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to encode settings as JSON.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Generate filename with timestamp.
+			$filename = 'nv-oos-settings-' . gmdate( 'Y-m-d-H-i-s' ) . '.json';
+
+			// Send as downloadable file.
+			header( 'Content-Type: application/json' );
+			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+			header( 'Content-Length: ' . strlen( $json ) );
+			header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+			header( 'Pragma: no-cache' );
+			header( 'Expires: 0' );
+
+			echo $json;
+			exit;
+		}
+
+		/**
+		 * Handle settings import AJAX request.
+		 *
+		 * Imports settings from a JSON file.
+		 */
+		public function handle_import_settings() {
+			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Check if file was uploaded.
+			if ( ! isset( $_FILES['settings_file'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
+				wp_send_json_error( array( 'message' => __( 'No file uploaded or upload error occurred.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			$file = $_FILES['settings_file'];
+
+			// Validate file size (max 5MB for settings file).
+			$max_size = 5 * MB_IN_BYTES;
+			if ( $file['size'] > $max_size ) {
+				wp_send_json_error( array(
+					'message' => sprintf(
+						/* translators: %s: Maximum file size */
+						__( 'File too large. Maximum size: %s', 'mcp-ai-wpoos' ),
+						size_format( $max_size )
+					),
+				) );
+			}
+
+			// Validate file type using WordPress function (more secure than client MIME type).
+			$filetype = wp_check_filetype( $file['name'], array( 'json' => 'application/json' ) );
+			if ( 'json' !== $filetype['ext'] || 'application/json' !== $filetype['type'] ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Read file contents with size validation.
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading uploaded file for import.
+			$json_content = file_get_contents( $file['tmp_name'] );
+
+			if ( false === $json_content || empty( $json_content ) ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to read uploaded file or file is empty.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Additional size check after reading to prevent memory issues.
+			if ( strlen( $json_content ) > $max_size ) {
+				wp_send_json_error( array( 'message' => __( 'File content too large.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Decode JSON.
+			$import_data = json_decode( $json_content, true );
+
+			if ( null === $import_data || JSON_ERROR_NONE !== json_last_error() ) {
+				wp_send_json_error( array(
+					'message' => sprintf(
+						/* translators: %s: JSON error message */
+						__( 'Invalid JSON format: %s', 'mcp-ai-wpoos' ),
+						json_last_error_msg()
+					),
+				) );
+			}
+
+			// Validate import data structure.
+			if ( ! isset( $import_data['settings'] ) || ! is_array( $import_data['settings'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid settings file structure.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Backup current settings before import.
+			$current_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			update_option( 'wp_mcp_ai_settings_backup_pre_import_' . time(), $current_settings, false );
+
+			// Sanitize imported settings through section-based sanitization.
+			$sanitized_settings = $this->sanitize_settings( $import_data['settings'], '' );
+
+			// Validate the sanitized settings.
+			$validation_errors = $this->validate_merged_settings( $sanitized_settings, $current_settings );
+
+			if ( ! empty( $validation_errors ) ) {
+				wp_send_json_error( array(
+					'message' => __( 'Settings validation failed:', 'mcp-ai-wpoos' ),
+					'errors'  => $validation_errors,
+				) );
+			}
+
+			// Save imported settings.
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized_settings, true );
+
+			if ( false === $update_result ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to save imported settings.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Clear all caches.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			delete_transient( 'wp_mcp_ai_settings_cache' );
+
+			wp_send_json_success( array(
+				'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
+				'imported_count' => count( $sanitized_settings ),
+				'imported_from'  => isset( $import_data['site_url'] ) ? esc_url( $import_data['site_url'] ) : 'unknown',
+			) );
+		}
+
+		/**
+		 * Handle clear cache AJAX request.
+		 *
+		 * Clears all settings-related caches.
+		 */
+		public function handle_clear_cache() {
+			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Clear all settings caches.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			delete_transient( 'wp_mcp_ai_settings_cache' );
+
+			// Clear any other related caches.
+			if ( function_exists( 'wp_cache_flush' ) ) {
+				wp_cache_flush();
+			}
+
+			wp_send_json_success( array(
+				'message' => __( 'All settings caches cleared successfully!', 'mcp-ai-wpoos' ),
+			) );
+		}
+
+		/**
+		 * Handle reset settings AJAX request.
+		 *
+		 * Resets all settings to default values.
+		 */
+		public function handle_reset_settings() {
+			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Backup current settings before reset.
+			$current_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			update_option( 'wp_mcp_ai_settings_backup_pre_reset_' . time(), $current_settings, false );
+
+			// Get default settings.
+			$default_settings = WP_MCP_AI_Admin_Settings_Base::get_default_settings();
+
+			// Save default settings.
+			$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $default_settings, true );
+
+			if ( false === $update_result ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to reset settings.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Clear all caches.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			delete_transient( 'wp_mcp_ai_settings_cache' );
+
+			wp_send_json_success( array(
+				'message' => __( 'Settings reset to defaults successfully!', 'mcp-ai-wpoos' ),
+			) );
+		}
+
+		/**
+		 * Handle settings health check AJAX request.
+		 *
+		 * Checks settings integrity and reports any issues.
+		 */
+		public function handle_check_settings_health() {
+			check_ajax_referer( 'wp-mcp-ai-dashboard', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Clear cache and get fresh settings.
+			WP_MCP_AI_Admin_Settings::reset_settings_cache();
+			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+
+			$issues = array();
+			$warnings = array();
+			$info = array();
+
+			// Check 1: Settings exist.
+			if ( empty( $settings ) ) {
+				$issues[] = __( 'No settings found in database. Settings may need to be initialized.', 'mcp-ai-wpoos' );
+			}
+
+			// Check 2: Settings is an array.
+			if ( ! is_array( $settings ) ) {
+				$issues[] = __( 'Settings data is not an array. Data corruption detected.', 'mcp-ai-wpoos' );
+			} else {
+				$info[] = sprintf( __( 'Total settings fields: %d', 'mcp-ai-wpoos' ), count( $settings ) );
+			}
+
+			// Check 3: Critical settings present.
+			$critical_fields = array( 'default_provider', 'default_model' );
+			foreach ( $critical_fields as $field ) {
+				if ( ! isset( $settings[ $field ] ) || empty( $settings[ $field ] ) ) {
+					$warnings[] = sprintf( __( 'Critical field "%s" is missing or empty.', 'mcp-ai-wpoos' ), $field );
+				}
+			}
+
+			// Check 4: Provider keys configured.
+			$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url' );
+			$configured_providers = 0;
+			foreach ( $provider_keys as $key ) {
+				if ( ! empty( $settings[ $key ] ) ) {
+					$configured_providers++;
+				}
+			}
+			if ( 0 === $configured_providers ) {
+				$warnings[] = __( 'No AI providers configured. At least one provider is required.', 'mcp-ai-wpoos' );
+			} else {
+				$info[] = sprintf( __( 'Configured providers: %d', 'mcp-ai-wpoos' ), $configured_providers );
+			}
+
+			// Check 5: Cache status.
+			$cache_exists = false !== wp_cache_get( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			$info[] = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
+
+			// Check 6: Backup count.
+			global $wpdb;
+			$backup_count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
+					'wp_mcp_ai_settings_backup_%'
+				)
+			);
+			$info[] = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
+
+			// Prepare response.
+			$health_status = 'good';
+			if ( ! empty( $issues ) ) {
+				$health_status = 'critical';
+			} elseif ( ! empty( $warnings ) ) {
+				$health_status = 'warning';
+			}
+
+			wp_send_json_success( array(
+				'status'   => $health_status,
+				'issues'   => $issues,
+				'warnings' => $warnings,
+				'info'     => $info,
+				'message'  => sprintf(
+					__( 'Health check complete. Status: %s', 'mcp-ai-wpoos' ),
+					strtoupper( $health_status )
+				),
+			) );
 		}
 	}
 }

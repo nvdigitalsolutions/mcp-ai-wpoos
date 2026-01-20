@@ -271,6 +271,11 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				return;
 			}
 
+			// Ensure messages is an array to prevent foreach errors.
+			if ( ! is_array( $messages ) ) {
+				$messages = array();
+			}
+
 			// Check if emergency shutdown is active.
 			if ( $this->is_emergency_shutdown_active() ) {
 				wp_die(
