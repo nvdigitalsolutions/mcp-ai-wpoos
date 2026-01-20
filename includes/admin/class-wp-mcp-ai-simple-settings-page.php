@@ -6,8 +6,8 @@
  * of all saved settings values for easy verification and editing.
  * 
  * This page displays fields from multiple tabs (General and Providers)
- * organized in separate tab sections. Each tab has its own form to avoid
- * browser warnings about multiple forms in a single form element.
+ * organized in logical groups. Uses the save_all_tabs flag to ensure
+ * all visible fields are saved together, preventing data loss.
  *
  * @package WP_MCP_AI
  */
@@ -77,16 +77,11 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			<div class="wrap">
 				<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
 				
-				<?php settings_errors( 'wp_mcp_ai_settings' ); ?>
-
 				<?php
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
-				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
-					?>
-					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
-					</div>
-				<?php endif; ?>
+				// Display settings errors/updates from WordPress Settings API.
+				// This automatically shows "Settings saved." message when updated=true query param is present.
+				settings_errors( 'wp_mcp_ai_settings' );
+				?>
 
 				<div class="notice notice-info">
 					<p>
@@ -135,6 +130,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
 					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 					<input type="hidden" name="redirect_page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
+					<input type="hidden" name="save_all_tabs" value="1" />
 
 					<?php foreach ( $grouped_fields as $group_name => $group_fields ) : ?>
 						<?php if ( ! empty( $group_fields ) ) : ?>
@@ -239,6 +235,30 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 
 			// Build the input name attribute.
 			$input_name = 'wp_mcp_ai_settings[' . esc_attr( $key ) . ']';
+
+			// Special handling for provider_priority_list - it's an array field.
+			if ( 'provider_priority_list' === $key ) {
+				?>
+				<div class="notice notice-warning inline" style="margin: 0; padding: 8px 12px;">
+					<p style="margin: 0;">
+						<?php
+						printf(
+							/* translators: %s: Link to main dashboard */
+							esc_html__( 'This field uses a drag-and-drop interface. Please use the %s to modify the provider priority order.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=priority' ) ) . '">' . esc_html__( 'main settings dashboard', 'mcp-ai-wpoos' ) . '</a>'
+						);
+						?>
+					</p>
+					<?php if ( is_array( $value ) && ! empty( $value ) ) : ?>
+						<p style="margin: 8px 0 0 0; color: #666;">
+							<strong><?php esc_html_e( 'Current order:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php echo esc_html( implode( ' → ', $value ) ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+				<?php
+				return;
+			}
 
 			// Render different input types.
 			switch ( $type ) {
