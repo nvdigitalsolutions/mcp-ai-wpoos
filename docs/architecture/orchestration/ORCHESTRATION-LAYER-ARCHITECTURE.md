@@ -1333,14 +1333,14 @@ The multi-agent enhancement builds upon the core orchestration patterns:
 Agent roles and team configurations are stored in the existing Profession Custom Post Type:
 
 **New Meta Fields (8 total):**
-- `mcp_ai_orchestration_agent_role` - Primary agent role (planner/executor/critic/specialist)
-- `mcp_ai_orchestration_agent_secondary_roles` - Additional roles this profession can fulfill
-- `mcp_ai_orchestration_can_delegate` - Whether profession can delegate to other agents
-- `mcp_ai_orchestration_expertise_keywords` - Keywords for profession matching
-- `mcp_ai_orchestration_task_patterns` - JSON task patterns for this profession
-- `mcp_ai_orchestration_collaboration_preferences` - Preferred team configurations
-- `mcp_ai_orchestration_seeder_version` - Version of orchestration data seeded
-- `mcp_ai_orchestration_performance_metrics` - Historical performance data
+- `mcp_ai_orchestration_agent_role` - Primary agent role (string: 'planner', 'executor', 'critic', 'specialist', or 'generalist')
+- `mcp_ai_orchestration_agent_secondary_roles` - Additional roles this profession can fulfill (array of strings)
+- `mcp_ai_orchestration_can_delegate` - Whether profession can delegate to other agents (boolean: 0 or 1)
+- `mcp_ai_orchestration_expertise_keywords` - Keywords for profession matching (array of strings)
+- `mcp_ai_orchestration_task_patterns` - JSON task patterns for this profession (string containing JSON array: `[{"pattern": "...", "complexity": "..."}]`)
+- `mcp_ai_orchestration_collaboration_preferences` - Preferred team configurations (array of strings or JSON string)
+- `mcp_ai_orchestration_seeder_version` - Version of orchestration data seeded (string: semver format like "1.0.0")
+- `mcp_ai_orchestration_performance_metrics` - Historical performance data (string containing JSON object)
 
 **Orchestration Seeder:**
 
@@ -1421,7 +1421,7 @@ The Team Custom Post Type has been enhanced with three new orchestration meta fi
    // Result: Option A (higher weighted score)
    ```
 
-3. **Hierarchical** - Priority order based on role (planner > specialist > executor)
+3. **Hierarchical** - Priority order based on role (planner > specialist > critic > executor)
    ```php
    // Example: Planner's strategy overrides executor's tactical suggestion
    // Role hierarchy: Planner > Specialist > Critic > Executor
@@ -1493,7 +1493,7 @@ const POST_TYPE = 'mcp_ai_team';
 // Orchestration Meta Keys
 const META_ORCHESTRATION_MODE = '_wp_mcp_ai_team_orchestration_mode';
 const META_WORKFLOW_TEMPLATE = '_wp_mcp_ai_team_workflow_template';
-const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';
+const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';  // Note: constant name includes _STRATEGY
 
 // Additional Team Meta
 const META_TEAM_MEMBERS = '_wp_mcp_ai_team_members';  // Array of profession IDs
