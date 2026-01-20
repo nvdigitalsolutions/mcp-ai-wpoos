@@ -201,8 +201,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[NV oOS Settings] Save attempt - Tab: %s, Save all tabs: %s, Posted fields: %d, Posted keys: %s',
+						'[NV oOS Settings] Save attempt - Tab: %s, Subtab: %s, Save all tabs: %s, Posted fields: %d, Posted keys: %s',
 						$active_tab,
+						$active_subtab,
 						$save_all_tabs ? 'YES' : 'NO',
 						count( $posted_settings ),
 						implode( ', ', array_keys( $posted_settings ) )

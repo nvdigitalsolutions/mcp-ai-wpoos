@@ -142,6 +142,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
 			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
+			// Debug logging for subtab sanitization.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s',
+							$this->get_id(),
+							$active_subtab,
+							$submitted_subtab,
+							$is_form_submit ? 'YES' : 'NO',
+							count( $active_field_keys ),
+							implode( ', ', array_slice( $active_field_keys, 0, 10 ) )
+						)
+					);
+				}
+			}
+
 			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
