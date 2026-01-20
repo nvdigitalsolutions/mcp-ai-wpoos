@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-base-zip-activation',
         'version' => 'dev-copilot/fix-base-zip-activation',
-        'reference' => '1832f66ebace589e4937a8357e13b9afd2cc2a4e',
+        'reference' => '59fb5492f32b3bcc2dd2c1791a41ba5d87887cad',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-base-zip-activation',
             'version' => 'dev-copilot/fix-base-zip-activation',
-            'reference' => '1832f66ebace589e4937a8357e13b9afd2cc2a4e',
+            'reference' => '59fb5492f32b3bcc2dd2c1791a41ba5d87887cad',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
