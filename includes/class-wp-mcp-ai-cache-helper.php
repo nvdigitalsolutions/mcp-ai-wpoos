@@ -192,6 +192,20 @@ class WP_MCP_AI_Cache_Helper {
 	}
 
 	/**
+	 * Invalidate all tool-related caches.
+	 *
+	 * Called when tool settings are updated.
+	 *
+	 * @return void
+	 */
+	public static function invalidate_tool_caches() {
+		self::delete( 'available_tools' );
+		self::delete( 'tool_limits' );
+		self::delete( 'enabled_tools' );
+		self::delete_pattern( 'tool_%' );
+	}
+
+	/**
 	 * Build cache key with prefix
 	 *
 	 * @param string $key Cache key.
