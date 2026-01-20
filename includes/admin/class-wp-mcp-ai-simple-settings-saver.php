@@ -217,6 +217,17 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 		 * @return mixed Sanitized value.
 		 */
 		private static function sanitize_field( $value, $type, $key, $existing ) {
+			// Handle array values - prevent "Array to string conversion" errors.
+			if ( is_array( $value ) ) {
+				// If the field type is specifically 'array', sanitize as array.
+				if ( 'array' === $type ) {
+					return array_map( 'sanitize_text_field', $value );
+				}
+				// For non-array field types that receive arrays, serialize or convert to JSON.
+				// This preserves the data rather than causing a fatal error.
+				return wp_json_encode( $value );
+			}
+
 			switch ( $type ) {
 				case 'checkbox':
 					return ! empty( $value );
@@ -245,7 +256,9 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 					return sanitize_textarea_field( $value );
 
 				case 'array':
-					return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : array();
+					// This case is handled above for actual arrays.
+					// If we get here with non-array value, return empty array.
+					return array();
 
 				case 'text':
 				default:
