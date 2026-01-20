@@ -241,8 +241,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$already_saved = true;
 			} else {
 				// Use section-based sanitization for main dashboard.
-				// Only sanitize the active tab to avoid clearing checkboxes from other tabs.
-				$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+				// When save_all_tabs is true (e.g., from Simple Settings page), sanitize ALL tabs.
+				// Otherwise, only sanitize the active tab to avoid clearing checkboxes from other tabs.
+				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
+				$sanitized_new = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved = false;
 
 				// Log sanitization results.
