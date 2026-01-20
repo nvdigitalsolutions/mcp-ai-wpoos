@@ -192,13 +192,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 				switch ( $type ) {
 					case 'text':
-						$sanitized[ $key ] = sanitize_text_field( $value );
+						// Handle array values to prevent warnings.
+						if ( is_array( $value ) ) {
+							$sanitized[ $key ] = wp_json_encode( $value );
+						} else {
+							$sanitized[ $key ] = sanitize_text_field( $value );
+						}
 						break;
 
 					case 'password':
 						// CRITICAL: Only save password fields if they contain a value.
 						// Empty password fields should not overwrite existing saved values.
 						// This prevents accidental deletion of API keys when saving other subtabs.
+						// Handle array values to prevent warnings.
+						if ( is_array( $value ) ) {
+							// Arrays should not be password fields, skip.
+							break;
+						}
 						$trimmed_value = trim( sanitize_text_field( $value ) );
 						if ( '' !== $trimmed_value ) {
 							$sanitized[ $key ] = $trimmed_value;
@@ -208,15 +218,30 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 					case 'url':
 						// Keep empty strings, only sanitize non-empty values with proper URL function.
-						$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
+						// Handle array values to prevent warnings.
+						if ( is_array( $value ) ) {
+							$sanitized[ $key ] = wp_json_encode( $value );
+						} else {
+							$sanitized[ $key ] = '' === $value ? '' : esc_url_raw( $value );
+						}
 						break;
 
 					case 'textarea':
-						$sanitized[ $key ] = sanitize_textarea_field( $value );
+						// Handle array values to prevent warnings.
+						if ( is_array( $value ) ) {
+							$sanitized[ $key ] = wp_json_encode( $value );
+						} else {
+							$sanitized[ $key ] = sanitize_textarea_field( $value );
+						}
 						break;
 
 					case 'email':
-						$sanitized[ $key ] = sanitize_email( $value );
+						// Handle array values to prevent warnings.
+						if ( is_array( $value ) ) {
+							$sanitized[ $key ] = wp_json_encode( $value );
+						} else {
+							$sanitized[ $key ] = sanitize_email( $value );
+						}
 						break;
 
 					case 'number':
@@ -251,7 +276,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					default:
-						$sanitized[ $key ] = sanitize_text_field( $value );
+						// Handle array values to prevent "Array to string conversion" warnings.
+						if ( is_array( $value ) ) {
+							// If value is an array, serialize it to JSON for storage.
+							$sanitized[ $key ] = wp_json_encode( $value );
+						} else {
+							$sanitized[ $key ] = sanitize_text_field( $value );
+						}
 						break;
 				}
 			}
