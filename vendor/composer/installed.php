@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-sanitization-rules',
-        'version' => 'dev-copilot/review-sanitization-rules',
-        'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-one-more-time',
+        'version' => 'dev-copilot/rebuild-all-zips-script-one-more-time',
+        'reference' => 'c1d49ada3d57d58e4f2214a5d26d679ae564e03d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-sanitization-rules',
-            'version' => 'dev-copilot/review-sanitization-rules',
-            'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-one-more-time',
+            'version' => 'dev-copilot/rebuild-all-zips-script-one-more-time',
+            'reference' => 'c1d49ada3d57d58e4f2214a5d26d679ae564e03d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
