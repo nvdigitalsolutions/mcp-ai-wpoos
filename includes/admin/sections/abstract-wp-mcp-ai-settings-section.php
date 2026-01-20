@@ -274,8 +274,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					case 'number':
-						// Keep empty strings for "use default" functionality (e.g., filter fields).
-						$sanitized[ $key ] = '' === $value ? '' : absint( $value );
+						// CRITICAL: Skip empty number fields to prevent overwriting existing values.
+						// This happens when a field from another tab/subtab is included in POST but not meant to be saved.
+						// Empty strings would overwrite actual values, causing them to appear as defaults when rendered.
+						if ( '' === $value ) {
+							// Skip adding to sanitized array - preserve existing value.
+							break;
+						}
+						$sanitized[ $key ] = absint( $value );
 						break;
 
 					case 'range':
