@@ -217,7 +217,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// causes data loss when saving from tabs/subtabs. Use section-based sanitization instead.
 			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX
 			$use_simple_settings_saver = false; // Force disabled.
-			
+
 			if ( $use_simple_settings_saver && $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				// Initialize field types for the Simple Settings Saver.
 				WP_MCP_AI_Simple_Settings_Saver::init_field_types();
@@ -244,8 +244,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// When save_all_tabs is true (e.g., from Simple Settings page), sanitize ALL tabs.
 				// Otherwise, only sanitize the active tab to avoid clearing checkboxes from other tabs.
 				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
-				$sanitized_new = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
-				$already_saved = false;
+				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
+				$already_saved   = false;
 
 				// Log sanitization results.
 				if ( $enable_logging ) {
@@ -268,8 +268,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				// Log critical provider keys BEFORE merge to help diagnose data loss issues.
 				if ( $enable_logging ) {
-					$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
-					$existing_providers = array();
+					$provider_keys       = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url', 'lm_studio_endpoint_url' );
+					$existing_providers  = array();
 					$sanitized_providers = array();
 					foreach ( $provider_keys as $key ) {
 						if ( isset( $existing_settings[ $key ] ) && ! empty( $existing_settings[ $key ] ) ) {
@@ -323,7 +323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					}
 				}
 
-				$merged_settings   = array_merge( $existing_settings, $sanitized_new );
+				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
 				// Save to database and log result.
 				$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings );
