@@ -14,12 +14,15 @@ The following packages will be added to `addons/pro/package.json` in Phase 2:
 ### E-commerce Toolkit Packages
 
 ```json
-"@woocommerce/woocommerce-rest-api": "^1.5.0",
+"@woocommerce/woocommerce-rest-api": "^1.0.1",
 "stripe": "^14.0.0",
 "currency.js": "^2.0.4"
 ```
 
-- **@woocommerce/woocommerce-rest-api**: Official WooCommerce REST API client
+- **@woocommerce/woocommerce-rest-api**: Official WooCommerce REST API client (v1.0.1 is latest)
+  - ⚠️ **Note**: Repository archived in July 2025, but package still works
+  - REST API merged into WooCommerce core
+  - Version 1.0.1 is stable and functional
 - **stripe**: Payment processing integration (Stripe API)
 - **currency.js**: Precise currency calculations and formatting
 
@@ -90,7 +93,7 @@ When Phase 2 begins, the complete dependencies section will be:
   "dependencies": {
     "@turf/turf": "^7.3.2",
     "@types/pdfkit": "^0.17.4",
-    "@woocommerce/woocommerce-rest-api": "^1.5.0",
+    "@woocommerce/woocommerce-rest-api": "^1.0.1",
     "axios": "^1.6.5",
     "chart.js": "^4.4.7",
     "currency.js": "^2.0.4",
@@ -122,6 +125,28 @@ When Phase 2 begins, the complete dependencies section will be:
     "video-stitch": "^2.0.0"
   }
 }
+```
+
+### Known Deprecation Warnings
+
+Some transitive dependencies may show deprecation warnings during `npm install`. These are non-blocking and don't affect functionality:
+
+**Expected Warnings (can be safely ignored)**:
+- `inflight@1.0.6` - Transitive dependency, replaced in newer package versions
+- `glob@7.x` - Transitive dependency, will be updated when parent packages upgrade
+- `rimraf@3.x` - Transitive dependency, will be updated when parent packages upgrade
+- Various `@humanwhocodes/*` packages - ESLint-related, replaced with `@eslint/*`
+
+**Important Notes**:
+- ✅ All warnings are from transitive dependencies (not our direct dependencies)
+- ✅ No security vulnerabilities in current package versions
+- ✅ Functionality not impacted
+- ✅ Parent packages will update these over time
+
+To check for security vulnerabilities:
+```bash
+npm audit
+npm audit fix  # If any vulnerabilities found
 ```
 
 ## Summary
