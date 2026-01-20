@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/refactor-simple-settings-page',
         'version' => 'dev-copilot/refactor-simple-settings-page',
-        'reference' => 'c36d7e7e1c0bf09e68546780794489433f9db059',
+        'reference' => '81d6d2daf79060f458563942107bbea51fb5cd12',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/refactor-simple-settings-page',
             'version' => 'dev-copilot/refactor-simple-settings-page',
-            'reference' => 'c36d7e7e1c0bf09e68546780794489433f9db059',
+            'reference' => '81d6d2daf79060f458563942107bbea51fb5cd12',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
