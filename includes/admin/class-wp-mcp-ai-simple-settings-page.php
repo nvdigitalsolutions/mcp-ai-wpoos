@@ -243,6 +243,14 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 
 			// Special handling for provider_priority_list - it's an array field.
 			if ( self::PROVIDER_PRIORITY_FIELD === $key ) {
+				$dashboard_url = add_query_arg(
+					array(
+						'page'   => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
+						'tab'    => 'providers',
+						'subtab' => 'priority',
+					),
+					admin_url( 'admin.php' )
+				);
 				?>
 				<div class="notice notice-warning inline" style="margin: 0; padding: 8px 12px;">
 					<p style="margin: 0;">
@@ -250,14 +258,14 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 						printf(
 							/* translators: %s: Link to main dashboard */
 							esc_html__( 'This field uses a drag-and-drop interface. Please use the %s to modify the provider priority order.', 'mcp-ai-wpoos' ),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=providers&subtab=priority' ) ) . '">' . esc_html__( 'main settings dashboard', 'mcp-ai-wpoos' ) . '</a>'
+							'<a href="' . esc_url( $dashboard_url ) . '">' . esc_html__( 'main settings dashboard', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
 					<?php if ( is_array( $value ) && ! empty( $value ) ) : ?>
 						<p style="margin: 8px 0 0 0; color: #666;">
 							<strong><?php esc_html_e( 'Current order:', 'mcp-ai-wpoos' ); ?></strong>
-							<?php echo esc_html( implode( ' → ', $value ) ); ?>
+							<?php echo esc_html( implode( ' > ', $value ) ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
