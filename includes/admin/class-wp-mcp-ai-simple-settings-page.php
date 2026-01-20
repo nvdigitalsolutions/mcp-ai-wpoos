@@ -90,9 +90,47 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				// Also show explicit success message if settings were just updated.
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 				if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) {
+					$saved_count = isset( $_GET['saved'] ) ? absint( $_GET['saved'] ) : 0;
 					?>
 					<div class="notice notice-success is-dismissible">
-						<p><strong><?php esc_html_e( 'Settings saved successfully!', 'mcp-ai-wpoos' ); ?></strong></p>
+						<p>
+							<strong><?php esc_html_e( 'Settings saved successfully!', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $saved_count > 0 ) : ?>
+								<?php
+								printf(
+									/* translators: %d: Number of settings fields saved */
+									esc_html( _n( '%d field updated.', '%d fields updated.', $saved_count, 'mcp-ai-wpoos' ) ),
+									esc_html( $saved_count )
+								);
+								?>
+							<?php endif; ?>
+						</p>
+						<?php
+						// Show link to view logs if logging is enabled.
+						$current_settings = WP_MCP_AI_Admin_Settings::get_settings();
+						if ( ! empty( $current_settings['enable_logging'] ) || ! empty( $current_settings['enable_extended_logging'] ) ) {
+							$advanced_url = add_query_arg(
+								array(
+									'page' => WP_MCP_AI_Settings_Dashboard::PAGE_SLUG,
+									'tab'  => 'advanced',
+								),
+								admin_url( 'admin.php' )
+							);
+							?>
+							<p style="margin-top: 10px;">
+								<em>
+									<?php
+									printf(
+										/* translators: %s: Link to Advanced tab */
+										esc_html__( 'Logging is enabled. View activity logs in the %s.', 'mcp-ai-wpoos' ),
+										'<a href="' . esc_url( $advanced_url ) . '">' . esc_html__( 'Advanced tab', 'mcp-ai-wpoos' ) . '</a>'
+									);
+									?>
+								</em>
+							</p>
+							<?php
+						}
+						?>
 					</div>
 					<?php
 				}

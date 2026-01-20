@@ -388,6 +388,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_args['view'] = $active_view;
 			}
 
+			// Add count of saved fields for user feedback.
+			if ( isset( $sanitized_new ) && is_array( $sanitized_new ) ) {
+				$redirect_args['saved'] = count( $sanitized_new );
+			}
+
 			// Determine redirect URL based on page type.
 			if ( self::PAGE_SLUG === $redirect_page ) {
 				// Main dashboard - use admin.php.
