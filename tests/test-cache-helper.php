@@ -288,4 +288,37 @@ class WP_MCP_AI_Cache_Helper_Test extends WP_UnitTestCase {
 		$cached = WP_MCP_AI_Cache_Helper::get( $key );
 		$this->assertFalse( $cached, 'Cache should be expired' );
 	}
+
+	/**
+	 * Test invalidate tool caches.
+	 */
+	public function test_invalidate_tool_caches() {
+		// Set various tool-related caches.
+		WP_MCP_AI_Cache_Helper::set( 'available_tools', array( 'tool1', 'tool2' ) );
+		WP_MCP_AI_Cache_Helper::set( 'tool_limits', array( 'limit1' => 100 ) );
+		WP_MCP_AI_Cache_Helper::set( 'enabled_tools', array( 'tool1' => true ) );
+		WP_MCP_AI_Cache_Helper::set( 'tool_123', array( 'config' => 'test' ) );
+		WP_MCP_AI_Cache_Helper::set( 'tool_456', array( 'config' => 'test2' ) );
+		WP_MCP_AI_Cache_Helper::set( 'other_cache', 'value' );
+
+		// Verify caches are set.
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'available_tools' ) );
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'tool_limits' ) );
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'enabled_tools' ) );
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'tool_123' ) );
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'other_cache' ) );
+
+		// Invalidate tool caches.
+		WP_MCP_AI_Cache_Helper::invalidate_tool_caches();
+
+		// Verify tool caches are cleared.
+		$this->assertFalse( WP_MCP_AI_Cache_Helper::get( 'available_tools' ) );
+		$this->assertFalse( WP_MCP_AI_Cache_Helper::get( 'tool_limits' ) );
+		$this->assertFalse( WP_MCP_AI_Cache_Helper::get( 'enabled_tools' ) );
+		$this->assertFalse( WP_MCP_AI_Cache_Helper::get( 'tool_123' ) );
+		$this->assertFalse( WP_MCP_AI_Cache_Helper::get( 'tool_456' ) );
+
+		// Verify non-tool cache still exists.
+		$this->assertNotFalse( WP_MCP_AI_Cache_Helper::get( 'other_cache' ) );
+	}
 }
