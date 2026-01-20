@@ -79,14 +79,14 @@ The following packages will be added to `addons/pro/package.json` in Phase 2:
 "ffprobe-static": "^3.1.0",
 "gif-encoder": "^0.7.2",
 "video-stitch": "^2.0.0",
-"subtitle": "^5.0.0"
+"subtitle": "^3.0.0"
 ```
 
 - **ffmpeg-static**: Bundled FFmpeg binary for video processing
 - **ffprobe-static**: Video metadata extraction
 - **gif-encoder**: Create GIFs from video frames
 - **video-stitch**: Merge multiple videos
-- **subtitle**: Subtitle parsing and generation
+- **subtitle**: Subtitle parsing and generation (v3.x stable, v4.x is alpha only)
 
 ## Complete package.json Dependencies Section (Phase 2)
 
@@ -124,7 +124,7 @@ When Phase 2 begins, the complete dependencies section will be:
     "regression": "^2.0.1",
     "sharp": "^0.33.5",
     "stripe": "^14.0.0",
-    "subtitle": "^5.0.0",
+    "subtitle": "^3.0.0",
     "twitter-api-v2": "^1.15.2",
     "video-stitch": "^2.0.0"
   }
