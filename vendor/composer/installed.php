@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
         'version' => 'dev-copilot/fix-timeout-setting-issue',
-        'reference' => '4c029dae978d89f47e8a61ca751f4d1b43e0b37d',
+        'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
             'version' => 'dev-copilot/fix-timeout-setting-issue',
-            'reference' => '4c029dae978d89f47e8a61ca751f4d1b43e0b37d',
+            'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
