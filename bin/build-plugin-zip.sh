@@ -167,7 +167,8 @@ mkdir -p build
 if [ "$BUILD_BASE" = true ]; then
     echo "Step 3a: Building Base version (standalone)..."
     
-    BASE_SLUG="mcp-ai-wpoos-base"
+    BASE_SLUG="mcp-ai-wpoos"
+    BASE_ZIP_NAME="mcp-ai-wpoos-base"
     mkdir -p "build/${BASE_SLUG}"
     
     # Copy full plugin files EXCEPT pro addons
@@ -286,8 +287,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-test-*.php' \
         --exclude 'includes/elementor/class-wp-mcp-ai-elementor-performance-test-*.php'
     
-    # Note: mcp-ai-wpoos-base.php is already included via rsync above.
-    # It serves as the main plugin file for the base version (matches folder name).
+    # Note: mcp-ai-wpoos.php serves as the main plugin file for the base version.
+    # The mcp-ai-wpoos-base.php file is only used in the repository and will be removed from the ZIP.
     
     # Keep both minified and unminified assets for flexibility
     # PHP code will automatically use minified versions in production (via get_asset_file() method)
@@ -301,61 +302,39 @@ if [ "$BUILD_BASE" = true ]; then
         echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
     fi
     
-    # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
-    # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
-    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
-        # Replace the plugin header comment block with a regular comment
-        sed -i '1,/\*\//c\
-<?php\
-/**\
- * WP MCP AI - Main Plugin File\
- *\
- * This file contains the core plugin functionality and is included by the\
- * main plugin entry point (mcp-ai-wpoos-base.php for base version,\
- * or mcp-ai-wpoos.php itself for the combined version).\
- *\
- * @package WP_MCP_AI\
- */' "build/${BASE_SLUG}/mcp-ai-wpoos.php"
-        echo "✓ Removed plugin header from mcp-ai-wpoos.php (prevents duplicate plugin detection)"
+    # Remove mcp-ai-wpoos-base.php - not needed in base version ZIP
+    # The base version uses mcp-ai-wpoos.php as the main plugin file
+    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php" ]; then
+        rm -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
+        echo "✓ Removed mcp-ai-wpoos-base.php (not needed in base version)"
     fi
     
-    # Add plugin header to mcp-ai-wpoos-base.php for base version distribution
-    # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
-    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php" ]; then
-        # Replace the comment block with a full plugin header
-        sed -i '1,/\*\//c\
-<?php\
-/**\
- * Plugin Name: NV Digital Open Operator System (oOS)\
- * Plugin URI: https://nvdigitalsolutions.com/wpoos\
- * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations.\
- * Version: '"${VERSION}"'\
- * Requires at least: 6.0\
- * Requires PHP: 7.4\
- * Tested up to: 6.7.1\
- * Author: NV Digital Solutions\
- * Author URI: https://nvdigitalsolutions.com\
- * License: GPLv3 or later\
- * License URI: https://www.gnu.org/licenses/gpl-3.0.html\
- * Text Domain: mcp-ai-wpoos\
- * Domain Path: /languages\
- * Network: true\
- *\
- * @package WP_MCP_AI\
- *\
- * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)\
- * This plugin is licensed under the GNU General Public License v3 or later.\
- */' "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
-        echo "✓ Added plugin header to mcp-ai-wpoos-base.php for base version"
+    # Update mcp-ai-wpoos.php header for base version (update version number and description)
+    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
+        # Update the version in the existing plugin header
+        sed -i "s/^ \* Version: .*/ * Version: ${VERSION}/" "build/${BASE_SLUG}/mcp-ai-wpoos.php"
+        # Update plugin name to remove "Complete"
+        sed -i 's/^ \* Plugin Name: NV Digital Open Operator System Complete (oOS)/ * Plugin Name: NV Digital Open Operator System (oOS)/' "build/${BASE_SLUG}/mcp-ai-wpoos.php"
+        # Update description to clarify it's the base version
+        sed -i 's/^ \* Description: Complete AI Assistant framework.*/ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Works standalone with optional third-party plugin integrations./' "build/${BASE_SLUG}/mcp-ai-wpoos.php"
+        echo "✓ Updated mcp-ai-wpoos.php header for base version"
+    fi
+    
+    # Ensure WP_MCP_AI_BASE_VERSION is set to true for base version
+    # This constant is checked throughout the plugin to exclude pro features
+    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
+        # Find the line that sets WP_MCP_AI_BASE_VERSION to false and change it to true
+        sed -i "s/define( 'WP_MCP_AI_BASE_VERSION', false )/define( 'WP_MCP_AI_BASE_VERSION', true )/" "build/${BASE_SLUG}/mcp-ai-wpoos.php"
+        echo "✓ Set WP_MCP_AI_BASE_VERSION to true in base version"
     fi
     
     # Create ZIP
     cd build
-    zip -r -q "${BASE_SLUG}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
+    zip -r -q "${BASE_ZIP_NAME}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
     cd ..
     
-    BASE_SIZE=$(du -h "build/${BASE_SLUG}-${VERSION}.zip" | cut -f1)
-    echo "✅ Base version created: build/${BASE_SLUG}-${VERSION}.zip (${BASE_SIZE})"
+    BASE_SIZE=$(du -h "build/${BASE_ZIP_NAME}-${VERSION}.zip" | cut -f1)
+    echo "✅ Base version created: build/${BASE_ZIP_NAME}-${VERSION}.zip (${BASE_SIZE})"
     echo ""
 fi
 
