@@ -1,14 +1,19 @@
 <?php
 /**
- * NV Digital Open Operator System (oOS) - Base Version Entry Point
- *
- * This file serves as the entry point for the standalone base version
- * when built for WordPress.org. In the repository, it does NOT have a
- * plugin header to prevent WordPress from detecting it as a separate plugin.
- *
- * The build script (bin/build-plugin-zip.sh) adds the plugin header when
- * creating the base version distribution for WordPress.org, where this file
- * gets renamed to mcp-ai-wpoos.php.
+ * Plugin Name: NV Digital Open Operator System (oOS) - Base
+ * Plugin URI: https://nvdigitalsolutions.com/wpoos
+ * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Base version with core features and optional third-party plugin integrations.
+ * Version: 1.1.0
+ * Requires at least: 6.0
+ * Requires PHP: 7.4
+ * Tested up to: 6.7
+ * Author: NV Digital Solutions
+ * Author URI: https://nvdigitalsolutions.com
+ * License: GPLv3 or later
+ * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: mcp-ai-wpoos
+ * Domain Path: /languages
+ * Network: true
  *
  * @package WP_MCP_AI
  *
