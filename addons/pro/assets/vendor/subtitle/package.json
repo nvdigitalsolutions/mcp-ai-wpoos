@@ -1,0 +1,62 @@
+{
+  "name": "subtitle",
+  "version": "3.0.0",
+  "description": "Parse, manipulate and stringify SRT (SubRip) format, with partial support for WebVTT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gsantiago/subtitle.js"
+  },
+  "keywords": [
+    "subtitle",
+    "webvtt",
+    "srt",
+    "captions",
+    "subrip",
+    "parser",
+    "stringify",
+    "validate",
+    "validation"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "test:coverage": "tsdx test --coverage",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "coveralls": "tsdx test --coverage && coveralls < coverage/lcov.info"
+  },
+  "peerDependencies": {},
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": false,
+    "singleQuote": true,
+    "trailingComma": "none"
+  },
+  "author": "Guilherme Santiago",
+  "module": "dist/subtitle.esm.js",
+  "devDependencies": {
+    "husky": "^4.2.5",
+    "tsdx": "^0.13.3",
+    "tslib": "^2.0.1",
+    "typescript": "^4.0.2"
+  },
+  "jest": {
+    "verbose": true
+  }
+}
