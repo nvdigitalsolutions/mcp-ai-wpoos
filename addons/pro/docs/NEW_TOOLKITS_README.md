@@ -29,9 +29,15 @@ This directory contains comprehensive planning documentation for **5 new Pro Too
    - Updated comparison tables
    - Migration path for existing users
 
+4. **[NEW_TOOLKITS_NPM_PACKAGES.md](./NEW_TOOLKITS_NPM_PACKAGES.md)** (5KB) 📦 **NPM PACKAGES**
+   - Complete list of 20 new NPM packages
+   - Node.js 20+ requirements (Node.js 18 is EOL)
+   - Package compatibility matrix
+   - Installation instructions for Phase 2
+
 ### Existing Reference Documents
 
-4. **[PRO_TOOLKIT_ENHANCEMENT_REVIEW.md](./PRO_TOOLKIT_ENHANCEMENT_REVIEW.md)** (existing)
+5. **[PRO_TOOLKIT_ENHANCEMENT_REVIEW.md](./PRO_TOOLKIT_ENHANCEMENT_REVIEW.md)** (existing)
    - Analysis of existing toolkit patterns
    - CRUD completeness review
    - Enhancement recommendations
