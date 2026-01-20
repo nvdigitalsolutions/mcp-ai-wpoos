@@ -115,16 +115,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			);
 		}
 
-		/**
-		 * Register settings with WordPress.
-		 */
+	/**
+	 * Register settings with WordPress.
+	 *
+	 * IMPORTANT: We do NOT register a sanitize_callback here because:
+	 * 1. We manually sanitize in handle_save_settings() with proper context
+	 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
+	 * 3. The callback has no POST context during update_option(), breaking subtab protection
+	 * 4. This would cause provider keys to be cleared when navigating tabs
+	 *
+	 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
+	 */
 		public function register_settings() {
 			register_setting(
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
 					'type'              => 'array',
-					'sanitize_callback' => array( $this, 'sanitize_settings' ),
+				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
 				)
 			);
 		}
