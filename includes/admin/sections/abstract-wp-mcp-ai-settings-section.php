@@ -181,6 +181,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		protected function sanitize_fields( $input, $fields, $is_form_submit = true ) {
 			$sanitized = array();
 
+			// DEFENSIVE: Filter input to only include fields that are defined in $fields.
+			// This prevents fields from other subtabs from being processed if they somehow
+			// end up in the POST data (e.g., browser autofill, JavaScript manipulation, etc.).
+			$filtered_input = array();
+			foreach ( $fields as $key => $field ) {
+				if ( isset( $input[ $key ] ) ) {
+					$filtered_input[ $key ] = $input[ $key ];
+				}
+			}
+
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
@@ -196,18 +206,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {
 						// Checkbox is checked if present in input, unchecked otherwise.
-						$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
+						$sanitized[ $key ] = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
 					}
 					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
 				}
 
-				// For other field types, skip if not present in input.
-				if ( ! isset( $input[ $key ] ) ) {
+				// For other field types, skip if not present in filtered input.
+				if ( ! isset( $filtered_input[ $key ] ) ) {
 					continue;
 				}
 
-				$value = $input[ $key ];
+				$value = $filtered_input[ $key ];
 
 				switch ( $type ) {
 					case 'text':
