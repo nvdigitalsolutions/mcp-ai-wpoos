@@ -29259,9 +29259,9 @@ var require_xlsx = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/FormatterOptions.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/FormatterOptions.js
 var require_FormatterOptions = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/FormatterOptions.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/FormatterOptions.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.FormatterOptions = void 0;
@@ -30128,9 +30128,9 @@ var require_lodash5 = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/formatter/FieldFormatter.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/FieldFormatter.js
 var require_FieldFormatter = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/formatter/FieldFormatter.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/FieldFormatter.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
@@ -30192,9 +30192,9 @@ var require_FieldFormatter = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/types.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/types.js
 var require_types = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/types.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/types.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.isSyncTransform = void 0;
@@ -30202,9 +30202,9 @@ var require_types = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/formatter/RowFormatter.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/RowFormatter.js
 var require_RowFormatter = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/formatter/RowFormatter.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/RowFormatter.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
@@ -30364,9 +30364,9 @@ var require_RowFormatter = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/formatter/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/index.js
 var require_formatter = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/formatter/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/formatter/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.FieldFormatter = exports2.RowFormatter = void 0;
@@ -30381,9 +30381,9 @@ var require_formatter = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/CsvFormatterStream.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/CsvFormatterStream.js
 var require_CsvFormatterStream = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/CsvFormatterStream.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/CsvFormatterStream.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.CsvFormatterStream = void 0;
@@ -30446,9 +30446,9 @@ var require_CsvFormatterStream = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/format/build/src/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/index.js
 var require_src = __commonJS({
-  "addons/pro/node_modules/@fast-csv/format/build/src/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/format/build/src/index.js"(exports2) {
     "use strict";
     var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
@@ -30525,9 +30525,9 @@ var require_src = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/ParserOptions.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/ParserOptions.js
 var require_ParserOptions = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/ParserOptions.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/ParserOptions.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
@@ -30577,9 +30577,9 @@ var require_ParserOptions = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/types.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/types.js
 var require_types2 = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/types.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/types.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.isSyncValidate = exports2.isSyncTransform = void 0;
@@ -30588,9 +30588,9 @@ var require_types2 = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/transforms/RowTransformerValidator.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/RowTransformerValidator.js
 var require_RowTransformerValidator = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/transforms/RowTransformerValidator.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/RowTransformerValidator.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
@@ -31893,9 +31893,9 @@ var require_lodash8 = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/transforms/HeaderTransformer.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/HeaderTransformer.js
 var require_HeaderTransformer = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/transforms/HeaderTransformer.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/HeaderTransformer.js"(exports2) {
     "use strict";
     var __importDefault = exports2 && exports2.__importDefault || function(mod) {
       return mod && mod.__esModule ? mod : { "default": mod };
@@ -32006,9 +32006,9 @@ var require_HeaderTransformer = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/transforms/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/index.js
 var require_transforms = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/transforms/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/transforms/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.HeaderTransformer = exports2.RowTransformerValidator = void 0;
@@ -32023,9 +32023,9 @@ var require_transforms = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/Token.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Token.js
 var require_Token = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/Token.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Token.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Token = void 0;
@@ -32059,9 +32059,9 @@ var require_Token = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/Scanner.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Scanner.js
 var require_Scanner = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/Scanner.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Scanner.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Scanner = void 0;
@@ -32146,9 +32146,9 @@ var require_Scanner = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/ColumnFormatter.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/ColumnFormatter.js
 var require_ColumnFormatter = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/ColumnFormatter.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/ColumnFormatter.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.ColumnFormatter = void 0;
@@ -32169,9 +32169,9 @@ var require_ColumnFormatter = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/NonQuotedColumnParser.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/NonQuotedColumnParser.js
 var require_NonQuotedColumnParser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/NonQuotedColumnParser.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/NonQuotedColumnParser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.NonQuotedColumnParser = void 0;
@@ -32203,9 +32203,9 @@ var require_NonQuotedColumnParser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/QuotedColumnParser.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/QuotedColumnParser.js
 var require_QuotedColumnParser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/QuotedColumnParser.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/QuotedColumnParser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.QuotedColumnParser = void 0;
@@ -32284,9 +32284,9 @@ var require_QuotedColumnParser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/ColumnParser.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/ColumnParser.js
 var require_ColumnParser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/ColumnParser.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/ColumnParser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.ColumnParser = void 0;
@@ -32312,9 +32312,9 @@ var require_ColumnParser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/index.js
 var require_column2 = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/column/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/column/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.ColumnFormatter = exports2.QuotedColumnParser = exports2.NonQuotedColumnParser = exports2.ColumnParser = void 0;
@@ -32337,9 +32337,9 @@ var require_column2 = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/RowParser.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/RowParser.js
 var require_RowParser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/RowParser.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/RowParser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.RowParser = void 0;
@@ -32413,9 +32413,9 @@ var require_RowParser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/Parser.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Parser.js
 var require_Parser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/Parser.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/Parser.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.Parser = void 0;
@@ -32491,9 +32491,9 @@ var require_Parser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/parser/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/index.js
 var require_parser = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/parser/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/parser/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.QuotedColumnParser = exports2.NonQuotedColumnParser = exports2.ColumnParser = exports2.Token = exports2.Scanner = exports2.RowParser = exports2.Parser = void 0;
@@ -32526,9 +32526,9 @@ var require_parser = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/CsvParserStream.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/CsvParserStream.js
 var require_CsvParserStream = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/CsvParserStream.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/CsvParserStream.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.CsvParserStream = void 0;
@@ -32727,9 +32727,9 @@ var require_CsvParserStream = __commonJS({
   }
 });
 
-// addons/pro/node_modules/@fast-csv/parse/build/src/index.js
+// addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/index.js
 var require_src2 = __commonJS({
-  "addons/pro/node_modules/@fast-csv/parse/build/src/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/@fast-csv/parse/build/src/index.js"(exports2) {
     "use strict";
     var __createBinding = exports2 && exports2.__createBinding || (Object.create ? (function(o, m, k, k2) {
       if (k2 === void 0) k2 = k;
@@ -32784,9 +32784,9 @@ var require_src2 = __commonJS({
   }
 });
 
-// addons/pro/node_modules/fast-csv/build/src/index.js
+// addons/pro/node_modules/exceljs/node_modules/fast-csv/build/src/index.js
 var require_src3 = __commonJS({
-  "addons/pro/node_modules/fast-csv/build/src/index.js"(exports2) {
+  "addons/pro/node_modules/exceljs/node_modules/fast-csv/build/src/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.CsvParserStream = exports2.ParserOptions = exports2.parseFile = exports2.parseStream = exports2.parseString = exports2.parse = exports2.FormatterOptions = exports2.CsvFormatterStream = exports2.writeToPath = exports2.writeToString = exports2.writeToBuffer = exports2.writeToStream = exports2.write = exports2.format = void 0;
