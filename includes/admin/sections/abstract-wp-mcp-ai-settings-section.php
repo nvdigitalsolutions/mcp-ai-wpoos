@@ -66,6 +66,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		}
 
 		/**
+		 * Get documentation URL for this section.
+		 *
+		 * Override this method in child classes to provide section-specific documentation links.
+		 *
+		 * @return string Documentation URL or empty string if no documentation available.
+		 */
+		public function get_documentation_url() {
+			return '';
+		}
+
+		/**
 		 * Validate input for this section.
 		 *
 		 * @param array $input Raw input from form.
@@ -253,6 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$required     = isset( $field['required'] ) ? $field['required'] : false;
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
+			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
 
 			?>
 			<tr>
@@ -261,6 +273,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						<?php echo esc_html( $label ); ?>
 						<?php if ( $required ) : ?>
 							<span class="required">*</span>
+						<?php endif; ?>
+						<?php if ( $pro_badge ) : ?>
+							<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-left: 8px; padding: 3px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;">
+								<?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?>
+							</span>
 						<?php endif; ?>
 					</label>
 				</th>
@@ -364,12 +381,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * Render the section wrapper.
 		 */
 		public function render_wrapper() {
-			$description = $this->get_description();
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
 			?>
 			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 				<?php if ( $description ) : ?>
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
 				<?php endif; ?>
 				<table class="form-table" role="presentation">
 					<?php $this->render(); ?>

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides the JSON summary of active storms from the National Hurricane Center.
  */
 class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const ENDPOINT = 'https://www.nhc.noaa.gov/CurrentStorms.json';
 
 	/**
@@ -26,14 +27,14 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get NHC Active Storms', 'wp-mcp-ai' );
+		return __( 'Get NHC Active Storms', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves the National Hurricane Center JSON summary for current active storms.', 'wp-mcp-ai' );
+		return __( 'Retrieves the National Hurricane Center JSON summary for current active storms.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -58,11 +59,11 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view active storm data.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view active storm data.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$request_args = apply_filters(
@@ -81,7 +82,7 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_nhc_request_failed',
-				__( 'The request to the National Hurricane Center failed.', 'wp-mcp-ai' ),
+				__( 'The request to the National Hurricane Center failed.', 'mcp-ai-wpoos' ),
 				$response->get_error_message()
 			);
 		}
@@ -92,7 +93,7 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 				'wp_mcp_ai_nhc_unexpected_status',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'The National Hurricane Center returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'The National Hurricane Center returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
 					(int) $status_code
 				)
 			);
@@ -102,17 +103,19 @@ class WP_MCP_AI_Tool_Get_NHC_Active_Storms implements WP_MCP_AI_Tool_Interface, 
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded || ! is_array( $decoded ) ) {
-			return new WP_Error( 'wp_mcp_ai_nhc_invalid_json', __( 'The National Hurricane Center response could not be decoded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_nhc_invalid_json', __( 'The National Hurricane Center response could not be decoded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$sanitized = $this->sanitize_payload( $decoded );
+		$summary   = sprintf(
+			/* translators: %d: number of active storms */
+			__( 'Found %d active storm(s)', 'mcp-ai-wpoos' ),
+			is_countable( $sanitized ) ? count( $sanitized ) : 0
+		);
 
 		return array(
-			'summary' => sprintf(
-				/* translators: %d: number of active storms */
-				__( 'Found %d active storm(s)', 'wp-mcp-ai' ),
-				is_countable( $sanitized ) ? count( $sanitized ) : 0
-			),
+			'message' => $summary, // Chat client.
+			'summary' => $summary, // Backward compatibility.
 			'storms'  => $sanitized,
 		);
 	}

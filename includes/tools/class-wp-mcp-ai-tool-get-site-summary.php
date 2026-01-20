@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides basic site metadata and content statistics.
  */
 class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Site Summary', 'wp-mcp-ai' );
+		return __( 'Get Site Summary', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns the site name, description, URL, and basic content statistics.', 'wp-mcp-ai' );
+		return __( 'Returns the site name, description, URL, and basic content statistics.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -56,19 +57,22 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view the site summary.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view the site summary.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_counts = wp_count_posts( 'post' );
 		$page_counts = wp_count_posts( 'page' );
 		$users       = count_users();
 
+		$summary_text = sprintf( __( 'Site: %s', 'mcp-ai-wpoos' ), get_bloginfo( 'name' ) );
+
 		return array(
-			'summary'          => sprintf( __( 'Site: %s', 'wp-mcp-ai' ), get_bloginfo( 'name' ) ),
+			'message'          => $summary_text,
+			'summary'          => $summary_text,
 			'site_name'        => get_bloginfo( 'name' ),
 			'site_description' => get_bloginfo( 'description' ),
 			'site_url'         => home_url(),

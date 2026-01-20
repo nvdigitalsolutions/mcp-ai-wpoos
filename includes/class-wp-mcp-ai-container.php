@@ -288,6 +288,13 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'client.cloudflare',
+			function () {
+				return new WP_MCP_AI_Cloudflare_Client();
+			}
+		);
+
+		$this->singleton(
 			'client.huggingface_datasets',
 			function () {
 				return new WP_MCP_AI_Huggingface_Datasets_Client();
@@ -417,9 +424,23 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.dlq_manager',
+			function () {
+				return new WP_MCP_AI_Admin_DLQ_Manager();
+			}
+		);
+
+		$this->singleton(
 			'admin.token_manager',
 			function () {
 				return new WP_MCP_AI_Admin_Token_Manager();
+			}
+		);
+
+		$this->singleton(
+			'admin.dashboard_widget_queue_health',
+			function () {
+				return new WP_MCP_AI_Dashboard_Widget_Queue_Health();
 			}
 		);
 
@@ -438,9 +459,44 @@ class WP_MCP_AI_Container {
 		);
 
 		$this->singleton(
+			'admin.test_model',
+			function () {
+				return new WP_MCP_AI_Admin_Test_Model();
+			}
+		);
+
+		$this->singleton(
 			'admin.test_team',
 			function () {
 				return new WP_MCP_AI_Admin_Test_Team();
+			}
+		);
+
+		$this->singleton(
+			'admin.profession_settings',
+			function () {
+				return new WP_MCP_AI_Admin_Profession_Settings();
+			}
+		);
+
+		$this->singleton(
+			'admin.team_settings',
+			function () {
+				return new WP_MCP_AI_Admin_Team_Settings();
+			}
+		);
+
+		$this->singleton(
+			'admin.profession_research',
+			function () {
+				return new WP_MCP_AI_Admin_Profession_Research_Page();
+			}
+		);
+
+		$this->singleton(
+			'admin.team_research',
+			function () {
+				return new WP_MCP_AI_Admin_Team_Research_Page();
 			}
 		);
 
@@ -471,6 +527,18 @@ class WP_MCP_AI_Container {
 			'admin.oauth_manager',
 			function () {
 				return new WP_MCP_AI_OAuth_Manager();
+			}
+		);
+
+		$this->singleton(
+			'admin.settings',
+			function ( $container ) {
+				return new WP_MCP_AI_Admin_Settings(
+					$container->get( 'admin.settings_base' ),
+					$container->get( 'admin.ajax_handlers' ),
+					$container->get( 'admin.settings_renderer' ),
+					$container->get( 'admin.oauth_manager' )
+				);
 			}
 		);
 

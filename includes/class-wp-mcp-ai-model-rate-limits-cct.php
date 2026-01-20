@@ -379,7 +379,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'AI Model Rate Limits', 'wp-mcp-ai' );
+		$label = __( 'AI Model Rate Limits', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -464,17 +464,17 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 			self::build_field(
 				20001,
 				'model_name',
-				__( 'Model Name', 'wp-mcp-ai' ),
+				__( 'Model Name', 'mcp-ai-wpoos' ),
 				'text',
 				array(
 					'is_required' => true,
-					'description' => __( 'Model identifier (e.g., gpt-4o, claude-3.5-sonnet, gemini-1.5-pro).', 'wp-mcp-ai' ),
+					'description' => __( 'Model identifier (e.g., gpt-4o, claude-3.5-sonnet, gemini-1.5-pro).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20002,
 				'provider',
-				__( 'Provider', 'wp-mcp-ai' ),
+				__( 'Provider', 'mcp-ai-wpoos' ),
 				'select',
 				array(
 					'is_required' => true,
@@ -512,59 +512,59 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'Other',
 						),
 					),
-					'description' => __( 'AI provider offering this model.', 'wp-mcp-ai' ),
+					'description' => __( 'AI provider offering this model.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20003,
 				'tpm_limit',
-				__( 'TPM Limit (Tokens Per Minute)', 'wp-mcp-ai' ),
+				__( 'TPM Limit (Tokens Per Minute)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'is_required' => true,
 					'min'         => 0,
 					'step'        => 1000,
-					'description' => __( 'Maximum tokens per minute allowed for this model (API rate limit).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum tokens per minute allowed for this model (API rate limit).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20004,
 				'rpm_limit',
-				__( 'RPM Limit (Requests Per Minute)', 'wp-mcp-ai' ),
+				__( 'RPM Limit (Requests Per Minute)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 1,
-					'description' => __( 'Maximum requests per minute allowed for this model.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum requests per minute allowed for this model.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20005,
 				'context_window',
-				__( 'Context Window (Max Tokens)', 'wp-mcp-ai' ),
+				__( 'Context Window (Max Tokens)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'is_required' => true,
 					'min'         => 0,
 					'step'        => 1000,
-					'description' => __( 'Maximum context window size in tokens for this model.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum context window size in tokens for this model.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20006,
 				'max_output_tokens',
-				__( 'Max Output Tokens', 'wp-mcp-ai' ),
+				__( 'Max Output Tokens', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 1000,
-					'description' => __( 'Maximum output tokens the model can generate per request.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum output tokens the model can generate per request.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20007,
 				'tier',
-				__( 'Account Tier', 'wp-mcp-ai' ),
+				__( 'Account Tier', 'mcp-ai-wpoos' ),
 				'select',
 				array(
 					'options'     => array(
@@ -589,75 +589,75 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 							'value' => 'Scale/Enterprise',
 						),
 					),
-					'description' => __( 'Account tier these limits apply to (Free, Paid, Enterprise, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Account tier these limits apply to (Free, Paid, Enterprise, etc.).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20008,
 				'supports_streaming',
-				__( 'Supports Streaming', 'wp-mcp-ai' ),
+				__( 'Supports Streaming', 'mcp-ai-wpoos' ),
 				'switcher',
 				array(
-					'description' => __( 'Whether this model supports streaming responses.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether this model supports streaming responses.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20009,
 				'supports_function_calling',
-				__( 'Supports Function Calling', 'wp-mcp-ai' ),
+				__( 'Supports Function Calling', 'mcp-ai-wpoos' ),
 				'switcher',
 				array(
-					'description' => __( 'Whether this model supports function/tool calling.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether this model supports function/tool calling.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20010,
 				'supports_vision',
-				__( 'Supports Vision', 'wp-mcp-ai' ),
+				__( 'Supports Vision', 'mcp-ai-wpoos' ),
 				'switcher',
 				array(
-					'description' => __( 'Whether this model can process images.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether this model can process images.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20011,
 				'cost_per_1k_input_tokens',
-				__( 'Cost Per 1K Input Tokens ($)', 'wp-mcp-ai' ),
+				__( 'Cost Per 1K Input Tokens ($)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 0.0001,
-					'description' => __( 'Cost in USD per 1000 input tokens.', 'wp-mcp-ai' ),
+					'description' => __( 'Cost in USD per 1000 input tokens.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20012,
 				'cost_per_1k_output_tokens',
-				__( 'Cost Per 1K Output Tokens ($)', 'wp-mcp-ai' ),
+				__( 'Cost Per 1K Output Tokens ($)', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'step'        => 0.0001,
-					'description' => __( 'Cost in USD per 1000 output tokens.', 'wp-mcp-ai' ),
+					'description' => __( 'Cost in USD per 1000 output tokens.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20013,
 				'notes',
-				__( 'Notes', 'wp-mcp-ai' ),
+				__( 'Notes', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
 					'rows'        => 3,
-					'description' => __( 'Additional notes about this model configuration.', 'wp-mcp-ai' ),
+					'description' => __( 'Additional notes about this model configuration.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				20014,
 				'fallback_model',
-				__( 'High-Capacity Fallback Model', 'wp-mcp-ai' ),
+				__( 'High-Capacity Fallback Model', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.5-flash). Leave empty to use global fallback setting.', 'wp-mcp-ai' ),
+					'description' => __( 'Model to use when this model\'s TPM limit is exceeded (e.g., gemini-2.5-flash). Leave empty to use global fallback setting.', 'mcp-ai-wpoos' ),
 				)
 			),
 		);

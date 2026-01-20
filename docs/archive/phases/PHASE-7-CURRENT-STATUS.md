@@ -276,7 +276,7 @@ Phase 7 Week 1-2 **SUCCESS CRITERIA MET:**
 1. **Install in WordPress Environment**:
    ```bash
    # Navigate to Token Manager page
-   # Settings → WP oOS → Token Manager
+   # Settings → NV oOS → Token Manager
    ```
 
 2. **Verify Charts Render**:

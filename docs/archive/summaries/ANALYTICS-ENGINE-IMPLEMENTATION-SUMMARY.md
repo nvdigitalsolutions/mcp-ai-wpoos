@@ -6,7 +6,7 @@
 
 ## Overview
 
-Successfully implemented the Advanced Analytics Engine for the WP oOS Token Manager enhancement. This completes Week 5-6 of Phase 7 as outlined in the Token Manager Enhancement Plan.
+Successfully implemented the Advanced Analytics Engine for the NV oOS Token Manager enhancement. This completes Week 5-6 of Phase 7 as outlined in the Token Manager Enhancement Plan.
 
 ## What Was Implemented
 

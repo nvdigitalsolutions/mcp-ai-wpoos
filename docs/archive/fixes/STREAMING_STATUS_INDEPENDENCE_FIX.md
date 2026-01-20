@@ -46,7 +46,7 @@ function updateStreamingMessage(content) {
         
         scrollBatcher.scrollToBottom(state.messagesEl);
     } else if (window.console && console.warn) {
-        console.warn('[WP oOS] Streaming message element not found');
+        console.warn('[NV oOS] Streaming message element not found');
     }
 
     // ✅ OUTSIDE conditional - always runs regardless of bubble state

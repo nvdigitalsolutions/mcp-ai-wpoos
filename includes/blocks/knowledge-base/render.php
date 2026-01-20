@@ -11,16 +11,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Check user permissions.
 if ( ! current_user_can( 'upload_files' ) ) {
-	echo '<p class="wp-block-wp-mcp-ai-knowledge-base__notice">' . esc_html__( 'You do not have permission to upload files.', 'wp-mcp-ai' ) . '</p>';
+	echo '<p class="wp-block-mcp-ai-wpoos-knowledge-base__notice">' . esc_html__( 'You do not have permission to upload files.', 'mcp-ai-wpoos' ) . '</p>';
 	return;
 }
 
 $title         = isset( $attributes['title'] ) && '' !== $attributes['title']
 	? $attributes['title']
-	: __( 'Knowledge Base', 'wp-mcp-ai' );
+	: __( 'Knowledge Base', 'mcp-ai-wpoos' );
 $description   = isset( $attributes['description'] ) && '' !== $attributes['description']
 	? $attributes['description']
-	: __( 'Upload files to include in the assistant\'s knowledge base.', 'wp-mcp-ai' );
+	: __( 'Upload files to include in the assistant\'s knowledge base.', 'mcp-ai-wpoos' );
 $allowed_types = isset( $attributes['allowedTypes'] ) ? $attributes['allowedTypes'] : '.pdf,.txt,.md,.doc,.docx,.csv,.json';
 $max_files     = isset( $attributes['maxFiles'] ) ? absint( $attributes['maxFiles'] ) : 10;
 $max_file_size = isset( $attributes['maxFileSizeMB'] ) ? absint( $attributes['maxFileSizeMB'] ) : 10;
@@ -41,7 +41,7 @@ $type_names = array_map(
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class'              => 'wp-block-wp-mcp-ai-knowledge-base',
+			'class'              => 'wp-block-mcp-ai-wpoos-knowledge-base',
 			'data-block-id'      => $unique_id,
 			'data-allowed-types' => $allowed_types,
 			'data-max-files'     => $max_files,
@@ -54,7 +54,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf(
 		'class="%s" data-block-id="%s" data-allowed-types="%s" data-max-files="%s" data-max-size="%s" data-nonce="%s" data-upload-url="%s"',
-		esc_attr( 'wp-block-wp-mcp-ai-knowledge-base' ),
+		esc_attr( 'wp-block-mcp-ai-wpoos-knowledge-base' ),
 		esc_attr( $unique_id ),
 		esc_attr( $allowed_types ),
 		esc_attr( $max_files ),
@@ -67,35 +67,35 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 <div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
 
 	<?php if ( $title ) : ?>
-		<h3 class="wp-block-wp-mcp-ai-knowledge-base__title"><?php echo esc_html( $title ); ?></h3>
+		<h3 class="wp-block-mcp-ai-wpoos-knowledge-base__title"><?php echo esc_html( $title ); ?></h3>
 	<?php endif; ?>
 
 	<?php if ( $description ) : ?>
-		<p class="wp-block-wp-mcp-ai-knowledge-base__description"><?php echo esc_html( $description ); ?></p>
+		<p class="wp-block-mcp-ai-wpoos-knowledge-base__description"><?php echo esc_html( $description ); ?></p>
 	<?php endif; ?>
 
 	<!-- Upload Area -->
-	<div class="wp-block-wp-mcp-ai-knowledge-base__upload-area">
-		<div class="wp-block-wp-mcp-ai-knowledge-base__dropzone" tabindex="0" role="button" aria-label="<?php esc_attr_e( 'Upload files', 'wp-mcp-ai' ); ?>">
-			<svg class="wp-block-wp-mcp-ai-knowledge-base__upload-icon" viewBox="0 0 24 24" aria-hidden="true">
+	<div class="wp-block-mcp-ai-wpoos-knowledge-base__upload-area">
+		<div class="wp-block-mcp-ai-wpoos-knowledge-base__dropzone" tabindex="0" role="button" aria-label="<?php esc_attr_e( 'Upload files', 'mcp-ai-wpoos' ); ?>">
+			<svg class="wp-block-mcp-ai-wpoos-knowledge-base__upload-icon" viewBox="0 0 24 24" aria-hidden="true">
 				<path d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
 			</svg>
-			<p class="wp-block-wp-mcp-ai-knowledge-base__dropzone-text">
-				<?php esc_html_e( 'Drop files here or click to upload', 'wp-mcp-ai' ); ?>
+			<p class="wp-block-mcp-ai-wpoos-knowledge-base__dropzone-text">
+				<?php esc_html_e( 'Drop files here or click to upload', 'mcp-ai-wpoos' ); ?>
 			</p>
-			<p class="wp-block-wp-mcp-ai-knowledge-base__dropzone-hint">
+			<p class="wp-block-mcp-ai-wpoos-knowledge-base__dropzone-hint">
 				<?php
 				printf(
 					/* translators: 1: file types, 2: max file size */
-					esc_html__( 'Accepted: %1$s • Max %2$s per file', 'wp-mcp-ai' ),
+					esc_html__( 'Accepted: %1$s • Max %2$s per file', 'mcp-ai-wpoos' ),
 					esc_html( implode( ', ', $type_names ) ),
 					esc_html( size_format( $max_upload_size ) )
 				);
 				?>
 			</p>
-			<input 
-				type="file" 
-				class="wp-block-wp-mcp-ai-knowledge-base__file-input" 
+			<input
+				type="file"
+				class="wp-block-mcp-ai-wpoos-knowledge-base__file-input"
 				id="<?php echo esc_attr( $unique_id ); ?>-input"
 				accept="<?php echo esc_attr( $allowed_types ); ?>"
 				multiple
@@ -105,29 +105,29 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	</div>
 
 	<!-- File List -->
-	<div class="wp-block-wp-mcp-ai-knowledge-base__files">
-		<div class="wp-block-wp-mcp-ai-knowledge-base__files-header">
-			<span class="wp-block-wp-mcp-ai-knowledge-base__files-count">
+	<div class="wp-block-mcp-ai-wpoos-knowledge-base__files">
+		<div class="wp-block-mcp-ai-wpoos-knowledge-base__files-header">
+			<span class="wp-block-mcp-ai-wpoos-knowledge-base__files-count">
 				<strong class="wp-mcp-ai-knowledge-base__count">0</strong> / <?php echo esc_html( $max_files ); ?>
-				<?php esc_html_e( 'files', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'files', 'mcp-ai-wpoos' ); ?>
 			</span>
-			<button type="button" class="wp-block-wp-mcp-ai-knowledge-base__clear-all button button-link" style="display: none;">
-				<?php esc_html_e( 'Remove All', 'wp-mcp-ai' ); ?>
+			<button type="button" class="wp-block-mcp-ai-wpoos-knowledge-base__clear-all button button-link" style="display: none;">
+				<?php esc_html_e( 'Remove All', 'mcp-ai-wpoos' ); ?>
 			</button>
 		</div>
-		<ul class="wp-block-wp-mcp-ai-knowledge-base__file-list" role="list">
+		<ul class="wp-block-mcp-ai-wpoos-knowledge-base__file-list" role="list">
 			<!-- Files will be added here dynamically -->
 		</ul>
 	</div>
 
 	<!-- Hidden input to store file IDs -->
-	<input type="hidden" class="wp-block-wp-mcp-ai-knowledge-base__file-ids" name="knowledge_base_files" value="">
+	<input type="hidden" class="wp-block-mcp-ai-wpoos-knowledge-base__file-ids" name="knowledge_base_files" value="">
 
 	<!-- Progress indicator -->
-	<div class="wp-block-wp-mcp-ai-knowledge-base__progress" style="display: none;">
-		<div class="wp-block-wp-mcp-ai-knowledge-base__progress-bar">
-			<div class="wp-block-wp-mcp-ai-knowledge-base__progress-fill"></div>
+	<div class="wp-block-mcp-ai-wpoos-knowledge-base__progress" style="display: none;">
+		<div class="wp-block-mcp-ai-wpoos-knowledge-base__progress-bar">
+			<div class="wp-block-mcp-ai-wpoos-knowledge-base__progress-fill"></div>
 		</div>
-		<span class="wp-block-wp-mcp-ai-knowledge-base__progress-text"><?php esc_html_e( 'Uploading...', 'wp-mcp-ai' ); ?></span>
+		<span class="wp-block-mcp-ai-wpoos-knowledge-base__progress-text"><?php esc_html_e( 'Uploading...', 'mcp-ai-wpoos' ); ?></span>
 	</div>
 </div>

@@ -139,7 +139,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_tools_list' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant to list tools for. Returns all tools if omitted.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant to list tools for. Returns all tools if omitted.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
@@ -152,19 +152,19 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_tool_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'ID of the assistant context for tool execution.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant context for tool execution.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 						),
 						'tool'         => array(
-							'description'       => __( 'Slug of the tool to execute.', 'wp-mcp-ai' ),
+							'description'       => __( 'Slug of the tool to execute.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_key',
 						),
 						'arguments'    => array(
-							'description' => __( 'Arguments to pass to the tool execution.', 'wp-mcp-ai' ),
+							'description' => __( 'Arguments to pass to the tool execution.', 'mcp-ai-wpoos' ),
 							'type'        => 'object',
 							'required'    => false,
 							'default'     => array(),
@@ -186,25 +186,25 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_file_download' ),
 					'args'                => array(
 						'assistant_id'  => array(
-							'description'       => __( 'ID of the assistant context for file access.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID of the assistant context for file access.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'sanitize_callback' => 'absint',
 						),
 						'file_id'       => array(
-							'description'       => __( 'ID or identifier of the file to download.', 'wp-mcp-ai' ),
+							'description'       => __( 'ID or identifier of the file to download.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => 'sanitize_text_field',
 						),
 						'download_name' => array(
-							'description'       => __( 'Optional custom filename for the download.', 'wp-mcp-ai' ),
+							'description'       => __( 'Optional custom filename for the download.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'sanitize_callback' => 'sanitize_file_name',
 						),
 						'disposition'   => array(
-							'description'       => __( 'Content-Disposition header value (attachment or inline).', 'wp-mcp-ai' ),
+							'description'       => __( 'Content-Disposition header value (attachment or inline).', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
 							'default'           => 'attachment',
@@ -230,13 +230,13 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_cron_status_request' ),
 					'args'                => array(
 						'assistant_id' => array(
-							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation.', 'wp-mcp-ai' ),
-							'type'              => 'integer',
+							'description'       => __( 'Filter jobs by assistant ID for multi-widget isolation. Can be an integer assistant ID or a string like "unified_team_123" for unified team chats.', 'mcp-ai-wpoos' ),
+							'type'              => array( 'integer', 'string' ),
 							'required'          => false,
-							'sanitize_callback' => 'absint',
+							'sanitize_callback' => array( 'WP_MCP_AI_REST_Tools_Controller', 'sanitize_assistant_id' ),
 						),
 						'limit'        => array(
-							'description'       => __( 'Maximum number of jobs to return.', 'wp-mcp-ai' ),
+							'description'       => __( 'Maximum number of jobs to return.', 'mcp-ai-wpoos' ),
 							'type'              => 'integer',
 							'required'          => false,
 							'default'           => 10,
@@ -245,7 +245,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'maximum'           => 50,
 						),
 						'stream'       => array(
-							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'wp-mcp-ai' ),
+							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'mcp-ai-wpoos' ),
 							'type'        => 'boolean',
 							'required'    => false,
 							'default'     => false,
@@ -269,13 +269,13 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'callback'            => array( $this, 'handle_cron_job_details_request' ),
 					'args'                => array(
 						'job_id' => array(
-							'description'       => __( 'Cron job identifier.', 'wp-mcp-ai' ),
+							'description'       => __( 'Cron job identifier.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
 							'sanitize_callback' => array( $this, 'sanitize_job_id' ),
 						),
 						'stream' => array(
-							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'wp-mcp-ai' ),
+							'description' => __( 'Enable Server-Sent Events streaming for real-time updates.', 'mcp-ai-wpoos' ),
 							'type'        => 'boolean',
 							'required'    => false,
 							'default'     => false,
@@ -367,7 +367,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( null === $registry ) {
 			return $this->error(
 				'wp_mcp_ai_registry_unavailable',
-				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
 				503
 			);
 		}
@@ -382,7 +382,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				return $this->error(
 					'wp_mcp_ai_assistant_cpt_unavailable',
-					__( 'Assistant configuration is not available.', 'wp-mcp-ai' ),
+					__( 'Assistant configuration is not available.', 'mcp-ai-wpoos' ),
 					503
 				);
 			}
@@ -447,7 +447,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( null === $registry ) {
 			return $this->error(
 				'wp_mcp_ai_registry_unavailable',
-				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'wp-mcp-ai' ),
+				__( 'Tool registry is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
 				503
 			);
 		}
@@ -459,7 +459,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $assistant_id ) {
 			return $this->error(
 				'wp_mcp_ai_missing_assistant',
-				__( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ),
+				__( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ),
 				400
 			);
 		}
@@ -467,7 +467,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $tool_slug ) ) {
 			return $this->error(
 				'wp_mcp_ai_missing_tool',
-				__( 'Tool slug is required.', 'wp-mcp-ai' ),
+				__( 'Tool slug is required.', 'mcp-ai-wpoos' ),
 				400
 			);
 		}
@@ -476,7 +476,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $this->error(
 				'wp_mcp_ai_assistant_cpt_unavailable',
-				__( 'Assistant configuration is not available.', 'wp-mcp-ai' ),
+				__( 'Assistant configuration is not available.', 'mcp-ai-wpoos' ),
 				503
 			);
 		}
@@ -502,7 +502,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
 			return $this->error(
 				'wp_mcp_ai_tool_forbidden',
-				__( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ),
+				__( 'This assistant is not allowed to execute the requested tool.', 'mcp-ai-wpoos' ),
 				403
 			);
 		}
@@ -512,7 +512,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( ! $tool ) {
 			return $this->error(
 				'wp_mcp_ai_tool_missing',
-				__( 'The requested tool is not registered.', 'wp-mcp-ai' ),
+				__( 'The requested tool is not registered.', 'mcp-ai-wpoos' ),
 				404
 			);
 		}
@@ -530,7 +530,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $user_id ) && ! $this->is_guest_request() ) {
 			return $this->error(
 				'wp_mcp_ai_anonymous_user',
-				__( 'You must be logged in to execute tools.', 'wp-mcp-ai' ),
+				__( 'You must be logged in to execute tools.', 'mcp-ai-wpoos' ),
 				rest_authorization_required_code()
 			);
 		}
@@ -607,7 +607,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		if ( empty( $file_id ) ) {
 			return $this->error(
 				'wp_mcp_ai_missing_file_id',
-				__( 'File ID is required.', 'wp-mcp-ai' ),
+				__( 'File ID is required.', 'mcp-ai-wpoos' ),
 				400
 			);
 		}
@@ -630,7 +630,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		return $this->error(
 			'wp_mcp_ai_file_not_found',
-			__( 'The requested file was not found.', 'wp-mcp-ai' ),
+			__( 'The requested file was not found.', 'mcp-ai-wpoos' ),
 			404
 		);
 	}
@@ -657,7 +657,12 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$user_id = $this->get_current_user_id();
 
 		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
-		$assistant_id = absint( $request->get_param( 'assistant_id' ) );
+		$assistant_id = $request->get_param( 'assistant_id' );
+
+		// Sanitize assistant_id: keep as string if it's a unified team ID, otherwise convert to int.
+		if ( $assistant_id ) {
+			$assistant_id = self::sanitize_assistant_id( $assistant_id );
+		}
 
 		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ?: null );
 		$counts = $service->get_status_counts( $user_id, $assistant_id ?: null );
@@ -727,5 +732,50 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$sanitized = preg_replace( '/\.{2,}/', '', $sanitized );
 
 		return $sanitized;
+	}
+
+	/**
+	 * Sanitize assistant ID parameter.
+	 *
+	 * Assistant IDs can be either:
+	 * - Integer post IDs (e.g., 8901)
+	 * - Unified team IDs (e.g., "unified_team_8901")
+	 * - Profession test IDs (e.g., "profession_123")
+	 *
+	 * This sanitization preserves string identifiers while converting numeric strings to integers.
+	 *
+	 * @param mixed $assistant_id Assistant ID to sanitize.
+	 * @return int|string|null Sanitized assistant ID (int for numeric, string for prefixed IDs).
+	 */
+	public static function sanitize_assistant_id( $assistant_id ) {
+		if ( empty( $assistant_id ) ) {
+			return null;
+		}
+
+		// If it's already an integer, return it.
+		if ( is_int( $assistant_id ) ) {
+			return $assistant_id;
+		}
+
+		// If it's a string, check if it's a special identifier.
+		if ( is_string( $assistant_id ) ) {
+			$sanitized = sanitize_text_field( $assistant_id );
+
+			// Check for unified team or profession prefix.
+			if ( 0 === strpos( $sanitized, 'unified_team_' ) || 0 === strpos( $sanitized, 'profession_' ) ) {
+				return $sanitized;
+			}
+
+			// If it's a numeric string, convert to integer.
+			if ( is_numeric( $sanitized ) ) {
+				return absint( $sanitized );
+			}
+
+			// Otherwise return the sanitized string (defensive fallback).
+			return $sanitized;
+		}
+
+		// Fallback for unexpected types - try to convert to int.
+		return absint( $assistant_id );
 	}
 }

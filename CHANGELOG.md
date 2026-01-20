@@ -3,6 +3,130 @@
 ## [Unreleased]
 
 ### Fixed
+- **Tool Preset Multiplier Application (January 18, 2026)**: Fixed broken "Apply Preset" button on Token Manager page (PR #2990)
+  - **Root Cause**: `get_all_recommendations()` only queried tool registry which returned empty array during preset application
+  - **Solution**: Modified method to iterate through `$tool_categories` static property first (200+ tools), then check registry for dynamic tools
+  - **Impact**: Preset application now works correctly for Conservative, Balanced, Performance, and Aggressive presets
+  - **Files Changed**: `includes/class-wp-mcp-ai-tool-recommendations.php` (refactored into 2 new private helper methods)
+  - **Testing**: Comprehensive manual testing plan in `docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md`
+  - **Documentation**: Complete fix details in `docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md`
+  - Broke after PR #2984 which updated tool recommendations system
+  - Zero security vulnerabilities introduced, maintains backward compatibility
+  - Better code organization and maintainability
+
+- **Audio Transcription MIME Type (January 11, 2026)**: Fixed transcription button creating video files instead of audio files
+  - Added `getSupportedAudioMimeType()` helper function to check browser support
+  - MediaRecorder now explicitly requests audio-only MIME types (audio/webm, audio/ogg, etc.)
+  - Prefers audio formats over video container formats to avoid confusion
+  - Maintains backward compatibility with fallback to video/webm if needed
+  - Affects both transcribe and voice chat recording features
+  - OpenAI Whisper API accepts both audio and video files with audio tracks
+
+### Added
+- **Cloudflare Image Generation Models (January 11, 2026)**: Added support for new Cloudflare Workers AI image generation models (PR #2785)
+  - **Flux-2 Dev** (`@cf/black-forest-labs/flux-2-dev`) - Advanced image generation model
+  - **Leonardo AI Models**: Lucid Origin (`@cf/leonardo/lucid-origin`) and Phoenix 1.0 (`@cf/leonardo/phoenix-1.0`)
+  - All models support configurable dimensions (256-2048px), diffusion steps (1-20), and guidance parameters
+  - Compatible with existing `cloudflareai_text_to_image` tool
+  - Join Stable Diffusion XL Base/Lightning, Flux-1 Schnell, and Dreamshaper 8 LCM models
+  - See [Cloudflare Image Generation Tool](includes/tools/class-wp-mcp-ai-tool-generate-cloudflareai-image.php)
+
+- **ISO 27001/SOC 2/HIPAA Compliance - January 6, 2026**: Achieved 100% ISO 27001:2022 compliance (PR #2645, #2631, #2630)
+  - ISO 27001: 100% (83 of 83 applicable controls) - up from 56%
+  - SOC 2: 100% (54 of 54 Trust Services Criteria)
+  - HIPAA: 98% (42 of 43 Security Rule safeguards)
+  - ~90KB documentation across 14 comprehensive procedures
+  - Dynamic compliance dashboard calculations
+  - Complete control mappings for all three frameworks
+  - See [Weekly Summary](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+
+- **Pro CPT Documentation - January 6, 2026**: Created comprehensive documentation for Pro custom post types
+  - Events, Quizzes, and Places CPT overview (21 tools total)
+  - Events: 5 tools including Google Calendar integration
+  - Quizzes: 9 tools with JetEngine CCT integration
+  - Places: 7 tools with Google Places API integration
+  - See [PRO_CPT_OVERVIEW.md](docs/features/pro-cpt/PRO_CPT_OVERVIEW.md)
+
+### Changed
+- **Pro Dashboard Modernization - January 6, 2026**: Refactored Pro Dashboard with industry-standard patterns (PR #2641)
+  - Implemented Singleton pattern with lazy initialization
+  - Added type-safe class constants for delegates
+  - Centralized delegate management with configuration-driven approach
+  - Enhanced error handling and observability
+  - Public API for delegate access
+  - 100% backward compatible
+  - See [INDUSTRY_STANDARDS_ENHANCEMENTS.md](docs/implementation-summaries/INDUSTRY_STANDARDS_ENHANCEMENTS.md)
+
+- **Text Domain Migration - January 6, 2026**: Complete migration from wp-mcp-ai to mcp-ai-wpoos (PR #2635)
+  - Updated 12,773 instances across PHP and JavaScript
+  - Separate text domains: mcp-ai-wpoos (main), mcp-ai-wpoos-pro, mcp-ai-wpoos-core, mcp-ai-wpoos-base
+  - Zero references to old domain remain
+  - Enables proper POT file generation
+
+- **Documentation Organization - January 6, 2026**: Root directory cleanup (PR #2644)
+  - Moved 25 markdown files to organized subdirectories
+  - Root now contains only 5 essential files (83% reduction)
+  - Files organized into: implementation-summaries/, fixes/, visual-guides/, troubleshooting/
+  - Fixed 2 incorrect local file paths in plugin code
+  - Zero broken links
+
+- **Production Deployment - January 6, 2026**: Removed dev dependencies from vendor (PR #2638)
+  - Executed `composer install --no-dev`
+  - Repository ready for production cloning
+  - Dev tools reinstallable via `composer install` when needed
+
+### Fixed
+- **Hugging Face Model Pricing - January 8, 2026**: Fixed $0 cost display for Hugging Face models
+  - Added DeepSeek-V3.2 pricing ($0.28 input / $0.42 output per 1M tokens)
+  - Added default fallback pricing for unknown models ($0.50 per 1M tokens)
+  - Updated `get_model_pricing()` to support default pricing for Huggingface (similar to ollama/lm_studio)
+  - Included pricing for 6 additional models: Llama 3.3 70B, Llama 3.1 8B, Mistral 7B, Phi-3 Mini, Qwen 2.5 72B, Qwen 2.5 7B
+  - Pricing ranges from $0.10 to $1.00 per 1M tokens (input/output)
+  - Added comprehensive test coverage for Hugging Face cost calculations
+  - Resolves issue where DeepSeek-V3.2 and other unknown models showed no cost information
+  - See `includes/class-wp-mcp-ai-cost-calculator.php` (lines 295-337)
+
+- **PM Assistant Fixes - January 6, 2026**: Six critical modal and chat fixes (PRs #2629, #2632, #2633, #2636, #2637, #2626)
+  - Modal Rendering: Added missing CSS for proper overlay display
+  - Chat Localization: Ensured wpMcpAiChat global availability
+  - Nested Form Fix: Changed form structure for WordPress compatibility
+  - Validation Blocking: Always render modal HTML with error messages
+  - Diagnostics: Added version tracking and debug logging
+  - HTML5 Validation: Removed conflicting required attributes
+
+- **WordPress 6.7+ Translation Compatibility - January 6, 2026**: Fixed translation loading timing (PRs #2640, #2639)
+  - Moved 4 registration functions from `init` to `admin_init`
+  - Removed translation functions from plugin action links
+  - Eliminated WordPress 6.7+ timing warnings
+
+- **Code Review - January 2, 2026**: Comprehensive code review of all features and tools
+  - Overall grade: A- (92/100) - Production ready
+  - Security: 10/10 - Zero vulnerabilities found
+  - JavaScript: 10/10 - ESLint passes cleanly (0 errors)
+  - PHP Code Style: 7.5/10 - 1,083 errors, 1,294 warnings (235 auto-fixable)
+  - Architecture: 9.5/10 - Clean design patterns maintained
+  - Documentation: 9.5/10 - 659 comprehensive files
+  - Test Coverage: 8.5/10 - 565 test files
+  - Tool inventory verified: 217 tool files (151 base + 66 Pro)
+  - See [CODE_REVIEW_2026-01-02.md](docs/implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)
+
+### Changed
+- **Root Directory Organization**: Cleaned up root directory by moving troubleshooting documentation files (January 10, 2026)
+  - Moved `CLOUDFLARE-SYSTEM-PROMPT-TEST.md` from root to `docs/troubleshooting/common/`
+  - Moved `MODEL-MANAGER-FIX-VERIFICATION.md` from root to `docs/troubleshooting/common/`
+  - Root directory now contains only 5 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md)
+  - Zero information loss during reorganization
+
+- **Root Directory Organization**: Cleaned up root directory by moving fix and implementation summary files (PR #XXXX)
+  - Moved 6 remote connection fix files from root to `docs/fixes/`
+  - Moved 2 vectorizer implementation summaries from root to `docs/implementation-summaries/`
+  - Root directory now contains only 7 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md, readme.txt, tool-status.txt)
+  - Updated `docs/fixes/README.md` with sections for remote connection and vectorizer fixes
+  - Added `docs/implementation-summaries/README.md` to document implementation summaries
+  - Updated all cross-references to point to new file locations
+  - Zero information loss during reorganization
+
+### Fixed
 - **Chart Tool Display**: Fixed 3x3 pixel canvas issue in `create_chart` tool
   - Chart.js responsive mode was causing canvas to shrink to 3x3 pixels during iframe initialization
   - Added `responsive: false` and `maintainAspectRatio: false` as default Chart.js options
@@ -13,7 +137,7 @@
   - See `includes/tools/class-wp-mcp-ai-tool-create-chart.php` (lines 250-252, 261-268)
 
 ### Changed
-- **Plugin Rename**: Updated plugin name from "Open Operator System (WP oOS)" to "NV Digital Open Operator System (oOS)"
+- **Plugin Rename**: Updated plugin name from "Open Operator System (NV oOS)" to "NV Digital Open Operator System (oOS)"
   - Updated all plugin headers in main files and core/pro versions
   - Updated README.md, readme.txt, and all documentation references
   - Updated build scripts to generate correct plugin names
@@ -520,7 +644,7 @@
   - Increased minimum timeout for completion requests from 30s to 120s
   - Resource Manager now allows bypassing PHP `max_execution_time` constraint for external HTTP requests
   - Local AI models can now take the time they need (60-240s+) without timing out
-  - Timeout can be further increased via Settings → WP oOS → Request Timeout if needed【F:includes/class-resource-manager.php†L189-L220】【F:includes/class-wp-mcp-ai-ollama-client.php†L111-L119】【F:includes/class-wp-mcp-ai-lm-studio-client.php†L253-L261】
+  - Timeout can be further increased via Settings → NV oOS → Request Timeout if needed【F:includes/class-resource-manager.php†L189-L220】【F:includes/class-wp-mcp-ai-ollama-client.php†L111-L119】【F:includes/class-wp-mcp-ai-lm-studio-client.php†L253-L261】
 - JavaScript lint errors: Fixed 6 linting errors including unused function parameters in admin-settings.js and camelcase identifier warnings in settings-dashboard.js
 - JavaScript lint error for unused `waitForCrawl4aiTask` function (documented as reserved for future use)
 - 164 PHP coding standard violations auto-fixed across 19 files

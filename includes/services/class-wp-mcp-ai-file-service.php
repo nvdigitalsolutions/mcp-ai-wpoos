@@ -86,7 +86,7 @@ class WP_MCP_AI_File_Service {
 				'wp_mcp_ai_file_too_large',
 				sprintf(
 					/* translators: %s: maximum file size */
-					__( 'File size exceeds maximum allowed size of %s.', 'wp-mcp-ai' ),
+					__( 'File size exceeds maximum allowed size of %s.', 'mcp-ai-wpoos' ),
 					size_format( $this->max_file_size )
 				),
 				array( 'status' => 400 )
@@ -100,7 +100,7 @@ class WP_MCP_AI_File_Service {
 				'wp_mcp_ai_invalid_file_type',
 				sprintf(
 					/* translators: %s: file type */
-					__( 'File type "%s" is not allowed.', 'wp-mcp-ai' ),
+					__( 'File type "%s" is not allowed.', 'mcp-ai-wpoos' ),
 					$file_type['type']
 				),
 				array( 'status' => 400 )
@@ -108,9 +108,15 @@ class WP_MCP_AI_File_Service {
 		}
 
 		// Use WordPress file upload handler.
-		require_once ABSPATH . 'wp-admin/includes/file.php';
-		require_once ABSPATH . 'wp-admin/includes/image.php';
-		require_once ABSPATH . 'wp-admin/includes/media.php';
+		if ( ! function_exists( 'wp_handle_upload' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/image.php';
+		}
+		if ( ! function_exists( 'wp_read_audio_metadata' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/media.php';
+		}
 
 		$upload_overrides = array(
 			'test_form' => false,
@@ -166,7 +172,7 @@ class WP_MCP_AI_File_Service {
 		if ( empty( $file['name'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_file',
-				__( 'No file was uploaded.', 'wp-mcp-ai' ),
+				__( 'No file was uploaded.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -190,16 +196,16 @@ class WP_MCP_AI_File_Service {
 	 */
 	private function get_upload_error_message( $error_code ) {
 		$messages = array(
-			UPLOAD_ERR_INI_SIZE   => __( 'File exceeds upload_max_filesize directive in php.ini.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_FORM_SIZE  => __( 'File exceeds MAX_FILE_SIZE directive.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_PARTIAL    => __( 'File was only partially uploaded.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_NO_FILE    => __( 'No file was uploaded.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_NO_TMP_DIR => __( 'Missing temporary folder.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_CANT_WRITE => __( 'Failed to write file to disk.', 'wp-mcp-ai' ),
-			UPLOAD_ERR_EXTENSION  => __( 'File upload stopped by extension.', 'wp-mcp-ai' ),
+			UPLOAD_ERR_INI_SIZE   => __( 'File exceeds upload_max_filesize directive in php.ini.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_FORM_SIZE  => __( 'File exceeds MAX_FILE_SIZE directive.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_PARTIAL    => __( 'File was only partially uploaded.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_NO_FILE    => __( 'No file was uploaded.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_NO_TMP_DIR => __( 'Missing temporary folder.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_CANT_WRITE => __( 'Failed to write file to disk.', 'mcp-ai-wpoos' ),
+			UPLOAD_ERR_EXTENSION  => __( 'File upload stopped by extension.', 'mcp-ai-wpoos' ),
 		);
 
-		return $messages[ $error_code ] ?? __( 'Unknown upload error.', 'wp-mcp-ai' );
+		return $messages[ $error_code ] ?? __( 'Unknown upload error.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -248,7 +254,7 @@ class WP_MCP_AI_File_Service {
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_attachment',
-				__( 'Invalid attachment ID.', 'wp-mcp-ai' ),
+				__( 'Invalid attachment ID.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -258,7 +264,7 @@ class WP_MCP_AI_File_Service {
 		if ( $assistant_id && ! current_user_can( 'read_post', $assistant_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_permission_denied',
-				__( 'You do not have permission to download this file.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to download this file.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -268,7 +274,7 @@ class WP_MCP_AI_File_Service {
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'File not found on server.', 'wp-mcp-ai' ),
+				__( 'File not found on server.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -336,7 +342,7 @@ class WP_MCP_AI_File_Service {
 		if ( ! is_array( $attachments ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_attachments',
-				__( 'Attachments must be an array.', 'wp-mcp-ai' ),
+				__( 'Attachments must be an array.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -345,7 +351,7 @@ class WP_MCP_AI_File_Service {
 			if ( ! isset( $attachment['type'] ) || ! isset( $attachment['data'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_invalid_attachment_format',
-					__( 'Each attachment must have "type" and "data" fields.', 'wp-mcp-ai' ),
+					__( 'Each attachment must have "type" and "data" fields.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}

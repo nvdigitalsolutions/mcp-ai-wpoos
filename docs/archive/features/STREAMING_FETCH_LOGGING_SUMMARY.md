@@ -20,7 +20,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** Before fetch request is sent
 **Logs:**
 ```javascript
-[WP oOS] Starting streaming request: {
+[NV oOS] Starting streaming request: {
     endpoint: "https://...",
     assistantId: 123,
     messageCount: 2,
@@ -34,7 +34,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** HTTP response received (before reading body)
 **Logs:**
 ```javascript
-[WP oOS] Streaming response received: {
+[NV oOS] Streaming response received: {
     status: 200,
     statusText: "OK",
     ok: true,
@@ -51,7 +51,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** Server returns error status (4xx, 5xx)
 **Logs:**
 ```javascript
-[WP oOS] HTTP error response: {
+[NV oOS] HTTP error response: {
     status: 403,
     statusText: "Forbidden",
     url: "https://..."
@@ -63,7 +63,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** Network error, CORS, or request failure
 **Logs:**
 ```javascript
-[WP oOS] Streaming request failed: {
+[NV oOS] Streaming request failed: {
     errorType: "TypeError",
     errorMessage: "Failed to fetch",
     errorStatus: "N/A",
@@ -73,7 +73,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
     hasResponse: false,
     streamCompleted: false
 }
-[WP oOS] Server response text: "..." (if available)
+[NV oOS] Server response text: "..." (if available)
 ```
 **Purpose:** Provides detailed error context
 
@@ -81,8 +81,8 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** SSE stream starts and completes
 **Logs:**
 ```javascript
-[WP oOS] Starting SSE stream processing
-[WP oOS] SSE stream completed: {
+[NV oOS] Starting SSE stream processing
+[NV oOS] SSE stream completed: {
     totalContentLength: 1234,
     contentSample: "..."
 }
@@ -93,7 +93,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** Malformed JSON in SSE event data
 **Logs:**
 ```javascript
-[WP oOS] Failed to parse SSE event data: {
+[NV oOS] Failed to parse SSE event data: {
     eventType: "message",
     eventData: "{invalid...",
     error: "Unexpected token..."
@@ -105,7 +105,7 @@ Added comprehensive debug logging at 7 critical points in the streaming request 
 **When:** Error reading from ReadableStream
 **Logs:**
 ```javascript
-[WP oOS] Error reading SSE stream chunk: {
+[NV oOS] Error reading SSE stream chunk: {
     error: "Stream closed unexpectedly",
     errorType: "DOMException"
 }
@@ -183,8 +183,8 @@ Created comprehensive test guide covering:
 **Before:** "Fetch failed loading"
 **After:**
 ```
-[WP oOS] Starting streaming request: {...}
-[WP oOS] Streaming request failed: {
+[NV oOS] Starting streaming request: {...}
+[NV oOS] Streaming request failed: {
     errorType: "TypeError",
     errorMessage: "Failed to fetch"
 }
@@ -195,9 +195,9 @@ Created comprehensive test guide covering:
 **Before:** "Fetch failed loading"
 **After:**
 ```
-[WP oOS] Streaming response received: {status: 403}
-[WP oOS] HTTP error response: {...}
-[WP oOS] Server response text: "{"code":"rest_forbidden",...}"
+[NV oOS] Streaming response received: {status: 403}
+[NV oOS] HTTP error response: {...}
+[NV oOS] Server response text: "{"code":"rest_forbidden",...}"
 ```
 **Diagnosis:** Permission issue, check authentication
 
@@ -205,7 +205,7 @@ Created comprehensive test guide covering:
 **Before:** Silent failure or unclear error
 **After:**
 ```
-[WP oOS] Failed to parse SSE event data: {
+[NV oOS] Failed to parse SSE event data: {
     error: "Unexpected token..."
 }
 ```
@@ -215,7 +215,7 @@ Created comprehensive test guide covering:
 **Before:** Silent failure
 **After:**
 ```
-[WP oOS] Error reading SSE stream chunk: {
+[NV oOS] Error reading SSE stream chunk: {
     error: "Stream closed unexpectedly"
 }
 ```

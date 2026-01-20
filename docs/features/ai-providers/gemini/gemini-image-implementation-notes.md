@@ -2,7 +2,7 @@
 
 ## Overview
 
-WP oOS provides two tools for working with Gemini's image capabilities:
+NV oOS provides two tools for working with Gemini's image capabilities:
 - `generate_gemini_image` - Text-to-image generation
 - `edit_gemini_image` - Image-to-image editing (Nano Banana)
 
@@ -153,7 +153,7 @@ Both tools respect the same WordPress settings:
 - `gemini_image_aspect_ratio` - Default aspect ratio (fallback: `1:1`)
 
 These can be configured at:
-**WordPress Admin → Settings → WP oOS → Gemini Settings**
+**WordPress Admin → Settings → NV oOS → Gemini Settings**
 
 ## Future Considerations
 
@@ -194,7 +194,7 @@ Both methods provide filters for customization:
 
 **Solution**: 
 1. Verify both tools are using `gemini-2.5-flash-image` model
-2. Check settings at **Settings → WP oOS → Gemini Settings**
+2. Check settings at **Settings → NV oOS → Gemini Settings**
 3. Run consistency tests: `composer test -- tests/test-gemini-image-pattern-consistency.php`
 4. Enable logging to compare request payloads
 

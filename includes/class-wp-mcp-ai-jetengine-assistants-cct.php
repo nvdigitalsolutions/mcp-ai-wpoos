@@ -217,7 +217,7 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 	 * @return array
 	 */
 	protected static function get_registration_request() {
-		$label = __( 'AI Assistants', 'wp-mcp-ai' );
+		$label = __( 'AI Assistants', 'mcp-ai-wpoos' );
 
 		return array(
 			'name'        => $label,
@@ -294,70 +294,70 @@ class WP_MCP_AI_JetEngine_Assistants_CCT {
 			self::build_field(
 				++$base_id,
 				'title',
-				__( 'Title', 'wp-mcp-ai' ),
+				__( 'Title', 'mcp-ai-wpoos' ),
 				'text',
 				array(
 					'is_required' => true,
-					'description' => __( 'Assistant display name.', 'wp-mcp-ai' ),
+					'description' => __( 'Assistant display name.', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'description',
-				__( 'Description', 'wp-mcp-ai' ),
+				__( 'Description', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'Assistant description or purpose.', 'wp-mcp-ai' ),
+					'description' => __( 'Assistant description or purpose.', 'mcp-ai-wpoos' ),
 					'rows'        => 4,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'provider',
-				__( 'Provider', 'wp-mcp-ai' ),
+				__( 'Provider', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'AI provider (e.g., openai, gemini, ollama).', 'wp-mcp-ai' ),
+					'description' => __( 'AI provider (e.g., openai, gemini, ollama).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'model',
-				__( 'Model', 'wp-mcp-ai' ),
+				__( 'Model', 'mcp-ai-wpoos' ),
 				'text',
 				array(
-					'description' => __( 'Model identifier (e.g., gpt-4o-mini).', 'wp-mcp-ai' ),
+					'description' => __( 'Model identifier (e.g., gpt-4o-mini).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'system_prompt',
-				__( 'System Prompt', 'wp-mcp-ai' ),
+				__( 'System Prompt', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'System instructions for the assistant.', 'wp-mcp-ai' ),
+					'description' => __( 'System instructions for the assistant.', 'mcp-ai-wpoos' ),
 					'rows'        => 8,
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'temperature',
-				__( 'Temperature', 'wp-mcp-ai' ),
+				__( 'Temperature', 'mcp-ai-wpoos' ),
 				'number',
 				array(
 					'min'         => 0,
 					'max'         => 2,
 					'step'        => 0.1,
-					'description' => __( 'Sampling temperature (0-2).', 'wp-mcp-ai' ),
+					'description' => __( 'Sampling temperature (0-2).', 'mcp-ai-wpoos' ),
 				)
 			),
 			self::build_field(
 				++$base_id,
 				'tools',
-				__( 'Tools', 'wp-mcp-ai' ),
+				__( 'Tools', 'mcp-ai-wpoos' ),
 				'textarea',
 				array(
-					'description' => __( 'JSON array of enabled tool slugs.', 'wp-mcp-ai' ),
+					'description' => __( 'JSON array of enabled tool slugs.', 'mcp-ai-wpoos' ),
 					'rows'        => 4,
 				)
 			),

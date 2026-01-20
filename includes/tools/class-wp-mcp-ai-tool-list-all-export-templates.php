@@ -18,6 +18,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  * Lists WP All Export templates configured on the site.
  */
 class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether WP All Export is available.
 	 *
@@ -33,7 +34,7 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Export tool is disabled because WP All Export plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Export tool is disabled because WP All Export plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +48,14 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List WP All Export Templates', 'wp-mcp-ai' );
+		return __( 'List WP All Export Templates', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns a list of WP All Export templates configured on the site. Requires WP All Export plugin.', 'wp-mcp-ai' );
+		return __( 'Returns a list of WP All Export templates configured on the site. Requires WP All Export plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,7 +67,7 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'limit' => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of export templates to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of export templates to retrieve.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 20,
@@ -85,21 +86,21 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view export templates.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to view export templates.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view export templates.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view export templates.', 'mcp-ai-wpoos' ) );
 		}
 
 		$limit = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
@@ -132,12 +133,15 @@ class WP_MCP_AI_Tool_List_All_Export_Templates implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of export templates */
+			__( 'Found %d export template(s)', 'mcp-ai-wpoos' ),
+			count( $results )
+		);
+
 		return array(
-			'summary' => sprintf(
-				/* translators: %d: number of export templates */
-				__( 'Found %d export template(s)', 'wp-mcp-ai' ),
-				count( $results )
-			),
+			'message' => $summary_text,
+			'summary' => $summary_text,
 			'exports' => $results,
 			'count'   => count( $results ),
 		);

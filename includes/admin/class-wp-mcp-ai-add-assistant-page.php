@@ -38,8 +38,8 @@ class WP_MCP_AI_Add_Assistant_Page {
 	public function register_page() {
 		$this->page_hook = add_submenu_page(
 			'edit.php?post_type=mcp_ai_assistant',
-			__( 'Create Assistant', 'wp-mcp-ai' ),
-			__( 'Create Assistant', 'wp-mcp-ai' ),
+			__( 'Create Assistant', 'mcp-ai-wpoos' ),
+			__( 'Create Assistant', 'mcp-ai-wpoos' ),
 			'edit_posts',
 			'wp-mcp-ai-add-assistant',
 			array( $this, 'render_page' )
@@ -78,9 +78,9 @@ class WP_MCP_AI_Add_Assistant_Page {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp_mcp_ai_create_from_professional' ),
 				'strings' => array(
-					'creating' => __( 'Creating assistant...', 'wp-mcp-ai' ),
-					'success'  => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
-					'error'    => __( 'Error creating assistant. Please try again.', 'wp-mcp-ai' ),
+					'creating' => __( 'Creating assistant...', 'mcp-ai-wpoos' ),
+					'success'  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
+					'error'    => __( 'Error creating assistant. Please try again.', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -103,9 +103,9 @@ class WP_MCP_AI_Add_Assistant_Page {
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Add New Assistant', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'Add New Assistant', 'mcp-ai-wpoos' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Select a professional template to create a new AI assistant. Each professional has pre-configured instructions, tools, and knowledge base.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select a professional template to create a new AI assistant. Each professional has pre-configured instructions, tools, and knowledge base.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $professions ) ) : ?>
@@ -114,8 +114,8 @@ class WP_MCP_AI_Add_Assistant_Page {
 						<?php
 						printf(
 							/* translators: %s: URL to create profession */
-							esc_html__( 'No professional templates found. Please %s first to create assistants from templates.', 'wp-mcp-ai' ),
-							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a professional', 'wp-mcp-ai' ) . '</a>'
+							esc_html__( 'No professional templates found. Please %s first to create assistants from templates.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a professional', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
@@ -123,8 +123,8 @@ class WP_MCP_AI_Add_Assistant_Page {
 						<?php
 						printf(
 							/* translators: %s: URL to classic add page */
-							esc_html__( 'Alternatively, you can %s to create a custom assistant without using a template.', 'wp-mcp-ai' ),
-							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'add a new assistant directly', 'wp-mcp-ai' ) . '</a>'
+							esc_html__( 'Alternatively, you can %s to create a custom assistant without using a template.', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'add a new assistant directly', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
@@ -147,7 +147,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 									<img src="<?php echo esc_url( $thumbnail_url ); ?>" alt="<?php echo esc_attr( $profession->post_title ); ?>">
 								</div>
 							<?php endif; ?>
-							
+
 							<div class="professional-header">
 								<h3><?php echo esc_html( $profession->post_title ); ?></h3>
 								<?php if ( $category ) : ?>
@@ -171,7 +171,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 											<?php
 											printf(
 												/* translators: %d: number of tools */
-												esc_html( _n( '%d tool', '%d tools', $tools_count, 'wp-mcp-ai' ) ),
+												esc_html( _n( '%d tool', '%d tools', $tools_count, 'mcp-ai-wpoos' ) ),
 												absint( $tools_count )
 											);
 											?>
@@ -183,7 +183,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 											<?php
 											printf(
 												/* translators: %d: number of expertise areas */
-												esc_html( _n( '%d expertise', '%d expertise areas', $expertise_count, 'wp-mcp-ai' ) ),
+												esc_html( _n( '%d expertise', '%d expertise areas', $expertise_count, 'mcp-ai-wpoos' ) ),
 												absint( $expertise_count )
 											);
 											?>
@@ -194,10 +194,10 @@ class WP_MCP_AI_Add_Assistant_Page {
 
 							<div class="professional-actions">
 								<button type="button" class="button button-primary button-large wp-mcp-ai-create-assistant" data-profession-id="<?php echo esc_attr( $profession->ID ); ?>">
-									<?php esc_html_e( 'Create Assistant', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Create Assistant', 'mcp-ai-wpoos' ); ?>
 								</button>
 								<a href="<?php echo esc_url( get_edit_post_link( $profession->ID ) ); ?>" class="button button-secondary">
-									<?php esc_html_e( 'View Template', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'View Template', 'mcp-ai-wpoos' ); ?>
 								</a>
 							</div>
 						</div>
@@ -211,43 +211,46 @@ class WP_MCP_AI_Add_Assistant_Page {
 			<div class="wp-mcp-ai-modal-overlay"></div>
 			<div class="wp-mcp-ai-modal-content">
 				<div class="wp-mcp-ai-modal-header">
-					<h2><?php esc_html_e( 'Create Assistant from Template', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Create Assistant from Template', 'mcp-ai-wpoos' ); ?></h2>
 					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">
 					<form id="wp-mcp-ai-create-form">
 						<input type="hidden" name="profession_id" id="profession-id" value="">
-						
+
 						<p>
 							<label for="assistant-title">
-								<strong><?php esc_html_e( 'Assistant Title', 'wp-mcp-ai' ); ?> <span class="required">*</span></strong>
+								<strong><?php esc_html_e( 'Assistant Title', 'mcp-ai-wpoos' ); ?> <span class="required">*</span></strong>
 							</label>
-							<input type="text" id="assistant-title" name="title" class="regular-text widefat" required placeholder="<?php esc_attr_e( 'e.g., "Jamaica Tax Assistant"', 'wp-mcp-ai' ); ?>">
-							<span class="description"><?php esc_html_e( 'Give your assistant a descriptive name', 'wp-mcp-ai' ); ?></span>
+							<input type="text" id="assistant-title" name="title" class="regular-text widefat" required placeholder="<?php esc_attr_e( 'e.g., "Jamaica Tax Assistant"', 'mcp-ai-wpoos' ); ?>">
+							<span class="description"><?php esc_html_e( 'Give your assistant a descriptive name', 'mcp-ai-wpoos' ); ?></span>
 						</p>
 
 						<p>
 							<label for="assistant-provider">
-								<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 							</label>
 							<select id="assistant-provider" name="provider" class="regular-text widefat">
-								<option value=""><?php esc_html_e( '-- Use Template Default --', 'wp-mcp-ai' ); ?></option>
-								<option value="openai"><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-								<option value="gemini"><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-								<option value="anthropic"><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-								<option value="ollama"><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-								<option value="lm_studio"><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+								<option value=""><?php esc_html_e( '-- Use Template Default --', 'mcp-ai-wpoos' ); ?></option>
+								<?php
+								$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+								foreach ( $available_providers as $provider_slug => $provider_label ) {
+									?>
+									<option value="<?php echo esc_attr( $provider_slug ); ?>"><?php echo esc_html( $provider_label ); ?></option>
+									<?php
+								}
+								?>
 							</select>
-							<span class="description"><?php esc_html_e( 'Override the template default if needed', 'wp-mcp-ai' ); ?></span>
+							<span class="description"><?php esc_html_e( 'Override the template default if needed', 'mcp-ai-wpoos' ); ?></span>
 						</p>
 					</form>
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
 					<button type="button" class="button button-secondary wp-mcp-ai-modal-close">
-						<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="submit" form="wp-mcp-ai-create-form" class="button button-primary" id="wp-mcp-ai-submit-create">
-						<?php esc_html_e( 'Create Assistant', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Create Assistant', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
 			</div>
@@ -262,7 +265,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 		check_ajax_referer( 'wp_mcp_ai_create_from_professional', 'nonce' );
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get form data.
@@ -272,11 +275,11 @@ class WP_MCP_AI_Add_Assistant_Page {
 
 		// Validate profession ID.
 		if ( ! $profession_id || 'mcp_ai_profession' !== get_post_type( $profession_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid professional template.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid professional template.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		if ( empty( $title ) ) {
-			wp_send_json_error( array( 'message' => __( 'Title is required.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Title is required.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get profession data.
@@ -304,7 +307,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 		// build the prompt. We keep this for assistants that may not use primary roles.
 		$system_prompt = $role_description;
 		if ( ! empty( $knowledge_base ) ) {
-			$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'wp-mcp-ai' ) . "\n" . $knowledge_base;
+			$system_prompt .= "\n\n" . __( 'Knowledge Base:', 'mcp-ai-wpoos' ) . "\n" . $knowledge_base;
 		}
 
 		// Create the assistant post.
@@ -345,7 +348,7 @@ class WP_MCP_AI_Add_Assistant_Page {
 			array(
 				'assistant_id' => $assistant_id,
 				'edit_url'     => get_edit_post_link( $assistant_id, 'raw' ),
-				'message'      => __( 'Assistant created successfully!', 'wp-mcp-ai' ),
+				'message'      => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
 			)
 		);
 	}

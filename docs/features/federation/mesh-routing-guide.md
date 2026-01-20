@@ -1,11 +1,13 @@
 # Mesh Compute Routing Guide
 
-**Version:** 1.0.0  
-**Last Updated:** November 6, 2025
+**Version:** 1.2.0  
+**Last Updated:** January 6, 2026
+
+> **🆕 v1.2.0 Enhancement:** Mesh routing now includes [Little's Law-based capacity prediction](../LITTLES_LAW_INTEGRATION.md#1-mesh-router-integration) for smarter peer selection and load balancing.
 
 ## Overview
 
-WP oOS now includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
+NV oOS now includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
 
 1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
 2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, and Ollama on one site
@@ -33,7 +35,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 
 **Perfect for**: One WordPress site using multiple AI providers for cost optimization and resilience.
 
-1. Configure multiple AI providers in **Settings → WP oOS**:
+1. Configure multiple AI providers in **Settings → NV oOS**:
    - Add OpenAI API key
    - Add Gemini API key
    - Configure Ollama endpoint (optional, for local AI)
@@ -53,7 +55,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 
 **Perfect for**: Multiple WordPress sites sharing compute resources across Cloudways, SiteGround, or mixed hosting.
 
-1. Enable mesh on all sites: **Settings → WP oOS → Mesh Network**
+1. Enable mesh on all sites: **Settings → NV oOS → Mesh Network**
    - Check **Enable mesh networking**
    - Copy the generated **Inbound API Key**
 
@@ -87,7 +89,7 @@ Even without a mesh network, AI routing provides significant benefits:
 
 #### 1. Configure Multiple Providers
 
-Navigate to **Settings → WP oOS** and configure at least two providers:
+Navigate to **Settings → NV oOS** and configure at least two providers:
 
 **OpenAI** (Cloud - Fast, Most Capable):
 ```

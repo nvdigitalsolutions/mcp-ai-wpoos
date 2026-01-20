@@ -116,7 +116,7 @@
 ✅ **AJAX-Powered** - Smooth, no-reload browsing experience
 
 #### **Access:**
-- **Admin Menu**: WP oOS → HF Datasets
+- **Admin Menu**: NV oOS → HF Datasets
 - **URL**: `/wp-admin/admin.php?page=wp-mcp-ai-datasets`
 
 ---
@@ -209,7 +209,7 @@
 
 ### ✅ Admin Page Loaded
 - Initialized in: `mcp-ai-wpoos.php` (line 603)
-- Menu item appears in WP oOS submenu
+- Menu item appears in NV oOS submenu
 - Accessible to administrators only
 
 ---

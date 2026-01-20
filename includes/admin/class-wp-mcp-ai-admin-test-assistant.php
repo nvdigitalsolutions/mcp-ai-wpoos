@@ -49,7 +49,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 		 * @return string
 		 */
 		protected function get_page_title() {
-			return __( 'Test Assistant', 'wp-mcp-ai' );
+			return __( 'Test Assistant', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -58,7 +58,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 		 * @return string
 		 */
 		protected function get_menu_title() {
-			return __( 'Test Assistant', 'wp-mcp-ai' );
+			return __( 'Test Assistant', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -94,9 +94,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 			if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				?>
 				<div class="wrap">
-					<h1><?php echo esc_html__( 'Test AI Assistants', 'wp-mcp-ai' ); ?></h1>
+					<h1><?php echo esc_html__( 'Test AI Assistants', 'mcp-ai-wpoos' ); ?></h1>
 					<div class="notice notice-error">
-						<p><?php echo esc_html__( 'The Assistant CPT class is not loaded. Please contact support.', 'wp-mcp-ai' ); ?></p>
+						<p><?php echo esc_html__( 'The Assistant CPT class is not loaded. Please contact support.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				</div>
 				<?php
@@ -118,8 +118,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 
 			?>
 			<div class="wrap">
-				<h1><?php echo esc_html__( 'Test AI Assistants', 'wp-mcp-ai' ); ?></h1>
-				<p><?php echo esc_html__( 'Test your AI assistants directly from the admin dashboard. Click "Test" next to any assistant to open a chat interface and validate its behavior.', 'wp-mcp-ai' ); ?></p>
+				<h1><?php echo esc_html__( 'Test AI Assistants', 'mcp-ai-wpoos' ); ?></h1>
+				<p><?php echo esc_html__( 'Test your AI assistants directly from the admin dashboard. Click "Test" next to any assistant to open a chat interface and validate its behavior.', 'mcp-ai-wpoos' ); ?></p>
 
 				<?php if ( empty( $assistants ) ) : ?>
 					<div class="notice notice-warning">
@@ -127,8 +127,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 							<?php
 							printf(
 								/* translators: %s: URL to create new assistant */
-								esc_html__( 'No assistants found. %s to get started.', 'wp-mcp-ai' ),
-								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ) . '">' . esc_html__( 'Create your first assistant', 'wp-mcp-ai' ) . '</a>'
+								esc_html__( 'No assistants found. %s to get started.', 'mcp-ai-wpoos' ),
+								'<a href="' . esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ) . '">' . esc_html__( 'Create your first assistant', 'mcp-ai-wpoos' ) . '</a>'
 							);
 							?>
 						</p>
@@ -137,12 +137,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
-								<th scope="col"><?php echo esc_html__( 'Assistant Name', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Provider', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Model', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Professionals', 'wp-mcp-ai' ); ?></th>
-								<th scope="col"><?php echo esc_html__( 'Tools', 'wp-mcp-ai' ); ?></th>
-								<th scope="col" class="column-actions"><?php echo esc_html__( 'Actions', 'wp-mcp-ai' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Assistant Name', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Model', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Professionals', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col"><?php echo esc_html__( 'Tools', 'mcp-ai-wpoos' ); ?></th>
+								<th scope="col" class="column-actions"><?php echo esc_html__( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -155,8 +155,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 									$config = array();
 								}
 
-								$provider       = ! empty( $config['provider'] ) ? $config['provider'] : __( 'Default', 'wp-mcp-ai' );
-								$model          = ! empty( $config['model'] ) ? $config['model'] : __( 'Default', 'wp-mcp-ai' );
+								$provider       = ! empty( $config['provider'] ) ? $config['provider'] : __( 'Default', 'mcp-ai-wpoos' );
+								$model          = ! empty( $config['model'] ) ? $config['model'] : __( 'Default', 'mcp-ai-wpoos' );
 								$tool_count     = isset( $config['tools'] ) && is_array( $config['tools'] ) ? count( $config['tools'] ) : 0;
 								$edit_url       = get_edit_post_link( $assistant->ID );
 								$tool_shortcuts = $this->get_assistant_tool_shortcuts( $assistant->ID );
@@ -168,7 +168,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 										<div class="row-actions">
 											<span class="edit">
 												<a href="<?php echo esc_url( $edit_url ); ?>">
-													<?php echo esc_html__( 'Edit', 'wp-mcp-ai' ); ?>
+													<?php echo esc_html__( 'Edit', 'mcp-ai-wpoos' ); ?>
 												</a>
 											</span>
 										</div>
@@ -178,7 +178,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 									<td>
 										<?php
 										if ( empty( $professionals ) ) {
-											echo '<em>' . esc_html__( 'None', 'wp-mcp-ai' ) . '</em>';
+											echo '<em>' . esc_html__( 'None', 'mcp-ai-wpoos' ) . '</em>';
 										} else {
 											echo esc_html( implode( ', ', $professionals ) );
 										}
@@ -187,18 +187,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 									<td>
 										<?php
 										/* translators: %d: number of tools enabled for the assistant */
-										echo esc_html( sprintf( _n( '%d tool', '%d tools', $tool_count, 'wp-mcp-ai' ), $tool_count ) );
+										echo esc_html( sprintf( _n( '%d tool', '%d tools', $tool_count, 'mcp-ai-wpoos' ), $tool_count ) );
 										?>
 									</td>
 									<td>
-										<button 
-											type="button" 
+										<button
+											type="button"
 											class="button button-primary wp-mcp-ai-test-assistant-btn"
 											data-assistant-id="<?php echo esc_attr( $assistant->ID ); ?>"
 											data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"
 											data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $tool_shortcuts ) ); ?>"
 										>
-											<?php echo esc_html__( 'Test', 'wp-mcp-ai' ); ?>
+											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>
 									</td>
 								</tr>
@@ -212,8 +212,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 					<div class="wp-mcp-ai-test-modal__backdrop"></div>
 					<div class="wp-mcp-ai-test-modal__panel">
 						<div class="wp-mcp-ai-test-modal__header">
-							<h2 id="wp-mcp-ai-test-modal__title"><?php echo esc_html__( 'Test Assistant', 'wp-mcp-ai' ); ?></h2>
-							<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
+							<h2 id="wp-mcp-ai-test-modal__title"><?php echo esc_html__( 'Test Assistant', 'mcp-ai-wpoos' ); ?></h2>
+							<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
 								<span class="dashicons dashicons-no-alt"></span>
 							</button>
 						</div>

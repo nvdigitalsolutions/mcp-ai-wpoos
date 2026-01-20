@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 	/**
 	 * Lists available splits and configurations for a dataset.
@@ -16,6 +18,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -33,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset List Splits tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset List Splits tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset List Splits', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset List Splits', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'List available splits in a HuggingFace dataset', 'wp-mcp-ai' );
+			return __( 'List available splits in a HuggingFace dataset', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -139,7 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -149,7 +153,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			if ( empty( $dataset ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_empty_dataset',
-					__( 'Dataset name cannot be empty.', 'wp-mcp-ai' )
+					__( 'Dataset name cannot be empty.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -164,10 +168,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 			}
 
 			// Format response.
+			$splits = isset( $result['splits'] ) ? $result['splits'] : array();
+			$count = count( $splits );
+
+			/* translators: %d: number of splits */
+			$message = sprintf( __( 'Found %d splits in dataset.', 'mcp-ai-wpoos' ), $count );
+
 			return array(
+				'message'      => $message,
 				'dataset'      => $dataset,
-				'splits'       => isset( $result['splits'] ) ? $result['splits'] : array(),
-				'total_splits' => isset( $result['splits'] ) ? count( $result['splits'] ) : 0,
+				'splits'       => $splits,
+				'total_splits' => $count,
 			);
 		}
 	}

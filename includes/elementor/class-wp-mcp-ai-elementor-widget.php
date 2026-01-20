@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Chat', 'wp-mcp-ai' );
+		return __( 'NV oOS Chat', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -79,88 +79,88 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_settings',
 			array(
-				'label' => __( 'Chat Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Chat Settings', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Select the assistant to use. Leave empty to use the default assistant configured in the plugin settings.', 'wp-mcp-ai' ),
+				'description' => __( 'Select the assistant to use. Leave empty to use the default assistant configured in the plugin settings.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'allow_guests',
 			array(
-				'label'        => __( 'Allow Guests', 'wp-mcp-ai' ),
+				'label'        => __( 'Allow Guests', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
-				'return_value' => 'true',
-				'default'      => 'false',
-				'description'  => __( 'Enable guest access using temporary tokens when the assistant allows it.', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
+				'return_value' => 'yes',
+				'default'      => '',
+				'description'  => __( 'Enable guest access using temporary tokens when the assistant allows it.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'save_transcript',
 			array(
-				'label'        => __( 'Save transcripts to JetEngine', 'wp-mcp-ai' ),
+				'label'        => __( 'Save transcripts to JetEngine', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
-				'return_value' => 'true',
-				'default'      => 'true',
-				'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
+				'return_value' => 'yes',
+				'default'      => 'yes',
+				'description'  => __( 'Store chat requests and responses in the ai_chat_transcripts Custom Content Type.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'enable_streaming',
 			array(
-				'label'        => __( 'Enable SSE Streaming', 'wp-mcp-ai' ),
+				'label'        => __( 'Enable SSE Streaming', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
-				'return_value' => 'true',
-				'default'      => 'true',
-				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated. Note: Streamable HTTP (MCP 2024-11-05) is separately available for MCP clients at the /mcp endpoint.', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
+				'return_value' => 'yes',
+				'default'      => 'yes',
+				'description'  => __( 'Enable Server-Sent Events (SSE) streaming for faster perceived response times. Responses will appear progressively as they are generated. Note: Streamable HTTP (MCP 2024-11-05) is separately available for MCP clients at the /mcp endpoint.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'allow_sensitive_tools',
 			array(
-				'label'        => __( 'Allow Sensitive Tools', 'wp-mcp-ai' ),
+				'label'        => __( 'Allow Sensitive Tools', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
-				'return_value' => 'true',
-				'default'      => 'false',
-				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
+				'return_value' => 'yes',
+				'default'      => '',
+				'description'  => __( 'Allow the assistant to use sensitive tools that may modify site content or settings. Only enable if you trust the assistant configuration.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'template',
 			array(
-				'label'       => __( 'Chat Template', 'wp-mcp-ai' ),
+				'label'       => __( 'Chat Template', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => array(
-					'classic'        => __( 'Classic', 'wp-mcp-ai' ),
-					'speech-bubbles' => __( 'Speech Bubbles', 'wp-mcp-ai' ),
-					'compact'        => __( 'Compact', 'wp-mcp-ai' ),
-					'sidebar'        => __( 'Sidebar', 'wp-mcp-ai' ),
+					'classic'        => __( 'Classic', 'mcp-ai-wpoos' ),
+					'speech-bubbles' => __( 'Speech Bubbles', 'mcp-ai-wpoos' ),
+					'compact'        => __( 'Compact', 'mcp-ai-wpoos' ),
+					'sidebar'        => __( 'Sidebar', 'mcp-ai-wpoos' ),
 				),
 				'default'     => 'classic',
 				'label_block' => true,
-				'description' => __( 'Select the visual template for the chat interface.', 'wp-mcp-ai' ),
+				'description' => __( 'Select the visual template for the chat interface.', 'mcp-ai-wpoos' ),
 			)
 		);
 
@@ -169,30 +169,30 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_assistant_defaults',
 			array(
-				'label' => __( 'Assistant Defaults', 'wp-mcp-ai' ),
+				'label' => __( 'Assistant Defaults', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_assistant_defaults',
 			array(
-				'label'        => __( 'Show assistant defaults', 'wp-mcp-ai' ),
+				'label'        => __( 'Show assistant defaults', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Show', 'wp-mcp-ai' ),
-				'label_off'    => __( 'Hide', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Show', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'Hide', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
-				'description'  => __( 'Display the selected assistant\'s provider, model, temperature, and system prompt above the chat UI.', 'wp-mcp-ai' ),
+				'description'  => __( 'Display the selected assistant\'s provider, model, temperature, and system prompt above the chat UI.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant_defaults_title',
 			array(
-				'label'       => __( 'Defaults heading', 'wp-mcp-ai' ),
+				'label'       => __( 'Defaults heading', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant model defaults', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant model defaults', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_defaults' => 'yes' ),
 			)
@@ -201,10 +201,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_defaults_show_prompt',
 			array(
-				'label'        => __( 'Show system prompt', 'wp-mcp-ai' ),
+				'label'        => __( 'Show system prompt', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 				'condition'    => array( 'show_assistant_defaults' => 'yes' ),
@@ -214,10 +214,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_defaults_empty_message',
 			array(
-				'label'       => __( 'Defaults empty message', 'wp-mcp-ai' ),
+				'label'       => __( 'Defaults empty message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant to view its default configuration.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant to view its default configuration.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_defaults' => 'yes' ),
 			)
@@ -228,30 +228,30 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_assistant_knowledge',
 			array(
-				'label' => __( 'Assistant Memory', 'wp-mcp-ai' ),
+				'label' => __( 'Assistant Memory', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_assistant_base_knowledge',
 			array(
-				'label'        => __( 'Show memory files', 'wp-mcp-ai' ),
+				'label'        => __( 'Show memory files', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Show', 'wp-mcp-ai' ),
-				'label_off'    => __( 'Hide', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Show', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'Hide', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
-				'description'  => __( 'List the media files and vector store assigned to the assistant for retrieval-augmented responses.', 'wp-mcp-ai' ),
+				'description'  => __( 'List the media files and vector store assigned to the assistant for retrieval-augmented responses.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant_base_knowledge_title',
 			array(
-				'label'       => __( 'Memory heading', 'wp-mcp-ai' ),
+				'label'       => __( 'Memory heading', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant knowledge base', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant knowledge base', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_base_knowledge' => 'yes' ),
 			)
@@ -260,10 +260,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_base_knowledge_show_sizes',
 			array(
-				'label'        => __( 'Show file sizes', 'wp-mcp-ai' ),
+				'label'        => __( 'Show file sizes', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 				'condition'    => array( 'show_assistant_base_knowledge' => 'yes' ),
@@ -273,10 +273,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_base_knowledge_empty_message',
 			array(
-				'label'       => __( 'Memory empty message', 'wp-mcp-ai' ),
+				'label'       => __( 'Memory empty message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant to audit its knowledge base.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant to audit its knowledge base.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_base_knowledge' => 'yes' ),
 			)
@@ -285,10 +285,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_base_knowledge_no_files_message',
 			array(
-				'label'       => __( 'No files message', 'wp-mcp-ai' ),
+				'label'       => __( 'No files message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No base knowledge files have been attached to this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no knowledge files are present…', 'wp-mcp-ai' ),
+				'default'     => __( 'No base knowledge files have been attached to this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no knowledge files are present…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_base_knowledge' => 'yes' ),
 			)
@@ -299,30 +299,30 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_assistant_tools',
 			array(
-				'label' => __( 'Assistant Tools', 'wp-mcp-ai' ),
+				'label' => __( 'Assistant Tools', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_assistant_tools',
 			array(
-				'label'        => __( 'Show assigned tools', 'wp-mcp-ai' ),
+				'label'        => __( 'Show assigned tools', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Show', 'wp-mcp-ai' ),
-				'label_off'    => __( 'Hide', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Show', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'Hide', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
-				'description'  => __( 'List the registered tools that are enabled for the assistant alongside any missing registrations.', 'wp-mcp-ai' ),
+				'description'  => __( 'List the registered tools that are enabled for the assistant alongside any missing registrations.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant_tools_title',
 			array(
-				'label'       => __( 'Tools heading', 'wp-mcp-ai' ),
+				'label'       => __( 'Tools heading', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Available assistant tools', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Available assistant tools', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_tools' => 'yes' ),
 			)
@@ -331,10 +331,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_tools_show_descriptions',
 			array(
-				'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
+				'label'        => __( 'Show descriptions', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 				'condition'    => array( 'show_assistant_tools' => 'yes' ),
@@ -344,10 +344,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_tools_empty_message',
 			array(
-				'label'       => __( 'No tools message', 'wp-mcp-ai' ),
+				'label'       => __( 'No tools message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No tools have been assigned to this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no tools are available…', 'wp-mcp-ai' ),
+				'default'     => __( 'No tools have been assigned to this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no tools are available…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_tools' => 'yes' ),
 			)
@@ -356,10 +356,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_tools_registry_message',
 			array(
-				'label'       => __( 'Registry offline message', 'wp-mcp-ai' ),
+				'label'       => __( 'Registry offline message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'The tool registry is currently unavailable.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when the registry cannot be reached…', 'wp-mcp-ai' ),
+				'default'     => __( 'The tool registry is currently unavailable.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when the registry cannot be reached…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_tools' => 'yes' ),
 			)
@@ -370,30 +370,30 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_assistant_shortcuts',
 			array(
-				'label' => __( 'Prompt Shortcuts', 'wp-mcp-ai' ),
+				'label' => __( 'Prompt Shortcuts', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_assistant_prompt_shortcuts',
 			array(
-				'label'        => __( 'Show prompt shortcuts', 'wp-mcp-ai' ),
+				'label'        => __( 'Show prompt shortcuts', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Show', 'wp-mcp-ai' ),
-				'label_off'    => __( 'Hide', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Show', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'Hide', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
-				'description'  => __( 'Surface the saved shortcut labels, descriptions, and payloads next to the chat interface.', 'wp-mcp-ai' ),
+				'description'  => __( 'Surface the saved shortcut labels, descriptions, and payloads next to the chat interface.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'assistant_prompt_shortcuts_title',
 			array(
-				'label'       => __( 'Prompt shortcuts heading', 'wp-mcp-ai' ),
+				'label'       => __( 'Prompt shortcuts heading', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant prompt shortcuts', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant prompt shortcuts', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
 			)
@@ -402,10 +402,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_prompt_shortcuts_show_descriptions',
 			array(
-				'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
+				'label'        => __( 'Show descriptions', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 				'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
@@ -415,10 +415,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_prompt_shortcuts_show_prompt',
 			array(
-				'label'        => __( 'Show prompt payload', 'wp-mcp-ai' ),
+				'label'        => __( 'Show prompt payload', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
 				'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
@@ -428,10 +428,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_prompt_shortcuts_show_tools',
 			array(
-				'label'        => __( 'Show tool context', 'wp-mcp-ai' ),
+				'label'        => __( 'Show tool context', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 				'condition'    => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
@@ -441,10 +441,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_prompt_shortcuts_empty_message',
 			array(
-				'label'       => __( 'Shortcuts empty message', 'wp-mcp-ai' ),
+				'label'       => __( 'Shortcuts empty message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant to view its prompt shortcuts.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant to view its prompt shortcuts.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
 			)
@@ -453,10 +453,10 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'assistant_prompt_shortcuts_none_message',
 			array(
-				'label'       => __( 'No shortcuts message', 'wp-mcp-ai' ),
+				'label'       => __( 'No shortcuts message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No prompt shortcuts have been saved for this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no shortcuts exist…', 'wp-mcp-ai' ),
+				'default'     => __( 'No prompt shortcuts have been saved for this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no shortcuts exist…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 				'condition'   => array( 'show_assistant_prompt_shortcuts' => 'yes' ),
 			)
@@ -467,7 +467,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_theme_notice',
 			array(
-				'label' => __( 'Theme Settings', 'wp-mcp-ai' ),
+				'label' => __( 'Theme Settings', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -486,7 +486,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->register_theme_style_controls(
 			array(
 				'section_id' => 'section_style_chat_widget',
-				'label'      => __( 'Supporting Sections', 'wp-mcp-ai' ),
+				'label'      => __( 'Supporting Sections', 'mcp-ai-wpoos' ),
 				'selectors'  => array(
 					'container' => '{{WRAPPER}} .wp-mcp-ai-chat-widget',
 					'heading'   => array(
@@ -513,7 +513,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->register_theme_style_controls(
 			array(
 				'section_id' => 'section_style_chat_interface',
-				'label'      => __( 'Chat Section', 'wp-mcp-ai' ),
+				'label'      => __( 'Chat Section', 'mcp-ai-wpoos' ),
 				'selectors'  => array(
 					'container'  => '{{WRAPPER}} .wp-mcp-ai-chat-widget .wp-mcp-ai-chat',
 					'heading'    => array(
@@ -561,7 +561,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_user_bubble',
 			array(
-				'label' => __( 'User Bubble', 'wp-mcp-ai' ),
+				'label' => __( 'User Bubble', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -569,7 +569,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_user_bubble_gradient_start',
 			array(
-				'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient Start', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#2747f0',
 				'selectors' => array(
@@ -581,7 +581,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_user_bubble_gradient_end',
 			array(
-				'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient End', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#4855f5',
 				'selectors' => array(
@@ -593,7 +593,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_user_bubble_text_color',
 			array(
-				'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Text Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
@@ -605,7 +605,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_user_bubble_shadow_color',
 			array(
-				'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(39, 71, 240, 0.35)',
 				'selectors' => array(
@@ -619,7 +619,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_assistant_bubble',
 			array(
-				'label' => __( 'Assistant Bubble', 'wp-mcp-ai' ),
+				'label' => __( 'Assistant Bubble', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -627,7 +627,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_assistant_bubble_background',
 			array(
-				'label'     => __( 'Background', 'wp-mcp-ai' ),
+				'label'     => __( 'Background', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#f8faff',
 				'selectors' => array(
@@ -639,7 +639,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_assistant_bubble_border',
 			array(
-				'label'     => __( 'Border', 'wp-mcp-ai' ),
+				'label'     => __( 'Border', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(59, 130, 246, 0.25)',
 				'selectors' => array(
@@ -651,7 +651,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_assistant_bubble_shadow',
 			array(
-				'label'     => __( 'Shadow', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(59, 130, 246, 0.08)',
 				'selectors' => array(
@@ -663,7 +663,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_assistant_bubble_strong_text',
 			array(
-				'label'     => __( 'Strong Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Strong Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#1d4ed8',
 				'selectors' => array(
@@ -675,7 +675,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_assistant_bubble_em_text',
 			array(
-				'label'     => __( 'Emphasised Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Emphasised Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#4338ca',
 				'selectors' => array(
@@ -689,7 +689,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_tool_bubble',
 			array(
-				'label' => __( 'Tool Bubble', 'wp-mcp-ai' ),
+				'label' => __( 'Tool Bubble', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -697,7 +697,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_bubble_background',
 			array(
-				'label'     => __( 'Background', 'wp-mcp-ai' ),
+				'label'     => __( 'Background', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#0f172a',
 				'selectors' => array(
@@ -709,7 +709,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_bubble_text',
 			array(
-				'label'     => __( 'Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#e2e8f0',
 				'selectors' => array(
@@ -721,7 +721,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_bubble_border',
 			array(
-				'label'     => __( 'Border', 'wp-mcp-ai' ),
+				'label'     => __( 'Border', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(96, 165, 250, 0.35)',
 				'selectors' => array(
@@ -733,7 +733,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_bubble_inner_shadow',
 			array(
-				'label'     => __( 'Inner Shadow', 'wp-mcp-ai' ),
+				'label'     => __( 'Inner Shadow', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(30, 64, 175, 0.4)',
 				'selectors' => array(
@@ -745,7 +745,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_bubble_link_text',
 			array(
-				'label'     => __( 'Link Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Link Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#93c5fd',
 				'selectors' => array(
@@ -757,7 +757,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_code_background',
 			array(
-				'label'     => __( 'Code Background', 'wp-mcp-ai' ),
+				'label'     => __( 'Code Background', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(148, 163, 184, 0.18)',
 				'selectors' => array(
@@ -769,7 +769,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_tool_code_text',
 			array(
-				'label'     => __( 'Code Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Code Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#f8fafc',
 				'selectors' => array(
@@ -783,7 +783,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_system_bubble',
 			array(
-				'label' => __( 'System Bubble', 'wp-mcp-ai' ),
+				'label' => __( 'System Bubble', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -791,7 +791,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_system_bubble_background',
 			array(
-				'label'     => __( 'Background', 'wp-mcp-ai' ),
+				'label'     => __( 'Background', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#fef9c3',
 				'selectors' => array(
@@ -803,7 +803,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_system_bubble_text',
 			array(
-				'label'     => __( 'Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#854d0e',
 				'selectors' => array(
@@ -815,7 +815,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_system_bubble_border',
 			array(
-				'label'     => __( 'Border', 'wp-mcp-ai' ),
+				'label'     => __( 'Border', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#facc15',
 				'selectors' => array(
@@ -829,7 +829,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_alert_notice',
 			array(
-				'label' => __( 'Alert Notice', 'wp-mcp-ai' ),
+				'label' => __( 'Alert Notice', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -837,7 +837,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_alert_notice_background',
 			array(
-				'label'     => __( 'Background', 'wp-mcp-ai' ),
+				'label'     => __( 'Background', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#fef2f2',
 				'selectors' => array(
@@ -849,7 +849,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_alert_notice_text',
 			array(
-				'label'     => __( 'Text', 'wp-mcp-ai' ),
+				'label'     => __( 'Text', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#8a1f1f',
 				'selectors' => array(
@@ -861,7 +861,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_alert_notice_border',
 			array(
-				'label'     => __( 'Border', 'wp-mcp-ai' ),
+				'label'     => __( 'Border', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(214, 54, 56, 0.35)',
 				'selectors' => array(
@@ -873,7 +873,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_alert_notice_shadow',
 			array(
-				'label'     => __( 'Shadow', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(214, 54, 56, 0.12)',
 				'selectors' => array(
@@ -887,7 +887,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_section(
 			'section_style_chat_submit_button',
 			array(
-				'label' => __( 'Submit Button', 'wp-mcp-ai' ),
+				'label' => __( 'Submit Button', 'mcp-ai-wpoos' ),
 				'tab'   => \Elementor\Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -897,14 +897,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_tab(
 			'tab_chat_submit_button_normal',
 			array(
-				'label' => __( 'Normal', 'wp-mcp-ai' ),
+				'label' => __( 'Normal', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'chat_submit_button_gradient_start',
 			array(
-				'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient Start', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#3b5bff',
 				'selectors' => array(
@@ -916,7 +916,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_gradient_end',
 			array(
-				'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient End', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#7c5cff',
 				'selectors' => array(
@@ -928,7 +928,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_text_color',
 			array(
-				'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Text Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
@@ -940,7 +940,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_shadow_color',
 			array(
-				'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(59, 91, 255, 0.35)',
 				'selectors' => array(
@@ -954,14 +954,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_tab(
 			'tab_chat_submit_button_hover',
 			array(
-				'label' => __( 'Hover', 'wp-mcp-ai' ),
+				'label' => __( 'Hover', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'chat_submit_button_hover_gradient_start',
 			array(
-				'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient Start', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#324cf8',
 				'selectors' => array(
@@ -973,7 +973,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_hover_gradient_end',
 			array(
-				'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient End', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#6a4bff',
 				'selectors' => array(
@@ -985,7 +985,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_hover_text_color',
 			array(
-				'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Text Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
@@ -997,7 +997,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_hover_shadow_color',
 			array(
-				'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(50, 76, 248, 0.4)',
 				'selectors' => array(
@@ -1011,14 +1011,14 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->start_controls_tab(
 			'tab_chat_submit_button_active',
 			array(
-				'label' => __( 'Active', 'wp-mcp-ai' ),
+				'label' => __( 'Active', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'chat_submit_button_active_gradient_start',
 			array(
-				'label'     => __( 'Gradient Start', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient Start', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#2f44f0',
 				'selectors' => array(
@@ -1030,7 +1030,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_active_gradient_end',
 			array(
-				'label'     => __( 'Gradient End', 'wp-mcp-ai' ),
+				'label'     => __( 'Gradient End', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#5b3eff',
 				'selectors' => array(
@@ -1042,7 +1042,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_active_text_color',
 			array(
-				'label'     => __( 'Text Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Text Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => '#ffffff',
 				'selectors' => array(
@@ -1054,7 +1054,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		$this->add_control(
 			'chat_submit_button_active_shadow_color',
 			array(
-				'label'     => __( 'Shadow Color', 'wp-mcp-ai' ),
+				'label'     => __( 'Shadow Color', 'mcp-ai-wpoos' ),
 				'type'      => \Elementor\Controls_Manager::COLOR,
 				'default'   => 'rgba(47, 68, 240, 0.38)',
 				'selectors' => array(
@@ -1090,7 +1090,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 	 * @return array Assistant options for dropdown.
 	 */
 	public function build_assistant_options() {
-		$options = array( '' => __( 'Default Assistant', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Default Assistant', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;
@@ -1146,20 +1146,20 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$attributes['assistant'] = (string) absint( $assistant_setting );
 		}
 
-		$allow_guests               = ! empty( $settings['allow_guests'] ) && 'true' === $settings['allow_guests'];
+		$allow_guests               = ! empty( $settings['allow_guests'] ) && 'yes' === $settings['allow_guests'];
 		$attributes['allow_guests'] = $allow_guests ? 'true' : 'false';
 
-		$save_transcript = empty( $settings['save_transcript'] ) || 'true' === $settings['save_transcript'];
+		$save_transcript = empty( $settings['save_transcript'] ) || 'yes' === $settings['save_transcript'];
 		if ( ! $save_transcript ) {
 			$attributes['save_transcript'] = 'false';
 		}
 
-		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'true' === $settings['enable_streaming'];
+		$enable_streaming = ! empty( $settings['enable_streaming'] ) && 'yes' === $settings['enable_streaming'];
 		if ( $enable_streaming ) {
 			$attributes['enable_streaming'] = 'true';
 		}
 
-		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'true' === $settings['allow_sensitive_tools'];
+		$allow_sensitive_tools = ! empty( $settings['allow_sensitive_tools'] ) && 'yes' === $settings['allow_sensitive_tools'];
 		if ( $allow_sensitive_tools ) {
 			$attributes['allow_sensitive_tools'] = 'true';
 		}
@@ -1215,13 +1215,13 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		if ( '' !== $url ) {
 			return sprintf(
 				/* translators: 1: Opening anchor tag, 2: closing anchor tag. */
-				__( 'Global chat colors are managed under %1$sSettings → NV oOS → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' ),
+				__( 'Global chat colors are managed under %1$sSettings → NV oOS → Theme%2$s. Update the palette there or use the controls below to override this widget.', 'mcp-ai-wpoos' ),
 				'<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">',
 				'</a>'
 			);
 		}
 
-		return __( 'Global chat colors are managed under Settings → NV oOS → Theme. Update the palette there or use the controls below to override this widget.', 'wp-mcp-ai' );
+		return __( 'Global chat colors are managed under Settings → NV oOS → Theme. Update the palette there or use the controls below to override this widget.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -1360,18 +1360,18 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 		echo '<dl class="wp-mcp-ai-chat-widget__assistant-defaults-list">';
 
 		if ( '' !== $provider_label ) {
-			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Provider', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Provider', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-chat-widget__assistant-defaults-value">' . esc_html( $provider_label ) . '</dd>';
 		}
 
 		if ( '' !== $model ) {
-			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Model', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Model', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-chat-widget__assistant-defaults-value">' . esc_html( $model ) . '</dd>';
 		}
 
 		if ( null !== $temperature && '' !== $temperature ) {
 			$temperature_value = number_format_i18n( floatval( $temperature ), 2 );
-			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Temperature', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-chat-widget__assistant-defaults-label">' . esc_html__( 'Temperature', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-chat-widget__assistant-defaults-value">' . esc_html( $temperature_value ) . '</dd>';
 		}
 
@@ -1382,7 +1382,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 			if ( '' !== $prompt_output ) {
 				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt">';
-				echo '<h4 class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-heading">' . esc_html__( 'System prompt', 'wp-mcp-ai' ) . '</h4>';
+				echo '<h4 class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-heading">' . esc_html__( 'System prompt', 'mcp-ai-wpoos' ) . '</h4>';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-chat-widget__assistant-defaults-prompt-content">' . $prompt_output . '</div>';
 				echo '</div>';
@@ -1464,7 +1464,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		if ( '' !== $vector_store ) {
 			echo '<div class="wp-mcp-ai-chat-widget__assistant-memory-vector">';
-			echo '<span class="wp-mcp-ai-chat-widget__assistant-memory-vector-label">' . esc_html__( 'Vector Store ID:', 'wp-mcp-ai' ) . '</span>';
+			echo '<span class="wp-mcp-ai-chat-widget__assistant-memory-vector-label">' . esc_html__( 'Vector Store ID:', 'mcp-ai-wpoos' ) . '</span>';
 			echo '<code class="wp-mcp-ai-chat-widget__assistant-memory-vector-value">' . esc_html( $vector_store ) . '</code>';
 			echo '</div>';
 		}
@@ -1548,7 +1548,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		if ( ! empty( $missing ) ) {
 			echo '<div class="wp-mcp-ai-chat-widget__assistant-tools-missing">';
-			echo '<h4 class="wp-mcp-ai-chat-widget__assistant-tools-missing-heading">' . esc_html__( 'Missing registrations', 'wp-mcp-ai' ) . '</h4>';
+			echo '<h4 class="wp-mcp-ai-chat-widget__assistant-tools-missing-heading">' . esc_html__( 'Missing registrations', 'mcp-ai-wpoos' ) . '</h4>';
 			echo '<ul class="wp-mcp-ai-chat-widget__assistant-tools-missing-list">';
 
 			foreach ( $missing as $slug ) {
@@ -1637,7 +1637,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 				$tool_label = $this->format_tool_label( $tool, $tool_names );
 
 				if ( '' !== $tool_label ) {
-					echo '<span class="wp-mcp-ai-chat-widget__assistant-shortcuts-tool">' . esc_html__( 'Tool:', 'wp-mcp-ai' ) . ' ' . esc_html( $tool_label ) . '</span>';
+					echo '<span class="wp-mcp-ai-chat-widget__assistant-shortcuts-tool">' . esc_html__( 'Tool:', 'mcp-ai-wpoos' ) . ' ' . esc_html( $tool_label ) . '</span>';
 				}
 			}
 
@@ -1702,9 +1702,9 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 
 		switch ( $provider ) {
 			case 'openai':
-				return __( 'OpenAI', 'wp-mcp-ai' );
+				return __( 'OpenAI', 'mcp-ai-wpoos' );
 			case 'gemini':
-				return __( 'Gemini', 'wp-mcp-ai' );
+				return __( 'Gemini', 'mcp-ai-wpoos' );
 		}
 
 		return ucwords( str_replace( array( '-', '_' ), ' ', $provider ) );
@@ -1736,7 +1736,7 @@ class WP_MCP_AI_Elementor_Widget extends \Elementor\Widget_Base {
 			$title = get_the_title( $attachment );
 			if ( '' === $title ) {
 				/* translators: %d: Attachment ID. */
-				$title = sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $file_id );
+				$title = sprintf( __( 'Attachment #%d', 'mcp-ai-wpoos' ), $file_id );
 			}
 
 			$url  = wp_get_attachment_url( $file_id );

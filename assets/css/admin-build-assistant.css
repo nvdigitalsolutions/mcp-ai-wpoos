@@ -12,6 +12,30 @@
 .wp-mcp-ai-build-assistant-page .nav-tab-wrapper {
 	margin-bottom: 20px;
 	border-bottom: 1px solid #ccd0d4;
+	overflow-x: auto;
+	overflow-y: hidden;
+	white-space: nowrap;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #8c8f94 #f0f0f1;
+}
+
+.wp-mcp-ai-build-assistant-page .nav-tab-wrapper::-webkit-scrollbar {
+	height: 8px;
+}
+
+.wp-mcp-ai-build-assistant-page .nav-tab-wrapper::-webkit-scrollbar-track {
+	background: #f0f0f1;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-build-assistant-page .nav-tab-wrapper::-webkit-scrollbar-thumb {
+	background: #8c8f94;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-build-assistant-page .nav-tab-wrapper::-webkit-scrollbar-thumb:hover {
+	background: #646970;
 }
 
 .wp-mcp-ai-build-assistant-page .nav-tab {

@@ -11,12 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Analyzes video content using AI vision models that support video understanding.
  */
 class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -29,14 +31,14 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Analyze Video', 'wp-mcp-ai' );
+		return __( 'Analyze Video', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Analyzes video content to extract information, describe scenes, identify objects, and provide insights using AI vision models with video understanding capabilities.', 'wp-mcp-ai' );
+		return __( 'Analyzes video content to extract information, describe scenes, identify objects, and provide insights using AI vision models with video understanding capabilities.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,32 +50,32 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'video_url'          => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the video to analyze. Supports MP4 and QuickTime formats.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the video to analyze. Supports MP4 and QuickTime formats.', 'mcp-ai-wpoos' ),
 				),
 				'url'                => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id'      => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the video to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID of the video to analyze.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'file_id'            => $this->get_file_id_parameter_schema(),
 				'prompt'             => array(
 					'type'        => 'string',
-					'description' => __( 'Specific question or analysis prompt for the video content. If not provided, a general description will be generated.', 'wp-mcp-ai' ),
+					'description' => __( 'Specific question or analysis prompt for the video content. If not provided, a general description will be generated.', 'mcp-ai-wpoos' ),
 				),
 				'context'            => array(
 					'type'        => 'string',
-					'description' => __( 'Optional context about the video to help generate more relevant analysis.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional context about the video to help generate more relevant analysis.', 'mcp-ai-wpoos' ),
 				),
 				'analysis_type'      => array(
 					'type'        => 'string',
-					'description' => __( 'Type of analysis to perform: "general" (default), "scene_breakdown", "timeline", "detailed".', 'wp-mcp-ai' ),
+					'description' => __( 'Type of analysis to perform: "general" (default), "scene_breakdown", "timeline", "detailed".', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'general', 'scene_breakdown', 'timeline', 'detailed' ),
 					'default'     => 'general',
 				),
 				'include_timestamps' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to include timestamps for key events and scenes in the analysis.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to include timestamps for key events and scenes in the analysis.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -96,7 +98,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to analyze videos.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to analyze videos.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -104,7 +106,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -129,7 +131,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				if ( ! $video_url ) {
 					return new WP_Error(
 						'wp_mcp_ai_invalid_attachment',
-						__( 'Invalid attachment ID provided.', 'wp-mcp-ai' ),
+						__( 'Invalid attachment ID provided.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -139,7 +141,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_not_video',
-						__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
+						__( 'The provided attachment is not a video file.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -155,7 +157,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( '' === $video_url ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_video',
-				__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
+				__( 'You must provide video_url, url, attachment_id, or file_id.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -187,9 +189,18 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$model    = is_array( $api_response ) && isset( $api_response['model'] ) ? $api_response['model'] : '';
 		$provider = is_array( $api_response ) && isset( $api_response['provider'] ) ? $api_response['provider'] : $default_provider;
 
+		// Generate descriptive message.
+		$message = $analysis_type === 'general'
+			? __( 'Video analysis completed.', 'mcp-ai-wpoos' )
+			: sprintf(
+				/* translators: %s: analysis type */
+				__( 'Video %s analysis completed.', 'mcp-ai-wpoos' ),
+				str_replace( '_', ' ', $analysis_type )
+			);
+
 		$result = array(
 			'analysis' => $analysis,
-			'success'  => true,
+			'text'     => $analysis, // For LLM context.
 		);
 
 		// Include provider/model/usage metadata for accurate cost tracking.
@@ -205,7 +216,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$result['usage'] = $usage;
 		}
 
-		return $result;
+		return $this->format_chat_response( $result, $message );
 	}
 
 	/**
@@ -223,7 +234,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( ! empty( $user_context ) ) {
 				$prompt = sprintf(
 					/* translators: 1: context, 2: prompt */
-					__( 'Context: %1$s\n\n%2$s', 'wp-mcp-ai' ),
+					__( 'Context: %1$s\n\n%2$s', 'mcp-ai-wpoos' ),
 					$user_context,
 					$prompt
 				);
@@ -237,7 +248,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $user_context ) ) {
 			$prompt = sprintf(
 				/* translators: 1: context, 2: default prompt */
-				__( 'Context: %1$s\n\n%2$s', 'wp-mcp-ai' ),
+				__( 'Context: %1$s\n\n%2$s', 'mcp-ai-wpoos' ),
 				$user_context,
 				$prompt
 			);
@@ -258,7 +269,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	protected function get_default_prompt_for_type( $analysis_type, $include_timestamps ) {
 		$timestamp_instruction = $include_timestamps
-			? __( ' Include approximate timestamps or time ranges for key events.', 'wp-mcp-ai' )
+			? __( ' Include approximate timestamps or time ranges for key events.', 'mcp-ai-wpoos' )
 			: '';
 
 		switch ( $analysis_type ) {
@@ -274,7 +285,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 5. Transitions to the next scene%s
 
 Organize your analysis by scene number or natural segments.',
-						'wp-mcp-ai'
+						'mcp-ai-wpoos'
 					),
 					$timestamp_instruction
 				);
@@ -287,7 +298,7 @@ Organize your analysis by scene number or natural segments.',
 3. Transitions and changes
 4. Conclusion or ending
 For each event, provide approximate timestamps and describe what happens.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				);
 
 			case 'detailed':
@@ -305,7 +316,7 @@ For each event, provide approximate timestamps and describe what happens.',
 8. Technical aspects (camera movements, effects, transitions)%s
 
 Be thorough and include specific observations.',
-						'wp-mcp-ai'
+						'mcp-ai-wpoos'
 					),
 					$timestamp_instruction
 				);
@@ -322,7 +333,7 @@ Be thorough and include specific observations.',
 4. Notable visual elements or transitions
 5. Overall tone and mood
 6. Any text or graphics visible in the video%s',
-						'wp-mcp-ai'
+						'mcp-ai-wpoos'
 					),
 					$timestamp_instruction
 				);

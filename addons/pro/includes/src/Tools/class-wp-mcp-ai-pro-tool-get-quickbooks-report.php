@@ -29,14 +29,14 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'QuickBooks Online Report', 'wp-mcp-ai' );
+		return __( 'QuickBooks Online Report', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves reporting data from QuickBooks Online using the configured company ID.', 'wp-mcp-ai' );
+		return __( 'Retrieves reporting data from QuickBooks Online using the configured company ID.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -46,27 +46,31 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'connection_id'     => array(
+					'type'        => 'string',
+					'description' => __( 'Optional Remote Sites connection ID for QuickBooks. If not provided, will use settings-based configuration.', 'mcp-ai-wpoos-pro' ),
+				),
 				'report'            => array(
 					'type'        => 'string',
-					'description' => __( 'Name of the QuickBooks report to request, such as ProfitAndLoss.', 'wp-mcp-ai' ),
+					'description' => __( 'Name of the QuickBooks report to request, such as ProfitAndLoss.', 'mcp-ai-wpoos-pro' ),
 				),
 				'start_date'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO-8601 start date (YYYY-MM-DD).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO-8601 start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
 				'end_date'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional ISO-8601 end date (YYYY-MM-DD).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional ISO-8601 end date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 				),
 				'accounting_method' => array(
 					'type'        => 'string',
 					'enum'        => array( 'Accrual', 'Cash' ),
-					'description' => __( 'Limit the report to a specific accounting method.', 'wp-mcp-ai' ),
+					'description' => __( 'Limit the report to a specific accounting method.', 'mcp-ai-wpoos-pro' ),
 				),
 				'minor_version'     => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
-					'description' => __( 'Optional QuickBooks API minor version to target.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional QuickBooks API minor version to target.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'report' ),
@@ -87,27 +91,74 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		$required_capability = apply_filters( 'wp_mcp_ai_quickbooks_required_capability', 'manage_options', $context );
 
 		if ( ! $user_id || ! user_can( $user_id, $required_capability ) ) {
-			return new WP_Error( 'wp_mcp_ai_quickbooks_forbidden', __( 'You do not have permission to access QuickBooks reports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quickbooks_forbidden', __( 'You do not have permission to access QuickBooks reports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_quickbooks_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quickbooks_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings    = WP_MCP_AI_Admin_Settings::get_settings();
-		$company_id  = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
-		$api_key     = isset( $settings['quickbooks_api_key'] ) ? trim( (string) $settings['quickbooks_api_key'] ) : '';
+		// Get connection_id if provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : null;
+
+		// Try to get credentials from connection first, then fall back to settings.
+		if ( ! empty( $connection_id ) && class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+
+			if ( null === $connection ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_not_found',
+					__( 'Connection not found. Please check the connection ID.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Validate connection type.
+			if ( empty( $connection['connection_type'] ) || 'quickbooks' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_wrong_connection_type',
+					__( 'This connection is not a QuickBooks connection.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Check if connection is enabled.
+			if ( empty( $connection['enabled'] ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_pro_connection_disabled',
+					__( 'This connection is disabled. Please enable it in Remote Sites settings.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
+			// Get credentials from connection.
+			$company_id = ! empty( $connection['company_id'] ) ? trim( (string) $connection['company_id'] ) : '';
+			$api_key    = ! empty( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+
+			// QuickBooks uses OAuth tokens, check for client_secret as the token
+			if ( ! empty( $connection['client_secret'] ) ) {
+				$api_key = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $connection['client_secret'] );
+			}
+		} else {
+			// Fallback to settings (old approach - for backward compatibility).
+			$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+			$company_id = isset( $settings['quickbooks_company_id'] ) ? trim( (string) $settings['quickbooks_company_id'] ) : '';
+			$api_key    = isset( $settings['quickbooks_api_key'] ) ? trim( (string) $settings['quickbooks_api_key'] ) : '';
+
+			// Show deprecation notice in logs if using settings.
+			if ( '' !== $company_id && '' !== $api_key ) {
+				error_log( 'WP MCP AI: Settings-based QuickBooks configuration is deprecated. Please migrate to Remote Sites connections.' );
+			}
+		}
+
 		$report_name = isset( $arguments['report'] ) ? trim( sanitize_text_field( $arguments['report'] ) ) : '';
 
 		if ( '' === $company_id || '' === $api_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_quickbooks_missing_credentials',
-				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the WP oOS settings.', 'wp-mcp-ai' )
+				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the WP oOS settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( '' === $report_name ) {
-			return new WP_Error( 'wp_mcp_ai_quickbooks_missing_report', __( 'A QuickBooks report name is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quickbooks_missing_report', __( 'A QuickBooks report name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$query_args = array();
@@ -116,7 +167,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			$start_date = sanitize_text_field( $arguments['start_date'] );
 
 			if ( ! $this->is_valid_date( $start_date ) ) {
-				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_start', __( 'The provided start date must use the YYYY-MM-DD format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_start', __( 'The provided start date must use the YYYY-MM-DD format.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$query_args['start_date'] = $start_date;
@@ -126,7 +177,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			$end_date = sanitize_text_field( $arguments['end_date'] );
 
 			if ( ! $this->is_valid_date( $end_date ) ) {
-				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_end', __( 'The provided end date must use the YYYY-MM-DD format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_end', __( 'The provided end date must use the YYYY-MM-DD format.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$query_args['end_date'] = $end_date;
@@ -136,7 +187,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			$accounting_method = ucfirst( strtolower( sanitize_text_field( $arguments['accounting_method'] ) ) );
 
 			if ( ! in_array( $accounting_method, array( 'Accrual', 'Cash' ), true ) ) {
-				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_method', __( 'The accounting method must be Accrual or Cash.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_method', __( 'The accounting method must be Accrual or Cash.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$query_args['accounting_method'] = $accounting_method;
@@ -156,7 +207,9 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 			$endpoint = add_query_arg( $query_args, $endpoint );
 		}
 
-		$timeout = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
+		// Get timeout from settings (not connection-specific).
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
 		$response = wp_remote_get(
 			$endpoint,
@@ -174,7 +227,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 
 			return new WP_Error(
 				'wp_mcp_ai_quickbooks_http_error',
-				__( 'The request to QuickBooks Online failed.', 'wp-mcp-ai' ),
+				__( 'The request to QuickBooks Online failed.', 'mcp-ai-wpoos-pro' ),
 				$response
 			);
 		}
@@ -188,7 +241,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 				'wp_mcp_ai_quickbooks_http_status',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'QuickBooks Online returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'QuickBooks Online returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				),
 				array(
@@ -205,7 +258,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		if ( JSON_ERROR_NONE !== $json_error ) {
 			WP_MCP_AI_Admin_Settings::log( 'QuickBooks report returned invalid JSON.', array( 'body' => $body ) );
 
-			return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_json', __( 'QuickBooks Online returned an invalid JSON response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quickbooks_invalid_json', __( 'QuickBooks Online returned an invalid JSON response.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( isset( $decoded['Fault'] ) ) {
@@ -213,7 +266,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 
 			return new WP_Error(
 				'wp_mcp_ai_quickbooks_fault',
-				__( 'QuickBooks Online reported an error for this request.', 'wp-mcp-ai' ),
+				__( 'QuickBooks Online reported an error for this request.', 'mcp-ai-wpoos-pro' ),
 				$decoded['Fault']
 			);
 		}

@@ -35,7 +35,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 	const DEFAULT_JOB_TIMEOUT = 300;
 
 	/**
-	 * Job priorities.
+	 * Job priorities (legacy - use SLA tiers for new code).
 	 */
 	const PRIORITY_HIGH   = 10;
 	const PRIORITY_NORMAL = 5;
@@ -43,6 +43,8 @@ class WP_MCP_AI_Job_Queue_Manager {
 
 	/**
 	 * Enqueue a job for execution.
+	 *
+	 * Supports both legacy priority values and SLA tier-based priorities.
 	 *
 	 * @param string $job_id   Unique job identifier.
 	 * @param array  $job_data Job data including callable and arguments.
@@ -77,14 +79,34 @@ class WP_MCP_AI_Job_Queue_Manager {
 			return false;
 		}
 
-		// Prepare job entry.
-		$priority = isset( $job_data['priority'] ) ? absint( $job_data['priority'] ) : self::PRIORITY_NORMAL;
-		$timeout  = isset( $job_data['timeout'] ) ? absint( $job_data['timeout'] ) : self::DEFAULT_JOB_TIMEOUT;
+		// Determine priority using SLA Manager if available and enabled.
+		$priority = self::PRIORITY_NORMAL;
+		$sla_tier = null;
+
+		if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) {
+			// Check for explicit SLA tier.
+			if ( isset( $job_data['sla_tier'] ) ) {
+				$sla_tier = sanitize_key( $job_data['sla_tier'] );
+				$priority = WP_MCP_AI_SLA_Manager::get_priority( $sla_tier );
+			} elseif ( isset( $job_data['tool'] ) && is_object( $job_data['tool'] ) ) {
+				// Infer tier from tool capabilities.
+				$sla_tier = WP_MCP_AI_SLA_Manager::get_tier_for_tool( $job_data['tool'] );
+				$priority = WP_MCP_AI_SLA_Manager::get_priority( $sla_tier );
+			}
+		}
+
+		// Allow explicit priority override (legacy behavior).
+		if ( isset( $job_data['priority'] ) ) {
+			$priority = absint( $job_data['priority'] );
+		}
+
+		$timeout = isset( $job_data['timeout'] ) ? absint( $job_data['timeout'] ) : self::DEFAULT_JOB_TIMEOUT;
 
 		$queue[ $job_id ] = array(
 			'callable'    => $job_data['callable'],
 			'args'        => isset( $job_data['args'] ) ? $job_data['args'] : array(),
 			'priority'    => $priority,
+			'sla_tier'    => $sla_tier,
 			'timeout'     => $timeout,
 			'enqueued_at' => time(),
 			'retry_count' => 0,
@@ -101,6 +123,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 				array(
 					'job_id'   => $job_id,
 					'priority' => $priority,
+					'sla_tier' => $sla_tier,
 				)
 			);
 		}
@@ -110,6 +133,8 @@ class WP_MCP_AI_Job_Queue_Manager {
 
 	/**
 	 * Process the job queue.
+	 *
+	 * Respects SLA tier-based concurrency limits if enabled.
 	 *
 	 * @param int $max_concurrent Maximum number of concurrent jobs.
 	 *
@@ -150,7 +175,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 		$queue           = self::get_queue_state();
 		$slots_available = $max_concurrent - $active_count;
 
-		// Get pending jobs sorted by priority.
+		// Get pending jobs sorted by priority (SLA-aware).
 		$pending_jobs = self::get_pending_jobs( $queue );
 
 		if ( empty( $pending_jobs ) ) {
@@ -159,6 +184,11 @@ class WP_MCP_AI_Job_Queue_Manager {
 				'active'    => $active_count,
 				'reason'    => 'no_pending_jobs',
 			);
+		}
+
+		// If SLA Manager is enabled, apply per-tier concurrency limits.
+		if ( class_exists( 'WP_MCP_AI_SLA_Manager' ) && WP_MCP_AI_SLA_Manager::is_enabled() ) {
+			$pending_jobs = self::apply_sla_tier_limits( $pending_jobs, $active_jobs );
 		}
 
 		$processed = 0;
@@ -198,6 +228,55 @@ class WP_MCP_AI_Job_Queue_Manager {
 			'active'    => count( self::get_active_jobs() ),
 			'reason'    => 'success',
 		);
+	}
+
+	/**
+	 * Apply SLA tier-based concurrency limits.
+	 *
+	 * Ensures each tier respects its concurrent job limit.
+	 *
+	 * @param array $pending_jobs Pending jobs.
+	 * @param array $active_jobs  Currently active jobs.
+	 * @return array Filtered pending jobs respecting tier limits.
+	 */
+	protected static function apply_sla_tier_limits( $pending_jobs, $active_jobs ) {
+		// Count active jobs per tier.
+		$active_by_tier = array();
+		foreach ( $active_jobs as $active_job ) {
+			$tier = isset( $active_job['sla_tier'] ) ? $active_job['sla_tier'] : null;
+			if ( $tier ) {
+				if ( ! isset( $active_by_tier[ $tier ] ) ) {
+					$active_by_tier[ $tier ] = 0;
+				}
+				++$active_by_tier[ $tier ];
+			}
+		}
+
+		// Filter pending jobs that have room in their tier.
+		$filtered = array();
+		foreach ( $pending_jobs as $job_id => $job ) {
+			$tier = isset( $job['sla_tier'] ) ? $job['sla_tier'] : null;
+
+			if ( ! $tier ) {
+				// No tier assigned - allow processing.
+				$filtered[ $job_id ] = $job;
+				continue;
+			}
+
+			$tier_max_concurrent = WP_MCP_AI_SLA_Manager::get_default_concurrent( $tier );
+			$tier_active_count   = isset( $active_by_tier[ $tier ] ) ? $active_by_tier[ $tier ] : 0;
+
+			if ( $tier_active_count < $tier_max_concurrent ) {
+				$filtered[ $job_id ] = $job;
+				// Increment count to track allocation in this pass.
+				if ( ! isset( $active_by_tier[ $tier ] ) ) {
+					$active_by_tier[ $tier ] = 0;
+				}
+				++$active_by_tier[ $tier ];
+			}
+		}
+
+		return $filtered;
 	}
 
 	/**
@@ -271,7 +350,32 @@ class WP_MCP_AI_Job_Queue_Manager {
 			return self::save_queue_state( $queue );
 		}
 
-		// Max retries exceeded - mark as failed.
+		// Max retries exceeded - move to dead letter queue.
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$retry_history = isset( $queue[ $job_id ]['retry_history'] ) ? $queue[ $job_id ]['retry_history'] : array();
+
+			// Build retry history from queue data.
+			for ( $i = 0; $i <= $retry_count; $i++ ) {
+				$retry_history[] = array(
+					'timestamp' => time() - ( ( $retry_count - $i ) * 300 ), // Estimate timestamps.
+					'result'    => 'failed',
+					'error'     => $error->get_error_message(),
+				);
+			}
+
+			WP_MCP_AI_Dead_Letter_Queue::add(
+				WP_MCP_AI_Dead_Letter_Queue::TYPE_JOB_QUEUE,
+				$job_id,
+				array(
+					'job_id'   => $job_id,
+					'job_data' => $job,
+				),
+				$error->get_error_message(),
+				$retry_history
+			);
+		}
+
+		// Mark as failed and remove from queue.
 		$queue[ $job_id ]['status']     = 'failed';
 		$queue[ $job_id ]['failed_at']  = time();
 		$queue[ $job_id ]['last_error'] = $error->get_error_message();

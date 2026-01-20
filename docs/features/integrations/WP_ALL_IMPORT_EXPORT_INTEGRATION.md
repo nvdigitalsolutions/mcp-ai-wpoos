@@ -6,7 +6,7 @@
 
 ## Overview
 
-WP oOS now provides comprehensive integration with WP All Import and WP All Export plugins, enabling AI assistants to automate WordPress data import/export workflows. The integration includes both base tools for essential operations and Pro-level tools for advanced scheduling and management.
+NV oOS now provides comprehensive integration with WP All Import and WP All Export plugins, enabling AI assistants to automate WordPress data import/export workflows. The integration includes both base tools for essential operations and Pro-level tools for advanced scheduling and management.
 
 ## Base Tools (5 tools)
 

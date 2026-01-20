@@ -55,82 +55,111 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				$args['categories'] = self::get_tool_categories();
 			}
 
+			$has_active_filters = ! empty( $args['search'] ) || ! empty( $args['filter_group'] );
+			$filter_bar_class   = 'wp-mcp-ai-tools-filter-bar';
+			if ( $has_active_filters ) {
+				$filter_bar_class .= ' has-active-filters';
+			}
+
 			ob_start();
 			?>
 			<!-- Search and Filter Bar -->
-			<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-				<div id="wp-mcp-ai-tools-filter-form" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-					<label for="tool_search" style="font-weight: 600;">
-						<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
-					</label>
-					<input type="search" 
-							id="tool_search" 
-							name="tool_search" 
-							value="<?php echo esc_attr( $args['search'] ); ?>" 
-							placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
-							style="flex: 1; max-width: 300px;">
+			<div class="<?php echo esc_attr( $filter_bar_class ); ?>" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+				<div class="wp-mcp-ai-tools-filter-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+						<label for="tool_search" style="font-weight: 600;">
+							<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+							<?php if ( ! empty( $args['search'] ) ) : ?>
+								<span class="wp-mcp-ai-filter-active-badge">
+									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+									<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
+								</span>
+							<?php endif; ?>
+						</label>
+						<input type="search"
+								id="tool_search"
+								name="tool_search"
+								value="<?php echo esc_attr( $args['search'] ); ?>"
+								placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
+								style="width: 100%;">
+					</div>
 
-					<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
-						<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
-					</label>
-					<select id="tool_group" name="tool_group" style="min-width: 200px;">
-						<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-						<?php foreach ( $args['categories'] as $group_key => $group_label ) : ?>
-							<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $args['filter_group'], $group_key ); ?>>
-								<?php echo esc_html( $group_label ); ?>
-							</option>
-						<?php endforeach; ?>
-					</select>
+					<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+						<label for="tool_group" style="font-weight: 600;">
+							<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
+							<?php if ( ! empty( $args['filter_group'] ) ) : ?>
+								<span class="wp-mcp-ai-filter-active-badge">
+									<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+									<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
+								</span>
+							<?php endif; ?>
+						</label>
+						<select id="tool_group" name="tool_group" style="width: 100%;">
+							<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+							<?php foreach ( $args['categories'] as $group_key => $group_label ) : ?>
+								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $args['filter_group'], $group_key ); ?>>
+									<?php echo esc_html( $group_label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</div>
 
-					<button type="button" id="wp-mcp-ai-filter-tools" class="button">
-						<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
-					</button>
+					<div class="wp-mcp-ai-filter-actions" style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end;">
+						<button type="button" id="wp-mcp-ai-filter-tools" class="button">
+							<?php esc_html_e( 'Filter', 'mcp-ai-wpoos' ); ?>
+						</button>
 
-					<?php if ( ! empty( $args['search'] ) || ! empty( $args['filter_group'] ) ) : ?>
-						<a href="<?php echo esc_url( $args['clear_url'] ); ?>" class="button">
-							<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
-						</a>
-					<?php endif; ?>
+						<?php if ( ! empty( $args['search'] ) || ! empty( $args['filter_group'] ) ) : ?>
+							<a href="<?php echo esc_url( $args['clear_url'] ); ?>" class="button">
+								<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+							</a>
+						<?php endif; ?>
+					</div>
 				</div>
 
 				<script>
 				(function($) {
 					$('#wp-mcp-ai-filter-tools').on('click', function() {
+						const $button = $(this);
+
+						// Add loading state
+						$button.addClass('is-loading').prop('disabled', true);
+
 						const search = $('#tool_search').val();
 						const group = $('#tool_group').val();
 						const url = new URL(window.location.href);
-						
+
 						// Update URL parameters.
 						url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
-						
+
 						<?php if ( ! empty( $args['tab'] ) ) : ?>
 						url.searchParams.set('tab', '<?php echo esc_js( $args['tab'] ); ?>');
 						<?php endif; ?>
-						
+
 						<?php if ( ! empty( $args['view'] ) ) : ?>
 						url.searchParams.set('view', '<?php echo esc_js( $args['view'] ); ?>');
 						<?php endif; ?>
-						
+
 						<?php if ( ! empty( $args['subtab'] ) ) : ?>
 						url.searchParams.set('subtab', '<?php echo esc_js( $args['subtab'] ); ?>');
 						<?php endif; ?>
-						
+
 						if (search) {
 							url.searchParams.set('tool_search', search);
 						} else {
 							url.searchParams.delete('tool_search');
 						}
-						
+
 						if (group) {
 							url.searchParams.set('tool_group', group);
 						} else {
 							url.searchParams.delete('tool_group');
 						}
-						
+
 						// Navigate to filtered URL.
 						window.location.href = url.toString();
 					});
-					
+
 					// Allow Enter key to trigger filter.
 					$('#tool_search, #tool_group').on('keypress', function(e) {
 						if (e.which === 13) {
@@ -152,10 +181,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 		 */
 		private static function get_tool_categories() {
 			return array(
-				'wordpress-core'    => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins' => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'external-tools'    => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'             => __( 'Other Tools', 'wp-mcp-ai' ),
+				'wordpress-core'    => __( 'WordPress Core', 'mcp-ai-wpoos' ),
+				'wordpress-plugins' => __( 'WordPress Plugins', 'mcp-ai-wpoos' ),
+				'external-tools'    => __( 'External Tools', 'mcp-ai-wpoos' ),
+				'other'             => __( 'Other Tools', 'mcp-ai-wpoos' ),
 			);
 		}
 

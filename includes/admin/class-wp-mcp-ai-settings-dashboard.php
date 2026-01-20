@@ -51,6 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -70,6 +71,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_toggle_tool', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_professions', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reseed_teams', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_seed_orchestration', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_migrate_gemini_costs', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_regenerate_playbook', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_sync_all_playbooks', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -83,8 +85,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function register_menu() {
 			add_menu_page(
-				__( 'NV oOS Settings', 'wp-mcp-ai' ),
-				__( 'NV oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS Settings', 'mcp-ai-wpoos' ),
+				__( 'NV oOS', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' ),
@@ -98,8 +100,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Add submenu item for General Settings with proper label.
 			add_submenu_page(
 				self::PAGE_SLUG,
-				__( 'General Settings', 'wp-mcp-ai' ),
-				__( 'General Settings', 'wp-mcp-ai' ),
+				__( 'General Settings', 'mcp-ai-wpoos' ),
+				__( 'General Settings', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' )
@@ -115,7 +117,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
 					'type'              => 'array',
-					'sanitize_callback' => null, // We handle sanitization in handle_save_settings().
+					'sanitize_callback' => array( $this, 'sanitize_settings' ),
 				)
 			);
 		}
@@ -165,7 +167,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function handle_save_settings() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_save_settings' );
@@ -238,6 +240,20 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						count( $merged_settings )
 					)
 				);
+			}
+
+			// Check if media toolkit was just enabled and seed presets if needed.
+			$was_toolkit_disabled = empty( $existing_settings['enable_media_toolkit'] );
+			$is_toolkit_enabled   = ! empty( $merged_settings['enable_media_toolkit'] );
+			if ( $was_toolkit_disabled && $is_toolkit_enabled ) {
+				// Media toolkit was just enabled, seed the template presets.
+				if ( class_exists( 'WP_MCP_AI_Media_Template_Presets' ) ) {
+					WP_MCP_AI_Media_Template_Presets::seed_presets();
+
+					if ( $enable_logging ) {
+						error_log( '[NV oOS Settings] Media toolkit enabled - triggered template preset seeding' );
+					}
+				}
 			}
 
 			// Clear caches when settings are updated.
@@ -327,15 +343,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Get asset files (automatically uses minified in production, unminified in debug mode).
-			$dashboard_css = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
-			$ajax_error_js = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
-			$dashboard_js  = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
+			$responsive_css = $this->get_asset_file( 'assets/css/admin-responsive-utilities.css' );
+			$dashboard_css  = $this->get_asset_file( 'assets/css/settings-dashboard.css' );
+			$ajax_error_js  = $this->get_asset_file( 'assets/js/ajax-error-service.js' );
+			$dashboard_js   = $this->get_asset_file( 'assets/js/settings-dashboard.js' );
+
+			// Enqueue responsive utilities first (base styles).
+			wp_enqueue_style(
+				'wp-mcp-ai-responsive-utilities',
+				$responsive_css['url'],
+				array(),
+				$responsive_css['version']
+			);
 
 			// Enqueue dashboard styles with file modification time for cache busting.
 			wp_enqueue_style(
 				'wp-mcp-ai-dashboard',
 				$dashboard_css['url'],
-				array(),
+				array( 'wp-mcp-ai-responsive-utilities' ),
 				$dashboard_css['version']
 			);
 
@@ -393,7 +418,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$orchestration_js['version'],
 					true
 				);
-				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'wp-mcp-ai' );
+				wp_set_script_translations( 'wp-mcp-ai-tool-orchestration', 'mcp-ai-wpoos' );
 			}
 
 			// Enqueue performance admin scripts if on advanced tab with performance_monitoring subtab.
@@ -414,7 +439,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					array(
 						'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
 						'nonce'       => wp_create_nonce( 'wp_mcp_ai_performance' ),
-						'runningText' => __( 'Running...', 'wp-mcp-ai' ),
+						'runningText' => __( 'Running...', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -438,8 +463,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-settings' ),
 					'i18n'    => array(
-						'enabled'  => __( 'Enabled', 'wp-mcp-ai' ),
-						'disabled' => __( 'Disabled', 'wp-mcp-ai' ),
+						'enabled'  => __( 'Enabled', 'mcp-ai-wpoos' ),
+						'disabled' => __( 'Disabled', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -466,7 +491,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 */
 		public function render_dashboard() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'You do not have permission to access this page.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
 			$active_tab = $this->get_active_tab();
@@ -484,11 +509,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				if ( isset( $_GET['updated'] ) && 'true' === sanitize_key( wp_unslash( $_GET['updated'] ) ) ) :
 					?>
 					<div class="notice notice-success is-dismissible">
-						<p><?php esc_html_e( 'Settings saved successfully.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Settings saved successfully.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				<?php endif; ?>
 
-				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'wp-mcp-ai' ); ?>">
+				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'mcp-ai-wpoos' ); ?>">
 					<?php foreach ( $tabs as $tab_id => $tab ) : ?>
 						<?php
 						$tab_url = add_query_arg(
@@ -515,7 +540,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					<div class="tab-content">
 						<?php if ( empty( $sections ) ) : ?>
 							<div class="notice notice-info">
-								<p><?php esc_html_e( 'No settings available for this tab.', 'wp-mcp-ai' ); ?></p>
+								<p><?php esc_html_e( 'No settings available for this tab.', 'mcp-ai-wpoos' ); ?></p>
 							</div>
 						<?php else : ?>
 							<?php foreach ( $sections as $section ) : ?>

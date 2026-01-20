@@ -322,21 +322,21 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			if ( '' === $path ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_missing',
-					__( 'The PHP error log path could not be determined.', 'wp-mcp-ai' )
+					__( 'The PHP error log path could not be determined.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( ! file_exists( $path ) || ! is_file( $path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_unavailable',
-					__( 'The PHP error log has not been created yet.', 'wp-mcp-ai' )
+					__( 'The PHP error log has not been created yet.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( ! is_writable( $path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_unwritable',
-					__( 'The PHP error log is not writable. Update the file permissions and try again.', 'wp-mcp-ai' )
+					__( 'The PHP error log is not writable. Update the file permissions and try again.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -345,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			if ( false === $handle ) {
 				return new WP_Error(
 					'wp_mcp_ai_log_failed',
-					__( 'The PHP error log could not be truncated.', 'wp-mcp-ai' )
+					__( 'The PHP error log could not be truncated.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -1200,59 +1200,59 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 				case 'openai_api_error':
 				case 'gemini_api_error':
 				case 'anthropic_api_error':
-					$friendly_message = __( 'Unable to connect to the AI service. Please check your API credentials and try again.', 'wp-mcp-ai' );
+					$friendly_message = __( 'Unable to connect to the AI service. Please check your API credentials and try again.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Verify your API key is correctly entered in the plugin settings.', 'wp-mcp-ai' ),
-						__( 'Check that your API key has not expired or been revoked.', 'wp-mcp-ai' ),
-						__( 'Ensure your account has sufficient credits or quota remaining.', 'wp-mcp-ai' ),
-						__( 'Verify your server can make outbound HTTPS connections.', 'wp-mcp-ai' ),
+						__( 'Verify your API key is correctly entered in the plugin settings.', 'mcp-ai-wpoos' ),
+						__( 'Check that your API key has not expired or been revoked.', 'mcp-ai-wpoos' ),
+						__( 'Ensure your account has sufficient credits or quota remaining.', 'mcp-ai-wpoos' ),
+						__( 'Verify your server can make outbound HTTPS connections.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'rate_limit_exceeded':
-					$friendly_message = __( 'You have exceeded the rate limit for this service. Please wait before trying again.', 'wp-mcp-ai' );
+					$friendly_message = __( 'You have exceeded the rate limit for this service. Please wait before trying again.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Wait a few minutes before making another request.', 'wp-mcp-ai' ),
-						__( 'Consider upgrading your API plan for higher rate limits.', 'wp-mcp-ai' ),
-						__( 'Review the rate limit settings in the plugin configuration.', 'wp-mcp-ai' ),
+						__( 'Wait a few minutes before making another request.', 'mcp-ai-wpoos' ),
+						__( 'Consider upgrading your API plan for higher rate limits.', 'mcp-ai-wpoos' ),
+						__( 'Review the rate limit settings in the plugin configuration.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'network_error':
 				case 'connection_timeout':
-					$friendly_message = __( 'Network connection failed. Please check your internet connection and try again.', 'wp-mcp-ai' );
+					$friendly_message = __( 'Network connection failed. Please check your internet connection and try again.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Verify your server has an active internet connection.', 'wp-mcp-ai' ),
-						__( 'Check if your firewall is blocking outbound connections.', 'wp-mcp-ai' ),
-						__( 'Contact your hosting provider if the issue persists.', 'wp-mcp-ai' ),
+						__( 'Verify your server has an active internet connection.', 'mcp-ai-wpoos' ),
+						__( 'Check if your firewall is blocking outbound connections.', 'mcp-ai-wpoos' ),
+						__( 'Contact your hosting provider if the issue persists.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'invalid_api_key':
 				case 'authentication_failed':
-					$friendly_message = __( 'API authentication failed. Your API key appears to be invalid.', 'wp-mcp-ai' );
+					$friendly_message = __( 'API authentication failed. Your API key appears to be invalid.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Double-check the API key in your plugin settings.', 'wp-mcp-ai' ),
-						__( 'Ensure there are no extra spaces before or after the API key.', 'wp-mcp-ai' ),
-						__( 'Generate a new API key from your provider\'s dashboard.', 'wp-mcp-ai' ),
+						__( 'Double-check the API key in your plugin settings.', 'mcp-ai-wpoos' ),
+						__( 'Ensure there are no extra spaces before or after the API key.', 'mcp-ai-wpoos' ),
+						__( 'Generate a new API key from your provider\'s dashboard.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'insufficient_quota':
-					$friendly_message = __( 'Your API quota has been exhausted. Please upgrade your plan or wait for the quota to reset.', 'wp-mcp-ai' );
+					$friendly_message = __( 'Your API quota has been exhausted. Please upgrade your plan or wait for the quota to reset.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Check your current usage in the AI provider\'s dashboard.', 'wp-mcp-ai' ),
-						__( 'Upgrade to a higher-tier plan if needed.', 'wp-mcp-ai' ),
-						__( 'Wait until the next billing cycle for quota to reset.', 'wp-mcp-ai' ),
+						__( 'Check your current usage in the AI provider\'s dashboard.', 'mcp-ai-wpoos' ),
+						__( 'Upgrade to a higher-tier plan if needed.', 'mcp-ai-wpoos' ),
+						__( 'Wait until the next billing cycle for quota to reset.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'invalid_model':
-					$friendly_message = __( 'The selected AI model is not available or invalid.', 'wp-mcp-ai' );
+					$friendly_message = __( 'The selected AI model is not available or invalid.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Verify the model name in your assistant settings.', 'wp-mcp-ai' ),
-						__( 'Check if the model is available for your API plan.', 'wp-mcp-ai' ),
-						__( 'Try selecting a different model from the available options.', 'wp-mcp-ai' ),
+						__( 'Verify the model name in your assistant settings.', 'mcp-ai-wpoos' ),
+						__( 'Check if the model is available for your API plan.', 'mcp-ai-wpoos' ),
+						__( 'Try selecting a different model from the available options.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
@@ -1260,22 +1260,22 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					$tool_name        = isset( $context['tool_slug'] ) ? sanitize_text_field( $context['tool_slug'] ) : 'unknown';
 					$friendly_message = sprintf(
 						/* translators: %s: Tool name */
-						__( 'The tool "%s" failed to execute properly.', 'wp-mcp-ai' ),
+						__( 'The tool "%s" failed to execute properly.', 'mcp-ai-wpoos' ),
 						$tool_name
 					);
 					$suggestions = array(
-						__( 'Check the tool configuration and try again.', 'wp-mcp-ai' ),
-						__( 'Verify required permissions for the tool are granted.', 'wp-mcp-ai' ),
-						__( 'Review the error log for more details.', 'wp-mcp-ai' ),
+						__( 'Check the tool configuration and try again.', 'mcp-ai-wpoos' ),
+						__( 'Verify required permissions for the tool are granted.', 'mcp-ai-wpoos' ),
+						__( 'Review the error log for more details.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'file_upload_error':
-					$friendly_message = __( 'File upload failed. Please check the file and try again.', 'wp-mcp-ai' );
+					$friendly_message = __( 'File upload failed. Please check the file and try again.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Ensure the file size is within the allowed limit.', 'wp-mcp-ai' ),
-						__( 'Verify the file type is supported.', 'wp-mcp-ai' ),
-						__( 'Check your server\'s upload_max_filesize setting.', 'wp-mcp-ai' ),
+						__( 'Ensure the file size is within the allowed limit.', 'mcp-ai-wpoos' ),
+						__( 'Verify the file type is supported.', 'mcp-ai-wpoos' ),
+						__( 'Check your server\'s upload_max_filesize setting.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
@@ -1283,10 +1283,10 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 					// Fallback for unknown errors.
 					$friendly_message = ! empty( $error_message ) ?
 						$error_message :
-						__( 'An unexpected error occurred. Please try again.', 'wp-mcp-ai' );
+						__( 'An unexpected error occurred. Please try again.', 'mcp-ai-wpoos' );
 					$suggestions      = array(
-						__( 'Check the error log for more details.', 'wp-mcp-ai' ),
-						__( 'Contact support if the problem persists.', 'wp-mcp-ai' ),
+						__( 'Check the error log for more details.', 'mcp-ai-wpoos' ),
+						__( 'Contact support if the problem persists.', 'mcp-ai-wpoos' ),
 					);
 					break;
 			}

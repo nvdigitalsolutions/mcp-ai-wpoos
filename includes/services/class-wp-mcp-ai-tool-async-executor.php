@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$tool_slug = sanitize_key( $tool_slug );
 
 		if ( empty( $tool_slug ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Tool slug is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_tool', __( 'Tool slug is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Generate unique job ID.
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 					'cron_hook' => self::CRON_HOOK,
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule async tool execution.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_schedule_failed', __( 'Failed to schedule async tool execution.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Record cron job in cron manager for visibility and management.
@@ -584,13 +584,13 @@ class WP_MCP_AI_Tool_Async_Executor {
 		$job_id = sanitize_key( $job_id );
 
 		if ( empty( $job_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_job', __( 'Job ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_job', __( 'Job ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$metadata = $this->get_metadata( $job_id );
 
 		if ( ! $metadata ) {
-			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found or expired.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_job_not_found', __( 'Job not found or expired.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Decompress result if needed.
@@ -608,7 +608,7 @@ class WP_MCP_AI_Tool_Async_Executor {
 				);
 				return new WP_Error(
 					'wp_mcp_ai_decompression_failed',
-					__( 'Failed to retrieve job result. The result may be corrupted.', 'wp-mcp-ai' )
+					__( 'Failed to retrieve job result. The result may be corrupted.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -809,9 +809,9 @@ class WP_MCP_AI_Tool_Async_Executor {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$expired = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT option_name FROM {$wpdb->options} 
-				WHERE option_name LIKE %s 
-				AND option_value < %d 
+				"SELECT option_name FROM {$wpdb->options}
+				WHERE option_name LIKE %s
+				AND option_value < %d
 				LIMIT 100",
 				$wpdb->esc_like( '_transient_timeout_' . $prefix ) . '%',
 				time()

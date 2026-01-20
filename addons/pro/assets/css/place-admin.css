@@ -1,0 +1,76 @@
+/**
+ * Places Management Admin Styles
+ *
+ * Styling for the Places management admin interface.
+ */
+
+/* Place edit screen */
+.wp-mcp-ai-place-location table.form-table th,
+.wp-mcp-ai-place-details table.form-table th {
+	width: 180px;
+}
+
+.wp-mcp-ai-place-location input[type="text"],
+.wp-mcp-ai-place-details input[type="text"],
+.wp-mcp-ai-place-details input[type="number"] {
+	width: 100%;
+	max-width: 400px;
+}
+
+.wp-mcp-ai-place-contact input {
+	margin-bottom: 8px;
+}
+
+/* Place info notice */
+.place-info-notice {
+	border-left-color: #00a0d2;
+}
+
+.place-info-notice p {
+	margin: 0.5em 0;
+}
+
+.place-info-notice p:first-of-type {
+	margin-top: 0;
+}
+
+.place-info-notice code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+}
+
+/* Business hours table */
+.wp-mcp-ai-place-details h4 {
+	margin-top: 20px;
+	margin-bottom: 10px;
+	font-size: 14px;
+}
+
+/* Amenities textarea */
+#place_amenities {
+	font-family: monospace;
+	font-size: 13px;
+}
+
+/* List table custom columns */
+.column-place_type,
+.column-rating,
+.column-price_level {
+	width: 10%;
+}
+
+.column-location {
+	width: 20%;
+}
+
+/* Rating stars */
+.column-rating {
+	color: #ffb900;
+}
+
+/* Price level symbols */
+.column-price_level {
+	color: #50b83c;
+	font-weight: bold;
+}

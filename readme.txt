@@ -3,7 +3,7 @@ Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
-Tested up to: 6.7.1
+Tested up to: 6.7
 Requires PHP: 7.4
 Stable tag: 1.1.0
 License: GPLv3 or later
@@ -79,7 +79,7 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 
 = Third-Party Plugin Support (Optional) =
 
-WP oOS works perfectly standalone. Optional integrations add enhanced functionality:
+NV oOS works perfectly standalone. Optional integrations add enhanced functionality:
 
 * **JetEngine** (paid) - Server-side chat transcript storage, CCT integration
 * **WooCommerce** (free) - E-commerce automation tools
@@ -105,7 +105,7 @@ Comprehensive documentation is available in the plugin's `/docs/` directory:
 
 = Open Source =
 
-WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
+NV oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 * [GitHub Repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos)
 * [Issue Tracker](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues)
@@ -118,7 +118,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 1. Go to Plugins → Add New in your WordPress admin
 2. Search for "Open Operator System"
 3. Click "Install Now" and then "Activate"
-4. Navigate to Settings → WP oOS to configure your API key
+4. Navigate to Settings → NV oOS to configure your API key
 
 = Manual Installation =
 
@@ -129,7 +129,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 = Configuration =
 
-1. Go to **Settings → WP oOS**
+1. Go to **Settings → NV oOS**
 2. Enter your OpenAI API key (get one at [platform.openai.com](https://platform.openai.com))
 3. (Optional) Configure Gemini API key for Google AI support
 4. (Optional) Configure Ollama endpoint for local AI
@@ -145,7 +145,7 @@ WP oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 = Multisite Installation =
 
-WP oOS supports WordPress multisite:
+NV oOS supports WordPress multisite:
 
 * **Network Activation** - Activate network-wide from Network Admin → Plugins
 * **Individual Activation** - Activate on specific sites as needed
@@ -162,7 +162,7 @@ Yes, you need an API key from at least one AI provider. OpenAI is recommended fo
 
 = How much does it cost to use the AI features? =
 
-WP oOS itself is free. AI provider costs depend on usage:
+NV oOS itself is free. AI provider costs depend on usage:
 * OpenAI charges per token (~$0.002 per 1K tokens for GPT-4o-mini)
 * Gemini has a generous free tier
 * Ollama is completely free (runs on your hardware)
@@ -173,11 +173,11 @@ Yes, when you use cloud AI providers, your chat messages are sent to their APIs.
 
 = Can I use this without JetEngine? =
 
-Absolutely! WP oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds server-side chat transcript storage. Without it, chat history is stored in browser localStorage (24 hours).
+Absolutely! NV oOS works perfectly with vanilla WordPress. JetEngine integration is optional and adds server-side chat transcript storage. Without it, chat history is stored in browser localStorage (24 hours).
 
 = How do I connect Claude Desktop or LM Studio? =
 
-WP oOS includes a full MCP server:
+NV oOS includes a full MCP server:
 1. Generate API credentials from the assistant editor
 2. Configure your MCP client with the credentials
 3. Use endpoint: `https://yoursite.com/wp-json/mcp-ai/v1/`
@@ -186,7 +186,7 @@ See our [MCP Server Documentation](https://github.com/nvdigitalsolutions/mcp-ai-
 
 = Is this plugin GDPR compliant? =
 
-WP oOS includes features to help with GDPR compliance:
+NV oOS includes features to help with GDPR compliance:
 * No tracking scripts or cookies
 * Optional logging (can be disabled)
 * API keys are never stored in plain text
@@ -194,9 +194,9 @@ WP oOS includes features to help with GDPR compliance:
 
 You are responsible for reviewing your AI provider's data processing agreements and informing users about AI processing.
 
-= How do I extend WP oOS with custom tools? =
+= How do I extend NV oOS with custom tools? =
 
-WP oOS has a developer-friendly tool registry:
+NV oOS has a developer-friendly tool registry:
 
 `add_action( 'wp_mcp_ai_register_tools', function( $registry ) {
     require_once 'path/to/class-my-custom-tool.php';
@@ -213,7 +213,7 @@ See our [Tool Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob
 
 = Is this plugin patented? =
 
-Yes. WP oOS is the subject of a pending patent application (Application #19/410,504) for "System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting."
+Yes. NV oOS is the subject of a pending patent application (Application #19/410,504) for "System and Method for Dynamic AI Orchestration Layer with Real-Time Capability Gating and Resource Budgeting."
 
 **Your Rights:** The patent will not be used to restrict your GPL rights. This plugin is licensed under GPLv3 or later, and you have all the freedoms granted by that license:
 
@@ -261,6 +261,161 @@ This plugin has been in active development since October 2024. See the complete 
 
 = 1.0.0 =
 Initial release. Welcome to Open Operator System!
+
+== External Services ==
+
+**IMPORTANT:** This plugin connects to various third-party services to provide AI functionality and optional features. 
+
+**📖 Complete Documentation:** For comprehensive details about all 16 external services, data transmission, and legal requirements, see our [External Services Reference](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md).
+
+Below is a summary of the most commonly used services:
+
+= AI Provider Services (Required - At Least One Must Be Configured) =
+
+**1. OpenAI API**
+* **Purpose:** Core AI functionality (chat, image generation, text-to-speech, embeddings)
+* **Data Sent:** Chat messages, system prompts, file attachments, tool results
+* **When:** Every time an AI assistant is used with OpenAI as the provider
+* **Service URL:** https://api.openai.com
+* **Terms of Service:** https://openai.com/policies/terms-of-use
+* **Privacy Policy:** https://openai.com/privacy
+* **Data Retention:** 30 days for abuse monitoring, then deleted (as of March 2023)
+
+**2. Google Gemini API**
+* **Purpose:** Core AI functionality (chat, image generation, embeddings, geospatial queries)
+* **Data Sent:** Chat messages, system prompts, file attachments, tool results
+* **When:** Every time an AI assistant is used with Gemini as the provider
+* **Service URL:** https://generativelanguage.googleapis.com
+* **Terms of Service:** https://ai.google.dev/terms
+* **Privacy Policy:** https://ai.google.dev/privacy
+
+**3. Ollama (Self-Hosted)**
+* **Purpose:** Privacy-focused local AI processing
+* **Data Sent:** None (runs entirely on your server)
+* **When:** When configured as AI provider
+* **Service URL:** Your local server only
+* **Privacy:** No external data transmission
+
+**4. LM Studio (Self-Hosted)**
+* **Purpose:** Local AI with function calling support
+* **Data Sent:** None (runs entirely on your computer)
+* **When:** When configured as AI provider
+* **Service URL:** Your local computer only
+* **Privacy:** No external data transmission
+
+= Optional Third-Party Service Integrations =
+
+These services are only contacted when specific tools/features are used:
+
+**5. Brave Search API**
+* **Purpose:** Web search functionality for AI assistants
+* **Data Sent:** Search queries provided by users or AI
+* **When:** When the web search tool is called by an assistant
+* **Service URL:** https://api.search.brave.com/res/v1/web/search
+* **Terms of Service:** https://brave.com/terms-of-use/
+* **Privacy Policy:** https://brave.com/privacy/browser/
+
+**6. Open-Meteo Weather API**
+* **Purpose:** Weather forecasts and historical weather data
+* **Data Sent:** Location coordinates or city names
+* **When:** When weather tools are used
+* **Service URL:** https://api.open-meteo.com
+* **Terms of Service:** https://open-meteo.com/en/terms
+* **Privacy Policy:** https://open-meteo.com/en/terms (includes privacy information)
+
+**7. ReliefWeb API**
+* **Purpose:** Humanitarian disaster and emergency reports
+* **Data Sent:** Search queries for disaster reports
+* **When:** When ReliefWeb tools are used
+* **Service URL:** https://api.reliefweb.int/v1/reports
+* **Terms of Service:** https://reliefweb.int/terms-conditions
+* **Privacy Policy:** https://reliefweb.int/privacy-policy
+
+**8. WordPress.org API**
+* **Purpose:** PHP version compatibility check for site health
+* **Data Sent:** Current PHP version number
+* **When:** When site health tools are called
+* **Service URL:** https://api.wordpress.org/core/serve-happy/1.0/
+* **Terms of Service:** https://wordpress.org/about/privacy/
+* **Privacy Policy:** https://wordpress.org/about/privacy/
+
+**9. Chart.js CDN**
+* **Purpose:** Chart visualization library for displaying data
+* **Data Sent:** None (library loaded client-side)
+* **When:** When chart generation tools create visualizations
+* **Service URL:** https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js
+* **Terms of Service:** https://www.jsdelivr.com/terms
+* **Privacy Policy:** https://www.jsdelivr.com/privacy-policy-jsdelivr-net
+
+= Optional OAuth/Integration Services (Pro Version Only) =
+
+These services are only used if you explicitly configure OAuth integrations:
+
+**10. GitHub API**
+* **Purpose:** Repository management, code search, issue tracking
+* **Data Sent:** OAuth tokens, repository queries, commit data
+* **When:** When GitHub tools are used after OAuth setup
+* **Service URL:** https://api.github.com
+* **Terms of Service:** https://docs.github.com/en/site-policy/github-terms/github-terms-of-service
+* **Privacy Policy:** https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement
+
+**11. Cloudways API**
+* **Purpose:** Server management for Cloudways hosting customers
+* **Data Sent:** OAuth tokens, server management commands
+* **When:** When Cloudways tools are used after OAuth setup
+* **Service URL:** https://api.cloudways.com/api/v1
+* **Terms of Service:** https://www.cloudways.com/en/terms-of-service.php
+* **Privacy Policy:** https://www.cloudways.com/en/privacy-policy.php
+
+**12. QuickBooks API (Intuit)**
+* **Purpose:** Accounting and financial data integration
+* **Data Sent:** OAuth tokens, financial queries
+* **When:** When QuickBooks tools are used after OAuth setup
+* **Service URL:** https://appcenter.intuit.com/connect/oauth2
+* **Terms of Service:** https://accounts.intuit.com/terms-of-service
+* **Privacy Policy:** https://www.intuit.com/privacy/statement/
+
+**13. Mailjet API**
+* **Purpose:** Email marketing and transactional email
+* **Data Sent:** OAuth tokens, email campaign data
+* **When:** When Mailjet tools are used after OAuth setup
+* **Service URL:** https://app.mailjet.com/oauth/authorize
+* **Terms of Service:** https://www.mailjet.com/legal/terms-of-use/
+* **Privacy Policy:** https://www.mailjet.com/privacy-policy/
+
+= Data Processing Summary =
+
+**What is sent to external services:**
+* User messages and chat conversations (AI providers only)
+* File uploads (AI providers only)
+* Search queries (when using search/weather tools)
+* OAuth credentials (when using optional integrations)
+
+**What is NOT sent:**
+* WordPress admin credentials
+* Database contents (unless explicitly requested via tool)
+* Site configuration (unless using diagnostic tools)
+* Other user data not related to AI requests
+
+**When data is sent:**
+* Only when you or your users actively use AI features
+* Only to services you have explicitly configured
+* Never for analytics or telemetry purposes
+
+**Your control:**
+* You choose which AI provider to use
+* You control which tools are enabled
+* You can use self-hosted AI (Ollama/LM Studio) for complete privacy
+* OAuth integrations are entirely optional
+
+= Recommendations =
+
+1. **Review Provider Policies** - Read the terms and privacy policies of any service you plan to use
+2. **Use Local AI for Sensitive Data** - Configure Ollama or LM Studio for maximum privacy
+3. **Limit Tool Access** - Only enable tools your site actually needs
+4. **Update Your Privacy Policy** - Inform your users about AI processing on your site
+5. **Obtain Consent** - Get user consent before processing personal data with AI
+6. **Monitor Usage** - Use the built-in token tracking to monitor API calls
 
 == Privacy Policy ==
 

@@ -34,13 +34,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// Performance Test Runner Block.
 		register_block_type(
-			'wp-mcp-ai/performance-test-runner',
+			'mcp-ai-wpoos/performance-test-runner',
 			array(
 				'render_callback' => array( __CLASS__, 'render_test_runner_block' ),
 				'attributes'      => array(
 					'title'        => array(
 						'type'    => 'string',
-						'default' => __( 'Performance Test Runner', 'wp-mcp-ai' ),
+						'default' => __( 'Performance Test Runner', 'mcp-ai-wpoos' ),
 					),
 					'enabledTests' => array(
 						'type'    => 'array',
@@ -52,13 +52,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// Performance Metrics Block.
 		register_block_type(
-			'wp-mcp-ai/performance-metrics',
+			'mcp-ai-wpoos/performance-metrics',
 			array(
 				'render_callback' => array( __CLASS__, 'render_metrics_block' ),
 				'attributes'      => array(
 					'title'      => array(
 						'type'    => 'string',
-						'default' => __( 'Performance Metrics', 'wp-mcp-ai' ),
+						'default' => __( 'Performance Metrics', 'mcp-ai-wpoos' ),
 					),
 					'component'  => array(
 						'type'    => 'string',
@@ -74,13 +74,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// System Health Status Block.
 		register_block_type(
-			'wp-mcp-ai/system-health-status',
+			'mcp-ai-wpoos/system-health-status',
 			array(
 				'render_callback' => array( __CLASS__, 'render_health_status_block' ),
 				'attributes'      => array(
 					'title'         => array(
 						'type'    => 'string',
-						'default' => __( 'System Health Status', 'wp-mcp-ai' ),
+						'default' => __( 'System Health Status', 'mcp-ai-wpoos' ),
 					),
 					'showBreakdown' => array(
 						'type'    => 'boolean',
@@ -92,13 +92,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// Test Results Table Block.
 		register_block_type(
-			'wp-mcp-ai/test-results-table',
+			'mcp-ai-wpoos/test-results-table',
 			array(
 				'render_callback' => array( __CLASS__, 'render_test_results_block' ),
 				'attributes'      => array(
 					'title'    => array(
 						'type'    => 'string',
-						'default' => __( 'Test Results', 'wp-mcp-ai' ),
+						'default' => __( 'Test Results', 'mcp-ai-wpoos' ),
 					),
 					'testType' => array(
 						'type'    => 'string',
@@ -114,13 +114,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// Performance Recommendations Block.
 		register_block_type(
-			'wp-mcp-ai/performance-recommendations',
+			'mcp-ai-wpoos/performance-recommendations',
 			array(
 				'render_callback' => array( __CLASS__, 'render_recommendations_block' ),
 				'attributes'      => array(
 					'title'    => array(
 						'type'    => 'string',
-						'default' => __( 'Performance Recommendations', 'wp-mcp-ai' ),
+						'default' => __( 'Performance Recommendations', 'mcp-ai-wpoos' ),
 					),
 					'severity' => array(
 						'type'    => 'string',
@@ -136,13 +136,13 @@ class WP_MCP_AI_Performance_Blocks {
 
 		// Performance Trends Chart Block.
 		register_block_type(
-			'wp-mcp-ai/performance-trends',
+			'mcp-ai-wpoos/performance-trends',
 			array(
 				'render_callback' => array( __CLASS__, 'render_trends_block' ),
 				'attributes'      => array(
 					'title'      => array(
 						'type'    => 'string',
-						'default' => __( 'Performance Trends', 'wp-mcp-ai' ),
+						'default' => __( 'Performance Trends', 'mcp-ai-wpoos' ),
 					),
 					'component'  => array(
 						'type'    => 'string',
@@ -187,20 +187,20 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_test_runner_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to run performance tests.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to run performance tests.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title         = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Test Runner', 'wp-mcp-ai' );
+		$title         = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Test Runner', 'mcp-ai-wpoos' );
 		$enabled_tests = isset( $attributes['enabledTests'] ) ? $attributes['enabledTests'] : array();
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-test-runner">
+		<div class="wp-block-mcp-ai-wpoos-performance-test-runner">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="test-runner-controls">
 				<?php foreach ( $enabled_tests as $test_type ) : ?>
 					<button class="button button-primary test-runner-btn" data-test-type="<?php echo esc_attr( $test_type ); ?>">
-						<?php echo esc_html( ucfirst( $test_type ) . ' ' . __( 'Test', 'wp-mcp-ai' ) ); ?>
+						<?php echo esc_html( ucfirst( $test_type ) . ' ' . __( 'Test', 'mcp-ai-wpoos' ) ); ?>
 					</button>
 				<?php endforeach; ?>
 			</div>
@@ -218,10 +218,10 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_metrics_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to view performance metrics.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to view performance metrics.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title       = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Metrics', 'wp-mcp-ai' );
+		$title       = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Metrics', 'mcp-ai-wpoos' );
 		$component   = isset( $attributes['component'] ) ? $attributes['component'] : '';
 		$time_period = isset( $attributes['timePeriod'] ) ? $attributes['timePeriod'] : '-24 hours';
 
@@ -229,19 +229,19 @@ class WP_MCP_AI_Performance_Blocks {
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-metrics">
+		<div class="wp-block-mcp-ai-wpoos-performance-metrics">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="metrics-grid">
 				<div class="metric-card">
-					<span class="metric-label"><?php esc_html_e( 'Avg Response Time', 'wp-mcp-ai' ); ?></span>
+					<span class="metric-label"><?php esc_html_e( 'Avg Response Time', 'mcp-ai-wpoos' ); ?></span>
 					<span class="metric-value"><?php echo esc_html( number_format( $metrics['avg_response_time'], 2 ) ); ?> ms</span>
 				</div>
 				<div class="metric-card">
-					<span class="metric-label"><?php esc_html_e( 'Avg Memory', 'wp-mcp-ai' ); ?></span>
+					<span class="metric-label"><?php esc_html_e( 'Avg Memory', 'mcp-ai-wpoos' ); ?></span>
 					<span class="metric-value"><?php echo esc_html( number_format( $metrics['avg_memory_usage'], 2 ) ); ?> MB</span>
 				</div>
 				<div class="metric-card">
-					<span class="metric-label"><?php esc_html_e( 'Avg DB Queries', 'wp-mcp-ai' ); ?></span>
+					<span class="metric-label"><?php esc_html_e( 'Avg DB Queries', 'mcp-ai-wpoos' ); ?></span>
 					<span class="metric-value"><?php echo esc_html( number_format( $metrics['avg_db_queries'], 0 ) ); ?></span>
 				</div>
 			</div>
@@ -258,17 +258,17 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_health_status_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to view system health.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to view system health.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'System Health Status', 'wp-mcp-ai' );
+		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'System Health Status', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-system-health-status">
+		<div class="wp-block-mcp-ai-wpoos-system-health-status">
 			<h3><?php echo esc_html( $title ); ?></h3>
 			<div class="health-status-content">
-				<p><?php esc_html_e( 'System health monitoring active. Check Elementor widgets for detailed view.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'System health monitoring active. Check Elementor widgets for detailed view.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 		</div>
 		<?php
@@ -283,16 +283,16 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_test_results_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to view test results.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to view test results.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Test Results', 'wp-mcp-ai' );
+		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Test Results', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-test-results-table">
+		<div class="wp-block-mcp-ai-wpoos-test-results-table">
 			<h3><?php echo esc_html( $title ); ?></h3>
-			<p><?php esc_html_e( 'Test results displayed here. Use Elementor widget for full table view.', 'wp-mcp-ai' ); ?></p>
+			<p><?php esc_html_e( 'Test results displayed here. Use Elementor widget for full table view.', 'mcp-ai-wpoos' ); ?></p>
 		</div>
 		<?php
 		return ob_get_clean();
@@ -306,16 +306,16 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_recommendations_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to view recommendations.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to view recommendations.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Recommendations', 'wp-mcp-ai' );
+		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Recommendations', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-recommendations">
+		<div class="wp-block-mcp-ai-wpoos-performance-recommendations">
 			<h3><?php echo esc_html( $title ); ?></h3>
-			<p><?php esc_html_e( 'AI-generated recommendations displayed here.', 'wp-mcp-ai' ); ?></p>
+			<p><?php esc_html_e( 'AI-generated recommendations displayed here.', 'mcp-ai-wpoos' ); ?></p>
 		</div>
 		<?php
 		return ob_get_clean();
@@ -329,16 +329,16 @@ class WP_MCP_AI_Performance_Blocks {
 	 */
 	public static function render_trends_block( $attributes ) {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			return '<p>' . esc_html__( 'You do not have permission to view performance trends.', 'wp-mcp-ai' ) . '</p>';
+			return '<p>' . esc_html__( 'You do not have permission to view performance trends.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
-		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Trends', 'wp-mcp-ai' );
+		$title = isset( $attributes['title'] ) ? $attributes['title'] : __( 'Performance Trends', 'mcp-ai-wpoos' );
 
 		ob_start();
 		?>
-		<div class="wp-block-wp-mcp-ai-performance-trends">
+		<div class="wp-block-mcp-ai-wpoos-performance-trends">
 			<h3><?php echo esc_html( $title ); ?></h3>
-			<p><?php esc_html_e( 'Performance trends chart. Use Elementor widget for full chart view.', 'wp-mcp-ai' ); ?></p>
+			<p><?php esc_html_e( 'Performance trends chart. Use Elementor widget for full chart view.', 'mcp-ai-wpoos' ); ?></p>
 		</div>
 		<?php
 		return ob_get_clean();

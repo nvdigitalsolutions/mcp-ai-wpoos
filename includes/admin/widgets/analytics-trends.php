@@ -28,7 +28,7 @@ if ( $has_analytics ) {
 	<?php if ( $has_analytics && ! empty( $trend_data['daily_usage'] ) ) : ?>
 		<!-- Trend Chart -->
 		<div class="wp-mcp-ai-chart-container" style="margin-bottom: 20px;">
-			<canvas id="wp-mcp-ai-analytics-trend-chart" width="400" height="250"></canvas>
+			<canvas id="wp-mcp-ai-analytics-trend-chart"></canvas>
 		</div>
 
 		<!-- Trend Statistics -->
@@ -36,7 +36,7 @@ if ( $has_analytics ) {
 			<!-- Direction -->
 			<div class="wp-mcp-ai-stat-box" style="padding: 15px; background: #f7f7f7; border-radius: 4px;">
 				<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-					<?php esc_html_e( 'Trend Direction', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Trend Direction', 'mcp-ai-wpoos' ); ?>
 				</div>
 				<div style="font-size: 16px; font-weight: 600;">
 					<?php
@@ -60,7 +60,7 @@ if ( $has_analytics ) {
 			<!-- Confidence -->
 			<div class="wp-mcp-ai-stat-box" style="padding: 15px; background: #f7f7f7; border-radius: 4px;">
 				<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-					<?php esc_html_e( 'Confidence', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Confidence', 'mcp-ai-wpoos' ); ?>
 				</div>
 				<div style="font-size: 16px; font-weight: 600;">
 					<?php echo esc_html( isset( $trend_data['trend']['confidence'] ) ? absint( $trend_data['trend']['confidence'] ) : 0 ); ?>%
@@ -70,7 +70,7 @@ if ( $has_analytics ) {
 			<!-- Average Usage -->
 			<div class="wp-mcp-ai-stat-box" style="padding: 15px; background: #f7f7f7; border-radius: 4px;">
 				<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-					<?php esc_html_e( 'Average Daily', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Average Daily', 'mcp-ai-wpoos' ); ?>
 				</div>
 				<div style="font-size: 16px; font-weight: 600;">
 					<?php echo esc_html( number_format_i18n( isset( $trend_data['statistics']['mean'] ) ? absint( $trend_data['statistics']['mean'] ) : 0 ) ); ?>
@@ -80,7 +80,7 @@ if ( $has_analytics ) {
 			<!-- Projected 7d -->
 			<div class="wp-mcp-ai-stat-box" style="padding: 15px; background: #f7f7f7; border-radius: 4px;">
 				<div style="font-size: 12px; color: #666; margin-bottom: 5px;">
-					<?php esc_html_e( 'Projected (7d)', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Projected (7d)', 'mcp-ai-wpoos' ); ?>
 				</div>
 				<div style="font-size: 16px; font-weight: 600;">
 					<?php echo esc_html( number_format_i18n( isset( $trend_data['projected_7d'] ) ? absint( $trend_data['projected_7d'] ) : 0 ) ); ?>
@@ -93,32 +93,34 @@ if ( $has_analytics ) {
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-analytics-trend-chart');
 				if (ctx) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
-					
+
 					// Prepare data points for chart.
 					var labels = [];
 					var dataPoints = [];
 					var trendLine = [];
 					var dayIndex = 0;
-					
+
 					for (var date in dailyUsage) {
 						labels.push(date);
 						dataPoints.push(dailyUsage[date]);
-						
+
 						// Calculate trend line point: y = slope * x + intercept
 						var trendValue = trendInfo.slope * dayIndex + trendInfo.intercept;
 						trendLine.push(Math.max(0, trendValue));
 						dayIndex++;
 					}
-					
+
 					new Chart(ctx.getContext('2d'), {
 						type: 'line',
 						data: {
 							labels: labels,
 							datasets: [
 								{
-									label: '<?php esc_attr_e( 'Actual Usage', 'wp-mcp-ai' ); ?>',
+									label: '<?php esc_attr_e( 'Actual Usage', 'mcp-ai-wpoos' ); ?>',
 									data: dataPoints,
 									borderColor: 'rgba(54, 162, 235, 1)',
 									backgroundColor: 'rgba(54, 162, 235, 0.1)',
@@ -128,7 +130,7 @@ if ( $has_analytics ) {
 									pointHoverRadius: 5
 								},
 								{
-									label: '<?php esc_attr_e( 'Trend Line', 'wp-mcp-ai' ); ?>',
+									label: '<?php esc_attr_e( 'Trend Line', 'mcp-ai-wpoos' ); ?>',
 									data: trendLine,
 									borderColor: 'rgba(255, 99, 132, 1)',
 									borderDash: [5, 5],
@@ -148,7 +150,7 @@ if ( $has_analytics ) {
 								},
 								title: {
 									display: true,
-									text: '<?php esc_attr_e( 'Usage Trend Analysis', 'wp-mcp-ai' ); ?>'
+									text: '<?php esc_attr_e( 'Usage Trend Analysis', 'mcp-ai-wpoos' ); ?>'
 								},
 								tooltip: {
 									callbacks: {
@@ -197,13 +199,13 @@ if ( $has_analytics ) {
 				<span class="dashicons dashicons-chart-line" style="font-size: 48px; color: #2271b1; opacity: 0.5;"></span>
 			</div>
 			<p style="margin: 0; font-weight: 600; margin-bottom: 8px;">
-				<?php esc_html_e( 'Usage Trend', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Usage Trend', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p style="margin: 0; color: #666;">
-				<?php esc_html_e( 'Usage is stable. No action required.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Usage is stable. No action required.', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p style="margin: 8px 0 0 0; font-size: 12px; color: #999;">
-				<?php esc_html_e( 'Advanced forecasting is currently being implemented. Basic trend analysis will be available soon!', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Advanced forecasting is currently being implemented. Basic trend analysis will be available soon!', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 	<?php endif; ?>
@@ -211,7 +213,7 @@ if ( $has_analytics ) {
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ); ?>" class="button">
-			<?php esc_html_e( 'View Full Analytics', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'View Full Analytics', 'mcp-ai-wpoos' ); ?>
 		</a>
 	</div>
 </div>

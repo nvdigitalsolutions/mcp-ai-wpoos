@@ -31,7 +31,7 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Default AI Settings', 'wp-mcp-ai' );
+		return __( 'Default AI Settings', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -53,6 +53,15 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#ai-providers-tab';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @param WP_Post $post The post object.
@@ -60,29 +69,11 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 */
 	public function render( $post ) {
 		// Enqueue model selector JavaScript.
-		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
-			wp_enqueue_script(
-				'wp-mcp-ai-model-selector',
-				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
-				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
+		// Script is registered globally in WP_MCP_AI_Admin_Scripts with localization.
+		// We just need to enqueue it here for this metabox.
+		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
 
-			// Localize script for AJAX (only once).
-			wp_localize_script(
-				'wp-mcp-ai-model-selector',
-				'wpMcpAiModelSelector',
-				array(
-					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
-				)
-			);
-		}
-
-		wp_nonce_field( 'wp_mcp_ai_save_profession_defaults', 'wp_mcp_ai_profession_defaults_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		$default_provider     = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_provider', true );
 		$default_model        = get_post_meta( $post->ID, '_wp_mcp_ai_profession_default_model', true );
@@ -123,15 +114,15 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 		?>
 		<div class="wp-mcp-ai-profession-defaults">
 			<p class="description">
-				<?php esc_html_e( 'These settings will be applied to assistants created from this professional template.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'These settings will be applied to assistants created from this professional template.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<p>
 				<label for="profession_associated_assistant">
-					<strong><?php esc_html_e( 'Test Assistant', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Test Assistant', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_associated_assistant" id="profession_associated_assistant" class="widefat">
-					<option value=""><?php esc_html_e( '— Use Profession Settings —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Use Profession Settings —', 'mcp-ai-wpoos' ); ?></option>
 					<?php foreach ( $assistants as $assistant ) : ?>
 						<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $associated_assistant, $assistant->ID ); ?>>
 							<?php echo esc_html( $assistant->post_title ); ?>
@@ -139,29 +130,32 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 					<?php endforeach; ?>
 				</select>
 				<span class="description" style="display: block; margin-top: 5px;">
-					<?php esc_html_e( 'Associate with an existing assistant to use its configuration when testing this profession.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Associate with an existing assistant to use its configuration when testing this profession.', 'mcp-ai-wpoos' ); ?>
 				</span>
 			</p>
 
 			<p>
 				<label for="profession_default_provider">
-					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_default_provider" id="profession_default_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#profession_default_model">
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+					<?php
+					$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+					foreach ( $available_providers as $provider_slug => $provider_label ) {
+						?>
+						<option value="<?php echo esc_attr( $provider_slug ); ?>" <?php selected( $default_provider, $provider_slug ); ?>><?php echo esc_html( $provider_label ); ?></option>
+						<?php
+					}
+					?>
 				</select>
 			</p>
 
 			<p>
 				<label for="profession_default_model">
-					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="profession_default_model" id="profession_default_model" class="widefat">
-					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 					<?php if ( ! empty( $models ) ) : ?>
 						<?php foreach ( $models as $model_id => $model_name ) : ?>
 							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
@@ -179,13 +173,14 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 
 			<p>
 				<label for="profession_default_temperature">
-					<strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<input type="number" name="profession_default_temperature" id="profession_default_temperature" class="widefat" value="<?php echo esc_attr( $default_temperature ); ?>" min="0" max="2" step="0.1">
-				<span class="description" style="display: block; margin-top: 5px;"><?php esc_html_e( '0-2. Lower is more deterministic.', 'wp-mcp-ai' ); ?></span>
+				<span class="description" style="display: block; margin-top: 5px;"><?php esc_html_e( '0-2. Lower is more deterministic.', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 		</div>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**
@@ -196,19 +191,12 @@ class WP_MCP_AI_Profession_Metabox_Defaults extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ) {
+		if ( ! $this->can_save( $post_id ) ) {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_save_profession_defaults' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_defaults_nonce'] ) ), 'wp_mcp_ai_profession_defaults_save' ) ) {
 			return;
 		}
 

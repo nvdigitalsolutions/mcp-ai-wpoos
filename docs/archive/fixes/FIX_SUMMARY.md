@@ -46,7 +46,7 @@
 
 ### Testing Auth0 Configuration Fix
 
-1. Go to Settings → WP oOS → Authentication
+1. Go to Settings → NV oOS → Authentication
 2. Navigate to "Auth0 Configuration" subtab
 3. Enter Auth0 domain and audience, save
 4. Navigate to "REST API Capabilities" subtab
@@ -59,7 +59,7 @@
 ### Testing POST /assistants Endpoint
 
 **Prerequisites:**
-- Enable "REST Assistant Creation" in Settings → WP oOS → Authentication → REST API Capabilities
+- Enable "REST Assistant Creation" in Settings → NV oOS → Authentication → REST API Capabilities
 
 **Test 1: Create with Minimal Data**
 ```bash

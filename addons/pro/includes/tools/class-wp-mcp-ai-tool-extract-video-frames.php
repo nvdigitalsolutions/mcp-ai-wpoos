@@ -31,14 +31,14 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Extract Video Frames', 'wp-mcp-ai' );
+		return __( 'Extract Video Frames', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Extracts specific frames from a video file at given timestamps or intervals. Useful for detailed analysis of specific moments or creating thumbnails.', 'wp-mcp-ai' );
+		return __( 'Extracts specific frames from a video file at given timestamps or intervals. Useful for detailed analysis of specific moments or creating thumbnails.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -50,42 +50,42 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'video_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the video file to extract frames from.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the video file to extract frames from.', 'mcp-ai-wpoos-pro' ),
 				),
 				'url'           => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the video to extract frames from.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID of the video to extract frames from.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'file_id'       => $this->get_file_id_parameter_schema(),
 				'timestamps'    => array(
 					'type'        => 'array',
-					'description' => __( 'Specific timestamps in seconds to extract frames at. Example: [5.5, 10, 15.25]', 'wp-mcp-ai' ),
+					'description' => __( 'Specific timestamps in seconds to extract frames at. Example: [5.5, 10, 15.25]', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'number',
 					),
 				),
 				'interval'      => array(
 					'type'        => 'number',
-					'description' => __( 'Extract frames at regular intervals (in seconds). Example: 5 for every 5 seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Extract frames at regular intervals (in seconds). Example: 5 for every 5 seconds.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.1,
 				),
 				'frame_count'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of frames to extract evenly distributed across the video. Default is 10, maximum is 20.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of frames to extract evenly distributed across the video. Default is 10, maximum is 20.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 10,
 				),
 				'save_to_media' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to save extracted frames to Media Library. Default is false (temporary files only).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to save extracted frames to Media Library. Default is false (temporary files only).', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'quality'       => array(
 					'type'        => 'integer',
-					'description' => __( 'JPEG quality for extracted frames (1-31, lower is better quality). Default is 2.', 'wp-mcp-ai' ),
+					'description' => __( 'JPEG quality for extracted frames (1-31, lower is better quality). Default is 2.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 31,
 					'default'     => 2,
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to extract video frames.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to extract video frames.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -147,11 +147,11 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			return new WP_Error(
 				'wp_mcp_ai_ffmpeg_not_available',
-				__( 'FFmpeg is not installed on this server. Frame extraction requires FFmpeg.', 'wp-mcp-ai' ),
+				__( 'FFmpeg is not installed on this server. Frame extraction requires FFmpeg.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status'  => 500,
 					'actions' => array(
-						'install_ffmpeg' => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'wp-mcp-ai' ),
+						'install_ffmpeg' => __( 'Install FFmpeg: https://ffmpeg.org/download.html', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			$result['frames']  = $attachment_ids;
 			$result['message'] = sprintf(
 				/* translators: %d: number of frames */
-				__( 'Successfully extracted and saved %d frames to Media Library.', 'wp-mcp-ai' ),
+				__( 'Successfully extracted and saved %d frames to Media Library.', 'mcp-ai-wpoos-pro' ),
 				count( $attachment_ids )
 			);
 		} else {
@@ -194,7 +194,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			$result['frames']  = $base64_frames;
 			$result['message'] = sprintf(
 				/* translators: %d: number of frames */
-				__( 'Successfully extracted %d frames (temporary - not saved to Media Library).', 'wp-mcp-ai' ),
+				__( 'Successfully extracted %d frames (temporary - not saved to Media Library).', 'mcp-ai-wpoos-pro' ),
 				count( $base64_frames )
 			);
 		}
@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_not_found',
-					__( 'Video file not found on server.', 'wp-mcp-ai' ),
+					__( 'Video file not found on server.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_not_video',
-					__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
+					__( 'The provided attachment is not a video file.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -267,7 +267,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 		return new WP_Error(
 			'wp_mcp_ai_missing_video',
-			__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
+			__( 'You must provide video_url, url, attachment_id, or file_id.', 'mcp-ai-wpoos-pro' ),
 			array( 'status' => 400 )
 		);
 	}
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_download_failed',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Failed to download video. HTTP status: %d', 'wp-mcp-ai' ),
+					__( 'Failed to download video. HTTP status: %d', 'mcp-ai-wpoos-pro' ),
 					$code
 				),
 				array( 'status' => $code )
@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_not_video',
-				__( 'Downloaded file is not a video.', 'wp-mcp-ai' ),
+				__( 'Downloaded file is not a video.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -320,7 +320,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( false === $written ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_failed',
-				__( 'Failed to write video to temporary file.', 'wp-mcp-ai' ),
+				__( 'Failed to write video to temporary file.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -378,7 +378,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( ! mkdir( $temp_dir, 0755, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_dir_failed',
-				__( 'Failed to create temporary directory for frames.', 'wp-mcp-ai' ),
+				__( 'Failed to create temporary directory for frames.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -393,7 +393,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 			if ( $timestamp < 0 || $timestamp > $duration ) {
 				$errors[] = sprintf(
 					/* translators: 1: timestamp, 2: duration */
-					__( 'Timestamp %1$s is out of range (video duration: %2$s seconds)', 'wp-mcp-ai' ),
+					__( 'Timestamp %1$s is out of range (video duration: %2$s seconds)', 'mcp-ai-wpoos-pro' ),
 					$timestamp,
 					$duration
 				);
@@ -423,7 +423,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			return new WP_Error(
 				'wp_mcp_ai_no_frames',
-				__( 'Failed to extract frames at specified timestamps.', 'wp-mcp-ai' ),
+				__( 'Failed to extract frames at specified timestamps.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'errors' => $errors,
@@ -472,7 +472,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_ffmpeg_extraction_failed',
 				sprintf(
 					/* translators: %s: timestamp in seconds */
-					__( 'FFmpeg failed to extract frame at timestamp %s', 'wp-mcp-ai' ),
+					__( 'FFmpeg failed to extract frame at timestamp %s', 'mcp-ai-wpoos-pro' ),
 					$timestamp_formatted
 				),
 				array(
@@ -509,7 +509,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $timestamps ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_interval',
-				__( 'Interval is too large for the video duration.', 'wp-mcp-ai' ),
+				__( 'Interval is too large for the video duration.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -563,7 +563,7 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 				'post_mime_type' => 'image/jpeg',
 				'post_title'     => sprintf(
 					/* translators: %d: frame number */
-					__( 'Video Frame %d', 'wp-mcp-ai' ),
+					__( 'Video Frame %d', 'mcp-ai-wpoos-pro' ),
 					$index + 1
 				),
 				'post_content'   => '',
@@ -575,7 +575,9 @@ class WP_MCP_AI_Tool_Extract_Video_Frames implements WP_MCP_AI_Tool_Interface, W
 
 			if ( ! is_wp_error( $attachment_id ) ) {
 				// Generate attachment metadata.
-				require_once ABSPATH . 'wp-admin/includes/image.php';
+				if ( ! function_exists( 'wp_generate_attachment_metadata' ) ) {
+					require_once ABSPATH . 'wp-admin/includes/image.php';
+				}
 				$attach_data = wp_generate_attachment_metadata( $attachment_id, $upload['file'] );
 				wp_update_attachment_metadata( $attachment_id, $attach_data );
 

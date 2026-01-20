@@ -1,10 +1,10 @@
 {
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
-	"name": "wp-mcp-ai/knowledge-base",
+	"name": "mcp-ai-wpoos/knowledge-base",
 	"version": "1.0.0",
 	"title": "Knowledge Base Upload",
-	"category": "wp-mcp-ai",
+	"category": "mcp-ai-wpoos",
 	"icon": "media-document",
 	"description": "Upload files to include in an AI assistant's knowledge base.",
 	"keywords": [ "ai", "knowledge", "upload", "files", "documents" ],

@@ -52,11 +52,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_api_key',
-					__( 'No Anthropic API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_api_key' => __( 'Add an Anthropic API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -67,11 +67,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $model ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_model',
-					__( 'No Anthropic model has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic model has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_anthropic_model' => __( 'Choose an Anthropic model in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_anthropic_model' => __( 'Choose an Anthropic model in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -105,8 +105,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The Anthropic API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'Anthropic', 'wp-mcp-ai' )
+					__( 'The Anthropic API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'Anthropic', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -118,11 +118,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode Anthropic response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Anthropic API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The Anthropic API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
-				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Anthropic.', 'wp-mcp-ai' );
+				$error_message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from Anthropic.', 'mcp-ai-wpoos' );
 
 				WP_MCP_AI_Logger::log_error(
 					'Anthropic returned an error response.',
@@ -164,7 +164,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_anthropic_api_key',
-					__( 'No Anthropic API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No Anthropic API key has been configured.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -191,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			return array(
 				'success' => true,
-				'message' => __( 'Successfully connected to Anthropic.', 'wp-mcp-ai' ),
+				'message' => __( 'Successfully connected to Anthropic.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -226,11 +226,11 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_messages',
-					__( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -277,7 +277,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			if ( empty( $anthropic_messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_no_valid_messages',
-					__( 'No valid messages found for the Anthropic request.', 'wp-mcp-ai' ),
+					__( 'No valid messages found for the Anthropic request.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -324,7 +324,52 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				$payload['temperature'] = (float) $options['temperature'];
 			}
 
+			// Add tools if specified (Anthropic format).
+			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
+				$tools = $this->translate_tools_for_anthropic( $options['tools'] );
+				if ( ! empty( $tools ) ) {
+					$payload['tools'] = $tools;
+				}
+			}
+
 			return $payload;
+		}
+
+		/**
+		 * Translate OpenAI-style tools to Anthropic format.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $tools Array of tool definitions in OpenAI format.
+		 * @return array Array of tool definitions in Anthropic format.
+		 */
+		protected function translate_tools_for_anthropic( array $tools ) {
+			$anthropic_tools = array();
+
+			foreach ( $tools as $tool ) {
+				if ( ! isset( $tool['function'] ) || ! is_array( $tool['function'] ) ) {
+					continue;
+				}
+
+				$function = $tool['function'];
+				if ( ! isset( $function['name'] ) ) {
+					continue;
+				}
+
+				$anthropic_tool = array(
+					'name'        => sanitize_text_field( $function['name'] ),
+					'description' => isset( $function['description'] ) ? sanitize_text_field( $function['description'] ) : '',
+				);
+
+				// Add input schema if parameters are provided.
+				if ( isset( $function['parameters'] ) && is_array( $function['parameters'] ) ) {
+					$anthropic_tool['input_schema'] = $function['parameters'];
+				}
+
+				$anthropic_tools[] = $anthropic_tool;
+			}
+
+			return $anthropic_tools;
 		}
 
 		/**
@@ -586,6 +631,464 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			}
 
 			return $payload;
+		}
+
+		/**
+		 * Execute a chat completion with tools and recursive tool execution.
+		 *
+		 * This method provides automatic tool execution in a loop for Anthropic.
+		 * Note: Anthropic uses "tool use" terminology instead of "function calling".
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages Array of conversation messages.
+		 * @param array $tools    Array of tool definitions with executable functions.
+		 * @param array $options  Optional configuration:
+		 *                        - strictValidation (bool): Validate arguments before execution. Default: true.
+		 *                        - maxRecursiveToolRuns (int): Maximum recursion depth. Default: 5.
+		 *                        - streamFinalResponse (bool): Enable streaming (not implemented for PHP). Default: false.
+		 *                        - verbose (bool): Detailed logging. Default: false.
+		 *                        - autoTrimTools (bool): Context-based tool selection. Default: false.
+		 *                        - maxTools (int): Max tools when trimming. Default: 10.
+		 *                        - model, temperature, timeout, etc.
+		 * @return array|WP_Error Final response or error.
+		 */
+		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
+			// Configuration options with defaults.
+			$strict_validation     = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
+			$max_recursive_runs    = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
+			$stream_final_response = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
+			$verbose               = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
+			$auto_trim_tools       = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
+
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'anthropic_run_with_tools_start',
+					'Starting Anthropic embedded function calling.',
+					array(
+						'message_count'      => count( $messages ),
+						'tool_count'         => count( $tools ),
+						'strict_validation'  => $strict_validation,
+						'max_recursive_runs' => $max_recursive_runs,
+						'auto_trim_tools'    => $auto_trim_tools,
+					)
+				);
+			}
+
+			// Validate tools array.
+			if ( empty( $tools ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_no_tools',
+					__( 'At least one tool must be provided for embedded function calling.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Auto-trim tools if enabled.
+			if ( $auto_trim_tools ) {
+				$tools = $this->auto_trim_tools( $messages, $tools, $options );
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'anthropic_auto_trim_tools',
+						'Automatically trimmed tools based on context.',
+						array( 'remaining_tool_count' => count( $tools ) )
+					);
+				}
+			}
+
+			// Convert tools to Anthropic format and create tool lookup.
+			$tool_definitions = array();
+			$tool_functions   = array();
+
+			foreach ( $tools as $tool ) {
+				if ( ! isset( $tool['name'] ) || ! isset( $tool['function'] ) ) {
+					continue;
+				}
+
+				$tool_name = sanitize_text_field( $tool['name'] );
+
+				// Build tool definition for API.
+				$definition = array(
+					'name'        => $tool_name,
+					'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
+				);
+
+				if ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$definition['parameters'] = $tool['parameters'];
+				}
+
+				$tool_definitions[] = array(
+					'type'     => 'function',
+					'function' => $definition,
+				);
+
+				// Store executable function.
+				$tool_functions[ $tool_name ] = $tool['function'];
+			}
+
+			// Prepare options with tools.
+			$request_options          = $options;
+			$request_options['tools'] = $tool_definitions;
+
+			// Execute recursive tool calling loop.
+			$conversation_messages = $messages;
+			$recursion_count       = 0;
+
+			while ( $recursion_count < $max_recursive_runs ) {
+				++$recursion_count;
+
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'anthropic_tool_run_iteration',
+						sprintf( 'Tool execution iteration %d/%d', $recursion_count, $max_recursive_runs ),
+						array( 'message_count' => count( $conversation_messages ) )
+					);
+				}
+
+				// Make API request.
+				$response = $this->create_chat_completion( $conversation_messages, $request_options );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				// Check if model wants to call any tools.
+				$tool_calls = array();
+				if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+					$tool_calls = $response['choices'][0]['message']['tool_calls'];
+				}
+
+				// If no tool calls, we're done.
+				if ( empty( $tool_calls ) ) {
+					if ( $verbose ) {
+						WP_MCP_AI_Logger::log_event(
+							'anthropic_run_with_tools_complete',
+							'Completed without tool calls.',
+							array( 'iterations' => $recursion_count )
+						);
+					}
+
+					// Return final response.
+					return $response;
+				}
+
+				// Add assistant's tool call message to conversation.
+				$conversation_messages[] = $response['choices'][0]['message'];
+
+				// Execute each tool call.
+				foreach ( $tool_calls as $tool_call ) {
+					if ( ! isset( $tool_call['function']['name'] ) ) {
+						continue;
+					}
+
+					$function_name = $tool_call['function']['name'];
+					$tool_call_id  = isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+
+					// Check if function exists.
+					if ( ! isset( $tool_functions[ $function_name ] ) ) {
+						$error_message = sprintf(
+							/* translators: %s: function name */
+							__( 'Tool function "%s" not found.', 'mcp-ai-wpoos' ),
+							$function_name
+						);
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'Anthropic tool function not found.',
+							array(
+								'function_name' => $function_name,
+								'tool_call_id'  => $tool_call_id,
+							)
+						);
+						continue;
+					}
+
+					// Parse arguments.
+					$arguments = array();
+					if ( isset( $tool_call['function']['arguments'] ) ) {
+						$args_json = $tool_call['function']['arguments'];
+						if ( is_string( $args_json ) ) {
+							$arguments = json_decode( $args_json, true );
+							if ( JSON_ERROR_NONE !== json_last_error() ) {
+								$arguments = array();
+							}
+						} elseif ( is_array( $args_json ) ) {
+							$arguments = $args_json;
+						}
+					}
+
+					// Validate arguments if strict validation is enabled.
+					if ( $strict_validation ) {
+						$validation_error = $this->validate_tool_arguments( $function_name, $arguments, $tool_definitions );
+						if ( is_wp_error( $validation_error ) ) {
+							$conversation_messages[] = array(
+								'role'         => 'tool',
+								'tool_call_id' => $tool_call_id,
+								'name'         => $function_name,
+								'content'      => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
+							);
+
+							WP_MCP_AI_Logger::log_error(
+								'Anthropic tool argument validation failed.',
+								array(
+									'function_name' => $function_name,
+									'error'         => $validation_error->get_error_message(),
+								)
+							);
+							continue;
+						}
+					}
+
+					// Execute the tool function.
+					try {
+						$function_callable = $tool_functions[ $function_name ];
+
+						if ( ! is_callable( $function_callable ) ) {
+							throw new Exception( 'Tool function is not callable.' );
+						}
+
+						$result = call_user_func( $function_callable, $arguments );
+
+						// Convert result to JSON string.
+						$result_content = is_string( $result ) ? $result : wp_json_encode( $result );
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => $result_content,
+						);
+
+						if ( $verbose ) {
+							WP_MCP_AI_Logger::log_event(
+								'anthropic_tool_executed',
+								sprintf( 'Executed tool: %s', $function_name ),
+								array(
+									'function_name' => $function_name,
+									'tool_call_id'  => $tool_call_id,
+									'result_length' => strlen( $result_content ),
+								)
+							);
+						}
+					} catch ( Exception $e ) {
+						$error_message = $e->getMessage();
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'Anthropic tool execution failed.',
+							array(
+								'function_name' => $function_name,
+								'error'         => $error_message,
+							)
+						);
+					}
+				}
+			}
+
+			// Max recursion reached.
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'anthropic_max_recursion_reached',
+					'Maximum recursive tool runs reached.',
+					array( 'max_runs' => $max_recursive_runs )
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_max_tool_recursion',
+				__( 'Maximum recursive tool runs reached without completion.', 'mcp-ai-wpoos' ),
+				array(
+					'status'         => 500,
+					'max_runs'       => $max_recursive_runs,
+					'final_messages' => $conversation_messages,
+				)
+			);
+		}
+
+		/**
+		 * Validate tool arguments against the tool definition schema.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $function_name    Name of the function being called.
+		 * @param array  $arguments        Arguments provided by the model.
+		 * @param array  $tool_definitions Array of tool definitions.
+		 * @return true|WP_Error True if valid, WP_Error otherwise.
+		 */
+		protected function validate_tool_arguments( $function_name, $arguments, $tool_definitions ) {
+			// Find the tool definition.
+			$tool_schema = null;
+			foreach ( $tool_definitions as $tool_def ) {
+				if ( isset( $tool_def['function']['name'] ) && $tool_def['function']['name'] === $function_name ) {
+					$tool_schema = isset( $tool_def['function']['parameters'] ) ? $tool_def['function']['parameters'] : null;
+					break;
+				}
+			}
+
+			if ( null === $tool_schema ) {
+				return true; // No schema to validate against.
+			}
+
+			// Check required parameters.
+			if ( isset( $tool_schema['required'] ) && is_array( $tool_schema['required'] ) ) {
+				foreach ( $tool_schema['required'] as $required_param ) {
+					if ( ! isset( $arguments[ $required_param ] ) ) {
+						return new WP_Error(
+							'wp_mcp_ai_missing_required_param',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: function name */
+								__( 'Required parameter "%1$s" missing for tool "%2$s".', 'mcp-ai-wpoos' ),
+								$required_param,
+								$function_name
+							),
+							array( 'parameter' => $required_param )
+						);
+					}
+				}
+			}
+
+			// Validate parameter types.
+			if ( isset( $tool_schema['properties'] ) && is_array( $tool_schema['properties'] ) ) {
+				foreach ( $arguments as $param_name => $param_value ) {
+					if ( ! isset( $tool_schema['properties'][ $param_name ] ) ) {
+						continue;
+					}
+
+					$param_schema = $tool_schema['properties'][ $param_name ];
+					if ( ! isset( $param_schema['type'] ) ) {
+						continue;
+					}
+
+					$expected_type = $param_schema['type'];
+					$actual_type   = gettype( $param_value );
+
+					$type_map = array(
+						'boolean' => 'boolean',
+						'integer' => 'number',
+						'double'  => 'number',
+						'string'  => 'string',
+						'array'   => 'array',
+						'object'  => 'object',
+						'NULL'    => 'null',
+					);
+
+					$mapped_type = isset( $type_map[ $actual_type ] ) ? $type_map[ $actual_type ] : $actual_type;
+
+					if ( 'number' === $expected_type && in_array( $mapped_type, array( 'number', 'integer' ), true ) ) {
+						continue;
+					}
+
+					if ( $expected_type !== $mapped_type ) {
+						return new WP_Error(
+							'wp_mcp_ai_invalid_param_type',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: expected type, %3$s: actual type */
+								__( 'Parameter "%1$s" expected type "%2$s" but got "%3$s".', 'mcp-ai-wpoos' ),
+								$param_name,
+								$expected_type,
+								$mapped_type
+							),
+							array(
+								'parameter'     => $param_name,
+								'expected_type' => $expected_type,
+								'actual_type'   => $mapped_type,
+							)
+						);
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Automatically trim tools based on context to reduce token usage.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages Message history.
+		 * @param array $tools    Array of tool definitions.
+		 * @param array $options  Request options.
+		 * @return array Trimmed tools array.
+		 */
+		protected function auto_trim_tools( $messages, $tools, $options = array() ) {
+			// Get the last user message.
+			$last_user_message = '';
+			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+					$last_user_message = isset( $messages[ $i ]['content'] ) ? strtolower( (string) $messages[ $i ]['content'] ) : '';
+					break;
+				}
+			}
+
+			if ( empty( $last_user_message ) || empty( $tools ) ) {
+				return $tools;
+			}
+
+			// Score each tool.
+			$scored_tools = array();
+			foreach ( $tools as $tool ) {
+				$score = 0;
+
+				if ( isset( $tool['name'] ) ) {
+					$tool_name  = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
+					$name_words = explode( ' ', $tool_name );
+					foreach ( $name_words as $word ) {
+						if ( ! empty( $word ) && false !== strpos( $last_user_message, $word ) ) {
+							$score += 3;
+						}
+					}
+				}
+
+				if ( isset( $tool['description'] ) ) {
+					$tool_desc  = strtolower( $tool['description'] );
+					$desc_words = explode( ' ', $tool_desc );
+					foreach ( $desc_words as $word ) {
+						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
+							$score += 1;
+						}
+					}
+				}
+
+				$scored_tools[] = array(
+					'tool'  => $tool,
+					'score' => $score,
+				);
+			}
+
+			usort(
+				$scored_tools,
+				function ( $a, $b ) {
+					return $b['score'] - $a['score'];
+				}
+			);
+
+			$max_tools     = isset( $options['maxTools'] ) ? absint( $options['maxTools'] ) : 10;
+			$trimmed_tools = array();
+
+			foreach ( array_slice( $scored_tools, 0, $max_tools ) as $scored ) {
+				if ( $scored['score'] > 0 || count( $trimmed_tools ) < 3 ) {
+					$trimmed_tools[] = $scored['tool'];
+				}
+			}
+
+			if ( empty( $trimmed_tools ) ) {
+				return $tools;
+			}
+
+			return $trimmed_tools;
 		}
 	}
 }

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Executes a probe request against a published assistant.
  */
 class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Probe Assistant Chat', 'wp-mcp-ai' );
+		return __( 'Probe Assistant Chat', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Runs an internal chat probe against a selected assistant to confirm the MCP stack is responsive.', 'wp-mcp-ai' );
+		return __( 'Runs an internal chat probe against a selected assistant to confirm the MCP stack is responsive.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -44,11 +45,11 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'assistant_id' => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
-					'description' => __( 'Published assistant post ID to probe.', 'wp-mcp-ai' ),
+					'description' => __( 'Published assistant post ID to probe.', 'mcp-ai-wpoos' ),
 				),
 				'message'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional probe message stored in the transcript preview.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional probe message stored in the transcript preview.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'assistant_id' ),
@@ -62,8 +63,8 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'title'       => __( 'Probe the assistant chat endpoint', 'wp-mcp-ai' ),
-				'description' => __( 'Verify that a published assistant can load, sanitise messages, and return a chat probe response.', 'wp-mcp-ai' ),
+				'title'       => __( 'Probe the assistant chat endpoint', 'mcp-ai-wpoos' ),
+				'description' => __( 'Verify that a published assistant can load, sanitise messages, and return a chat probe response.', 'mcp-ai-wpoos' ),
 				'arguments'   => new stdClass(),
 			),
 		);
@@ -80,28 +81,28 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to probe assistant chats.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to probe assistant chats.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		$assistant_id = isset( $arguments['assistant_id'] ) ? absint( $arguments['assistant_id'] ) : 0;
 		if ( $assistant_id <= 0 ) {
-			return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'Provide a valid assistant ID to run the probe.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'Provide a valid assistant ID to run the probe.', 'mcp-ai-wpoos' ) );
 		}
 
 		$message = isset( $arguments['message'] ) ? (string) $arguments['message'] : '';
 		$message = trim( $message );
 
 		if ( '' === $message ) {
-			$message = __( 'Diagnostics probe issued from the NV oOS troubleshooting tool.', 'wp-mcp-ai' );
+			$message = __( 'Diagnostics probe issued from the NV oOS troubleshooting tool.', 'mcp-ai-wpoos' );
 		}
 
 		$controller = isset( $GLOBALS['wp_mcp_ai_rest_controller'] ) ? $GLOBALS['wp_mcp_ai_rest_controller'] : null;
 
 		if ( ! $controller instanceof WP_MCP_AI_REST ) {
-			return new WP_Error( 'wp_mcp_ai_rest_unavailable', __( 'The NV oOS REST controller is not available for probing.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rest_unavailable', __( 'The NV oOS REST controller is not available for probing.', 'mcp-ai-wpoos' ) );
 		}
 
 		$request = new WP_REST_Request( 'POST', '/' . WP_MCP_AI_REST::REST_NAMESPACE . '/chat' );
@@ -210,7 +211,7 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$warnings = array();
 
 		if ( empty( $assistant_summary['exists'] ) && empty( $assistant_summary['title'] ) ) {
-			$warnings[] = __( 'The assistant could not be loaded. Confirm it is published and accessible to administrators.', 'wp-mcp-ai' );
+			$warnings[] = __( 'The assistant could not be loaded. Confirm it is published and accessible to administrators.', 'mcp-ai-wpoos' );
 			return $warnings;
 		}
 
@@ -218,15 +219,15 @@ class WP_MCP_AI_Tool_Probe_Chat implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$provider = isset( $assistant_summary['provider'] ) ? $assistant_summary['provider'] : '';
 
 		if ( '' === $provider ) {
-			$warnings[] = __( 'No language model provider is configured for this assistant.', 'wp-mcp-ai' );
+			$warnings[] = __( 'No language model provider is configured for this assistant.', 'mcp-ai-wpoos' );
 		} elseif ( 'openai' === $provider && empty( $settings['openai_api_key'] ) ) {
-			$warnings[] = __( 'OpenAI is selected but the site is missing an API key in the NV oOS settings.', 'wp-mcp-ai' );
+			$warnings[] = __( 'OpenAI is selected but the site is missing an API key in the NV oOS settings.', 'mcp-ai-wpoos' );
 		} elseif ( 'gemini' === $provider && empty( $settings['gemini_api_key'] ) ) {
-			$warnings[] = __( 'Gemini is selected but the site is missing a Gemini API key.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Gemini is selected but the site is missing a Gemini API key.', 'mcp-ai-wpoos' );
 		}
 
 		if ( isset( $assistant_summary['tool_count'] ) && 0 === (int) $assistant_summary['tool_count'] ) {
-			$warnings[] = __( 'The assistant has no tools enabled. Enable at least one tool to test tool execution flows.', 'wp-mcp-ai' );
+			$warnings[] = __( 'The assistant has no tools enabled. Enable at least one tool to test tool execution flows.', 'mcp-ai-wpoos' );
 		}
 
 		return array_values( array_unique( $warnings ) );

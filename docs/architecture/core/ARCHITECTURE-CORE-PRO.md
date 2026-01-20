@@ -1,6 +1,6 @@
-# WP oOS - Core/Pro Architecture
+# NV oOS - Core/Pro Architecture
 
-This document describes the architecture split between WP oOS Core and WP oOS Pro.
+This document describes the architecture split between NV oOS Core and NV oOS Pro.
 
 ## Repository Structure
 
@@ -44,8 +44,8 @@ mcp-ai-wpoos/
 ## Plugin Dependencies
 
 ```
-WP oOS Pro
-    └── requires: WP oOS Core
+NV oOS Pro
+    └── requires: NV oOS Core
 ```
 
 Pro checks for Core on activation and initialization:

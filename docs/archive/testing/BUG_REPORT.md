@@ -1,4 +1,4 @@
-# Bug Report - WP oOS Plugin Testing
+# Bug Report - NV oOS Plugin Testing
 
 ## Test Environment Setup
 

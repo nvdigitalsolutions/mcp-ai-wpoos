@@ -2,7 +2,8 @@
 /**
  * OAuth Manager for NV oOS
  *
- * Handles OAuth flows for third-party service integrations (Gmail, Google Analytics, etc.).
+ * Handles OAuth flows for third-party service integrations.
+ * Base version supports 1 Gmail connection. Pro addon extends with multiple connections.
  *
  * @package WP_MCP_AI
  */
@@ -14,37 +15,78 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 	/**
 	 * Manages OAuth authentication flows for external services.
+	 *
+	 * Base version supports 1 Gmail connection via settings.
+	 * Pro addon extends this with multiple connections via Remote Sites.
 	 */
 	class WP_MCP_AI_OAuth_Manager {
-		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
-		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		/**
+		 * Constructor - register OAuth hooks.
+		 */
+		public function __construct() {
+			// Register OAuth callback handler.
+			add_action( 'admin_init', array( $this, 'handle_oauth_callback' ) );
+		}
 
 		/**
-		 * Handle the start of the Gmail OAuth flow.
+		 * Handle OAuth callback from query parameter.
+		 */
+		public function handle_oauth_callback() {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth uses state parameter for CSRF protection.
+			if ( ! isset( $_GET['wp_mcp_ai_oauth'] ) ) {
+				return;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth uses state parameter for CSRF protection.
+			$handler = sanitize_key( wp_unslash( $_GET['wp_mcp_ai_oauth'] ) );
+
+			if ( 'gmail_callback' === $handler ) {
+				$this->handle_gmail_oauth_callback();
+			} elseif ( 'google_drive_callback' === $handler ) {
+				$this->handle_google_drive_oauth_callback();
+			}
+		}
+
+		/**
+		 * Handle Gmail OAuth start request.
 		 *
-		 * Redirects the user to Google's authorization page.
+		 * Implements OAuth flow for base version's single Gmail connection.
 		 */
 		public function handle_gmail_oauth_start() {
+			// Check nonce for security.
+			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wp_mcp_ai_gmail_oauth_start' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Check user capability.
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
-			check_admin_referer( 'wp_mcp_ai_gmail_oauth_start' );
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
+			$client_secret = isset( $settings['gmail_client_secret'] ) ? trim( $settings['gmail_client_secret'] ) : '';
 
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
-
-			if ( empty( $settings['gmail_client_id'] ) || empty( $settings['gmail_client_secret'] ) ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_missing_client',
-					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'page'        => 'wp-mcp-ai-dashboard',
+							'tab'         => 'tools',
+							'subtab'      => 'connections',
+							'connection'  => 'gmail',
+							'gmail_error' => rawurlencode( __( 'Please save your Gmail Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+						),
+						admin_url( 'admin.php' )
+					)
 				);
-				$this->redirect_to_settings_page();
+				exit;
 			}
 
+			// Generate OAuth state for CSRF protection.
 			$state     = wp_generate_uuid4();
-			$transient = $this->get_gmail_state_transient_key( $state );
+			$transient = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
 
 			set_transient(
 				$transient,
@@ -55,52 +97,37 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				10 * MINUTE_IN_SECONDS
 			);
 
-			/**
-			 * Filter the Gmail OAuth scope.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $scope OAuth scope. Default 'https://www.googleapis.com/auth/gmail.readonly'.
-			 */
-			$oauth_scope = apply_filters( 'wp_mcp_ai_gmail_oauth_scope', self::GMAIL_OAUTH_SCOPE );
+			// Build OAuth authorization URL.
+			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+				admin_url( 'admin.php' )
+			);
 
 			$params = array(
-				'client_id'              => $settings['gmail_client_id'],
-				'redirect_uri'           => $this->get_gmail_oauth_redirect_uri(),
+				'client_id'              => $client_id,
+				'redirect_uri'           => $redirect_uri,
 				'response_type'          => 'code',
-				'scope'                  => $oauth_scope,
+				'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
 				'access_type'            => 'offline',
 				'include_granted_scopes' => 'true',
 				'prompt'                 => 'consent',
 				'state'                  => $state,
 			);
 
-			if ( ! empty( $settings['gmail_user_email'] ) && 'me' !== strtolower( $settings['gmail_user_email'] ) ) {
-				$params['login_hint'] = $settings['gmail_user_email'];
-			}
+			$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 
-			/**
-			 * Filter the Gmail OAuth authorize endpoint.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $endpoint OAuth authorize endpoint. Default 'https://accounts.google.com/o/oauth2/v2/auth'.
-			 */
-			$authorize_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_authorize_endpoint', self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
-			$authorize_url      = add_query_arg( $params, $authorize_endpoint );
+			// Add Google OAuth domain to allowed redirect hosts.
+			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) );
 
 			wp_safe_redirect( $authorize_url );
 			exit;
 		}
 
 		/**
-		 * Handle the OAuth callback from Google and persist the refresh token.
+		 * Handle Gmail OAuth callback.
 		 */
-		public function handle_gmail_oauth_callback() {
-			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
-			}
-
+		protected function handle_gmail_oauth_callback() {
 			// OAuth callback parameters from Google. No nonce verification required as state parameter provides CSRF protection.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
 			$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
@@ -109,67 +136,62 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
 			$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
+			$redirect_base = add_query_arg(
+				array(
+					'page'       => 'wp-mcp-ai-dashboard',
+					'tab'        => 'tools',
+					'subtab'     => 'connections',
+					'connection' => 'gmail',
+				),
+				admin_url( 'admin.php' )
+			);
+
 			if ( $error ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_error',
-					sprintf(
-						/* translators: %s: Google error message. */
-						__( 'Google returned an error during authorisation: %s', 'wp-mcp-ai' ),
-						$error
-					)
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos' ), $error ) ), $redirect_base ) );
+				exit;
 			}
 
-			$transient_key = $this->get_gmail_state_transient_key( $state );
+			$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
 			$state_data    = get_transient( $transient_key );
 
 			delete_transient( $transient_key );
 
 			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_state_mismatch',
-					__( 'The Google authorisation request could not be verified. Please try again.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
 			if ( empty( $code ) ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_missing_code',
-					__( 'Google did not return an authorisation code. Please try again.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['gmail_client_id'] ) ? trim( $settings['gmail_client_id'] ) : '';
+			$client_secret = isset( $settings['gmail_client_secret'] ) ? trim( $settings['gmail_client_secret'] ) : '';
 
-			if ( empty( $settings['gmail_client_id'] ) || empty( $settings['gmail_client_secret'] ) ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_missing_client',
-					__( 'Enter a Gmail OAuth client ID and secret before connecting the account.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Gmail credentials not found in settings.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
-			/**
-			 * Filter the Gmail OAuth token endpoint.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $endpoint OAuth token endpoint. Default 'https://oauth2.googleapis.com/token'.
-			 */
-			$token_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_token_endpoint', self::GMAIL_OAUTH_TOKEN_ENDPOINT );
+			// Exchange authorization code for tokens.
+			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
+				admin_url( 'admin.php' )
+			);
 
 			$response = wp_remote_post(
-				$token_endpoint,
+				'https://oauth2.googleapis.com/token',
 				array(
 					'timeout' => 15,
 					'body'    => array(
 						'code'          => $code,
-						'client_id'     => $settings['gmail_client_id'],
-						'client_secret' => $settings['gmail_client_secret'],
-						'redirect_uri'  => $this->get_gmail_oauth_redirect_uri(),
+						'client_id'     => $client_id,
+						'client_secret' => $client_secret,
+						'redirect_uri'  => $redirect_uri,
 						'grant_type'    => 'authorization_code',
 					),
 					'headers' => array(
@@ -179,233 +201,322 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			);
 
 			if ( is_wp_error( $response ) ) {
-				WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth token exchange failed.', array( 'error' => $response->get_error_message() ) );
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_token_request_failed',
-					__( 'Google could not exchange the authorisation code. Check the client credentials and try again.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
 			$status_code = wp_remote_retrieve_response_code( $response );
 			$body        = wp_remote_retrieve_body( $response );
 
 			if ( 200 !== (int) $status_code ) {
-				WP_MCP_AI_Admin_Settings::log(
-					'Gmail OAuth token exchange returned an unexpected status.',
-					array(
-						'status' => $status_code,
-						'body'   => $body,
-					)
-				);
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_token_request_error',
-					__( 'Google rejected the authorisation code. Review the OAuth consent configuration and try again.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
 			$decoded = json_decode( $body, true );
 
 			if ( ! is_array( $decoded ) ) {
-				WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth token response was not valid JSON.', array( 'body' => $body ) );
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_token_invalid_json',
-					__( 'Google returned an unexpected response while exchanging the authorisation code.', 'wp-mcp-ai' )
-				);
-				$this->redirect_to_settings_page();
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
 			}
 
 			$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
 			$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
-			$used_existing = false;
 
-			if ( '' === $refresh_token ) {
-				$existing_refresh = isset( $settings['gmail_refresh_token'] ) ? $settings['gmail_refresh_token'] : '';
-
-				if ( '' === $existing_refresh ) {
-					WP_MCP_AI_Admin_Settings::log( 'Gmail OAuth callback omitted a refresh token.', array( 'response' => $decoded ) );
-					$this->add_settings_redirect_notice(
-						'gmail_oauth_missing_refresh_token',
-						__( 'Google did not return a refresh token. Remove any previous grants for this client and try again.', 'wp-mcp-ai' )
-					);
-					$this->redirect_to_settings_page();
-				}
-
-				$refresh_token = $existing_refresh;
-				$used_existing = true;
+			// If no refresh token, check if we can reuse existing one.
+			if ( '' === $refresh_token && ! empty( $settings['gmail_refresh_token'] ) ) {
+				$refresh_token = $settings['gmail_refresh_token'];
 			}
 
+			if ( '' === $refresh_token ) {
+				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'No refresh token received. Please revoke existing access in your Google account and try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Get email address from profile if access token is available.
 			$email_address = '';
-
 			if ( $access_token ) {
-				/**
-				 * Filter the Gmail profile endpoint.
-				 *
-				 * @since 1.0.0
-				 *
-				 * @param string $endpoint Gmail profile endpoint. Default 'https://gmail.googleapis.com/gmail/v1/users/me/profile'.
-				 */
-				$profile_endpoint = apply_filters( 'wp_mcp_ai_gmail_profile_endpoint', self::GMAIL_PROFILE_ENDPOINT );
-
 				$profile_response = wp_remote_get(
-					$profile_endpoint,
+					'https://gmail.googleapis.com/gmail/v1/users/me/profile',
 					array(
 						'timeout' => 15,
 						'headers' => array(
-							'Accept'        => 'application/json',
 							'Authorization' => 'Bearer ' . $access_token,
+							'Accept'        => 'application/json',
 						),
 					)
 				);
 
-				if ( is_wp_error( $profile_response ) ) {
-					WP_MCP_AI_Admin_Settings::log( 'Failed to load Gmail profile after OAuth.', array( 'error' => $profile_response->get_error_message() ) );
-				} else {
-					$profile_status = wp_remote_retrieve_response_code( $profile_response );
-					$profile_body   = wp_remote_retrieve_body( $profile_response );
-
-					if ( 200 === (int) $profile_status ) {
-						$profile_data = json_decode( $profile_body, true );
-
-						if ( is_array( $profile_data ) && ! empty( $profile_data['emailAddress'] ) ) {
-							$email_address = sanitize_email( $profile_data['emailAddress'] );
-						}
-					} else {
-						WP_MCP_AI_Admin_Settings::log(
-							'Gmail profile lookup returned an unexpected status.',
-							array(
-								'status' => $profile_status,
-								'body'   => $profile_body,
-							)
-						);
+				if ( ! is_wp_error( $profile_response ) && 200 === wp_remote_retrieve_response_code( $profile_response ) ) {
+					$profile_body = json_decode( wp_remote_retrieve_body( $profile_response ), true );
+					if ( isset( $profile_body['emailAddress'] ) ) {
+						$email_address = sanitize_email( $profile_body['emailAddress'] );
 					}
 				}
 			}
 
-			$updated_settings                        = $settings;
-			$updated_settings['gmail_refresh_token'] = $refresh_token;
-
+			// Update settings with refresh token and email.
+			$settings['gmail_refresh_token'] = $refresh_token;
 			if ( $email_address ) {
-				$updated_settings['gmail_user_email'] = $email_address;
+				$settings['gmail_user_email'] = $email_address;
 			}
 
-			// Manually sanitize settings before saving.
-			// Use the base class to avoid circular dependency.
-			// WP_MCP_AI_Admin_Settings instantiates WP_MCP_AI_OAuth_Manager in its constructor,.
-			// so we cannot instantiate it here. Use the base class instead.
-			$settings_base = new WP_MCP_AI_Admin_Settings_Base();
-			$sanitized     = $settings_base->sanitize_settings( $updated_settings );
-			update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized );
+			update_option( 'wp_mcp_ai_settings', $settings );
 
-			if ( $used_existing ) {
-				$this->add_settings_redirect_notice(
-					'gmail_oauth_success_existing_refresh',
-					__( 'Google reconnected successfully. The previous refresh token is still valid, so it has been kept.', 'wp-mcp-ai' ),
-					'updated'
+			$success_message = __( 'Gmail connected successfully!', 'mcp-ai-wpoos' );
+			if ( $email_address ) {
+				$success_message = sprintf(
+					/* translators: %s: email address */
+					__( 'Gmail connected successfully for %s!', 'mcp-ai-wpoos' ),
+					$email_address
 				);
-			} else {
-				$notice_message = __( 'Gmail authorisation complete. A new refresh token has been stored.', 'wp-mcp-ai' );
-
-				if ( $email_address ) {
-					$notice_message = sprintf(
-						/* translators: %s: Gmail email address. */
-						__( 'Gmail authorisation complete for %s.', 'wp-mcp-ai' ),
-						$email_address
-					);
-				}
-
-				$this->add_settings_redirect_notice( 'gmail_oauth_success', $notice_message, 'updated' );
 			}
 
-			$this->redirect_to_settings_page();
-		}
-
-		/**
-		 * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
-		 *
-		 * @param string[] $allowed_hosts Existing list of allowed hosts.
-		 * @param string   $redirect      Requested redirect destination.
-		 *
-		 * @return string[]
-		 */
-		public function allow_gmail_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
-			/**
-			 * Filter the Gmail OAuth authorize endpoint.
-			 *
-			 * @since 1.0.0
-			 *
-			 * @param string $endpoint OAuth authorize endpoint. Default 'https://accounts.google.com/o/oauth2/v2/auth'.
-			 */
-			$authorize_endpoint = apply_filters( 'wp_mcp_ai_gmail_oauth_authorize_endpoint', self::GMAIL_OAUTH_AUTHORIZE_ENDPOINT );
-			$google_host        = wp_parse_url( $authorize_endpoint, PHP_URL_HOST );
-
-			if ( $google_host ) {
-				$allowed_hosts[] = $google_host;
-			}
-
-			return array_values( array_unique( $allowed_hosts ) );
-		}
-
-		/**
-		 * Build the transient key used to persist OAuth state.
-		 *
-		 * @param string $state OAuth state string.
-		 * @return string
-		 */
-		private function get_gmail_state_transient_key( $state ) {
-			return 'wp_mcp_ai_gmail_state_' . md5( (string) $state );
-		}
-
-		/**
-		 * Return the OAuth redirect URI registered in the Google Cloud console.
-		 *
-		 * @return string
-		 */
-		private function get_gmail_oauth_redirect_uri() {
-			return admin_url( 'admin-post.php?action=wp_mcp_ai_gmail_oauth_callback' );
-		}
-
-		/**
-		 * Retrieve the settings page URL.
-		 *
-		 * @return string
-		 */
-		private function get_settings_page_url() {
-			// Redirect to the Tools tab > Connections subtab (where Gmail OAuth fields are located).
-			return admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections' );
-		}
-
-		/**
-		 * Redirect the current request back to the settings page and exit.
-		 */
-		private function redirect_to_settings_page() {
-			wp_safe_redirect( $this->get_settings_page_url() );
+			wp_safe_redirect( add_query_arg( 'gmail_success', rawurlencode( $success_message ), $redirect_base ) );
 			exit;
 		}
 
 		/**
-		 * Store a notice that will be displayed on the settings page after redirecting.
+		 * Allow the Google OAuth authorize endpoint host when using wp_safe_redirect().
+		 * Preserved for backward compatibility.
 		 *
-		 * @param string $code    Unique notice code.
-		 * @param string $message Notice message.
-		 * @param string $type    Notice type.
+		 * @param string[] $allowed_hosts Existing list of allowed hosts.
+		 *
+		 * @return string[]
 		 */
-		private function add_settings_redirect_notice( $code, $message, $type = 'error' ) {
-			add_settings_error( WP_MCP_AI_Admin_Settings::OPTION_NAME, $code, $message, $type );
+		public function allow_gmail_oauth_redirect_host( $allowed_hosts ) {
+			$allowed_hosts[] = 'accounts.google.com';
+			return array_values( array_unique( $allowed_hosts ) );
+		}
+
+		/**
+		 * Handle Google Drive OAuth start request.
+		 *
+		 * Implements OAuth flow for base version's single Google Drive connection.
+		 */
+		public function handle_google_drive_oauth_start() {
+			// Check nonce for security.
+			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wp_mcp_ai_google_drive_oauth_start' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Check user capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
+			$client_secret = isset( $settings['google_drive_client_secret'] ) ? trim( $settings['google_drive_client_secret'] ) : '';
+
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'page'        => 'wp-mcp-ai-dashboard',
+							'tab'         => 'tools',
+							'subtab'      => 'connections',
+							'connection'  => 'google_drive',
+							'drive_error' => rawurlencode( __( 'Please save your Google Drive Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+						),
+						admin_url( 'admin.php' )
+					)
+				);
+				exit;
+			}
+
+			// Generate OAuth state for CSRF protection.
+			$state     = wp_generate_uuid4();
+			$transient = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
 
 			set_transient(
-				'settings_errors',
+				$transient,
 				array(
-					array(
-						'setting' => WP_MCP_AI_Admin_Settings::OPTION_NAME,
-						'code'    => $code,
-						'message' => $message,
-						'type'    => $type,
-					),
+					'user_id' => get_current_user_id(),
+					'time'    => time(),
 				),
-				30
+				10 * MINUTE_IN_SECONDS
 			);
+
+			// Build OAuth authorization URL.
+			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+				admin_url( 'admin.php' )
+			);
+
+			$params = array(
+				'client_id'              => $client_id,
+				'redirect_uri'           => $redirect_uri,
+				'response_type'          => 'code',
+				'scope'                  => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly',
+				'access_type'            => 'offline',
+				'include_granted_scopes' => 'true',
+				'prompt'                 => 'consent',
+				'state'                  => $state,
+			);
+
+			$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+
+			// Add Google OAuth domain to allowed redirect hosts.
+			// Note: Reusing Gmail's filter as both use the same Google OAuth domain (accounts.google.com).
+			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) );
+
+			wp_safe_redirect( $authorize_url );
+			exit;
+		}
+
+		/**
+		 * Handle Google Drive OAuth callback.
+		 */
+		protected function handle_google_drive_oauth_callback() {
+			// OAuth callback parameters from Google. No nonce verification required as state parameter provides CSRF protection.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+			$redirect_base = add_query_arg(
+				array(
+					'page'       => 'wp-mcp-ai-dashboard',
+					'tab'        => 'tools',
+					'subtab'     => 'connections',
+					'connection' => 'google_drive',
+				),
+				admin_url( 'admin.php' )
+			);
+
+			if ( $error ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos' ), $error ) ), $redirect_base ) );
+				exit;
+			}
+
+			$transient_key = 'wp_mcp_ai_google_drive_oauth_state_' . md5( $state );
+			$state_data    = get_transient( $transient_key );
+
+			delete_transient( $transient_key );
+
+			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			if ( empty( $code ) ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['google_drive_client_id'] ) ? trim( $settings['google_drive_client_id'] ) : '';
+			$client_secret = isset( $settings['google_drive_client_secret'] ) ? trim( $settings['google_drive_client_secret'] ) : '';
+
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Google Drive credentials not found in settings.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Exchange authorization code for tokens.
+			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
+				admin_url( 'admin.php' )
+			);
+
+			$response = wp_remote_post(
+				'https://oauth2.googleapis.com/token',
+				array(
+					'timeout' => 15,
+					'body'    => array(
+						'code'          => $code,
+						'client_id'     => $client_id,
+						'client_secret' => $client_secret,
+						'redirect_uri'  => $redirect_uri,
+						'grant_type'    => 'authorization_code',
+					),
+					'headers' => array(
+						'Accept' => 'application/json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( 200 !== (int) $status_code ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( ! is_array( $decoded ) ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
+			$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
+
+			// If no refresh token, check if we can reuse existing one.
+			if ( '' === $refresh_token && ! empty( $settings['google_drive_refresh_token'] ) ) {
+				$refresh_token = $settings['google_drive_refresh_token'];
+			}
+
+			if ( '' === $refresh_token ) {
+				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'No refresh token received. Please revoke existing access in your Google account and try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Get email address from userinfo if access token is available.
+			$email_address = '';
+			if ( $access_token ) {
+				$profile_response = wp_remote_get(
+					'https://www.googleapis.com/oauth2/v2/userinfo',
+					array(
+						'timeout' => 15,
+						'headers' => array(
+							'Authorization' => 'Bearer ' . $access_token,
+							'Accept'        => 'application/json',
+						),
+					)
+				);
+
+				if ( ! is_wp_error( $profile_response ) && 200 === wp_remote_retrieve_response_code( $profile_response ) ) {
+					$profile_body = json_decode( wp_remote_retrieve_body( $profile_response ), true );
+					if ( isset( $profile_body['email'] ) ) {
+						$email_address = sanitize_email( $profile_body['email'] );
+					}
+				}
+			}
+
+			// Update settings with refresh token and email.
+			$settings['google_drive_refresh_token'] = $refresh_token;
+			if ( $email_address ) {
+				$settings['google_drive_user_email'] = $email_address;
+			}
+
+			update_option( 'wp_mcp_ai_settings', $settings );
+
+			$success_message = __( 'Google Drive connected successfully!', 'mcp-ai-wpoos' );
+			if ( $email_address ) {
+				$success_message = sprintf(
+					/* translators: %s: email address */
+					__( 'Google Drive connected successfully for %s!', 'mcp-ai-wpoos' ),
+					$email_address
+				);
+			}
+
+			wp_safe_redirect( add_query_arg( 'drive_success', rawurlencode( $success_message ), $redirect_base ) );
+			exit;
 		}
 	}
 }

@@ -30,14 +30,14 @@ class WP_MCP_AI_Federation_Settings {
 		// Federation section.
 		add_settings_section(
 			'wp_mcp_ai_federation_section',
-			__( 'Federation & Discovery', 'wp-mcp-ai' ),
+			__( 'Federation & Discovery', 'mcp-ai-wpoos' ),
 			array( $this, 'render_federation_section_description' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG
 		);
 
 		add_settings_field(
 			'enable_federation',
-			__( 'Enable Federation', 'wp-mcp-ai' ),
+			__( 'Enable Federation', 'mcp-ai-wpoos' ),
 			array( $this, 'render_enable_federation_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -45,7 +45,7 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'enable_federation_directory',
-			__( 'Enable Directory Service', 'wp-mcp-ai' ),
+			__( 'Enable Directory Service', 'mcp-ai-wpoos' ),
 			array( $this, 'render_enable_directory_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -53,7 +53,7 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'federation_regions',
-			__( 'Regions', 'wp-mcp-ai' ),
+			__( 'Regions', 'mcp-ai-wpoos' ),
 			array( $this, 'render_regions_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -61,7 +61,7 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'federation_data_tags',
-			__( 'Data Tags', 'wp-mcp-ai' ),
+			__( 'Data Tags', 'mcp-ai-wpoos' ),
 			array( $this, 'render_data_tags_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -69,7 +69,7 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'federation_qps',
-			__( 'Queries Per Second (QPS)', 'wp-mcp-ai' ),
+			__( 'Queries Per Second (QPS)', 'mcp-ai-wpoos' ),
 			array( $this, 'render_qps_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -77,7 +77,7 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'federation_burst',
-			__( 'Burst Limit', 'wp-mcp-ai' ),
+			__( 'Burst Limit', 'mcp-ai-wpoos' ),
 			array( $this, 'render_burst_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
 			'wp_mcp_ai_federation_section'
@@ -89,12 +89,12 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public function render_federation_section_description() {
 		?>
-		<p><?php esc_html_e( 'Configure federation settings to publish this site\'s capabilities and participate in the AI peer network.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure federation settings to publish this site\'s capabilities and participate in the AI peer network.', 'mcp-ai-wpoos' ); ?></p>
 		<p class="description">
 			<?php
 			printf(
 				/* translators: %s: well-known URL */
-				esc_html__( 'When enabled, your site will publish capabilities at: %s', 'wp-mcp-ai' ),
+				esc_html__( 'When enabled, your site will publish capabilities at: %s', 'mcp-ai-wpoos' ),
 				'<code>' . esc_html( trailingslashit( get_site_url() ) . '.well-known/ai-peer' ) . '</code>'
 			);
 			?>
@@ -116,10 +116,10 @@ class WP_MCP_AI_Federation_Settings {
 				value="1"
 				<?php checked( $enabled ); ?>
 			/>
-			<?php esc_html_e( 'Enable federation well-known endpoints', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enable federation well-known endpoints', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'Publishes /.well-known/ai-peer and /.well-known/jwks.json endpoints for peer discovery.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Publishes /.well-known/ai-peer and /.well-known/jwks.json endpoints for peer discovery.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
@@ -138,10 +138,10 @@ class WP_MCP_AI_Federation_Settings {
 				value="1"
 				<?php checked( $enabled ); ?>
 			/>
-			<?php esc_html_e( 'Enable directory service', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enable directory service', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
-			<?php esc_html_e( 'Allows this site to act as a directory service for registering and discovering other AI peers.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Allows this site to act as a directory service for registering and discovering other AI peers.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 		if ( $enabled ) :
@@ -150,7 +150,7 @@ class WP_MCP_AI_Federation_Settings {
 				<?php
 				printf(
 					/* translators: %s: directory API URL */
-					esc_html__( 'Directory API available at: %s', 'wp-mcp-ai' ),
+					esc_html__( 'Directory API available at: %s', 'mcp-ai-wpoos' ),
 					'<code>' . esc_html( rest_url( 'ai-dir/v1' ) ) . '</code>'
 				);
 				?>
@@ -179,7 +179,7 @@ class WP_MCP_AI_Federation_Settings {
 			placeholder="us, eu, ap, global"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Comma-separated list of regions this site operates in (e.g., us, eu, ap, global).', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Comma-separated list of regions this site operates in (e.g., us, eu, ap, global).', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
@@ -204,7 +204,7 @@ class WP_MCP_AI_Federation_Settings {
 			placeholder="no_pii, gdpr_ok, hipaa_like"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Comma-separated list of data handling tags (e.g., no_pii, gdpr_ok, hipaa_like).', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Comma-separated list of data handling tags (e.g., no_pii, gdpr_ok, hipaa_like).', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
@@ -225,7 +225,7 @@ class WP_MCP_AI_Federation_Settings {
 			class="small-text"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Maximum queries per second this site can handle from peers.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Maximum queries per second this site can handle from peers.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}
@@ -246,7 +246,7 @@ class WP_MCP_AI_Federation_Settings {
 			class="small-text"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Maximum burst capacity for handling simultaneous requests.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Maximum burst capacity for handling simultaneous requests.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<?php
 	}

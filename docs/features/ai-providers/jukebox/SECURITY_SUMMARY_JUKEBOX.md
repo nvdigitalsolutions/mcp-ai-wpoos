@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document summarizes the security measures implemented in the OpenAI Jukebox integration for the WP oOS plugin.
+This document summarizes the security measures implemented in the OpenAI Jukebox integration for the NV oOS plugin.
 
 ## Security Analysis
 
@@ -164,7 +164,7 @@ Both tools properly declare capability flags:
    - Consider rate limiting for music generation
 
 3. **Monitoring:**
-   - Watch WP oOS logs for failed generations
+   - Watch NV oOS logs for failed generations
    - Monitor server resource usage during generation
    - Set up alerts for unusual activity patterns
 

@@ -50,6 +50,13 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	protected $async_executor = null;
 
 	/**
+	 * Load monitor instance
+	 *
+	 * @var WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	protected $load_monitor = null;
+
+	/**
 	 * Capability flags that indicate a tool should be executed asynchronously
 	 *
 	 * @var array
@@ -61,14 +68,23 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	);
 
 	/**
+	 * Capacity thresholds for routing decisions
+	 */
+	const CAPACITY_THRESHOLD_CRITICAL = 15;  // Queue if capacity < 15%.
+	const CAPACITY_THRESHOLD_WARNING  = 30;  // Consider queueing if capacity < 30%.
+	const UTILIZATION_THRESHOLD_HIGH  = 0.85; // High utilization threshold.
+
+	/**
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Tool_Registry|null       $registry Tool registry instance.
 	 * @param WP_MCP_AI_Tool_Async_Executor|null $async_executor Async executor instance.
+	 * @param WP_MCP_AI_Tool_Load_Monitor|null   $load_monitor Load monitor instance.
 	 */
-	public function __construct( $registry = null, $async_executor = null ) {
+	public function __construct( $registry = null, $async_executor = null, $load_monitor = null ) {
 		$this->registry       = $registry;
 		$this->async_executor = $async_executor;
+		$this->load_monitor   = $load_monitor;
 	}
 
 	/**
@@ -78,6 +94,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 * - Tool capability flags
 	 * - Execution context
 	 * - Force async parameter
+	 * - System capacity and load (NEW - Phase 2.2)
 	 *
 	 * @param string $tool_slug Tool slug to execute.
 	 * @param array  $arguments Tool arguments.
@@ -92,7 +109,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		if ( ! $registry ) {
 			return new WP_Error(
 				'wp_mcp_ai_registry_unavailable',
-				__( 'Tool registry is not available.', 'wp-mcp-ai' ),
+				__( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -103,43 +120,72 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
 					/* translators: %s: tool slug */
-					__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 					$tool_slug
 				),
 				array( 'status' => 404 )
 			);
 		}
 
-		// Determine execution mode.
+		// Record execution start for load monitoring.
+		$monitor = $this->get_load_monitor();
+		if ( $monitor ) {
+			$monitor->record_execution_start( $tool_slug, $context );
+		}
+
+		$start_time = microtime( true );
+
+		// Determine execution mode with capacity awareness.
 		$should_execute_async = $this->should_execute_async( $tool_slug, $arguments, $context );
 
 		// Log orchestration decision.
+		$load_metrics = $monitor ? $monitor->get_load_metrics( $tool_slug ) : array();
 		WP_MCP_AI_Logger::log_event(
 			'tool_orchestration',
 			sprintf( 'Tool "%s" orchestrated for %s execution', $tool_slug, $should_execute_async ? 'async' : 'sync' ),
 			array(
-				'tool_slug' => $tool_slug,
-				'mode'      => $should_execute_async ? 'async' : 'sync',
+				'tool_slug'      => $tool_slug,
+				'mode'           => $should_execute_async ? 'async' : 'sync',
+				'capacity_score' => isset( $load_metrics['capacity_score'] ) ? $load_metrics['capacity_score'] : null,
+				'utilization'    => isset( $load_metrics['utilization'] ) ? $load_metrics['utilization'] : null,
 			)
 		);
 
 		// Execute asynchronously if needed.
 		if ( $should_execute_async ) {
-			return $this->execute_async( $tool_slug, $arguments, $context );
+			$result = $this->execute_async( $tool_slug, $arguments, $context );
+			
+			// Record completion for async (as queued).
+			if ( $monitor && ! is_wp_error( $result ) ) {
+				$duration = microtime( true ) - $start_time;
+				$monitor->record_execution_complete( $tool_slug, $duration, true, $context );
+			}
+			
+			return $result;
 		}
 
 		// Execute synchronously.
-		return $registry->execute_tool( $tool_slug, $arguments, $context );
+		$result = $registry->execute_tool( $tool_slug, $arguments, $context );
+
+		// Record completion for load monitoring.
+		if ( $monitor ) {
+			$duration = microtime( true ) - $start_time;
+			$success  = ! is_wp_error( $result );
+			$monitor->record_execution_complete( $tool_slug, $duration, $success, $context );
+		}
+
+		return $result;
 	}
 
 	/**
 	 * Determine if a tool should be executed asynchronously
 	 *
-	 * Checks:
-	 * 1. Auto-async setting in orchestration configuration
-	 * 2. Force async flag in context
-	 * 3. Tool capability flags (long-running, may-timeout, async)
-	 * 4. Explicit async parameter in arguments
+	 * Checks (in order):
+	 * 1. Force async/sync flags in context
+	 * 2. System capacity and load (NEW - Phase 2.2)
+	 * 3. Auto-async setting in orchestration configuration
+	 * 4. Tool capability flags (long-running, may-timeout, async)
+	 * 5. Explicit async parameter in arguments
 	 *
 	 * @param string $tool_slug Tool slug.
 	 * @param array  $arguments Tool arguments.
@@ -155,6 +201,13 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		// Check if async is explicitly disabled in context.
 		if ( isset( $context['force_sync'] ) && $context['force_sync'] ) {
 			return false;
+		}
+
+		// Check system capacity (NEW - Phase 2.2).
+		$capacity_routing_decision = $this->check_capacity_routing( $tool_slug, $context );
+		if ( null !== $capacity_routing_decision ) {
+			// Capacity-based routing made a decision.
+			return $capacity_routing_decision;
 		}
 
 		// Check if auto-async is enabled in settings.
@@ -194,6 +247,109 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	}
 
 	/**
+	 * Check capacity-based routing decision
+	 *
+	 * Uses Little's Law metrics to determine if tool should be queued.
+	 * Returns null if capacity-based routing should not override other factors.
+	 *
+	 * @param string $tool_slug Tool slug.
+	 * @param array  $context Execution context.
+	 * @return bool|null True for async, false for sync, null for no decision.
+	 */
+	protected function check_capacity_routing( $tool_slug, array $context ) {
+		// Check if capacity-aware routing is enabled.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		$capacity_aware_enabled = isset( $settings['enable_capacity_aware_routing'] ) 
+			? (bool) $settings['enable_capacity_aware_routing'] 
+			: true; // Enabled by default.
+
+		if ( ! $capacity_aware_enabled ) {
+			return null; // Capacity routing disabled.
+		}
+
+		$monitor = $this->get_load_monitor();
+		if ( ! $monitor ) {
+			return null; // Load monitor not available.
+		}
+
+		// Get current load metrics for the tool.
+		$metrics = $monitor->get_load_metrics( $tool_slug );
+
+		// Check if system is under critical load.
+		if ( isset( $metrics['capacity_score'] ) && $metrics['capacity_score'] < self::CAPACITY_THRESHOLD_CRITICAL ) {
+			// Critical capacity - queue non-critical tools.
+			$is_critical_request = isset( $context['priority'] ) && 'critical' === $context['priority'];
+			$is_agent_request    = isset( $context['agent_role'] );
+			
+			// Allow critical requests and agent requests through.
+			if ( $is_critical_request || $is_agent_request ) {
+				return null; // Let other factors decide.
+			}
+			
+			// Queue non-critical tools.
+			WP_MCP_AI_Logger::log_event(
+				'capacity_routing',
+				sprintf( 'Tool "%s" queued due to critical capacity (score: %.1f)', $tool_slug, $metrics['capacity_score'] ),
+				array(
+					'tool_slug'      => $tool_slug,
+					'capacity_score' => $metrics['capacity_score'],
+					'reason'         => 'critical_capacity',
+				)
+			);
+			
+			return true; // Queue it.
+		}
+
+		// Check if tool is showing high utilization.
+		if ( isset( $metrics['utilization'] ) && $metrics['utilization'] > self::UTILIZATION_THRESHOLD_HIGH ) {
+			// High utilization - consider agent role priority.
+			$agent_role = isset( $context['agent_role'] ) ? $context['agent_role'] : null;
+			
+			if ( 'executor' === $agent_role ) {
+				// Executor agents get priority - allow sync execution.
+				return null;
+			}
+			
+			// Queue for other requests.
+			WP_MCP_AI_Logger::log_event(
+				'capacity_routing',
+				sprintf( 'Tool "%s" queued due to high utilization (%.2f)', $tool_slug, $metrics['utilization'] ),
+				array(
+					'tool_slug'   => $tool_slug,
+					'utilization' => $metrics['utilization'],
+					'reason'      => 'high_utilization',
+				)
+			);
+			
+			return true; // Queue it.
+		}
+
+		// Check system-wide capacity.
+		$system_metrics = $monitor->get_system_load_metrics();
+		if ( isset( $system_metrics['health_status'] ) && 'critical' === $system_metrics['health_status'] ) {
+			// System is critical - be conservative.
+			$is_critical_request = isset( $context['priority'] ) && 'critical' === $context['priority'];
+			
+			if ( ! $is_critical_request ) {
+				WP_MCP_AI_Logger::log_event(
+					'capacity_routing',
+					sprintf( 'Tool "%s" queued due to critical system health', $tool_slug ),
+					array(
+						'tool_slug'      => $tool_slug,
+						'health_status'  => 'critical',
+						'reason'         => 'system_critical',
+					)
+				);
+				
+				return true; // Queue it.
+			}
+		}
+
+		// No capacity-based routing decision needed.
+		return null;
+	}
+
+	/**
 	 * Execute a tool asynchronously
 	 *
 	 * Queues the tool for background execution via WordPress cron.
@@ -220,7 +376,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			if ( ! $registry ) {
 				return new WP_Error(
 					'wp_mcp_ai_registry_unavailable',
-					__( 'Tool registry is not available.', 'wp-mcp-ai' ),
+					__( 'Tool registry is not available.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -242,7 +398,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			'status'  => 'pending',
 			'message' => sprintf(
 				/* translators: %s: tool name */
-				__( '%s started in background. Use the job_id to check status.', 'wp-mcp-ai' ),
+				__( '%s started in background. Use the job_id to check status.', 'mcp-ai-wpoos' ),
 				$tool_slug
 			),
 		);

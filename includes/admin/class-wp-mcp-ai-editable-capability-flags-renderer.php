@@ -46,18 +46,18 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 				<div class="wp-mcp-ai-capability-flags-view">
 					<?php if ( $has_custom_flags ) : ?>
 						<span class="wp-mcp-ai-custom-indicator" style="display: inline-block; padding: 2px 6px; background: #f0b849; color: white; border-radius: 3px; font-size: 10px; margin-right: 5px; font-weight: bold;">
-							<?php esc_html_e( 'CUSTOM', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'CUSTOM', 'mcp-ai-wpoos' ); ?>
 						</span>
 					<?php endif; ?>
-					
+
 					<?php if ( $force_sync ) : ?>
 						<span class="wp-mcp-ai-force-sync-indicator" style="display: inline-block; padding: 2px 6px; background: #d63638; color: white; border-radius: 3px; font-size: 10px; margin-right: 5px; font-weight: bold;">
-							<?php esc_html_e( 'FORCE SYNC', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'FORCE SYNC', 'mcp-ai-wpoos' ); ?>
 						</span>
 					<?php endif; ?>
 
 					<?php if ( empty( $capability_flags ) ) : ?>
-						<span style="color: #999; font-style: italic;"><?php esc_html_e( 'None', 'wp-mcp-ai' ); ?></span>
+						<span style="color: #999; font-style: italic;"><?php esc_html_e( 'None', 'mcp-ai-wpoos' ); ?></span>
 					<?php else : ?>
 						<div class="wp-mcp-ai-capability-flags" style="display: flex; flex-wrap: wrap; gap: 4px;">
 							<?php foreach ( $grouped_flags as $group_key => $group_data ) : ?>
@@ -84,22 +84,22 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 				<div class="wp-mcp-ai-capability-flags-edit" style="display: none;">
 					<div style="margin-bottom: 10px;">
 						<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-							<input type="checkbox" 
-									class="wp-mcp-ai-force-sync-checkbox" 
+							<input type="checkbox"
+									class="wp-mcp-ai-force-sync-checkbox"
 									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 									<?php checked( $force_sync ); ?>>
-							<strong style="color: #d63638;"><?php esc_html_e( 'Force Synchronous Execution', 'wp-mcp-ai' ); ?></strong>
-							<span class="dashicons dashicons-info-outline" style="font-size: 16px; color: #666;" title="<?php esc_attr_e( 'When enabled, this tool will always execute synchronously, bypassing async orchestration. Use this for tools that must complete immediately within the same request.', 'wp-mcp-ai' ); ?>"></span>
+							<strong style="color: #d63638;"><?php esc_html_e( 'Force Synchronous Execution', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="dashicons dashicons-info-outline" style="font-size: 16px; color: #666;" title="<?php esc_attr_e( 'When enabled, this tool will always execute synchronously, bypassing async orchestration. Use this for tools that must complete immediately within the same request.', 'mcp-ai-wpoos' ); ?>"></span>
 						</label>
 						<p class="description" style="margin: 5px 0 0 23px;">
-							<?php esc_html_e( 'Bypass async orchestration and always execute this tool synchronously.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Bypass async orchestration and always execute this tool synchronously.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
 
 					<div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
-						<strong><?php esc_html_e( 'Capability Flags:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Capability Flags:', 'mcp-ai-wpoos' ); ?></strong>
 						<p class="description" style="margin: 5px 0 10px;">
-							<?php esc_html_e( 'Select capability flags that describe this tool\'s requirements and behavior. Custom flags override the default settings.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Select capability flags that describe this tool\'s requirements and behavior. Custom flags override the default settings.', 'mcp-ai-wpoos' ); ?>
 						</p>
 
 						<?php foreach ( $available_flags as $group_key => $group_data ) : ?>
@@ -110,9 +110,9 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 								<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px;">
 									<?php foreach ( $group_data['flags'] as $flag_key => $flag_label ) : ?>
 										<label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-											<input type="checkbox" 
-													class="wp-mcp-ai-capability-flag-checkbox" 
-													name="capability_flags[]" 
+											<input type="checkbox"
+													class="wp-mcp-ai-capability-flag-checkbox"
+													name="capability_flags[]"
 													value="<?php echo esc_attr( $flag_key ); ?>"
 													<?php checked( in_array( $flag_key, $capability_flags, true ) ); ?>>
 											<span><?php echo esc_html( $flag_label ); ?></span>
@@ -184,27 +184,27 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 
 			return array(
 				'requirements' => array(
-					'label' => __( 'Requirements', 'wp-mcp-ai' ),
+					'label' => __( 'Requirements', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $requirement_flags ),
 					'color' => '#d63638',
 				),
 				'operational'  => array(
-					'label' => __( 'Operational', 'wp-mcp-ai' ),
+					'label' => __( 'Operational', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $operational_flags ),
 					'color' => '#2271b1',
 				),
 				'network'      => array(
-					'label' => __( 'Network', 'wp-mcp-ai' ),
+					'label' => __( 'Network', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $network_flags ),
 					'color' => '#f0b849',
 				),
 				'data'         => array(
-					'label' => __( 'Data', 'wp-mcp-ai' ),
+					'label' => __( 'Data', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $data_flags ),
 					'color' => '#46b450',
 				),
 				'tier'         => array(
-					'label' => __( 'Tier', 'wp-mcp-ai' ),
+					'label' => __( 'Tier', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $tier_flags ),
 					'color' => '#9b51e0',
 				),

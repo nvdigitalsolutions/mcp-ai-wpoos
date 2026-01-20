@@ -91,7 +91,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 			} elseif ( $header_token && $token !== $header_token ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_token_mismatch',
-					__( 'The Authorization header does not match the supplied bearer token.', 'wp-mcp-ai' ),
+					__( 'The Authorization header does not match the supplied bearer token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -134,7 +134,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 			if ( ! $matched || empty( $matches[2] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_invalid_header',
-					__( 'The Authorization header is not a valid bearer token.', 'wp-mcp-ai' ),
+					__( 'The Authorization header is not a valid bearer token.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -142,7 +142,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 			if ( ! empty( $matches[1] ) && 'bearer' !== strtolower( $matches[1] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_unsupported_scheme',
-					__( 'Only Bearer tokens are supported for Simple JWT Login authentication.', 'wp-mcp-ai' ),
+					__( 'Only Bearer tokens are supported for Simple JWT Login authentication.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -168,11 +168,12 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 
 				$allowed_ips = trim( (string) $auth_settings->getAllowedIps() );
 				if ( $allowed_ips ) {
-					$server_helper = new \SimpleJWTLogin\Helpers\ServerHelper( $_SERVER );
+					$sanitized_server = is_array( $_SERVER ) ? map_deep( $_SERVER, 'sanitize_text_field' ) : array();
+					$server_helper    = new \SimpleJWTLogin\Helpers\ServerHelper( $sanitized_server );
 					if ( ! $server_helper->isClientIpInList( $allowed_ips ) ) {
 						return new WP_Error(
 							'wp_mcp_ai_simple_jwt_disallowed_ip',
-							__( 'This IP address is not permitted to authenticate with Simple JWT Login.', 'wp-mcp-ai' ),
+							__( 'This IP address is not permitted to authenticate with Simple JWT Login.', 'mcp-ai-wpoos' ),
 							array( 'status' => 403 )
 						);
 					}
@@ -185,7 +186,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 				if ( empty( $public_key ) || empty( $algorithm ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_simple_jwt_missing_keys',
-						__( 'Simple JWT Login is not configured with a public key for token verification.', 'wp-mcp-ai' ),
+						__( 'Simple JWT Login is not configured with a public key for token verification.', 'mcp-ai-wpoos' ),
 						array( 'status' => 500 )
 					);
 				}
@@ -197,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 				if ( ! is_array( $payload ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_simple_jwt_invalid_payload',
-						__( 'Simple JWT Login returned an unexpected payload while validating the token.', 'wp-mcp-ai' ),
+						__( 'Simple JWT Login returned an unexpected payload while validating the token.', 'mcp-ai-wpoos' ),
 						array( 'status' => 401 )
 					);
 				}
@@ -213,7 +214,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 						if ( hash_equals( (string) $revoked, (string) $token ) ) {
 							return new WP_Error(
 								'wp_mcp_ai_simple_jwt_revoked',
-								__( 'The bearer token has been revoked by Simple JWT Login.', 'wp-mcp-ai' ),
+								__( 'The bearer token has been revoked by Simple JWT Login.', 'mcp-ai-wpoos' ),
 								array( 'status' => 401 )
 							);
 						}
@@ -229,7 +230,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 			} catch ( \Throwable $exception ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_validation_failed',
-					__( 'Simple JWT Login could not validate the supplied bearer token.', 'wp-mcp-ai' ),
+					__( 'Simple JWT Login could not validate the supplied bearer token.', 'mcp-ai-wpoos' ),
 					array(
 						'status'        => 401,
 						'error_code'    => $exception->getCode(),
@@ -288,7 +289,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 			if ( ! $wordpress_data->isInstanceOfuser( $user ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_user_not_found',
-					__( 'The user referenced by the Simple JWT Login token could not be found.', 'wp-mcp-ai' ),
+					__( 'The user referenced by the Simple JWT Login token could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -317,7 +318,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Simple_JWT' ) ) {
 						'wp_mcp_ai_simple_jwt_missing_claim',
 						sprintf(
 							/* translators: %s claim name */
-							__( 'The Simple JWT Login token is missing the "%s" claim.', 'wp-mcp-ai' ),
+							__( 'The Simple JWT Login token is missing the "%s" claim.', 'mcp-ai-wpoos' ),
 							$parameter
 						),
 						array( 'status' => 401 )

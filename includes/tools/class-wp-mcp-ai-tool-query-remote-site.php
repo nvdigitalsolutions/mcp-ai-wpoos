@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Allows AI assistants to query other WordPress sites running wp-mcp-ai.
  */
 class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Query Remote Site', 'wp-mcp-ai' );
+		return __( 'Query Remote Site', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Send a prompt to a peer site in the mesh network and receive the response from its AI assistant.', 'wp-mcp-ai' );
+		return __( 'Send a prompt to a peer site in the mesh network and receive the response from its AI assistant.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,11 +44,11 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'peer_name' => array(
 					'type'        => 'string',
-					'description' => __( 'The friendly name of the peer site as configured in mesh network settings.', 'wp-mcp-ai' ),
+					'description' => __( 'The friendly name of the peer site as configured in mesh network settings.', 'mcp-ai-wpoos' ),
 				),
 				'prompt'    => array(
 					'type'        => 'string',
-					'description' => __( 'The message or question to send to the remote site.', 'wp-mcp-ai' ),
+					'description' => __( 'The message or question to send to the remote site.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'peer_name', 'prompt' ),
@@ -68,12 +69,12 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to query remote sites.', 'wp-mcp-ai' )
+				__( 'You do not have permission to query remote sites.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
@@ -81,7 +82,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled. Please enable it in Settings → NV oOS → Mesh Network.', 'wp-mcp-ai' )
+				__( 'Mesh networking is not enabled. Please enable it in Settings → NV oOS → Mesh Network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -92,14 +93,14 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( '' === $peer_name ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_peer_name',
-				__( 'Please provide the name of the peer site to query.', 'wp-mcp-ai' )
+				__( 'Please provide the name of the peer site to query.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( '' === $prompt ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'Please provide a prompt to send to the remote site.', 'wp-mcp-ai' )
+				__( 'Please provide a prompt to send to the remote site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -121,7 +122,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_peer_not_found',
 				sprintf(
 					/* translators: %s: peer site name */
-					__( 'Peer site "%s" not found in mesh network configuration.', 'wp-mcp-ai' ),
+					__( 'Peer site "%s" not found in mesh network configuration.', 'mcp-ai-wpoos' ),
 					$peer_name
 				)
 			);
@@ -136,7 +137,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_invalid_peer_url',
 				sprintf(
 					/* translators: %s: peer site name */
-					__( 'Peer site "%s" has no URL configured.', 'wp-mcp-ai' ),
+					__( 'Peer site "%s" has no URL configured.', 'mcp-ai-wpoos' ),
 					$peer_name
 				)
 			);
@@ -147,7 +148,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_invalid_peer_key',
 				sprintf(
 					/* translators: %s: peer site name */
-					__( 'Peer site "%s" has no API key configured.', 'wp-mcp-ai' ),
+					__( 'Peer site "%s" has no API key configured.', 'mcp-ai-wpoos' ),
 					$peer_name
 				)
 			);
@@ -163,7 +164,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_invalid_endpoint_url',
 				sprintf(
 					/* translators: %s: peer site name */
-					__( 'Invalid endpoint URL for peer site "%s".', 'wp-mcp-ai' ),
+					__( 'Invalid endpoint URL for peer site "%s".', 'mcp-ai-wpoos' ),
 					$peer_name
 				)
 			);
@@ -205,7 +206,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_remote_request_failed',
 				sprintf(
 					/* translators: 1: peer site name, 2: error message */
-					__( 'Failed to connect to peer site "%1$s": %2$s', 'wp-mcp-ai' ),
+					__( 'Failed to connect to peer site "%1$s": %2$s', 'mcp-ai-wpoos' ),
 					$peer_name,
 					$response->get_error_message()
 				)
@@ -217,13 +218,13 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			$error_data = json_decode( $body, true );
-			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'wp-mcp-ai' );
+			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 			return new WP_Error(
 				'wp_mcp_ai_remote_error',
 				sprintf(
 					/* translators: 1: peer site name, 2: HTTP status code, 3: error message */
-					__( 'Peer site "%1$s" returned error %2$d: %3$s', 'wp-mcp-ai' ),
+					__( 'Peer site "%1$s" returned error %2$d: %3$s', 'mcp-ai-wpoos' ),
 					$peer_name,
 					$status_code,
 					$error_msg
@@ -239,7 +240,7 @@ class WP_MCP_AI_Tool_Query_Remote_Site implements WP_MCP_AI_Tool_Interface, WP_M
 				'wp_mcp_ai_invalid_response',
 				sprintf(
 					/* translators: %s: peer site name */
-					__( 'Peer site "%s" returned an invalid response.', 'wp-mcp-ai' ),
+					__( 'Peer site "%s" returned an invalid response.', 'mcp-ai-wpoos' ),
 					$peer_name
 				)
 			);

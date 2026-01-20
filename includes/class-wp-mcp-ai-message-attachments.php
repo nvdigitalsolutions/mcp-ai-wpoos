@@ -289,7 +289,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			return new WP_Error(
 				'wp_mcp_ai_invalid_attachment_segment',
-				__( 'Attachment segment must have a valid type field.', 'wp-mcp-ai' ),
+				__( 'Attachment segment must have a valid type field.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -361,7 +361,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! empty( $url ) ) {
 				$url = esc_url_raw( $url );
 				if ( empty( $url ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_image_url', __( 'Image segment URL is invalid.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_image_url', __( 'Image segment URL is invalid.', 'mcp-ai-wpoos' ) );
 				}
 
 				$allowed_schemes = apply_filters(
@@ -376,7 +376,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( empty( $scheme ) || ! in_array( $scheme, $allowed_schemes, true ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_unsupported_image_url_scheme',
-						__( 'Image segment URLs must use an allowed scheme.', 'wp-mcp-ai' ),
+						__( 'Image segment URLs must use an allowed scheme.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -498,7 +498,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( empty( $segment['attachment_id'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_image_attachment', __( 'Image segments must include an attachment ID or URL.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_image_attachment', __( 'Image segments must include an attachment ID or URL.', 'mcp-ai-wpoos' ) );
 			}
 
 			$attachment_id       = absint( $segment['attachment_id'] );
@@ -580,7 +580,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! empty( $url ) ) {
 				$url = esc_url_raw( $url );
 				if ( empty( $url ) ) {
-					return new WP_Error( 'wp_mcp_ai_invalid_file_url', __( 'File segment URL is invalid.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_invalid_file_url', __( 'File segment URL is invalid.', 'mcp-ai-wpoos' ) );
 				}
 
 				$allowed_schemes = apply_filters(
@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( empty( $scheme ) || ! in_array( $scheme, $allowed_schemes, true ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_unsupported_file_url_scheme',
-						__( 'File segment URLs must use an allowed scheme.', 'wp-mcp-ai' ),
+						__( 'File segment URLs must use an allowed scheme.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -695,7 +695,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			if ( empty( $segment['attachment_id'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_attachment', __( 'File segments must include an attachment ID.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_attachment', __( 'File segments must include an attachment ID.', 'mcp-ai-wpoos' ) );
 			}
 
 			$attachment_id       = absint( $segment['attachment_id'] );
@@ -763,27 +763,27 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 
 			$attachment = get_post( $attachment_id );
 			if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
-				return new WP_Error( 'wp_mcp_ai_attachment_missing', __( 'Attachment not found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_attachment_missing', __( 'Attachment not found.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! $this->current_user_can_access_attachment( $attachment_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_attachment_forbidden', __( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_attachment_forbidden', __( 'You do not have permission to use the requested attachment.', 'mcp-ai-wpoos' ) );
 			}
 
 			$file_path = get_attached_file( $attachment_id );
 			if ( ! $file_path || ! file_exists( $file_path ) ) {
-				return new WP_Error( 'wp_mcp_ai_attachment_missing_file', __( 'The attachment file could not be located.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_attachment_missing_file', __( 'The attachment file could not be located.', 'mcp-ai-wpoos' ) );
 			}
 
 			$file_size = filesize( $file_path );
 			if ( false === $file_size ) {
-				return new WP_Error( 'wp_mcp_ai_attachment_size_unknown', __( 'Could not determine attachment size.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_attachment_size_unknown', __( 'Could not determine attachment size.', 'mcp-ai-wpoos' ) );
 			}
 
 			$max_bytes = apply_filters( 'wp_mcp_ai_max_attachment_bytes', self::MAX_ATTACHMENT_BYTES, $attachment_id, $usage );
 			if ( $file_size > $max_bytes ) {
 				/* translators: %s: maximum bytes allowed for an attachment. */
-				return new WP_Error( 'wp_mcp_ai_attachment_too_large', sprintf( __( 'Attachments must be smaller than %s bytes.', 'wp-mcp-ai' ), number_format_i18n( $max_bytes ) ) );
+				return new WP_Error( 'wp_mcp_ai_attachment_too_large', sprintf( __( 'Attachments must be smaller than %s bytes.', 'mcp-ai-wpoos' ), number_format_i18n( $max_bytes ) ) );
 			}
 
 			$mime_type = get_post_mime_type( $attachment_id );
@@ -792,7 +792,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( 'image/svg+xml' === $mime_type && 'openai' === $this->provider ) {
 					return new WP_Error(
 						'wp_mcp_ai_attachment_unsupported_mime',
-						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'wp-mcp-ai' ),
+						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -800,7 +800,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					'wp_mcp_ai_attachment_unsupported_mime',
 					sprintf(
 						/* translators: %s: MIME type */
-						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'wp-mcp-ai' ),
+						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'mcp-ai-wpoos' ),
 						$mime_type
 					),
 					array( 'status' => 400 )
@@ -862,7 +862,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 						'wp_mcp_ai_file_upload_missing_id',
 						sprintf(
 							/* translators: %s: provider name */
-							__( '%s did not return a file identifier.', 'wp-mcp-ai' ),
+							__( '%s did not return a file identifier.', 'mcp-ai-wpoos' ),
 							ucfirst( $this->provider )
 						)
 					);
@@ -985,7 +985,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( '' === $file_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_unknown_file_reference',
-					__( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+					__( 'The referenced file could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -993,7 +993,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( isset( self::$deleted_file_ids[ $file_id ] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_unknown_file_reference',
-					__( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+					__( 'The referenced file could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1003,7 +1003,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! $attachment_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_unknown_file_reference',
-					__( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+					__( 'The referenced file could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1011,7 +1011,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( ! $this->current_user_can_access_attachment( $attachment_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_attachment_forbidden',
-					__( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to use the requested attachment.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -1021,7 +1021,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			if ( empty( $metadata['file_id'] ) || (string) $metadata['file_id'] !== $file_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_unknown_file_reference',
-					__( 'The referenced file could not be found.', 'wp-mcp-ai' ),
+					__( 'The referenced file could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1041,7 +1041,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 				if ( 'image/svg+xml' === $mime_type && 'openai' === $this->provider ) {
 					return new WP_Error(
 						'wp_mcp_ai_attachment_unsupported_mime',
-						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'wp-mcp-ai' ),
+						__( 'SVG files are not supported by OpenAI. Please use PNG, JPEG, GIF, or WebP formats instead.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -1049,7 +1049,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 					'wp_mcp_ai_attachment_unsupported_mime',
 					sprintf(
 						/* translators: %s: MIME type */
-						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'wp-mcp-ai' ),
+						__( 'The attachment type "%s" is not supported for chat messages with this AI provider.', 'mcp-ai-wpoos' ),
 						$mime_type
 					),
 					array( 'status' => 400 )

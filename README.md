@@ -1,6 +1,7 @@
 # NV Digital Open Operator System (NV oOS)
 
 [![PHPUnit](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/phpunit.yml)
+[![codecov](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos/branch/main/graph/badge.svg)](https://codecov.io/gh/nvdigitalsolutions/mcp-ai-wpoos)
 [![JavaScript Tests](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/javascript-tests.yml)
 [![PHP Linting](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/php-linting.yml)
 [![Security Checks](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml/badge.svg)](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/actions/workflows/security.yml)
@@ -22,15 +23,15 @@
 ## 📑 Table of Contents
 
 ### Getting Started
-- [🆕 Latest Updates (December 2025)](#-latest-updates-december-2025)
+- [🆕 Latest Updates (January 2026)](#-latest-updates-january-2026)
 - [🧩 Overview](#-overview)
 - [🎯 Our Mission](#-mission-modernizing-small-to-medium-business-websites)
-- [🛡️ Active Security Monitoring](#%EF%B8%8F-active-security-monitoring)
+- [🛡️ Active Security Monitoring](#-active-security-monitoring)
 - [🏗 System Architecture](#-system-architecture)
 - [🚀 Features](#-features)
 - [📦 Installation](#-installation)
 - [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
-- [⚙️ Configuration Checklist](#-configuration-checklist-action-items)
+- [⚙️ Configuration Checklist](#%EF%B8%8F-configuration-checklist-action-items)
 - [📚 Documentation](#-documentation)
 
 ### Core Functionality
@@ -40,7 +41,7 @@
 - [💬 Frontend Shortcode](#-frontend-shortcode)
 
 ### AI Providers & Integration
-- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama--lm-studio)
+- [🧠 Language Model Providers](#-language-model-providers-openai-gemini-ollama-lm-studio-hugging-face-cloudflare)
 - [🧱 ChatKit Integration](#-chatkit-integration)
 - [🌐 Crawl4AI Integration](#-crawl4ai-integration)
 - [📡 Job Notification System](#-job-notification-system)
@@ -58,7 +59,7 @@
 - [🌐 Connecting Remote MCP Clients](#-connecting-remote-mcp-clients)
 - [🛰 REST API Endpoints](#-rest-api-endpoints)
 - [🌊 SSE Streaming Support](#-sse-streaming-support)
-- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-2-0-endpoint)
+- [📝 MCP JSON-RPC 2.0 Endpoint](#-mcp-json-rpc-20-endpoint)
 - [🔑 Assistant API Credentials](#-assistant-api-credentials)
 - [🎫 Token Management UI](#-token-management-ui)
 
@@ -71,7 +72,7 @@
 
 ### Development
 - [🐳 Local Development with Docker](#-local-development-with-docker)
-- [🧑‍💻 Development Tooling](#--development-tooling)
+- [🧑‍💻 Development Tooling](#-development-tooling)
 - [🧪 Testing & QA](#-testing--qa)
 - [🧩 Hooks & Filters](#-hooks--filters)
 - [🧰 WP-CLI Commands](#-wp-cli-commands)
@@ -90,17 +91,17 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
-The plugin works standalone with **95 unique base tools** and optionally extends through the **Pro addon**, which adds **64 Pro tools** including advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **159 built-in tools**.
+The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 95 unique tools plus 24 validated variants (119 base tool files) and 64 Pro tools (total 183 tool files across base and Pro).
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 66 Pro tools (total 217 tool files across base and Pro).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
 **NV oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
 
-- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, and Ollama without custom development
+- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, Hugging Face, Cloudflare Worker AI, and Ollama without custom development
 - **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
 - **Enterprise-Grade Features** - Access to capabilities typically requiring expensive custom development
 - **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
@@ -134,7 +135,7 @@ The patent covers NV oOS's innovative approach to implementing sophisticated AI 
 - Metrics-driven budget adjustment for real-time optimization
 - Persistent-behavior illusion in request-based architectures
 
-The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#-system-architecture) section below for technical details on how these innovations work together.
+The orchestration layer makes NV oOS unique in the WordPress ecosystem by solving fundamental architectural limitations that prevent traditional WordPress plugins from supporting advanced AI features. See the [System Architecture](#system-architecture) section below for technical details on how these innovations work together.
 
 ## 🏗 System Architecture
 
@@ -210,13 +211,52 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ---
 
-## 🆕 Latest Updates (December 2025)
+## 🆕 Latest Updates (January 2026)
 
-> **📌 DECEMBER 23 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
+> **📌 JANUARY 18, 2026 UPDATE:** **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page. The button was silently failing to update tool multipliers when users selected presets (Conservative, Balanced, Performance, Aggressive). Root cause: `get_all_recommendations()` only queried tool registry which returned empty array. Solution: Refactored to iterate through tool categories first (200+ tools), then check registry for dynamic tools. [Fix Details](docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md) | [Testing Plan](docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md)
+
+> **📌 JANUARY 13, 2026 UPDATE:** **PR #2883 - Gmail OAuth UX Enhancement** - Added auto-display of OAuth redirect URI in Gmail/Google Drive connection settings, eliminating `redirect_uri_mismatch` errors. Users can now copy the exact URI directly from the admin interface. [Details](docs/fixes/gmail-oauth-fix-summary.md)
+
+> **📌 JANUARY 13, 2026 UPDATE:** **Root Directory Organization** - Consolidated 14 markdown files from root to organized subdirectories:
+> - 9 migration/implementation reports → `docs/implementation-history/2026/migrations/`
+> - 2 FlowHub fixes → `docs/fixes/`
+> - 2 Gmail OAuth files (consolidated into existing docs) → `docs/fixes/gmail-oauth-fix-summary.md`
+> - 1 settings change report → `docs/implementation-history/2026/settings/`
+> - 1 PHPCS tracking file → `docs/development/`
+> 
+> Repository root now contains only 6 essential files: README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, and BUILD.
+
+> **📌 JANUARY 8, 2026 UPDATE:** [Root Directory Consolidation](ROOT-DOCS-REORGANIZATION.md) - Organized 19 temporary fix documentation files into proper documentation hierarchy. Chart.js and Pro Dashboard fixes consolidated into [single reference document](docs/implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md). Repository root now contains only essential documentation files.
+
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2):** [Weekly Summary (Dec 30 - Jan 6)](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md) - **100% ISO 27001:2022 Compliance Achieved** + SOC 2 (100%) and HIPAA (98%) frameworks, Pro Dashboard modernization, PM Assistant fixes, WordPress 6.7+ compatibility, and production-ready deployment.
+
+> **📌 DECEMBER 23, 2025 UPDATE:** [Weekly Commits Summary (Dec 16-23)](docs/implementation-history/2025/WEEKLY_COMMITS_SUMMARY_2025-12-23.md) - Complete consolidation of all changes from the past week with zero information loss.
 
 > **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
 
-### 📅 Weekly Summary (Dec 16-23, 2025)
+### 📅 Weekly Summary (Dec 30 - Jan 6, 2026) ⭐ **LATEST**
+- **100% ISO 27001:2022 Compliance** - 83 of 83 applicable controls implemented (was 56%)
+- **SOC 2 Framework** - 100% compliant (54 of 54 Trust Services Criteria)
+- **HIPAA Framework** - 98% compliant (42 of 43 Security Rule safeguards)
+- **Pro Dashboard Modernization** - Singleton pattern with industry standards (lazy loading, type-safe constants)
+- **PM Assistant Fixes** - 6 critical modal and chat fixes (rendering, localization, validation, diagnostics)
+- **WordPress 6.7+ Compatibility** - Translation loading timing fixes
+- **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
+- **Production Ready** - Dev dependencies removed from vendor, repository ready for production clones
+- **Documentation Organization** - 25 files moved to organized subdirectories
+- [Full Weekly Summary →](docs/implementation-history/2026/WEEKLY_SUMMARY_2026-01-06.md)
+
+### 🏆 ISO 27001/SOC 2/HIPAA Multi-Framework Compliance (Jan 6, 2026)
+- **ISO 27001:2022** - 100% compliance achieved (83 of 83 applicable controls)
+  - Phase 6 & 7 implementation: 15 controls (82% → 100%)
+  - Comprehensive procedures: Acceptable Use, NDA templates, Data Masking, Equipment disposal, etc.
+  - Dynamic dashboard calculations replacing hardcoded values
+- **SOC 2** - 100% compliant (54 Trust Services Criteria across 5 categories)
+- **HIPAA** - 98% compliant (42 of 43 Security Rule safeguards)
+- **Documentation** - ~90KB across 14 comprehensive procedures with complete control mappings
+- [Compliance Documentation →](docs/compliance/)
+
+### 📅 Weekly Summary (Dec 16 - 23, 2025)
 - **PR #2364:** Profession model architecture improvements - Major re-architecture for proper knowledge layering
 - **2 Commits Reviewed:** 300+ files changed, ~100,000 lines added
 - **6 New AI Integrations:** Gemini Geospatial, OpenAI Batch API, Moderation API, GPT-5.2, GPT-Image-1.5, Symfony Process
@@ -269,7 +309,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🚀 Features
 
-> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details.
+> **Note:** Some features require third-party plugins (WooCommerce, JetEngine, Elementor, etc.). See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details.
 
 ### Assistant & conversation tools
 - 🧠 Create AI Assistants via a custom post type (`mcp_ai_assistant`)
@@ -292,6 +332,10 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - 🔊 Generate speech audio via OpenAI's Text-to-Speech API and save the result to the Media Library
 - 🎵 Generate instrumental music using Google Gemini Lyria with controls for genre, mood, tempo, and instrumentation
 - 🎨 Generate on-brand imagery with OpenAI's Images API, honouring the configured response format (including GPT-Image-1's `url` responses) and storing the files as WordPress attachments
+- 🖼️ Generate images with **Cloudflare Workers AI** using Stable Diffusion, Flux-2 Dev, Leonardo AI (Lucid Origin, Phoenix 1.0), and other text-to-image models with configurable dimensions and generation parameters
+- 🖼️ Vectorize raster images (PNG, JPEG, WebP, GIF) to SVG format using @neplex/vectorizer with configurable quality settings - perfect for logos and icons
+- 🎨 Comprehensive graphic editing with Graphic Editor Plus combining local operations (logo overlay, smart resize) and AI-powered features (style transfer, background removal, enhancement)
+- 🏗️ **Pro:** Generate professional architectural drawings (floor plans, elevations, sections) with building codes, dimensions, and material specifications - designed for construction professionals
 - 🎧 Transcribe or translate uploaded audio with OpenAI's speech-to-text endpoints
 
 ### Commerce & finance workflows
@@ -352,7 +396,7 @@ The tool registry boots with a curated catalogue of content, commerce, automatio
 The core plugin ships with a centrally registered tool catalogue that lets assistants mix and match capabilities into cohesive workflows without additional coding. Teams can chain authoring, media, research, commerce, marketing, and operational tools to deliver end-to-end outcomes inside a single conversation.
 
 - **Content & knowledge production** – Combine `submit_document_prompt`, `search_content`, and `search_attachments` to gather source material, then follow up with `save_post`, `create_wpcode_snippet`, or `get_rankmath_seo` for structured drafting and optimisation.
-- **Media generation & transcription** – Pair `generate_openai_image` or `generate_gemini_image` with `generate_openai_speech` and `transcribe_openai_audio` to build multimedia assets that flow into editorial or marketing outputs.
+- **Media generation & transcription** – Pair `generate_openai_image`, `generate_gemini_image`, `vectorize_image`, or `graphic_editor_plus` with `generate_openai_speech` and `transcribe_openai_audio` to build multimedia assets that flow into editorial or marketing outputs. Use `vectorize_image` to convert logos to scalable vectors, and `graphic_editor_plus` for comprehensive image editing with both local and AI-powered operations.
 - **Research & situational awareness** – Chain discovery helpers like `web_search`, `run_crawl4ai_job`, `reliefweb_reports`, `get_gdacs_events`, and `get_nhc_active_storms` to assemble briefing packs before drafting follow-up actions.
 - **Commerce & finance operations** – Use WooCommerce and finance tools such as `create_woo_product`, `get_woo_products`, `get_woo_recent_orders`, `crawl4ai_price_lookup`, `get_import_duty`, and `quickbooks_report` to coordinate merchandising, pricing, and bookkeeping reviews.
 - **Marketing & analytics insights** – Combine measurement tools including `google_analytics_report`, `get_google_business_insights`, `get_facebook_instagram_insights`, `get_linkedin_insights`, and `get_tiktok_insights` to guide campaigns and reporting.
@@ -390,6 +434,10 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | --- | --- | --- |
 | Generate OpenAI Image | `generate_openai_image` | Calls the OpenAI Images API with configurable defaults, saving the rendered asset to the Media Library with optional overrides.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php†L17-L218】|
 | Generate Gemini Image | `generate_gemini_image` | Uses Gemini’s multimodal image endpoint to render creative, aspect-ratio-aware visuals that are persisted as WordPress attachments.【F:includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php†L17-L200】|
+| Generate Cloudflare AI Image | `cloudflareai_text_to_image` | Creates images using Cloudflare Workers AI text-to-image models including Stable Diffusion XL, Flux-2 Dev, Leonardo AI (Lucid Origin, Phoenix 1.0), and Dreamshaper with configurable dimensions, steps, and guidance parameters.|
+| Vectorize Image | `vectorize_image` | Converts raster images (PNG, JPEG, WebP, GIF) to SVG vector format with configurable quality settings using @neplex/vectorizer. Perfect for logos, icons, and graphics. Requires Node.js 14+.【F:includes/tools/class-wp-mcp-ai-tool-vectorize-image.php†L1-L430】|
+| Graphic Editor Plus | `graphic_editor_plus` | Comprehensive image editing with local operations (logo overlay, resize) and AI-powered features (style transfer, background removal, enhancement). Combines speed with intelligent transformations.【F:includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php†L1-L784】|
+| Generate Architectural Drawing 🌟 | `generate_architectural_drawing` | **[PRO]** Creates professional architectural drawings (floor plans, elevations, sections, details) for construction projects. Supports 10 drawing types, 6 presentation styles (technical, sketched, rendered), dimensional specifications, building codes (IBC, IRC, NBC, Eurocode), and material lists. Outputs PNG or SVG with automatic vectorization. Perfect for architects, engineers, and construction professionals.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】|
 | Generate OpenAI Speech | `generate_openai_speech` | Converts text to audio via OpenAI’s text-to-speech models, honouring default voice/format selections and storing results in the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php†L17-L199】|
 | Generate Music | `generate_music` | Creates instrumental music from text descriptions using Google Gemini Lyria model with controls for genre, mood, duration, and tempo.|
 | Transcribe OpenAI Audio | `transcribe_openai_audio` | Sends uploaded audio to OpenAI’s transcription/translation endpoints and returns structured transcripts with language and duration metadata.【F:includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php†L17-L195】|
@@ -595,6 +643,24 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ## 📦 Installation
 
+### Requirements
+
+**Minimum Requirements:**
+- WordPress 6.0+
+- PHP 7.4+ (PHP 8.0+ recommended)
+- MySQL 5.7+ or MariaDB 10.3+
+
+**Optional Requirements for Enhanced Features:**
+- **Node.js 14+**: Required for image vectorization tools (`vectorize_image` tool)
+- **PHP Functions**: `proc_open`, `proc_close`, `proc_terminate` (for Node.js integration and Process Service)
+  - These functions are often disabled on shared hosting for security
+  - Can be enabled on Cloudways via Application Settings (see [troubleshooting guide](docs/getting-started/installation-setup/deployment-troubleshooting.md))
+- **JetEngine Plugin**: For CCT storage and advanced content management tools
+- **WooCommerce**: For e-commerce integration tools
+- **Elementor**: For visual page builder widgets
+
+**Note**: The plugin works without optional requirements, but some features will be disabled. See [deployment troubleshooting](docs/getting-started/installation-setup/deployment-troubleshooting.md) for enabling disabled PHP functions.
+
 ### For Developers (GitHub Clone)
 
 If you're cloning from GitHub for development:
@@ -682,11 +748,11 @@ cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 - ✅ 95 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
-- ✅ OpenAI/Gemini/Ollama integrations
+- ✅ OpenAI/Gemini/Ollama/Hugging Face/Cloudflare integrations
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
-- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#-optional-tools-dependencies))
+- ❌ 5 JetEngine-specific tools (see [🔌 Optional Tools & Dependencies](#optional-tools-dependencies))
 
 ---
 
@@ -823,13 +889,14 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
 - Research tools (web search, weather, disaster alerts)
 - Site operations (health checks, logs, cron jobs, cache management)
 - WordPress-native email (via wp_mail)
-- Image manipulation (resize, crop, rotate, convert)
+- Image manipulation (resize, crop, rotate, convert, vectorize to SVG)
+- Graphic editing (local operations and AI-powered transformations)
 - Profession and assistant management
 - GitHub integration tools
 - Google Maps Platform tools
 
 **Base Version excludes 31 tools requiring third-party plugins or external APIs:**
-- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins) for details
+- **Third-party WordPress plugins** (13 tools) - See [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins) for details
   - WooCommerce tools (3)
   - JetEngine/JetFormBuilder tools (5)
   - Elementor tools (2)
@@ -863,7 +930,7 @@ define( 'WP_MCP_AI_BASE_VERSION', false );
 - Advanced workflows requiring external APIs
 - Need server-side chat transcript storage (requires JetEngine)
 
-📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#-what-you-lose-without-third-party-plugins)
+📖 **See detailed breakdown:** [🔌 What You Lose Without Third-Party Plugins](#what-you-lose-without-third-party-plugins)
 
 
 ---
@@ -935,14 +1002,16 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Crawl4AI access** in **Settings → NV oOS → Tools** when you want the Crawl4AI tool to be available to assistants.
 - [ ] **Review attachment MIME overrides** in **Settings → NV oOS → Attachments** before enabling file uploads for end users.
 - [ ] **Review Send Group Email permissions** in **Settings → NV oOS → Tools** to choose the capability and recipient cap for the group email automation.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L348-L359】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L938-L953】
+- [ ] **Connect Gmail** under **Settings → NV oOS → Tools → Connections → Gmail** to enable Gmail search tools with OAuth 2.0. See [Google OAuth Setup Guide](docs/getting-started/installation-setup/google-oauth-setup.md) for complete configuration steps.
 - [ ] **Connect QuickBooks Online** under **Settings → NV oOS → QuickBooks Company ID / API Key** so the bundled reporting tool can fetch finance statements for authorised operators.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L906-L955】
 - [ ] **Configure Mailjet credentials** in **Settings → NV oOS → Mailjet API Key / Secret / From Email / From Name** before enabling Mailjet-powered tools or Elementor widgets that send email on behalf of assistants.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L1008-L1054】
 - [ ] **Enable Federation & Discovery** (Optional) in **Settings → NV oOS → Federation & Discovery** to publish your site's AI capabilities via `/.well-known/ai-peer` and optionally run a directory service for peer discovery. Configure regions, data tags, and rate limits to control how your site participates in the decentralized AI network.【F:docs/federation-discovery.md†L1-L511】【F:FEDERATION-IMPLEMENTATION-SUMMARY.md†L1-L381】
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
+- [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
-## 🧠 Language Model Providers (OpenAI, Gemini, Ollama & LM Studio)
+## 🧠 Language Model Providers (OpenAI, Gemini, Ollama, LM Studio, Hugging Face & Cloudflare)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, or LM Studio while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L63】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
 
 ### LM Studio Support
 
@@ -960,7 +1029,7 @@ The plugin includes an intelligent provider priority system that automatically t
 
 - **Drag and drop** providers to set your preferred order
 - **Automatic fallback** - if the first provider fails, the system tries the next one
-- **Visual management** - see all available providers (OpenAI, Gemini, Ollama, LM Studio) in one sortable list
+- **Visual management** - see all available providers (OpenAI, Gemini, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
 - **Flexible prioritization** - adjust based on cost, performance, or availability needs
 
 The first provider in the list serves as the default. If any provider returns an error, the router automatically attempts the next provider in the list until one succeeds. This ensures maximum uptime and resilience without manual intervention. All fallback attempts are logged for debugging and monitoring.
@@ -1120,7 +1189,7 @@ Administrators with `manage_options` capability can view comprehensive token usa
 - Reset personal usage data button
 
 **Detailed Breakdown:**
-- Usage by provider (OpenAI, Gemini, Ollama, LM Studio)
+- Usage by provider (OpenAI, Gemini, Ollama, LM Studio, Hugging Face, Cloudflare)
 - Usage by specific model (e.g., `gpt-4.1-mini`, `gemini-2.0-flash`)
 - Request counts per provider/model combination
 - Last used timestamp for each model
@@ -1225,7 +1294,7 @@ NV oOS includes several performance optimizations to enhance the chat experience
 NV oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
 
 1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
-2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, and Ollama on one site
+2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, Hugging Face, Cloudflare, and Ollama on one site
 
 Both modes use the same AI-powered routing engine to optimize for cost, performance, and reliability.
 
@@ -1241,7 +1310,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 ### Quick Start Examples
 
 **Single-Site Setup** (No mesh required):
-- Configure multiple AI providers (OpenAI + Gemini + Ollama)
+- Configure multiple AI providers (OpenAI + Gemini + Hugging Face + Cloudflare + Ollama)
 - Set assistant routing strategy to "AI Optimized"
 - Save 90% on costs by routing simple queries to cheaper models
 
@@ -1361,7 +1430,7 @@ Sites that enable the Simple JWT Login integration can now reuse those bearer to
 
 NV oOS works seamlessly with popular MCP clients including Claude Desktop, LM Studio, and ChatGPT connectors. Each client connects to your WordPress site via the MCP REST API at `/wp-json/mcp-ai/v1` and can access assistants, execute tools, and interact with your WordPress data remotely.
 
-**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#-sse-streaming-support) section for details.
+**SSE Support:** All MCP endpoints support Server-Sent Events (SSE) for real-time streaming. Enable SSE in your client configuration for better response times and real-time updates. See the [SSE Streaming Support](#sse-streaming-support) section for details.
 
 ### Quick Start
 
@@ -2079,8 +2148,8 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 - Validate cross-version compatibility (PHP 7.4–8.3) via `composer run lint:compat` prior to release builds.【F:composer.json†L16-L23】
 
 ### Manual smoke tests
-- Follow the scenarios in [## ✅ Manual QA Scenarios](#-manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
-- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#-logging).
+- Follow the scenarios in [## ✅ Manual QA Scenarios](#manual-qa-scenarios) after significant changes to chat flows, tool execution, or authentication wiring.
+- For logging-centric debugging, enable logging in the NV oOS settings and reference the retrieval commands in [🪵 Logging](#logging).
 
 ---
 

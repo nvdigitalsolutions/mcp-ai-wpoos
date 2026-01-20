@@ -16,7 +16,7 @@ function sendChatStreaming(state, payload, submissionContext, finalize) {
     
     // Logging concern mixed in
     if (window.console && console.log) {
-        console.log('[WP oOS] Starting streaming request:', {
+        console.log('[NV oOS] Starting streaming request:', {
             endpoint: state.config.messagesEndpoint,
             assistantId: payload.assistant_id,
             // ... more properties
@@ -29,7 +29,7 @@ function sendChatStreaming(state, payload, submissionContext, finalize) {
     }).then(function (response) {
         // More inline logging
         if (window.console && console.log) {
-            console.log('[WP oOS] Streaming response received:', {
+            console.log('[NV oOS] Streaming response received:', {
                 // ... logging details
             });
         }
@@ -57,7 +57,7 @@ Created a dedicated `streamingLogger` utility module following the existing SOC 
  * Centralizes all streaming-related logging to keep business logic clean.
  */
 const streamingLogger = (function() {
-    const LOG_PREFIX = '[WP oOS]';
+    const LOG_PREFIX = '[NV oOS]';
     
     // Helper functions for null-safe error handling
     function getErrorType(error) {

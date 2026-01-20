@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Creates charts using Chart.js and returns HTML/JavaScript or saves as attachment.
@@ -23,8 +24,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
  */
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
+	use WP_MCP_AI_Tool_Chat_Response;
+
 	const CHARTJS_VERSION = '4.4.0';
-	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
 
 	/**
 	 * {@inheritdoc}
@@ -37,14 +39,14 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create Chart', 'wp-mcp-ai' );
+		return __( 'Create Chart', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.', 'wp-mcp-ai' );
+		return __( 'Creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -56,39 +58,39 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'type'               => array(
 					'type'        => 'string',
-					'description' => __( 'Chart type: bar, line, pie, doughnut, radar, polarArea, scatter, bubble.', 'wp-mcp-ai' ),
+					'description' => __( 'Chart type: bar, line, pie, doughnut, radar, polarArea, scatter, bubble.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' ),
 				),
 				'data'               => array(
 					'type'        => 'object',
-					'description' => __( 'Chart data object with labels and datasets.', 'wp-mcp-ai' ),
+					'description' => __( 'Chart data object with labels and datasets.', 'mcp-ai-wpoos' ),
 					'properties'  => array(
 						'labels'   => array(
 							'type'        => 'array',
-							'description' => __( 'Labels for the chart data points.', 'wp-mcp-ai' ),
+							'description' => __( 'Labels for the chart data points.', 'mcp-ai-wpoos' ),
 							'items'       => array(
 								'type' => 'string',
 							),
 						),
 						'datasets' => array(
 							'type'        => 'array',
-							'description' => __( 'Array of dataset objects.', 'wp-mcp-ai' ),
+							'description' => __( 'Array of dataset objects.', 'mcp-ai-wpoos' ),
 							'items'       => array(
 								'type'       => 'object',
 								'properties' => array(
 									'label'           => array(
 										'type'        => 'string',
-										'description' => __( 'Dataset label.', 'wp-mcp-ai' ),
+										'description' => __( 'Dataset label.', 'mcp-ai-wpoos' ),
 									),
 									'data'            => array(
 										'type'        => 'array',
-										'description' => __( 'Data values for this dataset.', 'wp-mcp-ai' ),
+										'description' => __( 'Data values for this dataset.', 'mcp-ai-wpoos' ),
 										'items'       => array(
 											'type' => 'number',
 										),
 									),
 									'backgroundColor' => array(
-										'description' => __( 'Background color(s) for the dataset.', 'wp-mcp-ai' ),
+										'description' => __( 'Background color(s) for the dataset.', 'mcp-ai-wpoos' ),
 										'anyOf'       => array(
 											array(
 												'type' => 'string',
@@ -102,7 +104,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 										),
 									),
 									'borderColor'     => array(
-										'description' => __( 'Border color(s) for the dataset.', 'wp-mcp-ai' ),
+										'description' => __( 'Border color(s) for the dataset.', 'mcp-ai-wpoos' ),
 										'anyOf'       => array(
 											array(
 												'type' => 'string',
@@ -117,7 +119,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 									),
 									'borderWidth'     => array(
 										'type'        => 'number',
-										'description' => __( 'Border width in pixels.', 'wp-mcp-ai' ),
+										'description' => __( 'Border width in pixels.', 'mcp-ai-wpoos' ),
 									),
 								),
 							),
@@ -126,34 +128,34 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				),
 				'options'            => array(
 					'type'        => 'object',
-					'description' => __( 'Chart.js options object for customizing the chart appearance and behavior.', 'wp-mcp-ai' ),
+					'description' => __( 'Chart.js options object for customizing the chart appearance and behavior.', 'mcp-ai-wpoos' ),
 				),
 				'title'              => array(
 					'type'        => 'string',
-					'description' => __( 'Chart title (optional).', 'wp-mcp-ai' ),
+					'description' => __( 'Chart title (optional).', 'mcp-ai-wpoos' ),
 				),
 				'width'              => array(
 					'type'        => 'integer',
-					'description' => __( 'Chart canvas width in pixels (default: 800).', 'wp-mcp-ai' ),
+					'description' => __( 'Chart canvas width in pixels (default: 800).', 'mcp-ai-wpoos' ),
 					'default'     => 800,
 					'minimum'     => 100,
 					'maximum'     => 2000,
 				),
 				'height'             => array(
 					'type'        => 'integer',
-					'description' => __( 'Chart canvas height in pixels (default: 400).', 'wp-mcp-ai' ),
+					'description' => __( 'Chart canvas height in pixels (default: 400).', 'mcp-ai-wpoos' ),
 					'default'     => 400,
 					'minimum'     => 100,
 					'maximum'     => 2000,
 				),
 				'save_as_attachment' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to save the chart as an HTML file attachment (default: false).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to save the chart as an HTML file attachment (default: false).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'file_name'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved HTML attachment.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional base file name for the saved HTML attachment.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'type', 'data' ),
@@ -167,16 +169,16 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'create_chart', 'wp-mcp-ai' ),
-				'payload' => __( 'create_chart', 'wp-mcp-ai' ),
+				'label'   => __( 'create_chart', 'mcp-ai-wpoos' ),
+				'payload' => __( 'create_chart', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Create bar chart from data', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `create_chart` tool to create a bar chart. Ask for the data values and labels, then generate the chart configuration.', 'wp-mcp-ai' ),
+				'label'   => __( 'Create bar chart from data', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `create_chart` tool to create a bar chart. Ask for the data values and labels, then generate the chart configuration.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Create pie chart visualization', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `create_chart` tool to create a pie chart. Ask for the data categories and their values, then generate the chart.', 'wp-mcp-ai' ),
+				'label'   => __( 'Create pie chart visualization', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `create_chart` tool to create a pie chart. Ask for the data categories and their values, then generate the chart.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -195,7 +197,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to create charts.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to create charts.', 'mcp-ai-wpoos' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -204,14 +206,14 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			if ( ! user_can( $user_id, 'read' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to create charts.', 'wp-mcp-ai' )
+					__( 'You do not have permission to create charts.', 'mcp-ai-wpoos' )
 				);
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' )
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -225,7 +227,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				'wp_mcp_ai_invalid_chart_type',
 				sprintf(
 					/* translators: %s: valid chart types */
-					__( 'Invalid chart type. Must be one of: %s', 'wp-mcp-ai' ),
+					__( 'Invalid chart type. Must be one of: %s', 'mcp-ai-wpoos' ),
 					implode( ', ', $valid_types )
 				),
 				array( 'status' => 400 )
@@ -236,7 +238,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! isset( $arguments['data'] ) || ! is_array( $arguments['data'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_data',
-				__( 'Chart data is required.', 'wp-mcp-ai' ),
+				__( 'Chart data is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -298,7 +300,28 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 				return $storage;
 			}
 
+			$type_labels = array(
+				'bar'       => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+				'line'      => __( 'Line Chart', 'mcp-ai-wpoos' ),
+				'pie'       => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+				'doughnut'  => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+				'radar'     => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+				'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+				'scatter'   => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+				'bubble'    => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+			);
+			$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
+
+			$message = sprintf(
+				/* translators: 1: chart type, 2: file name */
+				__( 'Successfully created %1$s and saved as %2$s', 'mcp-ai-wpoos' ),
+				$chart_label,
+				$storage['file_name']
+			);
+
 			return array(
+				'message'       => $message,
+				'text'          => $message,
 				'chart_type'    => $chart_type,
 				'attachment_id' => $storage['attachment_id'],
 				'url'           => $storage['url'],
@@ -311,7 +334,27 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
+		$type_labels = array(
+			'bar'       => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+			'line'      => __( 'Line Chart', 'mcp-ai-wpoos' ),
+			'pie'       => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+			'doughnut'  => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+			'radar'     => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+			'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+			'scatter'   => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+			'bubble'    => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+		);
+		$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
+
+		$message = sprintf(
+			/* translators: %s: chart type */
+			__( 'Successfully created %s', 'mcp-ai-wpoos' ),
+			$chart_label
+		);
+
 		return array(
+			'message'       => $message,
+			'text'          => $message,
 			'chart_type'    => $chart_type,
 			'html'          => $html,
 			'chart_config'  => $chart_config,
@@ -342,7 +385,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! isset( $data['datasets'] ) || ! is_array( $data['datasets'] ) || empty( $data['datasets'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_datasets',
-				__( 'Chart data must include at least one dataset.', 'wp-mcp-ai' ),
+				__( 'Chart data must include at least one dataset.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -407,7 +450,7 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( empty( $sanitized['datasets'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_valid_datasets',
-				__( 'No valid datasets found in chart data.', 'wp-mcp-ai' ),
+				__( 'No valid datasets found in chart data.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -461,62 +504,65 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	protected function generate_chart_html( array $config, $width, $height ) {
 		$chart_id    = 'chart-' . wp_generate_password( 8, false );
 		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url = esc_url( self::CHARTJS_CDN_URL );
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 
-		$html = <<<HTML
+		ob_start();
+		?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chart</title>
-    <script src="{$chartjs_url}"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            background-color: #f5f5f5;
-        }
-        .chart-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        canvas {
-            max-width: 100%;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Chart</title>
+	<?php // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript ?>
+	<script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 20px;
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			background-color: #f5f5f5;
+		}
+		.chart-container {
+			max-width: 100%;
+			margin: 0 auto;
+			background: white;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		canvas {
+			max-width: 100%;
+		}
+	</style>
 </head>
 <body>
-    <div class="chart-container">
-        <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
-    </div>
-    <script>
-        (function() {
-            function initChart() {
-                if (typeof Chart === 'undefined') {
-                    setTimeout(initChart, 50);
-                    return;
-                }
-                const ctx = document.getElementById('{$chart_id}').getContext('2d');
-                const chartConfig = {$config_json};
-                new Chart(ctx, chartConfig);
-            }
-            
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initChart);
-            } else {
-                initChart();
-            }
-        })();
-    </script>
+	<div class="chart-container">
+		<canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
+	</div>
+	<script>
+		(function() {
+			function initChart() {
+				if (typeof Chart === 'undefined') {
+					setTimeout(initChart, 50);
+					return;
+				}
+				const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+				const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
+				new Chart(ctx, chartConfig);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', initChart);
+			} else {
+				initChart();
+			}
+		})();
+	</script>
 </body>
 </html>
-HTML;
+		<?php
+		$html = ob_get_clean();
 
 		return $html;
 	}
@@ -545,7 +591,7 @@ HTML;
 		if ( ! empty( $upload['error'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_chart_upload_failed',
-				__( 'Failed to save the chart HTML file.', 'wp-mcp-ai' ),
+				__( 'Failed to save the chart HTML file.', 'mcp-ai-wpoos' ),
 				array( 'error' => $upload['error'] )
 			);
 		}
@@ -555,7 +601,7 @@ HTML;
 		if ( '' === $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_chart_upload_failed',
-				__( 'Failed to write the chart HTML file to disk.', 'wp-mcp-ai' )
+				__( 'Failed to write the chart HTML file to disk.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -579,7 +625,7 @@ HTML;
 
 			return new WP_Error(
 				'wp_mcp_ai_attachment_error',
-				__( 'Failed to register the chart HTML as an attachment.', 'wp-mcp-ai' ),
+				__( 'Failed to register the chart HTML as an attachment.', 'mcp-ai-wpoos' ),
 				array( 'error' => $attachment_id )
 			);
 		}
@@ -633,17 +679,17 @@ HTML;
 	 */
 	protected function generate_attachment_title( $chart_type ) {
 		$type_labels = array(
-			'bar'       => __( 'Bar Chart', 'wp-mcp-ai' ),
-			'line'      => __( 'Line Chart', 'wp-mcp-ai' ),
-			'pie'       => __( 'Pie Chart', 'wp-mcp-ai' ),
-			'doughnut'  => __( 'Doughnut Chart', 'wp-mcp-ai' ),
-			'radar'     => __( 'Radar Chart', 'wp-mcp-ai' ),
-			'polarArea' => __( 'Polar Area Chart', 'wp-mcp-ai' ),
-			'scatter'   => __( 'Scatter Chart', 'wp-mcp-ai' ),
-			'bubble'    => __( 'Bubble Chart', 'wp-mcp-ai' ),
+			'bar'       => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+			'line'      => __( 'Line Chart', 'mcp-ai-wpoos' ),
+			'pie'       => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+			'doughnut'  => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+			'radar'     => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+			'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+			'scatter'   => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+			'bubble'    => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
 		);
 
-		$label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'wp-mcp-ai' );
+		$label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
 
 		return $label;
 	}
@@ -675,9 +721,7 @@ HTML;
 			'read-only',       // Does not modify site data (unless saving attachment).
 			'requires-capability',  // Requires user capabilities.
 			'write',           // Can create attachments when save_as_attachment is true.
-			'local-only',      // Works entirely locally, Chart.js loaded from CDN.
-			'external-api',    // Loads Chart.js from CDN.
-			'network-dependent', // Requires internet for Chart.js CDN.
+			'local-only',      // Works entirely locally, Chart.js loaded from local assets.
 		);
 	}
 
@@ -703,13 +747,7 @@ HTML;
 			),
 			'dependencies'          => array(
 				'required_extensions' => array(), // No PHP extensions required.
-				'external_services'   => array(
-					'chartjs_cdn' => array(
-						'url'      => self::CHARTJS_CDN_URL,
-						'required' => true,
-						'purpose'  => 'Chart.js library loading',
-					),
-				),
+				'external_services'   => array(),
 			),
 			'orchestration_hints'   => array(
 				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.

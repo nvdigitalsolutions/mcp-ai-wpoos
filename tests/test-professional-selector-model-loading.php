@@ -489,4 +489,157 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		$this->assertStringContainsString( 'wp-mcp-ai-chat', $html, 'HTML should contain chat container' );
 		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $html, 'HTML should contain chat data attribute' );
 	}
+
+	/**
+	 * Test that Hugging Face provider returns models when configured.
+	 */
+	public function test_huggingface_provider_returns_models_when_configured() {
+		wp_set_current_user( $this->user_id );
+
+		// Configure Hugging Face settings.
+		$settings                             = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['huggingface_api_key']      = 'test_hf_api_key';
+		$settings['huggingface_endpoint_url'] = 'https://api-inference.huggingface.co';
+		$settings['huggingface_model']        = 'meta-llama/Llama-3.2-3B-Instruct';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['provider'] = 'huggingface';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
+		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
+
+		// Hugging Face should return models (either from API or static list).
+		if ( $response['success'] ) {
+			$this->assertArrayHasKey( 'data', $response );
+			$this->assertArrayHasKey( 'models', $response['data'] );
+			$this->assertNotEmpty( $response['data']['models'], 'Hugging Face should return models when configured' );
+		}
+	}
+
+	/**
+	 * Test that Hugging Face provider returns empty when not configured.
+	 */
+	public function test_huggingface_provider_returns_empty_when_not_configured() {
+		wp_set_current_user( $this->user_id );
+
+		// Clear Hugging Face settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		unset( $settings['huggingface_api_key'] );
+		unset( $settings['huggingface_endpoint_url'] );
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['provider'] = 'huggingface';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
+		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
+
+		// Should fail when not configured.
+		$this->assertFalse( $response['success'], 'Hugging Face should fail when not configured' );
+		$this->assertArrayHasKey( 'data', $response );
+		$this->assertArrayHasKey( 'message', $response['data'] );
+		$this->assertStringContainsStringIgnoringCase(
+			'no models available',
+			$response['data']['message'],
+			'Error should mention no models available'
+		);
+	}
+
+	/**
+	 * Test that Anthropic provider returns models when configured.
+	 */
+	public function test_anthropic_provider_returns_models_when_configured() {
+		wp_set_current_user( $this->user_id );
+
+		// Configure Anthropic settings.
+		$settings                      = get_option( 'wp_mcp_ai_settings', array() );
+		$settings['anthropic_api_key'] = 'test_anthropic_api_key';
+		$settings['anthropic_model']   = 'claude-sonnet-4.5';
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['provider'] = 'anthropic';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
+		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
+
+		// Anthropic should return models when API key is configured.
+		if ( $response['success'] ) {
+			$this->assertArrayHasKey( 'data', $response );
+			$this->assertArrayHasKey( 'models', $response['data'] );
+			$this->assertNotEmpty( $response['data']['models'], 'Anthropic should return models when API key is configured' );
+			// Verify some expected Claude models are present.
+			$model_ids = array_keys( $response['data']['models'] );
+			$this->assertContains( 'claude-sonnet-4.5', $model_ids, 'Should include Claude Sonnet 4.5' );
+		}
+	}
+
+	/**
+	 * Test that Anthropic provider returns models even when not configured.
+	 *
+	 * Since Anthropic uses a static model list (no API call needed to list models),
+	 * models should be available for browsing even without an API key configured.
+	 */
+	public function test_anthropic_provider_returns_models_when_not_configured() {
+		wp_set_current_user( $this->user_id );
+
+		// Clear Anthropic settings.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		unset( $settings['anthropic_api_key'] );
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
+		$_POST['provider'] = 'anthropic';
+
+		try {
+			$this->_handleAjax( 'wp_mcp_ai_get_models_for_provider' );
+		} catch ( WPAjaxDieContinueException $e ) {
+			// Expected.
+			unset( $e );
+		}
+
+		$response = json_decode( $this->_last_response, true );
+
+		$this->assertIsArray( $response, 'Response should be a valid JSON array' );
+		$this->assertArrayHasKey( 'success', $response, 'Response should have success key' );
+
+		// Should succeed and return models even without API key (for browsing purposes).
+		$this->assertTrue( $response['success'], 'Anthropic should return models even without API key configured' );
+		$this->assertArrayHasKey( 'data', $response );
+		$this->assertArrayHasKey( 'models', $response['data'] );
+		$this->assertNotEmpty( $response['data']['models'], 'Anthropic should return Claude models for browsing' );
+
+		// Verify some expected Claude models are present.
+		$model_ids = array_keys( $response['data']['models'] );
+		$this->assertContains( 'claude-sonnet-4.5', $model_ids, 'Should include Claude Sonnet 4.5' );
+		$this->assertContains( 'claude-opus-4.1', $model_ids, 'Should include Claude Opus 4.1' );
+	}
 }

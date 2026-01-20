@@ -17,6 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
  * Provides a tool for sending a group email based on an uploaded file.
  */
 class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
 
 	const DEFAULT_MAX_RECIPIENTS = 100;
@@ -32,14 +33,14 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Send Group Email', 'wp-mcp-ai' );
+		return __( 'Send Group Email', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sends an email using the WordPress mailer to recipients. Email content (subject, message, recipients) can be provided directly as parameters or loaded from uploaded attachment files in JSON or plain text format.', 'wp-mcp-ai' );
+		return __( 'Sends an email using the WordPress mailer to recipients. Email content (subject, message, recipients) can be provided directly as parameters or loaded from uploaded attachment files in JSON or plain text format.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,15 +52,15 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'subject'        => array(
 					'type'        => 'string',
-					'description' => __( 'Email subject line. Can be provided here or in attachment file.', 'wp-mcp-ai' ),
+					'description' => __( 'Email subject line. Can be provided here or in attachment file.', 'mcp-ai-wpoos' ),
 				),
 				'message'        => array(
 					'type'        => 'string',
-					'description' => __( 'Email message content. Can be provided here or in attachment file.', 'wp-mcp-ai' ),
+					'description' => __( 'Email message content. Can be provided here or in attachment file.', 'mcp-ai-wpoos' ),
 				),
 				'recipients'     => array(
 					'type'        => 'array',
-					'description' => __( 'List of email recipients. Can be provided here or in attachment file. Each entry may be a string email address or object containing an email field.', 'wp-mcp-ai' ),
+					'description' => __( 'List of email recipients. Can be provided here or in attachment file. Each entry may be a string email address or object containing an email field.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array( 'type' => 'string' ),
@@ -77,28 +78,28 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'attachment_id'  => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Optional WordPress attachment ID containing email definition (JSON or plain text format).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional WordPress attachment ID containing email definition (JSON or plain text format).', 'mcp-ai-wpoos' ),
 				),
 				'file_id'        => $this->get_file_id_parameter_schema(),
-				'url'            => $this->get_url_parameter_schema( 'file', __( 'URL to email definition file (JSON or plain text format).', 'wp-mcp-ai' ) ),
+				'url'            => $this->get_url_parameter_schema( 'file', __( 'URL to email definition file (JSON or plain text format).', 'mcp-ai-wpoos' ) ),
 				'attachment_ids' => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of WordPress attachment IDs to combine into one email.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of WordPress attachment IDs to combine into one email.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => array( 'integer', 'string' ),
 					),
 				),
 				'from_email'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional override for the from email address.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional override for the from email address.', 'mcp-ai-wpoos' ),
 				),
 				'from_name'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional override for the from name.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional override for the from name.', 'mcp-ai-wpoos' ),
 				),
 				'headers'        => array(
 					'type'        => 'array',
-					'description' => __( 'Additional headers to merge into the outgoing message.', 'wp-mcp-ai' ),
+					'description' => __( 'Additional headers to merge into the outgoing message.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -122,11 +123,11 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		$default_capability  = isset( $settings['group_email_capability'] ) ? $settings['group_email_capability'] : 'publish_posts';
 		$required_capability = apply_filters( 'wp_mcp_ai_send_group_email_capability', $default_capability, $context, $arguments, $this );
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send group emails.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to send group emails.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$subject       = isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '';
@@ -176,24 +177,24 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		$email_request['bcc']        = $this->filter_unique_emails( $email_request['bcc'], array_merge( $email_request['recipients'], $email_request['cc'] ) );
 
 		if ( empty( $email_request['recipients'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_recipients', __( 'No recipients were provided for the group email.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_recipients', __( 'No recipients were provided for the group email.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$configured_max = isset( $settings['group_email_max_recipients'] ) ? absint( $settings['group_email_max_recipients'] ) : self::DEFAULT_MAX_RECIPIENTS;
 		$max_recipients = apply_filters( 'wp_mcp_ai_send_group_email_max_recipients', $configured_max, $context, $arguments, $this );
 		if ( is_numeric( $max_recipients ) && $max_recipients > 0 && count( $email_request['recipients'] ) > absint( $max_recipients ) ) {
-			return new WP_Error( 'wp_mcp_ai_recipient_limit_exceeded', __( 'The group email includes more recipients than allowed.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_recipient_limit_exceeded', __( 'The group email includes more recipients than allowed.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$message_parts = array_filter( array_map( 'trim', $message_parts ) );
 		$message       = trim( implode( "\n\n", array_unique( $message_parts ) ) );
 
 		if ( '' === $subject ) {
-			return new WP_Error( 'wp_mcp_ai_missing_subject', __( 'The email subject could not be determined.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_subject', __( 'The email subject could not be determined.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		if ( '' === $message ) {
-			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'The email message could not be determined.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_message', __( 'The email message could not be determined.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$headers = $this->prepare_headers( $arguments, $email_request );
@@ -213,7 +214,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( ! is_array( $mail_args ) || empty( $mail_args['to'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_mail_args', __( 'The email could not be prepared for sending.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_mail_args', __( 'The email could not be prepared for sending.', 'mcp-ai-wpoos' ) );
 		}
 
 		$pre_send = apply_filters( 'wp_mcp_ai_send_group_email_pre_send', null, $mail_args, $arguments, $context, $email_request, $this );
@@ -228,7 +229,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( ! $sent ) {
-			return new WP_Error( 'wp_mcp_ai_mail_failed', __( 'The group email could not be sent.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_mail_failed', __( 'The group email could not be sent.', 'mcp-ai-wpoos' ) );
 		}
 
 		do_action( 'wp_mcp_ai_send_group_email_after_send', $mail_args, $arguments, $context, $email_request, $this );
@@ -261,7 +262,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 				// For now, return error as this is complex.
 				return new WP_Error(
 					'wp_mcp_ai_remote_url_not_supported',
-					__( 'Remote URLs are not yet supported for email definition files. Please upload to Media Library first.', 'wp-mcp-ai' ),
+					__( 'Remote URLs are not yet supported for email definition files. Please upload to Media Library first.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			} elseif ( is_wp_error( $resolved ) ) {
@@ -342,11 +343,11 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function parse_email_definition_attachment( $attachment_id ) {
 		$attachment_id = absint( $attachment_id );
 		if ( ! $attachment_id ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The provided attachment could not be resolved.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The provided attachment could not be resolved.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( 'attachment' !== get_post_type( $attachment_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The provided attachment is not accessible.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_attachment', __( 'The provided attachment is not accessible.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
@@ -356,7 +357,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! WP_MCP_AI_Message_Attachments::user_can_access_attachment( $attachment_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_attachment_forbidden',
-				__( 'You do not have permission to use the requested attachment.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to use the requested attachment.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -364,7 +365,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 		$file_path = get_attached_file( $attachment_id );
 
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_file', __( 'The attachment file could not be found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_file', __( 'The attachment file could not be found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$max_bytes = apply_filters( 'wp_mcp_ai_email_definition_attachment_max_bytes', 1024 * 1024, $attachment_id, $this );
@@ -380,7 +381,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_attachment_too_large',
 				sprintf(
 					/* translators: %s: formatted file size limit. */
-					__( 'The attachment file is too large. The maximum allowed size is %s.', 'wp-mcp-ai' ),
+					__( 'The attachment file is too large. The maximum allowed size is %s.', 'mcp-ai-wpoos' ),
 					size_format( $max_bytes )
 				),
 				array( 'status' => 413 )
@@ -389,7 +390,7 @@ class WP_MCP_AI_Tool_Send_Group_Email implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$contents = file_get_contents( $file_path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 		if ( false === $contents ) {
-			return new WP_Error( 'wp_mcp_ai_unreadable_file', __( 'The attachment file could not be read.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unreadable_file', __( 'The attachment file could not be read.', 'mcp-ai-wpoos' ) );
 		}
 
 		$contents = trim( $contents );

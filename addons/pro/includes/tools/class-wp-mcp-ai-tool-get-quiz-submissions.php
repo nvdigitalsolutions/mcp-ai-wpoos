@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Quiz Submissions', 'wp-mcp-ai' );
+		return __( 'Get Quiz Submissions', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves submissions for a specific quiz.', 'wp-mcp-ai' );
+		return __( 'Retrieves submissions for a specific quiz.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,25 +43,25 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'quiz_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the quiz.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the quiz.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'status'   => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by submission status: pending, graded, or all.', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by submission status: pending, graded, or all.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'graded', 'all' ),
 					'default'     => 'all',
 				),
 				'per_page' => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of submissions to retrieve per page.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of submissions to retrieve per page.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'page'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination.', 'wp-mcp-ai' ),
+					'description' => __( 'Page number for pagination.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view submissions.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view submissions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz_id  = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
@@ -91,19 +91,19 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 		$page     = isset( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
 
 		if ( ! $quiz_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check if user can view submissions (must be author or have edit_others_posts).
 		$quiz_author = absint( $quiz->post_author );
 		if ( $quiz_author !== $current_user_id && ! user_can( $current_user_id, 'edit_others_posts' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view submissions for this quiz.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view submissions for this quiz.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$query_args = array(
@@ -172,10 +172,13 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			wp_reset_postdata();
 		}
 
+		// Generate Chart.js visualizations for submissions overview.
+		$chart_data = $this->generate_submissions_charts( $submissions, $quiz_id );
+
 		return array(
 			'summary'     => sprintf(
 				/* translators: %d: number of submissions */
-				_n( 'Found %d submission', 'Found %d submissions', count( $submissions ), 'wp-mcp-ai' ),
+				_n( 'Found %d submission', 'Found %d submissions', count( $submissions ), 'mcp-ai-wpoos-pro' ),
 				count( $submissions )
 			),
 			'quiz_id'     => $quiz_id,
@@ -185,7 +188,186 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 			'page'        => $page,
 			'per_page'    => $per_page,
 			'total_pages' => $query->max_num_pages,
+			'charts'      => $chart_data,
 		);
+	}
+
+	/**
+	 * Generate Chart.js configurations for submissions overview.
+	 *
+	 * @param array $submissions Submissions data.
+	 * @param int   $quiz_id     Quiz ID.
+	 * @return array Chart.js configurations.
+	 */
+	private function generate_submissions_charts( $submissions, $quiz_id ) {
+		$passing_score = get_post_meta( $quiz_id, '_mcp_ai_quiz_passing_score', true );
+
+		// Count by status.
+		$graded_count  = 0;
+		$pending_count = 0;
+		$passed_count  = 0;
+		$failed_count  = 0;
+		$scores        = array();
+
+		foreach ( $submissions as $submission ) {
+			if ( 'graded' === $submission['status'] ) {
+				++$graded_count;
+				if ( isset( $submission['passed'] ) ) {
+					if ( $submission['passed'] ) {
+						++$passed_count;
+					} else {
+						++$failed_count;
+					}
+				}
+				if ( isset( $submission['percentage'] ) ) {
+					$scores[] = $submission['percentage'];
+				}
+			} else {
+				++$pending_count;
+			}
+		}
+
+		$charts = array();
+
+		// Status overview chart.
+		$charts['status_overview'] = array(
+			'type'    => 'doughnut',
+			'data'    => array(
+				'labels'   => array(
+					__( 'Graded', 'mcp-ai-wpoos-pro' ),
+					__( 'Pending', 'mcp-ai-wpoos-pro' ),
+				),
+				'datasets' => array(
+					array(
+						'data'            => array( $graded_count, $pending_count ),
+						'backgroundColor' => array(
+							'rgba(75, 192, 192, 0.6)',
+							'rgba(255, 206, 86, 0.6)',
+						),
+						'borderColor'     => array(
+							'rgba(75, 192, 192, 1)',
+							'rgba(255, 206, 86, 1)',
+						),
+						'borderWidth'     => 1,
+					),
+				),
+			),
+			'options' => array(
+				'responsive' => true,
+				'plugins'    => array(
+					'title'  => array(
+						'display' => true,
+						'text'    => __( 'Submission Status', 'mcp-ai-wpoos-pro' ),
+					),
+					'legend' => array(
+						'display'  => true,
+						'position' => 'bottom',
+					),
+				),
+			),
+		);
+
+		// Pass/fail chart (only if there are graded submissions).
+		if ( $graded_count > 0 ) {
+			$charts['pass_fail'] = array(
+				'type'    => 'doughnut',
+				'data'    => array(
+					'labels'   => array(
+						__( 'Passed', 'mcp-ai-wpoos-pro' ),
+						__( 'Failed', 'mcp-ai-wpoos-pro' ),
+					),
+					'datasets' => array(
+						array(
+							'data'            => array( $passed_count, $failed_count ),
+							'backgroundColor' => array(
+								'rgba(75, 192, 192, 0.6)',
+								'rgba(255, 99, 132, 0.6)',
+							),
+							'borderColor'     => array(
+								'rgba(75, 192, 192, 1)',
+								'rgba(255, 99, 132, 1)',
+							),
+							'borderWidth'     => 1,
+						),
+					),
+				),
+				'options' => array(
+					'responsive' => true,
+					'plugins'    => array(
+						'title'  => array(
+							'display' => true,
+							'text'    => sprintf(
+								/* translators: %d: passing score */
+								__( 'Pass/Fail Rate (Passing: %d%%)', 'mcp-ai-wpoos-pro' ),
+								$passing_score
+							),
+						),
+						'legend' => array(
+							'display'  => true,
+							'position' => 'bottom',
+						),
+					),
+				),
+			);
+
+			// Score distribution (if scores available).
+			if ( ! empty( $scores ) ) {
+				$bins = array_fill( 0, 10, 0 );
+				foreach ( $scores as $score ) {
+					$bin_index = min( floor( $score / 10 ), 9 );
+					++$bins[ $bin_index ];
+				}
+
+				$labels = array();
+				for ( $i = 0; $i < 10; $i++ ) {
+					$start    = $i * 10;
+					$end      = $start + 10;
+					$labels[] = "{$start}-{$end}%";
+				}
+
+				$charts['score_distribution'] = array(
+					'type'    => 'bar',
+					'data'    => array(
+						'labels'   => $labels,
+						'datasets' => array(
+							array(
+								'label'           => __( 'Number of Students', 'mcp-ai-wpoos-pro' ),
+								'data'            => $bins,
+								'backgroundColor' => 'rgba(54, 162, 235, 0.6)',
+								'borderColor'     => 'rgba(54, 162, 235, 1)',
+								'borderWidth'     => 1,
+							),
+						),
+					),
+					'options' => array(
+						'responsive' => true,
+						'plugins'    => array(
+							'title' => array(
+								'display' => true,
+								'text'    => __( 'Score Distribution', 'mcp-ai-wpoos-pro' ),
+							),
+						),
+						'scales'     => array(
+							'y' => array(
+								'beginAtZero' => true,
+								'title'       => array(
+									'display' => true,
+									'text'    => __( 'Number of Students', 'mcp-ai-wpoos-pro' ),
+								),
+							),
+							'x' => array(
+								'title' => array(
+									'display' => true,
+									'text'    => __( 'Score Range', 'mcp-ai-wpoos-pro' ),
+								),
+							),
+						),
+					),
+				);
+			}
+		}
+
+		return $charts;
 	}
 
 	/**
@@ -193,6 +375,7 @@ class WP_MCP_AI_Tool_Get_Quiz_Submissions implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'read-only',
 			'local-only',
 			'requires-capability',

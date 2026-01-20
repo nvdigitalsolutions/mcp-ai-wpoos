@@ -12,33 +12,39 @@
 class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 
 	/**
-	 * Verify that plugin action links hook is registered on init.
+	 * Verify that plugin action links filter is registered directly.
 	 *
 	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 * Plugin action links use translation functions, so the filter should be
-	 * registered via the init action.
+	 * To avoid translation loading issues, the plugin action links now use
+	 * untranslated text and the filter is registered directly (not via a hook).
 	 */
-	public function test_plugin_action_links_registered_on_init() {
-		global $wp_filter;
-
-		// Check that the registration function is hooked to init.
+	public function test_plugin_action_links_registered_directly() {
+		// Check that the plugin action links filter is registered.
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_plugin_action_links' ),
-			'Plugin action links should be registered via init action'
+			has_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' ),
+			'Plugin action links filter should be registered'
 		);
 	}
 
 	/**
-	 * Verify that activation security notice hook is registered on init.
+	 * Verify that activation security notice is registered directly on admin_notices.
 	 *
-	 * The activation security notice uses translation functions, so it should
-	 * be registered via the init action.
+	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 * The activation security notice uses translation functions, so it should be
+	 * hooked directly to admin_notices (not via admin_init) to ensure translations
+	 * are only loaded when the notice is actually rendered.
 	 */
-	public function test_activation_security_notice_registered_on_init() {
-		// Check that the registration function is hooked to init.
+	public function test_activation_security_notice_registered_directly() {
+		// Check that the notice function is hooked directly to admin_notices.
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_activation_security_notice' ),
-			'Activation security notice should be registered via init action'
+			has_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' ),
+			'Activation security notice should be hooked directly to admin_notices'
+		);
+
+		// Check that the deferred security check runs on admin_init.
+		$this->assertTrue(
+			has_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' ),
+			'Deferred activation security check should run on admin_init'
 		);
 	}
 
@@ -101,7 +107,8 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 	 * Verify that admin notices are not registered before init.
 	 *
 	 * This test simulates the plugin loading sequence and verifies that
-	 * admin_notices hooks are not registered until after init fires.
+	 * admin_notices hooks with translation functions are registered at the
+	 * correct time to avoid early translation loading in WordPress 6.7+.
 	 */
 	public function test_admin_notices_not_registered_before_init() {
 		// Remove all existing hooks to simulate fresh load.
@@ -110,13 +117,11 @@ class WP_MCP_AI_Translation_Loading_Timing_Test extends WP_UnitTestCase {
 		// Simulate plugins_loaded (before init).
 		do_action( 'plugins_loaded' );
 
-		// At this point, admin_notices should not have translation-using handlers.
-		// We can't easily test this directly, but we can verify the registration.
-		// functions are hooked to init.
+		// Verify that the deferred security check function is hooked to admin_init.
+		// This ensures the security check runs after init completes.
 		$this->assertTrue(
-			has_action( 'init', 'wp_mcp_ai_register_plugin_action_links' ) ||
-			has_action( 'init', 'wp_mcp_ai_register_activation_security_notice' ),
-			'At least one registration function should be hooked to init'
+			has_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' ),
+			'Deferred activation security check should be hooked to admin_init'
 		);
 	}
 }

@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Lists available professions with their details.
  */
 class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -26,14 +27,14 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Professions', 'wp-mcp-ai' );
+		return __( 'List Professions', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists all available professions that can be used when creating AI assistants. Professions include advisory services, creative roles, STEM fields, healthcare, emergency management, and more.', 'wp-mcp-ai' );
+		return __( 'Lists all available professions that can be used when creating AI assistants. Professions include advisory services, creative roles, STEM fields, healthcare, emergency management, and more.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -45,12 +46,12 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'category' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional: Filter by category (advisory, creative, technical, healthcare, legal, financial, other)', 'wp-mcp-ai' ),
+					'description' => __( 'Optional: Filter by category (advisory, creative, technical, healthcare, legal, financial, other)', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'advisory', 'creative', 'technical', 'healthcare', 'legal', 'financial', 'other' ),
 				),
 				'detailed' => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, returns detailed information including expertise areas and default tools. Default: false.', 'wp-mcp-ai' ),
+					'description' => __( 'If true, returns detailed information including expertise areas and default tools. Default: false.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -73,7 +74,7 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			return array(
 				'success'     => false,
-				'message'     => __( 'Profession system not available.', 'wp-mcp-ai' ),
+				'message'     => __( 'Profession system not available.', 'mcp-ai-wpoos' ),
 				'professions' => array(),
 			);
 		}

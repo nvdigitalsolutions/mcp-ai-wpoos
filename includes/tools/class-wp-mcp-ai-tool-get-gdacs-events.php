@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Fetches tropical cyclone and flood events from GDACS.
  */
 class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * GDACS endpoint for tropical cyclone and flood events.
 	 */
@@ -34,14 +35,14 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get GDACS Events', 'wp-mcp-ai' );
+		return __( 'Get GDACS Events', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves recent tropical cyclone and flood alerts from the Global Disaster Alert and Coordination System (GDACS).', 'wp-mcp-ai' );
+		return __( 'Retrieves recent tropical cyclone and flood alerts from the Global Disaster Alert and Coordination System (GDACS).', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -53,11 +54,11 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'from_date' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional start date (YYYY-MM-DD) used to filter the GDACS events.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional start date (YYYY-MM-DD) used to filter the GDACS events.', 'mcp-ai-wpoos' ),
 				),
 				'to_date'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional end date (YYYY-MM-DD) used to filter the GDACS events.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional end date (YYYY-MM-DD) used to filter the GDACS events.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -75,11 +76,11 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_gdacs_forbidden', __( 'You do not have permission to view GDACS events.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gdacs_forbidden', __( 'You do not have permission to view GDACS events.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_gdacs_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gdacs_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$query_args = array(
@@ -90,7 +91,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 			$from_date = sanitize_text_field( $arguments['from_date'] );
 
 			if ( ! $this->is_valid_date( $from_date ) ) {
-				return new WP_Error( 'wp_mcp_ai_gdacs_invalid_from_date', __( 'The provided start date must use the YYYY-MM-DD format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_gdacs_invalid_from_date', __( 'The provided start date must use the YYYY-MM-DD format.', 'mcp-ai-wpoos' ) );
 			}
 
 			$query_args['fromdate'] = $from_date;
@@ -100,7 +101,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 			$to_date = sanitize_text_field( $arguments['to_date'] );
 
 			if ( ! $this->is_valid_date( $to_date ) ) {
-				return new WP_Error( 'wp_mcp_ai_gdacs_invalid_to_date', __( 'The provided end date must use the YYYY-MM-DD format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_gdacs_invalid_to_date', __( 'The provided end date must use the YYYY-MM-DD format.', 'mcp-ai-wpoos' ) );
 			}
 
 			$query_args['todate'] = $to_date;
@@ -125,7 +126,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_gdacs_request_failed',
-				__( 'The GDACS request failed.', 'wp-mcp-ai' ),
+				__( 'The GDACS request failed.', 'mcp-ai-wpoos' ),
 				$response->get_error_message()
 			);
 		}
@@ -137,7 +138,7 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_gdacs_http_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'GDACS returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'GDACS returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
 					$status_code
 				),
 				array( 'status' => $status_code )
@@ -148,14 +149,16 @@ class WP_MCP_AI_Tool_Get_GDACS_Events implements WP_MCP_AI_Tool_Interface, WP_MC
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded && JSON_ERROR_NONE !== json_last_error() ) {
-			return new WP_Error( 'wp_mcp_ai_gdacs_bad_json', __( 'The GDACS response could not be decoded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gdacs_bad_json', __( 'The GDACS response could not be decoded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$sanitised_events = $this->sanitize_payload( $decoded );
 		$event_count      = is_array( $sanitised_events ) ? count( $sanitised_events ) : 0;
+		$summary_text     = sprintf( __( 'Found %d GDACS events', 'mcp-ai-wpoos' ), $event_count );
 
 		return array(
-			'summary'   => sprintf( __( 'Found %d GDACS events', 'wp-mcp-ai' ), $event_count ),
+			'message'   => $summary_text,
+			'summary'   => $summary_text,
 			'model'     => self::DEFAULT_MODEL,
 			'from_date' => isset( $query_args['fromdate'] ) ? $query_args['fromdate'] : null,
 			'to_date'   => isset( $query_args['todate'] ) ? $query_args['todate'] : null,

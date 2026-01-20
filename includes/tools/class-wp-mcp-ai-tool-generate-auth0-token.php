@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Generates an Auth0 bearer token using OAuth 2.0 client credentials flow.
  */
 class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether the tool can be registered.
 	 *
@@ -42,14 +43,14 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Auth0 Token', 'wp-mcp-ai' );
+		return __( 'Generate Auth0 Token', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates an Auth0 bearer token using OAuth 2.0 client credentials flow. Requires Auth0 Management API client ID and client secret.', 'wp-mcp-ai' );
+		return __( 'Generates an Auth0 bearer token using OAuth 2.0 client credentials flow. Requires Auth0 Management API client ID and client secret.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,19 +62,19 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			'properties' => array(
 				'auth0_domain'  => array(
 					'type'        => 'string',
-					'description' => __( 'Auth0 domain (e.g., example.us.auth0.com)', 'wp-mcp-ai' ),
+					'description' => __( 'Auth0 domain (e.g., example.us.auth0.com)', 'mcp-ai-wpoos' ),
 				),
 				'client_id'     => array(
 					'type'        => 'string',
-					'description' => __( 'Auth0 Management API Client ID', 'wp-mcp-ai' ),
+					'description' => __( 'Auth0 Management API Client ID', 'mcp-ai-wpoos' ),
 				),
 				'client_secret' => array(
 					'type'        => 'string',
-					'description' => __( 'Auth0 Management API Client Secret', 'wp-mcp-ai' ),
+					'description' => __( 'Auth0 Management API Client Secret', 'mcp-ai-wpoos' ),
 				),
 				'audience'      => array(
 					'type'        => 'string',
-					'description' => __( 'Auth0 audience (optional, defaults to Management API audience)', 'wp-mcp-ai' ),
+					'description' => __( 'Auth0 audience (optional, defaults to Management API audience)', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'   => array( 'auth0_domain', 'client_id', 'client_secret' ),
@@ -94,13 +95,13 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $acting_user_id || ! user_can( $acting_user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_token_forbidden',
-				__( 'You do not have permission to generate Auth0 tokens.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to generate Auth0 tokens.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate required parameters.
@@ -111,7 +112,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $auth0_domain ) || empty( $client_id ) || empty( $client_secret ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_token_missing_params',
-				__( 'Auth0 domain, client ID, and client secret are required.', 'wp-mcp-ai' ),
+				__( 'Auth0 domain, client ID, and client secret are required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -128,7 +129,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $audience || ! wp_http_validate_url( $audience ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_invalid_audience',
-				__( 'Invalid Auth0 audience URL.', 'wp-mcp-ai' ),
+				__( 'Invalid Auth0 audience URL.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -169,7 +170,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $url || ! wp_http_validate_url( $url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_invalid_url',
-				__( 'Invalid Auth0 domain provided.', 'wp-mcp-ai' ),
+				__( 'Invalid Auth0 domain provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -200,7 +201,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_auth0_token_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to request Auth0 token: %s', 'wp-mcp-ai' ),
+					__( 'Failed to request Auth0 token: %s', 'mcp-ai-wpoos' ),
 					$response->get_error_message()
 				),
 				array( 'status' => 500 )
@@ -212,7 +213,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		$data         = json_decode( $body_content, true );
 
 		if ( 200 !== $code ) {
-			$error_message = __( 'Auth0 rejected the token request.', 'wp-mcp-ai' );
+			$error_message = __( 'Auth0 rejected the token request.', 'mcp-ai-wpoos' );
 			if ( is_array( $data ) && ! empty( $data['error_description'] ) ) {
 				$error_message = sanitize_text_field( $data['error_description'] );
 			} elseif ( is_array( $data ) && ! empty( $data['error'] ) ) {
@@ -235,7 +236,7 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		if ( ! is_array( $data ) || empty( $data['access_token'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_auth0_token_invalid_response',
-				__( 'Auth0 returned an unexpected response.', 'wp-mcp-ai' ),
+				__( 'Auth0 returned an unexpected response.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'details' => array(
@@ -255,8 +256,11 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 			$expires_at = gmdate( 'c', time() + $expires_in );
 		}
 
+		$summary_text = __( 'Auth0 token generated successfully', 'mcp-ai-wpoos' );
+
 		return array(
-			'summary'      => __( 'Auth0 token generated successfully', 'wp-mcp-ai' ),
+			'message'      => $summary_text, // Chat client display
+			'summary'      => $summary_text, // Backward compatibility
 			'access_token' => $token,
 			'token_type'   => $token_type,
 			'expires_in'   => $expires_in,

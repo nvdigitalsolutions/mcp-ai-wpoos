@@ -18,6 +18,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  * Triggers a WP All Export template to execute.
  */
 class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether WP All Export is available.
 	 *
@@ -33,7 +34,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Export tool is disabled because WP All Export plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Export tool is disabled because WP All Export plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,14 +48,14 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Trigger WP All Export', 'wp-mcp-ai' );
+		return __( 'Trigger WP All Export', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Triggers a WP All Export template to execute and generate export file. Requires WP All Export plugin.', 'wp-mcp-ai' );
+		return __( 'Triggers a WP All Export template to execute and generate export file. Requires WP All Export plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -66,7 +67,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'export_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the export template to trigger.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the export template to trigger.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 			),
@@ -84,25 +85,25 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_export_missing', __( 'WP All Export is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to trigger exports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to trigger exports.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to trigger exports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to trigger exports.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $arguments['export_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Export ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Export ID is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		$export_id = absint( $arguments['export_id'] );
@@ -110,12 +111,12 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 		// Verify export exists.
 		$export = get_post( $export_id );
 		if ( ! $export || 'pmxe_exports' !== $export->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_export', __( 'Invalid export ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_export', __( 'Invalid export ID.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if PMXE_Export_Record class exists.
 		if ( ! class_exists( 'PMXE_Export_Record' ) ) {
-			return new WP_Error( 'wp_mcp_ai_class_missing', __( 'PMXE_Export_Record class not found. WP All Export may not be properly installed.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_class_missing', __( 'PMXE_Export_Record class not found. WP All Export may not be properly installed.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Load and trigger the export using PMXE API.
@@ -124,7 +125,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 			$export_record->getById( $export_id );
 
 			if ( ! $export_record->id ) {
-				return new WP_Error( 'wp_mcp_ai_export_not_found', __( 'Export record not found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_export_not_found', __( 'Export record not found.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Trigger the export process.
@@ -141,7 +142,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 
 			return array(
 				'success'     => true,
-				'message'     => __( 'Export triggered successfully.', 'wp-mcp-ai' ),
+				'message'     => __( 'Export triggered successfully.', 'mcp-ai-wpoos' ),
 				'export_id'   => $export_id,
 				'export_name' => $export->post_title,
 				'file_path'   => $file_path,
@@ -153,7 +154,7 @@ class WP_MCP_AI_Tool_Trigger_All_Export implements WP_MCP_AI_Tool_Interface, WP_
 				'wp_mcp_ai_export_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Export failed: %s', 'wp-mcp-ai' ),
+					__( 'Export failed: %s', 'mcp-ai-wpoos' ),
 					$e->getMessage()
 				)
 			);

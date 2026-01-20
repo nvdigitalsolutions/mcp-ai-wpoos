@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 	/**
@@ -230,7 +231,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					'wp_mcp_ai_tool_not_found',
 					sprintf(
 						/* translators: %s: tool slug */
-						__( 'Tool "%s" not found.', 'wp-mcp-ai' ),
+						__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 						$slug
 					)
 				);
@@ -415,6 +416,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Data Visualization.
 				'create_chart'                       => 'wordpress-core',
 
+				// Excel and Spreadsheet Tools - Pro features.
+				'pro_excel'                          => 'external-tools',
+
 				// Assistant management.
 				'create_assistant'                   => 'wordpress-core',
 
@@ -463,6 +467,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'generate_openai_image'              => 'external-tools',
 				'generate_sora_video'                => 'external-tools',
 				'generate_gemini_image'              => 'external-tools',
+				'cloudflareai_text_to_image'         => 'external-tools',
 				'edit_gemini_image'                  => 'external-tools',
 				'generate_veo_video'                 => 'external-tools',
 				'check_video_status'                 => 'external-tools',
@@ -478,6 +483,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'get_openai_file_details'            => 'external-tools',
 				'list_available_models'              => 'external-tools',
 				'get_model_information'              => 'external-tools',
+				'research_model'                     => 'external-tools',
+				'add_model_config'                   => 'external-tools',
+				'discover_new_models'                => 'external-tools',
+				'deep_research'                      => 'external-tools',
 				'create_text_embeddings'             => 'external-tools',
 				// OpenAI API Integration - Phase 2 Tools.
 				'semantic_content_search'            => 'external-tools',
@@ -497,6 +506,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'vision_object_localization'         => 'external-tools',
 				'schedule_notify_sms'                => 'external-tools',
 				'web_search'                         => 'external-tools',
+				'search_gmail'                       => 'external-tools',
+				'search_drive'                       => 'external-tools',
 				'crawl4ai_price_lookup'              => 'external-tools',
 				'run_crawl4ai_job'                   => 'external-tools',
 				'scrape_product'                     => 'external-tools',
@@ -511,6 +522,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'geocode_address'                    => 'external-tools',
 				'search_places'                      => 'external-tools',
 				'gemini_geospatial_query'            => 'external-tools',
+				'payhere_get_payment'                => 'external-tools',
+				// Flowhub cannabis dispensary integration.
+				'flowhub_get_inventory'              => 'external-tools',
+				'flowhub_get_orders'                 => 'external-tools',
+				'flowhub_create_order'               => 'external-tools',
+				'flowhub_get_customers'              => 'external-tools',
+				'flowhub_manage_customer'            => 'external-tools',
+				'flowhub_get_products'               => 'external-tools',
+				'flowhub_manage_product'             => 'external-tools',
 				'list_github_repositories'           => 'external-tools',
 				'github_repository_operations'       => 'external-tools',
 				'manage_github_codespace'            => 'external-tools',
@@ -549,11 +569,11 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$this->init();
 
 			$default_labels = array(
-				'wordpress-core'     => __( 'WordPress Core', 'wp-mcp-ai' ),
-				'wordpress-plugins'  => __( 'WordPress Plugins', 'wp-mcp-ai' ),
-				'project-management' => __( 'Project Management', 'wp-mcp-ai' ),
-				'external-tools'     => __( 'External Tools', 'wp-mcp-ai' ),
-				'other'              => __( 'Other tools', 'wp-mcp-ai' ),
+				'wordpress-core'     => __( 'WordPress Core', 'mcp-ai-wpoos' ),
+				'wordpress-plugins'  => __( 'WordPress Plugins', 'mcp-ai-wpoos' ),
+				'project-management' => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'external-tools'     => __( 'External Tools', 'mcp-ai-wpoos' ),
+				'other'              => __( 'Other tools', 'mcp-ai-wpoos' ),
 			);
 
 			/**
@@ -822,6 +842,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_OpenAI_File_Details'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-openai-file-details.php',
 				'WP_MCP_AI_Tool_List_Available_Models'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-available-models.php',
 				'WP_MCP_AI_Tool_Get_Model_Information'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-model-information.php',
+				'WP_MCP_AI_Tool_Research_Model'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-research-model.php',
+				'WP_MCP_AI_Tool_Add_Model_Config'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-add-model-config.php',
+				'WP_MCP_AI_Tool_Discover_New_Models'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-discover-new-models.php',
 				'WP_MCP_AI_Tool_Create_Text_Embeddings'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-text-embeddings.php',
 				// OpenAI API Integration - Phase 2 Tools.
 				'WP_MCP_AI_Tool_Semantic_Content_Search'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-content-search.php',
@@ -842,6 +865,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_Auth0_Token'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-auth0-token.php',
 				'WP_MCP_AI_Tool_Get_NHC_Active_Storms'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-nhc-active-storms.php',
 				'WP_MCP_AI_Tool_Search_Attachments'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-attachments.php',
+				'WP_MCP_AI_Tool_Search_Gmail'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-gmail.php',
+				'WP_MCP_AI_Tool_Search_Drive'              => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-drive.php',
 				'WP_MCP_AI_Tool_Web_Search'                => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-web-search.php',
 				'WP_MCP_AI_Tool_Crawl4AI_Price_Lookup'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-crawl4ai-price-lookup.php',
 				'WP_MCP_AI_Tool_Get_GDACS_Events'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-gdacs-events.php',
@@ -855,6 +880,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_OpenAI_Image'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
 				'WP_MCP_AI_Tool_Generate_Sora_Video'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php',
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
+				'WP_MCP_AI_Tool_Generate_CloudflareAI_Image' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-cloudflareai-image.php',
 				'WP_MCP_AI_Tool_Generate_Veo_Video'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php',
 				'WP_MCP_AI_Tool_Check_Video_Status'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-video-status.php',
 				'WP_MCP_AI_Tool_Generate_Music'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-music.php',
@@ -892,6 +918,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Profession'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-profession.php',
 				'WP_MCP_AI_Tool_Save_Profession'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-profession.php',
 				'WP_MCP_AI_Tool_Profession_Stats'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-profession-stats.php',
+				// Agent coordination tools (DeepSeek V4 multi-agent orchestration).
+				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
+				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
+				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
@@ -919,6 +949,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-is-valid.php',
 				'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-dataset-filter.php',
 				'WP_MCP_AI_Tool_Huggingface_Recommended_Datasets' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-huggingface-recommended-datasets.php',
+				// Deep Research tool (Pro).
+				'WP_MCP_AI_Tool_Deep_Research'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-deep-research.php',
+				// Excel and Spreadsheet Tools - Pro feature for AI-powered formula generation.
+				'WP_MCP_AI_Tool_Pro_Excel'                 => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-pro-excel.php',
 			);
 
 			// Additional tools that require third-party plugins or external API credentials.
@@ -928,6 +962,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
 				'WP_MCP_AI_Tool_Get_Woo_Products'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-products.php',
 				'WP_MCP_AI_Tool_Create_Woo_Product'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-woo-product.php',
+				// PayHere payment gateway integration.
+				'WP_MCP_AI_Tool_PayHere_Get_Payment'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-payhere-get-payment.php',
+				// Flowhub cannabis dispensary integration.
+				'WP_MCP_AI_Tool_Flowhub_Get_Inventory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-get-inventory.php',
+				'WP_MCP_AI_Tool_Flowhub_Get_Orders'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-get-orders.php',
+				'WP_MCP_AI_Tool_Flowhub_Create_Order'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-create-order.php',
+				'WP_MCP_AI_Tool_Flowhub_Get_Customers'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-get-customers.php',
+				'WP_MCP_AI_Tool_Flowhub_Manage_Customer'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-manage-customer.php',
+				'WP_MCP_AI_Tool_Flowhub_Get_Products'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-get-products.php',
+				'WP_MCP_AI_Tool_Flowhub_Manage_Product'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-flowhub-manage-product.php',
 				'WP_MCP_AI_Tool_Get_JetEngine_Items'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php',

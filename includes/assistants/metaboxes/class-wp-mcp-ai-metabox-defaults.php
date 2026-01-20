@@ -53,7 +53,17 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Default Settings', 'wp-mcp-ai' );
+		return __( 'Default Settings', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @since 1.0.0
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#general-tab';
 	}
 
 	/**
@@ -76,31 +86,13 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	 */
 	public function render( $post ) {
 		if ( ! $this->can_view() ) {
-			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'wp-mcp-ai' ), '', array( 'response' => 403 ) );
+			wp_die( esc_html__( 'You do not have permission to edit this assistant.', 'mcp-ai-wpoos' ), '', array( 'response' => 403 ) );
 		}
 
 		// Enqueue model selector JavaScript.
-		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
-			wp_enqueue_script(
-				'wp-mcp-ai-model-selector',
-				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
-				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
-
-			// Localize script for AJAX (only once).
-			wp_localize_script(
-				'wp-mcp-ai-model-selector',
-				'wpMcpAiModelSelector',
-				array(
-					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
-				)
-			);
-		}
+		// Script is registered globally in WP_MCP_AI_Admin_Scripts with localization.
+		// We just need to enqueue it here for this metabox.
+		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
 
 		wp_nonce_field( 'wp_mcp_ai_defaults_meta', 'wp_mcp_ai_defaults_meta_nonce' );
 
@@ -117,9 +109,21 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 			$provider = $default_provider;
 		}
 
-		$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ) );
-		if ( ! is_array( $provider_choices ) ) {
-			$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+		// Get enabled providers from centralized function.
+		$provider_choices = WP_MCP_AI_Admin_Settings::get_available_providers();
+
+		// Apply filter for third-party extensions (maintains backward compatibility).
+		$provider_slugs = array_keys( $provider_choices );
+		$provider_slugs = apply_filters( 'wp_mcp_ai_allowed_providers', $provider_slugs );
+
+		// Filter the provider choices based on allowed slugs.
+		if ( is_array( $provider_slugs ) && ! empty( $provider_slugs ) ) {
+			$provider_choices = array_intersect_key( $provider_choices, array_flip( $provider_slugs ) );
+		}
+
+		// Fallback to all if filtering results in empty array.
+		if ( empty( $provider_choices ) ) {
+			$provider_choices = WP_MCP_AI_Admin_Settings::get_available_providers();
 		}
 
 		if ( '' === $temperature ) {
@@ -138,23 +142,14 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 
 		?>
 	<p>
-		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-provider"><strong><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></strong></label>
 		<select id="wp-mcp-ai-provider" name="wp_mcp_ai_provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-model">
 			<?php
-			foreach ( $provider_choices as $choice ) {
+			foreach ( $provider_choices as $choice => $label ) {
 				$choice = sanitize_key( $choice );
 				if ( '' === $choice ) {
 					continue;
 				}
-
-				$provider_labels = array(
-					'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-					'gemini'    => __( 'Gemini', 'wp-mcp-ai' ),
-					'ollama'    => __( 'Ollama', 'wp-mcp-ai' ),
-					'lm_studio' => __( 'LM Studio', 'wp-mcp-ai' ),
-				);
-
-				$label = isset( $provider_labels[ $choice ] ) ? $provider_labels[ $choice ] : ucfirst( str_replace( '_', ' ', $choice ) );
 				?>
 				<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $provider, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php
@@ -163,9 +158,9 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		</select>
 	</p>
 	<p>
-		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-model"><strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong></label>
 		<select id="wp-mcp-ai-model" name="wp_mcp_ai_model" class="widefat">
-			<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+			<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 			<?php if ( ! empty( $models ) ) : ?>
 				<?php foreach ( $models as $model_id => $model_name ) : ?>
 					<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $model, $model_id ); ?>>
@@ -181,13 +176,14 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 		</select>
 	</p>
 	<p>
-		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-temperature"><strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong></label>
 		<input type="number" step="0.1" min="0" max="2" id="wp-mcp-ai-temperature" name="wp_mcp_ai_temperature" value="<?php echo esc_attr( $temperature ); ?>" class="widefat" />
 	</p>
 	<p>
-		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'wp-mcp-ai' ); ?></strong></label>
+		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></strong></label>
 		<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
 	</p>
 		<?php
+		$this->render_documentation_link();
 	}
 }

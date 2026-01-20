@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Phase 2C aims to add semantic search capabilities to WP oOS using the Symfony AI component. This will enable:
+Phase 2C aims to add semantic search capabilities to NV oOS using the Symfony AI component. This will enable:
 - **Semantic Content Discovery:** Find content by meaning, not just keywords
 - **Intelligent Recommendations:** Suggest similar posts, products, or documents
 - **Knowledge Base Search:** Query documentation and knowledge bases naturally
@@ -274,7 +274,7 @@ wp mcp-ai embeddings stats
 
 #### Day 13-14: Admin UI
 **Tasks:**
-- [ ] Create admin page under Settings → WP oOS → Embeddings
+- [ ] Create admin page under Settings → NV oOS → Embeddings
 - [ ] Add provider configuration section
 - [ ] Add search testing console
 - [ ] Display embedding statistics

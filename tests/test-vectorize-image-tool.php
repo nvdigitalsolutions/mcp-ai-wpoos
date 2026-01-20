@@ -141,8 +141,8 @@ class Test_Vectorize_Image_Tool extends WP_UnitTestCase {
 		$tool     = $registry->get_tool( 'vectorize_image' );
 
 		// Use reflection to access protected method.
-		$reflection   = new ReflectionClass( $tool );
-		$method       = $reflection->getMethod( 'get_allowed_mime_types' );
+		$reflection = new ReflectionClass( $tool );
+		$method     = $reflection->getMethod( 'get_allowed_mime_types' );
 		$method->setAccessible( true );
 		$allowed_mimes = $method->invoke( $tool );
 

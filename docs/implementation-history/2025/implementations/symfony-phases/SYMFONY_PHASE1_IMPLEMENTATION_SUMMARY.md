@@ -4,7 +4,7 @@
 December 8, 2025
 
 ## Overview
-Successfully implemented Phase 1 of the Symfony enhancements plan for WP oOS, integrating three core Symfony components to improve code quality, performance, and developer experience.
+Successfully implemented Phase 1 of the Symfony enhancements plan for NV oOS, integrating three core Symfony components to improve code quality, performance, and developer experience.
 
 ## Completed Work
 

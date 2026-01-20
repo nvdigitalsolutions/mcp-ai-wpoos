@@ -207,7 +207,7 @@ The new functions integrate seamlessly with:
 
 ### For Testing
 1. Create a test WordPress installation
-2. Activate the WP oOS plugin
+2. Activate the NV oOS plugin
 3. Test save_post tool from chat interface
 4. Simulate network failures to test retry logic
 5. Test localStorage quota scenarios

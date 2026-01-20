@@ -16,6 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -33,7 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset Is Valid tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset Is Valid tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset Is Valid', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset Is Valid', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Check if a HuggingFace dataset exists and is valid', 'wp-mcp-ai' );
+			return __( 'Check if a HuggingFace dataset exists and is valid', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -139,7 +140,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -149,7 +150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 			if ( empty( $dataset ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_empty_dataset',
-					__( 'Dataset name cannot be empty.', 'wp-mcp-ai' )
+					__( 'Dataset name cannot be empty.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -168,7 +169,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Is_Valid' ) ) {
 				'valid'   => true,
 				'message' => sprintf(
 					/* translators: %s: dataset name */
-					__( 'Dataset "%s" is valid and accessible.', 'wp-mcp-ai' ),
+					__( 'Dataset "%s" is valid and accessible.', 'mcp-ai-wpoos' ),
 					$dataset
 				),
 			);

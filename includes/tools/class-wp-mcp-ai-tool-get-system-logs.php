@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns recent log entries from WordPress and NV oOS.
  */
 class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get System Logs', 'wp-mcp-ai' );
+		return __( 'Get System Logs', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns recent log entries from WordPress, NV oOS, and plugin log files for diagnostics.', 'wp-mcp-ai' );
+		return __( 'Returns recent log entries from WordPress, NV oOS, and plugin log files for diagnostics.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,14 +44,14 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties'           => array(
 				'activity_limit'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of NV oOS activity entries to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of NV oOS activity entries to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 10,
 				),
 				'activity_types'         => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of NV oOS activity types to include (tool_execution, openai_request, etc.).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of NV oOS activity types to include (tool_execution, openai_request, etc.).', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -58,59 +59,59 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'error_limit'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of NV oOS error entries to return.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of NV oOS error entries to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 20,
 				),
 				'include_debug_log'      => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to include the WordPress debug log if available.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to include the WordPress debug log if available.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'debug_log_limit'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of lines to return from the WordPress debug log.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of lines to return from the WordPress debug log.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 200,
 					'default'     => 50,
 				),
 				'debug_log_bytes'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of bytes to inspect when tailing the WordPress debug log.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of bytes to inspect when tailing the WordPress debug log.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1024,
 					'maximum'     => 200000,
 					'default'     => 50000,
 				),
 				'include_plugin_logs'    => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to scan plugin directories for additional .log files.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to scan plugin directories for additional .log files.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'plugin_log_limit'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of plugin log files to inspect.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of plugin log files to inspect.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 5,
 				),
 				'plugin_log_line_limit'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of lines to return from each plugin log.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of lines to return from each plugin log.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 200,
 					'default'     => 50,
 				),
 				'plugin_log_bytes'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of bytes to inspect when tailing plugin logs.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of bytes to inspect when tailing plugin logs.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1024,
 					'maximum'     => 200000,
 					'default'     => 50000,
 				),
 				'plugin_log_directories' => array(
 					'type'        => 'array',
-					'description' => __( 'Optional list of directories to scan for plugin log files. Defaults to wp-content and the plugins directory.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of directories to scan for plugin log files. Defaults to wp-content and the plugins directory.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
@@ -118,7 +119,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 				),
 				'plugin_log_depth'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum recursion depth when scanning plugin log directories.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum recursion depth when scanning plugin log directories.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 5,
 					'default'     => 2,
@@ -139,21 +140,21 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect system logs.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$args = $this->prepare_arguments( $arguments );
 
 		$result = array(
-			'summary'     => __( 'System logs retrieved successfully', 'wp-mcp-ai' ),
+			'summary'     => __( 'System logs retrieved successfully', 'mcp-ai-wpoos' ),
 			'wp_mcp_ai'   => $this->get_mcp_ai_logs( $args ),
 			'wordpress'   => $this->get_wordpress_logs( $args ),
 			'plugin_logs' => $args['include_plugin_logs'] ? $this->get_plugin_logs( $args ) : array(
-				'message' => __( 'Plugin log scanning disabled in request parameters.', 'wp-mcp-ai' ),
+				'message' => __( 'Plugin log scanning disabled in request parameters.', 'mcp-ai-wpoos' ),
 			),
 		);
 
@@ -240,7 +241,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$logs['recent_errors']   = WP_MCP_AI_Logger::get_recent_error_messages( $args['error_limit'] );
 			$logs['recent_activity'] = WP_MCP_AI_Logger::get_recent_activity_entries( $args['activity_limit'], $args['activity_types'] );
 		} else {
-			$logs['message'] = __( 'NV oOS logging is disabled. Enable logging in the NV oOS settings to capture entries.', 'wp-mcp-ai' );
+			$logs['message'] = __( 'NV oOS logging is disabled. Enable logging in the NV oOS settings to capture entries.', 'mcp-ai-wpoos' );
 		}
 
 		return $logs;
@@ -263,7 +264,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			} else {
 				$wordpress_logs['debug_log'] = array(
 					'available' => false,
-					'message'   => __( 'No readable WordPress debug.log file was found. Enable WP_DEBUG_LOG to capture entries.', 'wp-mcp-ai' ),
+					'message'   => __( 'No readable WordPress debug.log file was found. Enable WP_DEBUG_LOG to capture entries.', 'mcp-ai-wpoos' ),
 				);
 			}
 		}
@@ -283,14 +284,14 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 			} else {
 				$wordpress_logs['php_error_log'] = array(
 					'available' => false,
-					'message'   => __( 'PHP error_log path is not readable by WordPress.', 'wp-mcp-ai' ),
+					'message'   => __( 'PHP error_log path is not readable by WordPress.', 'mcp-ai-wpoos' ),
 					'path'      => $this->make_relative_path( $error_log_path ),
 				);
 			}
 		}
 
 		if ( empty( $wordpress_logs ) ) {
-			$wordpress_logs['message'] = __( 'No WordPress level log files were located.', 'wp-mcp-ai' );
+			$wordpress_logs['message'] = __( 'No WordPress level log files were located.', 'mcp-ai-wpoos' );
 		}
 
 		return $wordpress_logs;
@@ -330,7 +331,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'path'    => $this->make_relative_path( $directory ),
 					'message' => sprintf(
 						/* translators: %s: Directory path that could not be scanned. */
-						__( 'Unable to scan directory for logs: %s', 'wp-mcp-ai' ),
+						__( 'Unable to scan directory for logs: %s', 'mcp-ai-wpoos' ),
 						$this->make_relative_path( $directory )
 					),
 				);
@@ -370,7 +371,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		if ( empty( $found ) ) {
 			return array(
-				'message' => __( 'No plugin log files were found in the configured directories.', 'wp-mcp-ai' ),
+				'message' => __( 'No plugin log files were found in the configured directories.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -448,7 +449,7 @@ class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( is_readable( $path ) && $payload['size'] > 0 ) {
 			$payload['entries'] = $this->tail_file( $path, $line_limit, $byte_limit );
 		} else {
-			$payload['message'] = __( 'Log file is empty or not readable.', 'wp-mcp-ai' );
+			$payload['message'] = __( 'Log file is empty or not readable.', 'mcp-ai-wpoos' );
 		}
 
 		return $payload;

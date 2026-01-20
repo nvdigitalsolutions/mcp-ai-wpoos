@@ -1671,41 +1671,57 @@ class WP_MCP_AI_Model_Config {
 				'status'         => 'active',
 			),
 			// Qwen family - Alibaba's multilingual models.
+			'Qwen/Qwen3-Coder-30B-A3B-Instruct'            => array(
+				'name'                   => 'Qwen 3 Coder 30B A3B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 50000,
+				'rpm'                    => 100,
+				'tpd'                    => 1000000,
+				'rpd'                    => 5000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'            => 0.001,
+				'status'                 => 'active',
+			),
 			'Qwen/Qwen2.5-72B-Instruct'                    => array(
-				'name'           => 'Qwen 2.5 72B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 50000,
-				'rpm'            => 100,
-				'tpd'            => 1000000,
-				'rpd'            => 5000,
-				'context_window' => 32768,
-				'fallback_model' => 'Qwen/Qwen2.5-32B-Instruct',
-				'cost_per_1k'    => 0.001,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 72B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 50000,
+				'rpm'                    => 100,
+				'tpd'                    => 1000000,
+				'rpd'                    => 5000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'            => 0.001,
+				'status'                 => 'active',
 			),
 			'Qwen/Qwen2.5-32B-Instruct'                    => array(
-				'name'           => 'Qwen 2.5 32B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 70000,
-				'rpm'            => 140,
-				'tpd'            => 1400000,
-				'rpd'            => 7000,
-				'context_window' => 32768,
-				'fallback_model' => 'Qwen/Qwen2.5-7B-Instruct',
-				'cost_per_1k'    => 0.0005,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 32B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 70000,
+				'rpm'                    => 140,
+				'tpd'                    => 1400000,
+				'rpd'                    => 7000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'Qwen/Qwen2.5-7B-Instruct',
+				'cost_per_1k'            => 0.0005,
+				'status'                 => 'active',
 			),
 			'Qwen/Qwen2.5-7B-Instruct'                     => array(
-				'name'           => 'Qwen 2.5 7B Instruct',
-				'provider'       => 'huggingface',
-				'tpm'            => 120000,
-				'rpm'            => 240,
-				'tpd'            => 2400000,
-				'rpd'            => 12000,
-				'context_window' => 32768,
-				'fallback_model' => 'microsoft/Phi-3-mini-4k-instruct',
-				'cost_per_1k'    => 0.0002,
-				'status'         => 'active',
+				'name'                   => 'Qwen 2.5 7B Instruct',
+				'provider'               => 'huggingface',
+				'tpm'                    => 120000,
+				'rpm'                    => 240,
+				'tpd'                    => 2400000,
+				'rpd'                    => 12000,
+				'context_window'         => 32768,
+				'max_completion_tokens'  => 8192,
+				'fallback_model'         => 'microsoft/Phi-3-mini-4k-instruct',
+				'cost_per_1k'            => 0.0002,
+				'status'                 => 'active',
 			),
 			// Specialized Hugging Face models.
 			'google/gemma-2-9b-it-hf'                      => array(
@@ -1742,6 +1758,299 @@ class WP_MCP_AI_Model_Config {
 				'context_window' => 2048,
 				'fallback_model' => 'meta-llama/Llama-3.1-70B-Instruct',
 				'cost_per_1k'    => 0.002,
+				'status'         => 'active',
+			),
+			// Ollama Models (local deployment, no API rate limits).
+			'llama3'                                       => array(
+				'name'           => 'Llama 3',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 8192,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'llama3:70b'                                   => array(
+				'name'           => 'Llama 3 70B',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 8192,
+				'fallback_model' => 'llama3',
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'mistral'                                      => array(
+				'name'           => 'Mistral',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 8192,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'codellama'                                    => array(
+				'name'           => 'CodeLlama',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 16384,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'phi3'                                         => array(
+				'name'           => 'Phi-3 Mini',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 4096,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'deepseek-coder'                               => array(
+				'name'           => 'DeepSeek Coder',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 16384,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'deepseek-r1-0528-qwen3-8b'                    => array(
+				'name'           => 'DeepSeek R1 Qwen3 8B',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 32768,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.00002,
+				'status'         => 'active',
+			),
+			'qwen2'                                        => array(
+				'name'           => 'Qwen2',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 32768,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+			'gemma2'                                       => array(
+				'name'           => 'Gemma 2',
+				'provider'       => 'ollama',
+				'tpm'            => 1000000,
+				'rpm'            => 10000,
+				'tpd'            => 100000000,
+				'rpd'            => 100000,
+				'context_window' => 8192,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0,
+				'status'         => 'active',
+			),
+
+			// Cloudflare Workers AI Models (updated January 2025).
+			// Function Calling Models.
+			'@cf/meta/llama-3.3-70b-instruct-fp8-fast'     => array(
+				'name'           => 'Llama 3.3 70B Instruct FP8 Fast',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 5000,
+				'context_window' => 128000,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.001,
+				'status'         => 'active',
+			),
+			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
+				'name'           => 'Llama 4 Scout 17B 16E Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 5000,
+				'context_window' => 131000,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.00027,
+				'status'         => 'active',
+			),
+			'@cf/ibm-granite/granite-4.0-h-micro'          => array(
+				'name'           => 'IBM Granite 4.0 H Micro',
+				'provider'       => 'cloudflare',
+				'tpm'            => 100000,
+				'rpm'            => 500,
+				'tpd'            => 5000000,
+				'rpd'            => 10000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/meta/llama-3.2-1b-instruct',
+				'cost_per_1k'    => 0.0002,
+				'status'         => 'active',
+			),
+			'@cf/qwen/qwen3-30b-a3b-fp8'                   => array(
+				'name'           => 'Qwen 3 30B A3B FP8',
+				'provider'       => 'cloudflare',
+				'tpm'            => 40000,
+				'rpm'            => 200,
+				'tpd'            => 2000000,
+				'rpd'            => 4000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/qwen/qwen2.5-coder-32b-instruct',
+				'cost_per_1k'    => 0.0006,
+				'status'         => 'active',
+			),
+			'@cf/mistralai/mistral-small-3.1-24b-instruct' => array(
+				'name'           => 'Mistral Small 3.1 24B Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 60000,
+				'rpm'            => 300,
+				'tpd'            => 3000000,
+				'rpd'            => 6000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.0004,
+				'status'         => 'active',
+			),
+			'@hf/nousresearch/hermes-2-pro-mistral-7b'     => array(
+				'name'           => 'Hermes 2 Pro Mistral 7B',
+				'provider'       => 'cloudflare',
+				'tpm'            => 100000,
+				'rpm'            => 500,
+				'tpd'            => 5000000,
+				'rpd'            => 10000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.0003,
+				'status'         => 'active',
+			),
+			// Text Generation Models.
+			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
+				'name'           => 'Gemma SEA Lion V4 27B IT',
+				'provider'       => 'cloudflare',
+				'tpm'            => 60000,
+				'rpm'            => 300,
+				'tpd'            => 3000000,
+				'rpd'            => 6000,
+				'context_window' => 8192,
+				'fallback_model' => '@cf/google/gemma-3-12b-it',
+				'cost_per_1k'    => 0.0004,
+				'status'         => 'active',
+			),
+			'@cf/openai/gpt-oss-20b'                       => array(
+				'name'           => 'GPT OSS 20B',
+				'provider'       => 'cloudflare',
+				'tpm'            => 80000,
+				'rpm'            => 400,
+				'tpd'            => 4000000,
+				'rpd'            => 8000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.0003,
+				'status'         => 'active',
+			),
+			'@cf/openai/gpt-oss-120b'                      => array(
+				'name'           => 'GPT OSS 120B',
+				'provider'       => 'cloudflare',
+				'tpm'            => 40000,
+				'rpm'            => 150,
+				'tpd'            => 2000000,
+				'rpd'            => 4000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/openai/gpt-oss-20b',
+				'cost_per_1k'    => 0.0008,
+				'status'         => 'active',
+			),
+			'@cf/google/gemma-3-12b-it'                    => array(
+				'name'           => 'Gemma 3 12B IT',
+				'provider'       => 'cloudflare',
+				'tpm'            => 100000,
+				'rpm'            => 500,
+				'tpd'            => 5000000,
+				'rpd'            => 10000,
+				'context_window' => 8192,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.0002,
+				'status'         => 'active',
+			),
+			'@cf/qwen/qwq-32b'                             => array(
+				'name'           => 'Qwen QwQ 32B',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 250,
+				'tpd'            => 2500000,
+				'rpd'            => 5000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/qwen/qwen2.5-coder-32b-instruct',
+				'cost_per_1k'    => 0.0005,
+				'status'         => 'active',
+			),
+			'@cf/qwen/qwen2.5-coder-32b-instruct'          => array(
+				'name'           => 'Qwen 2.5 Coder 32B Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 250,
+				'tpd'            => 2500000,
+				'rpd'            => 5000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/meta/llama-3.2-3b-instruct',
+				'cost_per_1k'    => 0.0005,
+				'status'         => 'active',
+			),
+			'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => array(
+				'name'           => 'DeepSeek R1 Distill Qwen 32B',
+				'provider'       => 'cloudflare',
+				'tpm'            => 50000,
+				'rpm'            => 250,
+				'tpd'            => 2500000,
+				'rpd'            => 5000,
+				'context_window' => 32768,
+				'fallback_model' => '@cf/qwen/qwen2.5-coder-32b-instruct',
+				'cost_per_1k'    => 0.0005,
+				'status'         => 'active',
+			),
+			'@cf/meta/llama-3.2-1b-instruct'               => array(
+				'name'           => 'Llama 3.2 1B Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 200000,
+				'rpm'            => 1000,
+				'tpd'            => 10000000,
+				'rpd'            => 20000,
+				'context_window' => 128000,
+				'fallback_model' => null,
+				'cost_per_1k'    => 0.0001,
+				'status'         => 'active',
+			),
+			'@cf/meta/llama-3.2-3b-instruct'               => array(
+				'name'           => 'Llama 3.2 3B Instruct',
+				'provider'       => 'cloudflare',
+				'tpm'            => 150000,
+				'rpm'            => 750,
+				'tpd'            => 7500000,
+				'rpd'            => 15000,
+				'context_window' => 128000,
+				'fallback_model' => '@cf/meta/llama-3.2-1b-instruct',
+				'cost_per_1k'    => 0.00015,
 				'status'         => 'active',
 			),
 		);
@@ -1787,7 +2096,7 @@ class WP_MCP_AI_Model_Config {
 		}
 
 		// Integer fields.
-		$int_fields = array( 'tpm', 'rpm', 'tpd', 'rpd', 'context_window' );
+		$int_fields = array( 'tpm', 'rpm', 'tpd', 'rpd', 'context_window', 'max_completion_tokens' );
 		foreach ( $int_fields as $field ) {
 			if ( isset( $config[ $field ] ) ) {
 				$sanitized[ $field ] = absint( $config[ $field ] );
@@ -1826,32 +2135,102 @@ class WP_MCP_AI_Model_Config {
 	/**
 	 * Get available providers from settings.
 	 *
+	 * Returns only providers that are both enabled (via enable_* checkbox)
+	 * and properly configured (have required API keys/endpoints).
+	 *
 	 * @return array Array of available providers.
 	 */
 	public static function get_available_providers() {
 		$settings  = get_option( 'wp_mcp_ai_settings', array() );
 		$providers = array();
 
-		if ( ! empty( $settings['openai_api_key'] ) ) {
-			$providers['openai'] = __( 'OpenAI', 'wp-mcp-ai' );
+		// Check enable_openai setting (defaults to false if not set).
+		$enable_openai = isset( $settings['enable_openai'] ) ? $settings['enable_openai'] : false;
+		if ( $enable_openai && ! empty( $settings['openai_api_key'] ) ) {
+			$providers['openai'] = __( 'OpenAI', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['anthropic_api_key'] ) ) {
-			$providers['anthropic'] = __( 'Anthropic (Claude)', 'wp-mcp-ai' );
+		// Check enable_anthropic setting (defaults to false if not set).
+		$enable_anthropic = isset( $settings['enable_anthropic'] ) ? $settings['enable_anthropic'] : false;
+		if ( $enable_anthropic && ! empty( $settings['anthropic_api_key'] ) ) {
+			$providers['anthropic'] = __( 'Anthropic (Claude)', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['gemini_api_key'] ) ) {
-			$providers['gemini'] = __( 'Google Gemini', 'wp-mcp-ai' );
+		// Check enable_gemini setting (defaults to false if not set).
+		$enable_gemini = isset( $settings['enable_gemini'] ) ? $settings['enable_gemini'] : false;
+		if ( $enable_gemini && ! empty( $settings['gemini_api_key'] ) ) {
+			$providers['gemini'] = __( 'Google Gemini', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['ollama_endpoint_url'] ) ) {
-			$providers['ollama'] = __( 'Ollama (Local)', 'wp-mcp-ai' );
+		// Check enable_ollama setting (defaults to false if not set).
+		$enable_ollama = isset( $settings['enable_ollama'] ) ? $settings['enable_ollama'] : false;
+		if ( $enable_ollama && ! empty( $settings['ollama_endpoint_url'] ) ) {
+			$providers['ollama'] = __( 'Ollama (Local)', 'mcp-ai-wpoos' );
 		}
 
-		if ( ! empty( $settings['lm_studio_endpoint_url'] ) ) {
-			$providers['lm_studio'] = __( 'LM Studio (Local)', 'wp-mcp-ai' );
+		// Check enable_lm_studio setting (defaults to false if not set).
+		$enable_lm_studio = isset( $settings['enable_lm_studio'] ) ? $settings['enable_lm_studio'] : false;
+		if ( $enable_lm_studio && ! empty( $settings['lm_studio_endpoint_url'] ) ) {
+			$providers['lm_studio'] = __( 'LM Studio (Local)', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_cloudflare setting (defaults to false if not set).
+		$enable_cloudflare = isset( $settings['enable_cloudflare'] ) ? $settings['enable_cloudflare'] : false;
+		if ( $enable_cloudflare && ! empty( $settings['cloudflare_api_token'] ) && ! empty( $settings['cloudflare_account_id'] ) ) {
+			$providers['cloudflare'] = __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_huggingface setting (defaults to false if not set).
+		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
+		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
+			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
 		}
 
 		return $providers;
+	}
+
+	/**
+	 * Get all provider slugs from Model Config.
+	 *
+	 * Returns a unique list of all provider slugs that have models configured,
+	 * regardless of whether API keys are set up.
+	 *
+	 * @since 1.0.0
+	 * @return array Array of provider slugs (e.g., ['openai', 'anthropic', 'gemini']).
+	 */
+	public static function get_all_provider_slugs() {
+		$all_configs = self::get_all_configs();
+		$providers   = array();
+
+		foreach ( $all_configs as $config ) {
+			if ( isset( $config['provider'] ) && ! in_array( $config['provider'], $providers, true ) ) {
+				$providers[] = $config['provider'];
+			}
+		}
+
+		// Sort providers alphabetically for consistency.
+		sort( $providers );
+
+		return $providers;
+	}
+
+	/**
+	 * Get models for a specific provider from Model Config.
+	 *
+	 * @since 1.0.0
+	 * @param string $provider Provider slug (e.g., 'openai', 'anthropic').
+	 * @return array Associative array of model_id => model_name.
+	 */
+	public static function get_models_by_provider( $provider ) {
+		$all_configs = self::get_all_configs();
+		$models      = array();
+
+		foreach ( $all_configs as $model_id => $config ) {
+			if ( isset( $config['provider'] ) && $config['provider'] === $provider ) {
+				$models[ $model_id ] = isset( $config['name'] ) ? $config['name'] : $model_id;
+			}
+		}
+
+		return $models;
 	}
 }

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Successfully integrated Hugging Face Inference API as a new AI provider for WP oOS, following the established LM Studio pattern for OpenAI-compatible APIs.
+Successfully integrated Hugging Face Inference API as a new AI provider for NV oOS, following the established LM Studio pattern for OpenAI-compatible APIs.
 
 ## What Was Implemented
 
@@ -313,7 +313,7 @@ $this->singleton(
 ### Rate Limiting
 Handled by:
 1. Hugging Face API (free tier: limited)
-2. WP oOS rate limit manager (optional)
+2. NV oOS rate limit manager (optional)
 3. Provider fallback on rate limit errors
 
 ## Cost Analysis
@@ -352,7 +352,7 @@ Handled by:
 
 ## Conclusion
 
-Successfully implemented Hugging Face as a fully-featured AI provider following established patterns in the WP oOS codebase. The implementation:
+Successfully implemented Hugging Face as a fully-featured AI provider following established patterns in the NV oOS codebase. The implementation:
 
 - ✅ **Complete**: All core functionality implemented
 - ✅ **Tested**: Comprehensive test suite

@@ -25,7 +25,7 @@
 	 * Initialize assistant selector blocks.
 	 */
 	function initAssistantSelectors() {
-		$( '.wp-block-wp-mcp-ai-assistant-selector' ).each( function () {
+		$( '.wp-block-mcp-ai-wpoos-assistant-selector' ).each( function () {
 			const $block = $( this );
 			const $select = $block.find( '.wp-mcp-ai-assistant-selector__select' );
 			const $startBtn = $block.find( '.wp-mcp-ai-assistant-selector__start' );
@@ -56,12 +56,84 @@
 	 * Initialize tools grid blocks.
 	 */
 	function initToolsGrids() {
-		$( '.wp-block-wp-mcp-ai-tools-grid' ).each( function () {
+		$( '.wp-block-mcp-ai-wpoos-tools-grid' ).each( function () {
 			const $block = $( this );
 			const $selectAll = $block.find( '.wp-mcp-ai-tools-grid__select-all' );
 			const $deselectAll = $block.find( '.wp-mcp-ai-tools-grid__deselect-all' );
 			const $selectedCount = $block.find( '.wp-mcp-ai-tools-grid__selected-count' );
 			const $checkboxes = $block.find( '.wp-mcp-ai-tools-grid__checkbox' );
+			const $searchInput = $block.find( '.wp-mcp-ai-tools-grid__search-input' );
+			const $groupSelect = $block.find( '.wp-mcp-ai-tools-grid__group-select' );
+			const $clearFilters = $block.find( '.wp-mcp-ai-tools-grid__clear-filters' );
+			const $visibleCount = $block.find( '.wp-mcp-ai-tools-grid__visible-count' );
+			const $visibleCountText = $block.find( '.wp-mcp-ai-tools-grid__visible-count-text' );
+
+			let searchTerm = '';
+			let selectedGroup = '';
+
+			/**
+			 * Apply filters to show/hide tools and groups.
+			 */
+			function applyFilters() {
+				let visibleToolsCount = 0;
+				const hasActiveFilters = searchTerm !== '' || selectedGroup !== '';
+
+				// Show/hide clear filters button.
+				$clearFilters.toggle( hasActiveFilters );
+
+				// Filter each group and its tools.
+				$block.find( '.wp-block-mcp-ai-wpoos-tools-grid__group' ).each( function () {
+					const $group = $( this );
+					const groupId = $group.find( 'summary' ).data( 'group-id' ) || '';
+					let visibleInGroup = 0;
+
+					// If a specific group is selected, hide all other groups.
+					if ( selectedGroup && groupId !== selectedGroup ) {
+						$group.addClass( 'wp-block-mcp-ai-wpoos-tools-grid__group--hidden' );
+						return;
+					}
+
+					// Filter tools within the group.
+					$group.find( '.wp-block-mcp-ai-wpoos-tools-grid__item' ).each( function () {
+						const $item = $( this );
+						const toolName = $item.find( '.wp-block-mcp-ai-wpoos-tools-grid__item-name' ).text().toLowerCase();
+						const toolDesc = $item.find( '.wp-block-mcp-ai-wpoos-tools-grid__item-description' ).text().toLowerCase();
+						const searchLower = searchTerm.toLowerCase();
+
+						// Check if tool matches search term.
+						const matchesSearch = ! searchTerm ||
+							toolName.indexOf( searchLower ) !== -1 ||
+							toolDesc.indexOf( searchLower ) !== -1;
+
+						if ( matchesSearch ) {
+							$item.removeClass( 'wp-block-mcp-ai-wpoos-tools-grid__item--hidden' );
+							visibleInGroup++;
+							visibleToolsCount++;
+						} else {
+							$item.addClass( 'wp-block-mcp-ai-wpoos-tools-grid__item--hidden' );
+						}
+					} );
+
+					// Hide group if no visible tools.
+					if ( visibleInGroup === 0 ) {
+						$group.addClass( 'wp-block-mcp-ai-wpoos-tools-grid__group--hidden' );
+					} else {
+						$group.removeClass( 'wp-block-mcp-ai-wpoos-tools-grid__group--hidden' );
+					}
+				} );
+
+				// Update visible count indicator.
+				if ( hasActiveFilters ) {
+					const totalTools = $block.find( '.wp-block-mcp-ai-wpoos-tools-grid__item' ).length;
+					$visibleCountText.text( visibleToolsCount + ' of ' + totalTools + ' tools shown' );
+					$visibleCount.show();
+				} else {
+					$visibleCount.hide();
+				}
+
+				// Update counts after filtering.
+				updateCounts();
+			}
 
 			/**
 			 * Update counts and selected state.
@@ -71,7 +143,7 @@
 				$selectedCount.text( totalSelected );
 
 				// Update group counts.
-				$block.find( '.wp-block-wp-mcp-ai-tools-grid__group' ).each( function () {
+				$block.find( '.wp-block-mcp-ai-wpoos-tools-grid__group' ).each( function () {
 					const $group = $( this );
 					const $groupCheckboxes = $group.find( '.wp-mcp-ai-tools-grid__checkbox' );
 					const groupSelected = $groupCheckboxes.filter( ':checked' ).length;
@@ -81,8 +153,8 @@
 				// Update item classes.
 				$checkboxes.each( function () {
 					const $checkbox = $( this );
-					$checkbox.closest( '.wp-block-wp-mcp-ai-tools-grid__item' )
-						.toggleClass( 'wp-block-wp-mcp-ai-tools-grid__item--selected', $checkbox.is( ':checked' ) );
+					$checkbox.closest( '.wp-block-mcp-ai-wpoos-tools-grid__item' )
+						.toggleClass( 'wp-block-mcp-ai-wpoos-tools-grid__item--selected', $checkbox.is( ':checked' ) );
 				} );
 
 				// Trigger custom event.
@@ -92,18 +164,57 @@
 				$block.trigger( 'toolsChanged', { tools: selectedTools } );
 			}
 
+			/**
+			 * Clear all filters.
+			 */
+			function clearFilters() {
+				searchTerm = '';
+				selectedGroup = '';
+				$searchInput.val( '' );
+				$groupSelect.val( '' );
+				applyFilters();
+			}
+
+			// Store group IDs in summary elements for filtering.
+			$block.find( '.wp-block-mcp-ai-wpoos-tools-grid__group' ).each( function () {
+				const $group = $( this );
+				const $select = $groupSelect.find( 'option' ).filter( function () {
+					return $( this ).text() === $group.find( '.wp-block-mcp-ai-wpoos-tools-grid__group-title' ).text();
+				} );
+				if ( $select.length ) {
+					$group.find( 'summary' ).attr( 'data-group-id', $select.val() );
+				}
+			} );
+
+			// Handle search input.
+			$searchInput.on( 'input', function () {
+				searchTerm = $( this ).val();
+				applyFilters();
+			} );
+
+			// Handle group filter.
+			$groupSelect.on( 'change', function () {
+				selectedGroup = $( this ).val();
+				applyFilters();
+			} );
+
+			// Handle clear filters button.
+			$clearFilters.on( 'click', clearFilters );
+
 			// Handle checkbox changes.
 			$checkboxes.on( 'change', updateCounts );
 
-			// Handle select all.
+			// Handle select all (only visible checkboxes).
 			$selectAll.on( 'click', function () {
-				$checkboxes.prop( 'checked', true );
+				$checkboxes.not( '.wp-block-mcp-ai-wpoos-tools-grid__item--hidden .wp-mcp-ai-tools-grid__checkbox' )
+					.prop( 'checked', true );
 				updateCounts();
 			} );
 
-			// Handle deselect all.
+			// Handle deselect all (only visible checkboxes).
 			$deselectAll.on( 'click', function () {
-				$checkboxes.prop( 'checked', false );
+				$checkboxes.not( '.wp-block-mcp-ai-wpoos-tools-grid__item--hidden .wp-mcp-ai-tools-grid__checkbox' )
+					.prop( 'checked', false );
 				updateCounts();
 			} );
 
@@ -116,17 +227,17 @@
 	 * Initialize knowledge base blocks.
 	 */
 	function initKnowledgeBases() {
-		$( '.wp-block-wp-mcp-ai-knowledge-base' ).each( function () {
+		$( '.wp-block-mcp-ai-wpoos-knowledge-base' ).each( function () {
 			const $block = $( this );
-			const $dropzone = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__dropzone' );
-			const $fileInput = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-input' );
-			const $fileList = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-list' );
-			const $fileIds = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__file-ids' );
+			const $dropzone = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__dropzone' );
+			const $fileInput = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__file-input' );
+			const $fileList = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__file-list' );
+			const $fileIds = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__file-ids' );
 			const $count = $block.find( '.wp-mcp-ai-knowledge-base__count' );
-			const $clearAll = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__clear-all' );
-			const $progress = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress' );
-			const $progressFill = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-fill' );
-			const $progressText = $block.find( '.wp-block-wp-mcp-ai-knowledge-base__progress-text' );
+			const $clearAll = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__clear-all' );
+			const $progress = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__progress' );
+			const $progressFill = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__progress-fill' );
+			const $progressText = $block.find( '.wp-block-mcp-ai-wpoos-knowledge-base__progress-text' );
 
 			const allowedTypes = ( $block.data( 'allowed-types' ) || '' ).split( ',' );
 			const maxFiles = $block.data( 'max-files' ) || 10;
@@ -215,29 +326,29 @@
 
 				files.push( fileData );
 
-				let itemClass = 'wp-block-wp-mcp-ai-knowledge-base__file-item';
+				let itemClass = 'wp-block-mcp-ai-wpoos-knowledge-base__file-item';
 				if ( error ) {
-					itemClass += ' wp-block-wp-mcp-ai-knowledge-base__file-item--error';
+					itemClass += ' wp-block-mcp-ai-wpoos-knowledge-base__file-item--error';
 				}
 
 				const $item = $( '<li>', { class: itemClass, 'data-index': files.length - 1 } );
 
 				const ext = getExtension( file.name ).replace( '.', '' ).toUpperCase();
-				$item.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-icon', text: ext } ) );
+				$item.append( $( '<span>', { class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-icon', text: ext } ) );
 
-				const $info = $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-info' } );
-				$info.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-name', text: file.name } ) );
+				const $info = $( '<span>', { class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-info' } );
+				$info.append( $( '<span>', { class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-name', text: file.name } ) );
 
 				if ( error ) {
-					$info.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-error', text: error } ) );
+					$info.append( $( '<span>', { class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-error', text: error } ) );
 				} else {
-					$info.append( $( '<span>', { class: 'wp-block-wp-mcp-ai-knowledge-base__file-meta', text: formatSize( file.size ) } ) );
+					$info.append( $( '<span>', { class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-meta', text: formatSize( file.size ) } ) );
 				}
 
 				$item.append( $info );
 				$item.append( $( '<button>', {
 					type: 'button',
-					class: 'wp-block-wp-mcp-ai-knowledge-base__file-remove',
+					class: 'wp-block-mcp-ai-wpoos-knowledge-base__file-remove',
 					text: 'Remove'
 				} ) );
 
@@ -277,7 +388,7 @@
 
 					const fileData = pendingFiles[ completed ];
 					const $item = $fileList.find( '[data-index="' + files.indexOf( fileData ) + '"]' );
-					$item.addClass( 'wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' );
+					$item.addClass( 'wp-block-mcp-ai-wpoos-knowledge-base__file-item--uploading' );
 
 					const formData = new FormData();
 					formData.append( 'file', fileData.file );
@@ -292,7 +403,7 @@
 						success: function ( response ) {
 							fileData.id = response.id;
 							fileData.status = 'uploaded';
-							$item.removeClass( 'wp-block-wp-mcp-ai-knowledge-base__file-item--uploading' );
+							$item.removeClass( 'wp-block-mcp-ai-wpoos-knowledge-base__file-item--uploading' );
 						},
 						error: function ( xhr ) {
 							let errorMsg = 'Upload failed';
@@ -306,10 +417,10 @@
 							}
 							fileData.error = errorMsg;
 							fileData.status = 'error';
-							$item.addClass( 'wp-block-wp-mcp-ai-knowledge-base__file-item--error' );
-							$item.find( '.wp-block-wp-mcp-ai-knowledge-base__file-meta' )
-								.removeClass( 'wp-block-wp-mcp-ai-knowledge-base__file-meta' )
-								.addClass( 'wp-block-wp-mcp-ai-knowledge-base__file-error' )
+							$item.addClass( 'wp-block-mcp-ai-wpoos-knowledge-base__file-item--error' );
+							$item.find( '.wp-block-mcp-ai-wpoos-knowledge-base__file-meta' )
+								.removeClass( 'wp-block-mcp-ai-wpoos-knowledge-base__file-meta' )
+								.addClass( 'wp-block-mcp-ai-wpoos-knowledge-base__file-error' )
 								.text( errorMsg );
 						},
 						complete: function () {
@@ -354,13 +465,13 @@
 			$dropzone.on( 'dragover dragenter', function ( e ) {
 				e.preventDefault();
 				e.stopPropagation();
-				$dropzone.addClass( 'wp-block-wp-mcp-ai-knowledge-base__dropzone--dragover' );
+				$dropzone.addClass( 'wp-block-mcp-ai-wpoos-knowledge-base__dropzone--dragover' );
 			} );
 
 			$dropzone.on( 'dragleave dragend drop', function ( e ) {
 				e.preventDefault();
 				e.stopPropagation();
-				$dropzone.removeClass( 'wp-block-wp-mcp-ai-knowledge-base__dropzone--dragover' );
+				$dropzone.removeClass( 'wp-block-mcp-ai-wpoos-knowledge-base__dropzone--dragover' );
 			} );
 
 			$dropzone.on( 'drop', function ( e ) {
@@ -372,14 +483,14 @@
 			} );
 
 			// Handle remove button.
-			$fileList.on( 'click', '.wp-block-wp-mcp-ai-knowledge-base__file-remove', function () {
-				const $item = $( this ).closest( '.wp-block-wp-mcp-ai-knowledge-base__file-item' );
+			$fileList.on( 'click', '.wp-block-mcp-ai-wpoos-knowledge-base__file-remove', function () {
+				const $item = $( this ).closest( '.wp-block-mcp-ai-wpoos-knowledge-base__file-item' );
 				const index = parseInt( $item.data( 'index' ), 10 );
 				files.splice( index, 1 );
 				$item.remove();
 
 				// Re-index remaining items.
-				$fileList.find( '.wp-block-wp-mcp-ai-knowledge-base__file-item' ).each( function ( i ) {
+				$fileList.find( '.wp-block-mcp-ai-wpoos-knowledge-base__file-item' ).each( function ( i ) {
 					$( this ).data( 'index', i );
 				} );
 
@@ -407,7 +518,7 @@
 	 * Initialize assistant builder blocks.
 	 */
 	function initAssistantBuilders() {
-		$( '.wp-block-wp-mcp-ai-assistant-builder' ).each( function () {
+		$( '.wp-block-mcp-ai-wpoos-assistant-builder' ).each( function () {
 			const $block = $( this );
 			const $config = $block.find( '.wp-mcp-ai-assistant-builder-config' );
 			let config = {};
@@ -418,10 +529,10 @@
 				// Keep empty config.
 			}
 
-			const $selector = $block.find( '.wp-block-wp-mcp-ai-assistant-selector' );
-			const $tools = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__tools' );
-			const $knowledgeBase = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__knowledge-base' );
-			const $chat = $block.find( '.wp-block-wp-mcp-ai-assistant-builder__chat' );
+			const $selector = $block.find( '.wp-block-mcp-ai-wpoos-assistant-selector' );
+			const $tools = $block.find( '.wp-block-mcp-ai-wpoos-assistant-builder__tools' );
+			const $knowledgeBase = $block.find( '.wp-block-mcp-ai-wpoos-assistant-builder__knowledge-base' );
+			const $chat = $block.find( '.wp-block-mcp-ai-wpoos-assistant-builder__chat' );
 
 			// Listen for assistant selection to show other components.
 			$selector.on( 'startChat', function ( e, data ) {

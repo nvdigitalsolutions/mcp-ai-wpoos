@@ -208,7 +208,7 @@ Initialize the MCP connection and retrieve server capabilities.
       "progress": { "enabled": true }
     },
     "serverInfo": {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "version": "1.0.0"
     },
     "instructions": "This is a WordPress site. You can use the available tools to interact with WordPress content, users, and functionality."
@@ -316,7 +316,7 @@ Execute a tool with the provided arguments.
 
 **Progress Notifications (New in MCP 2024-11-05):**
 
-For long-running tool operations, WP oOS can send progress notifications:
+For long-running tool operations, NV oOS can send progress notifications:
 
 ```json
 {
@@ -554,7 +554,7 @@ All errors follow JSON-RPC 2.0 error format. Common errors:
 {
   "servers": [
     {
-      "name": "WP oOS",
+      "name": "NV oOS",
       "url": "https://your-site.com/wp-json/mcp-ai/v1/mcp",
       "auth": {
         "type": "bearer",
@@ -608,7 +608,7 @@ The MCP specification now recommends **JSON-RPC over HTTP** as the primary trans
 - Better network efficiency
 - Maintains compatibility with JSON-RPC 2.0
 
-**WP oOS Implementation:**
+**NV oOS Implementation:**
 - ✅ JSON-RPC as primary transport (POST /mcp)
 - ✅ Discovery via GET /mcp (returns JSON by default)
 - ✅ Optional SSE streaming (GET /mcp?stream=true)

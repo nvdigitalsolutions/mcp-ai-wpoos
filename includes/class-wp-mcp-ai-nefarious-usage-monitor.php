@@ -274,8 +274,8 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 			// Check if emergency shutdown is active.
 			if ( $this->is_emergency_shutdown_active() ) {
 				wp_die(
-					esc_html__( 'AI Assistant services have been temporarily disabled due to suspicious activity. Please contact the site administrator.', 'wp-mcp-ai' ),
-					esc_html__( 'Service Unavailable', 'wp-mcp-ai' ),
+					esc_html__( 'AI Assistant services have been temporarily disabled due to suspicious activity. Please contact the site administrator.', 'mcp-ai-wpoos' ),
+					esc_html__( 'Service Unavailable', 'mcp-ai-wpoos' ),
 					array( 'response' => 503 )
 				);
 			}
@@ -566,7 +566,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 
 			$subject = sprintf(
 				/* translators: %s: Site name */
-				__( '[%s] NV oOS Emergency Shutdown Activated', 'wp-mcp-ai' ),
+				__( '[%s] NV oOS Emergency Shutdown Activated', 'mcp-ai-wpoos' ),
 				$site_name
 			);
 
@@ -574,7 +574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				/* translators: 1: Site URL, 2: Violation type, 3: Violation message */
 				__(
 					"The Open Operator System has been automatically shut down due to suspicious activity.\n\nSite: %1\$s\nViolation Type: %2\$s\nMessage: %3\$s\n\nPlease review the security logs and clear the shutdown from the plugin settings page if this was a false positive.",
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				),
 				home_url(),
 				$violation['type'],
@@ -597,14 +597,14 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 				?>
 				<div class="notice notice-error is-dismissible">
 					<p>
-						<strong><?php esc_html_e( 'Open Operator System: Emergency Shutdown Active', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Open Operator System: Emergency Shutdown Active', 'mcp-ai-wpoos' ); ?></strong>
 					</p>
 					<p>
 						<?php
 						printf(
 							/* translators: %s: Settings page URL */
-							esc_html__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'wp-mcp-ai' ),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'wp-mcp-ai' ) . '</a>'
+							esc_html__( 'The AI Assistant has been automatically disabled due to suspicious activity. %s', 'mcp-ai-wpoos' ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'Review and clear shutdown', 'mcp-ai-wpoos' ) . '</a>'
 						);
 						?>
 					</p>
@@ -622,15 +622,15 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 					?>
 					<div class="notice notice-warning">
 						<p>
-							<strong><?php esc_html_e( 'Open Operator System: Security Violations Detected', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Open Operator System: Security Violations Detected', 'mcp-ai-wpoos' ); ?></strong>
 						</p>
 						<p>
 							<?php
 							printf(
 								/* translators: 1: Number of violations, 2: Settings page URL */
-								esc_html( _n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'wp-mcp-ai' ) ),
+								esc_html( _n( '%1$d security violation detected in the past hour. %2$s', '%1$d security violations detected in the past hour. %2$s', $recent_violations, 'mcp-ai-wpoos' ) ),
 								absint( $recent_violations ),
-								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'View details', 'wp-mcp-ai' ) . '</a>'
+								'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=security' ) ) . '">' . esc_html__( 'View details', 'mcp-ai-wpoos' ) . '</a>'
 							);
 							?>
 						</p>

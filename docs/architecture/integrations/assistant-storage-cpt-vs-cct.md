@@ -1,6 +1,6 @@
 # Assistant Storage: CPT vs CCT
 
-This document explains the different assistant storage mechanisms available in WP oOS and how they support the MCP server functionality.
+This document explains the different assistant storage mechanisms available in NV oOS and how they support the MCP server functionality.
 
 ---
 
@@ -22,7 +22,7 @@ This is the MCP server endpoint. It:
 
 ## MCP Server Context
 
-**WP oOS functions as an MCP (Model Context Protocol) server** that exposes AI assistants and tools via REST API endpoints at `/wp-json/mcp-ai/v1/`. MCP clients like Claude Desktop, LM Studio, and other AI applications connect to this server to:
+**NV oOS functions as an MCP (Model Context Protocol) server** that exposes AI assistants and tools via REST API endpoints at `/wp-json/mcp-ai/v1/`. MCP clients like Claude Desktop, LM Studio, and other AI applications connect to this server to:
 
 - Discover available assistants (`GET /assistants`)
 - Execute chat conversations (`POST /chat`)
@@ -33,7 +33,7 @@ This is the MCP server endpoint. It:
 
 ## Overview
 
-WP oOS provides **two distinct methods** for storing AI assistant configurations:
+NV oOS provides **two distinct methods** for storing AI assistant configurations:
 
 1. **CPT (Custom Post Type)** - WordPress native Custom Post Type (`mcp_ai_assistant`) - **MCP Server Data Source**
 2. **CCT (Custom Content Type)** - JetEngine Custom Content Type (`assistants`) - **Optional Sync Target**
@@ -113,7 +113,7 @@ $config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 - `POST /wp-json/mcp-ai/v1/tools` - Direct tool execution
 - `GET /wp-json/mcp-ai/v1/sse` - Server-Sent Events for streaming
 
-**These endpoints are what make WP oOS function as an MCP server.** They enable Claude Desktop, LM Studio, and other MCP clients to discover assistants, execute tools, and conduct conversations.
+**These endpoints are what make NV oOS function as an MCP server.** They enable Claude Desktop, LM Studio, and other MCP clients to discover assistants, execute tools, and conduct conversations.
 
 ### Automatic CCT Synchronization
 
@@ -410,9 +410,9 @@ if ( $cct_item_id ) {
 }
 ```
 
-## Related CCTs in WP oOS
+## Related CCTs in NV oOS
 
-WP oOS also registers another CCT for **chat transcripts** (separate from assistants):
+NV oOS also registers another CCT for **chat transcripts** (separate from assistants):
 
 - **Slug**: `ai_chat_transcripts`
 - **Purpose**: Store conversation history

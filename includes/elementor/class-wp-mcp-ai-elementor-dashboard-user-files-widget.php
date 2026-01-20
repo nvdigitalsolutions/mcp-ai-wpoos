@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS User File List', 'wp-mcp-ai' );
+		return __( 'NV oOS User File List', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +61,16 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'File List', 'wp-mcp-ai' ),
+				'label' => __( 'File List', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Knowledge files', 'wp-mcp-ai' ),
+				'default'     => __( 'Knowledge files', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -78,22 +78,22 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Browse the documents associated with this operator to confirm the correct files are available.', 'wp-mcp-ai' ),
+				'default' => __( 'Browse the documents associated with this operator to confirm the correct files are available.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'user_mode',
 			array(
-				'label'   => __( 'User Source', 'wp-mcp-ai' ),
+				'label'   => __( 'User Source', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'current',
 				'options' => array(
-					'current'  => __( 'Current user', 'wp-mcp-ai' ),
-					'specific' => __( 'Specific user ID', 'wp-mcp-ai' ),
+					'current'  => __( 'Current user', 'mcp-ai-wpoos' ),
+					'specific' => __( 'Specific user ID', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -101,7 +101,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'user_id',
 			array(
-				'label'       => __( 'User ID', 'wp-mcp-ai' ),
+				'label'       => __( 'User ID', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'label_block' => true,
@@ -114,21 +114,21 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'max_items',
 			array(
-				'label'       => __( 'Maximum files to show', 'wp-mcp-ai' ),
+				'label'       => __( 'Maximum files to show', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'min'         => 1,
 				'default'     => 20,
-				'description' => __( 'Limit the number of attachments displayed. Leave empty to show every file.', 'wp-mcp-ai' ),
+				'description' => __( 'Limit the number of attachments displayed. Leave empty to show every file.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_file_size',
 			array(
-				'label'        => __( 'Show file size', 'wp-mcp-ai' ),
+				'label'        => __( 'Show file size', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -137,10 +137,10 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'show_upload_date',
 			array(
-				'label'        => __( 'Show upload date', 'wp-mcp-ai' ),
+				'label'        => __( 'Show upload date', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'no',
 			)
@@ -149,9 +149,9 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No files are linked to this user yet.', 'wp-mcp-ai' ),
+				'default'     => __( 'No files are linked to this user yet.', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -217,7 +217,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		}
 
 		if ( ! $user_id ) {
-			echo '<p class="wp-mcp-ai-user-files__notice">' . esc_html__( 'Select a user to view their files.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-user-files__notice">' . esc_html__( 'Select a user to view their files.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -252,7 +252,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 
 			if ( '' === $title_text ) {
 				/* translators: %d: attachment ID */
-				$title_text = sprintf( __( 'Attachment #%d', 'wp-mcp-ai' ), $attachment_id );
+				$title_text = sprintf( __( 'Attachment #%d', 'mcp-ai-wpoos' ), $attachment_id );
 			}
 
 			$file_url = wp_get_attachment_url( $attachment_id );
@@ -305,13 +305,13 @@ class WP_MCP_AI_Elementor_Dashboard_User_Files_Widget extends \Elementor\Widget_
 		$user_id = absint( $user_id );
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'A valid user could not be detected.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'A valid user could not be detected.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user = get_user_by( 'id', $user_id );
 
 		if ( ! $user ) {
-			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'The requested user does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_user_missing', __( 'The requested user does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		$query_args = array(

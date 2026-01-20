@@ -105,11 +105,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -120,7 +120,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_upload_missing_file',
-					__( 'The file to upload could not be located.', 'wp-mcp-ai' ),
+					__( 'The file to upload could not be located.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -157,7 +157,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_file_upload_read_failed',
-					__( 'The file to upload could not be read.', 'wp-mcp-ai' )
+					__( 'The file to upload could not be read.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -203,8 +203,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_file_upload_http_error',
-					__( 'The OpenAI file upload failed to complete.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI file upload failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -216,7 +216,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI file upload response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_file_upload_invalid_response', __( 'OpenAI returned malformed JSON for the file upload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_upload_invalid_response', __( 'OpenAI returned malformed JSON for the file upload.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -228,7 +228,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file upload failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file upload failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_file_upload_error',
@@ -265,11 +265,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -278,7 +278,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$file_id = sanitize_text_field( (string) $file_id );
 
 			if ( '' === $file_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'mcp-ai-wpoos' ) );
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -315,8 +315,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_file_delete_http_error',
-					__( 'The OpenAI file deletion request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI file deletion request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -333,7 +333,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				return new WP_Error( 'wp_mcp_ai_file_delete_invalid_response', __( 'OpenAI returned malformed JSON for the file deletion.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_delete_invalid_response', __( 'OpenAI returned malformed JSON for the file deletion.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -346,7 +346,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file deletion failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file deletion failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_file_delete_error',
@@ -380,11 +380,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -393,7 +393,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$file_id = sanitize_text_field( (string) $file_id );
 
 			if ( '' === $file_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'mcp-ai-wpoos' ) );
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -430,8 +430,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The OpenAI file could not be downloaded.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI file could not be downloaded.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -440,7 +440,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			if ( $status_code < 200 || $status_code >= 300 ) {
 				$decoded = json_decode( $body, true );
-				$message = __( 'OpenAI returned an unexpected response while downloading the file.', 'wp-mcp-ai' );
+				$message = __( 'OpenAI returned an unexpected response while downloading the file.', 'mcp-ai-wpoos' );
 
 				if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) && '' !== $decoded['error']['message'] ) {
 					$message = $decoded['error']['message'];
@@ -472,7 +472,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					array( 'file_id' => $file_id )
 				);
 
-				return new WP_Error( 'wp_mcp_ai_file_download_empty', __( 'The downloaded OpenAI file was empty.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_download_empty', __( 'The downloaded OpenAI file was empty.', 'mcp-ai-wpoos' ) );
 			}
 
 			$headers = wp_remote_retrieve_headers( $response );
@@ -518,11 +518,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -578,8 +578,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_list_files_http_error',
-					__( 'The OpenAI files list request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI files list request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -591,7 +591,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list files response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_list_files_invalid_response', __( 'OpenAI returned malformed JSON for the files list.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_list_files_invalid_response', __( 'OpenAI returned malformed JSON for the files list.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -603,7 +603,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI files list request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI files list request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_list_files_error',
@@ -639,11 +639,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -652,7 +652,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$file_id = sanitize_text_field( (string) $file_id );
 
 			if ( '' === $file_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'mcp-ai-wpoos' ) );
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -689,8 +689,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_retrieve_file_http_error',
-					__( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI file metadata request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -707,7 +707,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				return new WP_Error( 'wp_mcp_ai_retrieve_file_invalid_response', __( 'OpenAI returned malformed JSON for the file metadata.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_retrieve_file_invalid_response', __( 'OpenAI returned malformed JSON for the file metadata.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -720,7 +720,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file metadata request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI file metadata request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_retrieve_file_error',
@@ -753,11 +753,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -787,8 +787,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_list_models_http_error',
-					__( 'The OpenAI models list request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -799,7 +799,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI list models response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_list_models_invalid_response', __( 'OpenAI returned malformed JSON for the models list.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -811,7 +811,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI models list request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_list_models_error',
@@ -847,11 +847,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -860,7 +860,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$model_id = sanitize_text_field( (string) $model_id );
 
 			if ( '' === $model_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_model_id', __( 'A model identifier must be supplied.', 'mcp-ai-wpoos' ) );
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -897,8 +897,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_get_model_http_error',
-					__( 'The OpenAI model information request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI model information request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -915,7 +915,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				return new WP_Error( 'wp_mcp_ai_get_model_invalid_response', __( 'OpenAI returned malformed JSON for the model information.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_get_model_invalid_response', __( 'OpenAI returned malformed JSON for the model information.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -928,7 +928,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI model information request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI model information request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_get_model_error',
@@ -962,18 +962,18 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
 			}
 
 			if ( empty( $input ) || ( is_string( $input ) && '' === trim( $input ) ) ) {
-				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_missing_input', __( 'Input text must be provided for embeddings.', 'mcp-ai-wpoos' ) );
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -1031,8 +1031,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_embeddings_http_error',
-					__( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -1043,7 +1043,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI embeddings response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_embeddings_invalid_response', __( 'OpenAI returned malformed JSON for the embeddings.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -1055,7 +1055,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI embeddings request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_embeddings_error',
@@ -1108,11 +1108,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1122,7 +1122,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $input ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_input',
-					__( 'Input content must be provided for moderation.', 'wp-mcp-ai' ),
+					__( 'Input content must be provided for moderation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1131,7 +1131,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( is_string( $input ) && '' === trim( $input ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_empty_input',
-					__( 'Input text cannot be empty.', 'wp-mcp-ai' ),
+					__( 'Input text cannot be empty.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1179,8 +1179,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_moderation_http_error',
-					__( 'The OpenAI moderation request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI moderation request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -1196,7 +1196,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_moderation_invalid_response',
-					__( 'OpenAI returned malformed JSON for the moderation.', 'wp-mcp-ai' ),
+					__( 'OpenAI returned malformed JSON for the moderation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -1210,7 +1210,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI moderation request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI moderation request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_moderation_error',
@@ -1294,8 +1294,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$body     = '';
 
 			foreach ( $fields as $name => $value ) {
-				$name  = (string) $name;
-				$value = (string) $value;
+				$name = (string) $name;
+
+				// Handle array values by JSON-encoding them for OpenAI API compatibility.
+				if ( is_array( $value ) ) {
+					$value = wp_json_encode( $value );
+				} else {
+					$value = (string) $value;
+				}
 
 				$body .= '--' . $boundary . $eol;
 				$body .= 'Content-Disposition: form-data; name="' . $name . '"' . $eol . $eol;
@@ -1381,11 +1387,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1396,7 +1402,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $prompt ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_image_prompt',
-					__( 'A text prompt must be supplied to generate an image.', 'wp-mcp-ai' ),
+					__( 'A text prompt must be supplied to generate an image.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1469,7 +1475,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$encoded_payload = wp_json_encode( $payload );
 			if ( false === $encoded_payload ) {
-				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'mcp-ai-wpoos' ) );
 			}
 
 			$request_args = array(
@@ -1501,8 +1507,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -1519,7 +1525,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$message = $decoded['error']['message'];
 				} else {
 					/* translators: %d: HTTP status code */
-					$message = sprintf( __( 'The OpenAI image request failed with status %d.', 'wp-mcp-ai' ), $status_code );
+					$message = sprintf( __( 'The OpenAI image request failed with status %d.', 'mcp-ai-wpoos' ), $status_code );
 				}
 
 				WP_MCP_AI_Logger::log_error(
@@ -1565,7 +1571,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( empty( $decoded['data'] ) || empty( $decoded['data'][0] ) || ! is_array( $decoded['data'][0] ) ) {
 					WP_MCP_AI_Logger::log_error( 'OpenAI image response missing payload data.', array( 'response' => $decoded ) );
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 				}
 
 				$image_response = $decoded['data'][0];
@@ -1576,7 +1582,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					if ( false === $image_data ) {
 						WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI image payload.', array( 'response' => $decoded ) );
 
-						return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'wp-mcp-ai' ) );
+						return new WP_Error( 'wp_mcp_ai_image_decode_error', __( 'OpenAI returned an invalid image payload.', 'mcp-ai-wpoos' ) );
 					}
 
 					$response_format = $this->detect_format_from_binary( $image_data );
@@ -1590,7 +1596,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					if ( '' === $image_url ) {
 						WP_MCP_AI_Logger::log_error( 'OpenAI image response returned an invalid URL.', array( 'url' => $image_response['url'] ) );
 
-						return new WP_Error( 'wp_mcp_ai_image_invalid_url', __( 'OpenAI returned an invalid image URL.', 'wp-mcp-ai' ) );
+						return new WP_Error( 'wp_mcp_ai_image_invalid_url', __( 'OpenAI returned an invalid image URL.', 'mcp-ai-wpoos' ) );
 					}
 
 					$downloaded_image = $this->download_image_from_url( $image_url, $timeout );
@@ -1615,13 +1621,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				} else {
 					WP_MCP_AI_Logger::log_error( 'OpenAI image response missing supported payload keys.', array( 'response' => $decoded ) );
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 				}
 
 				if ( '' === $image_data ) {
 					WP_MCP_AI_Logger::log_error( 'OpenAI image response contained no data.', array( 'response' => $decoded ) );
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 				}
 
 				$response_created  = isset( $decoded['created'] ) ? intval( $decoded['created'] ) : 0;
@@ -1633,7 +1639,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( '' === $image_data ) {
 					WP_MCP_AI_Logger::log_error( 'OpenAI image response contained no data.', array( 'contentType' => $content_type ) );
 
-					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 				}
 
 				$response_format = $this->detect_format_from_mime_type( $content_type );
@@ -1656,7 +1662,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				return new WP_Error( 'wp_mcp_ai_image_invalid_response', __( 'OpenAI returned an unexpected image response format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_image_invalid_response', __( 'OpenAI returned an unexpected image response format.', 'mcp-ai-wpoos' ) );
 			}
 
 			$result = array(
@@ -1711,8 +1717,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_image_download_http_error',
-					__( 'The generated image could not be downloaded from OpenAI.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The generated image could not be downloaded from OpenAI.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -1734,7 +1740,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_image_download_error',
 					/* translators: %d: HTTP status code */
-					sprintf( __( 'OpenAI returned an HTTP %d while downloading the generated image.', 'wp-mcp-ai' ), $status_code ),
+					sprintf( __( 'OpenAI returned an HTTP %d while downloading the generated image.', 'mcp-ai-wpoos' ), $status_code ),
 					array(
 						'status'   => $status_code,
 						'response' => $body,
@@ -1745,7 +1751,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $body ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI image download returned empty content.', array( 'url' => $url ) );
 
-				return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_image_empty', __( 'OpenAI returned an empty image response.', 'mcp-ai-wpoos' ) );
 			}
 
 			return array(
@@ -1958,11 +1964,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1972,7 +1978,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $image_path || ! file_exists( $image_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_image_not_found',
-					__( 'The image file to edit could not be located.', 'wp-mcp-ai' ),
+					__( 'The image file to edit could not be located.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -1981,7 +1987,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $prompt ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_image_prompt',
-					__( 'A text prompt must be supplied to edit the image.', 'wp-mcp-ai' ),
+					__( 'A text prompt must be supplied to edit the image.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -2080,7 +2086,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI image edit request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI image edit request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -2095,7 +2101,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image edit API.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image edit API.', 'mcp-ai-wpoos' ) );
 			}
 
 			WP_MCP_AI_Logger::log_event( 'openai_image_edit_success', 'Image edit completed successfully.' );
@@ -2120,11 +2126,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2134,7 +2140,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $image_path || ! file_exists( $image_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_image_not_found',
-					__( 'The image file could not be located.', 'wp-mcp-ai' ),
+					__( 'The image file could not be located.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -2217,7 +2223,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI image variation request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI image variation request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -2232,7 +2238,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( ! isset( $decoded['data'] ) || ! is_array( $decoded['data'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image variation API.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'Invalid response from OpenAI image variation API.', 'mcp-ai-wpoos' ) );
 			}
 
 			WP_MCP_AI_Logger::log_event( 'openai_image_variation_success', 'Image variation completed successfully.' );
@@ -2257,11 +2263,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2272,14 +2278,14 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $input ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_speech_input',
-					__( 'A text prompt must be supplied to generate speech.', 'wp-mcp-ai' ),
+					__( 'A text prompt must be supplied to generate speech.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$default_model  = ! empty( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'gpt-4o-mini-tts';
+			$default_model  = ! empty( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'tts-1';
 			$default_voice  = isset( $settings['openai_speech_voice'] ) ? sanitize_key( $settings['openai_speech_voice'] ) : 'alloy';
 			$default_format = isset( $settings['openai_speech_format'] ) ? sanitize_key( $settings['openai_speech_format'] ) : 'mp3';
 
@@ -2292,7 +2298,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( '' === $default_model ) {
-				$default_model = 'gpt-4o-mini-tts';
+				$default_model = 'tts-1';
 			}
 
 			$model   = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : $default_model;
@@ -2326,7 +2332,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$encoded_payload = wp_json_encode( $payload );
 			if ( false === $encoded_payload ) {
-				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the OpenAI request payload.', 'mcp-ai-wpoos' ) );
 			}
 
 			$request_args = array(
@@ -2357,8 +2363,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -2372,7 +2378,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
 					$message = $decoded['error']['message'];
 				} else {
-					$message = __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+					$message = __( 'Unexpected response from OpenAI.', 'mcp-ai-wpoos' );
 				}
 
 				WP_MCP_AI_Logger::log_error(
@@ -2387,7 +2393,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			}
 
 			if ( '' === $body ) {
-				return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_empty_audio', __( 'OpenAI returned an empty audio response.', 'mcp-ai-wpoos' ) );
 			}
 
 			$headers = wp_remote_retrieve_headers( $response );
@@ -2416,11 +2422,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2431,16 +2437,16 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $file_path || ! file_exists( $file_path ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcription_missing_file',
-					__( 'The audio file to transcribe could not be located.', 'wp-mcp-ai' ),
+					__( 'The audio file to transcribe could not be located.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
 
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'gpt-4o-mini-transcribe';
+			$model = isset( $options['model'] ) && '' !== $options['model'] ? sanitize_text_field( $options['model'] ) : 'whisper-1';
 			if ( '' === $model ) {
-				$model = 'gpt-4o-mini-transcribe';
+				$model = 'whisper-1';
 			}
 
 			$translate = false;
@@ -2533,7 +2539,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_transcription_read_failed',
-					__( 'The audio file could not be read from disk.', 'wp-mcp-ai' )
+					__( 'The audio file could not be read from disk.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -2581,8 +2587,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -2596,7 +2602,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				if ( JSON_ERROR_NONE === $error && isset( $decoded['error']['message'] ) ) {
 					$message = $decoded['error']['message'];
 				} else {
-					$message = __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+					$message = __( 'Unexpected response from OpenAI.', 'mcp-ai-wpoos' );
 				}
 
 				WP_MCP_AI_Logger::log_error(
@@ -2616,7 +2622,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $error || ! is_array( $decoded ) ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI audio transcription response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_transcription_invalid_response', __( 'OpenAI returned malformed JSON for the audio transcription.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_transcription_invalid_response', __( 'OpenAI returned malformed JSON for the audio transcription.', 'mcp-ai-wpoos' ) );
 			}
 
 			$text = isset( $decoded['text'] ) ? (string) $decoded['text'] : '';
@@ -2624,7 +2630,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $text ) {
 				WP_MCP_AI_Logger::log_error( 'OpenAI audio transcription response did not include text.', array( 'response' => $decoded ) );
 
-				return new WP_Error( 'wp_mcp_ai_transcription_empty_text', __( 'OpenAI did not return any transcription text.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_transcription_empty_text', __( 'OpenAI did not return any transcription text.', 'mcp-ai-wpoos' ) );
 			}
 
 			$result = array(
@@ -2662,11 +2668,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2733,11 +2739,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $payload[ $message_key ] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_messages',
-					__( 'No chat messages were provided for the request.', 'wp-mcp-ai' ),
+					__( 'No chat messages were provided for the request.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'wp-mcp-ai' ),
+							'review_request_payload' => __( 'Provide at least one user or system message before calling the API.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2865,8 +2871,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_http_error',
-					__( 'The OpenAI API request failed to complete.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI API request failed to complete.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -2878,7 +2884,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( JSON_ERROR_NONE !== $json_err ) {
 				WP_MCP_AI_Logger::log_error( 'Failed to decode OpenAI response.', array( 'body' => $body ) );
 
-				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The OpenAI API returned malformed JSON.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_response', __( 'The OpenAI API returned malformed JSON.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( $code < 200 || $code >= 300 ) {
@@ -2890,7 +2896,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Unexpected response from OpenAI.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_api_error',
@@ -3106,7 +3112,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					continue;
 				}
 
-				$title      = isset( $document['title'] ) && '' !== $document['title'] ? $document['title'] : __( 'Document', 'wp-mcp-ai' );
+				$title      = isset( $document['title'] ) && '' !== $document['title'] ? $document['title'] : __( 'Document', 'mcp-ai-wpoos' );
 				$chunks     = array_values( array_filter( array_map( 'strval', $document['chunks'] ) ) );
 				$parts      = count( $chunks );
 				$part_index = 0;
@@ -3118,7 +3124,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 					if ( $parts > 1 ) {
 						/* translators: %1$s: document title, %2$d: chunk number. */
-						$label = sprintf( __( '%1$s (Part %2$d)', 'wp-mcp-ai' ), $title, $part_index );
+						$label = sprintf( __( '%1$s (Part %2$d)', 'mcp-ai-wpoos' ), $title, $part_index );
 					}
 
 					$messages[] = array(
@@ -3127,7 +3133,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 							array(
 								'type' => 'text',
 								/* translators: %1$s: document title, %2$s: extracted text snippet. */
-								'text' => sprintf( __( 'Reference document "%1$s": %2$s', 'wp-mcp-ai' ), $label, $chunk ),
+								'text' => sprintf( __( 'Reference document "%1$s": %2$s', 'mcp-ai-wpoos' ), $label, $chunk ),
 							),
 						),
 					);
@@ -4416,11 +4422,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4430,7 +4436,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $name ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_name',
-					__( 'A name is required to create a vector store.', 'wp-mcp-ai' ),
+					__( 'A name is required to create a vector store.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4457,7 +4463,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$encoded_payload = wp_json_encode( $payload );
 			if ( false === $encoded_payload ) {
-				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
 			$request_args = array(
@@ -4488,7 +4494,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI vector store creation failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI vector store creation failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4519,11 +4525,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4576,7 +4582,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI list vector stores request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI list vector stores request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4599,11 +4605,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4613,7 +4619,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $vector_store_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_id',
-					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4644,7 +4650,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI retrieve vector store request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI retrieve vector store request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4667,11 +4673,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4681,7 +4687,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $vector_store_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_id',
-					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4713,7 +4719,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI delete vector store request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI delete vector store request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4737,11 +4743,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4751,7 +4757,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $vector_store_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_id',
-					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4759,7 +4765,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $file_ids ) || ! is_array( $file_ids ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_file_ids',
-					__( 'File IDs are required.', 'wp-mcp-ai' ),
+					__( 'File IDs are required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4776,7 +4782,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 			$encoded_payload = wp_json_encode( $payload );
 			if ( false === $encoded_payload ) {
-				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_encoding_error', __( 'Failed to encode the request payload.', 'mcp-ai-wpoos' ) );
 			}
 
 			$request_args = array(
@@ -4800,7 +4806,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI add vector store files request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI add vector store files request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4824,11 +4830,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4838,7 +4844,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $vector_store_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_id',
-					__( 'A vector store ID is required.', 'wp-mcp-ai' ),
+					__( 'A vector store ID is required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4890,7 +4896,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI list vector store files request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI list vector store files request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -4914,11 +4920,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4930,7 +4936,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $vector_store_id ) || empty( $file_id ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_id',
-					__( 'Vector store ID and file ID are required.', 'wp-mcp-ai' ),
+					__( 'Vector store ID and file ID are required.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -4962,7 +4968,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			$decoded       = json_decode( $response_body, true );
 
 			if ( 200 !== $http_code ) {
-				$error_message = __( 'OpenAI remove vector store file request failed.', 'wp-mcp-ai' );
+				$error_message = __( 'OpenAI remove vector store file request failed.', 'mcp-ai-wpoos' );
 				if ( isset( $decoded['error']['message'] ) ) {
 					$error_message = sanitize_text_field( $decoded['error']['message'] );
 				}
@@ -5006,11 +5012,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -5021,7 +5027,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $input_file_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_input_file_id',
-					__( 'Input file ID must be provided.', 'wp-mcp-ai' ),
+					__( 'Input file ID must be provided.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -5034,7 +5040,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					'wp_mcp_ai_invalid_batch_endpoint',
 					sprintf(
 						/* translators: %s: comma-separated list of allowed endpoints */
-						__( 'Invalid batch endpoint. Allowed endpoints: %s', 'wp-mcp-ai' ),
+						__( 'Invalid batch endpoint. Allowed endpoints: %s', 'mcp-ai-wpoos' ),
 						implode( ', ', $allowed_endpoints )
 					),
 					array( 'status' => 400 )
@@ -5097,8 +5103,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_create_batch_http_error',
-					__( 'The OpenAI create batch request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI create batch request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -5114,7 +5120,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_create_batch_invalid_response',
-					__( 'OpenAI returned malformed JSON for the batch creation.', 'wp-mcp-ai' ),
+					__( 'OpenAI returned malformed JSON for the batch creation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -5128,7 +5134,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI create batch request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI create batch request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_create_batch_error',
@@ -5165,11 +5171,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -5179,7 +5185,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $batch_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_batch_id',
-					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					__( 'Batch ID must be provided.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -5215,8 +5221,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_retrieve_batch_http_error',
-					__( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI retrieve batch request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -5232,7 +5238,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_retrieve_batch_invalid_response',
-					__( 'OpenAI returned malformed JSON for the batch retrieval.', 'wp-mcp-ai' ),
+					__( 'OpenAI returned malformed JSON for the batch retrieval.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -5246,7 +5252,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI retrieve batch request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI retrieve batch request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_retrieve_batch_error',
@@ -5274,11 +5280,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -5288,7 +5294,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( '' === $batch_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_batch_id',
-					__( 'Batch ID must be provided.', 'wp-mcp-ai' ),
+					__( 'Batch ID must be provided.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -5324,8 +5330,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_cancel_batch_http_error',
-					__( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI cancel batch request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -5341,7 +5347,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_cancel_batch_invalid_response',
-					__( 'OpenAI returned malformed JSON for the batch cancellation.', 'wp-mcp-ai' ),
+					__( 'OpenAI returned malformed JSON for the batch cancellation.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -5355,7 +5361,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI cancel batch request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI cancel batch request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_cancel_batch_error',
@@ -5397,11 +5403,11 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			if ( empty( $api_key ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_api_key',
-					__( 'No OpenAI API key has been configured.', 'wp-mcp-ai' ),
+					__( 'No OpenAI API key has been configured.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'wp-mcp-ai' ),
+							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -5454,8 +5460,8 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 				return WP_MCP_AI_HTTP::prepare_transport_error(
 					$response,
 					'wp_mcp_ai_list_batches_http_error',
-					__( 'The OpenAI list batches request failed.', 'wp-mcp-ai' ),
-					__( 'OpenAI', 'wp-mcp-ai' )
+					__( 'The OpenAI list batches request failed.', 'mcp-ai-wpoos' ),
+					__( 'OpenAI', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -5471,7 +5477,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_list_batches_invalid_response',
-					__( 'OpenAI returned malformed JSON for the batches list.', 'wp-mcp-ai' ),
+					__( 'OpenAI returned malformed JSON for the batches list.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -5485,7 +5491,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					)
 				);
 
-				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI list batches request failed.', 'wp-mcp-ai' );
+				$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'The OpenAI list batches request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_list_batches_error',
@@ -5504,6 +5510,480 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 			);
 
 			return is_array( $decoded ) ? $decoded : array();
+		}
+
+		/**
+		 * Execute a chat completion with tools and recursive tool execution.
+		 *
+		 * This method provides automatic tool execution in a loop, similar to the Cloudflare
+		 * implementation. It will:
+		 * 1. Send messages with tool definitions to OpenAI
+		 * 2. If tools are called, execute them and add results to conversation
+		 * 3. Repeat until no more tools are needed or max recursion is reached
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages Array of conversation messages.
+		 * @param array $tools    Array of tool definitions with executable functions.
+		 * @param array $options  Optional configuration:
+		 *                        - strictValidation (bool): Validate arguments before execution. Default: true.
+		 *                        - maxRecursiveToolRuns (int): Maximum recursion depth. Default: 5.
+		 *                        - streamFinalResponse (bool): Enable streaming (not implemented for PHP). Default: false.
+		 *                        - verbose (bool): Detailed logging. Default: false.
+		 *                        - autoTrimTools (bool): Context-based tool selection. Default: false.
+		 *                        - maxTools (int): Max tools when trimming. Default: 10.
+		 *                        - model, temperature, timeout, etc.
+		 * @return array|WP_Error Final response or error.
+		 */
+		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
+			// Configuration options with defaults.
+			$strict_validation     = isset( $options['strictValidation'] ) ? (bool) $options['strictValidation'] : true;
+			$max_recursive_runs    = isset( $options['maxRecursiveToolRuns'] ) ? absint( $options['maxRecursiveToolRuns'] ) : 5;
+			$stream_final_response = isset( $options['streamFinalResponse'] ) ? (bool) $options['streamFinalResponse'] : false;
+			$verbose               = isset( $options['verbose'] ) ? (bool) $options['verbose'] : false;
+			$auto_trim_tools       = isset( $options['autoTrimTools'] ) ? (bool) $options['autoTrimTools'] : false;
+
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'openai_run_with_tools_start',
+					'Starting OpenAI embedded function calling.',
+					array(
+						'message_count'      => count( $messages ),
+						'tool_count'         => count( $tools ),
+						'strict_validation'  => $strict_validation,
+						'max_recursive_runs' => $max_recursive_runs,
+						'auto_trim_tools'    => $auto_trim_tools,
+					)
+				);
+			}
+
+			// Validate tools array.
+			if ( empty( $tools ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_no_tools',
+					__( 'At least one tool must be provided for embedded function calling.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Auto-trim tools if enabled.
+			if ( $auto_trim_tools ) {
+				$tools = $this->auto_trim_tools( $messages, $tools, $options );
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'openai_auto_trim_tools',
+						'Automatically trimmed tools based on context.',
+						array( 'remaining_tool_count' => count( $tools ) )
+					);
+				}
+			}
+
+			// Convert tools to OpenAI format and create tool lookup.
+			$tool_definitions = array();
+			$tool_functions   = array();
+
+			foreach ( $tools as $tool ) {
+				if ( ! isset( $tool['name'] ) || ! isset( $tool['function'] ) ) {
+					continue;
+				}
+
+				$tool_name = sanitize_text_field( $tool['name'] );
+
+				// Build tool definition for API.
+				$definition = array(
+					'name'        => $tool_name,
+					'description' => isset( $tool['description'] ) ? sanitize_text_field( $tool['description'] ) : '',
+				);
+
+				if ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$definition['parameters'] = $tool['parameters'];
+				}
+
+				$tool_definitions[] = array(
+					'type'     => 'function',
+					'function' => $definition,
+				);
+
+				// Store executable function.
+				$tool_functions[ $tool_name ] = $tool['function'];
+			}
+
+			// Prepare options with tools.
+			$request_options          = $options;
+			$request_options['tools'] = $tool_definitions;
+
+			// Execute recursive tool calling loop.
+			$conversation_messages = $messages;
+			$recursion_count       = 0;
+
+			while ( $recursion_count < $max_recursive_runs ) {
+				++$recursion_count;
+
+				if ( $verbose ) {
+					WP_MCP_AI_Logger::log_event(
+						'openai_tool_run_iteration',
+						sprintf( 'Tool execution iteration %d/%d', $recursion_count, $max_recursive_runs ),
+						array( 'message_count' => count( $conversation_messages ) )
+					);
+				}
+
+				// Make API request.
+				$response = $this->create_chat_completion( $conversation_messages, $request_options );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				// Check if model wants to call any tools.
+				$tool_calls = array();
+				if ( isset( $response['choices'][0]['message']['tool_calls'] ) ) {
+					$tool_calls = $response['choices'][0]['message']['tool_calls'];
+				}
+
+				// If no tool calls, we're done.
+				if ( empty( $tool_calls ) ) {
+					if ( $verbose ) {
+						WP_MCP_AI_Logger::log_event(
+							'openai_run_with_tools_complete',
+							'Completed without tool calls.',
+							array( 'iterations' => $recursion_count )
+						);
+					}
+
+					// Return final response (streaming not implemented for PHP).
+					return $response;
+				}
+
+				// Add assistant's tool call message to conversation.
+				$conversation_messages[] = $response['choices'][0]['message'];
+
+				// Execute each tool call.
+				foreach ( $tool_calls as $tool_call ) {
+					if ( ! isset( $tool_call['function']['name'] ) ) {
+						continue;
+					}
+
+					$function_name = $tool_call['function']['name'];
+					$tool_call_id  = isset( $tool_call['id'] ) ? $tool_call['id'] : uniqid( 'tool-', true );
+
+					// Check if function exists.
+					if ( ! isset( $tool_functions[ $function_name ] ) ) {
+						$error_message = sprintf(
+							/* translators: %s: function name */
+							__( 'Tool function "%s" not found.', 'mcp-ai-wpoos' ),
+							$function_name
+						);
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'OpenAI tool function not found.',
+							array(
+								'function_name' => $function_name,
+								'tool_call_id'  => $tool_call_id,
+							)
+						);
+						continue;
+					}
+
+					// Parse arguments.
+					$arguments = array();
+					if ( isset( $tool_call['function']['arguments'] ) ) {
+						$args_json = $tool_call['function']['arguments'];
+						if ( is_string( $args_json ) ) {
+							$arguments = json_decode( $args_json, true );
+							if ( JSON_ERROR_NONE !== json_last_error() ) {
+								$arguments = array();
+							}
+						} elseif ( is_array( $args_json ) ) {
+							$arguments = $args_json;
+						}
+					}
+
+					// Validate arguments if strict validation is enabled.
+					if ( $strict_validation ) {
+						$validation_error = $this->validate_tool_arguments( $function_name, $arguments, $tool_definitions );
+						if ( is_wp_error( $validation_error ) ) {
+							$conversation_messages[] = array(
+								'role'         => 'tool',
+								'tool_call_id' => $tool_call_id,
+								'name'         => $function_name,
+								'content'      => wp_json_encode( array( 'error' => $validation_error->get_error_message() ) ),
+							);
+
+							WP_MCP_AI_Logger::log_error(
+								'OpenAI tool argument validation failed.',
+								array(
+									'function_name' => $function_name,
+									'error'         => $validation_error->get_error_message(),
+								)
+							);
+							continue;
+						}
+					}
+
+					// Execute the tool function.
+					try {
+						$function_callable = $tool_functions[ $function_name ];
+
+						if ( ! is_callable( $function_callable ) ) {
+							throw new Exception( 'Tool function is not callable.' );
+						}
+
+						$result = call_user_func( $function_callable, $arguments );
+
+						// Convert result to JSON string.
+						$result_content = is_string( $result ) ? $result : wp_json_encode( $result );
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => $result_content,
+						);
+
+						if ( $verbose ) {
+							WP_MCP_AI_Logger::log_event(
+								'openai_tool_executed',
+								sprintf( 'Executed tool: %s', $function_name ),
+								array(
+									'function_name' => $function_name,
+									'tool_call_id'  => $tool_call_id,
+									'result_length' => strlen( $result_content ),
+								)
+							);
+						}
+					} catch ( Exception $e ) {
+						$error_message = $e->getMessage();
+
+						$conversation_messages[] = array(
+							'role'         => 'tool',
+							'tool_call_id' => $tool_call_id,
+							'name'         => $function_name,
+							'content'      => wp_json_encode( array( 'error' => $error_message ) ),
+						);
+
+						WP_MCP_AI_Logger::log_error(
+							'OpenAI tool execution failed.',
+							array(
+								'function_name' => $function_name,
+								'error'         => $error_message,
+							)
+						);
+					}
+				}
+			}
+
+			// Max recursion reached.
+			if ( $verbose ) {
+				WP_MCP_AI_Logger::log_event(
+					'openai_max_recursion_reached',
+					'Maximum recursive tool runs reached.',
+					array( 'max_runs' => $max_recursive_runs )
+				);
+			}
+
+			return new WP_Error(
+				'wp_mcp_ai_max_tool_recursion',
+				__( 'Maximum recursive tool runs reached without completion.', 'mcp-ai-wpoos' ),
+				array(
+					'status'         => 500,
+					'max_runs'       => $max_recursive_runs,
+					'final_messages' => $conversation_messages,
+				)
+			);
+		}
+
+		/**
+		 * Validate tool arguments against the tool definition schema.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $function_name    Name of the function being called.
+		 * @param array  $arguments        Arguments provided by the model.
+		 * @param array  $tool_definitions Array of tool definitions.
+		 * @return true|WP_Error True if valid, WP_Error otherwise.
+		 */
+		protected function validate_tool_arguments( $function_name, $arguments, $tool_definitions ) {
+			// Find the tool definition.
+			$tool_schema = null;
+			foreach ( $tool_definitions as $tool_def ) {
+				if ( isset( $tool_def['function']['name'] ) && $tool_def['function']['name'] === $function_name ) {
+					$tool_schema = isset( $tool_def['function']['parameters'] ) ? $tool_def['function']['parameters'] : null;
+					break;
+				}
+			}
+
+			if ( null === $tool_schema ) {
+				return true; // No schema to validate against.
+			}
+
+			// Check required parameters.
+			if ( isset( $tool_schema['required'] ) && is_array( $tool_schema['required'] ) ) {
+				foreach ( $tool_schema['required'] as $required_param ) {
+					if ( ! isset( $arguments[ $required_param ] ) ) {
+						return new WP_Error(
+							'wp_mcp_ai_missing_required_param',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: function name */
+								__( 'Required parameter "%1$s" missing for tool "%2$s".', 'mcp-ai-wpoos' ),
+								$required_param,
+								$function_name
+							),
+							array( 'parameter' => $required_param )
+						);
+					}
+				}
+			}
+
+			// Validate parameter types if schema includes type definitions.
+			if ( isset( $tool_schema['properties'] ) && is_array( $tool_schema['properties'] ) ) {
+				foreach ( $arguments as $param_name => $param_value ) {
+					if ( ! isset( $tool_schema['properties'][ $param_name ] ) ) {
+						// Ignore extra parameters (non-strict mode).
+						continue;
+					}
+
+					$param_schema = $tool_schema['properties'][ $param_name ];
+					if ( ! isset( $param_schema['type'] ) ) {
+						continue;
+					}
+
+					$expected_type = $param_schema['type'];
+					$actual_type   = gettype( $param_value );
+
+					// Map PHP types to JSON Schema types.
+					$type_map = array(
+						'boolean' => 'boolean',
+						'integer' => 'number',
+						'double'  => 'number',
+						'string'  => 'string',
+						'array'   => 'array',
+						'object'  => 'object',
+						'NULL'    => 'null',
+					);
+
+					$mapped_type = isset( $type_map[ $actual_type ] ) ? $type_map[ $actual_type ] : $actual_type;
+
+					// Allow integer for number type.
+					if ( 'number' === $expected_type && in_array( $mapped_type, array( 'number', 'integer' ), true ) ) {
+						continue;
+					}
+
+					if ( $expected_type !== $mapped_type ) {
+						return new WP_Error(
+							'wp_mcp_ai_invalid_param_type',
+							sprintf(
+								/* translators: %1$s: parameter name, %2$s: expected type, %3$s: actual type */
+								__( 'Parameter "%1$s" expected type "%2$s" but got "%3$s".', 'mcp-ai-wpoos' ),
+								$param_name,
+								$expected_type,
+								$mapped_type
+							),
+							array(
+								'parameter'     => $param_name,
+								'expected_type' => $expected_type,
+								'actual_type'   => $mapped_type,
+							)
+						);
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Automatically trim tools based on context to reduce token usage.
+		 *
+		 * This is a simplified implementation that keeps tools relevant to the conversation.
+		 * Uses keyword matching to score tool relevance based on name and description.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $messages Message history.
+		 * @param array $tools    Array of tool definitions.
+		 * @param array $options  Request options.
+		 * @return array Trimmed tools array.
+		 */
+		protected function auto_trim_tools( $messages, $tools, $options = array() ) {
+			// Get the last user message to determine relevance.
+			$last_user_message = '';
+			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
+					$last_user_message = isset( $messages[ $i ]['content'] ) ? strtolower( (string) $messages[ $i ]['content'] ) : '';
+					break;
+				}
+			}
+
+			if ( empty( $last_user_message ) || empty( $tools ) ) {
+				return $tools;
+			}
+
+			// Score each tool based on relevance.
+			$scored_tools = array();
+			foreach ( $tools as $tool ) {
+				$score = 0;
+
+				// Check name relevance.
+				if ( isset( $tool['name'] ) ) {
+					$tool_name  = strtolower( str_replace( array( '-', '_' ), ' ', $tool['name'] ) );
+					$name_words = explode( ' ', $tool_name );
+					foreach ( $name_words as $word ) {
+						if ( ! empty( $word ) && false !== strpos( $last_user_message, $word ) ) {
+							$score += 3; // Higher weight for name match.
+						}
+					}
+				}
+
+				// Check description relevance.
+				if ( isset( $tool['description'] ) ) {
+					$tool_desc  = strtolower( $tool['description'] );
+					$desc_words = explode( ' ', $tool_desc );
+					foreach ( $desc_words as $word ) {
+						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
+							$score += 1;
+						}
+					}
+				}
+
+				$scored_tools[] = array(
+					'tool'  => $tool,
+					'score' => $score,
+				);
+			}
+
+			// Sort by score (descending).
+			usort(
+				$scored_tools,
+				function ( $a, $b ) {
+					return $b['score'] - $a['score'];
+				}
+			);
+
+			// Keep top tools (limit to maxTools option).
+			$max_tools     = isset( $options['maxTools'] ) ? absint( $options['maxTools'] ) : 10;
+			$trimmed_tools = array();
+
+			foreach ( array_slice( $scored_tools, 0, $max_tools ) as $scored ) {
+				// Only include tools with a relevance score.
+				if ( $scored['score'] > 0 || count( $trimmed_tools ) < 3 ) {
+					// Always keep at least 3 tools even if score is 0.
+					$trimmed_tools[] = $scored['tool'];
+				}
+			}
+
+			// If no tools passed the relevance test, keep all original tools.
+			if ( empty( $trimmed_tools ) ) {
+				return $tools;
+			}
+
+			return $trimmed_tools;
 		}
 	}
 }

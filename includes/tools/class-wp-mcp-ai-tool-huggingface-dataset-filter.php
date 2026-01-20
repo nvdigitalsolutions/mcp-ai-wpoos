@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 	/**
 	 * Filters dataset rows using SQL-like expressions.
@@ -16,6 +18,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_Filter implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -33,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset Filter tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset Filter tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset Filter', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset Filter', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Filter rows in a HuggingFace dataset based on conditions', 'wp-mcp-ai' );
+			return __( 'Filter rows in a HuggingFace dataset based on conditions', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -205,7 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -222,7 +226,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 			if ( empty( $dataset ) || empty( $split ) || empty( $where ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_missing_params',
-					__( 'Dataset, split, and where clause are required.', 'wp-mcp-ai' )
+					__( 'Dataset, split, and where clause are required.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -236,7 +240,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Filter' ) ) {
 				return $result;
 			}
 
-			return $result;
+			// Add message field for chat response.
+			$count = isset( $result['rows'] ) ? count( $result['rows'] ) : 0;
+			/* translators: %d: number of rows */
+			$message = sprintf( __( 'Successfully filtered dataset, found %d rows.', 'mcp-ai-wpoos' ), $count );
+
+			return $this->ensure_response_message( $result, $message );
 		}
 	}
 }

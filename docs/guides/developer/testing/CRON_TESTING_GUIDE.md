@@ -4,7 +4,7 @@ This guide explains how to test cron job creation and verify that test jobs appe
 
 ## Overview
 
-The WP oOS Cron Manager allows you to create scheduled tasks through AI Assistant tools and view their status, including executed test jobs. This guide shows you how to:
+The NV oOS Cron Manager allows you to create scheduled tasks through AI Assistant tools and view their status, including executed test jobs. This guide shows you how to:
 
 1. Create test cron jobs
 2. Verify they appear in the Cron Manager
@@ -13,7 +13,7 @@ The WP oOS Cron Manager allows you to create scheduled tasks through AI Assistan
 
 ## Accessing the Cron Manager
 
-Navigate to: **WP Admin → WP oOS → Cron Manager**
+Navigate to: **WP Admin → NV oOS → Cron Manager**
 
 Or directly: `/wp-admin/admin.php?page=wp-mcp-ai-cron-manager`
 
@@ -101,7 +101,7 @@ wp mcp-ai tool execute create_cron_job --hook=wp_mcp_ai_cli_test --schedule=sing
 
 ### Step 2: Verify in Cron Manager (Before Execution)
 
-1. Navigate to **WP Admin → WP oOS → Cron Manager**
+1. Navigate to **WP Admin → NV oOS → Cron Manager**
 2. You should see your job listed with:
    - Status: **Active** (green badge)
    - Next Run: "In X minutes"
@@ -130,7 +130,7 @@ Wait for the scheduled time to pass (1-2 minutes).
 
 ### Via Settings UI
 
-1. Navigate to **WP Admin → Settings → WP oOS → Orchestration Layer**
+1. Navigate to **WP Admin → Settings → NV oOS → Orchestration Layer**
 2. Find **Cron Job History Retention** setting
 3. Choose from available options:
    - **1 hour** - Quick tests only
@@ -162,7 +162,7 @@ add_filter( 'wp_mcp_ai_settings', function( $settings ) {
 
 **Solutions:**
 1. Verify you have `manage_options` capability (admin role)
-2. Check that you're creating jobs through WP oOS tools (not native WordPress `wp_schedule_event`)
+2. Check that you're creating jobs through NV oOS tools (not native WordPress `wp_schedule_event`)
 3. Ensure the job was created successfully (check tool execution response)
 4. Try refreshing the Cron Manager page
 
@@ -181,7 +181,7 @@ add_filter( 'wp_mcp_ai_settings', function( $settings ) {
 **Problem:** Job appears but shows as inactive
 
 **Possible Causes:**
-1. Job was manually unscheduled outside of WP oOS
+1. Job was manually unscheduled outside of NV oOS
 2. WordPress cron array was cleared
 3. Job failed to schedule due to an error
 
@@ -299,7 +299,7 @@ Note that PHPUnit tests use `setUp()` and `tearDown()` methods that clean up tes
 If test jobs aren't showing up as expected:
 
 1. Check WordPress error logs
-2. Verify WP oOS plugin is active
+2. Verify NV oOS plugin is active
 3. Ensure you have admin permissions
 4. Review retention settings
 5. Check that WordPress cron is functioning (`wp cron event list`)

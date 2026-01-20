@@ -17,6 +17,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * Provides a tool for forwarding an attachment and prompt to the model.
  */
 class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -28,14 +29,14 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Submit Document Prompt', 'wp-mcp-ai' );
+		return __( 'Submit Document Prompt', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Uploads the referenced document with a follow-up prompt and returns the model response.', 'wp-mcp-ai' );
+		return __( 'Uploads the referenced document with a follow-up prompt and returns the model response.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -47,33 +48,33 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'prompt'         => array(
 					'type'        => 'string',
-					'description' => __( 'Instruction or question that should be answered using the document.', 'wp-mcp-ai' ),
+					'description' => __( 'Instruction or question that should be answered using the document.', 'mcp-ai-wpoos' ),
 				),
 				'attachment_id'  => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'WordPress attachment ID that should be submitted.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID that should be submitted.', 'mcp-ai-wpoos' ),
 				),
 				'attachment_ids' => array(
 					'type'        => 'array',
-					'description' => __( 'List of WordPress attachment IDs to submit.', 'wp-mcp-ai' ),
+					'description' => __( 'List of WordPress attachment IDs to submit.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => array( 'integer', 'string' ),
 					),
 				),
 				'file_id'        => array(
 					'type'        => 'string',
-					'description' => __( 'Previously uploaded OpenAI file identifier to include.', 'wp-mcp-ai' ),
+					'description' => __( 'Previously uploaded OpenAI file identifier to include.', 'mcp-ai-wpoos' ),
 				),
 				'file_ids'       => array(
 					'type'        => 'array',
-					'description' => __( 'List of OpenAI file identifiers to include.', 'wp-mcp-ai' ),
+					'description' => __( 'List of OpenAI file identifiers to include.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
 				'attachments'    => array(
 					'type'        => 'array',
-					'description' => __( 'Structured attachment definitions that may include attachment_id or file_id values.', 'wp-mcp-ai' ),
+					'description' => __( 'Structured attachment definitions that may include attachment_id or file_id values.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'properties'           => array(
@@ -95,19 +96,19 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 				),
 				'model'          => array(
 					'type'        => 'string',
-					'description' => __( 'Optional model override for the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional model override for the request.', 'mcp-ai-wpoos' ),
 				),
 				'temperature'    => array(
 					'type'        => array( 'number', 'integer', 'string' ),
-					'description' => __( 'Optional temperature override (0-2).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional temperature override (0-2).', 'mcp-ai-wpoos' ),
 				),
 				'system_prompt'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional system prompt to prepend to the request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional system prompt to prepend to the request.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'        => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'Optional request timeout override in seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional request timeout override in seconds.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'prompt' ),
@@ -127,7 +128,7 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 		$prompt = trim( $prompt );
 
 		if ( '' === $prompt ) {
-			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'You must supply a prompt before submitting a document.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_prompt', __( 'You must supply a prompt before submitting a document.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -137,7 +138,7 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 
 		$document_specs = $this->normalise_document_arguments( $arguments );
 		if ( empty( $document_specs ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_document', __( 'No attachments or file identifiers were provided.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_document', __( 'No attachments or file identifiers were provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$attachments_helper = new WP_MCP_AI_Message_Attachments();
@@ -158,7 +159,7 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 				}
 
 				if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-					return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 				}
 				$segment = $attachments_helper->prepare_input_file_segment( $segment_args );
 				if ( is_wp_error( $segment ) ) {
@@ -201,7 +202,7 @@ class WP_MCP_AI_Tool_Submit_Document_Prompt implements WP_MCP_AI_Tool_Interface,
 		}
 
 		if ( ! $has_file_segment ) {
-			return new WP_Error( 'wp_mcp_ai_missing_document', __( 'The tool request must include at least one attachment.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_document', __( 'The tool request must include at least one attachment.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$messages = array(

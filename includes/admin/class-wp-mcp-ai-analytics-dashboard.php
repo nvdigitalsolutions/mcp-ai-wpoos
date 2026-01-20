@@ -44,19 +44,19 @@ class WP_MCP_AI_Analytics_Dashboard {
 
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_token_usage_overview',
-			__( 'AI Token Usage Overview', 'wp-mcp-ai' ),
+			__( 'AI Token Usage Overview', 'mcp-ai-wpoos' ),
 			array( __CLASS__, 'render_usage_overview_widget' )
 		);
 
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_cost_breakdown',
-			__( 'AI Cost Breakdown', 'wp-mcp-ai' ),
+			__( 'AI Cost Breakdown', 'mcp-ai-wpoos' ),
 			array( __CLASS__, 'render_cost_breakdown_widget' )
 		);
 
 		wp_add_dashboard_widget(
 			'wp_mcp_ai_usage_forecast',
-			__( 'AI Usage Forecast', 'wp-mcp-ai' ),
+			__( 'AI Usage Forecast', 'mcp-ai-wpoos' ),
 			array( __CLASS__, 'render_usage_forecast_widget' )
 		);
 
@@ -64,19 +64,19 @@ class WP_MCP_AI_Analytics_Dashboard {
 		if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
 			wp_add_dashboard_widget(
 				'wp_mcp_ai_analytics_trends',
-				__( 'AI Usage Trends', 'wp-mcp-ai' ),
+				__( 'AI Usage Trends', 'mcp-ai-wpoos' ),
 				array( __CLASS__, 'render_analytics_trends_widget' )
 			);
 
 			wp_add_dashboard_widget(
 				'wp_mcp_ai_analytics_patterns',
-				__( 'AI Usage Patterns', 'wp-mcp-ai' ),
+				__( 'AI Usage Patterns', 'mcp-ai-wpoos' ),
 				array( __CLASS__, 'render_analytics_patterns_widget' )
 			);
 
 			wp_add_dashboard_widget(
 				'wp_mcp_ai_analytics_anomalies',
-				__( 'AI Anomaly Detection', 'wp-mcp-ai' ),
+				__( 'AI Anomaly Detection', 'mcp-ai-wpoos' ),
 				array( __CLASS__, 'render_analytics_anomalies_widget' )
 			);
 		}

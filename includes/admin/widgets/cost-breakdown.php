@@ -35,7 +35,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 				<?php
 				printf(
 					/* translators: %1$s: start date, %2$s: end date */
-					esc_html__( '%1$s to %2$s', 'wp-mcp-ai' ),
+					esc_html__( '%1$s to %2$s', 'mcp-ai-wpoos' ),
 					esc_html( gmdate( 'M j', strtotime( $period_start ) ) ),
 					esc_html( gmdate( 'M j', strtotime( $period_end ) ) )
 				);
@@ -47,7 +47,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 				<?php
 				printf(
 					/* translators: %s: total tokens */
-					esc_html__( '%s total tokens', 'wp-mcp-ai' ),
+					esc_html__( '%s total tokens', 'mcp-ai-wpoos' ),
 					esc_html( number_format_i18n( $total_tokens ) )
 				);
 				?>
@@ -58,7 +58,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 	<!-- Cost by Provider Chart -->
 	<?php if ( ! empty( $by_provider ) ) : ?>
 		<div class="wp-mcp-ai-chart-container" style="margin-top: 20px;">
-			<canvas id="wp-mcp-ai-dashboard-cost-breakdown" width="400" height="200"></canvas>
+			<canvas id="wp-mcp-ai-dashboard-cost-breakdown"></canvas>
 		</div>
 
 		<script type="text/javascript">
@@ -66,9 +66,11 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-dashboard-cost-breakdown');
 				if (ctx) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var providers = <?php echo wp_json_encode( array_keys( $by_provider ) ); ?>;
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var costs = <?php echo wp_json_encode( array_values( $by_provider ) ); ?>;
-					
+
 					new Chart(ctx.getContext('2d'), {
 						type: 'doughnut',
 						data: {
@@ -102,7 +104,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 								},
 								title: {
 									display: true,
-									text: '<?php esc_attr_e( 'Cost by Provider', 'wp-mcp-ai' ); ?>'
+									text: '<?php esc_attr_e( 'Cost by Provider', 'mcp-ai-wpoos' ); ?>'
 								},
 								tooltip: {
 									callbacks: {
@@ -128,15 +130,15 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 		<?php if ( ! empty( $by_model ) ) : ?>
 			<div class="wp-mcp-ai-model-breakdown" style="margin-top: 20px; border-top: 1px solid #ddd; padding-top: 15px;">
 				<h4 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600;">
-					<?php esc_html_e( 'Cost Breakdown by Model', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Cost Breakdown by Model', 'mcp-ai-wpoos' ); ?>
 				</h4>
 				<table class="widefat" style="font-size: 12px;">
 					<thead>
 						<tr>
-							<th style="padding: 6px 8px;"><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-							<th style="padding: 6px 8px;"><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
-							<th style="padding: 6px 8px; text-align: right;"><?php esc_html_e( 'Tokens', 'wp-mcp-ai' ); ?></th>
-							<th style="padding: 6px 8px; text-align: right;"><?php esc_html_e( 'Cost', 'wp-mcp-ai' ); ?></th>
+							<th style="padding: 6px 8px;"><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding: 6px 8px;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding: 6px 8px; text-align: right;"><?php esc_html_e( 'Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th style="padding: 6px 8px; text-align: right;"><?php esc_html_e( 'Cost', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -177,7 +179,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 									<?php
 									printf(
 										/* translators: %d: number of additional models */
-										esc_html__( '+ %d more models', 'wp-mcp-ai' ),
+										esc_html__( '+ %d more models', 'mcp-ai-wpoos' ),
 										count( $by_model ) - 5
 									);
 									?>
@@ -195,11 +197,11 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 				if ( $total_cost > 0 ) {
 					printf(
 						/* translators: %s: total cost */
-						esc_html__( 'Estimated cost: %s (based on average pricing)', 'wp-mcp-ai' ),
+						esc_html__( 'Estimated cost: %s (based on average pricing)', 'mcp-ai-wpoos' ),
 						esc_html( WP_MCP_AI_Cost_Calculator::format_cost( $total_cost ) )
 					);
 				} else {
-					esc_html_e( 'No token usage recorded in this period.', 'wp-mcp-ai' );
+					esc_html_e( 'No token usage recorded in this period.', 'mcp-ai-wpoos' );
 				}
 				?>
 			</p>
@@ -209,7 +211,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 	<!-- Quick Actions -->
 	<div class="wp-mcp-ai-widget-actions" style="margin-top: 15px; text-align: right;">
 		<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager&view=per_site' ) ); ?>" class="button">
-			<?php esc_html_e( 'View Full Report', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'View Full Report', 'mcp-ai-wpoos' ); ?>
 		</a>
 	</div>
 </div>

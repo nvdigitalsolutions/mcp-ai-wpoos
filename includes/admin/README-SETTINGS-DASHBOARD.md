@@ -1,4 +1,4 @@
-# WP oOS Settings Dashboard
+# NV oOS Settings Dashboard
 
 This directory contains the modern, modular settings dashboard system for Open Operator System.
 

@@ -47,6 +47,34 @@ class WP_MCP_AI_Team_CPT {
 	const META_DEFAULT_TEMPERATURE = '_wp_mcp_ai_team_default_temperature';
 
 	/**
+	 * Meta key for orchestration mode (single, sequential, parallel, swarm).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_ORCHESTRATION_MODE = '_wp_mcp_ai_team_orchestration_mode';
+
+	/**
+	 * Meta key for workflow template (JSON: workflow steps and dependencies).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_WORKFLOW_TEMPLATE = '_wp_mcp_ai_team_workflow_template';
+
+	/**
+	 * Meta key for result aggregation strategy (consensus, weighted, hierarchical, first, best).
+	 *
+	 * @since 1.9.0
+	 */
+	const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';
+
+	/**
+	 * Meta key for driver assistant ID (the assistant that orchestrates the team).
+	 *
+	 * @since 1.9.1
+	 */
+	const META_DRIVER_ASSISTANT = '_wp_mcp_ai_team_driver_assistant';
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -65,19 +93,19 @@ class WP_MCP_AI_Team_CPT {
 	 */
 	public function register_post_type() {
 		$labels = array(
-			'name'               => _x( 'Teams', 'Post type general name', 'wp-mcp-ai' ),
-			'singular_name'      => _x( 'Team', 'Post type singular name', 'wp-mcp-ai' ),
-			'menu_name'          => _x( 'Teams', 'Admin Menu text', 'wp-mcp-ai' ),
-			'name_admin_bar'     => _x( 'Team', 'Add New on Toolbar', 'wp-mcp-ai' ),
-			'add_new'            => __( 'Add New', 'wp-mcp-ai' ),
-			'add_new_item'       => __( 'Add New Team', 'wp-mcp-ai' ),
-			'new_item'           => __( 'New Team', 'wp-mcp-ai' ),
-			'edit_item'          => __( 'Edit Team', 'wp-mcp-ai' ),
-			'view_item'          => __( 'View Team', 'wp-mcp-ai' ),
-			'all_items'          => __( 'Teams', 'wp-mcp-ai' ),
-			'search_items'       => __( 'Search Teams', 'wp-mcp-ai' ),
-			'not_found'          => __( 'No teams found.', 'wp-mcp-ai' ),
-			'not_found_in_trash' => __( 'No teams found in Trash.', 'wp-mcp-ai' ),
+			'name'               => _x( 'Teams', 'Post type general name', 'mcp-ai-wpoos' ),
+			'singular_name'      => _x( 'Team', 'Post type singular name', 'mcp-ai-wpoos' ),
+			'menu_name'          => _x( 'Teams', 'Admin Menu text', 'mcp-ai-wpoos' ),
+			'name_admin_bar'     => _x( 'Team', 'Add New on Toolbar', 'mcp-ai-wpoos' ),
+			'add_new'            => __( 'Add New', 'mcp-ai-wpoos' ),
+			'add_new_item'       => __( 'Add New Team', 'mcp-ai-wpoos' ),
+			'new_item'           => __( 'New Team', 'mcp-ai-wpoos' ),
+			'edit_item'          => __( 'Edit Team', 'mcp-ai-wpoos' ),
+			'view_item'          => __( 'View Team', 'mcp-ai-wpoos' ),
+			'all_items'          => __( 'Teams', 'mcp-ai-wpoos' ),
+			'search_items'       => __( 'Search Teams', 'mcp-ai-wpoos' ),
+			'not_found'          => __( 'No teams found.', 'mcp-ai-wpoos' ),
+			'not_found_in_trash' => __( 'No teams found in Trash.', 'mcp-ai-wpoos' ),
 		);
 
 		$args = array(
@@ -110,7 +138,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_TEAM_MEMBERS,
 			array(
 				'type'              => 'array',
-				'description'       => __( 'Team member profession IDs', 'wp-mcp-ai' ),
+				'description'       => __( 'Team member profession IDs', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_team_members' ),
 				'auth_callback'     => '__return_true',
@@ -124,7 +152,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_TEAM_DESCRIPTION,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Team description', 'wp-mcp-ai' ),
+				'description'       => __( 'Team description', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'wp_kses_post',
 				'auth_callback'     => '__return_true',
@@ -138,7 +166,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_PROVIDER,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Default AI provider for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default AI provider for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_key',
 				'auth_callback'     => '__return_true',
@@ -152,7 +180,7 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_MODEL,
 			array(
 				'type'              => 'string',
-				'description'       => __( 'Default model for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default model for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => 'sanitize_text_field',
 				'auth_callback'     => '__return_true',
@@ -166,13 +194,90 @@ class WP_MCP_AI_Team_CPT {
 			self::META_DEFAULT_TEMPERATURE,
 			array(
 				'type'              => 'number',
-				'description'       => __( 'Default temperature for team members', 'wp-mcp-ai' ),
+				'description'       => __( 'Default temperature for team members', 'mcp-ai-wpoos' ),
 				'single'            => true,
 				'sanitize_callback' => array( $this, 'sanitize_temperature' ),
 				'auth_callback'     => '__return_true',
 				'show_in_rest'      => false,
 			)
 		);
+
+		// Orchestration mode.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_ORCHESTRATION_MODE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Multi-agent orchestration mode', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => 'single',
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Workflow template.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_WORKFLOW_TEMPLATE,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Workflow template for multi-agent coordination', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => '{}',
+				'sanitize_callback' => array( $this, 'sanitize_json_field' ),
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Result aggregation strategy.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_RESULT_AGGREGATION_STRATEGY,
+			array(
+				'type'              => 'string',
+				'description'       => __( 'Strategy for aggregating results from multiple agents', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'default'           => 'consensus',
+				'sanitize_callback' => 'sanitize_key',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+
+		// Driver assistant.
+		register_post_meta(
+			self::POST_TYPE,
+			self::META_DRIVER_ASSISTANT,
+			array(
+				'type'              => 'integer',
+				'description'       => __( 'The assistant that orchestrates and drives the team', 'mcp-ai-wpoos' ),
+				'single'            => true,
+				'sanitize_callback' => 'absint',
+				'auth_callback'     => '__return_true',
+				'show_in_rest'      => false,
+			)
+		);
+	}
+
+	/**
+	 * Sanitize JSON field.
+	 *
+	 * @param string $value Raw JSON value.
+	 * @return string Validated JSON string.
+	 * @since 1.9.0
+	 */
+	public function sanitize_json_field( $value ) {
+		// Decode to validate JSON syntax.
+		$decoded = json_decode( $value, true );
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			// Invalid JSON, return empty object.
+			return '{}';
+		}
+		// Re-encode for consistency.
+		return wp_json_encode( $decoded );
 	}
 
 	/**
@@ -248,7 +353,7 @@ class WP_MCP_AI_Team_CPT {
 
 		add_meta_box(
 			'wp-mcp-ai-team-members',
-			__( 'Team Members', 'wp-mcp-ai' ),
+			__( 'Team Members', 'mcp-ai-wpoos' ),
 			array( $this, 'render_team_members_meta_box' ),
 			self::POST_TYPE,
 			'normal',
@@ -256,8 +361,26 @@ class WP_MCP_AI_Team_CPT {
 		);
 
 		add_meta_box(
+			'wp-mcp-ai-team-orchestration',
+			__( 'Multi-Agent Orchestration', 'mcp-ai-wpoos' ),
+			array( $this, 'render_orchestration_meta_box' ),
+			self::POST_TYPE,
+			'normal',
+			'default'
+		);
+
+		add_meta_box(
+			'wp-mcp-ai-team-driver-assistant',
+			__( 'Driver Assistant', 'mcp-ai-wpoos' ),
+			array( $this, 'render_driver_assistant_meta_box' ),
+			self::POST_TYPE,
+			'side',
+			'high'
+		);
+
+		add_meta_box(
 			'wp-mcp-ai-team-defaults',
-			__( 'Default Settings', 'wp-mcp-ai' ),
+			__( 'Default Settings', 'mcp-ai-wpoos' ),
 			array( $this, 'render_defaults_meta_box' ),
 			self::POST_TYPE,
 			'side',
@@ -292,7 +415,7 @@ class WP_MCP_AI_Team_CPT {
 		?>
 		<div class="wp-mcp-ai-team-members">
 			<p class="description">
-				<?php esc_html_e( 'Select the professionals that make up this team. When you deploy this team, an assistant will be created for each selected professional.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select the professionals that make up this team. When you deploy this team, an assistant will be created for each selected professional.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( empty( $professions ) ) : ?>
@@ -300,8 +423,8 @@ class WP_MCP_AI_Team_CPT {
 					<?php
 					printf(
 						/* translators: %s: URL to create profession */
-						esc_html__( 'No professions found. Please %s first.', 'wp-mcp-ai' ),
-						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'wp-mcp-ai' ) . '</a>'
+						esc_html__( 'No professions found. Please %s first.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_profession' ) ) . '">' . esc_html__( 'create a profession', 'mcp-ai-wpoos' ) . '</a>'
 					);
 					?>
 				</p>
@@ -326,11 +449,223 @@ class WP_MCP_AI_Team_CPT {
 					<?php
 					printf(
 						/* translators: %d: number of selected members */
-						esc_html( _n( '%d professional selected', '%d professionals selected', count( $team_members ), 'wp-mcp-ai' ) ),
+						esc_html( _n( '%d professional selected', '%d professionals selected', count( $team_members ), 'mcp-ai-wpoos' ) ),
 						absint( count( $team_members ) )
 					);
 					?>
 				</p>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the multi-agent orchestration meta box.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @since 1.9.0
+	 */
+	public function render_orchestration_meta_box( $post ) {
+		wp_nonce_field( 'wp_mcp_ai_team_orchestration_meta', 'wp_mcp_ai_team_orchestration_meta_nonce' );
+
+		$orchestration_mode   = get_post_meta( $post->ID, self::META_ORCHESTRATION_MODE, true ) ?: 'single';
+		$workflow_template    = get_post_meta( $post->ID, self::META_WORKFLOW_TEMPLATE, true ) ?: '{}';
+		$aggregation_strategy = get_post_meta( $post->ID, self::META_RESULT_AGGREGATION_STRATEGY, true ) ?: 'consensus';
+
+		// Format JSON for display.
+		$decoded_workflow = json_decode( $workflow_template, true );
+		if ( json_last_error() === JSON_ERROR_NONE ) {
+			$workflow_template = wp_json_encode( $decoded_workflow, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		}
+
+		?>
+		<div class="wp-mcp-ai-team-orchestration">
+			<p class="description" style="margin-bottom: 20px;">
+				<?php
+				esc_html_e(
+					'Configure how team members coordinate in multi-agent workflows. Orchestration mode determines execution pattern (single, sequential, parallel, or swarm). Result aggregation defines how outputs from multiple agents are combined.',
+					'mcp-ai-wpoos'
+				);
+				?>
+			</p>
+
+			<style>
+				.wp-mcp-ai-team-orchestration-field {
+					margin-bottom: 20px;
+				}
+				.wp-mcp-ai-team-orchestration-field label {
+					display: block;
+					font-weight: 600;
+					margin-bottom: 8px;
+				}
+				.wp-mcp-ai-team-orchestration-field textarea {
+					width: 100%;
+					font-family: 'Courier New', Courier, monospace;
+					font-size: 13px;
+				}
+				.wp-mcp-ai-team-orchestration-field .description {
+					margin-top: 5px;
+					font-style: italic;
+				}
+			</style>
+
+			<!-- Orchestration Mode -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_orchestration_mode">
+					<?php esc_html_e( 'Orchestration Mode', 'mcp-ai-wpoos' ); ?>
+					<span class="required" style="color: #dc3232;">*</span>
+				</label>
+				<select 
+					name="wp_mcp_ai_orchestration_mode" 
+					id="wp_mcp_ai_orchestration_mode" 
+					class="widefat"
+					style="max-width: 400px;"
+				>
+					<option value="single" <?php selected( $orchestration_mode, 'single' ); ?>>
+						<?php esc_html_e( 'Single - One agent handles entire task', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="sequential" <?php selected( $orchestration_mode, 'sequential' ); ?>>
+						<?php esc_html_e( 'Sequential - Agents execute in order (pipeline)', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="parallel" <?php selected( $orchestration_mode, 'parallel' ); ?>>
+						<?php esc_html_e( 'Parallel - Agents execute simultaneously', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="swarm" <?php selected( $orchestration_mode, 'swarm' ); ?>>
+						<?php esc_html_e( 'Swarm - Redundant agents for consensus/validation', 'mcp-ai-wpoos' ); ?>
+					</option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'Execution pattern for team members. Sequential chains outputs (A→B→C), parallel runs concurrently, swarm uses redundancy for validation.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<!-- Workflow Template -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_workflow_template">
+					<?php esc_html_e( 'Workflow Template (JSON)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<textarea 
+					name="wp_mcp_ai_workflow_template" 
+					id="wp_mcp_ai_workflow_template" 
+					rows="10"
+					placeholder='{"workflow_name": "research_pipeline", "steps": [{"step_id": "1", "agent_role": "planner"}, {"step_id": "2", "agent_role": "executor", "depends_on": "1"}]}'
+				><?php echo esc_textarea( $workflow_template ); ?></textarea>
+				<p class="description">
+					<?php
+					esc_html_e(
+						'Define workflow steps, agent role assignments, and dependencies. Example: {"workflow_name": "research", "steps": [{"step_id": "1", "agent_role": "planner", "action": "decompose"}, {"step_id": "2", "agent_role": "executor", "depends_on": "1"}]}',
+						'mcp-ai-wpoos'
+					);
+					?>
+				</p>
+			</div>
+
+			<!-- Result Aggregation Strategy -->
+			<div class="wp-mcp-ai-team-orchestration-field">
+				<label for="wp_mcp_ai_result_aggregation">
+					<?php esc_html_e( 'Result Aggregation Strategy', 'mcp-ai-wpoos' ); ?>
+					<span class="required" style="color: #dc3232;">*</span>
+				</label>
+				<select 
+					name="wp_mcp_ai_result_aggregation" 
+					id="wp_mcp_ai_result_aggregation" 
+					class="widefat"
+					style="max-width: 400px;"
+				>
+					<option value="consensus" <?php selected( $aggregation_strategy, 'consensus' ); ?>>
+						<?php esc_html_e( 'Consensus - Majority agreement from all agents', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="weighted" <?php selected( $aggregation_strategy, 'weighted' ); ?>>
+						<?php esc_html_e( 'Weighted - Agents weighted by confidence scores', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="hierarchical" <?php selected( $aggregation_strategy, 'hierarchical' ); ?>>
+						<?php esc_html_e( 'Hierarchical - Priority order (planner > specialist > executor)', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="first" <?php selected( $aggregation_strategy, 'first' ); ?>>
+						<?php esc_html_e( 'First - Use first successful result', 'mcp-ai-wpoos' ); ?>
+					</option>
+					<option value="best" <?php selected( $aggregation_strategy, 'best' ); ?>>
+						<?php esc_html_e( 'Best - Highest confidence score wins', 'mcp-ai-wpoos' ); ?>
+					</option>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'How to combine outputs from multiple agents. Consensus requires agreement, weighted uses confidence scores, hierarchical respects role priority.', 'mcp-ai-wpoos' ); ?>
+				</p>
+			</div>
+
+			<p class="description" style="margin-top: 20px; padding: 10px; background: #f0f0f1; border-left: 4px solid #2271b1;">
+				<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php
+				esc_html_e(
+					'These settings enable DeepSeek V4 multi-agent orchestration. Team members should have assigned agent roles (planner/executor/critic/specialist) via the Profession CPT. Use create_agent_team tool to deploy teams with orchestration.',
+					'mcp-ai-wpoos'
+				);
+				?>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the driver assistant meta box.
+	 *
+	 * @param WP_Post $post Post object.
+	 * @since 1.9.1
+	 */
+	public function render_driver_assistant_meta_box( $post ) {
+		wp_nonce_field( 'wp_mcp_ai_team_driver_assistant_meta', 'wp_mcp_ai_team_driver_assistant_meta_nonce' );
+
+		$driver_assistant_id = get_post_meta( $post->ID, self::META_DRIVER_ASSISTANT, true );
+
+		// Get all published assistants.
+		$assistants = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_assistant',
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+				'post_status'    => 'publish',
+			)
+		);
+
+		?>
+		<div class="wp-mcp-ai-driver-assistant">
+			<p class="description">
+				<?php esc_html_e( 'Optional: Associate an assistant ID for tracking and logging team coordination activities.', 'mcp-ai-wpoos' ); ?>
+			</p>
+
+			<?php if ( empty( $assistants ) ) : ?>
+				<p class="notice notice-warning inline" style="margin: 10px 0;">
+					<?php
+					printf(
+						/* translators: %s: URL to create assistant */
+						esc_html__( 'No assistants found. Please %s first.', 'mcp-ai-wpoos' ),
+						'<a href="' . esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ) . '">' . esc_html__( 'create an assistant', 'mcp-ai-wpoos' ) . '</a>'
+					);
+					?>
+				</p>
+			<?php else : ?>
+				<p>
+					<label for="wp-mcp-ai-driver-assistant">
+						<strong><?php esc_html_e( 'Select Assistant', 'mcp-ai-wpoos' ); ?></strong>
+					</label>
+				</p>
+				<select name="wp_mcp_ai_driver_assistant" id="wp-mcp-ai-driver-assistant" class="widefat" style="margin-bottom: 10px;">
+					<option value=""><?php esc_html_e( '-- Select Driver Assistant --', 'mcp-ai-wpoos' ); ?></option>
+					<?php foreach ( $assistants as $assistant ) : ?>
+						<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $driver_assistant_id, $assistant->ID ); ?>>
+							<?php echo esc_html( $assistant->post_title ); ?>
+						</option>
+					<?php endforeach; ?>
+				</select>
+				
+				<?php if ( $driver_assistant_id ) : ?>
+					<p style="margin-top: 10px;">
+						<a href="<?php echo esc_url( get_edit_post_link( $driver_assistant_id ) ); ?>" class="button button-small">
+							<?php esc_html_e( 'Edit Driver Assistant', 'mcp-ai-wpoos' ); ?>
+						</a>
+					</p>
+				<?php endif; ?>
 			<?php endif; ?>
 		</div>
 		<?php
@@ -343,27 +678,9 @@ class WP_MCP_AI_Team_CPT {
 	 */
 	public function render_defaults_meta_box( $post ) {
 		// Enqueue model selector JavaScript.
-		if ( ! wp_script_is( 'wp-mcp-ai-model-selector', 'enqueued' ) ) {
-			wp_enqueue_script(
-				'wp-mcp-ai-model-selector',
-				WP_MCP_AI_URL . 'assets/js/admin-model-selector.js',
-				array( 'jquery' ),
-				WP_MCP_AI_VERSION,
-				true
-			);
-
-			// Localize script for AJAX (only once).
-			wp_localize_script(
-				'wp-mcp-ai-model-selector',
-				'wpMcpAiModelSelector',
-				array(
-					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
-					'nonce'           => wp_create_nonce( 'wp-mcp-ai-model-selector' ),
-					'selectModelText' => __( '— Select Model —', 'wp-mcp-ai' ),
-					'errorMessage'    => __( 'Failed to load models. Please try again.', 'wp-mcp-ai' ),
-				)
-			);
-		}
+		// Script is registered globally in WP_MCP_AI_Admin_Scripts with localization.
+		// We just need to enqueue it here for this metabox.
+		wp_enqueue_script( 'wp-mcp-ai-model-selector' );
 
 		wp_nonce_field( 'wp_mcp_ai_team_defaults_meta', 'wp_mcp_ai_team_defaults_meta_nonce' );
 
@@ -386,29 +703,32 @@ class WP_MCP_AI_Team_CPT {
 		?>
 		<div class="wp-mcp-ai-team-defaults">
 			<p class="description">
-				<?php esc_html_e( 'These settings will be applied to all assistants created from this team.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'These settings will be applied to all assistants created from this team.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-provider">
-					<strong><?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="wp_mcp_ai_default_provider" id="wp-mcp-ai-default-provider" class="widefat wp-mcp-ai-provider-select" data-model-target="#wp-mcp-ai-default-model">
-					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'wp-mcp-ai' ); ?></option>
-					<option value="openai" <?php selected( $default_provider, 'openai' ); ?>><?php esc_html_e( 'OpenAI', 'wp-mcp-ai' ); ?></option>
-					<option value="gemini" <?php selected( $default_provider, 'gemini' ); ?>><?php esc_html_e( 'Google Gemini', 'wp-mcp-ai' ); ?></option>
-					<option value="anthropic" <?php selected( $default_provider, 'anthropic' ); ?>><?php esc_html_e( 'Anthropic Claude', 'wp-mcp-ai' ); ?></option>
-					<option value="ollama" <?php selected( $default_provider, 'ollama' ); ?>><?php esc_html_e( 'Ollama (Local)', 'wp-mcp-ai' ); ?></option>
-					<option value="lm_studio" <?php selected( $default_provider, 'lm_studio' ); ?>><?php esc_html_e( 'LM Studio', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '-- Use Professional Default --', 'mcp-ai-wpoos' ); ?></option>
+					<?php
+					$available_providers = WP_MCP_AI_Admin_Settings::get_available_providers();
+					foreach ( $available_providers as $provider_slug => $provider_label ) {
+						?>
+						<option value="<?php echo esc_attr( $provider_slug ); ?>" <?php selected( $default_provider, $provider_slug ); ?>><?php echo esc_html( $provider_label ); ?></option>
+						<?php
+					}
+					?>
 				</select>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-model">
-					<strong><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<select name="wp_mcp_ai_default_model" id="wp-mcp-ai-default-model" class="widefat">
-					<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+					<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 					<?php if ( ! empty( $models ) ) : ?>
 						<?php foreach ( $models as $model_id => $model_name ) : ?>
 							<option value="<?php echo esc_attr( $model_id ); ?>" <?php selected( $default_model, $model_id ); ?>>
@@ -422,15 +742,15 @@ class WP_MCP_AI_Team_CPT {
 						</option>
 					<?php endif; ?>
 				</select>
-				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( 'Leave empty to use professional default', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 
 			<p>
 				<label for="wp-mcp-ai-default-temperature">
-					<strong><?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?></strong>
 				</label><br>
 				<input type="number" name="wp_mcp_ai_default_temperature" id="wp-mcp-ai-default-temperature" class="widefat" value="<?php echo esc_attr( $default_temperature ); ?>" min="0" max="2" step="0.1" placeholder="0.7">
-				<span class="description"><?php esc_html_e( '0-2. Leave empty to use professional default', 'wp-mcp-ai' ); ?></span>
+				<span class="description"><?php esc_html_e( '0-2. Leave empty to use professional default', 'mcp-ai-wpoos' ); ?></span>
 			</p>
 		</div>
 		<?php
@@ -493,6 +813,38 @@ class WP_MCP_AI_Team_CPT {
 				update_post_meta( $post_id, self::META_DEFAULT_TEMPERATURE, $default_temperature );
 			}
 		}
+
+		// Save orchestration settings.
+		if ( isset( $_POST['wp_mcp_ai_team_orchestration_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_team_orchestration_meta_nonce'] ) ), 'wp_mcp_ai_team_orchestration_meta' ) ) {
+			// Orchestration mode.
+			if ( isset( $_POST['wp_mcp_ai_orchestration_mode'] ) ) {
+				$orchestration_mode = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_orchestration_mode'] ) );
+				update_post_meta( $post_id, self::META_ORCHESTRATION_MODE, $orchestration_mode );
+			}
+
+			// Workflow template (JSON).
+			if ( isset( $_POST['wp_mcp_ai_workflow_template'] ) ) {
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized by sanitize_json_field callback.
+				$workflow_template = wp_unslash( $_POST['wp_mcp_ai_workflow_template'] );
+				update_post_meta( $post_id, self::META_WORKFLOW_TEMPLATE, $workflow_template );
+			}
+
+			// Result aggregation strategy.
+			if ( isset( $_POST['wp_mcp_ai_result_aggregation'] ) ) {
+				$aggregation_strategy = sanitize_key( wp_unslash( $_POST['wp_mcp_ai_result_aggregation'] ) );
+				update_post_meta( $post_id, self::META_RESULT_AGGREGATION_STRATEGY, $aggregation_strategy );
+			}
+		}
+
+		// Save driver assistant.
+		if ( isset( $_POST['wp_mcp_ai_team_driver_assistant_meta_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_team_driver_assistant_meta_nonce'] ) ), 'wp_mcp_ai_team_driver_assistant_meta' ) ) {
+			$driver_assistant_id = isset( $_POST['wp_mcp_ai_driver_assistant'] ) ? absint( wp_unslash( $_POST['wp_mcp_ai_driver_assistant'] ) ) : 0;
+			if ( $driver_assistant_id > 0 ) {
+				update_post_meta( $post_id, self::META_DRIVER_ASSISTANT, $driver_assistant_id );
+			} else {
+				delete_post_meta( $post_id, self::META_DRIVER_ASSISTANT );
+			}
+		}
 	}
 
 	/**
@@ -506,8 +858,8 @@ class WP_MCP_AI_Team_CPT {
 		foreach ( $columns as $key => $label ) {
 			$new_columns[ $key ] = $label;
 			if ( 'title' === $key ) {
-				$new_columns['team_members'] = __( 'Team Members', 'wp-mcp-ai' );
-				$new_columns['provider']     = __( 'Provider', 'wp-mcp-ai' );
+				$new_columns['team_members'] = __( 'Team Members', 'mcp-ai-wpoos' );
+				$new_columns['provider']     = __( 'Provider', 'mcp-ai-wpoos' );
 			}
 		}
 		return $new_columns;
@@ -523,23 +875,24 @@ class WP_MCP_AI_Team_CPT {
 		if ( 'team_members' === $column ) {
 			$team_members = get_post_meta( $post_id, self::META_TEAM_MEMBERS, true );
 			if ( is_array( $team_members ) && ! empty( $team_members ) ) {
-				echo esc_html( count( $team_members ) ) . ' ' . esc_html( _n( 'professional', 'professionals', count( $team_members ), 'wp-mcp-ai' ) );
+				echo esc_html( count( $team_members ) ) . ' ' . esc_html( _n( 'professional', 'professionals', count( $team_members ), 'mcp-ai-wpoos' ) );
 			} else {
-				echo '<span class="description">' . esc_html__( 'No members', 'wp-mcp-ai' ) . '</span>';
+				echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>';
 			}
 		} elseif ( 'provider' === $column ) {
 			$provider = get_post_meta( $post_id, self::META_DEFAULT_PROVIDER, true );
 			if ( $provider ) {
 				$provider_labels = array(
-					'openai'    => 'OpenAI',
-					'gemini'    => 'Gemini',
-					'anthropic' => 'Claude',
-					'ollama'    => 'Ollama',
-					'lm_studio' => 'LM Studio',
+					'openai'     => 'OpenAI',
+					'gemini'     => 'Gemini',
+					'anthropic'  => 'Claude',
+					'ollama'     => 'Ollama',
+					'lm_studio'  => 'LM Studio',
+					'cloudflare' => 'Cloudflare',
 				);
 				echo esc_html( isset( $provider_labels[ $provider ] ) ? $provider_labels[ $provider ] : $provider );
 			} else {
-				echo '<span class="description">' . esc_html__( 'Default', 'wp-mcp-ai' ) . '</span>';
+				echo '<span class="description">' . esc_html__( 'Default', 'mcp-ai-wpoos' ) . '</span>';
 			}
 		}
 	}

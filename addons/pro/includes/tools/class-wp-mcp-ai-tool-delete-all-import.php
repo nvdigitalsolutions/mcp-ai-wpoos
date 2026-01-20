@@ -33,7 +33,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The WP All Import Pro tool is disabled because WP All Import plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The WP All Import Pro tool is disabled because WP All Import plugin is not active.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Delete WP All Import Template', 'wp-mcp-ai' );
+		return __( 'Delete WP All Import Template', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Deletes a WP All Import template and its associated files (Pro feature). Requires WP All Import plugin.', 'wp-mcp-ai' );
+		return __( 'Deletes a WP All Import template and its associated files (Pro feature). Requires WP All Import plugin.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,7 +66,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'import_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the import template to delete.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the import template to delete.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 			),
@@ -84,21 +84,21 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_all_import_missing', __( 'WP All Import is not active on this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete imports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be logged in to delete imports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete imports.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to delete imports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( empty( $arguments['import_id'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Import ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$import_id = absint( $arguments['import_id'] );
@@ -106,7 +106,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 		// Verify import exists.
 		$import = get_post( $import_id );
 		if ( ! $import || 'import' !== $import->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_import', __( 'Invalid import ID.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$import_name = $import->post_title;
@@ -131,12 +131,12 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 		$deleted = wp_delete_post( $import_id, true );
 
 		if ( ! $deleted ) {
-			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete import template.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete import template.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return array(
 			'success'     => true,
-			'message'     => __( 'Import template deleted successfully.', 'wp-mcp-ai' ),
+			'message'     => __( 'Import template deleted successfully.', 'mcp-ai-wpoos-pro' ),
 			'import_id'   => $import_id,
 			'import_name' => $import_name,
 		);
@@ -165,6 +165,7 @@ class WP_MCP_AI_Pro_Tool_Delete_All_Import implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'requires-plugin',     // Requires WP All Import plugin.
 			'state-changing',      // Modifies state by deleting data.
 			'destructive',         // Permanently deletes data.

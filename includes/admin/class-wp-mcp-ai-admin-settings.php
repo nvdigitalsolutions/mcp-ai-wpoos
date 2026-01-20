@@ -25,15 +25,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 	 * - WP_MCP_AI_Settings_Validator: Input validation
 	 */
 	class WP_MCP_AI_Admin_Settings {
-		const DEFAULT_MEMORY_MAX_FILE_BYTES  = 5242880; // 5 MB.
-		const OPTION_NAME                    = 'wp_mcp_ai_settings';
-		const SETTINGS_GROUP                 = 'wp_mcp_ai_settings_group';
-		const PAGE_SLUG                      = 'wp-mcp-ai-settings';
-		const SIMPLE_JWT_LOGIN_PLUGIN        = 'simple-jwt-login/simple-jwt-login.php';
-		const GMAIL_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/gmail.readonly';
-		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
-		const GMAIL_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
-		const GMAIL_PROFILE_ENDPOINT         = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		const DEFAULT_MEMORY_MAX_FILE_BYTES         = 5242880; // 5 MB.
+		const OPTION_NAME                           = 'wp_mcp_ai_settings';
+		const SETTINGS_GROUP                        = 'wp_mcp_ai_settings_group';
+		const PAGE_SLUG                             = 'wp-mcp-ai-settings';
+		const SIMPLE_JWT_LOGIN_PLUGIN               = 'simple-jwt-login/simple-jwt-login.php';
+		const GMAIL_OAUTH_SCOPE                     = 'https://www.googleapis.com/auth/gmail.readonly';
+		const GMAIL_OAUTH_AUTHORIZE_ENDPOINT        = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GMAIL_OAUTH_TOKEN_ENDPOINT            = 'https://oauth2.googleapis.com/token';
+		const GMAIL_PROFILE_ENDPOINT                = 'https://gmail.googleapis.com/gmail/v1/users/me/profile';
+		const GOOGLE_DRIVE_OAUTH_SCOPE              = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
+		const GOOGLE_DRIVE_OAUTH_AUTHORIZE_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
+		const GOOGLE_DRIVE_OAUTH_TOKEN_ENDPOINT     = 'https://oauth2.googleapis.com/token';
 
 		/**
 		 * Cached settings for the current request.
@@ -94,8 +97,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );.
 
 			// Delegate OAuth handlers to the OAuth manager component.
+			// Note: OAuth callback is now handled via admin_init in the OAuth manager itself.
+			// We only need the 'start' action here as it uses admin-post.php properly.
 			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_start', array( $this->oauth_manager, 'handle_gmail_oauth_start' ) );
-			add_action( 'admin_post_wp_mcp_ai_gmail_oauth_callback', array( $this->oauth_manager, 'handle_gmail_oauth_callback' ) );
+			add_action( 'admin_post_wp_mcp_ai_google_drive_oauth_start', array( $this->oauth_manager, 'handle_google_drive_oauth_start' ) );
 			add_filter( 'wp_mcp_ai_memory_max_file_bytes', array( $this->settings_base, 'filter_memory_max_file_bytes' ), 10, 2 );
 			add_action( 'admin_post_wp_mcp_ai_prune_log', array( $this, 'handle_prune_log_request' ) );
 			// Legacy settings page notices disabled - now handled by WP_MCP_AI_Settings_Dashboard.
@@ -111,6 +116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			add_action( 'wp_ajax_wp_mcp_ai_fetch_cloudways_data', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_cloudflare_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_test_brave_search_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
+			add_action( 'wp_ajax_wp_mcp_ai_test_mubert_connection', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_user_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_reset_all_token_usage', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
 			add_action( 'wp_ajax_wp_mcp_ai_save_tool_limits', array( $this->ajax_handlers, 'safe_ajax_handler' ) );
@@ -140,173 +146,198 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		private static function get_connector_definitions() {
 			return array(
 				'auth0'            => array(
-					'label'            => __( 'Auth0', 'wp-mcp-ai' ),
+					'label'            => __( 'Auth0', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'auth0_domain', 'auth0_audience' ),
 					'fields'           => array(
-						'auth0_domain'         => __( 'Domain', 'wp-mcp-ai' ),
-						'auth0_audience'       => __( 'API Audience', 'wp-mcp-ai' ),
-						'auth0_required_scope' => __( 'Required Scope', 'wp-mcp-ai' ),
+						'auth0_domain'         => __( 'Domain', 'mcp-ai-wpoos' ),
+						'auth0_audience'       => __( 'API Audience', 'mcp-ai-wpoos' ),
+						'auth0_required_scope' => __( 'Required Scope', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Secures the MCP REST namespace for remote clients that authenticate with bearer tokens.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Fill this in when provisioning external connectors or integrations that need REST access.', 'wp-mcp-ai' ),
+					'description'      => __( 'Secures the MCP REST namespace for remote clients that authenticate with bearer tokens.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Fill this in when provisioning external connectors or integrations that need REST access.', 'mcp-ai-wpoos' ),
 				),
 				'openai'           => array(
-					'label'            => __( 'OpenAI', 'wp-mcp-ai' ),
+					'label'            => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'openai_api_key' ),
 					'fields'           => array(
-						'openai_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+						'openai_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Powers chat completions, document tools, speech synthesis, and image generation workflows.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter this connector before routing assistants through OpenAI or enabling OpenAI-powered tools.', 'wp-mcp-ai' ),
+					'description'      => __( 'Powers chat completions, document tools, speech synthesis, and image generation workflows.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enter this connector before routing assistants through OpenAI or enabling OpenAI-powered tools.', 'mcp-ai-wpoos' ),
 				),
 				'gemini'           => array(
-					'label'            => __( 'Gemini', 'wp-mcp-ai' ),
+					'label'            => __( 'Gemini', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'gemini_api_key' ),
 					'fields'           => array(
-						'gemini_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+						'gemini_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'wp-mcp-ai' ),
+					'description'      => __( 'Provides access to Google Gemini models when routing assistant conversations.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add credentials once you plan to use Gemini as a provider or fallback.', 'mcp-ai-wpoos' ),
 				),
 				'ollama'           => array(
-					'label'            => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
+					'label'            => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'ollama_endpoint_url', 'ollama_model' ),
 					'fields'           => array(
-						'ollama_endpoint_url' => __( 'Endpoint URL', 'wp-mcp-ai' ),
-						'ollama_model'        => __( 'Model', 'wp-mcp-ai' ),
+						'ollama_endpoint_url' => __( 'Endpoint URL', 'mcp-ai-wpoos' ),
+						'ollama_model'        => __( 'Model', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Connects to a local Ollama instance for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:11434) and select a model from your Ollama instance.', 'wp-mcp-ai' ),
+					'description'      => __( 'Connects to a local Ollama instance for privacy-focused, cost-free AI processing.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enter the endpoint URL (e.g., http://localhost:11434) and select a model from your Ollama instance.', 'mcp-ai-wpoos' ),
 				),
 				'lm_studio'        => array(
-					'label'            => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+					'label'            => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'lm_studio_endpoint_url', 'lm_studio_model' ),
 					'fields'           => array(
-						'lm_studio_endpoint_url' => __( 'Endpoint URL', 'wp-mcp-ai' ),
-						'lm_studio_model'        => __( 'Model', 'wp-mcp-ai' ),
+						'lm_studio_endpoint_url' => __( 'Endpoint URL', 'mcp-ai-wpoos' ),
+						'lm_studio_model'        => __( 'Model', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Connects to a local LM Studio server with OpenAI-compatible API for privacy-focused, cost-free AI processing.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter the endpoint URL (e.g., http://127.0.0.1:1234) and select a model from your LM Studio server.', 'wp-mcp-ai' ),
+					'description'      => __( 'Connects to a local LM Studio server with OpenAI-compatible API for privacy-focused, cost-free AI processing.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enter the endpoint URL (e.g., http://127.0.0.1:1234) and select a model from your LM Studio server.', 'mcp-ai-wpoos' ),
 				),
 				'brave'            => array(
-					'label'            => __( 'Brave Search', 'wp-mcp-ai' ),
+					'label'            => __( 'Brave Search', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'brave_search_api_key' ),
 					'fields'           => array(
-						'brave_search_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+						'brave_search_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Enables enhanced web search results when assistants run the search tool.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Provide the key after switching the web search provider to Brave.', 'wp-mcp-ai' ),
+					'description'      => __( 'Enables enhanced web search results when assistants run the search tool.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Provide the key after switching the web search provider to Brave.', 'mcp-ai-wpoos' ),
 					'active_when'      => array(
 						'web_search_provider' => array( 'brave' ),
 					),
-					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'wp-mcp-ai' ),
+					'inactive_message' => __( 'Set the web search provider to Brave to activate this connector.', 'mcp-ai-wpoos' ),
+				),
+				'mubert'           => array(
+					'label'            => __( 'Mubert', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'mubert_api_key' ),
+					'fields'           => array(
+						'mubert_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables royalty-free background music generation with 150+ genres and 50+ moods.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Request an API key from Mubert (business@mubert.com) before using the generate_music tool.', 'mcp-ai-wpoos' ),
+					'docs_url'         => 'https://mubert.com',
 				),
 				'ita_tariff_rates' => array(
-					'label'            => __( 'ITA Tariff Rates', 'wp-mcp-ai' ),
+					'label'            => __( 'ITA Tariff Rates', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'ita_tariff_api_key' ),
 					'fields'           => array(
-						'ita_tariff_api_key' => __( 'API Key', 'wp-mcp-ai' ),
+						'ita_tariff_api_key' => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Enables automated tariff lookups through Trade.gov for supported destinations.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Request an API key from Trade.gov and store it before using the import duty lookup tool.', 'wp-mcp-ai' ),
+					'description'      => __( 'Enables automated tariff lookups through Trade.gov for supported destinations.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Request an API key from Trade.gov and store it before using the import duty lookup tool.', 'mcp-ai-wpoos' ),
 					'docs_url'         => 'https://developer.trade.gov/ita-tariff-rates-api',
 				),
 				'crawl4ai'         => array(
-					'label'            => __( 'Crawl4AI', 'wp-mcp-ai' ),
+					'label'            => __( 'Crawl4AI', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'crawl4ai_base_url' ),
 					'fields'           => array(
-						'crawl4ai_base_url' => __( 'Base URL', 'wp-mcp-ai' ),
-						'crawl4ai_api_key'  => __( 'API Key', 'wp-mcp-ai' ),
+						'crawl4ai_base_url' => __( 'Base URL', 'mcp-ai-wpoos' ),
+						'crawl4ai_api_key'  => __( 'API Key', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Lets assistants launch Crawl4AI harvesting jobs for large-scale content gathering.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Configure this before dispatching Crawl4AI jobs from an assistant workflow.', 'wp-mcp-ai' ),
-					'ready_message'    => __( 'Remote Crawl4AI endpoint configured.', 'wp-mcp-ai' ),
+					'description'      => __( 'Lets assistants launch Crawl4AI harvesting jobs for large-scale content gathering.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Configure this before dispatching Crawl4AI jobs from an assistant workflow.', 'mcp-ai-wpoos' ),
+					'ready_message'    => __( 'Remote Crawl4AI endpoint configured.', 'mcp-ai-wpoos' ),
 					'empty_status'     => array(
 						'status'  => 'info',
-						'label'   => __( 'Running locally', 'wp-mcp-ai' ),
-						'message' => __( 'No remote endpoint configured. Crawl4AI jobs will run locally until a base URL is provided.', 'wp-mcp-ai' ),
+						'label'   => __( 'Running locally', 'mcp-ai-wpoos' ),
+						'message' => __( 'No remote endpoint configured. Crawl4AI jobs will run locally until a base URL is provided.', 'mcp-ai-wpoos' ),
+					),
+				),
+				'playwright'       => array(
+					'label'            => __( 'Playwright (Pro)', 'mcp-ai-wpoos' ),
+					'required_options' => array( 'playwright_service_url' ),
+					'fields'           => array(
+						'playwright_service_url' => __( 'Service URL', 'mcp-ai-wpoos' ),
+					),
+					'description'      => __( 'Enables browser automation with JavaScript rendering, screenshots, PDFs, and form interactions via the web_browser Pro tool.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Configure a Playwright service URL for full browser automation capabilities. Leave empty to use local HTTP fallback (limited to simple page fetch).', 'mcp-ai-wpoos' ),
+					'ready_message'    => __( 'Remote Playwright service configured.', 'mcp-ai-wpoos' ),
+					'empty_status'     => array(
+						'status'  => 'info',
+						'label'   => __( 'Local fallback', 'mcp-ai-wpoos' ),
+						'message' => __( 'No remote service configured. The web_browser tool will use local HTTP fallback with limited functionality (no JavaScript, screenshots, or PDFs).', 'mcp-ai-wpoos' ),
 					),
 				),
 				'cloudflare'       => array(
-					'label'            => __( 'Cloudflare', 'wp-mcp-ai' ),
+					'label'            => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'cloudflare_zone_id', 'cloudflare_api_token' ),
 					'fields'           => array(
-						'cloudflare_zone_id'   => __( 'Zone ID', 'wp-mcp-ai' ),
-						'cloudflare_api_token' => __( 'API Token', 'wp-mcp-ai' ),
+						'cloudflare_zone_id'   => __( 'Zone ID', 'mcp-ai-wpoos' ),
+						'cloudflare_api_token' => __( 'API Token', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Used by operations automations that purge cache or interact with Cloudflare APIs.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Add these credentials ahead of enabling Cloudflare-related tools.', 'wp-mcp-ai' ),
+					'description'      => __( 'Used by operations automations that purge cache or interact with Cloudflare APIs.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Add these credentials ahead of enabling Cloudflare-related tools.', 'mcp-ai-wpoos' ),
 				),
 				'varnish'          => array(
-					'label'            => __( 'Varnish', 'wp-mcp-ai' ),
+					'label'            => __( 'Varnish', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'enable_varnish_purge' ),
 					'fields'           => array(
-						'enable_varnish_purge' => __( 'Enable Varnish Purge', 'wp-mcp-ai' ),
+						'enable_varnish_purge' => __( 'Enable Varnish Purge', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Enables purging of local Varnish cache. Sends PURGE requests to 127.0.0.1, which is the standard practice for Varnish on hosting platforms like Cloudways.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enable this option if your server uses Varnish caching and you need to purge it when content updates.', 'wp-mcp-ai' ),
+					'description'      => __( 'Enables purging of local Varnish cache. Sends PURGE requests to 127.0.0.1, which is the standard practice for Varnish on hosting platforms like Cloudways.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enable this option if your server uses Varnish caching and you need to purge it when content updates.', 'mcp-ai-wpoos' ),
 					'empty_status'     => array(
 						'status'  => 'info',
-						'label'   => __( 'Not enabled', 'wp-mcp-ai' ),
-						'message' => __( 'Varnish purge is not currently enabled. Enable it if your hosting environment uses Varnish caching.', 'wp-mcp-ai' ),
+						'label'   => __( 'Not enabled', 'mcp-ai-wpoos' ),
+						'message' => __( 'Varnish purge is not currently enabled. Enable it if your hosting environment uses Varnish caching.', 'mcp-ai-wpoos' ),
 					),
 				),
 				'cloudways'        => array(
-					'label'            => __( 'Cloudways', 'wp-mcp-ai' ),
+					'label'            => __( 'Cloudways', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'cloudways_email', 'cloudways_api_key' ),
 					'fields'           => array(
-						'cloudways_email'     => __( 'Account Email', 'wp-mcp-ai' ),
-						'cloudways_api_key'   => __( 'API Key', 'wp-mcp-ai' ),
-						'cloudways_server_id' => __( 'Server ID', 'wp-mcp-ai' ),
-						'cloudways_app_id'    => __( 'Application ID', 'wp-mcp-ai' ),
+						'cloudways_email'     => __( 'Account Email', 'mcp-ai-wpoos' ),
+						'cloudways_api_key'   => __( 'API Key', 'mcp-ai-wpoos' ),
+						'cloudways_server_id' => __( 'Server ID', 'mcp-ai-wpoos' ),
+						'cloudways_app_id'    => __( 'Application ID', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Connects to Cloudways hosting platform for server and application management.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter your Cloudways account email and API key. Use the "Fetch Cloudways Data" button to automatically retrieve your server and application IDs.', 'wp-mcp-ai' ),
+					'description'      => __( 'Connects to Cloudways hosting platform for server and application management.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enter your Cloudways account email and API key. Use the "Fetch Cloudways Data" button to automatically retrieve your server and application IDs.', 'mcp-ai-wpoos' ),
 					'docs_url'         => 'https://developers.cloudways.com/docs/',
 				),
 				'mailjet'          => array(
-					'label'            => __( 'Mailjet', 'wp-mcp-ai' ),
+					'label'            => __( 'Mailjet', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'mailjet_api_key', 'mailjet_api_secret' ),
 					'fields'           => array(
-						'mailjet_api_key'    => __( 'API Key', 'wp-mcp-ai' ),
-						'mailjet_api_secret' => __( 'API Secret', 'wp-mcp-ai' ),
-						'mailjet_from_email' => __( 'From Email', 'wp-mcp-ai' ),
-						'mailjet_from_name'  => __( 'From Name', 'wp-mcp-ai' ),
+						'mailjet_api_key'    => __( 'API Key', 'mcp-ai-wpoos' ),
+						'mailjet_api_secret' => __( 'API Secret', 'mcp-ai-wpoos' ),
+						'mailjet_from_email' => __( 'From Email', 'mcp-ai-wpoos' ),
+						'mailjet_from_name'  => __( 'From Name', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Allows assistants to send transactional or group email through Mailjet.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Populate these fields before assigning assistants to send Mailjet emails.', 'wp-mcp-ai' ),
+					'description'      => __( 'Allows assistants to send transactional or group email through Mailjet.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Populate these fields before assigning assistants to send Mailjet emails.', 'mcp-ai-wpoos' ),
 				),
 				'quickbooks'       => array(
-					'label'            => __( 'QuickBooks Online', 'wp-mcp-ai' ),
+					'label'            => __( 'QuickBooks Online', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'quickbooks_company_id', 'quickbooks_api_key' ),
 					'fields'           => array(
-						'quickbooks_company_id' => __( 'Company ID', 'wp-mcp-ai' ),
-						'quickbooks_api_key'    => __( 'API Key / Token', 'wp-mcp-ai' ),
+						'quickbooks_company_id' => __( 'Company ID', 'mcp-ai-wpoos' ),
+						'quickbooks_api_key'    => __( 'API Key / Token', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Feeds financial reporting tools that summarise QuickBooks Online data.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Enter credentials when activating the QuickBooks report tool for assistants.', 'wp-mcp-ai' ),
+					'description'      => __( 'Feeds financial reporting tools that summarise QuickBooks Online data.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Enter credentials when activating the QuickBooks report tool for assistants.', 'mcp-ai-wpoos' ),
 				),
 				'google_analytics' => array(
-					'label'            => __( 'Google Analytics', 'wp-mcp-ai' ),
+					'label'            => __( 'Google Analytics', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'google_analytics_property_id', 'google_analytics_credentials_json' ),
 					'fields'           => array(
-						'google_analytics_property_id' => __( 'Property ID', 'wp-mcp-ai' ),
-						'google_analytics_credentials_json' => __( 'Service account JSON', 'wp-mcp-ai' ),
+						'google_analytics_property_id' => __( 'Property ID', 'mcp-ai-wpoos' ),
+						'google_analytics_credentials_json' => __( 'Service account JSON', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Supplies authenticated access to the Google Analytics Data API for GA4 properties.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Paste a service account credential and default property before enabling Analytics reporting tools.', 'wp-mcp-ai' ),
+					'description'      => __( 'Supplies authenticated access to the Google Analytics Data API for GA4 properties.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Paste a service account credential and default property before enabling Analytics reporting tools.', 'mcp-ai-wpoos' ),
 				),
 				'gmail'            => array(
-					'label'            => __( 'Gmail', 'wp-mcp-ai' ),
+					'label'            => __( 'Gmail', 'mcp-ai-wpoos' ),
 					'required_options' => array( 'gmail_client_id', 'gmail_client_secret', 'gmail_refresh_token', 'gmail_user_email' ),
 					'fields'           => array(
-						'gmail_client_id'     => __( 'Client ID', 'wp-mcp-ai' ),
-						'gmail_client_secret' => __( 'Client Secret', 'wp-mcp-ai' ),
-						'gmail_refresh_token' => __( 'Refresh Token', 'wp-mcp-ai' ),
-						'gmail_user_email'    => __( 'Authorised Email', 'wp-mcp-ai' ),
+						'gmail_client_id'     => __( 'Client ID', 'mcp-ai-wpoos' ),
+						'gmail_client_secret' => __( 'Client Secret', 'mcp-ai-wpoos' ),
+						'gmail_refresh_token' => __( 'Refresh Token', 'mcp-ai-wpoos' ),
+						'gmail_user_email'    => __( 'Authorised Email', 'mcp-ai-wpoos' ),
 					),
-					'description'      => __( 'Unlocks Gmail search tools so assistants can review messages within scope.', 'wp-mcp-ai' ),
-					'usage'            => __( 'Complete this connector when assistants need to search connected Gmail inboxes.', 'wp-mcp-ai' ),
+					'description'      => __( 'Unlocks Gmail search tools so assistants can review messages within scope.', 'mcp-ai-wpoos' ),
+					'usage'            => __( 'Complete this connector when assistants need to search connected Gmail inboxes.', 'mcp-ai-wpoos' ),
 				),
 			);
 		}
@@ -319,627 +350,627 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function get_chat_color_definitions() {
 			return array(
 				'container-border'                    => array(
-					'label'       => __( 'Container border', 'wp-mcp-ai' ),
+					'label'       => __( 'Container border', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#d5d5d5',
 					'format'      => 'hex',
-					'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
+					'description' => __( 'Border surrounding the chat interface.', 'mcp-ai-wpoos' ),
 				),
 				'container-background'                => array(
-					'label'       => __( 'Container background', 'wp-mcp-ai' ),
+					'label'       => __( 'Container background', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
+					'description' => __( 'Main background color for the chat container.', 'mcp-ai-wpoos' ),
 				),
 				'container-shadow'                    => array(
-					'label'       => __( 'Container shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Container shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => 'rgba(15, 23, 42, 0.08)',
 					'format'      => 'rgba',
-					'description' => __( 'Drop shadow applied to the chat container.', 'wp-mcp-ai' ),
+					'description' => __( 'Drop shadow applied to the chat container.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-border'                     => array(
-					'label'       => __( 'Shortcut border', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut border', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => 'rgba(148, 163, 184, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Border for the transcript toggle and saved reply shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Border for the transcript toggle and saved reply shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-background'                 => array(
-					'label'       => __( 'Shortcut background', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut background', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => 'rgba(148, 163, 184, 0.16)',
 					'format'      => 'rgba',
-					'description' => __( 'Background fill for the transcript toggle and shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Background fill for the transcript toggle and shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-text'                       => array(
-					'label'       => __( 'Shortcut text', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut text', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => '#111827',
 					'format'      => 'hex',
-					'description' => __( 'Text and icon color for transcript controls and shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Text and icon color for transcript controls and shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-hover-background'           => array(
-					'label'       => __( 'Shortcut hover background', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut hover background', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => 'rgba(59, 130, 246, 0.12)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color when hovering the transcript toggle or shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when hovering the transcript toggle or shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-hover-border'               => array(
-					'label'       => __( 'Shortcut hover border', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut hover border', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => 'rgba(59, 130, 246, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Border color when hovering transcript controls or shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color when hovering transcript controls or shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-hover-text'                 => array(
-					'label'       => __( 'Shortcut hover text', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut hover text', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => '#0f172a',
 					'format'      => 'hex',
-					'description' => __( 'Text color when hovering the transcript toggle or shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color when hovering the transcript toggle or shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'shortcut-focus-ring'                 => array(
-					'label'       => __( 'Shortcut focus ring', 'wp-mcp-ai' ),
+					'label'       => __( 'Shortcut focus ring', 'mcp-ai-wpoos' ),
 					'group'       => 'shortcuts',
 					'default'     => 'rgba(59, 130, 246, 0.45)',
 					'format'      => 'rgba',
-					'description' => __( 'Focus outline color for transcript controls and shortcuts.', 'wp-mcp-ai' ),
+					'description' => __( 'Focus outline color for transcript controls and shortcuts.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-neutral-background'           => array(
-					'label'       => __( 'Default bubble background', 'wp-mcp-ai' ),
+					'label'       => __( 'Default bubble background', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#f5f5f5',
 					'format'      => 'hex',
-					'description' => __( 'Background color for neutral chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for neutral chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-neutral-text'                 => array(
-					'label'       => __( 'Default bubble text', 'wp-mcp-ai' ),
+					'label'       => __( 'Default bubble text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#111827',
 					'format'      => 'hex',
-					'description' => __( 'Primary text color inside neutral chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Primary text color inside neutral chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-neutral-border'               => array(
-					'label'       => __( 'Default bubble border', 'wp-mcp-ai' ),
+					'label'       => __( 'Default bubble border', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => 'rgba(148, 163, 184, 0.4)',
 					'format'      => 'rgba',
-					'description' => __( 'Border color used for neutral chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color used for neutral chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-neutral-shadow'               => array(
-					'label'       => __( 'Default bubble shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Default bubble shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => 'rgba(15, 23, 42, 0.06)',
 					'format'      => 'rgba',
-					'description' => __( 'Soft shadow beneath neutral chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Soft shadow beneath neutral chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-heading-text'                 => array(
-					'label'       => __( 'Bubble heading text', 'wp-mcp-ai' ),
+					'label'       => __( 'Bubble heading text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#1e293b',
 					'format'      => 'hex',
-					'description' => __( 'Heading color for titles inside chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Heading color for titles inside chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'code-block-background'               => array(
-					'label'       => __( 'Code block background', 'wp-mcp-ai' ),
+					'label'       => __( 'Code block background', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#0f172a',
 					'format'      => 'hex',
-					'description' => __( 'Background for preformatted code blocks.', 'wp-mcp-ai' ),
+					'description' => __( 'Background for preformatted code blocks.', 'mcp-ai-wpoos' ),
 				),
 				'code-block-text'                     => array(
-					'label'       => __( 'Code block text', 'wp-mcp-ai' ),
+					'label'       => __( 'Code block text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#f8fafc',
 					'format'      => 'hex',
-					'description' => __( 'Text color for preformatted code blocks.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for preformatted code blocks.', 'mcp-ai-wpoos' ),
 				),
 				'code-block-border'                   => array(
-					'label'       => __( 'Code block border', 'wp-mcp-ai' ),
+					'label'       => __( 'Code block border', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => 'rgba(59, 130, 246, 0.25)',
 					'format'      => 'rgba',
-					'description' => __( 'Outline applied to code blocks.', 'wp-mcp-ai' ),
+					'description' => __( 'Outline applied to code blocks.', 'mcp-ai-wpoos' ),
 				),
 				'blockquote-border'                   => array(
-					'label'       => __( 'Blockquote border', 'wp-mcp-ai' ),
+					'label'       => __( 'Blockquote border', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => 'rgba(59, 130, 246, 0.4)',
 					'format'      => 'rgba',
-					'description' => __( 'Accent border for blockquotes within bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Accent border for blockquotes within bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'blockquote-background'               => array(
-					'label'       => __( 'Blockquote background', 'wp-mcp-ai' ),
+					'label'       => __( 'Blockquote background', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#eef2ff',
 					'format'      => 'hex',
-					'description' => __( 'Background fill for blockquotes inside chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Background fill for blockquotes inside chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'blockquote-text'                     => array(
-					'label'       => __( 'Blockquote text', 'wp-mcp-ai' ),
+					'label'       => __( 'Blockquote text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#1e293b',
 					'format'      => 'hex',
-					'description' => __( 'Text color for quoted content.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for quoted content.', 'mcp-ai-wpoos' ),
 				),
 				'inline-code-background'              => array(
-					'label'       => __( 'Inline code background', 'wp-mcp-ai' ),
+					'label'       => __( 'Inline code background', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => 'rgba(15, 23, 42, 0.08)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color for inline code snippets.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for inline code snippets.', 'mcp-ai-wpoos' ),
 				),
 				'inline-code-text'                    => array(
-					'label'       => __( 'Inline code text', 'wp-mcp-ai' ),
+					'label'       => __( 'Inline code text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#0f172a',
 					'format'      => 'hex',
-					'description' => __( 'Text color for inline code snippets.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for inline code snippets.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-link-text'                    => array(
-					'label'       => __( 'Default link text', 'wp-mcp-ai' ),
+					'label'       => __( 'Default link text', 'mcp-ai-wpoos' ),
 					'group'       => 'default-message',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Link color inside neutral chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Link color inside neutral chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'speech-button-background'            => array(
-					'label'       => __( 'Speech button background', 'wp-mcp-ai' ),
+					'label'       => __( 'Speech button background', 'mcp-ai-wpoos' ),
 					'group'       => 'speech',
 					'default'     => 'rgba(15, 23, 42, 0.82)',
 					'format'      => 'rgba',
-					'description' => __( 'Default background for the speech playback button.', 'wp-mcp-ai' ),
+					'description' => __( 'Default background for the speech playback button.', 'mcp-ai-wpoos' ),
 				),
 				'speech-button-text'                  => array(
-					'label'       => __( 'Speech button icon', 'wp-mcp-ai' ),
+					'label'       => __( 'Speech button icon', 'mcp-ai-wpoos' ),
 					'group'       => 'speech',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Icon color within the speech playback button.', 'wp-mcp-ai' ),
+					'description' => __( 'Icon color within the speech playback button.', 'mcp-ai-wpoos' ),
 				),
 				'speech-button-hover-background'      => array(
-					'label'       => __( 'Speech button hover', 'wp-mcp-ai' ),
+					'label'       => __( 'Speech button hover', 'mcp-ai-wpoos' ),
 					'group'       => 'speech',
 					'default'     => 'rgba(15, 23, 42, 0.94)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color when hovering over the speech button.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when hovering over the speech button.', 'mcp-ai-wpoos' ),
 				),
 				'speech-button-focus-ring'            => array(
-					'label'       => __( 'Speech button focus ring', 'wp-mcp-ai' ),
+					'label'       => __( 'Speech button focus ring', 'mcp-ai-wpoos' ),
 					'group'       => 'speech',
 					'default'     => 'rgba(59, 130, 246, 0.45)',
 					'format'      => 'rgba',
-					'description' => __( 'Outline color when the speech button receives focus.', 'wp-mcp-ai' ),
+					'description' => __( 'Outline color when the speech button receives focus.', 'mcp-ai-wpoos' ),
 				),
 				'speech-button-error-background'      => array(
-					'label'       => __( 'Speech button error', 'wp-mcp-ai' ),
+					'label'       => __( 'Speech button error', 'mcp-ai-wpoos' ),
 					'group'       => 'speech',
 					'default'     => 'rgba(220, 38, 38, 0.88)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color when a speech error is shown.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when a speech error is shown.', 'mcp-ai-wpoos' ),
 				),
 				'copy-button-background'              => array(
-					'label'       => __( 'Copy button background', 'wp-mcp-ai' ),
+					'label'       => __( 'Copy button background', 'mcp-ai-wpoos' ),
 					'group'       => 'clipboard',
 					'default'     => 'rgba(15, 23, 42, 0.82)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color for the copy transcript button.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for the copy transcript button.', 'mcp-ai-wpoos' ),
 				),
 				'copy-button-text'                    => array(
-					'label'       => __( 'Copy button icon', 'wp-mcp-ai' ),
+					'label'       => __( 'Copy button icon', 'mcp-ai-wpoos' ),
 					'group'       => 'clipboard',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Icon color for the copy transcript button.', 'wp-mcp-ai' ),
+					'description' => __( 'Icon color for the copy transcript button.', 'mcp-ai-wpoos' ),
 				),
 				'copy-button-hover-background'        => array(
-					'label'       => __( 'Copy button hover background', 'wp-mcp-ai' ),
+					'label'       => __( 'Copy button hover background', 'mcp-ai-wpoos' ),
 					'group'       => 'clipboard',
 					'default'     => 'rgba(15, 23, 42, 0.94)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color when hovering the copy transcript button.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when hovering the copy transcript button.', 'mcp-ai-wpoos' ),
 				),
 				'copy-button-focus-ring'              => array(
-					'label'       => __( 'Copy button focus ring', 'wp-mcp-ai' ),
+					'label'       => __( 'Copy button focus ring', 'mcp-ai-wpoos' ),
 					'group'       => 'clipboard',
 					'default'     => 'rgba(59, 130, 246, 0.45)',
 					'format'      => 'rgba',
-					'description' => __( 'Focus outline color for the copy transcript button.', 'wp-mcp-ai' ),
+					'description' => __( 'Focus outline color for the copy transcript button.', 'mcp-ai-wpoos' ),
 				),
 				'copy-button-error-background'        => array(
-					'label'       => __( 'Copy button error', 'wp-mcp-ai' ),
+					'label'       => __( 'Copy button error', 'mcp-ai-wpoos' ),
 					'group'       => 'clipboard',
 					'default'     => 'rgba(220, 38, 38, 0.88)',
 					'format'      => 'rgba',
-					'description' => __( 'Background color when the copy transcript button fails.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when the copy transcript button fails.', 'mcp-ai-wpoos' ),
 				),
 				'user-bubble-gradient-start'          => array(
-					'label'       => __( 'User bubble gradient start', 'wp-mcp-ai' ),
+					'label'       => __( 'User bubble gradient start', 'mcp-ai-wpoos' ),
 					'group'       => 'user-message',
 					'default'     => '#2747f0',
 					'format'      => 'hex',
-					'description' => __( 'Starting color for the user message gradient.', 'wp-mcp-ai' ),
+					'description' => __( 'Starting color for the user message gradient.', 'mcp-ai-wpoos' ),
 				),
 				'user-bubble-gradient-end'            => array(
-					'label'       => __( 'User bubble gradient end', 'wp-mcp-ai' ),
+					'label'       => __( 'User bubble gradient end', 'mcp-ai-wpoos' ),
 					'group'       => 'user-message',
 					'default'     => '#4855f5',
 					'format'      => 'hex',
-					'description' => __( 'Ending color for the user message gradient.', 'wp-mcp-ai' ),
+					'description' => __( 'Ending color for the user message gradient.', 'mcp-ai-wpoos' ),
 				),
 				'user-bubble-text'                    => array(
-					'label'       => __( 'User bubble text', 'wp-mcp-ai' ),
+					'label'       => __( 'User bubble text', 'mcp-ai-wpoos' ),
 					'group'       => 'user-message',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Text and link color for user messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Text and link color for user messages.', 'mcp-ai-wpoos' ),
 				),
 				'user-bubble-shadow'                  => array(
-					'label'       => __( 'User bubble shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'User bubble shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'user-message',
 					'default'     => 'rgba(39, 71, 240, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow cast by user chat bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow cast by user chat bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'assistant-bubble-background'         => array(
-					'label'       => __( 'Assistant bubble background', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant bubble background', 'mcp-ai-wpoos' ),
 					'group'       => 'assistant-message',
 					'default'     => '#f8faff',
 					'format'      => 'hex',
-					'description' => __( 'Background color for assistant responses.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for assistant responses.', 'mcp-ai-wpoos' ),
 				),
 				'assistant-bubble-border'             => array(
-					'label'       => __( 'Assistant bubble border', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant bubble border', 'mcp-ai-wpoos' ),
 					'group'       => 'assistant-message',
 					'default'     => 'rgba(59, 130, 246, 0.25)',
 					'format'      => 'rgba',
-					'description' => __( 'Border color for assistant responses.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color for assistant responses.', 'mcp-ai-wpoos' ),
 				),
 				'assistant-bubble-shadow'             => array(
-					'label'       => __( 'Assistant bubble shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant bubble shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'assistant-message',
 					'default'     => 'rgba(59, 130, 246, 0.08)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow used beneath assistant responses.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow used beneath assistant responses.', 'mcp-ai-wpoos' ),
 				),
 				'assistant-strong-text'               => array(
-					'label'       => __( 'Assistant strong text', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant strong text', 'mcp-ai-wpoos' ),
 					'group'       => 'assistant-message',
 					'default'     => '#1d4ed8',
 					'format'      => 'hex',
-					'description' => __( 'Accent color for bold text in assistant messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Accent color for bold text in assistant messages.', 'mcp-ai-wpoos' ),
 				),
 				'assistant-em-text'                   => array(
-					'label'       => __( 'Assistant emphasized text', 'wp-mcp-ai' ),
+					'label'       => __( 'Assistant emphasized text', 'mcp-ai-wpoos' ),
 					'group'       => 'assistant-message',
 					'default'     => '#4338ca',
 					'format'      => 'hex',
-					'description' => __( 'Accent color for italic text in assistant messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Accent color for italic text in assistant messages.', 'mcp-ai-wpoos' ),
 				),
 				'tool-bubble-background'              => array(
-					'label'       => __( 'Tool bubble background', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool bubble background', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => '#0f172a',
 					'format'      => 'hex',
-					'description' => __( 'Background color for tool output bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for tool output bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'tool-bubble-text'                    => array(
-					'label'       => __( 'Tool bubble text', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool bubble text', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => '#e2e8f0',
 					'format'      => 'hex',
-					'description' => __( 'Text color used in tool output bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color used in tool output bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'tool-bubble-border'                  => array(
-					'label'       => __( 'Tool bubble border', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool bubble border', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => 'rgba(96, 165, 250, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Border color for tool output bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color for tool output bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'tool-bubble-inner-shadow'            => array(
-					'label'       => __( 'Tool bubble inner shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool bubble inner shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => 'rgba(30, 64, 175, 0.4)',
 					'format'      => 'rgba',
-					'description' => __( 'Inset outline applied inside tool bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Inset outline applied inside tool bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'tool-bubble-link-text'               => array(
-					'label'       => __( 'Tool link text', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool link text', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => '#93c5fd',
 					'format'      => 'hex',
-					'description' => __( 'Link color for tool output bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Link color for tool output bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'tool-code-background'                => array(
-					'label'       => __( 'Tool code background', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool code background', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => 'rgba(148, 163, 184, 0.18)',
 					'format'      => 'rgba',
-					'description' => __( 'Background for inline code inside tool outputs.', 'wp-mcp-ai' ),
+					'description' => __( 'Background for inline code inside tool outputs.', 'mcp-ai-wpoos' ),
 				),
 				'tool-code-text'                      => array(
-					'label'       => __( 'Tool code text', 'wp-mcp-ai' ),
+					'label'       => __( 'Tool code text', 'mcp-ai-wpoos' ),
 					'group'       => 'tool-message',
 					'default'     => '#f8fafc',
 					'format'      => 'hex',
-					'description' => __( 'Text color for inline code within tool outputs.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for inline code within tool outputs.', 'mcp-ai-wpoos' ),
 				),
 				'system-bubble-background'            => array(
-					'label'       => __( 'System bubble background', 'wp-mcp-ai' ),
+					'label'       => __( 'System bubble background', 'mcp-ai-wpoos' ),
 					'group'       => 'system-message',
 					'default'     => '#fef9c3',
 					'format'      => 'hex',
-					'description' => __( 'Background color for system messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for system messages.', 'mcp-ai-wpoos' ),
 				),
 				'system-bubble-text'                  => array(
-					'label'       => __( 'System bubble text', 'wp-mcp-ai' ),
+					'label'       => __( 'System bubble text', 'mcp-ai-wpoos' ),
 					'group'       => 'system-message',
 					'default'     => '#854d0e',
 					'format'      => 'hex',
-					'description' => __( 'Text color used in system messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color used in system messages.', 'mcp-ai-wpoos' ),
 				),
 				'system-bubble-border'                => array(
-					'label'       => __( 'System bubble border', 'wp-mcp-ai' ),
+					'label'       => __( 'System bubble border', 'mcp-ai-wpoos' ),
 					'group'       => 'system-message',
 					'default'     => '#facc15',
 					'format'      => 'hex',
-					'description' => __( 'Accent border for system messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Accent border for system messages.', 'mcp-ai-wpoos' ),
 				),
 				'status-text'                         => array(
-					'label'       => __( 'Status text', 'wp-mcp-ai' ),
+					'label'       => __( 'Status text', 'mcp-ai-wpoos' ),
 					'group'       => 'status',
 					'default'     => '#1d4ed8',
 					'format'      => 'hex',
-					'description' => __( 'Primary color for status messages.', 'wp-mcp-ai' ),
+					'description' => __( 'Primary color for status messages.', 'mcp-ai-wpoos' ),
 				),
 				'status-background'                   => array(
-					'label'       => __( 'Status background', 'wp-mcp-ai' ),
+					'label'       => __( 'Status background', 'mcp-ai-wpoos' ),
 					'group'       => 'status',
 					'default'     => '#eef2ff',
 					'format'      => 'hex',
-					'description' => __( 'Background for status notices below the transcript.', 'wp-mcp-ai' ),
+					'description' => __( 'Background for status notices below the transcript.', 'mcp-ai-wpoos' ),
 				),
 				'status-border'                       => array(
-					'label'       => __( 'Status border', 'wp-mcp-ai' ),
+					'label'       => __( 'Status border', 'mcp-ai-wpoos' ),
 					'group'       => 'status',
 					'default'     => '#3b82f6',
 					'format'      => 'hex',
-					'description' => __( 'Accent border for status notices.', 'wp-mcp-ai' ),
+					'description' => __( 'Accent border for status notices.', 'mcp-ai-wpoos' ),
 				),
 				'label-text'                          => array(
-					'label'       => __( 'Form label text', 'wp-mcp-ai' ),
+					'label'       => __( 'Form label text', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#0f172a',
 					'format'      => 'hex',
-					'description' => __( 'Color used for form field labels.', 'wp-mcp-ai' ),
+					'description' => __( 'Color used for form field labels.', 'mcp-ai-wpoos' ),
 				),
 				'input-border'                        => array(
-					'label'       => __( 'Input border', 'wp-mcp-ai' ),
+					'label'       => __( 'Input border', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#cbd5f5',
 					'format'      => 'hex',
-					'description' => __( 'Border color for the chat input field.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color for the chat input field.', 'mcp-ai-wpoos' ),
 				),
 				'input-background'                    => array(
-					'label'       => __( 'Input background', 'wp-mcp-ai' ),
+					'label'       => __( 'Input background', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#f9fafb',
 					'format'      => 'hex',
-					'description' => __( 'Background color for the chat input field.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for the chat input field.', 'mcp-ai-wpoos' ),
 				),
 				'input-focus-border'                  => array(
-					'label'       => __( 'Input focus border', 'wp-mcp-ai' ),
+					'label'       => __( 'Input focus border', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#4361ff',
 					'format'      => 'hex',
-					'description' => __( 'Border color when the input field is focused.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color when the input field is focused.', 'mcp-ai-wpoos' ),
 				),
 				'input-focus-shadow'                  => array(
-					'label'       => __( 'Input focus glow', 'wp-mcp-ai' ),
+					'label'       => __( 'Input focus glow', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => 'rgba(67, 97, 255, 0.2)',
 					'format'      => 'rgba',
-					'description' => __( 'Glow applied when the input field is focused.', 'wp-mcp-ai' ),
+					'description' => __( 'Glow applied when the input field is focused.', 'mcp-ai-wpoos' ),
 				),
 				'attach-border'                       => array(
-					'label'       => __( 'Attachment button border', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment button border', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#c3c4c7',
 					'format'      => 'hex',
-					'description' => __( 'Border for the “Attach file” button.', 'wp-mcp-ai' ),
+					'description' => __( 'Border for the “Attach file” button.', 'mcp-ai-wpoos' ),
 				),
 				'attach-text'                         => array(
-					'label'       => __( 'Attachment button text', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment button text', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#1d2327',
 					'format'      => 'hex',
-					'description' => __( 'Text color for the “Attach file” button and attachment titles.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for the “Attach file” button and attachment titles.', 'mcp-ai-wpoos' ),
 				),
 				'attach-hover-background'             => array(
-					'label'       => __( 'Attachment hover background', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment hover background', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#f0f0f0',
 					'format'      => 'hex',
-					'description' => __( 'Background color when hovering the attachment button.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when hovering the attachment button.', 'mcp-ai-wpoos' ),
 				),
 				'attach-hover-border'                 => array(
-					'label'       => __( 'Attachment hover border', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment hover border', 'mcp-ai-wpoos' ),
 					'group'       => 'form',
 					'default'     => '#a7aaad',
 					'format'      => 'hex',
-					'description' => __( 'Border color when hovering the attachment button.', 'wp-mcp-ai' ),
+					'description' => __( 'Border color when hovering the attachment button.', 'mcp-ai-wpoos' ),
 				),
 				'submit-gradient-start'               => array(
-					'label'       => __( 'Submit gradient start', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit gradient start', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#3b5bff',
 					'format'      => 'hex',
-					'description' => __( 'Starting color for the Send button gradient.', 'wp-mcp-ai' ),
+					'description' => __( 'Starting color for the Send button gradient.', 'mcp-ai-wpoos' ),
 				),
 				'submit-gradient-end'                 => array(
-					'label'       => __( 'Submit gradient end', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit gradient end', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#7c5cff',
 					'format'      => 'hex',
-					'description' => __( 'Ending color for the Send button gradient.', 'wp-mcp-ai' ),
+					'description' => __( 'Ending color for the Send button gradient.', 'mcp-ai-wpoos' ),
 				),
 				'submit-text'                         => array(
-					'label'       => __( 'Submit button text', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit button text', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Text color for the Send button.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for the Send button.', 'mcp-ai-wpoos' ),
 				),
 				'submit-shadow'                       => array(
-					'label'       => __( 'Submit button shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit button shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => 'rgba(59, 91, 255, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow below the Send button.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow below the Send button.', 'mcp-ai-wpoos' ),
 				),
 				'submit-hover-gradient-start'         => array(
-					'label'       => __( 'Submit hover gradient start', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit hover gradient start', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#324cf8',
 					'format'      => 'hex',
-					'description' => __( 'Starting gradient color when hovering the Send button.', 'wp-mcp-ai' ),
+					'description' => __( 'Starting gradient color when hovering the Send button.', 'mcp-ai-wpoos' ),
 				),
 				'submit-hover-gradient-end'           => array(
-					'label'       => __( 'Submit hover gradient end', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit hover gradient end', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#6a4bff',
 					'format'      => 'hex',
-					'description' => __( 'Ending gradient color when hovering the Send button.', 'wp-mcp-ai' ),
+					'description' => __( 'Ending gradient color when hovering the Send button.', 'mcp-ai-wpoos' ),
 				),
 				'submit-hover-shadow'                 => array(
-					'label'       => __( 'Submit hover shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit hover shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => 'rgba(50, 76, 248, 0.4)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow applied to the Send button on hover.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow applied to the Send button on hover.', 'mcp-ai-wpoos' ),
 				),
 				'submit-active-gradient-start'        => array(
-					'label'       => __( 'Submit active gradient start', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit active gradient start', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#2f44f0',
 					'format'      => 'hex',
-					'description' => __( 'Starting gradient color while the Send button is pressed.', 'wp-mcp-ai' ),
+					'description' => __( 'Starting gradient color while the Send button is pressed.', 'mcp-ai-wpoos' ),
 				),
 				'submit-active-gradient-end'          => array(
-					'label'       => __( 'Submit active gradient end', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit active gradient end', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#5b3eff',
 					'format'      => 'hex',
-					'description' => __( 'Ending gradient color while the Send button is pressed.', 'wp-mcp-ai' ),
+					'description' => __( 'Ending gradient color while the Send button is pressed.', 'mcp-ai-wpoos' ),
 				),
 				'submit-active-shadow'                => array(
-					'label'       => __( 'Submit active shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit active shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => 'rgba(47, 68, 240, 0.38)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow applied to the Send button while it is pressed.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow applied to the Send button while it is pressed.', 'mcp-ai-wpoos' ),
 				),
 				'submit-disabled-background'          => array(
-					'label'       => __( 'Submit disabled background', 'wp-mcp-ai' ),
+					'label'       => __( 'Submit disabled background', 'mcp-ai-wpoos' ),
 					'group'       => 'actions',
 					'default'     => '#9aa5ff',
 					'format'      => 'hex',
-					'description' => __( 'Background color when the Send button is disabled.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color when the Send button is disabled.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-border'                  => array(
-					'label'       => __( 'Attachments border', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachments border', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#e2e4e7',
 					'format'      => 'hex',
-					'description' => __( 'Border for the attachments container and items.', 'wp-mcp-ai' ),
+					'description' => __( 'Border for the attachments container and items.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-background'              => array(
-					'label'       => __( 'Attachments background', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachments background', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#f9fafb',
 					'format'      => 'hex',
-					'description' => __( 'Background color for the attachments container.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for the attachments container.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-item-background'         => array(
-					'label'       => __( 'Attachment item background', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment item background', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Background color for individual attachment rows.', 'wp-mcp-ai' ),
+					'description' => __( 'Background color for individual attachment rows.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-meta-text'               => array(
-					'label'       => __( 'Attachment meta text', 'wp-mcp-ai' ),
+					'label'       => __( 'Attachment meta text', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#646970',
 					'format'      => 'hex',
-					'description' => __( 'Secondary text color for attachment metadata.', 'wp-mcp-ai' ),
+					'description' => __( 'Secondary text color for attachment metadata.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-remove-text'             => array(
-					'label'       => __( 'Remove link text', 'wp-mcp-ai' ),
+					'label'       => __( 'Remove link text', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#3858e9',
 					'format'      => 'hex',
-					'description' => __( 'Link color for removing attachments.', 'wp-mcp-ai' ),
+					'description' => __( 'Link color for removing attachments.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-remove-hover-background' => array(
-					'label'       => __( 'Remove link hover background', 'wp-mcp-ai' ),
+					'label'       => __( 'Remove link hover background', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => 'rgba(56, 88, 233, 0.1)',
 					'format'      => 'rgba',
-					'description' => __( 'Background when hovering the attachment remove link.', 'wp-mcp-ai' ),
+					'description' => __( 'Background when hovering the attachment remove link.', 'mcp-ai-wpoos' ),
 				),
 				'attachments-remove-hover-text'       => array(
-					'label'       => __( 'Remove link hover text', 'wp-mcp-ai' ),
+					'label'       => __( 'Remove link hover text', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#2b45b8',
 					'format'      => 'hex',
-					'description' => __( 'Text color when hovering the attachment remove link.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color when hovering the attachment remove link.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-attachments-text'             => array(
-					'label'       => __( 'Bubble attachment text', 'wp-mcp-ai' ),
+					'label'       => __( 'Bubble attachment text', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Text color for attachments listed inside bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for attachments listed inside bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'bubble-attachments-link-text'        => array(
-					'label'       => __( 'Bubble attachment links', 'wp-mcp-ai' ),
+					'label'       => __( 'Bubble attachment links', 'mcp-ai-wpoos' ),
 					'group'       => 'attachments',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Link color for attachments displayed within bubbles.', 'wp-mcp-ai' ),
+					'description' => __( 'Link color for attachments displayed within bubbles.', 'mcp-ai-wpoos' ),
 				),
 				'notice-border'                       => array(
-					'label'       => __( 'Alert border', 'wp-mcp-ai' ),
+					'label'       => __( 'Alert border', 'mcp-ai-wpoos' ),
 					'group'       => 'alerts',
 					'default'     => 'rgba(214, 54, 56, 0.35)',
 					'format'      => 'rgba',
-					'description' => __( 'Border for alert notices rendered by the shortcode.', 'wp-mcp-ai' ),
+					'description' => __( 'Border for alert notices rendered by the shortcode.', 'mcp-ai-wpoos' ),
 				),
 				'notice-background'                   => array(
-					'label'       => __( 'Alert background', 'wp-mcp-ai' ),
+					'label'       => __( 'Alert background', 'mcp-ai-wpoos' ),
 					'group'       => 'alerts',
 					'default'     => '#fef2f2',
 					'format'      => 'hex',
-					'description' => __( 'Background for alert notices rendered by the shortcode.', 'wp-mcp-ai' ),
+					'description' => __( 'Background for alert notices rendered by the shortcode.', 'mcp-ai-wpoos' ),
 				),
 				'notice-text'                         => array(
-					'label'       => __( 'Alert text', 'wp-mcp-ai' ),
+					'label'       => __( 'Alert text', 'mcp-ai-wpoos' ),
 					'group'       => 'alerts',
 					'default'     => '#8a1f1f',
 					'format'      => 'hex',
-					'description' => __( 'Text color for alert notices.', 'wp-mcp-ai' ),
+					'description' => __( 'Text color for alert notices.', 'mcp-ai-wpoos' ),
 				),
 				'notice-shadow'                       => array(
-					'label'       => __( 'Alert shadow', 'wp-mcp-ai' ),
+					'label'       => __( 'Alert shadow', 'mcp-ai-wpoos' ),
 					'group'       => 'alerts',
 					'default'     => 'rgba(214, 54, 56, 0.12)',
 					'format'      => 'rgba',
-					'description' => __( 'Shadow applied to alert notices.', 'wp-mcp-ai' ),
+					'description' => __( 'Shadow applied to alert notices.', 'mcp-ai-wpoos' ),
 				),
 			);
 		}
@@ -962,10 +993,37 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		/**
 		 * Returns the list of available provider choices.
 		 *
-		 * @return array
+		 * This method returns only providers that are both enabled (via enable_* checkbox)
+		 * and properly configured (have required API keys/endpoints). Works in both base
+		 * and pro modes, and handles cases where Model_Config may not be loaded.
+		 *
+		 * @since 1.0.0
+		 * @return array Associative array of provider slug => label for enabled providers.
 		 */
 		public static function get_available_providers() {
-			return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			// Try to use Model_Config if available for accurate filtering.
+			if ( ! class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$model_config_path = trailingslashit( WP_MCP_AI_PATH ) . 'includes' . DIRECTORY_SEPARATOR . 'class-wp-mcp-ai-model-config.php';
+				if ( file_exists( $model_config_path ) ) {
+					require_once $model_config_path;
+				}
+			}
+
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) && method_exists( 'WP_MCP_AI_Model_Config', 'get_available_providers' ) ) {
+				return WP_MCP_AI_Model_Config::get_available_providers();
+			}
+
+			// Fallback: Return all providers if Model_Config is not available.
+			// This ensures backward compatibility and prevents breaking the UI.
+			return array(
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare Workers AI', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			);
 		}
 
 		/**
@@ -975,20 +1033,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public static function get_chat_color_groups() {
 			return array(
-				'container'         => __( 'Chat container', 'wp-mcp-ai' ),
-				'shortcuts'         => __( 'Transcript toggle & shortcuts', 'wp-mcp-ai' ),
-				'default-message'   => __( 'Default message bubble', 'wp-mcp-ai' ),
-				'speech'            => __( 'Speech controls', 'wp-mcp-ai' ),
-				'clipboard'         => __( 'Copy transcript button', 'wp-mcp-ai' ),
-				'user-message'      => __( 'User messages', 'wp-mcp-ai' ),
-				'assistant-message' => __( 'Assistant messages', 'wp-mcp-ai' ),
-				'tool-message'      => __( 'Tool messages', 'wp-mcp-ai' ),
-				'system-message'    => __( 'System messages', 'wp-mcp-ai' ),
-				'status'            => __( 'Status notice', 'wp-mcp-ai' ),
-				'form'              => __( 'Form elements', 'wp-mcp-ai' ),
-				'actions'           => __( 'Action buttons', 'wp-mcp-ai' ),
-				'attachments'       => __( 'Attachments', 'wp-mcp-ai' ),
-				'alerts'            => __( 'Alert notice', 'wp-mcp-ai' ),
+				'container'         => __( 'Chat container', 'mcp-ai-wpoos' ),
+				'shortcuts'         => __( 'Transcript toggle & shortcuts', 'mcp-ai-wpoos' ),
+				'default-message'   => __( 'Default message bubble', 'mcp-ai-wpoos' ),
+				'speech'            => __( 'Speech controls', 'mcp-ai-wpoos' ),
+				'clipboard'         => __( 'Copy transcript button', 'mcp-ai-wpoos' ),
+				'user-message'      => __( 'User messages', 'mcp-ai-wpoos' ),
+				'assistant-message' => __( 'Assistant messages', 'mcp-ai-wpoos' ),
+				'tool-message'      => __( 'Tool messages', 'mcp-ai-wpoos' ),
+				'system-message'    => __( 'System messages', 'mcp-ai-wpoos' ),
+				'status'            => __( 'Status notice', 'mcp-ai-wpoos' ),
+				'form'              => __( 'Form elements', 'mcp-ai-wpoos' ),
+				'actions'           => __( 'Action buttons', 'mcp-ai-wpoos' ),
+				'attachments'       => __( 'Attachments', 'mcp-ai-wpoos' ),
+				'alerts'            => __( 'Alert notice', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -1146,8 +1204,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 				if ( ! $is_active ) {
 					$status['status']         = 'inactive';
-					$status['status_label']   = isset( $definition['inactive_label'] ) ? $definition['inactive_label'] : __( 'Inactive', 'wp-mcp-ai' );
-					$status['status_message'] = isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : __( 'This connector is not currently in use.', 'wp-mcp-ai' );
+					$status['status_label']   = isset( $definition['inactive_label'] ) ? $definition['inactive_label'] : __( 'Inactive', 'mcp-ai-wpoos' );
+					$status['status_message'] = isset( $definition['inactive_message'] ) ? $definition['inactive_message'] : __( 'This connector is not currently in use.', 'mcp-ai-wpoos' );
 					$statuses[]               = $status;
 					continue;
 				}
@@ -1169,23 +1227,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 				if ( empty( $required_options ) ) {
 					$status['status']         = 'info';
-					$status['status_label']   = isset( $definition['info_label'] ) ? $definition['info_label'] : __( 'Info', 'wp-mcp-ai' );
+					$status['status_label']   = isset( $definition['info_label'] ) ? $definition['info_label'] : __( 'Info', 'mcp-ai-wpoos' );
 					$status['status_message'] = isset( $definition['info_message'] ) ? $definition['info_message'] : '';
 				} elseif ( empty( $missing ) ) {
 					$status['status']         = 'ready';
-					$status['status_label']   = __( 'Ready', 'wp-mcp-ai' );
-					$status['status_message'] = isset( $definition['ready_message'] ) ? $definition['ready_message'] : __( 'All required credentials are stored.', 'wp-mcp-ai' );
+					$status['status_label']   = __( 'Ready', 'mcp-ai-wpoos' );
+					$status['status_message'] = isset( $definition['ready_message'] ) ? $definition['ready_message'] : __( 'All required credentials are stored.', 'mcp-ai-wpoos' );
 				} elseif ( count( $filled ) > 0 ) {
 					$status['status']       = 'partial';
-					$status['status_label'] = __( 'Incomplete', 'wp-mcp-ai' );
+					$status['status_label'] = __( 'Incomplete', 'mcp-ai-wpoos' );
 					/* translators: %s: list of missing credentials */
-					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'Add the missing credential: %s.', 'wp-mcp-ai' ) );
+					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'Add the missing credential: %s.', 'mcp-ai-wpoos' ) );
 				} elseif ( isset( $definition['empty_status'] ) && is_array( $definition['empty_status'] ) ) {
 					$empty_status = wp_parse_args(
 						$definition['empty_status'],
 						array(
 							'status'  => 'info',
-							'label'   => __( 'Info', 'wp-mcp-ai' ),
+							'label'   => __( 'Info', 'mcp-ai-wpoos' ),
 							'message' => '',
 						)
 					);
@@ -1195,9 +1253,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					$status['status_message'] = $empty_status['message'];
 				} else {
 					$status['status']       = 'missing';
-					$status['status_label'] = __( 'Action required', 'wp-mcp-ai' );
+					$status['status_label'] = __( 'Action required', 'mcp-ai-wpoos' );
 					/* translators: %s: list of required credentials */
-					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'wp-mcp-ai' ) );
+					$status['status_message'] = $this->format_connector_missing_message( $missing, $fields, __( 'No credentials stored yet. Provide: %s.', 'mcp-ai-wpoos' ) );
 				}
 
 				$statuses[] = $status;
@@ -1288,8 +1346,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function register_settings_page() {
 			add_options_page(
-				__( 'NV oOS', 'wp-mcp-ai' ),
-				__( 'NV oOS', 'wp-mcp-ai' ),
+				__( 'NV oOS', 'mcp-ai-wpoos' ),
+				__( 'NV oOS', 'mcp-ai-wpoos' ),
 				'manage_options',
 				self::PAGE_SLUG,
 				array( $this, 'render_settings_page' )
@@ -1317,14 +1375,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_openai_section',
-				__( 'OpenAI Configuration', 'wp-mcp-ai' ),
+				__( 'OpenAI Configuration', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'openai_api_key',
-				__( 'OpenAI API Key', 'wp-mcp-ai' ),
+				__( 'OpenAI API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_openai_section'
@@ -1332,7 +1390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'default_model',
-				__( 'Default OpenAI Model', 'wp-mcp-ai' ),
+				__( 'Default OpenAI Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_default_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_openai_section'
@@ -1340,7 +1398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'request_timeout',
-				__( 'Request Timeout (seconds)', 'wp-mcp-ai' ),
+				__( 'Request Timeout (seconds)', 'mcp-ai-wpoos' ),
 				array( $this, 'render_timeout_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_openai_section'
@@ -1348,7 +1406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_embedding_model',
-				__( 'OpenAI Embedding Model', 'wp-mcp-ai' ),
+				__( 'OpenAI Embedding Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_embedding_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_openai_section'
@@ -1356,7 +1414,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'max_history_messages',
-				__( 'Max History Messages', 'wp-mcp-ai' ),
+				__( 'Max History Messages', 'mcp-ai-wpoos' ),
 				array( $this, 'render_max_history_messages_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_openai_section'
@@ -1364,14 +1422,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_gemini_section',
-				__( 'Gemini Configuration', 'wp-mcp-ai' ),
+				__( 'Gemini Configuration', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'gemini_api_key',
-				__( 'Gemini API Key', 'wp-mcp-ai' ),
+				__( 'Gemini API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gemini_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gemini_section'
@@ -1379,7 +1437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'default_gemini_model',
-				__( 'Default Gemini Model', 'wp-mcp-ai' ),
+				__( 'Default Gemini Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_default_gemini_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gemini_section'
@@ -1387,14 +1445,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_google_maps_section',
-				__( 'Google Maps Platform Configuration', 'wp-mcp-ai' ),
+				__( 'Google Maps Platform Configuration', 'mcp-ai-wpoos' ),
 				array( $this, 'render_google_maps_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'google_maps_api_key',
-				__( 'Google Maps API Key', 'wp-mcp-ai' ),
+				__( 'Google Maps API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_google_maps_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_google_maps_section'
@@ -1402,14 +1460,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_ollama_section',
-				__( 'Ollama Configuration (Local AI)', 'wp-mcp-ai' ),
+				__( 'Ollama Configuration (Local AI)', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ollama_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'ollama_endpoint_url',
-				__( 'Ollama Endpoint URL', 'wp-mcp-ai' ),
+				__( 'Ollama Endpoint URL', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ollama_endpoint_url_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_ollama_section'
@@ -1417,7 +1475,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'ollama_model',
-				__( 'Ollama Model', 'wp-mcp-ai' ),
+				__( 'Ollama Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ollama_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_ollama_section'
@@ -1425,14 +1483,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_lm_studio_section',
-				__( 'LM Studio Configuration (Local AI)', 'wp-mcp-ai' ),
+				__( 'LM Studio Configuration (Local AI)', 'mcp-ai-wpoos' ),
 				array( $this, 'render_lm_studio_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'lm_studio_endpoint_url',
-				__( 'LM Studio Endpoint URL', 'wp-mcp-ai' ),
+				__( 'LM Studio Endpoint URL', 'mcp-ai-wpoos' ),
 				array( $this, 'render_lm_studio_endpoint_url_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_lm_studio_section'
@@ -1440,7 +1498,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'lm_studio_model',
-				__( 'LM Studio Model', 'wp-mcp-ai' ),
+				__( 'LM Studio Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_lm_studio_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_lm_studio_section'
@@ -1448,14 +1506,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_authentication_section',
-				__( 'Authentication', 'wp-mcp-ai' ),
+				__( 'Authentication', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'auth0_domain',
-				__( 'Auth0 Domain', 'wp-mcp-ai' ),
+				__( 'Auth0 Domain', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_domain_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1463,7 +1521,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'auth0_audience',
-				__( 'Auth0 API Audience', 'wp-mcp-ai' ),
+				__( 'Auth0 API Audience', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_audience_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1471,7 +1529,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'auth0_required_scope',
-				__( 'Required Access Scope', 'wp-mcp-ai' ),
+				__( 'Required Access Scope', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_scope_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1479,7 +1537,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'enable_auth0_github_bridge',
-				__( 'Enable Auth0 GitHub bridge', 'wp-mcp-ai' ),
+				__( 'Enable Auth0 GitHub bridge', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_github_bridge_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1487,7 +1545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'auth0_management_client_id',
-				__( 'Auth0 Management Client ID', 'wp-mcp-ai' ),
+				__( 'Auth0 Management Client ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_management_client_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1495,7 +1553,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'auth0_management_client_secret',
-				__( 'Auth0 Management Client Secret', 'wp-mcp-ai' ),
+				__( 'Auth0 Management Client Secret', 'mcp-ai-wpoos' ),
 				array( $this, 'render_auth0_management_client_secret_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1503,7 +1561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'enable_wordpress_gravatar_bridge',
-				__( 'Enable WordPress.com/Gravatar bridge', 'wp-mcp-ai' ),
+				__( 'Enable WordPress.com/Gravatar bridge', 'mcp-ai-wpoos' ),
 				array( $this, 'render_wordpress_gravatar_bridge_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1511,7 +1569,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'wordpress_gravatar_userinfo_endpoint',
-				__( 'WordPress.com Userinfo Endpoint', 'wp-mcp-ai' ),
+				__( 'WordPress.com Userinfo Endpoint', 'mcp-ai-wpoos' ),
 				array( $this, 'render_wordpress_gravatar_userinfo_endpoint_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1519,7 +1577,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'enable_simple_jwt_login',
-				__( 'Enable Simple JWT Login tokens', 'wp-mcp-ai' ),
+				__( 'Enable Simple JWT Login tokens', 'mcp-ai-wpoos' ),
 				array( $this, 'render_simple_jwt_login_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1527,7 +1585,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'rest_enable_assistant_create',
-				__( 'Enable REST Assistant Creation', 'wp-mcp-ai' ),
+				__( 'Enable REST Assistant Creation', 'mcp-ai-wpoos' ),
 				array( $this, 'render_rest_enable_assistant_create_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1535,7 +1593,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'rest_enable_assistant_delete',
-				__( 'Enable REST Assistant Deletion', 'wp-mcp-ai' ),
+				__( 'Enable REST Assistant Deletion', 'mcp-ai-wpoos' ),
 				array( $this, 'render_rest_enable_assistant_delete_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1543,7 +1601,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'sse_enable_post_method',
-				__( 'Enable POST Method on SSE Endpoint', 'wp-mcp-ai' ),
+				__( 'Enable POST Method on SSE Endpoint', 'mcp-ai-wpoos' ),
 				array( $this, 'render_sse_enable_post_method_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_authentication_section'
@@ -1551,14 +1609,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_assistant_section',
-				__( 'Assistant Defaults', 'wp-mcp-ai' ),
+				__( 'Assistant Defaults', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'default_provider',
-				__( 'Default API Provider', 'wp-mcp-ai' ),
+				__( 'Default API Provider', 'mcp-ai-wpoos' ),
 				array( $this, 'render_default_provider_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_assistant_section'
@@ -1566,7 +1624,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'provider_priority_list',
-				__( 'Provider Priority List', 'wp-mcp-ai' ),
+				__( 'Provider Priority List', 'mcp-ai-wpoos' ),
 				array( $this, 'render_provider_priority_list_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_assistant_section'
@@ -1574,7 +1632,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'default_assistant',
-				__( 'Default Assistant', 'wp-mcp-ai' ),
+				__( 'Default Assistant', 'mcp-ai-wpoos' ),
 				array( $this, 'render_default_assistant_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_assistant_section'
@@ -1582,7 +1640,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'enable_logging',
-				__( 'Enable Logging', 'wp-mcp-ai' ),
+				__( 'Enable Logging', 'mcp-ai-wpoos' ),
 				array( $this, 'render_logging_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_assistant_section'
@@ -1590,14 +1648,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_high_token_section',
-				__( 'High Token Tool Handling', 'wp-mcp-ai' ),
+				__( 'High Token Tool Handling', 'mcp-ai-wpoos' ),
 				array( $this, 'render_high_token_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'enable_high_token_model_switch',
-				__( 'Auto-Switch to High-Capacity Model', 'wp-mcp-ai' ),
+				__( 'Auto-Switch to High-Capacity Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_enable_high_token_model_switch_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_high_token_section'
@@ -1605,7 +1663,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'high_token_fallback_model',
-				__( 'High-Capacity Fallback Model (Global)', 'wp-mcp-ai' ),
+				__( 'High-Capacity Fallback Model (Global)', 'mcp-ai-wpoos' ),
 				array( $this, 'render_high_token_fallback_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_high_token_section'
@@ -1613,7 +1671,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'per_model_fallbacks',
-				__( 'Per-Model Fallback Configuration', 'wp-mcp-ai' ),
+				__( 'Per-Model Fallback Configuration', 'mcp-ai-wpoos' ),
 				array( $this, 'render_per_model_fallbacks_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_high_token_section'
@@ -1621,14 +1679,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_attachments_section',
-				__( 'Attachments', 'wp-mcp-ai' ),
+				__( 'Attachments', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'allowed_image_mimes',
-				__( 'Allowed Image MIME Types', 'wp-mcp-ai' ),
+				__( 'Allowed Image MIME Types', 'mcp-ai-wpoos' ),
 				array( $this, 'render_allowed_image_mimes_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_attachments_section'
@@ -1636,7 +1694,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'allowed_file_mimes',
-				__( 'Allowed File MIME Types', 'wp-mcp-ai' ),
+				__( 'Allowed File MIME Types', 'mcp-ai-wpoos' ),
 				array( $this, 'render_allowed_file_mimes_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_attachments_section'
@@ -1644,7 +1702,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'memory_max_file_bytes',
-				__( 'Maximum Memory File Size', 'wp-mcp-ai' ),
+				__( 'Maximum Memory File Size', 'mcp-ai-wpoos' ),
 				array( $this, 'render_memory_max_file_bytes_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_attachments_section'
@@ -1652,21 +1710,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_quickbooks_section',
-				__( 'QuickBooks Online', 'wp-mcp-ai' ),
+				__( 'QuickBooks Online', 'mcp-ai-wpoos' ),
 				array( $this, 'render_quickbooks_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_section(
 				'wp_mcp_ai_google_analytics_section',
-				__( 'Google Analytics', 'wp-mcp-ai' ),
+				__( 'Google Analytics', 'mcp-ai-wpoos' ),
 				array( $this, 'render_google_analytics_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'google_analytics_property_id',
-				__( 'Default Property ID', 'wp-mcp-ai' ),
+				__( 'Default Property ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_google_analytics_property_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_google_analytics_section'
@@ -1674,7 +1732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'google_analytics_credentials_json',
-				__( 'Service Account JSON', 'wp-mcp-ai' ),
+				__( 'Service Account JSON', 'mcp-ai-wpoos' ),
 				array( $this, 'render_google_analytics_credentials_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_google_analytics_section'
@@ -1682,7 +1740,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'quickbooks_company_id',
-				__( 'Company ID', 'wp-mcp-ai' ),
+				__( 'Company ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_quickbooks_company_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_quickbooks_section'
@@ -1690,7 +1748,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'quickbooks_api_key',
-				__( 'API Key / Access Token', 'wp-mcp-ai' ),
+				__( 'API Key / Access Token', 'mcp-ai-wpoos' ),
 				array( $this, 'render_quickbooks_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_quickbooks_section'
@@ -1698,14 +1756,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_tools_section',
-				__( 'Tools', 'wp-mcp-ai' ),
+				__( 'Tools', 'mcp-ai-wpoos' ),
 				array( $this, 'render_tools_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'web_search_provider',
-				__( 'Web Search Provider', 'wp-mcp-ai' ),
+				__( 'Web Search Provider', 'mcp-ai-wpoos' ),
 				array( $this, 'render_web_search_provider_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1713,7 +1771,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'brave_search_api_key',
-				__( 'Brave Search API Key', 'wp-mcp-ai' ),
+				__( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_brave_search_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1721,7 +1779,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'ita_tariff_api_key',
-				__( 'ITA Tariff Rates API Key', 'wp-mcp-ai' ),
+				__( 'ITA Tariff Rates API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_ita_tariff_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1729,7 +1787,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_image_model',
-				__( 'OpenAI Image Model', 'wp-mcp-ai' ),
+				__( 'OpenAI Image Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_image_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1737,7 +1795,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_image_size',
-				__( 'Default Image Size', 'wp-mcp-ai' ),
+				__( 'Default Image Size', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_image_size_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1745,7 +1803,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_image_quality',
-				__( 'Default Image Quality', 'wp-mcp-ai' ),
+				__( 'Default Image Quality', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_image_quality_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1753,7 +1811,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_image_response_format',
-				__( 'Image Output Type', 'wp-mcp-ai' ),
+				__( 'Image Output Type', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_image_response_format_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1761,7 +1819,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_speech_model',
-				__( 'OpenAI Speech Model', 'wp-mcp-ai' ),
+				__( 'OpenAI Speech Model', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_speech_model_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1769,7 +1827,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_speech_voice',
-				__( 'Default Speech Voice', 'wp-mcp-ai' ),
+				__( 'Default Speech Voice', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_speech_voice_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1777,7 +1835,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'openai_speech_format',
-				__( 'Default Speech Format', 'wp-mcp-ai' ),
+				__( 'Default Speech Format', 'mcp-ai-wpoos' ),
 				array( $this, 'render_openai_speech_format_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1785,7 +1843,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'crawl4ai_base_url',
-				__( 'Crawl4AI Base URL', 'wp-mcp-ai' ),
+				__( 'Crawl4AI Base URL', 'mcp-ai-wpoos' ),
 				array( $this, 'render_crawl4ai_base_url_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1793,15 +1851,23 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'crawl4ai_api_key',
-				__( 'Crawl4AI API Key', 'wp-mcp-ai' ),
+				__( 'Crawl4AI API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_crawl4ai_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
 			);
 
 			add_settings_field(
+				'playwright_service_url',
+				__( 'Playwright Service URL', 'mcp-ai-wpoos' ),
+				array( $this, 'render_playwright_service_url_field' ),
+				self::PAGE_SLUG,
+				'wp_mcp_ai_tools_section'
+			);
+
+			add_settings_field(
 				'cloudflare_zone_id',
-				__( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
+				__( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudflare_zone_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1809,7 +1875,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'cloudflare_api_token',
-				__( 'Cloudflare API Token', 'wp-mcp-ai' ),
+				__( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudflare_api_token_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1817,7 +1883,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'enable_varnish_purge',
-				__( 'Enable Varnish Purge', 'wp-mcp-ai' ),
+				__( 'Enable Varnish Purge', 'mcp-ai-wpoos' ),
 				array( $this, 'render_enable_varnish_purge_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1825,7 +1891,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'cloudways_email',
-				__( 'Cloudways Account Email', 'wp-mcp-ai' ),
+				__( 'Cloudways Account Email', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudways_email_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1833,7 +1899,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'cloudways_api_key',
-				__( 'Cloudways API Key', 'wp-mcp-ai' ),
+				__( 'Cloudways API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudways_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1841,7 +1907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'cloudways_server_id',
-				__( 'Cloudways Server ID', 'wp-mcp-ai' ),
+				__( 'Cloudways Server ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudways_server_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1849,7 +1915,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'cloudways_app_id',
-				__( 'Cloudways Application ID', 'wp-mcp-ai' ),
+				__( 'Cloudways Application ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_cloudways_app_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1857,7 +1923,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mailjet_api_key',
-				__( 'Mailjet API Key', 'wp-mcp-ai' ),
+				__( 'Mailjet API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mailjet_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1865,7 +1931,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mailjet_api_secret',
-				__( 'Mailjet API Secret', 'wp-mcp-ai' ),
+				__( 'Mailjet API Secret', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mailjet_api_secret_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1873,7 +1939,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mailjet_from_email',
-				__( 'Mailjet From Email', 'wp-mcp-ai' ),
+				__( 'Mailjet From Email', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mailjet_from_email_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1881,7 +1947,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mailjet_from_name',
-				__( 'Mailjet From Name', 'wp-mcp-ai' ),
+				__( 'Mailjet From Name', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mailjet_from_name_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1889,7 +1955,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'group_email_capability',
-				__( 'Group Email Capability', 'wp-mcp-ai' ),
+				__( 'Group Email Capability', 'mcp-ai-wpoos' ),
 				array( $this, 'render_group_email_capability_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1897,7 +1963,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'group_email_max_recipients',
-				__( 'Group Email Recipient Limit', 'wp-mcp-ai' ),
+				__( 'Group Email Recipient Limit', 'mcp-ai-wpoos' ),
 				array( $this, 'render_group_email_max_recipients_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_tools_section'
@@ -1905,14 +1971,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_gmail_section',
-				__( 'Gmail Integration', 'wp-mcp-ai' ),
+				__( 'Gmail Integration', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gmail_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'gmail_client_id',
-				__( 'Gmail Client ID', 'wp-mcp-ai' ),
+				__( 'Gmail Client ID', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gmail_client_id_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gmail_section'
@@ -1920,7 +1986,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'gmail_client_secret',
-				__( 'Gmail Client Secret', 'wp-mcp-ai' ),
+				__( 'Gmail Client Secret', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gmail_client_secret_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gmail_section'
@@ -1928,7 +1994,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'gmail_refresh_token',
-				__( 'Gmail Refresh Token', 'wp-mcp-ai' ),
+				__( 'Gmail Refresh Token', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gmail_refresh_token_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gmail_section'
@@ -1936,22 +2002,24 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'gmail_user_email',
-				__( 'Gmail User Email', 'wp-mcp-ai' ),
+				__( 'Gmail User Email', 'mcp-ai-wpoos' ),
 				array( $this, 'render_gmail_user_email_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_gmail_section'
 			);
 
+			// Google Drive OAuth section removed - now handled in PRO addon's Remote Sites feature.
+
 			add_settings_section(
 				'wp_mcp_ai_chat_colors_section',
-				__( 'Chat Appearance', 'wp-mcp-ai' ),
+				__( 'Chat Appearance', 'mcp-ai-wpoos' ),
 				array( $this, 'render_chat_colors_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'chat_colors',
-				__( 'Interface Colors', 'wp-mcp-ai' ),
+				__( 'Interface Colors', 'mcp-ai-wpoos' ),
 				array( $this, 'render_chat_colors_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_chat_colors_section'
@@ -1959,14 +2027,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_maintenance_section',
-				__( 'Maintenance', 'wp-mcp-ai' ),
+				__( 'Maintenance', 'mcp-ai-wpoos' ),
 				'__return_false',
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'delete_on_uninstall',
-				__( 'Remove Data on Uninstall', 'wp-mcp-ai' ),
+				__( 'Remove Data on Uninstall', 'mcp-ai-wpoos' ),
 				array( $this, 'render_delete_on_uninstall_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_maintenance_section'
@@ -1974,14 +2042,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_mesh_section',
-				__( 'Mesh Network', 'wp-mcp-ai' ),
+				__( 'Mesh Network', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mesh_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'enable_mesh',
-				__( 'Enable Mesh Networking', 'wp-mcp-ai' ),
+				__( 'Enable Mesh Networking', 'mcp-ai-wpoos' ),
 				array( $this, 'render_enable_mesh_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_mesh_section'
@@ -1989,7 +2057,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mesh_inbound_api_key',
-				__( 'Inbound API Key', 'wp-mcp-ai' ),
+				__( 'Inbound API Key', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mesh_inbound_api_key_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_mesh_section'
@@ -1997,7 +2065,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'mesh_peer_sites',
-				__( 'Peer Sites', 'wp-mcp-ai' ),
+				__( 'Peer Sites', 'mcp-ai-wpoos' ),
 				array( $this, 'render_mesh_peer_sites_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_mesh_section'
@@ -2005,14 +2073,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_section(
 				'wp_mcp_ai_security_monitor_section',
-				__( 'Security Monitoring', 'wp-mcp-ai' ),
+				__( 'Security Monitoring', 'mcp-ai-wpoos' ),
 				array( $this, 'render_security_monitor_section_description' ),
 				self::PAGE_SLUG
 			);
 
 			add_settings_field(
 				'security_monitor_enabled',
-				__( 'Enable Security Monitoring', 'wp-mcp-ai' ),
+				__( 'Enable Security Monitoring', 'mcp-ai-wpoos' ),
 				array( $this, 'render_security_monitor_enabled_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_security_monitor_section'
@@ -2020,7 +2088,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'security_monitor_auto_shutdown',
-				__( 'Auto-Shutdown Tools', 'wp-mcp-ai' ),
+				__( 'Auto-Shutdown Tools', 'mcp-ai-wpoos' ),
 				array( $this, 'render_security_monitor_auto_shutdown_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_security_monitor_section'
@@ -2028,7 +2096,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			add_settings_field(
 				'security_monitor_violations',
-				__( 'Security Violations', 'wp-mcp-ai' ),
+				__( 'Security Violations', 'mcp-ai-wpoos' ),
 				array( $this, 'render_security_monitor_violations_field' ),
 				self::PAGE_SLUG,
 				'wp_mcp_ai_security_monitor_section'
@@ -2160,10 +2228,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'gemini', 'ollama' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'gemini' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
@@ -2182,6 +2250,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['brave_search_api_key'] ) ) {
 				$clean['brave_search_api_key'] = trim( sanitize_text_field( $settings['brave_search_api_key'] ) );
+			}
+
+			if ( isset( $settings['mubert_api_key'] ) ) {
+				$clean['mubert_api_key'] = trim( sanitize_text_field( $settings['mubert_api_key'] ) );
 			}
 
 			if ( isset( $settings['ita_tariff_api_key'] ) ) {
@@ -2256,6 +2328,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$clean['crawl4ai_api_key'] = trim( sanitize_text_field( $settings['crawl4ai_api_key'] ) );
 			}
 
+			if ( isset( $settings['playwright_service_url'] ) ) {
+				$service_url = trim( $settings['playwright_service_url'] );
+
+				$clean['playwright_service_url'] = $service_url ? esc_url_raw( $service_url ) : '';
+			}
+
 			if ( isset( $settings['cloudflare_api_token'] ) ) {
 				$clean['cloudflare_api_token'] = trim( sanitize_text_field( $settings['cloudflare_api_token'] ) );
 			}
@@ -2316,7 +2394,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						add_settings_error(
 							self::OPTION_NAME,
 							'google_analytics_credentials_json',
-							__( 'The Google Analytics service account JSON could not be parsed. Please paste a valid credential.', 'wp-mcp-ai' ),
+							__( 'The Google Analytics service account JSON could not be parsed. Please paste a valid credential.', 'mcp-ai-wpoos' ),
 							'error'
 						);
 					}
@@ -2577,74 +2655,74 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			return array(
 				'wp_mcp_ai_openai_section'         => array(
 					'icon'     => '🤖',
-					'title'    => __( 'OpenAI Configuration', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Configure OpenAI API and model settings', 'wp-mcp-ai' ),
+					'title'    => __( 'OpenAI Configuration', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Configure OpenAI API and model settings', 'mcp-ai-wpoos' ),
 					'category' => 'ai',
 				),
 				'wp_mcp_ai_gemini_section'         => array(
 					'icon'     => '✨',
-					'title'    => __( 'Gemini Configuration', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Google Gemini model settings', 'wp-mcp-ai' ),
+					'title'    => __( 'Gemini Configuration', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Google Gemini model settings', 'mcp-ai-wpoos' ),
 					'category' => 'ai',
 				),
 				'wp_mcp_ai_ollama_section'         => array(
 					'icon'     => '🦙',
-					'title'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Connect to local Ollama instance', 'wp-mcp-ai' ),
+					'title'    => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Connect to local Ollama instance', 'mcp-ai-wpoos' ),
 					'category' => 'ai',
 				),
 				'wp_mcp_ai_lm_studio_section'      => array(
 					'icon'     => '💻',
-					'title'    => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Connect to LM Studio server', 'wp-mcp-ai' ),
+					'title'    => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Connect to LM Studio server', 'mcp-ai-wpoos' ),
 					'category' => 'ai',
 				),
 				'wp_mcp_ai_authentication_section' => array(
 					'icon'     => '🔐',
-					'title'    => __( 'Authentication', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Auth0 and JWT login settings', 'wp-mcp-ai' ),
+					'title'    => __( 'Authentication', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Auth0 and JWT login settings', 'mcp-ai-wpoos' ),
 					'category' => 'security',
 				),
 				'wp_mcp_ai_mesh_section'           => array(
 					'icon'     => '🌐',
-					'title'    => __( 'Mesh Network', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Multi-site mesh configuration', 'wp-mcp-ai' ),
+					'title'    => __( 'Mesh Network', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Multi-site mesh configuration', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 				'wp_mcp_ai_integrations_section'   => array(
 					'icon'     => '🔌',
-					'title'    => __( 'External Integrations', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Third-party service connectors', 'wp-mcp-ai' ),
+					'title'    => __( 'External Integrations', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Third-party service connectors', 'mcp-ai-wpoos' ),
 					'category' => 'integration',
 				),
 				'wp_mcp_ai_image_section'          => array(
 					'icon'     => '🖼️',
-					'title'    => __( 'Image Generation', 'wp-mcp-ai' ),
-					'subtitle' => __( 'OpenAI DALL-E settings', 'wp-mcp-ai' ),
+					'title'    => __( 'Image Generation', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'OpenAI DALL-E settings', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 				'wp_mcp_ai_speech_section'         => array(
 					'icon'     => '🔊',
-					'title'    => __( 'Speech Synthesis', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Text-to-speech configuration', 'wp-mcp-ai' ),
+					'title'    => __( 'Speech Synthesis', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Text-to-speech configuration', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 				'wp_mcp_ai_chat_colors_section'    => array(
 					'icon'     => '🎨',
-					'title'    => __( 'Chat Interface Colors', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Customize chat UI appearance', 'wp-mcp-ai' ),
+					'title'    => __( 'Chat Interface Colors', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Customize chat UI appearance', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 				'wp_mcp_ai_advanced_section'       => array(
 					'icon'     => '⚙️',
-					'title'    => __( 'Advanced Settings', 'wp-mcp-ai' ),
-					'subtitle' => __( 'File handling, memory, and REST API', 'wp-mcp-ai' ),
+					'title'    => __( 'Advanced Settings', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'File handling, memory, and REST API', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 				'wp_mcp_ai_high_token_section'     => array(
 					'icon'     => '📊',
-					'title'    => __( 'High Token Handling', 'wp-mcp-ai' ),
-					'subtitle' => __( 'Automatic model switching for large data', 'wp-mcp-ai' ),
+					'title'    => __( 'High Token Handling', 'mcp-ai-wpoos' ),
+					'subtitle' => __( 'Automatic model switching for large data', 'mcp-ai-wpoos' ),
 					'category' => 'advanced',
 				),
 			);
@@ -2697,38 +2775,38 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'NV oOS Settings', 'wp-mcp-ai' ); ?></h1>
+			<h1><?php esc_html_e( 'NV oOS Settings', 'mcp-ai-wpoos' ); ?></h1>
 			<?php settings_errors( self::OPTION_NAME ); ?>
 
 			<!-- Dashboard Overview -->
 			<div class="wp-mcp-ai-dashboard">
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--success">
-					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Configured', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Configured', 'mcp-ai-wpoos' ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $configured ) ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Connectors ready', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Connectors ready', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--warning">
-					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Incomplete', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Incomplete', 'mcp-ai-wpoos' ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $incomplete ) ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Needs attention', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Needs attention', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 				<div class="wp-mcp-ai-dashboard-card wp-mcp-ai-dashboard-card--info">
-					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Total', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__title"><?php esc_html_e( 'Total', 'mcp-ai-wpoos' ); ?></p>
 					<p class="wp-mcp-ai-dashboard-card__value"><?php echo esc_html( absint( $total_connectors ) ); ?></p>
-					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Available connectors', 'wp-mcp-ai' ); ?></p>
+					<p class="wp-mcp-ai-dashboard-card__description"><?php esc_html_e( 'Available connectors', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			</div>
 
 			<?php $this->render_error_log_section(); ?>
-			
+
 			<?php $this->render_token_usage_section(); ?>
-			
+
 			<?php $this->render_tool_token_limits_section(); ?>
-			
+
 			<?php if ( ! empty( $connector_statuses ) ) : ?>
 				<div class="wp-mcp-ai-connector-checklist" aria-live="polite">
-					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'wp-mcp-ai' ); ?></h2>
-					<p class="wp-mcp-ai-connector-checklist__intro"><?php esc_html_e( 'Track which integrations still need credentials so you know exactly when to enter a new connector.', 'wp-mcp-ai' ); ?></p>
+					<h2 class="wp-mcp-ai-connector-checklist__title"><?php esc_html_e( 'Connector Checklist', 'mcp-ai-wpoos' ); ?></h2>
+					<p class="wp-mcp-ai-connector-checklist__intro"><?php esc_html_e( 'Track which integrations still need credentials so you know exactly when to enter a new connector.', 'mcp-ai-wpoos' ); ?></p>
 					<ul class="wp-mcp-ai-connector-checklist__list">
 						<?php foreach ( $connector_statuses as $connector ) : ?>
 							<li class="wp-mcp-ai-connector-checklist__item wp-mcp-ai-connector-checklist__item--<?php echo esc_attr( $connector['status'] ); ?>">
@@ -2747,7 +2825,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 								<?php endif; ?>
 								<?php if ( ! empty( $connector['docs_url'] ) ) : ?>
 									<p class="wp-mcp-ai-connector-checklist__docs">
-										<a href="<?php echo esc_url( $connector['docs_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Read setup guide', 'wp-mcp-ai' ); ?></a>
+										<a href="<?php echo esc_url( $connector['docs_url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Read setup guide', 'mcp-ai-wpoos' ); ?></a>
 									</p>
 								<?php endif; ?>
 							</li>
@@ -2762,8 +2840,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 				<!-- Accordion Controls -->
 				<div class="wp-mcp-ai-settings-controls">
-					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-expand-all"><?php esc_html_e( 'Expand All', 'wp-mcp-ai' ); ?></button>
-					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-collapse-all"><?php esc_html_e( 'Collapse All', 'wp-mcp-ai' ); ?></button>
+					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-expand-all"><?php esc_html_e( 'Expand All', 'mcp-ai-wpoos' ); ?></button>
+					<button type="button" class="wp-mcp-ai-settings-controls__button wp-mcp-ai-collapse-all"><?php esc_html_e( 'Collapse All', 'mcp-ai-wpoos' ); ?></button>
 				</div>
 
 				<!-- Collapsible Settings Sections -->
@@ -2817,7 +2895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$badge       = '';
 				$badge_class = '';
 				if ( 'ai' === $category ) {
-					$badge       = __( 'AI', 'wp-mcp-ai' );
+					$badge       = __( 'AI', 'mcp-ai-wpoos' );
 					$badge_class = 'configured';
 				}
 
@@ -2832,7 +2910,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				?>
 				<div id="<?php echo esc_attr( $section_id ); ?>" class="wp-mcp-ai-section wp-mcp-ai-section--<?php echo esc_attr( $category ); ?><?php echo esc_attr( $expanded_class ); ?>">
 					<?php /* translators: %s: section title */ ?>
-					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-expanded="<?php echo esc_attr( $aria_expanded ); ?>" aria-controls="<?php echo esc_attr( $section_id . '__content' ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'wp-mcp-ai' ), $title ) ); ?>">
+					<div class="wp-mcp-ai-section__header" tabindex="0" role="button" aria-expanded="<?php echo esc_attr( $aria_expanded ); ?>" aria-controls="<?php echo esc_attr( $section_id . '__content' ); ?>" aria-label="<?php echo esc_attr( sprintf( __( 'Toggle %s section', 'mcp-ai-wpoos' ), $title ) ); ?>">
 						<div class="wp-mcp-ai-section__header-left">
 							<div class="wp-mcp-ai-section__icon" aria-hidden="true"><?php echo esc_html( $icon ); ?></div>
 							<div class="wp-mcp-ai-section__title-wrapper">
@@ -2877,10 +2955,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_chat_colors_section_description() {
 			?>
 		<details class="wp-mcp-ai-collapsible-section">
-			<summary style="cursor: pointer; font-weight: 600; padding: 10px 0; list-style: none;"><?php esc_html_e( '▸ Click to expand/collapse chat appearance settings', 'wp-mcp-ai' ); ?></summary>
+			<summary style="cursor: pointer; font-weight: 600; padding: 10px 0; list-style: none;"><?php esc_html_e( '▸ Click to expand/collapse chat appearance settings', 'mcp-ai-wpoos' ); ?></summary>
 			<div style="padding: 10px 0;">
-				<p><?php esc_html_e( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'wp-mcp-ai' ); ?></p>
-				<p><?php esc_html_e( 'New controls cover the transcript toggle, saved reply shortcuts, and the copy transcript button so every surface can follow your brand.', 'wp-mcp-ai' ); ?></p>
+				<p><?php esc_html_e( 'Customize the palette used by the front-end chat interface. Leave a field empty to keep its default color.', 'mcp-ai-wpoos' ); ?></p>
+				<p><?php esc_html_e( 'New controls cover the transcript toggle, saved reply shortcuts, and the copy transcript button so every surface can follow your brand.', 'mcp-ai-wpoos' ); ?></p>
 			</div>
 			<?php
 		}
@@ -2923,7 +3001,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					}
 
 					if ( 'rgba' === $format ) {
-						$descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'wp-mcp-ai' );
+						$descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'mcp-ai-wpoos' );
 					}
 
 					echo '<div class="wp-mcp-ai-chat-colors__field">';
@@ -2951,7 +3029,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_domain]" value="<?php echo esc_attr( $settings['auth0_domain'] ); ?>" class="regular-text" placeholder="example.us.auth0.com" />
-		<p class="description"><?php esc_html_e( 'The Auth0 tenant domain that issues access tokens for remote MCP assistants.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'The Auth0 tenant domain that issues access tokens for remote MCP assistants.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -2962,7 +3040,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_audience]" value="<?php echo esc_attr( $settings['auth0_audience'] ); ?>" class="regular-text" placeholder="https://api.example.com/" />
-		<p class="description"><?php esc_html_e( 'Optional. When provided, bearer tokens must include this audience (or API Identifier) claim.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Optional. When provided, bearer tokens must include this audience (or API Identifier) claim.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -2973,7 +3051,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_required_scope]" value="<?php echo esc_attr( $settings['auth0_required_scope'] ); ?>" class="regular-text" placeholder="mcp:invoke" />
-		<p class="description"><?php esc_html_e( 'Optional space-delimited scope that must be present on remote bearer tokens.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Optional space-delimited scope that must be present on remote bearer tokens.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -2990,10 +3068,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				esc_attr( $field_id ),
 				esc_attr( self::OPTION_NAME ),
 				checked( $enabled, true, false ),
-				esc_html__( 'Resolve Auth0 GitHub identities into WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' )
+				esc_html__( 'Resolve Auth0 GitHub identities into WordPress users for REST auditing and assistant scoping.', 'mcp-ai-wpoos' )
 			);
 
-			echo '<p class="description">' . esc_html__( 'Enable after configuring the Auth0 Management API credentials below.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Enable after configuring the Auth0 Management API credentials below.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		/**
@@ -3003,7 +3081,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_id]" value="<?php echo esc_attr( $settings['auth0_management_client_id'] ); ?>" class="regular-text" placeholder="client_abc123" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Client ID for the Auth0 Machine-to-Machine application authorised for the Management API.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Client ID for the Auth0 Machine-to-Machine application authorised for the Management API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3014,7 +3092,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[auth0_management_client_secret]" value="<?php echo esc_attr( $settings['auth0_management_client_secret'] ); ?>" class="regular-text" autocomplete="new-password" />
-		<p class="description"><?php esc_html_e( 'Secret for the Auth0 Management API application. Required when the GitHub profile lacks email or username claims.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Secret for the Auth0 Management API application. Required when the GitHub profile lacks email or username claims.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3031,10 +3109,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				esc_attr( $field_id ),
 				esc_attr( self::OPTION_NAME ),
 				checked( $enabled, true, false ),
-				esc_html__( 'Resolve WordPress.com/Gravatar identities into WordPress users for REST auditing and assistant scoping.', 'wp-mcp-ai' )
+				esc_html__( 'Resolve WordPress.com/Gravatar identities into WordPress users for REST auditing and assistant scoping.', 'mcp-ai-wpoos' )
 			);
 
-			echo '<p class="description">' . esc_html__( 'Enable this to automatically map WordPress.com and Gravatar OAuth tokens to WordPress users. Optionally configure the userinfo endpoint below.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Enable this to automatically map WordPress.com and Gravatar OAuth tokens to WordPress users. Optionally configure the userinfo endpoint below.', 'mcp-ai-wpoos' ) . '</p>';
 		}
 
 		/**
@@ -3044,7 +3122,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[wordpress_gravatar_userinfo_endpoint]" value="<?php echo esc_attr( $settings['wordpress_gravatar_userinfo_endpoint'] ); ?>" class="regular-text" placeholder="https://public-api.wordpress.com/oauth2/userinfo" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Optional: Override the default WordPress.com userinfo endpoint for profile enrichment. Leave blank to use the default.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Optional: Override the default WordPress.com userinfo endpoint for profile enrichment. Leave blank to use the default.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3063,17 +3141,17 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				esc_attr( self::OPTION_NAME ),
 				checked( $enabled, true, false ),
 				disabled( ! $available, true, false ),
-				esc_html__( 'Allow bearer tokens validated by Simple JWT Login to access the MCP REST API.', 'wp-mcp-ai' )
+				esc_html__( 'Allow bearer tokens validated by Simple JWT Login to access the MCP REST API.', 'mcp-ai-wpoos' )
 			);
 
-			echo '<p class="description">' . esc_html__( 'Enable this after configuring the Simple JWT Login plugin to issue tokens for remote assistants.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="description">' . esc_html__( 'Enable this after configuring the Simple JWT Login plugin to issue tokens for remote assistants.', 'mcp-ai-wpoos' ) . '</p>';
 
 			if ( ! $available ) {
 				$install_url = 'https://wordpress.org/plugins/simple-jwt-login/#installation';
 				$link        = sprintf(
 					'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
 					esc_url( $install_url ),
-					esc_html__( 'Simple JWT Login installation guide', 'wp-mcp-ai' )
+					esc_html__( 'Simple JWT Login installation guide', 'mcp-ai-wpoos' )
 				);
 
 				printf(
@@ -3081,7 +3159,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					wp_kses(
 						sprintf(
 						/* translators: %s: Link to the Simple JWT Login documentation. */
-							__( 'Install and activate the %s to enable this integration.', 'wp-mcp-ai' ),
+							__( 'Install and activate the %s to enable this integration.', 'mcp-ai-wpoos' ),
 							$link
 						),
 						array(
@@ -3131,11 +3209,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$install_url = 'https://wordpress.org/plugins/simple-jwt-login/#installation';
 			$message     = sprintf(
 			/* translators: %s: Hyperlink pointing to the Simple JWT Login installation instructions. */
-				__( 'The Simple JWT Login plugin is not active. Install and activate it to enable its bearer tokens for the MCP API. Review the %s.', 'wp-mcp-ai' ),
+				__( 'The Simple JWT Login plugin is not active. Install and activate it to enable its bearer tokens for the MCP API. Review the %s.', 'mcp-ai-wpoos' ),
 				sprintf(
 					'<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
 					esc_url( $install_url ),
-					esc_html__( 'installation instructions', 'wp-mcp-ai' )
+					esc_html__( 'installation instructions', 'mcp-ai-wpoos' )
 				)
 			);
 
@@ -3214,16 +3292,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 			<div class="notice notice-warning is-dismissible">
 				<p>
-					<strong><?php esc_html_e( 'NV oOS Plugin Updated', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'NV oOS Plugin Updated', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
 				<p>
 					<?php
-					esc_html_e( 'Plugin files were recently updated. If you experience "unexpected token" or syntax errors, your server\'s OPcache may need to be cleared.', 'wp-mcp-ai' );
+					esc_html_e( 'Plugin files were recently updated. If you experience "unexpected token" or syntax errors, your server\'s OPcache may need to be cleared.', 'mcp-ai-wpoos' );
 					?>
 				</p>
 				<p>
 					<a href="<?php echo esc_url( $troubleshooting_url ); ?>" target="_blank" class="button button-secondary">
-						<?php esc_html_e( 'View Troubleshooting Guide', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Troubleshooting Guide', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 			</div>
@@ -3259,9 +3337,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-delete-on-uninstall">
 			<input id="wp-mcp-ai-delete-on-uninstall" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[delete_on_uninstall]" value="1" <?php checked( $settings['delete_on_uninstall'] ); ?> />
-			<?php esc_html_e( 'When uninstalling the plugin, remove assistants, settings, and other stored data.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'When uninstalling the plugin, remove assistants, settings, and other stored data.', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'Leave unchecked to preserve plugin data for future installations.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Leave unchecked to preserve plugin data for future installations.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3270,7 +3348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_mesh_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running NV oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure mesh networking to enable communication between different WordPress sites running NV oOS. This allows AI assistants to query and share knowledge across a distributed network.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3282,9 +3360,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-enable-mesh">
 			<input id="wp-mcp-ai-enable-mesh" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_mesh]" value="1" <?php checked( $settings['enable_mesh'] ); ?> />
-			<?php esc_html_e( 'Enable mesh networking for this site', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enable mesh networking for this site', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'When enabled, this site can accept requests from peer sites and query other sites in the mesh network.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'When enabled, this site can accept requests from peer sites and query other sites in the mesh network.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3300,7 +3378,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mesh_inbound_api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" readonly />
-		<p class="description"><?php esc_html_e( 'This is the API key that other sites must use to authenticate with this site. It is automatically generated when mesh networking is enabled.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'This is the API key that other sites must use to authenticate with this site. It is automatically generated when mesh networking is enabled.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3316,10 +3394,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<table class="widefat" style="margin-bottom: 15px;">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Name', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Site URL', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'API Key', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Name', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'API Key', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -3331,10 +3409,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 							$api_key = isset( $peer['api_key'] ) ? $peer['api_key'] : '';
 							?>
 					<tr class="wp-mcp-ai-mesh-peer-row">
-						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][name]" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" /></td>
+						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][name]" value="<?php echo esc_attr( $name ); ?>" class="regular-text" placeholder="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>" /></td>
 						<td><input type="url" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][url]" value="<?php echo esc_attr( $url ); ?>" class="regular-text" placeholder="https://example.com" /></td>
 						<td><input type="text" name="<?php echo esc_attr( $option_name ); ?>[mesh_peer_sites][<?php echo esc_attr( $index ); ?>][api_key]" value="<?php echo esc_attr( $api_key ); ?>" class="regular-text" placeholder="mesh_..." /></td>
-						<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button></td>
+						<td><button type="button" class="button wp-mcp-ai-remove-peer"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button></td>
 					</tr>
 							<?php
 						}
@@ -3342,13 +3420,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					?>
 				</tbody>
 			</table>
-			<button type="button" class="button" id="wp-mcp-ai-add-peer" 
-				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'wp-mcp-ai' ); ?>" 
-				data-placeholder-url="https://example.com" 
-				data-placeholder-key="mesh_..." 
-				data-btn-remove="<?php esc_attr_e( 'Remove', 'wp-mcp-ai' ); ?>"><?php esc_html_e( 'Add Peer Site', 'wp-mcp-ai' ); ?></button>
+			<button type="button" class="button" id="wp-mcp-ai-add-peer"
+				data-placeholder-name="<?php esc_attr_e( 'e.g., Production Site', 'mcp-ai-wpoos' ); ?>"
+				data-placeholder-url="https://example.com"
+				data-placeholder-key="mesh_..."
+				data-btn-remove="<?php esc_attr_e( 'Remove', 'mcp-ai-wpoos' ); ?>"><?php esc_html_e( 'Add Peer Site', 'mcp-ai-wpoos' ); ?></button>
 		</div>
-		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Add peer sites that this site can query. Each peer requires a friendly name, the root URL of the remote site, and the inbound API key from that remote site.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3359,7 +3437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_api_key]" value="<?php echo esc_attr( $settings['openai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter the OpenAI secret key with access to the Chat Completions API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3370,7 +3448,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gemini_api_key]" value="<?php echo esc_attr( $settings['gemini_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter the Gemini API key with access to the Generative Language API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3379,7 +3457,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_google_maps_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure Google Maps Platform API for geocoding, places search, and spatial features. Requires a Google Cloud account with Maps Platform enabled.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure Google Maps Platform API for geocoding, places search, and spatial features. Requires a Google Cloud account with Maps Platform enabled.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3390,7 +3468,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_maps_api_key]" value="<?php echo esc_attr( $settings['google_maps_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter your Google Maps Platform API key with Geocoding API and Places API enabled.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3399,7 +3477,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_ollama_section_description() {
 			?>
-		<p><?php esc_html_e( 'Connect to a local Ollama instance for privacy-focused, cost-free AI processing using your own hardware. Ollama uses its native API format.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Connect to a local Ollama instance for privacy-focused, cost-free AI processing using your own hardware. Ollama uses its native API format.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3411,8 +3489,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_endpoint_url]" value="<?php echo esc_attr( $settings['ollama_endpoint_url'] ); ?>" class="regular-text" placeholder="http://localhost:11434" />
 		<p class="description">
-			<?php esc_html_e( 'Enter the URL where your Ollama instance is running (e.g., http://localhost:11434).', 'wp-mcp-ai' ); ?>
-			<button type="button" id="wp-mcp-ai-test-ollama-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<?php esc_html_e( 'Enter the URL where your Ollama instance is running (e.g., http://localhost:11434).', 'mcp-ai-wpoos' ); ?>
+			<button type="button" id="wp-mcp-ai-test-ollama-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
 			<span id="wp-mcp-ai-ollama-test-result" style="margin-left: 10px;"></span>
 		</p>
 			<?php
@@ -3425,8 +3503,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ollama_model]" id="wp-mcp-ai-ollama-model" value="<?php echo esc_attr( $settings['ollama_model'] ); ?>" class="regular-text" placeholder="llama2" />
-		<button type="button" id="wp-mcp-ai-fetch-ollama-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'wp-mcp-ai' ); ?></button>
-		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your Ollama instance.', 'wp-mcp-ai' ); ?></p>
+		<button type="button" id="wp-mcp-ai-fetch-ollama-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'mcp-ai-wpoos' ); ?></button>
+		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your Ollama instance.', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-ollama-models-list" style="margin-top: 10px;"></div>
 			<?php
 		}
@@ -3436,7 +3514,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_lm_studio_section_description() {
 			?>
-		<p><?php esc_html_e( 'Connect to a local LM Studio instance for privacy-focused, cost-free AI processing using your own hardware. LM Studio provides an OpenAI-compatible API.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Connect to a local LM Studio instance for privacy-focused, cost-free AI processing using your own hardware. LM Studio provides an OpenAI-compatible API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3448,8 +3526,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_endpoint_url]" value="<?php echo esc_attr( $settings['lm_studio_endpoint_url'] ); ?>" class="regular-text" placeholder="http://127.0.0.1:1234" />
 		<p class="description">
-			<?php esc_html_e( 'Enter the URL where your LM Studio server is running (e.g., http://127.0.0.1:1234).', 'wp-mcp-ai' ); ?>
-			<button type="button" id="wp-mcp-ai-test-lm-studio-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<?php esc_html_e( 'Enter the URL where your LM Studio server is running (e.g., http://127.0.0.1:1234).', 'mcp-ai-wpoos' ); ?>
+			<button type="button" id="wp-mcp-ai-test-lm-studio-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
 			<span id="wp-mcp-ai-lm-studio-test-result" style="margin-left: 10px;"></span>
 		</p>
 			<?php
@@ -3462,8 +3540,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[lm_studio_model]" id="wp-mcp-ai-lm-studio-model" value="<?php echo esc_attr( $settings['lm_studio_model'] ); ?>" class="regular-text" placeholder="local-model" />
-		<button type="button" id="wp-mcp-ai-fetch-lm-studio-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'wp-mcp-ai' ); ?></button>
-		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your LM Studio server.', 'wp-mcp-ai' ); ?></p>
+		<button type="button" id="wp-mcp-ai-fetch-lm-studio-models" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Fetch Models', 'mcp-ai-wpoos' ); ?></button>
+		<p class="description"><?php esc_html_e( 'Enter a model name or click "Fetch Models" to see available models from your LM Studio server.', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-lm-studio-models-list" style="margin-top: 10px;"></div>
 			<?php
 		}
@@ -3475,7 +3553,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_base_url]" value="<?php echo esc_attr( $settings['crawl4ai_base_url'] ); ?>" class="regular-text" placeholder="https://example.com/" />
-		<p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Base URL for the Crawl4AI API (for example, https://localhost:11235/).', 'mcp-ai-wpoos' ); ?></p>
+			<?php
+		}
+
+		/**
+		 * Render the Playwright service URL field.
+		 */
+		public function render_playwright_service_url_field() {
+			$settings = self::get_settings();
+			?>
+		<input type="url" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[playwright_service_url]" value="<?php echo esc_attr( $settings['playwright_service_url'] ); ?>" class="regular-text" placeholder="https://playwright.example.com/" />
+		<p class="description"><?php esc_html_e( 'URL for the Playwright service (Node.js + Express). Leave empty to use local HTTP fallback (limited functionality).', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3484,7 +3573,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_google_analytics_section_description() {
 			?>
-		<p><?php esc_html_e( 'Connect a Google Analytics 4 property so assistants can request reporting snapshots via the Data API.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Connect a Google Analytics 4 property so assistants can request reporting snapshots via the Data API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3495,7 +3584,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_analytics_property_id]" value="<?php echo esc_attr( $settings['google_analytics_property_id'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Provide the numeric GA4 property ID that should be used when a tool call does not specify one.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Provide the numeric GA4 property ID that should be used when a tool call does not specify one.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3506,7 +3595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[google_analytics_credentials_json]" rows="6" class="large-text code" autocomplete="off"><?php echo esc_textarea( $settings['google_analytics_credentials_json'] ); ?></textarea>
-		<p class="description"><?php esc_html_e( 'Paste the JSON credentials for a Google Cloud service account with access to the Analytics Data API.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Paste the JSON credentials for a Google Cloud service account with access to the Analytics Data API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3515,7 +3604,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_quickbooks_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure the credentials used by the QuickBooks Online reporting tool.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure the credentials used by the QuickBooks Online reporting tool.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3526,7 +3615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_company_id]" value="<?php echo esc_attr( $settings['quickbooks_company_id'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the QuickBooks Online company ID that should be used for report requests.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter the QuickBooks Online company ID that should be used for report requests.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3537,7 +3626,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[quickbooks_api_key]" value="<?php echo esc_attr( $settings['quickbooks_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Provide a bearer token or API key that authorises access to the QuickBooks Online reports API.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3557,25 +3646,25 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				);
 			}
 			?>
-		<p><?php esc_html_e( 'Provide OAuth credentials for the Gmail API. These are used by assistants to search email on your behalf.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Provide OAuth credentials for the Gmail API. These are used by assistants to search email on your behalf.', 'mcp-ai-wpoos' ); ?></p>
 			<?php if ( $login_url ) : ?>
 			<p>
 				<a class="button button-secondary" href="<?php echo esc_url( $login_url ); ?>">
-					<?php esc_html_e( 'Connect Gmail Account', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Connect Gmail Account', 'mcp-ai-wpoos' ); ?>
 				</a>
 			</p>
-			<p class="description"><?php esc_html_e( 'Launch the Google consent screen to mint and store a refresh token automatically. The plugin requests read-only access to Gmail messages.', 'wp-mcp-ai' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Launch the Google consent screen to mint and store a refresh token automatically. The plugin requests read-only access to Gmail messages.', 'mcp-ai-wpoos' ); ?></p>
 		<?php else : ?>
-			<p class="description"><?php esc_html_e( 'Save your Gmail client ID and secret, then reload this page to enable the Google login button.', 'wp-mcp-ai' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Save your Gmail client ID and secret, then reload this page to enable the Google login button.', 'mcp-ai-wpoos' ); ?></p>
 		<?php endif; ?>
 			<?php if ( ! empty( $settings['gmail_refresh_token'] ) ) : ?>
 			<p class="description">
 				<?php
 				if ( ! empty( $settings['gmail_user_email'] ) ) {
 					/* translators: %s: Gmail email address. */
-					printf( esc_html__( 'A refresh token is stored for %s.', 'wp-mcp-ai' ), '<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>' );
+					printf( esc_html__( 'A refresh token is stored for %s.', 'mcp-ai-wpoos' ), '<code>' . esc_html( $settings['gmail_user_email'] ) . '</code>' );
 				} else {
-					esc_html_e( 'A Gmail refresh token is already stored for this site.', 'wp-mcp-ai' );
+					esc_html_e( 'A Gmail refresh token is already stored for this site.', 'mcp-ai-wpoos' );
 				}
 				?>
 			</p>
@@ -3590,7 +3679,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_id]" value="<?php echo esc_attr( $settings['gmail_client_id'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the OAuth client ID from your Google Cloud project.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter the OAuth client ID from your Google Cloud project.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3601,7 +3690,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_client_secret]" value="<?php echo esc_attr( $settings['gmail_client_secret'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enter the OAuth client secret associated with the client ID.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3612,7 +3701,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<textarea name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_refresh_token]" rows="3" class="large-text" autocomplete="off"><?php echo esc_textarea( $settings['gmail_refresh_token'] ); ?></textarea>
-		<p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Gmail API with the https://www.googleapis.com/auth/gmail.readonly scope.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Provide a long-lived refresh token issued for the Gmail API with the https://www.googleapis.com/auth/gmail.readonly scope.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3623,7 +3712,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[gmail_user_email]" value="<?php echo esc_attr( $settings['gmail_user_email'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Specify the Gmail account email address associated with the refresh token. Leave blank or enter “me” to use the authenticated account.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Specify the Gmail account email address associated with the refresh token. Leave blank or enter “me” to use the authenticated account.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3632,7 +3721,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_tools_section_description() {
 			?>
-		<p><?php esc_html_e( 'Configure the optional MCP tools exposed to assistants.', 'wp-mcp-ai' ); ?></p>
+		<p><?php esc_html_e( 'Configure the optional MCP tools exposed to assistants.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3643,8 +3732,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings  = self::get_settings();
 			$current   = isset( $settings['web_search_provider'] ) ? sanitize_key( $settings['web_search_provider'] ) : 'duckduckgo';
 			$providers = array(
-				'duckduckgo' => __( 'DuckDuckGo Instant Answer API', 'wp-mcp-ai' ),
-				'brave'      => __( 'Brave Search API', 'wp-mcp-ai' ),
+				'duckduckgo' => __( 'DuckDuckGo Instant Answer API', 'mcp-ai-wpoos' ),
+				'brave'      => __( 'Brave Search API', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[web_search_provider]" class="regular-text">
@@ -3652,7 +3741,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Choose the web search backend used by the Web Search tool.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Choose the web search backend used by the Web Search tool.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3663,7 +3752,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[brave_search_api_key]" value="<?php echo esc_attr( $settings['brave_search_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Required when Brave Search is selected as the provider.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3674,7 +3763,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[ita_tariff_api_key]" value="<?php echo esc_attr( $settings['ita_tariff_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Store the Trade.gov API key used to query import duty rates.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Store the Trade.gov API key used to query import duty rates.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3691,7 +3780,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Default OpenAI model used by the Generate OpenAI Image tool.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default OpenAI model used by the Generate OpenAI Image tool.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3713,7 +3802,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Image dimensions requested from OpenAI when size is not supplied explicitly.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Image dimensions requested from OpenAI when size is not supplied explicitly.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3730,7 +3819,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Quality hint passed to OpenAI when generating new images.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3760,9 +3849,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		</select>
 			<?php if ( ! $supports_response_format ) : ?>
 			<input type="hidden" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_image_response_format]" value="b64_json" />
-			<p class="description"><?php esc_html_e( 'The selected image model currently returns base64 data only.', 'wp-mcp-ai' ); ?></p>
+			<p class="description"><?php esc_html_e( 'The selected image model currently returns base64 data only.', 'mcp-ai-wpoos' ); ?></p>
 		<?php else : ?>
-			<p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'wp-mcp-ai' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Choose whether OpenAI should return base64 data or a downloadable URL when generating images.', 'mcp-ai-wpoos' ); ?></p>
 		<?php endif; ?>
 			<?php
 		}
@@ -3772,16 +3861,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function render_openai_speech_model_field() {
 			$settings = self::get_settings();
-			$current  = isset( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'gpt-4o-mini-tts';
+			$current  = isset( $settings['openai_speech_model'] ) ? sanitize_text_field( $settings['openai_speech_model'] ) : 'tts-1';
 			?>
 		<input
 			type="text"
 			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_speech_model]"
 			value="<?php echo esc_attr( $current ); ?>"
 			class="regular-text"
-			placeholder="gpt-4o-mini-tts"
+			placeholder="tts-1"
 		/>
-		<p class="description"><?php esc_html_e( 'Default text-to-speech model used by the Generate OpenAI Speech tool.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default text-to-speech model used by the Generate OpenAI Speech tool.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3799,7 +3888,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			class="regular-text"
 			placeholder="alloy"
 		/>
-		<p class="description"><?php esc_html_e( 'Default OpenAI voice requested for speech responses (for example, alloy, verse, or shimmer).', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default OpenAI voice requested for speech responses (for example, alloy, verse, or shimmer).', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3816,7 +3905,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $current, $value ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Preferred audio container when assistants omit the format.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Preferred audio container when assistants omit the format.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3827,7 +3916,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[crawl4ai_api_key]" value="<?php echo esc_attr( $settings['crawl4ai_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Optional bearer token that will be sent with Crawl4AI requests.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3838,7 +3927,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_zone_id]" value="<?php echo esc_attr( $settings['cloudflare_zone_id'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Cloudflare zone identifier (a 32 character string) for the site you wish to purge.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Cloudflare zone identifier (a 32 character string) for the site you wish to purge.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3850,8 +3939,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudflare_api_token]" value="<?php echo esc_attr( $settings['cloudflare_api_token'] ); ?>" class="regular-text" autocomplete="off" />
 		<p class="description">
-			<?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'wp-mcp-ai' ); ?>
-			<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'wp-mcp-ai' ); ?></button>
+			<?php esc_html_e( 'Cloudflare API token with permission to purge cache for the configured zone.', 'mcp-ai-wpoos' ); ?>
+			<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary" style="margin-left: 10px;"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?></button>
 			<span id="wp-mcp-ai-cloudflare-test-result" style="margin-left: 10px;"></span>
 		</p>
 		<div id="wp-mcp-ai-cloudflare-zone-info" style="margin-top: 10px;"></div>
@@ -3866,9 +3955,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-enable-varnish-purge">
 			<input id="wp-mcp-ai-enable-varnish-purge" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_varnish_purge]" value="1" <?php checked( $settings['enable_varnish_purge'] ); ?> />
-			<?php esc_html_e( 'Enable Varnish cache purging for this site.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Enable Varnish cache purging for this site.', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'Enable this if your hosting environment (like Cloudways) uses Varnish caching. The plugin will send PURGE requests to 127.0.0.1 to clear the local cache.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Enable this if your hosting environment (like Cloudways) uses Varnish caching. The plugin will send PURGE requests to 127.0.0.1 to clear the local cache.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3880,8 +3969,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_email]" value="<?php echo esc_attr( $settings['cloudways_email'] ); ?>" class="regular-text" autocomplete="off" placeholder="your-email@example.com" />
 		<p class="description">
-			<?php esc_html_e( 'Your Cloudways account email address.', 'wp-mcp-ai' ); ?>
-			<a href="https://developers.cloudways.com/docs/#authentication" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Learn how to generate your API key', 'wp-mcp-ai' ); ?></a>
+			<?php esc_html_e( 'Your Cloudways account email address.', 'mcp-ai-wpoos' ); ?>
+			<a href="https://developers.cloudways.com/docs/#authentication" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Learn how to generate your API key', 'mcp-ai-wpoos' ); ?></a>
 		</p>
 			<?php
 		}
@@ -3893,10 +3982,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_api_key]" value="<?php echo esc_attr( $settings['cloudways_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'API key from your Cloudways account settings.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'API key from your Cloudways account settings.', 'mcp-ai-wpoos' ); ?></p>
 		<div style="margin-top: 10px;">
 			<button type="button" id="wp-mcp-ai-fetch-cloudways-data" class="button button-secondary">
-				<?php esc_html_e( 'Fetch Cloudways Data', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Fetch Cloudways Data', 'mcp-ai-wpoos' ); ?>
 			</button>
 			<span id="wp-mcp-ai-cloudways-fetch-result" style="margin-left: 10px;"></span>
 		</div>
@@ -3909,18 +3998,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_server_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-server-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_server_id]"
+			value="<?php echo esc_attr( $settings['cloudways_server_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-server-id-description"
-			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'wp-mcp-ai' ); ?>"
+			aria-label="<?php esc_attr_e( 'Cloudways Server ID', 'mcp-ai-wpoos' ); ?>"
 		/>
-		<p id="wp-mcp-ai-cloudways-server-id-description" class="description"><?php esc_html_e( 'Server ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<p id="wp-mcp-ai-cloudways-server-id-description" class="description"><?php esc_html_e( 'Server ID (auto-populated after fetching Cloudways data).', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-cloudways-servers-list" style="margin-top: 10px;"></div>
 			<?php
 		}
@@ -3931,18 +4020,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public function render_cloudways_app_id_field() {
 			$settings = self::get_settings();
 			?>
-		<input 
-			type="text" 
+		<input
+			type="text"
 			id="wp-mcp-ai-cloudways-app-id"
-			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]" 
-			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>" 
-			class="regular-text" 
-			autocomplete="off" 
-			readonly 
+			name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cloudways_app_id]"
+			value="<?php echo esc_attr( $settings['cloudways_app_id'] ); ?>"
+			class="regular-text"
+			autocomplete="off"
+			readonly
 			aria-describedby="wp-mcp-ai-cloudways-app-id-description"
-			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'wp-mcp-ai' ); ?>"
+			aria-label="<?php esc_attr_e( 'Cloudways Application ID', 'mcp-ai-wpoos' ); ?>"
 		/>
-		<p id="wp-mcp-ai-cloudways-app-id-description" class="description"><?php esc_html_e( 'Application ID (auto-populated after fetching Cloudways data).', 'wp-mcp-ai' ); ?></p>
+		<p id="wp-mcp-ai-cloudways-app-id-description" class="description"><?php esc_html_e( 'Application ID (auto-populated after fetching Cloudways data).', 'mcp-ai-wpoos' ); ?></p>
 		<div id="wp-mcp-ai-cloudways-apps-list" style="margin-top: 10px;"></div>
 			<?php
 		}
@@ -3954,7 +4043,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_key]" value="<?php echo esc_attr( $settings['mailjet_api_key'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Public Mailjet API key used to authenticate requests.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3965,7 +4054,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="password" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_api_secret]" value="<?php echo esc_attr( $settings['mailjet_api_secret'] ); ?>" class="regular-text" autocomplete="off" />
-		<p class="description"><?php esc_html_e( 'Private Mailjet API secret paired with the API key.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Private Mailjet API secret paired with the API key.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3976,7 +4065,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="email" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_email]" value="<?php echo esc_attr( $settings['mailjet_from_email'] ); ?>" class="regular-text" placeholder="sender@example.com" />
-		<p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default sender email used when assistants omit a from address.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -3987,7 +4076,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[mailjet_from_name]" value="<?php echo esc_attr( $settings['mailjet_from_name'] ); ?>" class="regular-text" placeholder="NV oOS" />
-		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Optional default sender name presented to recipients.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4008,7 +4097,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			class="regular-text"
 		>
 			<option value="" <?php selected( '', $capability ); ?>>
-				<?php esc_html_e( 'Any logged-in user (no capability required)', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Any logged-in user (no capability required)', 'mcp-ai-wpoos' ); ?>
 			</option>
 			<?php foreach ( $choices as $choice ) : ?>
 				<?php $label = $this->get_group_email_capability_label( $choice ); ?>
@@ -4018,7 +4107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			<?php endforeach; ?>
 		</select>
 		<p class="description">
-			<?php esc_html_e( 'Select the capability required to use the Send Group Email tool. Choose "Any logged-in user" to allow any logged-in user that passes attachment checks.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Select the capability required to use the Send Group Email tool. Choose "Any logged-in user" to allow any logged-in user that passes attachment checks.', 'mcp-ai-wpoos' ); ?>
 		</p>
 			<?php
 		}
@@ -4127,7 +4216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			class="small-text"
 		/>
 		<p class="description">
-			<?php esc_html_e( 'Maximum number of recipients allowed per Send Group Email request. Set to 0 to disable the limit.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Maximum number of recipients allowed per Send Group Email request. Set to 0 to disable the limit.', 'mcp-ai-wpoos' ); ?>
 		</p>
 			<?php
 		}
@@ -4163,13 +4252,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				}
 
 				if ( 'openai' === $choice ) {
-					$label = __( 'OpenAI', 'wp-mcp-ai' );
+					$label = __( 'OpenAI', 'mcp-ai-wpoos' );
 				} elseif ( 'gemini' === $choice ) {
-					$label = __( 'Gemini', 'wp-mcp-ai' );
+					$label = __( 'Gemini', 'mcp-ai-wpoos' );
 				} elseif ( 'ollama' === $choice ) {
-					$label = __( 'Ollama (Local AI)', 'wp-mcp-ai' );
+					$label = __( 'Ollama (Local AI)', 'mcp-ai-wpoos' );
 				} elseif ( 'lm_studio' === $choice ) {
-					$label = __( 'LM Studio (Local AI)', 'wp-mcp-ai' );
+					$label = __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' );
 				} else {
 					$label = ucfirst( $choice );
 				}
@@ -4179,7 +4268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 			?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Default API for the system. This provider will be used by assistants and API requests when no specific provider is set. Changing this affects all new conversations.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Default API for the system. This provider will be used by assistants and API requests when no specific provider is set. Changing this affects all new conversations.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4205,12 +4294,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			$provider_labels = array(
-				'openai'      => __( 'OpenAI', 'wp-mcp-ai' ),
-				'anthropic'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-				'gemini'      => __( 'Gemini', 'wp-mcp-ai' ),
-				'huggingface' => __( 'Hugging Face', 'wp-mcp-ai' ),
-				'ollama'      => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio'   => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Gemini', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 			);
 			?>
 		<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
@@ -4227,7 +4316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			</ul>
 		</div>
 		<p class="description">
-			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'mcp-ai-wpoos' ); ?>
 		</p>
 		<style>
 			#wp-mcp-ai-provider-sortable {
@@ -4282,12 +4371,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$assistants = $this->get_assistant_posts();
 			?>
 		<select name="<?php echo esc_attr( self::OPTION_NAME ); ?>[default_assistant]" class="regular-text">
-			<option value="0" <?php selected( 0, $settings['default_assistant'] ); ?>><?php esc_html_e( 'None', 'wp-mcp-ai' ); ?></option>
+			<option value="0" <?php selected( 0, $settings['default_assistant'] ); ?>><?php esc_html_e( 'None', 'mcp-ai-wpoos' ); ?></option>
 			<?php foreach ( $assistants as $assistant ) : ?>
 				<option value="<?php echo esc_attr( $assistant->ID ); ?>" <?php selected( $assistant->ID, $settings['default_assistant'] ); ?>><?php echo esc_html( $assistant->post_title ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'The assistant used by default in REST interactions when one is not provided explicitly.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'The assistant used by default in REST interactions when one is not provided explicitly.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4299,9 +4388,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-enable-logging">
 			<input id="wp-mcp-ai-enable-logging" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_logging]" value="1" <?php checked( $settings['enable_logging'] ); ?> />
-			<?php esc_html_e( 'Write OpenAI request and response details to the debug log.', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Write OpenAI request and response details to the debug log.', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'When enabled, detailed error and debug logs will be displayed in a separate section below.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'When enabled, detailed error and debug logs will be displayed in a separate section below.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4313,9 +4402,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-rest-enable-assistant-create">
 			<input id="wp-mcp-ai-rest-enable-assistant-create" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[rest_enable_assistant_create]" value="1" <?php checked( $settings['rest_enable_assistant_create'] ); ?> />
-			<?php esc_html_e( 'Allow creating assistants via REST API (POST /wp-json/mcp-ai/v1/assistants)', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Allow creating assistants via REST API (POST /wp-json/mcp-ai/v1/assistants)', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can create new assistants remotely. Requires proper authentication (Auth0, assistant credentials, or JWT).', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can create new assistants remotely. Requires proper authentication (Auth0, assistant credentials, or JWT).', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4327,9 +4416,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-rest-enable-assistant-delete">
 			<input id="wp-mcp-ai-rest-enable-assistant-delete" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[rest_enable_assistant_delete]" value="1" <?php checked( $settings['rest_enable_assistant_delete'] ); ?> />
-			<?php esc_html_e( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Allow deleting assistants via REST API (DELETE /wp-json/mcp-ai/v1/assistants/{id})', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'When enabled, authenticated API clients can delete assistants remotely. Use with caution - this is irreversible.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4341,9 +4430,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			?>
 		<label for="wp-mcp-ai-sse-enable-post-method">
 			<input id="wp-mcp-ai-sse-enable-post-method" type="checkbox" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[sse_enable_post_method]" value="1" <?php checked( $settings['sse_enable_post_method'] ); ?> />
-			<?php esc_html_e( 'Allow POST requests to /wp-json/mcp-ai/v1/sse endpoint', 'wp-mcp-ai' ); ?>
+			<?php esc_html_e( 'Allow POST requests to /wp-json/mcp-ai/v1/sse endpoint', 'mcp-ai-wpoos' ); ?>
 		</label>
-		<p class="description"><?php esc_html_e( 'SSE (Server-Sent Events) standard only uses GET. Enable POST only if you have LM Studio or client bugs requiring it. Leave disabled for standard SSE compliance.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'SSE (Server-Sent Events) standard only uses GET. Enable POST only if you have LM Studio or client bugs requiring it. Leave disabled for standard SSE compliance.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4360,10 +4449,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$entries = WP_MCP_AI_Logger::get_recent_error_messages();
 			?>
 		<div class="wp-mcp-ai-error-log-section">
-			<h2><?php esc_html_e( 'Error Log', 'wp-mcp-ai' ); ?></h2>
-			<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
+			<h2><?php esc_html_e( 'Error Log', 'mcp-ai-wpoos' ); ?></h2>
+			<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos' ); ?></p>
 			<?php if ( empty( $entries ) ) : ?>
-				<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
+				<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'mcp-ai-wpoos' ); ?></p>
 			<?php else : ?>
 				<ul class="wp-mcp-ai-log-preview">
 					<?php
@@ -4408,7 +4497,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 							<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
 							<?php if ( '' !== $context_label ) : ?>
 								<details class="wp-mcp-ai-log-preview__context">
-									<summary><?php esc_html_e( 'Context details', 'wp-mcp-ai' ); ?></summary>
+									<summary><?php esc_html_e( 'Context details', 'mcp-ai-wpoos' ); ?></summary>
 									<pre><?php echo esc_html( $context_label ); ?></pre>
 								</details>
 							<?php endif; ?>
@@ -4434,33 +4523,33 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						<?php
 						if ( $log_file_exists ) {
 							if ( '' === $log_size_display ) {
-								$log_size_display = __( 'Unknown size', 'wp-mcp-ai' );
+								$log_size_display = __( 'Unknown size', 'mcp-ai-wpoos' );
 							}
 
 							printf(
 								/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-								esc_html__( 'PHP error log: %1$s (%2$s).', 'wp-mcp-ai' ),
+								esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
 								'<code>' . esc_html( $log_file_path ) . '</code>',
 								esc_html( $log_size_display )
 							);
 						} else {
 							printf(
 								/* translators: %s: Path to the PHP error log. */
-								esc_html__( 'PHP error log: %s (not created yet).', 'wp-mcp-ai' ),
+								esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
 								'<code>' . esc_html( $log_file_path ) . '</code>'
 							);
 						}
 						?>
 					</p>
 				<?php else : ?>
-					<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'mcp-ai-wpoos' ); ?></p>
 				<?php endif; ?>
 					<?php if ( WP_MCP_AI_Logger::can_prune_error_log() ) : ?>
 					<div class="wp-mcp-ai-log-meta__actions">
-						<?php submit_button( __( 'Prune log file', 'wp-mcp-ai' ), 'secondary', 'wp_mcp_ai_prune_log', false, array( 'form' => 'wp-mcp-ai-prune-log-form' ) ); ?>
+						<?php submit_button( __( 'Prune log file', 'mcp-ai-wpoos' ), 'secondary', 'wp_mcp_ai_prune_log', false, array( 'form' => 'wp-mcp-ai-prune-log-form' ) ); ?>
 					</div>
 				<?php elseif ( '' !== $log_file_path && $log_file_exists ) : ?>
-					<p class="description"><?php esc_html_e( 'The PHP error log is not writable. Update the file permissions to prune it from the dashboard.', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'The PHP error log is not writable. Update the file permissions to prune it from the dashboard.', 'mcp-ai-wpoos' ); ?></p>
 				<?php endif; ?>
 			</div>
 		</div>
@@ -4472,7 +4561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		public function handle_prune_log_request() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'wp-mcp-ai' ) );
+				wp_die( esc_html__( 'Sorry, you are not allowed to manage these settings.', 'mcp-ai-wpoos' ) );
 			}
 
 			check_admin_referer( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_nonce' );
@@ -4485,7 +4574,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				$message = $result->get_error_message();
 				$type    = 'error';
 			} else {
-				$message = __( 'The PHP error log was pruned successfully.', 'wp-mcp-ai' );
+				$message = __( 'The PHP error log was pruned successfully.', 'mcp-ai-wpoos' );
 			}
 
 			add_settings_error( 'wp_mcp_ai_prune_log', 'wp_mcp_ai_prune_log_notice', $message, $type );
@@ -4530,7 +4619,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<?php endforeach; ?>
 			</datalist>
 		<?php endif; ?>
-		<p class="description"><?php esc_html_e( 'The Chat Completions model to use when assistants do not specify one.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'The Chat Completions model to use when assistants do not specify one.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -4540,74 +4629,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 * @return array<string, string> Associative array of model slugs mapped to display labels.
 		 */
 		protected function get_openai_default_model_choices() {
-			// Try to get models from CCT if JetEngine is active.
-			$cct_models = $this->get_openai_models_from_cct();
-
-			// Fallback to hardcoded choices if CCT is not available or empty.
-			if ( empty( $cct_models ) ) {
-				$choices = array(
-					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-					'gpt-5.2'                            => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
-					'gpt-5.2-2025-12-11'                 => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
-					'gpt-5.2-pro'                        => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
-					'gpt-5.2-pro-2025-12-11'             => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
-					'gpt-5.2-instant'                    => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
-					'gpt-5.2-thinking'                   => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
-					// GPT-5.1 series (Nov 2025).
-					'gpt-5.1'                            => __( 'GPT-5.1', 'wp-mcp-ai' ),
-					'gpt-5.1-2025-11-13'                 => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
-					'gpt-5.1-instant'                    => __( 'GPT-5.1 Instant (Fast)', 'wp-mcp-ai' ),
-					'gpt-5.1-thinking'                   => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'wp-mcp-ai' ),
-					'gpt-5.1-codex-max'                  => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'wp-mcp-ai' ),
-					'gpt-5.1-codex-mini'                 => __( 'GPT-5.1 Codex Mini', 'wp-mcp-ai' ),
-					// GPT-5 series (Aug 2025).
-					'gpt-5'                              => __( 'GPT-5', 'wp-mcp-ai' ),
-					'gpt-5-2025-08-07'                   => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
-					'gpt-5-mini'                         => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
-					'gpt-5-nano'                         => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
-					'gpt-5-pro'                          => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
-					'gpt-5-codex'                        => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
-					'gpt-5-codex-mini'                   => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
-					// Future placeholder models.
-					'gpt-4.5-preview'                    => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
-					'gpt-4.5-turbo'                      => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
-					// Reasoning models (o-series - "thinking models").
-					'o1-2024-12-17'                      => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
-					'o1-preview'                         => __( 'o1 Preview', 'wp-mcp-ai' ),
-					'o1-mini'                            => __( 'o1 Mini', 'wp-mcp-ai' ),
-					'o1'                                 => __( 'o1 (Legacy Reasoning)', 'wp-mcp-ai' ),
-					'o1-pro'                             => __( 'o1 Pro (Legacy Advanced)', 'wp-mcp-ai' ),
-					'o3-mini'                            => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
-					'o3'                                 => __( 'o3 (Reasoning Model)', 'wp-mcp-ai' ),
-					'o3-pro'                             => __( 'o3 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
-					'o4-mini'                            => __( 'o4 Mini', 'wp-mcp-ai' ),
-					// GPT-4o series (current flagship).
-					'gpt-4o'                             => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'                        => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview'               => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview-2024-12-17'    => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview'            => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2024-12-17' => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2025-01-06' => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2025-06-03' => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview'       => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
-					'gpt-realtime-mini'                  => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
-					'gpt-realtime-mini-2025-12-15'       => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
-					// Legacy GPT-4 series.
-					'gpt-4.1'                            => __( 'GPT-4.1', 'wp-mcp-ai' ),
-					'gpt-4.1-mini'                       => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
-					'gpt-4.1-nano'                       => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
-					'gpt-4-turbo'                        => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
-					'gpt-4'                              => __( 'GPT-4', 'wp-mcp-ai' ),
-					// GPT-3.5 series (legacy).
-					'gpt-3.5-turbo'                      => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
-					'gpt-3.5-turbo-16k'                  => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
-					'gpt-3.5-turbo-instruct'             => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
-				);
-			} else {
-				$choices = $cct_models;
+			// Try Model Config first (single source of truth).
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$model_config_models = WP_MCP_AI_Model_Config::get_models_by_provider( 'openai' );
+				if ( ! empty( $model_config_models ) ) {
+					return $model_config_models;
+				}
 			}
+
+			// Fallback to CCT if JetEngine is active.
+			$cct_models = $this->get_openai_models_from_cct();
+			if ( ! empty( $cct_models ) ) {
+				return $cct_models;
+			}
+
+			// Final fallback to minimal hardcoded list.
+			$choices = array(
+				'gpt-4o'      => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini' => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo' => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+			);
 
 			/**
 			 * Filter the default OpenAI model choices displayed in the settings UI.
@@ -4718,47 +4759,47 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			// Handle special cases first.
 			$special_cases = array(
 				// Future flagship models.
-				'gpt-5'                                   => __( 'GPT-5', 'wp-mcp-ai' ),
-				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
-				'gpt-5-nano'                              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
-				'gpt-5-pro'                               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
-				'gpt-5-codex'                             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
-				'gpt-5-codex-mini'                        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
-				'gpt-4.5-preview'                         => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
-				'gpt-4.5-turbo'                           => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
+				'gpt-5'                                   => __( 'GPT-5', 'mcp-ai-wpoos' ),
+				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
+				'gpt-5-nano'                              => __( 'GPT-5 Nano', 'mcp-ai-wpoos' ),
+				'gpt-5-pro'                               => __( 'GPT-5 Pro', 'mcp-ai-wpoos' ),
+				'gpt-5-codex'                             => __( 'GPT-5 Codex (Coding)', 'mcp-ai-wpoos' ),
+				'gpt-5-codex-mini'                        => __( 'GPT-5 Codex Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.5-preview'                         => __( 'GPT-4.5 Preview', 'mcp-ai-wpoos' ),
+				'gpt-4.5-turbo'                           => __( 'GPT-4.5 Turbo', 'mcp-ai-wpoos' ),
 				// Reasoning models (o-series).
-				'o1-2024-12-17'                           => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
-				'o1-preview'                              => __( 'o1 Preview', 'wp-mcp-ai' ),
-				'o1-mini'                                 => __( 'o1 Mini', 'wp-mcp-ai' ),
-				'o1'                                      => __( 'o1 (Legacy Reasoning)', 'wp-mcp-ai' ),
-				'o1-pro'                                  => __( 'o1 Pro (Legacy Advanced)', 'wp-mcp-ai' ),
-				'o3-mini'                                 => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
-				'o3'                                      => __( 'o3 (Reasoning Model)', 'wp-mcp-ai' ),
-				'o3-pro'                                  => __( 'o3 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
-				'o4-mini'                                 => __( 'o4 Mini', 'wp-mcp-ai' ),
+				'o1-2024-12-17'                           => __( 'o1 (Dec 2024)', 'mcp-ai-wpoos' ),
+				'o1-preview'                              => __( 'o1 Preview', 'mcp-ai-wpoos' ),
+				'o1-mini'                                 => __( 'o1 Mini', 'mcp-ai-wpoos' ),
+				'o1'                                      => __( 'o1 (Legacy Reasoning)', 'mcp-ai-wpoos' ),
+				'o1-pro'                                  => __( 'o1 Pro (Legacy Advanced)', 'mcp-ai-wpoos' ),
+				'o3-mini'                                 => __( 'o3 Mini (24% faster, structured outputs)', 'mcp-ai-wpoos' ),
+				'o3'                                      => __( 'o3 (Reasoning Model)', 'mcp-ai-wpoos' ),
+				'o3-pro'                                  => __( 'o3 Pro (Advanced Reasoning)', 'mcp-ai-wpoos' ),
+				'o4-mini'                                 => __( 'o4 Mini', 'mcp-ai-wpoos' ),
 				// GPT-4o series.
-				'gpt-4o'                                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
-				'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-				'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
-				'gpt-realtime-mini'                       => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
-				'gpt-realtime-mini-2025-12-15'            => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
+				'gpt-4o'                                  => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'mcp-ai-wpoos' ),
+				'gpt-realtime-mini'                       => __( 'GPT Realtime Mini', 'mcp-ai-wpoos' ),
+				'gpt-realtime-mini-2025-12-15'            => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'mcp-ai-wpoos' ),
 				// Legacy GPT-4 series.
-				'gpt-4.1'                                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
-				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
-				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
-				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
-				'gpt-4'                                   => __( 'GPT-4', 'wp-mcp-ai' ),
+				'gpt-4.1'                                 => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
+				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4'                                   => __( 'GPT-4', 'mcp-ai-wpoos' ),
 				// GPT-3.5 series.
-				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
-				'gpt-3.5-turbo-16k'                       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
-				'gpt-3.5-turbo-instruct'                  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
+				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-3.5-turbo-16k'                       => __( 'GPT-3.5 Turbo 16k', 'mcp-ai-wpoos' ),
+				'gpt-3.5-turbo-instruct'                  => __( 'GPT-3.5 Turbo Instruct', 'mcp-ai-wpoos' ),
 			);
 
 			if ( isset( $special_cases[ $model_name ] ) ) {
@@ -4845,35 +4886,35 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		public static function format_model_label_static( $model_name ) {
 			// Handle special cases first.
 			$special_cases = array(
-				'gpt-5'                                   => __( 'GPT-5', 'wp-mcp-ai' ),
-				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
-				'gpt-5-nano'                              => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
-				'gpt-5-pro'                               => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
-				'gpt-5-codex'                             => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
-				'gpt-5-codex-mini'                        => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
-				'gpt-4o'                                  => __( 'GPT-4o', 'wp-mcp-ai' ),
-				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-				'gpt-4.1'                                 => __( 'GPT-4.1', 'wp-mcp-ai' ),
-				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
-				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
-				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
-				'gpt-4'                                   => __( 'GPT-4', 'wp-mcp-ai' ),
-				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
-				'gpt-3.5-turbo-16k'                       => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
-				'gpt-3.5-turbo-instruct'                  => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
-				'o1-preview'                              => __( 'O1 Preview', 'wp-mcp-ai' ),
-				'o1-mini'                                 => __( 'O1 Mini', 'wp-mcp-ai' ),
-				'o4-mini'                                 => __( 'O4 Mini', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
-				'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
-				'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-				'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
-				'gpt-realtime-mini'                       => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
-				'gpt-realtime-mini-2025-12-15'            => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
+				'gpt-5'                                   => __( 'GPT-5', 'mcp-ai-wpoos' ),
+				'gpt-5-mini'                              => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
+				'gpt-5-nano'                              => __( 'GPT-5 Nano', 'mcp-ai-wpoos' ),
+				'gpt-5-pro'                               => __( 'GPT-5 Pro', 'mcp-ai-wpoos' ),
+				'gpt-5-codex'                             => __( 'GPT-5 Codex (Coding)', 'mcp-ai-wpoos' ),
+				'gpt-5-codex-mini'                        => __( 'GPT-5 Codex Mini', 'mcp-ai-wpoos' ),
+				'gpt-4o'                                  => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini'                             => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.1'                                 => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
+				'gpt-4.1-mini'                            => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
+				'gpt-4.1-nano'                            => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
+				'gpt-4-turbo'                             => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-4'                                   => __( 'GPT-4', 'mcp-ai-wpoos' ),
+				'gpt-3.5-turbo'                           => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
+				'gpt-3.5-turbo-16k'                       => __( 'GPT-3.5 Turbo 16k', 'mcp-ai-wpoos' ),
+				'gpt-3.5-turbo-instruct'                  => __( 'GPT-3.5 Turbo Instruct', 'mcp-ai-wpoos' ),
+				'o1-preview'                              => __( 'O1 Preview', 'mcp-ai-wpoos' ),
+				'o1-mini'                                 => __( 'O1 Mini', 'mcp-ai-wpoos' ),
+				'o4-mini'                                 => __( 'O4 Mini', 'mcp-ai-wpoos' ),
+				'gpt-4o-audio-preview'                    => __( 'GPT-4o Audio Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-audio-preview-2024-12-17'         => __( 'GPT-4o Audio Preview (Dec 2024)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview'                 => __( 'GPT-4o Realtime Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2024-12-17'      => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2025-01-06'      => __( 'GPT-4o Realtime Preview (Jan 2025)', 'mcp-ai-wpoos' ),
+				'gpt-4o-realtime-preview-2025-06-03'      => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini-realtime-preview'            => __( 'GPT-4o Mini Realtime Preview', 'mcp-ai-wpoos' ),
+				'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'mcp-ai-wpoos' ),
+				'gpt-realtime-mini'                       => __( 'GPT Realtime Mini', 'mcp-ai-wpoos' ),
+				'gpt-realtime-mini-2025-12-15'            => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'mcp-ai-wpoos' ),
 			);
 
 			if ( isset( $special_cases[ $model_name ] ) ) {
@@ -4905,63 +4946,63 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			if ( empty( $cct_models ) ) {
 				$choices = array(
 					// GPT-5.2 series (flagship - Dec 2025) - 400K context window.
-					'gpt-5.2'                            => __( 'GPT-5.2 (Flagship)', 'wp-mcp-ai' ),
-					'gpt-5.2-2025-12-11'                 => __( 'GPT-5.2 (Dec 2025)', 'wp-mcp-ai' ),
-					'gpt-5.2-pro'                        => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
-					'gpt-5.2-pro-2025-12-11'             => __( 'GPT-5.2 Pro (Dec 2025)', 'wp-mcp-ai' ),
-					'gpt-5.2-instant'                    => __( 'GPT-5.2 Instant (High Throughput)', 'wp-mcp-ai' ),
-					'gpt-5.2-thinking'                   => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'wp-mcp-ai' ),
+					'gpt-5.2'                            => __( 'GPT-5.2 (Flagship)', 'mcp-ai-wpoos' ),
+					'gpt-5.2-2025-12-11'                 => __( 'GPT-5.2 (Dec 2025)', 'mcp-ai-wpoos' ),
+					'gpt-5.2-pro'                        => __( 'GPT-5.2 Pro (Advanced Reasoning)', 'mcp-ai-wpoos' ),
+					'gpt-5.2-pro-2025-12-11'             => __( 'GPT-5.2 Pro (Dec 2025)', 'mcp-ai-wpoos' ),
+					'gpt-5.2-instant'                    => __( 'GPT-5.2 Instant (High Throughput)', 'mcp-ai-wpoos' ),
+					'gpt-5.2-thinking'                   => __( 'GPT-5.2 Thinking (Deeper Analysis)', 'mcp-ai-wpoos' ),
 					// GPT-5.1 series (Nov 2025).
-					'gpt-5.1'                            => __( 'GPT-5.1', 'wp-mcp-ai' ),
-					'gpt-5.1-2025-11-13'                 => __( 'GPT-5.1 (Nov 2025)', 'wp-mcp-ai' ),
-					'gpt-5.1-instant'                    => __( 'GPT-5.1 Instant (Fast)', 'wp-mcp-ai' ),
-					'gpt-5.1-thinking'                   => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'wp-mcp-ai' ),
-					'gpt-5.1-codex-max'                  => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'wp-mcp-ai' ),
-					'gpt-5.1-codex-mini'                 => __( 'GPT-5.1 Codex Mini', 'wp-mcp-ai' ),
+					'gpt-5.1'                            => __( 'GPT-5.1', 'mcp-ai-wpoos' ),
+					'gpt-5.1-2025-11-13'                 => __( 'GPT-5.1 (Nov 2025)', 'mcp-ai-wpoos' ),
+					'gpt-5.1-instant'                    => __( 'GPT-5.1 Instant (Fast)', 'mcp-ai-wpoos' ),
+					'gpt-5.1-thinking'                   => __( 'GPT-5.1 Thinking (Deep Reasoning)', 'mcp-ai-wpoos' ),
+					'gpt-5.1-codex-max'                  => __( 'GPT-5.1 Codex Max (Advanced Coding)', 'mcp-ai-wpoos' ),
+					'gpt-5.1-codex-mini'                 => __( 'GPT-5.1 Codex Mini', 'mcp-ai-wpoos' ),
 					// GPT-5 series (Aug 2025).
-					'gpt-5'                              => __( 'GPT-5', 'wp-mcp-ai' ),
-					'gpt-5-2025-08-07'                   => __( 'GPT-5 (Aug 2025)', 'wp-mcp-ai' ),
-					'gpt-5-mini'                         => __( 'GPT-5 Mini', 'wp-mcp-ai' ),
-					'gpt-5-nano'                         => __( 'GPT-5 Nano', 'wp-mcp-ai' ),
-					'gpt-5-pro'                          => __( 'GPT-5 Pro', 'wp-mcp-ai' ),
-					'gpt-5-codex'                        => __( 'GPT-5 Codex (Coding)', 'wp-mcp-ai' ),
-					'gpt-5-codex-mini'                   => __( 'GPT-5 Codex Mini', 'wp-mcp-ai' ),
+					'gpt-5'                              => __( 'GPT-5', 'mcp-ai-wpoos' ),
+					'gpt-5-2025-08-07'                   => __( 'GPT-5 (Aug 2025)', 'mcp-ai-wpoos' ),
+					'gpt-5-mini'                         => __( 'GPT-5 Mini', 'mcp-ai-wpoos' ),
+					'gpt-5-nano'                         => __( 'GPT-5 Nano', 'mcp-ai-wpoos' ),
+					'gpt-5-pro'                          => __( 'GPT-5 Pro', 'mcp-ai-wpoos' ),
+					'gpt-5-codex'                        => __( 'GPT-5 Codex (Coding)', 'mcp-ai-wpoos' ),
+					'gpt-5-codex-mini'                   => __( 'GPT-5 Codex Mini', 'mcp-ai-wpoos' ),
 					// Future placeholder models.
-					'gpt-4.5-preview'                    => __( 'GPT-4.5 Preview', 'wp-mcp-ai' ),
-					'gpt-4.5-turbo'                      => __( 'GPT-4.5 Turbo', 'wp-mcp-ai' ),
+					'gpt-4.5-preview'                    => __( 'GPT-4.5 Preview', 'mcp-ai-wpoos' ),
+					'gpt-4.5-turbo'                      => __( 'GPT-4.5 Turbo', 'mcp-ai-wpoos' ),
 					// Reasoning models (o-series - "thinking models").
-					'o1-2024-12-17'                      => __( 'o1 (Dec 2024)', 'wp-mcp-ai' ),
-					'o1-preview'                         => __( 'o1 Preview', 'wp-mcp-ai' ),
-					'o1-mini'                            => __( 'o1 Mini', 'wp-mcp-ai' ),
-					'o1'                                 => __( 'o1 (Legacy Reasoning)', 'wp-mcp-ai' ),
-					'o1-pro'                             => __( 'o1 Pro (Legacy Advanced)', 'wp-mcp-ai' ),
-					'o3-mini'                            => __( 'o3 Mini (24% faster, structured outputs)', 'wp-mcp-ai' ),
-					'o3'                                 => __( 'o3 (Reasoning Model)', 'wp-mcp-ai' ),
-					'o3-pro'                             => __( 'o3 Pro (Advanced Reasoning)', 'wp-mcp-ai' ),
-					'o4-mini'                            => __( 'o4 Mini', 'wp-mcp-ai' ),
+					'o1-2024-12-17'                      => __( 'o1 (Dec 2024)', 'mcp-ai-wpoos' ),
+					'o1-preview'                         => __( 'o1 Preview', 'mcp-ai-wpoos' ),
+					'o1-mini'                            => __( 'o1 Mini', 'mcp-ai-wpoos' ),
+					'o1'                                 => __( 'o1 (Legacy Reasoning)', 'mcp-ai-wpoos' ),
+					'o1-pro'                             => __( 'o1 Pro (Legacy Advanced)', 'mcp-ai-wpoos' ),
+					'o3-mini'                            => __( 'o3 Mini (24% faster, structured outputs)', 'mcp-ai-wpoos' ),
+					'o3'                                 => __( 'o3 (Reasoning Model)', 'mcp-ai-wpoos' ),
+					'o3-pro'                             => __( 'o3 Pro (Advanced Reasoning)', 'mcp-ai-wpoos' ),
+					'o4-mini'                            => __( 'o4 Mini', 'mcp-ai-wpoos' ),
 					// GPT-4o series (current flagship).
-					'gpt-4o'                             => __( 'GPT-4o', 'wp-mcp-ai' ),
-					'gpt-4o-mini'                        => __( 'GPT-4o Mini', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview'               => __( 'GPT-4o Audio Preview', 'wp-mcp-ai' ),
-					'gpt-4o-audio-preview-2024-12-17'    => __( 'GPT-4o Audio Preview (Dec 2024)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview'            => __( 'GPT-4o Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2024-12-17' => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2025-01-06' => __( 'GPT-4o Realtime Preview (Jan 2025)', 'wp-mcp-ai' ),
-					'gpt-4o-realtime-preview-2025-06-03' => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview'       => __( 'GPT-4o Mini Realtime Preview', 'wp-mcp-ai' ),
-					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'wp-mcp-ai' ),
-					'gpt-realtime-mini'                  => __( 'GPT Realtime Mini', 'wp-mcp-ai' ),
-					'gpt-realtime-mini-2025-12-15'       => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'wp-mcp-ai' ),
+					'gpt-4o'                             => __( 'GPT-4o', 'mcp-ai-wpoos' ),
+					'gpt-4o-mini'                        => __( 'GPT-4o Mini', 'mcp-ai-wpoos' ),
+					'gpt-4o-audio-preview'               => __( 'GPT-4o Audio Preview', 'mcp-ai-wpoos' ),
+					'gpt-4o-audio-preview-2024-12-17'    => __( 'GPT-4o Audio Preview (Dec 2024)', 'mcp-ai-wpoos' ),
+					'gpt-4o-realtime-preview'            => __( 'GPT-4o Realtime Preview', 'mcp-ai-wpoos' ),
+					'gpt-4o-realtime-preview-2024-12-17' => __( 'GPT-4o Realtime Preview (Dec 2024 - 60% cheaper)', 'mcp-ai-wpoos' ),
+					'gpt-4o-realtime-preview-2025-01-06' => __( 'GPT-4o Realtime Preview (Jan 2025)', 'mcp-ai-wpoos' ),
+					'gpt-4o-realtime-preview-2025-06-03' => __( 'GPT-4o Realtime Preview (Jun 2025 - latest)', 'mcp-ai-wpoos' ),
+					'gpt-4o-mini-realtime-preview'       => __( 'GPT-4o Mini Realtime Preview', 'mcp-ai-wpoos' ),
+					'gpt-4o-mini-realtime-preview-2024-12-17' => __( 'GPT-4o Mini Realtime Preview (Dec 2024 - 10x cheaper)', 'mcp-ai-wpoos' ),
+					'gpt-realtime-mini'                  => __( 'GPT Realtime Mini', 'mcp-ai-wpoos' ),
+					'gpt-realtime-mini-2025-12-15'       => __( 'GPT Realtime Mini (Dec 2025 - 32K context)', 'mcp-ai-wpoos' ),
 					// Legacy GPT-4 series.
-					'gpt-4.1'                            => __( 'GPT-4.1', 'wp-mcp-ai' ),
-					'gpt-4.1-mini'                       => __( 'GPT-4.1 Mini', 'wp-mcp-ai' ),
-					'gpt-4.1-nano'                       => __( 'GPT-4.1 Nano', 'wp-mcp-ai' ),
-					'gpt-4-turbo'                        => __( 'GPT-4 Turbo', 'wp-mcp-ai' ),
-					'gpt-4'                              => __( 'GPT-4', 'wp-mcp-ai' ),
+					'gpt-4.1'                            => __( 'GPT-4.1', 'mcp-ai-wpoos' ),
+					'gpt-4.1-mini'                       => __( 'GPT-4.1 Mini', 'mcp-ai-wpoos' ),
+					'gpt-4.1-nano'                       => __( 'GPT-4.1 Nano', 'mcp-ai-wpoos' ),
+					'gpt-4-turbo'                        => __( 'GPT-4 Turbo', 'mcp-ai-wpoos' ),
+					'gpt-4'                              => __( 'GPT-4', 'mcp-ai-wpoos' ),
 					// GPT-3.5 series (legacy).
-					'gpt-3.5-turbo'                      => __( 'GPT-3.5 Turbo', 'wp-mcp-ai' ),
-					'gpt-3.5-turbo-16k'                  => __( 'GPT-3.5 Turbo 16k', 'wp-mcp-ai' ),
-					'gpt-3.5-turbo-instruct'             => __( 'GPT-3.5 Turbo Instruct', 'wp-mcp-ai' ),
+					'gpt-3.5-turbo'                      => __( 'GPT-3.5 Turbo', 'mcp-ai-wpoos' ),
+					'gpt-3.5-turbo-16k'                  => __( 'GPT-3.5 Turbo 16k', 'mcp-ai-wpoos' ),
+					'gpt-3.5-turbo-instruct'             => __( 'GPT-3.5 Turbo Instruct', 'mcp-ai-wpoos' ),
 				);
 			} else {
 				$choices = $cct_models;
@@ -5014,7 +5055,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$settings = self::get_settings();
 			?>
 		<input type="number" min="5" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[request_timeout]" value="<?php echo esc_attr( $settings['request_timeout'] ); ?>" class="small-text" />
-		<p class="description"><?php esc_html_e( 'How long to wait for OpenAI responses before aborting the request.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'How long to wait for OpenAI responses before aborting the request.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -5026,7 +5067,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$current  = isset( $settings['openai_embedding_model'] ) ? sanitize_text_field( $settings['openai_embedding_model'] ) : 'text-embedding-3-small';
 			?>
 		<input type="text" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[openai_embedding_model]" value="<?php echo esc_attr( $current ); ?>" class="regular-text" placeholder="text-embedding-3-small" />
-		<p class="description"><?php esc_html_e( 'OpenAI embedding model for vector operations (e.g., text-embedding-3-small, text-embedding-3-large).', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'OpenAI embedding model for vector operations (e.g., text-embedding-3-small, text-embedding-3-large).', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -5038,7 +5079,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$current  = isset( $settings['max_history_messages'] ) ? absint( $settings['max_history_messages'] ) : 8;
 			?>
 		<input type="number" min="1" max="50" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_history_messages]" value="<?php echo esc_attr( $current ); ?>" class="small-text" />
-		<p class="description"><?php esc_html_e( 'Maximum number of conversation messages to retain per chat. Recommended: 6-8 for optimal performance, higher values increase token usage. System messages are always preserved.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Maximum number of conversation messages to retain per chat. Recommended: 6-8 for optimal performance, higher values increase token usage. System messages are always preserved.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -5085,11 +5126,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'%s %s',
 				esc_html__(
 					'Optional. Enter one MIME type per line to replace the default allowed image types.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				),
 				esc_html__(
 					'Leave blank to use the plugin defaults.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				)
 			);
 			?>
@@ -5116,11 +5157,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				'%s %s',
 				esc_html__(
 					'Optional. Enter one MIME type per line to replace the default allowed file types.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				),
 				esc_html__(
 					'Leave blank to use the plugin defaults.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				)
 			);
 			?>
@@ -5141,7 +5182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				<option value="<?php echo esc_attr( $bytes ); ?>" <?php selected( $current, $bytes ); ?>><?php echo esc_html( $label ); ?></option>
 			<?php endforeach; ?>
 		</select>
-		<p class="description"><?php esc_html_e( 'Largest attachment size that can be processed as assistant memory.', 'wp-mcp-ai' ); ?></p>
+		<p class="description"><?php esc_html_e( 'Largest attachment size that can be processed as assistant memory.', 'mcp-ai-wpoos' ); ?></p>
 			<?php
 		}
 
@@ -5152,11 +5193,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_memory_max_file_size_choices() {
 			$choices = array(
-				5 * MB_IN_BYTES   => __( '5 MB (default)', 'wp-mcp-ai' ),
-				10 * MB_IN_BYTES  => __( '10 MB', 'wp-mcp-ai' ),
-				25 * MB_IN_BYTES  => __( '25 MB', 'wp-mcp-ai' ),
-				50 * MB_IN_BYTES  => __( '50 MB', 'wp-mcp-ai' ),
-				100 * MB_IN_BYTES => __( '100 MB', 'wp-mcp-ai' ),
+				5 * MB_IN_BYTES   => __( '5 MB (default)', 'mcp-ai-wpoos' ),
+				10 * MB_IN_BYTES  => __( '10 MB', 'mcp-ai-wpoos' ),
+				25 * MB_IN_BYTES  => __( '25 MB', 'mcp-ai-wpoos' ),
+				50 * MB_IN_BYTES  => __( '50 MB', 'mcp-ai-wpoos' ),
+				100 * MB_IN_BYTES => __( '100 MB', 'mcp-ai-wpoos' ),
 			);
 
 			/**
@@ -5167,7 +5208,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$choices = apply_filters( 'wp_mcp_ai_memory_max_file_size_choices', $choices );
 
 			if ( ! is_array( $choices ) || empty( $choices ) ) {
-				return array( self::DEFAULT_MEMORY_MAX_FILE_BYTES => __( '5 MB (default)', 'wp-mcp-ai' ) );
+				return array( self::DEFAULT_MEMORY_MAX_FILE_BYTES => __( '5 MB (default)', 'mcp-ai-wpoos' ) );
 			}
 
 			$sanitized = array();
@@ -5183,7 +5224,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			}
 
 			if ( empty( $sanitized ) ) {
-				$sanitized[ self::DEFAULT_MEMORY_MAX_FILE_BYTES ] = __( '5 MB (default)', 'wp-mcp-ai' );
+				$sanitized[ self::DEFAULT_MEMORY_MAX_FILE_BYTES ] = __( '5 MB (default)', 'mcp-ai-wpoos' );
 			}
 
 			return $sanitized;
@@ -5196,20 +5237,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_model_choices() {
 			$models = array(
-				'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'wp-mcp-ai' ),
-				'gpt-image-1'   => __( 'GPT-Image-1', 'wp-mcp-ai' ),
-				'dall-e-3'      => __( 'DALL·E 3', 'wp-mcp-ai' ),
-				'dall-e-2'      => __( 'DALL·E 2', 'wp-mcp-ai' ),
+				'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'mcp-ai-wpoos' ),
+				'gpt-image-1'   => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
+				'dall-e-3'      => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
+				'dall-e-2'      => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
 			);
 
 			$models = apply_filters( 'wp_mcp_ai_openai_image_models', $models );
 
 			if ( ! is_array( $models ) || empty( $models ) ) {
 				$models = array(
-					'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'wp-mcp-ai' ),
-					'gpt-image-1'   => __( 'GPT-Image-1', 'wp-mcp-ai' ),
-					'dall-e-3'      => __( 'DALL·E 3', 'wp-mcp-ai' ),
-					'dall-e-2'      => __( 'DALL·E 2', 'wp-mcp-ai' ),
+					'gpt-image-1.5' => __( 'GPT-Image-1.5 (Recommended)', 'mcp-ai-wpoos' ),
+					'gpt-image-1'   => __( 'GPT-Image-1', 'mcp-ai-wpoos' ),
+					'dall-e-3'      => __( 'DALL·E 3', 'mcp-ai-wpoos' ),
+					'dall-e-2'      => __( 'DALL·E 2', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5223,20 +5264,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_size_choices() {
 			$sizes = array(
-				'1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-				'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'wp-mcp-ai' ),
-				'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'wp-mcp-ai' ),
-				'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
+				'1024x1024' => __( '1024 × 1024 (square)', 'mcp-ai-wpoos' ),
+				'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'mcp-ai-wpoos' ),
+				'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'mcp-ai-wpoos' ),
+				'auto'      => __( 'Auto (let OpenAI decide)', 'mcp-ai-wpoos' ),
 			);
 
 			$sizes = apply_filters( 'wp_mcp_ai_openai_image_sizes', $sizes );
 
 			if ( ! is_array( $sizes ) || empty( $sizes ) ) {
 				$sizes = array(
-					'1024x1024' => __( '1024 × 1024 (square)', 'wp-mcp-ai' ),
-					'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'wp-mcp-ai' ),
-					'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'wp-mcp-ai' ),
-					'auto'      => __( 'Auto (let OpenAI decide)', 'wp-mcp-ai' ),
+					'1024x1024' => __( '1024 × 1024 (square)', 'mcp-ai-wpoos' ),
+					'1024x1536' => __( '1024 × 1536 (portrait, 2:3)', 'mcp-ai-wpoos' ),
+					'1536x1024' => __( '1536 × 1024 (landscape, 3:2)', 'mcp-ai-wpoos' ),
+					'auto'      => __( 'Auto (let OpenAI decide)', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5250,20 +5291,20 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_quality_choices() {
 			$qualities = array(
-				'low'    => __( 'Low', 'wp-mcp-ai' ),
-				'medium' => __( 'Medium', 'wp-mcp-ai' ),
-				'high'   => __( 'High', 'wp-mcp-ai' ),
-				'auto'   => __( 'Auto', 'wp-mcp-ai' ),
+				'low'    => __( 'Low', 'mcp-ai-wpoos' ),
+				'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
+				'high'   => __( 'High', 'mcp-ai-wpoos' ),
+				'auto'   => __( 'Auto', 'mcp-ai-wpoos' ),
 			);
 
 			$qualities = apply_filters( 'wp_mcp_ai_openai_image_qualities', $qualities );
 
 			if ( ! is_array( $qualities ) || empty( $qualities ) ) {
 				$qualities = array(
-					'low'    => __( 'Low', 'wp-mcp-ai' ),
-					'medium' => __( 'Medium', 'wp-mcp-ai' ),
-					'high'   => __( 'High', 'wp-mcp-ai' ),
-					'auto'   => __( 'Auto', 'wp-mcp-ai' ),
+					'low'    => __( 'Low', 'mcp-ai-wpoos' ),
+					'medium' => __( 'Medium', 'mcp-ai-wpoos' ),
+					'high'   => __( 'High', 'mcp-ai-wpoos' ),
+					'auto'   => __( 'Auto', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5277,16 +5318,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_image_response_format_choices() {
 			$formats = array(
-				'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
-				'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+				'b64_json' => __( 'Base64 JSON (download immediately)', 'mcp-ai-wpoos' ),
+				'url'      => __( 'Hosted URL (download from OpenAI)', 'mcp-ai-wpoos' ),
 			);
 
 			$formats = apply_filters( 'wp_mcp_ai_openai_image_response_formats', $formats );
 
 			if ( ! is_array( $formats ) || empty( $formats ) ) {
 				$formats = array(
-					'b64_json' => __( 'Base64 JSON (download immediately)', 'wp-mcp-ai' ),
-					'url'      => __( 'Hosted URL (download from OpenAI)', 'wp-mcp-ai' ),
+					'b64_json' => __( 'Base64 JSON (download immediately)', 'mcp-ai-wpoos' ),
+					'url'      => __( 'Hosted URL (download from OpenAI)', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5300,12 +5341,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		 */
 		protected function get_openai_speech_format_choices() {
 			$formats = array(
-				'mp3'  => __( 'MP3', 'wp-mcp-ai' ),
-				'aac'  => __( 'AAC', 'wp-mcp-ai' ),
-				'flac' => __( 'FLAC', 'wp-mcp-ai' ),
-				'ogg'  => __( 'OGG', 'wp-mcp-ai' ),
-				'opus' => __( 'Opus', 'wp-mcp-ai' ),
-				'wav'  => __( 'WAV', 'wp-mcp-ai' ),
+				'mp3'  => __( 'MP3', 'mcp-ai-wpoos' ),
+				'aac'  => __( 'AAC', 'mcp-ai-wpoos' ),
+				'flac' => __( 'FLAC', 'mcp-ai-wpoos' ),
+				'ogg'  => __( 'OGG', 'mcp-ai-wpoos' ),
+				'opus' => __( 'Opus', 'mcp-ai-wpoos' ),
+				'wav'  => __( 'WAV', 'mcp-ai-wpoos' ),
 			);
 
 			/**
@@ -5317,7 +5358,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( ! is_array( $formats ) || empty( $formats ) ) {
 				return array(
-					'mp3' => __( 'MP3', 'wp-mcp-ai' ),
+					'mp3' => __( 'MP3', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5335,7 +5376,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( empty( $sanitized ) ) {
 				return array(
-					'mp3' => __( 'MP3', 'wp-mcp-ai' ),
+					'mp3' => __( 'MP3', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -5411,6 +5452,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			return $max_bytes;
 		}
+
+		// Google Drive OAuth field rendering methods removed - now handled in PRO addon's Remote Sites feature.
 	}
 }
 

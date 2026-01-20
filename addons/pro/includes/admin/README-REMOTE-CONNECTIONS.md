@@ -22,7 +22,13 @@ This feature allows AI assistants to access data from external WordPress and Woo
 ## Authentication Methods
 
 ### Application Passwords (Recommended)
-Most secure. Generate on remote site: Users → Profile → Application Passwords
+Most secure for WordPress REST API. Generate on remote site: Users → Profile → Application Passwords
+
+### WooCommerce API Keys (Recommended for WooCommerce)
+Use WooCommerce REST API consumer keys. Generate on remote site: WooCommerce → Settings → Advanced → REST API
+- Consumer Key format: `ck_xxxxxxxxxx`
+- Consumer Secret format: `cs_xxxxxxxxxx`
+- Works over HTTPS by passing keys as query parameters
 
 ### Basic Auth
 Requires Basic Auth plugin on remote site.

@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-User reported LM Studio connection errors when trying to connect to the WP oOS MCP server:
+User reported LM Studio connection errors when trying to connect to the NV oOS MCP server:
 
 ```
 [Error]: SSE error: Non-200 status code (500)

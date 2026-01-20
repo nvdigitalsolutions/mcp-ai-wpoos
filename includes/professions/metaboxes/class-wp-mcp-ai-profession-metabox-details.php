@@ -31,7 +31,16 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Profession Details', 'wp-mcp-ai' );
+		return __( 'Profession Details', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/user/professionals/PROFESSION_KNOWLEDGE_BASE_SYSTEM.md';
 	}
 
 	/**
@@ -41,7 +50,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return void
 	 */
 	public function render( $post ) {
-		wp_nonce_field( 'wp_mcp_ai_save_profession', 'wp_mcp_ai_profession_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		$category         = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_CATEGORY, true );
 		$role_description = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_ROLE_DESCRIPTION, true );
@@ -57,29 +66,29 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 				<tr>
 					<th scope="row">
 						<label for="profession_category">
-							<?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
 						<select id="profession_category" name="profession_category" class="regular-text">
-							<option value=""><?php esc_html_e( 'Select Category', 'wp-mcp-ai' ); ?></option>
-							<option value="advisory" <?php selected( $category, 'advisory' ); ?>><?php esc_html_e( 'Advisory/Consulting', 'wp-mcp-ai' ); ?></option>
-							<option value="creative" <?php selected( $category, 'creative' ); ?>><?php esc_html_e( 'Creative Services', 'wp-mcp-ai' ); ?></option>
-							<option value="technical" <?php selected( $category, 'technical' ); ?>><?php esc_html_e( 'Technical', 'wp-mcp-ai' ); ?></option>
-							<option value="healthcare" <?php selected( $category, 'healthcare' ); ?>><?php esc_html_e( 'Healthcare', 'wp-mcp-ai' ); ?></option>
-							<option value="legal" <?php selected( $category, 'legal' ); ?>><?php esc_html_e( 'Legal', 'wp-mcp-ai' ); ?></option>
-							<option value="financial" <?php selected( $category, 'financial' ); ?>><?php esc_html_e( 'Financial', 'wp-mcp-ai' ); ?></option>
-							<option value="other" <?php selected( $category, 'other' ); ?>><?php esc_html_e( 'Other', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( 'Select Category', 'mcp-ai-wpoos' ); ?></option>
+							<option value="advisory" <?php selected( $category, 'advisory' ); ?>><?php esc_html_e( 'Advisory/Consulting', 'mcp-ai-wpoos' ); ?></option>
+							<option value="creative" <?php selected( $category, 'creative' ); ?>><?php esc_html_e( 'Creative Services', 'mcp-ai-wpoos' ); ?></option>
+							<option value="technical" <?php selected( $category, 'technical' ); ?>><?php esc_html_e( 'Technical', 'mcp-ai-wpoos' ); ?></option>
+							<option value="healthcare" <?php selected( $category, 'healthcare' ); ?>><?php esc_html_e( 'Healthcare', 'mcp-ai-wpoos' ); ?></option>
+							<option value="legal" <?php selected( $category, 'legal' ); ?>><?php esc_html_e( 'Legal', 'mcp-ai-wpoos' ); ?></option>
+							<option value="financial" <?php selected( $category, 'financial' ); ?>><?php esc_html_e( 'Financial', 'mcp-ai-wpoos' ); ?></option>
+							<option value="other" <?php selected( $category, 'other' ); ?>><?php esc_html_e( 'Other', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Categorize this profession for easier filtering.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Categorize this profession for easier filtering.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row">
 						<label for="profession_region">
-							<?php esc_html_e( 'Primary Region/Jurisdiction', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Primary Region/Jurisdiction', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
@@ -87,41 +96,41 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 						$region = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_REGION, true );
 						?>
 						<select id="profession_region" name="profession_region" class="regular-text">
-							<option value=""><?php esc_html_e( 'Global (All Regions)', 'wp-mcp-ai' ); ?></option>
-							<option value="north_america" <?php selected( $region, 'north_america' ); ?>><?php esc_html_e( 'North America', 'wp-mcp-ai' ); ?></option>
-							<option value="united_states" <?php selected( $region, 'united_states' ); ?>><?php esc_html_e( 'United States', 'wp-mcp-ai' ); ?></option>
-							<option value="canada" <?php selected( $region, 'canada' ); ?>><?php esc_html_e( 'Canada', 'wp-mcp-ai' ); ?></option>
-							<option value="europe" <?php selected( $region, 'europe' ); ?>><?php esc_html_e( 'Europe', 'wp-mcp-ai' ); ?></option>
-							<option value="european_union" <?php selected( $region, 'european_union' ); ?>><?php esc_html_e( 'European Union', 'wp-mcp-ai' ); ?></option>
-							<option value="united_kingdom" <?php selected( $region, 'united_kingdom' ); ?>><?php esc_html_e( 'United Kingdom', 'wp-mcp-ai' ); ?></option>
-							<option value="asia_pacific" <?php selected( $region, 'asia_pacific' ); ?>><?php esc_html_e( 'Asia-Pacific', 'wp-mcp-ai' ); ?></option>
-							<option value="latin_america_caribbean" <?php selected( $region, 'latin_america_caribbean' ); ?>><?php esc_html_e( 'Latin America & Caribbean', 'wp-mcp-ai' ); ?></option>
-							<option value="caribbean" <?php selected( $region, 'caribbean' ); ?>><?php esc_html_e( 'Caribbean (CARICOM)', 'wp-mcp-ai' ); ?></option>
-							<option value="middle_east_africa" <?php selected( $region, 'middle_east_africa' ); ?>><?php esc_html_e( 'Middle East & Africa', 'wp-mcp-ai' ); ?></option>
-							<option value="africa" <?php selected( $region, 'africa' ); ?>><?php esc_html_e( 'Africa', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( 'Global (All Regions)', 'mcp-ai-wpoos' ); ?></option>
+							<option value="north_america" <?php selected( $region, 'north_america' ); ?>><?php esc_html_e( 'North America', 'mcp-ai-wpoos' ); ?></option>
+							<option value="united_states" <?php selected( $region, 'united_states' ); ?>><?php esc_html_e( 'United States', 'mcp-ai-wpoos' ); ?></option>
+							<option value="canada" <?php selected( $region, 'canada' ); ?>><?php esc_html_e( 'Canada', 'mcp-ai-wpoos' ); ?></option>
+							<option value="europe" <?php selected( $region, 'europe' ); ?>><?php esc_html_e( 'Europe', 'mcp-ai-wpoos' ); ?></option>
+							<option value="european_union" <?php selected( $region, 'european_union' ); ?>><?php esc_html_e( 'European Union', 'mcp-ai-wpoos' ); ?></option>
+							<option value="united_kingdom" <?php selected( $region, 'united_kingdom' ); ?>><?php esc_html_e( 'United Kingdom', 'mcp-ai-wpoos' ); ?></option>
+							<option value="asia_pacific" <?php selected( $region, 'asia_pacific' ); ?>><?php esc_html_e( 'Asia-Pacific', 'mcp-ai-wpoos' ); ?></option>
+							<option value="latin_america_caribbean" <?php selected( $region, 'latin_america_caribbean' ); ?>><?php esc_html_e( 'Latin America & Caribbean', 'mcp-ai-wpoos' ); ?></option>
+							<option value="caribbean" <?php selected( $region, 'caribbean' ); ?>><?php esc_html_e( 'Caribbean (CARICOM)', 'mcp-ai-wpoos' ); ?></option>
+							<option value="middle_east_africa" <?php selected( $region, 'middle_east_africa' ); ?>><?php esc_html_e( 'Middle East & Africa', 'mcp-ai-wpoos' ); ?></option>
+							<option value="africa" <?php selected( $region, 'africa' ); ?>><?php esc_html_e( 'Africa', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Primary region or jurisdiction for this profession. Used to provide region-specific guidance and standards. Select "Global" if applicable worldwide or if the playbook covers multiple regions.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Primary region or jurisdiction for this profession. Used to provide region-specific guidance and standards. Select "Global" if applicable worldwide or if the playbook covers multiple regions.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row">
 						<label for="profession_role_description">
-							<?php esc_html_e( 'Role Description', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Role Description', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
 						<textarea id="profession_role_description" name="profession_role_description" rows="5" class="large-text"><?php echo esc_textarea( $role_description ); ?></textarea>
 						<p class="description">
-							<?php esc_html_e( 'Describe the primary role and responsibilities. This will be used in AI assistant instructions.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Describe the primary role and responsibilities. This will be used in AI assistant instructions.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
 				<tr>
 					<th scope="row">
 						<label for="profession_warnings">
-							<?php esc_html_e( 'Warnings/Disclaimers', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Warnings/Disclaimers', 'mcp-ai-wpoos' ); ?>
 						</label>
 					</th>
 					<td>
@@ -129,15 +138,15 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 							<?php foreach ( $warnings as $index => $warning ) : ?>
 								<div class="profession-warning-item" style="margin-bottom: 10px;">
 									<input type="text" name="profession_warnings[]" value="<?php echo esc_attr( $warning ); ?>" class="large-text" />
-									<button type="button" class="button button-small remove-warning"><?php esc_html_e( 'Remove', 'wp-mcp-ai' ); ?></button>
+									<button type="button" class="button button-small remove-warning"><?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?></button>
 								</div>
 							<?php endforeach; ?>
 						</div>
 						<button type="button" id="add-profession-warning" class="button button-secondary">
-							<?php esc_html_e( 'Add Warning', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Add Warning', 'mcp-ai-wpoos' ); ?>
 						</button>
 						<p class="description">
-							<?php esc_html_e( 'Disclaimers that the AI should communicate to users.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Disclaimers that the AI should communicate to users.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -149,7 +158,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 			$('#add-profession-warning').on('click', function() {
 				var warningHtml = '<div class="profession-warning-item" style="margin-bottom: 10px;">' +
 					'<input type="text" name="profession_warnings[]" value="" class="large-text" />' +
-					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( __( 'Remove', 'wp-mcp-ai' ) ); ?></button>' +
+					'<button type="button" class="button button-small remove-warning"><?php echo esc_js( __( 'Remove', 'mcp-ai-wpoos' ) ); ?></button>' +
 					'</div>';
 				$('#profession-warnings-list').append(warningHtml);
 			});
@@ -160,6 +169,7 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 		});
 		</script>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**
@@ -170,6 +180,15 @@ class WP_MCP_AI_Profession_Metabox_Details extends WP_MCP_AI_Profession_Metabox_
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
+		if ( ! $this->can_save( $post_id ) ) {
+			return;
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_details_nonce'] ) ), 'wp_mcp_ai_profession_details_save' ) ) {
+			return;
+		}
+
 		// Save category.
 		if ( isset( $_POST['profession_category'] ) ) {
 			update_post_meta( $post_id, WP_MCP_AI_Profession_CPT::META_CATEGORY, sanitize_key( wp_unslash( $_POST['profession_category'] ) ) );

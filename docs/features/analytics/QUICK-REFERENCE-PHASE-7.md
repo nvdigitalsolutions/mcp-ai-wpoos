@@ -2,7 +2,7 @@
 
 **Version:** 1.0  
 **Status:** Planning Phase  
-**Target:** WP oOS v1.2.0
+**Target:** NV oOS v1.2.0
 
 ## Overview
 
@@ -25,7 +25,7 @@ Phase 7 builds on the token management foundation (Phases 1-6) by adding advance
 
 ```php
 // Access the analytics dashboard
-// Navigate to: Settings → WP oOS → Token Manager → Analytics
+// Navigate to: Settings → NV oOS → Token Manager → Analytics
 ```
 
 ### 2. Get Cost Breakdown

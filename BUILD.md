@@ -1,10 +1,10 @@
 # Open Operator System - Build Process
 
-This document describes the build process for the Open Operator System (WP oOS) plugin, including both asset compilation and PHP dependency management.
+This document describes the build process for the Open Operator System (NV oOS) plugin, including both asset compilation and PHP dependency management.
 
 ## Overview
 
-WP oOS uses a modern development toolchain including:
+NV oOS uses a modern development toolchain including:
 
 - Manage PHP dependencies via Composer (including Symfony components)
 - Package development dependencies for offline use
@@ -56,6 +56,19 @@ This installs:
 
 ### PHP Dependencies
 
+**⚠️ Important: Repository Production State**
+
+The repository is maintained in a **production-ready state** with only production dependencies committed. This ensures:
+- The plugin can be cloned and used directly as a production plugin
+- Repository size stays minimal (~7 MB vendor vs ~145 MB with dev dependencies)
+- No dev-only files are accidentally deployed to WordPress.org
+
+**Before committing changes to `vendor/`:**
+```bash
+# Always run with --no-dev to keep the repository production-ready
+composer install --no-dev --prefer-dist --optimize-autoloader
+```
+
 #### Production Dependencies
 
 Install only production dependencies (automatically included in the repository):
@@ -64,7 +77,7 @@ Install only production dependencies (automatically included in the repository):
 composer install --no-dev
 ```
 
-Production packages (~5.6 MB):
+Production packages (~7 MB):
 - `rahul900day/tiktoken-php` - Token counting for AI models
 - `symfony/http-client` - HTTP client for API requests
 - `symfony/validator` - Input validation framework
@@ -367,7 +380,7 @@ git add assets/css/*.min.css assets/js/*.min.js
 
 ### Plugin Versions
 
-WP oOS is available in three distribution formats:
+NV oOS is available in three distribution formats:
 
 | Version | File | Description |
 |---------|------|-------------|

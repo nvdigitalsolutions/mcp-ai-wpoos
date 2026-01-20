@@ -26,14 +26,14 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Tasks', 'wp-mcp-ai' );
+		return __( 'List Tasks', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists tasks with optional filtering by project, status, priority, due date, or assigned user. Supports calendar view by filtering tasks with due dates.', 'wp-mcp-ai' );
+		return __( 'Lists tasks with optional filtering by project, status, priority, due date, or assigned user. Supports calendar view by filtering tasks with due dates.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,35 +45,35 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'properties'           => array(
 				'project_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by project ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by project ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by task status (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by task status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
 				),
 				'priority'    => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by priority (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by priority (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'medium', 'high', 'urgent' ),
 				),
 				'assigned_to' => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by assigned user ID (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by assigned user ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
 				'due_after'   => array(
 					'type'        => 'string',
-					'description' => __( 'Filter tasks due after this date (YYYY-MM-DD) for calendar views (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter tasks due after this date (YYYY-MM-DD) for calendar views (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'due_before'  => array(
 					'type'        => 'string',
-					'description' => __( 'Filter tasks due before this date (YYYY-MM-DD) for calendar views (optional)', 'wp-mcp-ai' ),
+					'description' => __( 'Filter tasks due before this date (YYYY-MM-DD) for calendar views (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
 				'limit'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of tasks to return (default: 50, max: 200)', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of tasks to return (default: 50, max: 200)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 200,
@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'read-only' );
+		return array(
+			'pro',
+			'read-only',
+		);
 	}
 
 	/**
@@ -115,7 +118,7 @@ class WP_MCP_AI_Tool_List_Tasks implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list tasks.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to list tasks.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Build query args.

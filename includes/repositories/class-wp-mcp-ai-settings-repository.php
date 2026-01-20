@@ -111,8 +111,8 @@ class WP_MCP_AI_Settings_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"SELECT option_name, option_value 
-			FROM {$wpdb->options} 
+			"SELECT option_name, option_value
+			FROM {$wpdb->options}
 			WHERE option_name LIKE %s",
 			$wpdb->esc_like( $this->prefix ) . '%'
 		);
@@ -306,7 +306,7 @@ class WP_MCP_AI_Settings_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"DELETE FROM {$wpdb->options} 
+			"DELETE FROM {$wpdb->options}
 			WHERE option_name LIKE %s",
 			$wpdb->esc_like( $this->prefix ) . '%'
 		);

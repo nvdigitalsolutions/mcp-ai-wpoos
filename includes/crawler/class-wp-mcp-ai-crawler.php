@@ -63,6 +63,9 @@ class WP_MCP_AI_Crawler {
 			'max_runtime'   => max( 60, $wait_timeout ),
 			'arguments'     => isset( $job_args['arguments'] ) && is_array( $job_args['arguments'] ) ? $job_args['arguments'] : array(),
 			'context'       => isset( $job_args['context'] ) && is_array( $job_args['context'] ) ? $job_args['context'] : array(),
+			'retry_count'   => 0,
+			'max_retries'   => 3,
+			'sla_tier'      => 'batch', // Crawl4AI jobs are background batch processing.
 		);
 
 		if ( isset( $job_args['raw_response'] ) ) {
@@ -207,7 +210,7 @@ class WP_MCP_AI_Crawler {
 		if ( self::is_expired( $job ) ) {
 			self::finalise_with_error(
 				$job,
-				new WP_Error( 'wp_mcp_ai_crawl4ai_timeout', __( 'The Crawl4AI job timed out before completion.', 'wp-mcp-ai' ) ),
+				new WP_Error( 'wp_mcp_ai_crawl4ai_timeout', __( 'The Crawl4AI job timed out before completion.', 'mcp-ai-wpoos' ) ),
 				'timeout'
 			);
 			return;
@@ -294,7 +297,9 @@ class WP_MCP_AI_Crawler {
 	}
 
 	/**
-	 * Persist an error result and remove the job.
+	 * Persist an error result and handle retry logic or move to DLQ.
+	 *
+	 * Implements exponential backoff retry strategy before permanently failing.
 	 *
 	 * @param array    $job    Job metadata.
 	 * @param WP_Error $error  Error instance.
@@ -304,9 +309,72 @@ class WP_MCP_AI_Crawler {
 		$message = $error->get_error_message();
 		$code    = $error->get_error_code();
 
+		$retry_count = isset( $job['retry_count'] ) ? absint( $job['retry_count'] ) : 0;
+		$max_retries = isset( $job['max_retries'] ) ? absint( $job['max_retries'] ) : 3;
+
+		WP_MCP_AI_Logger::log_error(
+			'Crawl4AI job failed',
+			array(
+				'task_id'     => $job['task_id'],
+				'retry_count' => $retry_count,
+				'error'       => $message,
+				'code'        => $code,
+			)
+		);
+
+		// Check if we should retry (not for timeouts - those are final).
+		if ( 'timeout' !== $status && $retry_count < $max_retries ) {
+			// Implement exponential backoff: 30s, 60s, 120s.
+			$backoff_delay = $job['poll_interval'] * pow( 2, $retry_count );
+			$backoff_delay = min( $backoff_delay, 300 ); // Cap at 5 minutes.
+
+			$job['retry_count'] = $retry_count + 1;
+			$job['status']      = 'retrying';
+			$job['updated_at']  = time();
+			$job['last_error']  = $message;
+
+			self::save_job( $job );
+
+			// Schedule retry with backoff delay.
+			$next_attempt = time() + $backoff_delay;
+			$scheduled    = wp_schedule_single_event( $next_attempt, self::CRON_HOOK, array( $job['task_id'] ) );
+
+			if ( $scheduled ) {
+				WP_MCP_AI_Logger::log_event(
+					'crawl4ai_retry_scheduled',
+					'Crawl4AI job scheduled for retry with exponential backoff',
+					array(
+						'task_id'       => $job['task_id'],
+						'retry_count'   => $job['retry_count'],
+						'backoff_delay' => $backoff_delay,
+						'next_attempt'  => gmdate( 'Y-m-d H:i:s', $next_attempt ),
+					)
+				);
+
+				// Cache interim retry status.
+				$retry_result = array(
+					'status'   => 'retrying',
+					'task_id'  => $job['task_id'],
+					'results'  => array(),
+					'metadata' => array(
+						'retry_count'   => $job['retry_count'],
+						'max_retries'   => $max_retries,
+						'next_attempt'  => gmdate( 'Y-m-d H:i:s', $next_attempt ),
+						'backoff_delay' => $backoff_delay,
+						'last_error'    => $message,
+					),
+				);
+
+				WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $job['task_id'], $retry_result );
+				return; // Don't finalize yet, let it retry.
+			}
+		}
+
+		// Max retries exceeded or timeout - permanently fail and move to DLQ.
 		$metadata = array(
-			'error' => $message,
-			'code'  => $code,
+			'error'       => $message,
+			'code'        => $code,
+			'retry_count' => $retry_count,
 		);
 
 		$result = array(
@@ -321,8 +389,37 @@ class WP_MCP_AI_Crawler {
 
 		WP_MCP_AI_Crawl4AI_Local_API::cache_task_result( $job['task_id'], $result );
 
+		// Move to dead letter queue if available.
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$retry_history = array();
+			for ( $i = 0; $i <= $retry_count; $i++ ) {
+				$retry_history[] = array(
+					'timestamp' => time() - ( ( $retry_count - $i ) * 60 ),
+					'result'    => 'failed',
+					'error'     => $message,
+				);
+			}
+
+			WP_MCP_AI_Dead_Letter_Queue::add(
+				WP_MCP_AI_Dead_Letter_Queue::TYPE_CRON_JOB,
+				$job['task_id'],
+				array(
+					'hook'      => self::CRON_HOOK,
+					'args'      => array( $job['task_id'] ),
+					'timestamp' => time(),
+					'job_data'  => $job,
+				),
+				sprintf(
+					'Crawl4AI job failed after %d retries: %s',
+					$retry_count,
+					$message
+				),
+				$retry_history
+			);
+		}
+
 		/**
-		 * Fires when a background Crawl4AI job fails or times out.
+		 * Fires when a background Crawl4AI job fails or times out permanently.
 		 *
 		 * @param string   $task_id Task identifier.
 		 * @param WP_Error $error   Error instance.

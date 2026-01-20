@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Convert Image Format', 'wp-mcp-ai' );
+		return __( 'Convert Image Format', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Convert an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.', 'wp-mcp-ai' );
+		return __( 'Convert an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,12 +49,12 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'format'  => array(
 						'type'        => 'string',
-						'description' => __( 'Target image format.', 'wp-mcp-ai' ),
-						'enum'        => array( 'png', 'jpeg', 'jpg', 'webp', 'gif' ),
+						'description' => __( 'Target image format.', 'mcp-ai-wpoos' ),
+						'enum'        => array( 'png', 'jpeg', 'jpg', 'webp', 'gif', 'svg' ),
 					),
 					'quality' => array(
 						'type'        => 'integer',
-						'description' => __( 'Output quality for JPEG and WebP formats (1-100). Higher is better quality but larger file size.', 'wp-mcp-ai' ),
+						'description' => __( 'Output quality for JPEG and WebP formats (1-100). Higher is better quality but larger file size.', 'mcp-ai-wpoos' ),
 						'minimum'     => 1,
 						'maximum'     => 100,
 						'default'     => 90,
@@ -91,20 +91,20 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to convert images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to convert images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$format = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : '';
 		if ( '' === $format ) {
-			return new WP_Error( 'wp_mcp_ai_missing_format', __( 'Target format must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_format', __( 'Target format must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Normalize format.
@@ -113,9 +113,9 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			$format = 'jpeg';
 		}
 
-		$allowed_formats = array( 'png', 'jpeg', 'webp', 'gif' );
+		$allowed_formats = array( 'png', 'jpeg', 'webp', 'gif', 'svg' );
 		if ( ! in_array( $format, $allowed_formats, true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'Invalid target format specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_format', __( 'Invalid target format specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$quality = isset( $arguments['quality'] ) ? absint( $arguments['quality'] ) : 90;
@@ -131,6 +131,65 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 		}
 
 		$original_mime = $image_editor->mime_type;
+
+		// Handle SVG conversion separately.
+		if ( 'svg' === $format ) {
+			// Convert directly to SVG.
+			$storage = $this->convert_to_svg( $image_editor, $arguments, $user_id );
+
+			// Clean up temp file if exists.
+			if ( isset( $image_editor->temp_file ) ) {
+				$this->delete_temp_file( $image_editor->temp_file );
+			}
+
+			if ( is_wp_error( $storage ) ) {
+				return $storage;
+			}
+
+			$result_data = array(
+				'attachment_id'   => $storage['attachment_id'],
+				'url'             => $storage['url'],
+				'file_name'       => $storage['file_name'],
+				'mime_type'       => $storage['mime_type'],
+				'bytes'           => $storage['bytes'],
+				'title'           => $storage['title'],
+				'original_format' => $this->mime_to_format( $original_mime ),
+				'new_format'      => 'svg',
+				'quality'         => null,
+				'operation'       => 'convert',
+				'vectorized'      => true,
+				'svg_size'        => isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'],
+				'source_size'     => isset( $storage['source_size'] ) ? $storage['source_size'] : 0,
+				'duration_ms'     => isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0,
+			);
+
+			$message = sprintf(
+				/* translators: 1: original format, 2: new format */
+				__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
+				strtoupper( $this->mime_to_format( $original_mime ) ),
+				'SVG'
+			);
+
+			// Add text field for LLM context and message for chat display.
+			$result_data['text']    = $message;
+			$result_data['message'] = $message;
+
+			// Add image_url structure for agentic workflow and chat client display.
+			if ( ! empty( $storage['url'] ) ) {
+				$result_data['image_url'] = array(
+					'url' => $storage['url'],
+				);
+			}
+
+			/**
+			 * Filter the convert image format result.
+			 *
+			 * @param array $result_data Result array.
+			 * @param array $arguments   Tool arguments.
+			 * @param array $context     Execution context.
+			 */
+			return apply_filters( 'wp_mcp_ai_convert_image_format_result', $result_data, $arguments, $context );
+		}
 
 		// Set new MIME type and quality.
 		$mime_type_map = array(
@@ -179,13 +238,18 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 			'new_format'      => $format,
 			'quality'         => in_array( $format, array( 'jpeg', 'webp' ), true ) ? $quality : null,
 			'operation'       => 'convert',
-			'text'            => sprintf(
-				/* translators: 1: original format, 2: new format */
-				__( 'Successfully converted image from %1$s to %2$s.', 'wp-mcp-ai' ),
-				strtoupper( $this->mime_to_format( $original_mime ) ),
-				strtoupper( $format )
-			),
 		);
+
+		$message = sprintf(
+			/* translators: 1: original format, 2: new format */
+			__( 'Successfully converted image from %1$s to %2$s.', 'mcp-ai-wpoos' ),
+			strtoupper( $this->mime_to_format( $original_mime ) ),
+			strtoupper( $format )
+		);
+
+		// Add text field for LLM context and message for chat display.
+		$result_data['text']    = $message;
+		$result_data['message'] = $message;
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.
@@ -209,11 +273,12 @@ class WP_MCP_AI_Tool_Convert_Image_Format extends WP_MCP_AI_Tool_Image_Base {
 	 */
 	protected function mime_to_format( $mime_type ) {
 		$map = array(
-			'image/png'  => 'png',
-			'image/jpeg' => 'jpeg',
-			'image/jpg'  => 'jpeg',
-			'image/webp' => 'webp',
-			'image/gif'  => 'gif',
+			'image/png'     => 'png',
+			'image/jpeg'    => 'jpeg',
+			'image/jpg'     => 'jpeg',
+			'image/webp'    => 'webp',
+			'image/gif'     => 'gif',
+			'image/svg+xml' => 'svg',
 		);
 
 		return isset( $map[ $mime_type ] ) ? $map[ $mime_type ] : 'unknown';

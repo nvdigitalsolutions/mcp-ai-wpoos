@@ -60,13 +60,13 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 					</label>
 					<div class="slider-wrapper">
 						<span class="slider-min"><?php echo esc_html( $min . $suffix ); ?></span>
-						<input 
-							type="range" 
-							id="<?php echo esc_attr( $key ); ?>" 
-							name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]" 
-							min="<?php echo esc_attr( $min ); ?>" 
-							max="<?php echo esc_attr( $max ); ?>" 
-							step="<?php echo esc_attr( $step ); ?>" 
+						<input
+							type="range"
+							id="<?php echo esc_attr( $key ); ?>"
+							name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+							min="<?php echo esc_attr( $min ); ?>"
+							max="<?php echo esc_attr( $max ); ?>"
+							step="<?php echo esc_attr( $step ); ?>"
 							value="<?php echo esc_attr( $value ); ?>"
 							class="wp-mcp-ai-slider"
 							data-suffix="<?php echo esc_attr( $suffix ); ?>"
@@ -105,7 +105,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Return simple fallback.
 				return sprintf(
 					'<p class="description error">%s</p>',
-					esc_html__( 'Slider control temporarily unavailable.', 'wp-mcp-ai' )
+					esc_html__( 'Slider control temporarily unavailable.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -125,25 +125,25 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				$current_preset = WP_MCP_AI_Orchestration_Preset_Service::get_active_preset();
 
 				// Get the current preset name for display.
-				$current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : __( 'Unknown', 'wp-mcp-ai' );
+				$current_preset_name = isset( $presets[ $current_preset ]['name'] ) ? $presets[ $current_preset ]['name'] : __( 'Unknown', 'mcp-ai-wpoos' );
 
 				ob_start();
 				?>
 				<div class="wp-mcp-ai-presets-section">
-					<h3><?php esc_html_e( 'Configuration Presets', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Configuration Presets', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
-						<?php esc_html_e( 'Choose a preset configuration or customize your own settings. Clicking a preset will apply its settings immediately.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Choose a preset configuration or customize your own settings. Clicking a preset will apply its settings immediately.', 'mcp-ai-wpoos' ); ?>
 					</p>
 					<div class="notice notice-info inline" style="margin: 15px 0; padding: 10px 15px;">
 						<p style="margin: 0;">
 							<span class="dashicons dashicons-info" style="vertical-align: middle; color: #2271b1;"></span>
-							<strong><?php esc_html_e( 'What Presets Control:', 'wp-mcp-ai' ); ?></strong>
-							<?php esc_html_e( 'Each preset configures context window limits (max tokens per request), health monitoring thresholds, budget allocation, and predictive settings. These apply uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'What Presets Control:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Each preset configures context window limits (max tokens per request), health monitoring thresholds, budget allocation, and predictive settings. These apply uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
 					<div class="wp-mcp-ai-current-preset-indicator">
 						<span class="dashicons dashicons-admin-settings"></span>
-						<strong><?php esc_html_e( 'Currently Active:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Currently Active:', 'mcp-ai-wpoos' ); ?></strong>
 						<span class="current-preset-name"><?php echo esc_html( $current_preset_name ); ?></span>
 					</div>
 					<div class="wp-mcp-ai-presets-grid">
@@ -159,37 +159,37 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							$badge_class    = $is_default ? 'default' : ( $is_recommended ? 'recommended' : '' );
 							$active_class   = $is_active ? 'active' : '';
 							?>
-							<div class="preset-card <?php echo esc_attr( $badge_class . ' ' . $active_class ); ?>" 
+							<div class="preset-card <?php echo esc_attr( $badge_class . ' ' . $active_class ); ?>"
 								data-preset="<?php echo esc_attr( $preset_id ); ?>">
 								<div class="preset-header">
 									<h4><?php echo esc_html( $preset_config['name'] ); ?></h4>
 									<?php if ( $is_default ) : ?>
-										<span class="preset-badge default"><?php esc_html_e( 'DEFAULT', 'wp-mcp-ai' ); ?></span>
+										<span class="preset-badge default"><?php esc_html_e( 'DEFAULT', 'mcp-ai-wpoos' ); ?></span>
 									<?php elseif ( $is_recommended ) : ?>
-										<span class="preset-badge recommended"><?php esc_html_e( 'RECOMMENDED', 'wp-mcp-ai' ); ?></span>
+										<span class="preset-badge recommended"><?php esc_html_e( 'RECOMMENDED', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</div>
 								<p class="preset-description">
 									<?php echo esc_html( isset( $preset_config['description'] ) ? $preset_config['description'] : '' ); ?>
 								</p>
 								<?php if ( $is_active ) : ?>
-									<div class="preset-status"><?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></div>
+									<div class="preset-status"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 								<?php else : ?>
-									<button type="button" class="button button-secondary apply-preset" 
+									<button type="button" class="button button-secondary apply-preset"
 										data-preset="<?php echo esc_attr( $preset_id ); ?>"
 										aria-label="
 										<?php
 										/* translators: %s: preset name */
-										echo esc_attr( sprintf( __( 'Apply %s preset', 'wp-mcp-ai' ), $preset_config['name'] ) );
+										echo esc_attr( sprintf( __( 'Apply %s preset', 'mcp-ai-wpoos' ), $preset_config['name'] ) );
 										?>
 										">
-										<?php esc_html_e( 'Apply', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Apply', 'mcp-ai-wpoos' ); ?>
 									</button>
 								<?php endif; ?>
 							</div>
 						<?php endforeach; ?>
 					</div>
-					<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" 
+					<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]"
 						id="orchestration_preset" value="<?php echo esc_attr( $current_preset ); ?>" />
 				</div>
 				<?php
@@ -215,7 +215,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Return simple fallback.
 				return sprintf(
 					'<div class="notice notice-warning inline"><p>%s</p></div>',
-					esc_html__( 'Configuration presets temporarily unavailable. Your settings are safe.', 'wp-mcp-ai' )
+					esc_html__( 'Configuration presets temporarily unavailable. Your settings are safe.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -242,7 +242,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				}
 
 				$status  = isset( $health['status'] ) ? sanitize_key( $health['status'] ) : 'unknown';
-				$label   = isset( $health['label'] ) ? sanitize_text_field( $health['label'] ) : __( 'Unknown', 'wp-mcp-ai' );
+				$label   = isset( $health['label'] ) ? sanitize_text_field( $health['label'] ) : __( 'Unknown', 'mcp-ai-wpoos' );
 				$icon    = isset( $health['icon'] ) ? sanitize_text_field( $health['icon'] ) : '○';
 				$metrics = isset( $health['metrics'] ) && is_array( $health['metrics'] ) ? $health['metrics'] : array();
 
@@ -255,26 +255,26 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				<div class="wp-mcp-ai-health-banner status-<?php echo esc_attr( $status ); ?>">
 					<div class="health-status">
 						<span class="health-icon"><?php echo esc_html( $icon ); ?></span>
-						<strong><?php esc_html_e( 'System Health:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'System Health:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php echo esc_html( $label ); ?>
 					</div>
 					<div class="health-metrics">
 						<span class="metric">
 							<?php
 							/* translators: %s: memory usage percentage */
-							printf( esc_html__( 'Memory: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $memory_percent, 1 ) ) );
+							printf( esc_html__( 'Memory: %s%%', 'mcp-ai-wpoos' ), esc_html( number_format( $memory_percent, 1 ) ) );
 							?>
 						</span>
 						<span class="metric">
 							<?php
 							/* translators: %s: error rate percentage */
-							printf( esc_html__( 'Errors: %s%%', 'wp-mcp-ai' ), esc_html( number_format( $error_rate, 1 ) ) );
+							printf( esc_html__( 'Errors: %s%%', 'mcp-ai-wpoos' ), esc_html( number_format( $error_rate, 1 ) ) );
 							?>
 						</span>
 						<span class="metric">
 							<?php
 							/* translators: %s: average response time in seconds */
-							printf( esc_html__( 'Avg Response: %ss', 'wp-mcp-ai' ), esc_html( number_format( $avg_response, 1 ) ) );
+							printf( esc_html__( 'Avg Response: %ss', 'mcp-ai-wpoos' ), esc_html( number_format( $avg_response, 1 ) ) );
 							?>
 						</span>
 					</div>
@@ -305,11 +305,11 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				<div class="wp-mcp-ai-health-banner status-unknown">
 					<div class="health-status">
 						<span class="health-icon">○</span>
-						<strong><?php esc_html_e( 'System Health:', 'wp-mcp-ai' ); ?></strong>
-						<?php esc_html_e( 'Unavailable', 'wp-mcp-ai' ); ?>
+						<strong><?php esc_html_e( 'System Health:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Unavailable', 'mcp-ai-wpoos' ); ?>
 					</div>
 					<p class="description">
-						<?php esc_html_e( 'Health monitoring temporarily unavailable. Your plugin is still functioning normally.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Health monitoring temporarily unavailable. Your plugin is still functioning normally.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -348,14 +348,14 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				?>
 				<div class="wp-mcp-ai-memory-progress">
 					<div class="progress-label">
-						<?php esc_html_e( 'Memory Usage', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Memory Usage', 'mcp-ai-wpoos' ); ?>
 					</div>
 					<div class="progress-bar-wrapper">
-						<div class="progress-bar" role="progressbar" 
-							aria-valuenow="<?php echo esc_attr( round( $memory_percent ) ); ?>" 
-							aria-valuemin="0" 
+						<div class="progress-bar" role="progressbar"
+							aria-valuenow="<?php echo esc_attr( round( $memory_percent ) ); ?>"
+							aria-valuemin="0"
 							aria-valuemax="100">
-							<div class="progress-fill <?php echo esc_attr( $color_class ); ?>" 
+							<div class="progress-fill <?php echo esc_attr( $color_class ); ?>"
 								style="width: <?php echo esc_attr( min( 100, $memory_percent ) ) . '%'; ?>"></div>
 						</div>
 						<span class="progress-value">
@@ -386,7 +386,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Return simple fallback.
 				return sprintf(
 					'<p class="description">%s</p>',
-					esc_html__( 'Memory usage monitor temporarily unavailable.', 'wp-mcp-ai' )
+					esc_html__( 'Memory usage monitor temporarily unavailable.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -413,10 +413,10 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				<div class="wp-mcp-ai-predictive-insights">
 					<h4>
 						<span class="dashicons dashicons-lightbulb"></span>
-						<?php esc_html_e( 'Predictive Insights', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Predictive Insights', 'mcp-ai-wpoos' ); ?>
 					</h4>
 					<?php if ( ! empty( $insights ) ) : ?>
-						<p><?php esc_html_e( 'Based on current trends:', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Based on current trends:', 'mcp-ai-wpoos' ); ?></p>
 						<ul class="insights-list">
 							<?php foreach ( $insights as $insight ) : ?>
 								<?php
@@ -428,8 +428,8 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 									<?php echo esc_html( $insight['message'] ); ?>
 									<?php if ( isset( $insight['confidence'] ) ) : ?>
 										<span class="confidence">
-											(<?php echo esc_html( absint( $insight['confidence'] ) ); ?>% 
-											<?php esc_html_e( 'confidence', 'wp-mcp-ai' ); ?>)
+											(<?php echo esc_html( absint( $insight['confidence'] ) ); ?>%
+											<?php esc_html_e( 'confidence', 'mcp-ai-wpoos' ); ?>)
 										</span>
 									<?php endif; ?>
 								</li>
@@ -437,7 +437,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						</ul>
 					<?php else : ?>
 						<p class="no-insights">
-							<?php esc_html_e( 'Collecting data for predictions. Check back after 24 hours of activity.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Collecting data for predictions. Check back after 24 hours of activity.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -464,7 +464,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Return simple message - this is optional functionality.
 				return sprintf(
 					'<div class="wp-mcp-ai-predictive-insights"><p class="description">%s</p></div>',
-					esc_html__( 'Predictive insights will appear after 24 hours of activity.', 'wp-mcp-ai' )
+					esc_html__( 'Predictive insights will appear after 24 hours of activity.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -492,14 +492,14 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				<div class="wp-mcp-ai-token-budget-explanation">
 					<h4>
 						<span class="dashicons dashicons-lightbulb"></span>
-						<?php esc_html_e( 'Understanding Your Token Budget', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Understanding Your Token Budget', 'mcp-ai-wpoos' ); ?>
 					</h4>
 					<div class="wp-mcp-ai-budget-breakdown">
 						<p class="description">
 							<?php
 							printf(
 								/* translators: %s: formatted max tokens number */
-								esc_html__( 'The %s token Context Window limit represents the total budget for each complete AI interaction. This budget includes:', 'wp-mcp-ai' ),
+								esc_html__( 'The %s token Context Window limit represents the total budget for each complete AI interaction. This budget includes:', 'mcp-ai-wpoos' ),
 								'<strong>' . esc_html( number_format( $max_tokens ) ) . '</strong>'
 							);
 							?>
@@ -507,44 +507,44 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 						<ul class="wp-mcp-ai-budget-components">
 							<li>
 								<span class="dashicons dashicons-admin-settings"></span>
-								<strong><?php esc_html_e( 'System Prompt:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'Initial instructions given to the AI assistant', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'System Prompt:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'Initial instructions given to the AI assistant', 'mcp-ai-wpoos' ); ?>
 							</li>
 							<li>
 								<span class="dashicons dashicons-format-chat"></span>
-								<strong><?php esc_html_e( 'Conversation History:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'Previous messages in the current chat session', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'Conversation History:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'Previous messages in the current chat session', 'mcp-ai-wpoos' ); ?>
 							</li>
 							<li>
 								<span class="dashicons dashicons-admin-users"></span>
-								<strong><?php esc_html_e( 'User Input:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'Your most recent message or question', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'User Input:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'Your most recent message or question', 'mcp-ai-wpoos' ); ?>
 							</li>
 							<li>
 								<span class="dashicons dashicons-database"></span>
-								<strong><?php esc_html_e( 'Tool/API Data:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'Information fetched from WordPress or other sources', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'Tool/API Data:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'Information fetched from WordPress or other sources', 'mcp-ai-wpoos' ); ?>
 							</li>
 							<li>
 								<span class="dashicons dashicons-editor-alignleft"></span>
-								<strong><?php esc_html_e( 'AI Output:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'The actual response generated by the AI', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'AI Output:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'The actual response generated by the AI', 'mcp-ai-wpoos' ); ?>
 							</li>
 						</ul>
 						<div class="notice notice-info inline">
 							<p>
-								<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai' ); ?></strong>
-								<?php esc_html_e( 'If the input (history + user prompt + data) is very large, the space remaining for the AI\'s answer will be smaller. The orchestration layer manages this budget automatically to prevent errors.', 'wp-mcp-ai' ); ?>
+								<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'If the input (history + user prompt + data) is very large, the space remaining for the AI\'s answer will be smaller. The orchestration layer manages this budget automatically to prevent errors.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						</div>
 						<p class="description">
 							<span class="dashicons dashicons-info"></span>
 							<?php
-							$doc_path = WP_MCP_AI_PATH . 'docs/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
+							$doc_path = WP_MCP_AI_PATH . 'docs/reference/technical/TOKEN-CONTEXT-WINDOW-EXPLAINED.md';
 							if ( file_exists( $doc_path ) ) {
 								printf(
 									/* translators: 1: Documentation link opening tag, 2: closing link tag, 3: Token Manager link opening tag, 4: closing link tag */
-									esc_html__( '%1$sLearn more about context windows%2$s or visit the %3$sToken Manager%4$s for detailed analytics.', 'wp-mcp-ai' ),
+									esc_html__( '%1$sLearn more about context windows%2$s or visit the %3$sToken Manager%4$s for detailed analytics.', 'mcp-ai-wpoos' ),
 									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration#context-window-docs' ) ) . '">',
 									'</a>',
 									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '">',
@@ -553,7 +553,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 							} else {
 								printf(
 									/* translators: 1: Token Manager link, 2: closing link tag */
-									esc_html__( 'For more detailed token tracking and analytics, visit the %1$sToken Manager%2$s.', 'wp-mcp-ai' ),
+									esc_html__( 'For more detailed token tracking and analytics, visit the %1$sToken Manager%2$s.', 'mcp-ai-wpoos' ),
 									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=token_manager' ) ) . '">',
 									'</a>'
 								);
@@ -645,7 +645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Return simple fallback - don't break the UI.
 				return sprintf(
 					'<div class="notice notice-info inline"><p>%s</p></div>',
-					esc_html__( 'Token budget information temporarily unavailable.', 'wp-mcp-ai' )
+					esc_html__( 'Token budget information temporarily unavailable.', 'mcp-ai-wpoos' )
 				);
 			}
 		}

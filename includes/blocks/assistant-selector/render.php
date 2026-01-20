@@ -12,11 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 $default_id        = isset( $attributes['defaultAssistantId'] ) ? absint( $attributes['defaultAssistantId'] ) : 0;
 $label             = isset( $attributes['label'] ) && '' !== $attributes['label']
 	? $attributes['label']
-	: __( 'Select an Assistant:', 'wp-mcp-ai' );
+	: __( 'Select an Assistant:', 'mcp-ai-wpoos' );
 $show_start_button = isset( $attributes['showStartButton'] ) ? $attributes['showStartButton'] : true;
 $start_button_text = isset( $attributes['startButtonText'] ) && '' !== $attributes['startButtonText']
 	? $attributes['startButtonText']
-	: __( 'Start Chat', 'wp-mcp-ai' );
+	: __( 'Start Chat', 'mcp-ai-wpoos' );
 
 // Get assistants.
 $assistants = array();
@@ -58,7 +58,7 @@ $unique_id = wp_unique_id( 'wp-mcp-ai-assistant-selector-' );
 if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_object( $block ) ) {
 	$wrapper_attributes = get_block_wrapper_attributes(
 		array(
-			'class'         => 'wp-block-wp-mcp-ai-assistant-selector',
+			'class'         => 'wp-block-mcp-ai-wpoos-assistant-selector',
 			'data-block-id' => $unique_id,
 		)
 	);
@@ -66,7 +66,7 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	// Non-block context fallback (e.g., direct include in admin pages).
 	$wrapper_attributes = sprintf(
 		'class="%s" data-block-id="%s"',
-		esc_attr( 'wp-block-wp-mcp-ai-assistant-selector' ),
+		esc_attr( 'wp-block-mcp-ai-wpoos-assistant-selector' ),
 		esc_attr( $unique_id )
 	);
 }
@@ -76,9 +76,9 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 		<?php echo esc_html( $label ); ?>
 	</label>
 	<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
-		<option value=""><?php esc_html_e( '— Select an assistant —', 'wp-mcp-ai' ); ?></option>
+		<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 		<?php foreach ( $assistants as $assistant ) : ?>
-			<option 
+			<option
 				value="<?php echo esc_attr( $assistant['id'] ); ?>"
 				data-tools="<?php echo esc_attr( wp_json_encode( $assistant['tools'] ) ); ?>"
 				data-shortcuts="<?php echo esc_attr( wp_json_encode( $assistant['shortcuts'] ) ); ?>"

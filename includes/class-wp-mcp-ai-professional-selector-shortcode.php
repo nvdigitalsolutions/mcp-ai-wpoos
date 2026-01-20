@@ -67,7 +67,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		wp_register_style(
 			self::STYLE_HANDLE,
 			$style_path,
-			array(),
+			array( 'dashicons' ),
 			$style_version
 		);
 
@@ -86,14 +86,14 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 				'nonce'   => wp_create_nonce( 'wp-mcp-ai-professional-selector' ),
 				'strings' => array(
-					'selectAssistant'    => __( '— Select Assistant —', 'wp-mcp-ai' ),
-					'selectProfessional' => __( '— Select Professional —', 'wp-mcp-ai' ),
-					'selectProvider'     => __( '— Select Provider —', 'wp-mcp-ai' ),
-					'selectModel'        => __( '— Select Model —', 'wp-mcp-ai' ),
-					'loading'            => __( 'Loading...', 'wp-mcp-ai' ),
-					'errorLoading'       => __( 'Failed to load configuration. Please try again.', 'wp-mcp-ai' ),
-					'startChat'          => __( 'Start Chat', 'wp-mcp-ai' ),
-					'selectRequired'     => __( 'Please select an assistant, professional, provider, and model.', 'wp-mcp-ai' ),
+					'selectAssistant'    => __( '— Select Assistant —', 'mcp-ai-wpoos' ),
+					'selectProfessional' => __( '— Select Professional —', 'mcp-ai-wpoos' ),
+					'selectProvider'     => __( '— Select Provider —', 'mcp-ai-wpoos' ),
+					'selectModel'        => __( '— Select Model —', 'mcp-ai-wpoos' ),
+					'loading'            => __( 'Loading...', 'mcp-ai-wpoos' ),
+					'errorLoading'       => __( 'Failed to load configuration. Please try again.', 'mcp-ai-wpoos' ),
+					'startChat'          => __( 'Start Chat', 'mcp-ai-wpoos' ),
+					'selectRequired'     => __( 'Please select an assistant, professional, provider, and model.', 'mcp-ai-wpoos' ),
 				),
 			)
 		);
@@ -145,25 +145,25 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		<div class="wp-mcp-ai-professional-selector" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-professional-selector>
 			<div class="wp-mcp-ai-professional-selector__form-container" data-selector-form>
 				<h3 class="wp-mcp-ai-professional-selector__title">
-					<?php esc_html_e( 'Select Your Professional Assistant', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Select Your Professional Assistant', 'mcp-ai-wpoos' ); ?>
 				</h3>
 
 				<form class="wp-mcp-ai-professional-selector__form">
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-assistant">
-							<?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Assistant', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-assistant" 
-							name="assistant" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-assistant"
+							name="assistant"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-assistant-select
 						>
-							<option value=""><?php esc_html_e( '— Select Assistant —', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( '— Select Assistant —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $assistants as $assistant_id => $assistant_title ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $assistant_id ); ?>"
 									<?php selected( $assistant, $assistant_id ); ?>
 								>
@@ -175,19 +175,19 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-professional">
-							<?php esc_html_e( 'Professional', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Professional', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-professional" 
-							name="professional" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-professional"
+							name="professional"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-professional-select
 						>
-							<option value=""><?php esc_html_e( '— Select Professional —', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( '— Select Professional —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $professionals as $prof_id => $prof_title ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $prof_id ); ?>"
 									<?php selected( $default_professional, $prof_id ); ?>
 								>
@@ -199,19 +199,19 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-provider">
-							<?php esc_html_e( 'AI Provider', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'AI Provider', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-provider" 
-							name="provider" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-provider"
+							name="provider"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-provider-select
 						>
-							<option value=""><?php esc_html_e( '— Select Provider —', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( '— Select Provider —', 'mcp-ai-wpoos' ); ?></option>
 							<?php foreach ( $providers as $provider_key => $provider_label ) : ?>
-								<option 
+								<option
 									value="<?php echo esc_attr( $provider_key ); ?>"
 									<?php selected( $default_provider, $provider_key ); ?>
 								>
@@ -223,18 +223,18 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-model">
-							<?php esc_html_e( 'AI Model', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'AI Model', 'mcp-ai-wpoos' ); ?>
 							<span class="required">*</span>
 						</label>
-						<select 
-							id="<?php echo esc_attr( $instance_id ); ?>-model" 
-							name="model" 
+						<select
+							id="<?php echo esc_attr( $instance_id ); ?>-model"
+							name="model"
 							class="wp-mcp-ai-professional-selector__select"
 							required
 							data-model-select
 							disabled
 						>
-							<option value=""><?php esc_html_e( '— Select Model —', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( '— Select Model —', 'mcp-ai-wpoos' ); ?></option>
 							<?php if ( $default_model ) : ?>
 								<option value="<?php echo esc_attr( $default_model ); ?>" selected>
 									<?php echo esc_html( $default_model ); ?>
@@ -249,12 +249,12 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 					<?php if ( $show_temperature ) : ?>
 					<div class="wp-mcp-ai-professional-selector__field">
 						<label for="<?php echo esc_attr( $instance_id ); ?>-temperature">
-							<?php esc_html_e( 'Temperature', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Temperature', 'mcp-ai-wpoos' ); ?>
 						</label>
-						<input 
-							type="number" 
-							id="<?php echo esc_attr( $instance_id ); ?>-temperature" 
-							name="temperature" 
+						<input
+							type="number"
+							id="<?php echo esc_attr( $instance_id ); ?>-temperature"
+							name="temperature"
 							class="wp-mcp-ai-professional-selector__input"
 							min="0"
 							max="2"
@@ -263,14 +263,14 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 							data-temperature-input
 						/>
 						<p class="description">
-							<?php esc_html_e( 'Optional: Override the default temperature (0.0 - 2.0).', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Optional: Override the default temperature (0.0 - 2.0).', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
 					<?php endif; ?>
 
 					<div class="wp-mcp-ai-professional-selector__actions">
 						<button type="submit" class="wp-mcp-ai-professional-selector__button" data-start-button>
-							<?php esc_html_e( 'Start Chat', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Start Chat', 'mcp-ai-wpoos' ); ?>
 						</button>
 					</div>
 
@@ -284,9 +284,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				<div class="wp-mcp-ai-professional-selector-modal__panel">
 					<div class="wp-mcp-ai-professional-selector-modal__header">
 						<h2 class="wp-mcp-ai-professional-selector-modal__title" data-modal-title">
-							<?php esc_html_e( 'Professional Chat', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Professional Chat', 'mcp-ai-wpoos' ); ?>
 						</h2>
-						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr__( 'Close', 'wp-mcp-ai' ); ?>">
+						<button type="button" class="wp-mcp-ai-professional-selector-modal__close" data-modal-close aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
 							<span class="dashicons dashicons-no-alt"></span>
 						</button>
 					</div>
@@ -404,16 +404,17 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' )
 		);
 
 		$labels = array(
-			'openai'      => __( 'OpenAI', 'wp-mcp-ai' ),
-			'anthropic'   => __( 'Anthropic (Claude)', 'wp-mcp-ai' ),
-			'gemini'      => __( 'Google Gemini', 'wp-mcp-ai' ),
-			'huggingface' => __( 'Hugging Face', 'wp-mcp-ai' ),
-			'ollama'      => __( 'Ollama (Local)', 'wp-mcp-ai' ),
-			'lm_studio'   => __( 'LM Studio (Local)', 'wp-mcp-ai' ),
+			'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+			'anthropic'   => __( 'Anthropic (Claude)', 'mcp-ai-wpoos' ),
+			'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+			'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
+			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
+			'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
 		);
 
 		$options = array();
@@ -436,12 +437,12 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		$professional_id = isset( $_POST['professional_id'] ) ? absint( $_POST['professional_id'] ) : 0;
 
 		if ( ! $professional_id ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid professional ID.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Invalid professional ID.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		$professional = get_post( $professional_id );
 		if ( ! $professional || 'mcp_ai_profession' !== $professional->post_type ) {
-			wp_send_json_error( array( 'message' => __( 'Professional not found.', 'wp-mcp-ai' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Professional not found.', 'mcp-ai-wpoos' ) ) );
 		}
 
 		// Get professional defaults.
@@ -465,7 +466,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		if ( empty( $provider ) ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Provider parameter is required.', 'wp-mcp-ai' ),
+					'message' => __( 'Provider parameter is required.', 'mcp-ai-wpoos' ),
 				)
 			);
 			return;
@@ -483,7 +484,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 				array(
 					'message' => sprintf(
 						/* translators: %s: provider name */
-						__( 'No models available for provider: %s', 'wp-mcp-ai' ),
+						__( 'No models available for provider: %s', 'mcp-ai-wpoos' ),
 						$provider
 					),
 				)
@@ -516,7 +517,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		if ( empty( $shortcode_atts ) ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Invalid shortcode attributes.', 'wp-mcp-ai' ),
+					'message' => __( 'Invalid shortcode attributes.', 'mcp-ai-wpoos' ),
 				)
 			);
 			return;
@@ -540,7 +541,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		if ( empty( $html ) || $html === $shortcode ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Failed to render chat interface.', 'wp-mcp-ai' ),
+					'message' => __( 'Failed to render chat interface.', 'mcp-ai-wpoos' ),
 				)
 			);
 			return;
@@ -561,7 +562,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		if ( ! $config ) {
 			wp_send_json_error(
 				array(
-					'message' => __( 'Failed to extract chat configuration.', 'wp-mcp-ai' ),
+					'message' => __( 'Failed to extract chat configuration.', 'mcp-ai-wpoos' ),
 				)
 			);
 			return;

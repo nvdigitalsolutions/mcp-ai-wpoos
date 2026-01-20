@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Generates embeddings for multiple WordPress posts in batch.
  */
 class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Maximum text length in characters for embedding.
 	 * Approximate limit to stay within token constraints.
@@ -32,14 +33,14 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Batch Embed Content', 'wp-mcp-ai' );
+		return __( 'Batch Embed Content', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates embeddings for multiple posts/pages in batch. Use this to prepare semantic search, index content library, build recommendation systems, or initialize vector databases.', 'wp-mcp-ai' );
+		return __( 'Generates embeddings for multiple posts/pages in batch. Use this to prepare semantic search, index content library, build recommendation systems, or initialize vector databases.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -54,19 +55,19 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 					'items'       => array(
 						'type' => 'integer',
 					),
-					'description' => __( 'Specific post IDs to process. If not provided, uses post_types filter.', 'wp-mcp-ai' ),
+					'description' => __( 'Specific post IDs to process. If not provided, uses post_types filter.', 'mcp-ai-wpoos' ),
 				),
 				'post_types'      => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
 					),
-					'description' => __( 'Post types to process. Defaults to ["post", "page"].', 'wp-mcp-ai' ),
+					'description' => __( 'Post types to process. Defaults to ["post", "page"].', 'mcp-ai-wpoos' ),
 					'default'     => array( 'post', 'page' ),
 				),
 				'limit'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum posts to process per batch.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum posts to process per batch.', 'mcp-ai-wpoos' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 100,
@@ -74,23 +75,23 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				'provider'        => array(
 					'type'        => 'string',
 					'enum'        => array( 'openai', 'gemini' ),
-					'description' => __( 'AI provider to use for embeddings. OpenAI uses individual API calls, Gemini uses efficient batch processing.', 'wp-mcp-ai' ),
+					'description' => __( 'AI provider to use for embeddings. OpenAI uses individual API calls, Gemini uses efficient batch processing.', 'mcp-ai-wpoos' ),
 					'default'     => 'openai',
 				),
 				'model'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002', 'text-embedding-004', 'text-embedding-005' ),
-					'description' => __( 'Embedding model to use. OpenAI: text-embedding-3-small/large/ada-002. Gemini: text-embedding-004/005.', 'wp-mcp-ai' ),
+					'description' => __( 'Embedding model to use. OpenAI: text-embedding-3-small/large/ada-002. Gemini: text-embedding-004/005.', 'mcp-ai-wpoos' ),
 					'default'     => 'text-embedding-3-small',
 				),
 				'store_in_meta'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Store embeddings in post metadata.', 'wp-mcp-ai' ),
+					'description' => __( 'Store embeddings in post metadata.', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'update_existing' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Re-embed posts that already have embeddings.', 'wp-mcp-ai' ),
+					'description' => __( 'Re-embed posts that already have embeddings.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -112,12 +113,12 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to batch embed content.', 'wp-mcp-ai' )
+				__( 'You do not have permission to batch embed content.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get parameters.
@@ -181,7 +182,8 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				'estimated_cost' => 0,
 				'model'          => $model,
 				'provider'       => $provider,
-				'summary'        => __( 'No posts found to process.', 'wp-mcp-ai' ),
+				'message'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Chat client display
+				'summary'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Backward compatibility
 			);
 		}
 
@@ -324,7 +326,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			'batch_mode'     => true,
 			'summary'        => sprintf(
 				/* translators: 1: embedded count, 2: processed count */
-				__( 'Successfully embedded %1$d of %2$d processed posts using Gemini batch API.', 'wp-mcp-ai' ),
+				__( 'Successfully embedded %1$d of %2$d processed posts using Gemini batch API.', 'mcp-ai-wpoos' ),
 				$embedded,
 				$processed
 			),
@@ -437,7 +439,7 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			'batch_mode'     => false,
 			'summary'        => sprintf(
 				/* translators: 1: embedded count, 2: processed count */
-				__( 'Successfully embedded %1$d of %2$d processed posts using OpenAI.', 'wp-mcp-ai' ),
+				__( 'Successfully embedded %1$d of %2$d processed posts using OpenAI.', 'mcp-ai-wpoos' ),
 				$embedded,
 				$processed
 			),

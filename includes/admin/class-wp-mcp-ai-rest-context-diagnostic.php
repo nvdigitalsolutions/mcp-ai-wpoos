@@ -42,8 +42,8 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 	public static function add_diagnostic_page() {
 		add_submenu_page(
 			'tools.php',
-			__( 'REST API Context Diagnostic', 'wp-mcp-ai' ),
-			__( 'REST API Context', 'wp-mcp-ai' ),
+			__( 'REST API Context Diagnostic', 'mcp-ai-wpoos' ),
+			__( 'REST API Context', 'mcp-ai-wpoos' ),
 			'manage_options',
 			'wp-mcp-ai-rest-context-diagnostic',
 			array( __CLASS__, 'render_diagnostic_page' )
@@ -86,41 +86,41 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 	 */
 	public static function render_diagnostic_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'wp-mcp-ai' ) );
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 		}
 
 		$diagnostics = WP_MCP_AI_REST_API_Context_Fix::get_diagnostics();
 
 		?>
 		<div class="wrap wp-mcp-ai-diagnostic">
-			<h1><?php esc_html_e( 'REST API Context Parameter Diagnostic', 'wp-mcp-ai' ); ?></h1>
-			
+			<h1><?php esc_html_e( 'REST API Context Parameter Diagnostic', 'mcp-ai-wpoos' ); ?></h1>
+
 			<p>
 				<?php
 				esc_html_e(
 					'This diagnostic tool helps identify issues with WordPress REST API context parameter handling. The context parameter (e.g., ?context=edit) is critical for the block editor and many plugins.',
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				);
 				?>
 			</p>
 
-			<h2><?php esc_html_e( 'System Checks', 'wp-mcp-ai' ); ?></h2>
+			<h2><?php esc_html_e( 'System Checks', 'mcp-ai-wpoos' ); ?></h2>
 
 			<!-- Pretty Permalinks -->
 			<div class="test-result <?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning' ); ?>">
 				<h3>
 					<span class="dashicons dashicons-<?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'yes' : 'warning' ); ?>"></span>
-					<?php esc_html_e( 'Pretty Permalinks', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Pretty Permalinks', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<p>
-					<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
 					<span class="status-<?php echo esc_attr( $diagnostics['rest_url_rewrite_enabled'] ? 'ok' : 'warning' ); ?>">
-						<?php echo $diagnostics['rest_url_rewrite_enabled'] ? esc_html__( 'Enabled', 'wp-mcp-ai' ) : esc_html__( 'Disabled', 'wp-mcp-ai' ); ?>
+						<?php echo $diagnostics['rest_url_rewrite_enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 					</span>
 				</p>
 				<?php if ( ! $diagnostics['rest_url_rewrite_enabled'] ) : ?>
-					<p><?php esc_html_e( 'Pretty permalinks are not enabled. This may cause issues with REST API requests.', 'wp-mcp-ai' ); ?></p>
-					<p><?php esc_html_e( 'Go to Settings → Permalinks and select any option other than "Plain".', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'Pretty permalinks are not enabled. This may cause issues with REST API requests.', 'mcp-ai-wpoos' ); ?></p>
+					<p><?php esc_html_e( 'Go to Settings → Permalinks and select any option other than "Plain".', 'mcp-ai-wpoos' ); ?></p>
 				<?php endif; ?>
 			</div>
 
@@ -128,10 +128,10 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 			<div class="test-result ok">
 				<h3>
 					<span class="dashicons dashicons-info"></span>
-					<?php esc_html_e( 'Server Software', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Server Software', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<p>
-					<strong><?php esc_html_e( 'Detected:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Detected:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php echo esc_html( $diagnostics['server_software'] ); ?>
 				</p>
 			</div>
@@ -140,26 +140,26 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 			<div class="test-result <?php echo esc_attr( empty( $diagnostics['caching_plugins'] ) ? 'ok' : 'warning' ); ?>">
 				<h3>
 					<span class="dashicons dashicons-<?php echo esc_attr( empty( $diagnostics['caching_plugins'] ) ? 'yes' : 'warning' ); ?>"></span>
-					<?php esc_html_e( 'Caching Plugins', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Caching Plugins', 'mcp-ai-wpoos' ); ?>
 				</h3>
 				<p>
-					<strong><?php esc_html_e( 'Status:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php
 					if ( empty( $diagnostics['caching_plugins'] ) ) {
-						echo '<span class="status-ok">' . esc_html__( 'None detected', 'wp-mcp-ai' ) . '</span>';
+						echo '<span class="status-ok">' . esc_html__( 'None detected', 'mcp-ai-wpoos' ) . '</span>';
 					} else {
 						echo '<span class="status-warning">' . esc_html( implode( ', ', $diagnostics['caching_plugins'] ) ) . '</span>';
 					}
 					?>
 				</p>
 				<?php if ( ! empty( $diagnostics['caching_plugins'] ) ) : ?>
-					<p><?php esc_html_e( 'The following caching plugins are active. Make sure to exclude /wp-json/* from caching.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'The following caching plugins are active. Make sure to exclude /wp-json/* from caching.', 'mcp-ai-wpoos' ); ?></p>
 				<?php endif; ?>
 			</div>
 
 			<?php if ( ! empty( $diagnostics['recommendations'] ) ) : ?>
-				<h2><?php esc_html_e( 'Recommendations', 'wp-mcp-ai' ); ?></h2>
-				
+				<h2><?php esc_html_e( 'Recommendations', 'mcp-ai-wpoos' ); ?></h2>
+
 				<?php foreach ( $diagnostics['recommendations'] as $recommendation ) : ?>
 					<div class="recommendation">
 						<p><?php echo esc_html( $recommendation ); ?></p>
@@ -167,12 +167,12 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 				<?php endforeach; ?>
 			<?php endif; ?>
 
-			<h2><?php esc_html_e( 'Server Configuration Examples', 'wp-mcp-ai' ); ?></h2>
+			<h2><?php esc_html_e( 'Server Configuration Examples', 'mcp-ai-wpoos' ); ?></h2>
 
 			<?php if ( stripos( $diagnostics['server_software'], 'nginx' ) !== false ) : ?>
 				<!-- Nginx Configuration -->
-				<h3><?php esc_html_e( 'Nginx Configuration', 'wp-mcp-ai' ); ?></h3>
-				<p><?php esc_html_e( 'Add this to your Nginx configuration file:', 'wp-mcp-ai' ); ?></p>
+				<h3><?php esc_html_e( 'Nginx Configuration', 'mcp-ai-wpoos' ); ?></h3>
+				<p><?php esc_html_e( 'Add this to your Nginx configuration file:', 'mcp-ai-wpoos' ); ?></p>
 				<div class="code-block">location ~* ^/wp-json/ {<br>
 	add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;<br>
 	add_header Pragma "no-cache" always;<br>
@@ -183,8 +183,8 @@ class WP_MCP_AI_REST_Context_Diagnostic {
 
 			<?php if ( stripos( $diagnostics['server_software'], 'apache' ) !== false ) : ?>
 				<!-- Apache Configuration -->
-				<h3><?php esc_html_e( 'Apache .htaccess Configuration', 'wp-mcp-ai' ); ?></h3>
-				<p><?php esc_html_e( 'Add this to your .htaccess file:', 'wp-mcp-ai' ); ?></p>
+				<h3><?php esc_html_e( 'Apache .htaccess Configuration', 'mcp-ai-wpoos' ); ?></h3>
+				<p><?php esc_html_e( 'Add this to your .htaccess file:', 'mcp-ai-wpoos' ); ?></p>
 				<div class="code-block">&lt;FilesMatch "^(wp-json)"&gt;<br>
 	&lt;IfModule mod_headers.c&gt;<br>
 		Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"<br>
@@ -198,33 +198,33 @@ RewriteRule ^wp-json/(.*)$ /index.php?rest_route=/$1 [QSA,L]</div>
 			<?php endif; ?>
 
 			<!-- Cloudflare Configuration -->
-			<h3><?php esc_html_e( 'Cloudflare Configuration', 'wp-mcp-ai' ); ?></h3>
+			<h3><?php esc_html_e( 'Cloudflare Configuration', 'mcp-ai-wpoos' ); ?></h3>
 			<ol>
-				<li><?php esc_html_e( 'Go to Cloudflare → Caching → Configuration', 'wp-mcp-ai' ); ?></li>
-				<li><?php esc_html_e( 'Create a Cache Rule for URI Path contains "/wp-json/"', 'wp-mcp-ai' ); ?></li>
-				<li><?php esc_html_e( 'Set Cache Level to "Bypass"', 'wp-mcp-ai' ); ?></li>
-				<li><?php esc_html_e( 'Go to Security → WAF', 'wp-mcp-ai' ); ?></li>
-				<li><?php esc_html_e( 'Add Exception to skip all rules for /wp-json/* paths', 'wp-mcp-ai' ); ?></li>
+				<li><?php esc_html_e( 'Go to Cloudflare → Caching → Configuration', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Create a Cache Rule for URI Path contains "/wp-json/"', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Set Cache Level to "Bypass"', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Go to Security → WAF', 'mcp-ai-wpoos' ); ?></li>
+				<li><?php esc_html_e( 'Add Exception to skip all rules for /wp-json/* paths', 'mcp-ai-wpoos' ); ?></li>
 			</ol>
 
-			<h2><?php esc_html_e( 'Testing', 'wp-mcp-ai' ); ?></h2>
-			<p><?php esc_html_e( 'Use these commands to test if the context parameter is working:', 'wp-mcp-ai' ); ?></p>
-			
-			<h4><?php esc_html_e( 'Test 1: Check cache headers', 'wp-mcp-ai' ); ?></h4>
+			<h2><?php esc_html_e( 'Testing', 'mcp-ai-wpoos' ); ?></h2>
+			<p><?php esc_html_e( 'Use these commands to test if the context parameter is working:', 'mcp-ai-wpoos' ); ?></p>
+
+			<h4><?php esc_html_e( 'Test 1: Check cache headers', 'mcp-ai-wpoos' ); ?></h4>
 			<div class="code-block">curl -I "<?php echo esc_url( rest_url( 'wp/v2/posts' ) ); ?>?context=edit" | grep -i "cache-control"</div>
-			<p><strong><?php esc_html_e( 'Expected:', 'wp-mcp-ai' ); ?></strong> Cache-Control: no-store, no-cache, must-revalidate, max-age=0</p>
+			<p><strong><?php esc_html_e( 'Expected:', 'mcp-ai-wpoos' ); ?></strong> Cache-Control: no-store, no-cache, must-revalidate, max-age=0</p>
 
-			<h4><?php esc_html_e( 'Test 2: Verify query string preservation', 'wp-mcp-ai' ); ?></h4>
+			<h4><?php esc_html_e( 'Test 2: Verify query string preservation', 'mcp-ai-wpoos' ); ?></h4>
 			<div class="code-block">curl -v "<?php echo esc_url( rest_url( 'wp/v2/types' ) ); ?>?context=edit" 2>&1 | grep -i "context"</div>
-			<p><strong><?php esc_html_e( 'Expected:', 'wp-mcp-ai' ); ?></strong> <?php esc_html_e( 'Should show context=edit in the request', 'wp-mcp-ai' ); ?></p>
+			<p><strong><?php esc_html_e( 'Expected:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Should show context=edit in the request', 'mcp-ai-wpoos' ); ?></p>
 
-			<h2><?php esc_html_e( 'Documentation', 'wp-mcp-ai' ); ?></h2>
+			<h2><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos' ); ?></h2>
 			<p>
 				<?php
 				printf(
 					/* translators: %s: link to documentation */
-					esc_html__( 'For comprehensive server configuration instructions, see the %s documentation.', 'wp-mcp-ai' ),
-					'<a href="https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/deployment-troubleshooting.md#rest-api-context-parameter-issues" target="_blank">' . esc_html__( 'deployment troubleshooting', 'wp-mcp-ai' ) . '</a>'
+					esc_html__( 'For comprehensive server configuration instructions, see the %s documentation.', 'mcp-ai-wpoos' ),
+					'<a href="https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/deployment-troubleshooting.md#rest-api-context-parameter-issues" target="_blank">' . esc_html__( 'deployment troubleshooting', 'mcp-ai-wpoos' ) . '</a>'
 				);
 				?>
 			</p>

@@ -15,6 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
  * Provides an integration with the Crawl4AI REST API.
  */
 class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_WAIT_TIMEOUT  = 120;
 	const DEFAULT_POLL_INTERVAL = 3;
 
@@ -52,7 +53,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Crawl4AI tool is disabled on this site.', 'wp-mcp-ai' );
+		return __( 'The Crawl4AI tool is disabled on this site.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -107,14 +108,14 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Run Crawl4AI Job', 'wp-mcp-ai' );
+		return __( 'Run Crawl4AI Job', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results.', 'wp-mcp-ai' );
+		return __( 'Submits a Crawl4AI crawl request and optionally waits for the results.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -126,7 +127,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'urls'                => array(
 					'type'        => 'array',
-					'description' => __( 'List of URLs that should be crawled.', 'wp-mcp-ai' ),
+					'description' => __( 'List of URLs that should be crawled.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'   => 'string',
 						'format' => 'uri',
@@ -135,34 +136,34 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'url'                 => array(
 					'type'        => 'string',
-					'description' => __( 'Convenience field for a single URL when `urls` is not provided.', 'wp-mcp-ai' ),
+					'description' => __( 'Convenience field for a single URL when `urls` is not provided.', 'mcp-ai-wpoos' ),
 				),
 				'priority'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional job priority forwarded to Crawl4AI.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional job priority forwarded to Crawl4AI.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
 				'options'             => array(
 					'type'                 => 'object',
-					'description'          => __( 'Additional Crawl4AI options (for example, crawler configuration or hook overrides).', 'wp-mcp-ai' ),
+					'description'          => __( 'Additional Crawl4AI options (for example, crawler configuration or hook overrides).', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 				'wait_for_completion' => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true, the tool polls Crawl4AI until the job finishes.', 'wp-mcp-ai' ),
+					'description' => __( 'When true, the tool polls Crawl4AI until the job finishes.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'poll_interval'       => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of seconds to wait between polling attempts when waiting for completion.', 'wp-mcp-ai' ),
+					'description' => __( 'Number of seconds to wait between polling attempts when waiting for completion.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 30,
 					'default'     => self::DEFAULT_POLL_INTERVAL,
 				),
 				'timeout'             => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of seconds to wait for the job to finish when polling.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of seconds to wait for the job to finish when polling.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 600,
 					'default'     => self::DEFAULT_WAIT_TIMEOUT,
@@ -181,17 +182,17 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI is not available on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_unavailable', __( 'Crawl4AI is not available on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run Crawl4AI jobs.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to run Crawl4AI jobs.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$urls = $this->extract_urls( $arguments );
@@ -210,7 +211,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		if ( isset( $arguments['options'] ) ) {
 			if ( ! is_array( $arguments['options'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_options', __( 'Crawl4AI options must be provided as an object.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_options', __( 'Crawl4AI options must be provided as an object.', 'mcp-ai-wpoos' ) );
 			}
 
 			$payload = array_merge( $payload, $this->sanitize_options( $arguments['options'] ) );
@@ -239,7 +240,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		if ( isset( $arguments['urls'] ) ) {
 			if ( ! is_array( $arguments['urls'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_urls', __( 'The Crawl4AI tool expects the `urls` parameter to be an array.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_urls', __( 'The Crawl4AI tool expects the `urls` parameter to be an array.', 'mcp-ai-wpoos' ) );
 			}
 
 			foreach ( $arguments['urls'] as $url ) {
@@ -269,7 +270,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		$urls = array_values( array_unique( $urls ) );
 
 		if ( empty( $urls ) ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_missing_urls', __( 'At least one URL must be provided to Crawl4AI.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_missing_urls', __( 'At least one URL must be provided to Crawl4AI.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $urls;
@@ -316,7 +317,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $this->is_url_network_safe( $sanitised, $parts ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_unsafe_url',
-				__( 'Crawl4AI cannot access loopback, link-local, or private network URLs.', 'wp-mcp-ai' ),
+				__( 'Crawl4AI cannot access loopback, link-local, or private network URLs.', 'mcp-ai-wpoos' ),
 				array( 'url' => $sanitised )
 			);
 		}
@@ -828,7 +829,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				'retrieved_at'   => current_time( 'mysql', true ),
 				'html'           => '',
 				'markdown'       => '',
-				'text'           => __( 'Content could not be properly encoded for transmission. This may indicate invalid characters in the scraped data.', 'wp-mcp-ai' ),
+				'text'           => __( 'Content could not be properly encoded for transmission. This may indicate invalid characters in the scraped data.', 'mcp-ai-wpoos' ),
 				'metadata'       => array(
 					'error' => 'json_encode_failed',
 				),
@@ -1088,7 +1089,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		$body = wp_remote_retrieve_body( $response );
 
 		if ( '' === $body ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_empty_response', __( 'Crawl4AI returned an empty response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_empty_response', __( 'Crawl4AI returned an empty response.', 'mcp-ai-wpoos' ) );
 		}
 
 		$decoded = json_decode( $body, true );
@@ -1096,7 +1097,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			WP_MCP_AI_Logger::log_error( 'Failed to decode Crawl4AI response.', array( 'body' => $body ) );
 
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_response', __( 'Crawl4AI returned malformed JSON.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_invalid_response', __( 'Crawl4AI returned malformed JSON.', 'mcp-ai-wpoos' ) );
 		}
 
 		return $decoded;
@@ -1112,33 +1113,33 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( isset( $decoded['error'] ) ) {
 			if ( is_string( $decoded['error'] ) ) {
 				/* translators: %s: error message from Crawl4AI */
-				return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error'] );
+				return sprintf( __( 'Crawl4AI reported an error: %s', 'mcp-ai-wpoos' ), $decoded['error'] );
 			}
 
 			if ( is_array( $decoded['error'] ) ) {
 				if ( isset( $decoded['error']['message'] ) && is_string( $decoded['error']['message'] ) ) {
 					/* translators: %s: error message from Crawl4AI */
-					return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error']['message'] );
+					return sprintf( __( 'Crawl4AI reported an error: %s', 'mcp-ai-wpoos' ), $decoded['error']['message'] );
 				}
 
 				if ( isset( $decoded['error']['detail'] ) && is_string( $decoded['error']['detail'] ) ) {
 					/* translators: %s: error message from Crawl4AI */
-					return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['error']['detail'] );
+					return sprintf( __( 'Crawl4AI reported an error: %s', 'mcp-ai-wpoos' ), $decoded['error']['detail'] );
 				}
 			}
 		}
 
 		if ( isset( $decoded['detail'] ) && is_string( $decoded['detail'] ) ) {
 			/* translators: %s: error message from Crawl4AI */
-			return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['detail'] );
+			return sprintf( __( 'Crawl4AI reported an error: %s', 'mcp-ai-wpoos' ), $decoded['detail'] );
 		}
 
 		if ( isset( $decoded['message'] ) && is_string( $decoded['message'] ) ) {
 			/* translators: %s: error message from Crawl4AI */
-			return sprintf( __( 'Crawl4AI reported an error: %s', 'wp-mcp-ai' ), $decoded['message'] );
+			return sprintf( __( 'Crawl4AI reported an error: %s', 'mcp-ai-wpoos' ), $decoded['message'] );
 		}
 
-		return __( 'Crawl4AI returned an unexpected response.', 'wp-mcp-ai' );
+		return __( 'Crawl4AI returned an unexpected response.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -1220,7 +1221,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_poll_error',
-				__( 'The Crawl4AI status check failed.', 'wp-mcp-ai' ),
+				__( 'The Crawl4AI status check failed.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -1392,7 +1393,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$response['metadata']['truncated']               = true;
-		$response['metadata']['truncated_reason']        = __( 'Results trimmed to satisfy model token limits.', 'wp-mcp-ai' );
+		$response['metadata']['truncated_reason']        = __( 'Results trimmed to satisfy model token limits.', 'mcp-ai-wpoos' );
 		$response['metadata']['approximate_token_limit'] = $limit_tokens;
 
 		if ( ! isset( $response['raw'] ) || ! is_array( $response['raw'] ) ) {
@@ -1454,7 +1455,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function execute_remote_crawl( array $payload, array $arguments, array $context, array $settings, $base_url ) {
 		$encoded_payload = wp_json_encode( $payload );
 		if ( false === $encoded_payload ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI request payload.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_encoding_error', __( 'Failed to encode the Crawl4AI request payload.', 'mcp-ai-wpoos' ) );
 		}
 
 		$headers   = $this->build_headers( $settings, $context );
@@ -1483,7 +1484,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 			return new WP_Error(
 				'wp_mcp_ai_crawl4ai_http_error',
-				__( 'The Crawl4AI request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The Crawl4AI request failed to complete.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -1545,7 +1546,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( empty( $filtered['task_id'] ) && ! $has_results ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_missing_task', __( 'Crawl4AI did not return a task identifier.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_missing_task', __( 'Crawl4AI did not return a task identifier.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $filtered['status'] ) ) {
@@ -1599,7 +1600,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'status'   => $filtered['status'],
 			'task_id'  => $filtered['task_id'],
 			'job_id'   => $filtered['task_id'], // Alias for consistency with other async tools.
-			'message'  => __( 'Crawl job queued for background processing. Results will appear when ready.', 'wp-mcp-ai' ),
+			'message'  => __( 'Crawl job queued for background processing. Results will appear when ready.', 'mcp-ai-wpoos' ),
 			'results'  => array(),
 			'metadata' => $metadata,
 			'raw'      => isset( $filtered['raw'] ) ? $filtered['raw'] : $formatted['raw'],
@@ -1620,7 +1621,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		if ( ! $queued ) {
-			return new WP_Error( 'wp_mcp_ai_crawl4ai_queue_failed', __( 'Failed to queue the Crawl4AI job for background processing.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_crawl4ai_queue_failed', __( 'Failed to queue the Crawl4AI job for background processing.', 'mcp-ai-wpoos' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -1766,7 +1767,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	protected function build_local_failure_message( array $errors ) {
-		$message = __( 'Unable to crawl the requested URLs.', 'wp-mcp-ai' );
+		$message = __( 'Unable to crawl the requested URLs.', 'mcp-ai-wpoos' );
 
 		if ( empty( $errors ) ) {
 			return $message;
@@ -1791,7 +1792,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $first_url && $first_error ) {
 			return sprintf(
 			/* translators: 1: URL that failed, 2: error message */
-				__( 'Unable to crawl the requested URLs. Example: %1$s (%2$s).', 'wp-mcp-ai' ),
+				__( 'Unable to crawl the requested URLs. Example: %1$s (%2$s).', 'mcp-ai-wpoos' ),
 				$first_url,
 				$first_error
 			);
@@ -1800,7 +1801,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $first_url ) {
 			return sprintf(
 			/* translators: %s: example URL that couldn't be crawled */
-				__( 'Unable to crawl the requested URLs. Example URL: %s.', 'wp-mcp-ai' ),
+				__( 'Unable to crawl the requested URLs. Example URL: %s.', 'mcp-ai-wpoos' ),
 				$first_url
 			);
 		}
@@ -1808,7 +1809,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $first_error ) {
 			return sprintf(
 			/* translators: %s: example error message */
-				__( 'Unable to crawl the requested URLs. Example error: %s.', 'wp-mcp-ai' ),
+				__( 'Unable to crawl the requested URLs. Example error: %s.', 'mcp-ai-wpoos' ),
 				$first_error
 			);
 		}

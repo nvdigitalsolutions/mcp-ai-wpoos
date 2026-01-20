@@ -61,20 +61,20 @@ class WP_MCP_AI_AI_Peer_CPT {
 	 */
 	public static function register_post_type() {
 		$labels = array(
-			'name'               => _x( 'AI Peers', 'post type general name', 'wp-mcp-ai' ),
-			'singular_name'      => _x( 'AI Peer', 'post type singular name', 'wp-mcp-ai' ),
-			'menu_name'          => _x( 'AI Peers', 'admin menu', 'wp-mcp-ai' ),
-			'name_admin_bar'     => _x( 'AI Peer', 'add new on admin bar', 'wp-mcp-ai' ),
-			'add_new'            => _x( 'Add New', 'ai peer', 'wp-mcp-ai' ),
-			'add_new_item'       => __( 'Add New AI Peer', 'wp-mcp-ai' ),
-			'new_item'           => __( 'New AI Peer', 'wp-mcp-ai' ),
-			'edit_item'          => __( 'Edit AI Peer', 'wp-mcp-ai' ),
-			'view_item'          => __( 'View AI Peer', 'wp-mcp-ai' ),
-			'all_items'          => __( 'AI Peers', 'wp-mcp-ai' ),
-			'search_items'       => __( 'Search AI Peers', 'wp-mcp-ai' ),
-			'parent_item_colon'  => __( 'Parent AI Peers:', 'wp-mcp-ai' ),
-			'not_found'          => __( 'No AI peers found.', 'wp-mcp-ai' ),
-			'not_found_in_trash' => __( 'No AI peers found in trash.', 'wp-mcp-ai' ),
+			'name'               => _x( 'AI Peers', 'post type general name', 'mcp-ai-wpoos' ),
+			'singular_name'      => _x( 'AI Peer', 'post type singular name', 'mcp-ai-wpoos' ),
+			'menu_name'          => _x( 'AI Peers', 'admin menu', 'mcp-ai-wpoos' ),
+			'name_admin_bar'     => _x( 'AI Peer', 'add new on admin bar', 'mcp-ai-wpoos' ),
+			'add_new'            => _x( 'Add New', 'ai peer', 'mcp-ai-wpoos' ),
+			'add_new_item'       => __( 'Add New AI Peer', 'mcp-ai-wpoos' ),
+			'new_item'           => __( 'New AI Peer', 'mcp-ai-wpoos' ),
+			'edit_item'          => __( 'Edit AI Peer', 'mcp-ai-wpoos' ),
+			'view_item'          => __( 'View AI Peer', 'mcp-ai-wpoos' ),
+			'all_items'          => __( 'AI Peers', 'mcp-ai-wpoos' ),
+			'search_items'       => __( 'Search AI Peers', 'mcp-ai-wpoos' ),
+			'parent_item_colon'  => __( 'Parent AI Peers:', 'mcp-ai-wpoos' ),
+			'not_found'          => __( 'No AI peers found.', 'mcp-ai-wpoos' ),
+			'not_found_in_trash' => __( 'No AI peers found in trash.', 'mcp-ai-wpoos' ),
 		);
 
 		$args = array(
@@ -181,7 +181,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 	public function register_meta_boxes() {
 		add_meta_box(
 			'wp_mcp_ai_peer_info',
-			__( 'Peer Information', 'wp-mcp-ai' ),
+			__( 'Peer Information', 'mcp-ai-wpoos' ),
 			array( $this, 'render_peer_info_meta_box' ),
 			self::POST_TYPE,
 			'normal',
@@ -190,7 +190,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 
 		add_meta_box(
 			'wp_mcp_ai_peer_health',
-			__( 'Health Status', 'wp-mcp-ai' ),
+			__( 'Health Status', 'mcp-ai-wpoos' ),
 			array( $this, 'render_health_meta_box' ),
 			self::POST_TYPE,
 			'side',
@@ -219,53 +219,53 @@ class WP_MCP_AI_AI_Peer_CPT {
 		?>
 		<table class="form-table">
 			<tr>
-				<th><label><?php esc_html_e( 'Site URL', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( $site_url ) : ?>
 						<a href="<?php echo esc_url( $site_url ); ?>" target="_blank" rel="noopener">
 							<?php echo esc_html( $site_url ); ?>
 						</a>
 					<?php else : ?>
-						<em><?php esc_html_e( 'Not set', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'Well-Known URL', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'Well-Known URL', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( $wellknown_url ) : ?>
 						<a href="<?php echo esc_url( $wellknown_url ); ?>" target="_blank" rel="noopener">
 							<?php echo esc_html( $wellknown_url ); ?>
 						</a>
 					<?php else : ?>
-						<em><?php esc_html_e( 'Not set', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'MCP Endpoint', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'MCP Endpoint', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( $mcp_url ) : ?>
 						<code><?php echo esc_html( $mcp_url ); ?></code>
 					<?php else : ?>
-						<em><?php esc_html_e( 'Not set', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'JWKS URI', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'JWKS URI', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( $jwks_uri ) : ?>
 						<a href="<?php echo esc_url( $jwks_uri ); ?>" target="_blank" rel="noopener">
 							<?php echo esc_html( $jwks_uri ); ?>
 						</a>
 					<?php else : ?>
-						<em><?php esc_html_e( 'Not set', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'Capabilities', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'Capabilities', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( ! empty( $capabilities ) ) : ?>
 						<div style="max-height: 200px; overflow-y: auto;">
@@ -279,33 +279,33 @@ class WP_MCP_AI_AI_Peer_CPT {
 							<?php
 							printf(
 								// translators: %d: number of capabilities.
-								esc_html__( '%d capabilities available', 'wp-mcp-ai' ),
+								esc_html__( '%d capabilities available', 'mcp-ai-wpoos' ),
 								count( $capabilities )
 							);
 							?>
 						</p>
 					<?php else : ?>
-						<em><?php esc_html_e( 'No capabilities', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'No capabilities', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'Regions', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'Regions', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( ! empty( $regions ) ) : ?>
 						<?php echo esc_html( implode( ', ', $regions ) ); ?>
 					<?php else : ?>
-						<em><?php esc_html_e( 'Global', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'Global', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
 			<tr>
-				<th><label><?php esc_html_e( 'Data Tags', 'wp-mcp-ai' ); ?></label></th>
+				<th><label><?php esc_html_e( 'Data Tags', 'mcp-ai-wpoos' ); ?></label></th>
 				<td>
 					<?php if ( ! empty( $data_tags ) ) : ?>
 						<?php echo esc_html( implode( ', ', $data_tags ) ); ?>
 					<?php else : ?>
-						<em><?php esc_html_e( 'None specified', 'wp-mcp-ai' ); ?></em>
+						<em><?php esc_html_e( 'None specified', 'mcp-ai-wpoos' ); ?></em>
 					<?php endif; ?>
 				</td>
 			</tr>
@@ -325,17 +325,17 @@ class WP_MCP_AI_AI_Peer_CPT {
 		$last_error    = get_post_meta( $post->ID, self::META_LAST_ERROR, true );
 
 		$status_class = 'unknown';
-		$status_label = __( 'Unknown', 'wp-mcp-ai' );
+		$status_label = __( 'Unknown', 'mcp-ai-wpoos' );
 
 		if ( 'healthy' === $health_status ) {
 			$status_class = 'healthy';
-			$status_label = __( 'Healthy', 'wp-mcp-ai' );
+			$status_label = __( 'Healthy', 'mcp-ai-wpoos' );
 		} elseif ( 'degraded' === $health_status ) {
 			$status_class = 'degraded';
-			$status_label = __( 'Degraded', 'wp-mcp-ai' );
+			$status_label = __( 'Degraded', 'mcp-ai-wpoos' );
 		} elseif ( 'down' === $health_status ) {
 			$status_class = 'down';
-			$status_label = __( 'Down', 'wp-mcp-ai' );
+			$status_label = __( 'Down', 'mcp-ai-wpoos' );
 		}
 
 		?>
@@ -358,22 +358,22 @@ class WP_MCP_AI_AI_Peer_CPT {
 
 		<?php if ( $latency_p50 ) : ?>
 			<p>
-				<strong><?php esc_html_e( 'Latency (P50):', 'wp-mcp-ai' ); ?></strong><br>
+				<strong><?php esc_html_e( 'Latency (P50):', 'mcp-ai-wpoos' ); ?></strong><br>
 				<?php echo esc_html( $latency_p50 ); ?> ms
 			</p>
 		<?php endif; ?>
 
 		<?php if ( $last_verified ) : ?>
 			<p>
-				<strong><?php esc_html_e( 'Last Verified:', 'wp-mcp-ai' ); ?></strong><br>
+				<strong><?php esc_html_e( 'Last Verified:', 'mcp-ai-wpoos' ); ?></strong><br>
 				<?php echo esc_html( human_time_diff( strtotime( $last_verified ), current_time( 'timestamp' ) ) ); ?>
-				<?php esc_html_e( 'ago', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'ago', 'mcp-ai-wpoos' ); ?>
 			</p>
 		<?php endif; ?>
 
 		<?php if ( $last_error ) : ?>
 			<p>
-				<strong><?php esc_html_e( 'Last Error:', 'wp-mcp-ai' ); ?></strong><br>
+				<strong><?php esc_html_e( 'Last Error:', 'mcp-ai-wpoos' ); ?></strong><br>
 				<code style="font-size: 11px; display: block; max-height: 100px; overflow-y: auto;">
 					<?php echo esc_html( $last_error ); ?>
 				</code>
@@ -382,7 +382,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 
 		<p>
 			<button type="button" class="button button-secondary" id="wp-mcp-ai-verify-peer">
-				<?php esc_html_e( 'Verify Now', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Verify Now', 'mcp-ai-wpoos' ); ?>
 			</button>
 		</p>
 
@@ -391,7 +391,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 			$('#wp-mcp-ai-verify-peer').on('click', function(e) {
 				e.preventDefault();
 				var button = $(this);
-				button.prop('disabled', true).text('<?php esc_html_e( 'Verifying...', 'wp-mcp-ai' ); ?>');
+				button.prop('disabled', true).text('<?php esc_html_e( 'Verifying...', 'mcp-ai-wpoos' ); ?>');
 
 				$.ajax({
 					url: '<?php echo esc_url( rest_url( 'ai-dir/v1/reverify/' . $post->ID ) ); ?>',
@@ -400,15 +400,15 @@ class WP_MCP_AI_AI_Peer_CPT {
 						xhr.setRequestHeader('X-WP-Nonce', '<?php echo esc_js( wp_create_nonce( 'wp_rest' ) ); ?>');
 					},
 					success: function(response) {
-						alert('<?php esc_html_e( 'Peer verification completed. Refresh the page to see results.', 'wp-mcp-ai' ); ?>');
+						alert('<?php esc_html_e( 'Peer verification completed. Refresh the page to see results.', 'mcp-ai-wpoos' ); ?>');
 						location.reload();
 					},
 					error: function(xhr) {
-						var message = xhr.responseJSON && xhr.responseJSON.message 
-							? xhr.responseJSON.message 
-							: '<?php esc_html_e( 'Verification failed. Check the error log.', 'wp-mcp-ai' ); ?>';
+						var message = xhr.responseJSON && xhr.responseJSON.message
+							? xhr.responseJSON.message
+							: '<?php esc_html_e( 'Verification failed. Check the error log.', 'mcp-ai-wpoos' ); ?>';
 						alert(message);
-						button.prop('disabled', false).text('<?php esc_html_e( 'Verify Now', 'wp-mcp-ai' ); ?>');
+						button.prop('disabled', false).text('<?php esc_html_e( 'Verify Now', 'mcp-ai-wpoos' ); ?>');
 					}
 				});
 			});
@@ -427,11 +427,11 @@ class WP_MCP_AI_AI_Peer_CPT {
 		$new_columns = array(
 			'cb'           => $columns['cb'],
 			'title'        => $columns['title'],
-			'health'       => __( 'Health', 'wp-mcp-ai' ),
-			'capabilities' => __( 'Capabilities', 'wp-mcp-ai' ),
-			'regions'      => __( 'Regions', 'wp-mcp-ai' ),
-			'latency'      => __( 'Latency', 'wp-mcp-ai' ),
-			'last_check'   => __( 'Last Check', 'wp-mcp-ai' ),
+			'health'       => __( 'Health', 'mcp-ai-wpoos' ),
+			'capabilities' => __( 'Capabilities', 'mcp-ai-wpoos' ),
+			'regions'      => __( 'Regions', 'mcp-ai-wpoos' ),
+			'latency'      => __( 'Latency', 'mcp-ai-wpoos' ),
+			'last_check'   => __( 'Last Check', 'mcp-ai-wpoos' ),
 			'date'         => $columns['date'],
 		);
 
@@ -454,12 +454,12 @@ class WP_MCP_AI_AI_Peer_CPT {
 					'down'     => '#dc3232',
 				);
 				$status_labels = array(
-					'healthy'  => __( 'Healthy', 'wp-mcp-ai' ),
-					'degraded' => __( 'Degraded', 'wp-mcp-ai' ),
-					'down'     => __( 'Down', 'wp-mcp-ai' ),
+					'healthy'  => __( 'Healthy', 'mcp-ai-wpoos' ),
+					'degraded' => __( 'Degraded', 'mcp-ai-wpoos' ),
+					'down'     => __( 'Down', 'mcp-ai-wpoos' ),
 				);
 				$color         = isset( $status_colors[ $health_status ] ) ? $status_colors[ $health_status ] : '#999';
-				$label         = isset( $status_labels[ $health_status ] ) ? $status_labels[ $health_status ] : __( 'Unknown', 'wp-mcp-ai' );
+				$label         = isset( $status_labels[ $health_status ] ) ? $status_labels[ $health_status ] : __( 'Unknown', 'mcp-ai-wpoos' );
 				echo '<span style="color: ' . esc_attr( $color ) . '; font-weight: 600;">● ' . esc_html( $label ) . '</span>';
 				break;
 
@@ -467,7 +467,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 				$capabilities = get_post_meta( $post_id, self::META_CAPABILITIES, true );
 				$capabilities = is_string( $capabilities ) ? json_decode( $capabilities, true ) : array();
 				if ( ! empty( $capabilities ) ) {
-					echo esc_html( count( $capabilities ) ) . ' ' . esc_html__( 'tools', 'wp-mcp-ai' );
+					echo esc_html( count( $capabilities ) ) . ' ' . esc_html__( 'tools', 'mcp-ai-wpoos' );
 				} else {
 					echo '—';
 				}
@@ -482,7 +482,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 						echo ' <span style="color: #999;">+' . esc_html( count( $regions ) - 3 ) . '</span>';
 					}
 				} else {
-					echo esc_html__( 'Global', 'wp-mcp-ai' );
+					echo esc_html__( 'Global', 'mcp-ai-wpoos' );
 				}
 				break;
 
@@ -498,9 +498,9 @@ class WP_MCP_AI_AI_Peer_CPT {
 			case 'last_check':
 				$last_verified = get_post_meta( $post_id, self::META_LAST_VERIFIED, true );
 				if ( $last_verified ) {
-					echo esc_html( human_time_diff( strtotime( $last_verified ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__( 'ago', 'wp-mcp-ai' );
+					echo esc_html( human_time_diff( strtotime( $last_verified ), current_time( 'timestamp' ) ) ) . ' ' . esc_html__( 'ago', 'mcp-ai-wpoos' );
 				} else {
-					echo esc_html__( 'Never', 'wp-mcp-ai' );
+					echo esc_html__( 'Never', 'mcp-ai-wpoos' );
 				}
 				break;
 		}

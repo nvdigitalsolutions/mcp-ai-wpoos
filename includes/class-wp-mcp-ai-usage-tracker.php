@@ -463,105 +463,197 @@ class WP_MCP_AI_Usage_Tracker {
 
 		// Common model pricing (as of November 2024).
 		$pricing_map = array(
-			'gpt-5'                => array(
+			'gpt-5'                                        => array(
 				'input_cost_per_1k'  => 0.01,
 				'output_cost_per_1k' => 0.03,
 			),
-			'gpt-5-mini'           => array(
+			'gpt-5-mini'                                   => array(
 				'input_cost_per_1k'  => 0.002,
 				'output_cost_per_1k' => 0.006,
 			),
-			'gpt-4.1'              => array(
+			'gpt-4.1'                                      => array(
 				'input_cost_per_1k'  => 0.001,
 				'output_cost_per_1k' => 0.004,
 			),
-			'gpt-4.1-mini'         => array(
+			'gpt-4.1-mini'                                 => array(
 				'input_cost_per_1k'  => 0.0004,
 				'output_cost_per_1k' => 0.0016,
 			),
-			'gpt-4.1-nano'         => array(
+			'gpt-4.1-nano'                                 => array(
 				'input_cost_per_1k'  => 0.0002,
 				'output_cost_per_1k' => 0.0008,
 			),
-			'gpt-4o'               => array(
+			'gpt-4o'                                       => array(
 				'input_cost_per_1k'  => 0.0025,
 				'output_cost_per_1k' => 0.01,
 			),
-			'gpt-4o-mini'          => array(
+			'gpt-4o-mini'                                  => array(
 				'input_cost_per_1k'  => 0.00015,
 				'output_cost_per_1k' => 0.0006,
 			),
-			'gpt-4-turbo'          => array(
+			'gpt-4-turbo'                                  => array(
 				'input_cost_per_1k'  => 0.01,
 				'output_cost_per_1k' => 0.03,
 			),
-			'gpt-4'                => array(
+			'gpt-4'                                        => array(
 				'input_cost_per_1k'  => 0.03,
 				'output_cost_per_1k' => 0.06,
 			),
-			'gpt-3.5-turbo'        => array(
+			'gpt-3.5-turbo'                                => array(
 				'input_cost_per_1k'  => 0.0005,
 				'output_cost_per_1k' => 0.0015,
 			),
-			'o1-2024-12-17'        => array(
+			'o1-2024-12-17'                                => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.06,
 			),
-			'o1-preview'           => array(
+			'o1-preview'                                   => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.06,
 			),
-			'o1-mini'              => array(
+			'o1-mini'                                      => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.012,
 			),
-			'o3-mini'              => array(
+			'o3-mini'                                      => array(
 				'input_cost_per_1k'  => 0.00110,
 				'output_cost_per_1k' => 0.00440,
 			),
-			'gemini-1.5-pro'       => array(
+			'gemini-1.5-pro'                               => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.005,
 			),
-			'gemini-1.5-pro-002'   => array(
+			'gemini-1.5-pro-002'                           => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.005,
 			),
-			'gemini-1.5-flash'     => array(
+			'gemini-1.5-flash'                             => array(
 				'input_cost_per_1k'  => 0.000075,
 				'output_cost_per_1k' => 0.0003,
 			),
-			'gemini-1.5-flash-002' => array(
+			'gemini-1.5-flash-002'                         => array(
 				'input_cost_per_1k'  => 0.000075,
 				'output_cost_per_1k' => 0.0003,
 			),
-			'gemini-2.0-flash'     => array(
+			'gemini-2.0-flash'                             => array(
 				'input_cost_per_1k'  => 0.0001,
 				'output_cost_per_1k' => 0.0004,
 			),
-			'gemini-2.5-flash'     => array(
+			'gemini-2.5-flash'                             => array(
 				'input_cost_per_1k'  => 0.000075,
 				'output_cost_per_1k' => 0.0003,
 			),
-			'gemini-2.5-pro'       => array(
+			'gemini-2.5-pro'                               => array(
 				'input_cost_per_1k'  => 0.00125,
 				'output_cost_per_1k' => 0.01,
 			),
-			'claude-3.5-sonnet'    => array(
+			'claude-3.5-sonnet'                            => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
 			),
-			'claude-3.5-sonnet-v2' => array(
+			'claude-3.5-sonnet-v2'                         => array(
 				'input_cost_per_1k'  => 0.003,
 				'output_cost_per_1k' => 0.015,
 			),
-			'claude-3-opus'        => array(
+			'claude-3-opus'                                => array(
 				'input_cost_per_1k'  => 0.015,
 				'output_cost_per_1k' => 0.075,
 			),
-			'claude-3-haiku'       => array(
+			'claude-3-haiku'                               => array(
 				'input_cost_per_1k'  => 0.00025,
 				'output_cost_per_1k' => 0.00125,
+			),
+			// Cloudflare Workers AI models (as of January 2025).
+			// Function Calling Models.
+			'@cf/meta/llama-3.3-70b-instruct-fp8-fast'     => array(
+				'input_cost_per_1k'  => 0.000293,
+				'output_cost_per_1k' => 0.002253,
+			),
+			'@cf/meta/llama-4-scout-17b-16e-instruct'      => array(
+				'input_cost_per_1k'  => 0.000270,
+				'output_cost_per_1k' => 0.000850,
+			),
+			'@cf/ibm-granite/granite-4.0-h-micro'          => array(
+				'input_cost_per_1k'  => 0.000100,
+				'output_cost_per_1k' => 0.000300,
+			),
+			'@cf/qwen/qwen3-30b-a3b-fp8'                   => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/mistralai/mistral-small-3.1-24b-instruct' => array(
+				'input_cost_per_1k'  => 0.000351,
+				'output_cost_per_1k' => 0.000555,
+			),
+			'@hf/nousresearch/hermes-2-pro-mistral-7b'     => array(
+				'input_cost_per_1k'  => 0.000110,
+				'output_cost_per_1k' => 0.000190,
+			),
+			// Text Generation Models.
+			'@cf/aisingapore/gemma-sea-lion-v4-27b-it'     => array(
+				'input_cost_per_1k'  => 0.000350,
+				'output_cost_per_1k' => 0.001000,
+			),
+			'@cf/openai/gpt-oss-20b'                       => array(
+				'input_cost_per_1k'  => 0.000250,
+				'output_cost_per_1k' => 0.000800,
+			),
+			'@cf/openai/gpt-oss-120b'                      => array(
+				'input_cost_per_1k'  => 0.000600,
+				'output_cost_per_1k' => 0.002000,
+			),
+			'@cf/google/gemma-3-12b-it'                    => array(
+				'input_cost_per_1k'  => 0.000150,
+				'output_cost_per_1k' => 0.000450,
+			),
+			'@cf/qwen/qwq-32b'                             => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/qwen/qwen2.5-coder-32b-instruct'          => array(
+				'input_cost_per_1k'  => 0.000400,
+				'output_cost_per_1k' => 0.001200,
+			),
+			'@cf/deepseek-ai/deepseek-r1-distill-qwen-32b' => array(
+				'input_cost_per_1k'  => 0.000497,
+				'output_cost_per_1k' => 0.004881,
+			),
+			'@cf/meta/llama-3.2-1b-instruct'               => array(
+				'input_cost_per_1k'  => 0.000027,
+				'output_cost_per_1k' => 0.000201,
+			),
+			'@cf/meta/llama-3.2-3b-instruct'               => array(
+				'input_cost_per_1k'  => 0.000051,
+				'output_cost_per_1k' => 0.000335,
+			),
+			// HuggingFace Inference API models (as of January 2026).
+			'deepseek-ai/deepseek-v3.2'                    => array(
+				'input_cost_per_1k'  => 0.00028, // $0.28 per 1M tokens = $0.00028 per 1K.
+				'output_cost_per_1k' => 0.00042, // $0.42 per 1M tokens = $0.00042 per 1K.
+			),
+			'meta-llama/llama-3.3-70b-instruct'            => array(
+				'input_cost_per_1k'  => 0.001, // $1.00 per 1M tokens = $0.001 per 1K.
+				'output_cost_per_1k' => 0.001,
+			),
+			'meta-llama/llama-3.1-8b-instruct'             => array(
+				'input_cost_per_1k'  => 0.0003, // $0.30 per 1M tokens = $0.0003 per 1K.
+				'output_cost_per_1k' => 0.0003,
+			),
+			'mistralai/mistral-7b-instruct-v0.3'           => array(
+				'input_cost_per_1k'  => 0.0002, // $0.20 per 1M tokens = $0.0002 per 1K.
+				'output_cost_per_1k' => 0.0002,
+			),
+			'microsoft/phi-3-mini-4k-instruct'             => array(
+				'input_cost_per_1k'  => 0.0001, // $0.10 per 1M tokens = $0.0001 per 1K.
+				'output_cost_per_1k' => 0.0001,
+			),
+			'qwen/qwen2.5-72b-instruct'                    => array(
+				'input_cost_per_1k'  => 0.001, // $1.00 per 1M tokens = $0.001 per 1K.
+				'output_cost_per_1k' => 0.001,
+			),
+			'qwen/qwen2.5-7b-instruct'                     => array(
+				'input_cost_per_1k'  => 0.0002, // $0.20 per 1M tokens = $0.0002 per 1K.
+				'output_cost_per_1k' => 0.0002,
 			),
 		);
 

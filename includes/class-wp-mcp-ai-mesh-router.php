@@ -53,6 +53,36 @@ class WP_MCP_AI_Mesh_Router {
 	const LOAD_ESTIMATION_DIVISOR = 20;
 
 	/**
+	 * Time window for arrival rate estimation (seconds).
+	 */
+	const ARRIVAL_RATE_TIME_WINDOW = 60.0;
+
+	/**
+	 * Default arrival rate when no data available (jobs per second).
+	 */
+	const DEFAULT_ARRIVAL_RATE = 0.01;
+
+	/**
+	 * Weight for utilization score in capacity calculation.
+	 */
+	const CAPACITY_UTILIZATION_WEIGHT = 0.6;
+
+	/**
+	 * Weight for queue score in capacity calculation.
+	 */
+	const CAPACITY_QUEUE_WEIGHT = 0.4;
+
+	/**
+	 * Multiplier for utilization to percentage conversion.
+	 */
+	const UTILIZATION_TO_PERCENTAGE = 100;
+
+	/**
+	 * Multiplier for queue length scoring.
+	 */
+	const QUEUE_LENGTH_MULTIPLIER = 20;
+
+	/**
 	 * Get the optimal peer for a given request using AI-powered analysis.
 	 *
 	 * Analyzes:
@@ -75,7 +105,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $settings['enable_mesh'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_mesh_disabled',
-				__( 'Mesh networking is not enabled.', 'wp-mcp-ai' )
+				__( 'Mesh networking is not enabled.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -87,7 +117,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $peer_sites ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_peers',
-				__( 'No peer sites configured in mesh network.', 'wp-mcp-ai' )
+				__( 'No peer sites configured in mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -120,7 +150,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $healthy_peers ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_healthy_peers',
-				__( 'No healthy peer sites available in mesh network.', 'wp-mcp-ai' )
+				__( 'No healthy peer sites available in mesh network.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -144,13 +174,14 @@ class WP_MCP_AI_Mesh_Router {
 	}
 
 	/**
-	 * AI-optimized peer selection.
+	 * AI-optimized peer selection with Little's Law capacity prediction.
 	 *
 	 * Uses intelligent analysis to select the best peer based on:
 	 * - Task complexity (via prompt analysis)
-	 * - Peer capacity and current load
+	 * - Peer capacity and current load (using Little's Law)
 	 * - Response time history
 	 * - Model availability
+	 * - Predicted queue wait time
 	 *
 	 * @param array  $healthy_peers Available healthy peers.
 	 * @param string $prompt        The prompt being sent.
@@ -168,30 +199,35 @@ class WP_MCP_AI_Mesh_Router {
 			$score  = 0;
 			$health = $peer['health'];
 
-			// Factor 1: Response time (lower is better) - 30% weight.
+			// Factor 1: Response time (lower is better) - 25% weight.
 			$avg_response_time   = isset( $health['avg_response_time'] ) ? $health['avg_response_time'] : 5.0;
 			$response_time_score = max( 0, 100 - ( $avg_response_time * 10 ) );
-			$score              += $response_time_score * 0.3;
+			$score              += $response_time_score * 0.25;
 
-			// Factor 2: Load (lower is better) - 25% weight.
+			// Factor 2: Current load (lower is better) - 20% weight.
 			$current_load = isset( $health['current_load'] ) ? $health['current_load'] : 0;
 			$load_score   = max( 0, 100 - ( $current_load * 5 ) );
-			$score       += $load_score * 0.25;
+			$score       += $load_score * 0.2;
 
-			// Factor 3: Success rate - 25% weight.
+			// Factor 3: Success rate - 20% weight.
 			$success_rate = isset( $health['success_rate'] ) ? $health['success_rate'] : 100;
-			$score       += $success_rate * 0.25;
+			$score       += $success_rate * 0.2;
 
-			// Factor 4: Compute hub priority - 20% weight.
+			// Factor 4: Little's Law capacity analysis - 20% weight.
+			$capacity_score = self::calculate_peer_capacity_score( $health, $avg_response_time );
+			$score         += $capacity_score * 0.2;
+
+			// Factor 5: Compute hub priority - 15% weight.
 			$is_compute_hub = self::is_compute_hub( $peer, $hub_config );
 			if ( $is_compute_hub && $complexity_score > 7 ) {
 				// Prefer compute hubs for complex tasks.
-				$score += 20;
+				$score += 15;
 			}
 
 			$scored_peers[] = array(
-				'peer'  => $peer,
-				'score' => $score,
+				'peer'           => $peer,
+				'score'          => $score,
+				'capacity_score' => $capacity_score,
 			);
 		}
 
@@ -206,10 +242,11 @@ class WP_MCP_AI_Mesh_Router {
 		// Log the routing decision.
 		WP_MCP_AI_Logger::log_event(
 			'mesh_routing_ai_optimized',
-			'AI-optimized peer selection completed.',
+			'AI-optimized peer selection completed with Little\'s Law analysis.',
 			array(
 				'selected_peer'    => $scored_peers[0]['peer']['name'],
 				'score'            => $scored_peers[0]['score'],
+				'capacity_score'   => $scored_peers[0]['capacity_score'],
 				'complexity_score' => $complexity_score,
 				'total_peers'      => count( $healthy_peers ),
 			)
@@ -349,7 +386,7 @@ class WP_MCP_AI_Mesh_Router {
 			return $result;
 		}
 
-		// If we've exhausted retries, return the error.
+		// If we've exhausted retries, move to dead letter queue and return error.
 		if ( $attempt >= self::MAX_RETRY_ATTEMPTS ) {
 			WP_MCP_AI_Logger::log_event(
 				'mesh_routing_retry_exhausted',
@@ -360,6 +397,41 @@ class WP_MCP_AI_Mesh_Router {
 					'error'    => $result->get_error_message(),
 				)
 			);
+
+			// Move to dead letter queue if available.
+			if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+				// Build retry history.
+				$retry_history = array();
+				for ( $i = 1; $i <= $attempt; $i++ ) {
+					$retry_history[] = array(
+						'attempt'   => $i,
+						'timestamp' => time() - ( ( $attempt - $i ) * 5 ), // Approximate timing.
+						'result'    => 'failed',
+					);
+				}
+
+				// Generate unique identifier for this failed mesh query.
+				$identifier = md5( $peer['name'] . $prompt . time() );
+
+				WP_MCP_AI_Dead_Letter_Queue::add(
+					WP_MCP_AI_Dead_Letter_Queue::TYPE_MESH_QUERY,
+					$identifier,
+					array(
+						'assistant_id' => $assistant_id,
+						'peer_name'    => $peer['name'],
+						'peer_url'     => isset( $peer['url'] ) ? $peer['url'] : '',
+						'prompt'       => $prompt,
+						'context'      => $context,
+					),
+					sprintf(
+						'Mesh query failed after %d attempts: %s',
+						$attempt,
+						$result->get_error_message()
+					),
+					$retry_history
+				);
+			}
+
 			return $result;
 		}
 
@@ -392,7 +464,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( empty( $peer_url ) || empty( $peer_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_peer_config',
-				__( 'Invalid peer configuration.', 'wp-mcp-ai' )
+				__( 'Invalid peer configuration.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -434,7 +506,7 @@ class WP_MCP_AI_Mesh_Router {
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
 			$error_data = json_decode( $body, true );
-			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'wp-mcp-ai' );
+			$error_msg  = isset( $error_data['message'] ) ? $error_data['message'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 			return new WP_Error(
 				'wp_mcp_ai_remote_error',
@@ -448,7 +520,7 @@ class WP_MCP_AI_Mesh_Router {
 		if ( ! $data ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from peer site.', 'wp-mcp-ai' )
+				__( 'Invalid response from peer site.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -645,5 +717,222 @@ class WP_MCP_AI_Mesh_Router {
 	 */
 	public static function update_hub_config( $assistant_id, $config ) {
 		return update_post_meta( $assistant_id, self::META_COMPUTE_HUB_CONFIG, $config );
+	}
+
+	/**
+	 * Calculate peer capacity score using Little's Law.
+	 *
+	 * Little's Law: L = λ × W
+	 * - L = average number of items in system
+	 * - λ (lambda) = arrival rate
+	 * - W = average wait time
+	 *
+	 * Score reflects how much capacity the peer has available:
+	 * - 100 = Peer has excellent capacity
+	 * - 50 = Peer is at moderate load
+	 * - 0 = Peer is overloaded
+	 *
+	 * @param array $health         Peer health metrics.
+	 * @param float $service_time   Expected service time for this request (seconds).
+	 * @return float Capacity score (0-100).
+	 */
+	protected static function calculate_peer_capacity_score( $health, $service_time ) {
+		// Get current load metrics.
+		$current_load      = isset( $health['current_load'] ) ? floatval( $health['current_load'] ) : 0;
+		$avg_response_time = isset( $health['avg_response_time'] ) ? floatval( $health['avg_response_time'] ) : $service_time;
+		$total_requests    = isset( $health['total_requests'] ) ? intval( $health['total_requests'] ) : 0;
+
+		// Estimate arrival rate (λ) based on recent activity.
+		// Assume requests are spread over last 60 seconds.
+		$time_window  = self::ARRIVAL_RATE_TIME_WINDOW;
+		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : self::DEFAULT_ARRIVAL_RATE;
+
+		// Calculate utilization (ρ = λ × service_time).
+		$utilization = $arrival_rate * $avg_response_time;
+
+		// Calculate queue length using Little's Law.
+		// L = λ × W, where W is wait time.
+		$wait_time    = max( 0, $avg_response_time - $service_time );
+		$queue_length = $arrival_rate * $wait_time;
+
+		// Score based on utilization and queue depth.
+		// Perfect score when utilization < 50% and no queue.
+		$utilization_score = max( 0, 100 - ( $utilization * self::UTILIZATION_TO_PERCENTAGE ) );
+		$queue_score       = max( 0, 100 - ( $queue_length * self::QUEUE_LENGTH_MULTIPLIER ) );
+
+		// Combined capacity score (weighted average).
+		$capacity_score = ( $utilization_score * self::CAPACITY_UTILIZATION_WEIGHT ) + ( $queue_score * self::CAPACITY_QUEUE_WEIGHT );
+
+		return max( 0, min( 100, $capacity_score ) );
+	}
+
+	/**
+	 * Get predicted wait time for a peer using Little's Law.
+	 *
+	 * Estimates how long a new request would wait in queue before processing.
+	 *
+	 * @param array $health       Peer health metrics.
+	 * @param float $service_time Expected service time (seconds).
+	 * @return float Predicted wait time in seconds.
+	 */
+	public static function get_predicted_wait_time( $health, $service_time ) {
+		$current_load      = isset( $health['current_load'] ) ? floatval( $health['current_load'] ) : 0;
+		$avg_response_time = isset( $health['avg_response_time'] ) ? floatval( $health['avg_response_time'] ) : $service_time;
+		$total_requests    = isset( $health['total_requests'] ) ? intval( $health['total_requests'] ) : 0;
+
+		// Estimate arrival rate.
+		$time_window  = self::ARRIVAL_RATE_TIME_WINDOW;
+		$arrival_rate = $total_requests > 0 ? ( $current_load / $time_window ) : self::DEFAULT_ARRIVAL_RATE;
+
+		// Little's Law: L = λ × W.
+		// Solve for W (wait time): W = L / λ.
+		$queue_length = $arrival_rate * ( $avg_response_time - $service_time );
+		$wait_time    = $queue_length > 0 ? ( $queue_length / max( self::DEFAULT_ARRIVAL_RATE, $arrival_rate ) ) : 0;
+
+		return max( 0, $wait_time );
+	}
+
+	/**
+	 * Get mesh network capacity metrics using Little's Law.
+	 *
+	 * Analyzes overall mesh health and capacity across all peers.
+	 *
+	 * @return array Mesh capacity metrics.
+	 */
+	public static function get_mesh_capacity_metrics() {
+		$settings   = WP_MCP_AI_Admin_Settings::get_settings();
+		$peer_sites = isset( $settings['mesh_peer_sites'] ) && is_array( $settings['mesh_peer_sites'] )
+			? $settings['mesh_peer_sites']
+			: array();
+
+		if ( empty( $peer_sites ) ) {
+			return array(
+				'error'       => __( 'No peer sites configured.', 'mcp-ai-wpoos' ),
+				'total_peers' => 0,
+			);
+		}
+
+		$health_metrics = self::get_health_metrics();
+
+		$total_capacity      = 0;
+		$total_utilization   = 0;
+		$total_queue_length  = 0;
+		$healthy_peer_count  = 0;
+		$degraded_peer_count = 0;
+		$down_peer_count     = 0;
+
+		foreach ( $peer_sites as $peer ) {
+			$peer_name = isset( $peer['name'] ) ? $peer['name'] : '';
+			if ( empty( $peer_name ) ) {
+				continue;
+			}
+
+			$health = self::get_peer_health( $peer_name, $health_metrics );
+
+			// Count peer status.
+			if ( 'healthy' === $health['status'] ) {
+				++$healthy_peer_count;
+			} elseif ( 'degraded' === $health['status'] ) {
+				++$degraded_peer_count;
+			} else {
+				++$down_peer_count;
+				continue; // Skip down peers in calculations.
+			}
+
+			// Calculate peer metrics.
+			$avg_response_time = isset( $health['avg_response_time'] ) ? floatval( $health['avg_response_time'] ) : 5.0;
+			$current_load      = isset( $health['current_load'] ) ? floatval( $health['current_load'] ) : 0;
+			$total_requests    = isset( $health['total_requests'] ) ? intval( $health['total_requests'] ) : 0;
+
+			$arrival_rate = $total_requests > 0 ? ( $current_load / 60.0 ) : 0.01;
+			$utilization  = $arrival_rate * $avg_response_time;
+			$queue_length = $arrival_rate * max( 0, $avg_response_time - 2.0 ); // Assume 2s baseline.
+
+			$total_capacity     += self::calculate_peer_capacity_score( $health, 2.0 );
+			$total_utilization  += $utilization;
+			$total_queue_length += $queue_length;
+		}
+
+		$total_peers  = count( $peer_sites );
+		$active_peers = $healthy_peer_count + $degraded_peer_count;
+
+		return array(
+			'total_peers'        => $total_peers,
+			'healthy_peers'      => $healthy_peer_count,
+			'degraded_peers'     => $degraded_peer_count,
+			'down_peers'         => $down_peer_count,
+			'avg_capacity_score' => $active_peers > 0 ? ( $total_capacity / $active_peers ) : 0,
+			'avg_utilization'    => $active_peers > 0 ? ( $total_utilization / $active_peers ) : 0,
+			'total_queue_length' => $total_queue_length,
+			'mesh_health'        => self::calculate_mesh_health_status( $healthy_peer_count, $degraded_peer_count, $down_peer_count ),
+			'recommended_action' => self::get_mesh_recommendation( $healthy_peer_count, $degraded_peer_count, $down_peer_count, $total_utilization / max( 1, $active_peers ) ),
+		);
+	}
+
+	/**
+	 * Calculate overall mesh health status.
+	 *
+	 * @param int $healthy_count  Number of healthy peers.
+	 * @param int $degraded_count Number of degraded peers.
+	 * @param int $down_count     Number of down peers.
+	 * @return string Health status (excellent, good, warning, critical).
+	 */
+	protected static function calculate_mesh_health_status( $healthy_count, $degraded_count, $down_count ) {
+		$total = $healthy_count + $degraded_count + $down_count;
+
+		if ( 0 === $total ) {
+			return 'critical';
+		}
+
+		$healthy_ratio = $healthy_count / $total;
+
+		if ( $healthy_ratio >= 0.9 ) {
+			return 'excellent';
+		} elseif ( $healthy_ratio >= 0.7 ) {
+			return 'good';
+		} elseif ( $healthy_ratio >= 0.5 ) {
+			return 'warning';
+		} else {
+			return 'critical';
+		}
+	}
+
+	/**
+	 * Get mesh recommendation based on current metrics.
+	 *
+	 * @param int   $healthy_count    Number of healthy peers.
+	 * @param int   $degraded_count   Number of degraded peers.
+	 * @param int   $down_count       Number of down peers.
+	 * @param float $avg_utilization  Average utilization across peers.
+	 * @return string Recommendation message.
+	 */
+	protected static function get_mesh_recommendation( $healthy_count, $degraded_count, $down_count, $avg_utilization ) {
+		// Critical: No healthy peers.
+		if ( 0 === $healthy_count ) {
+			return __( 'CRITICAL: No healthy peers available. Add new peers or investigate network issues immediately.', 'mcp-ai-wpoos' );
+		}
+
+		// Warning: High utilization.
+		if ( $avg_utilization > 0.8 ) {
+			return __( 'HIGH UTILIZATION: Mesh network is operating at >80% capacity. Consider adding more peer sites.', 'mcp-ai-wpoos' );
+		}
+
+		// Warning: Too many degraded peers.
+		$total = $healthy_count + $degraded_count + $down_count;
+		if ( $degraded_count > ( $total * 0.3 ) ) {
+			return __( 'DEGRADED PEERS: More than 30% of peers are degraded. Check peer health and network connectivity.', 'mcp-ai-wpoos' );
+		}
+
+		// Warning: Some peers down.
+		if ( $down_count > 0 ) {
+			return sprintf(
+				/* translators: %d: number of down peers */
+				__( '%d peer(s) are down. Monitor health metrics and consider removing or replacing failed peers.', 'mcp-ai-wpoos' ),
+				$down_count
+			);
+		}
+
+		// All good.
+		return __( 'Mesh network is healthy and operating within optimal parameters.', 'mcp-ai-wpoos' );
 	}
 }

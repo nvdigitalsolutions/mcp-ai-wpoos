@@ -2,7 +2,7 @@
 
 ## Overview
 
-WP oOS uses a dependency injection (DI) container to manage all service instantiation. This eliminates hard-coded dependencies and makes the codebase fully testable.
+NV oOS uses a dependency injection (DI) container to manage all service instantiation. This eliminates hard-coded dependencies and makes the codebase fully testable.
 
 ## Quick Start
 

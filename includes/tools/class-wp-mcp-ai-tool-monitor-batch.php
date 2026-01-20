@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Option name for storing monitored batches.
 	 */
@@ -42,14 +43,14 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Monitor Batch Job', 'wp-mcp-ai' );
+		return __( 'Monitor Batch Job', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Sets up automatic monitoring for a batch job with WordPress cron. Checks status periodically and triggers actions when completed, failed, or expired. Useful for long-running batches.', 'wp-mcp-ai' );
+		return __( 'Sets up automatic monitoring for a batch job with WordPress cron. Checks status periodically and triggers actions when completed, failed, or expired. Useful for long-running batches.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,26 +62,26 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'batch_id'       => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the batch job to monitor.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the batch job to monitor.', 'mcp-ai-wpoos' ),
 				),
 				'check_interval' => array(
 					'type'        => 'string',
 					'enum'        => array( 'hourly', 'twicedaily', 'daily' ),
-					'description' => __( 'How often to check batch status.', 'wp-mcp-ai' ),
+					'description' => __( 'How often to check batch status.', 'mcp-ai-wpoos' ),
 					'default'     => 'hourly',
 				),
 				'callback_hook'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optional WordPress action hook to trigger when batch completes. Receives batch_id and result as parameters.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional WordPress action hook to trigger when batch completes. Receives batch_id and result as parameters.', 'mcp-ai-wpoos' ),
 				),
 				'auto_download'  => array(
 					'type'        => 'boolean',
-					'description' => __( 'Automatically download results when batch completes.', 'wp-mcp-ai' ),
+					'description' => __( 'Automatically download results when batch completes.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'metadata'       => array(
 					'type'        => 'object',
-					'description' => __( 'Custom metadata to associate with this monitoring job.', 'wp-mcp-ai' ),
+					'description' => __( 'Custom metadata to associate with this monitoring job.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'batch_id' ),
@@ -117,7 +118,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to monitor batch jobs.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to monitor batch jobs.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -125,7 +126,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -134,7 +135,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! isset( $arguments['batch_id'] ) || '' === trim( $arguments['batch_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_batch_id',
-				__( 'Batch ID is required.', 'wp-mcp-ai' ),
+				__( 'Batch ID is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -155,7 +156,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				'wp_mcp_ai_batch_already_finished',
 				sprintf(
 					/* translators: %s: batch status */
-					__( 'Batch is already in final state: %s. No monitoring needed.', 'wp-mcp-ai' ),
+					__( 'Batch is already in final state: %s. No monitoring needed.', 'mcp-ai-wpoos' ),
 					$batch['status']
 				),
 				array( 'status' => 400 )
@@ -193,6 +194,8 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			wp_schedule_event( time(), $check_interval, self::CRON_HOOK );
 		}
 
+		$summary_text = $this->generate_summary( $batch_id, $check_interval, $callback_hook );
+
 		// Return success with monitoring details.
 		return array(
 			'success'        => true,
@@ -202,7 +205,8 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'current_status' => $batch['status'],
 			'callback_hook'  => $callback_hook ? $callback_hook : 'none',
 			'auto_download'  => $auto_download,
-			'summary'        => $this->generate_summary( $batch_id, $check_interval, $callback_hook ),
+			'message'        => $summary_text,
+			'summary'        => $summary_text,
 		);
 	}
 
@@ -217,7 +221,7 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	protected function generate_summary( $batch_id, $check_interval, $callback_hook ) {
 		$summary = sprintf(
 			/* translators: 1: batch ID, 2: check interval */
-			__( 'Monitoring enabled for batch %1$s. Status will be checked %2$s.', 'wp-mcp-ai' ),
+			__( 'Monitoring enabled for batch %1$s. Status will be checked %2$s.', 'mcp-ai-wpoos' ),
 			$batch_id,
 			$check_interval
 		);
@@ -225,12 +229,12 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $callback_hook ) ) {
 			$summary .= "\n\n" . sprintf(
 				/* translators: %s: callback hook name */
-				__( 'When the batch completes, the action "%s" will be triggered.', 'wp-mcp-ai' ),
+				__( 'When the batch completes, the action "%s" will be triggered.', 'mcp-ai-wpoos' ),
 				$callback_hook
 			);
 		}
 
-		$summary .= "\n\n" . __( 'You will be notified when the batch reaches a final state (completed, failed, expired, or cancelled).', 'wp-mcp-ai' );
+		$summary .= "\n\n" . __( 'You will be notified when the batch reaches a final state (completed, failed, expired, or cancelled).', 'mcp-ai-wpoos' );
 
 		return $summary;
 	}
@@ -353,29 +357,29 @@ class WP_MCP_AI_Tool_Monitor_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	protected static function send_completion_notification( $email, $batch_id, $status ) {
 		$subject = sprintf(
 			/* translators: 1: site name, 2: batch status */
-			__( '[%1$s] Batch Job %2$s', 'wp-mcp-ai' ),
+			__( '[%1$s] Batch Job %2$s', 'mcp-ai-wpoos' ),
 			get_bloginfo( 'name' ),
 			ucfirst( $status )
 		);
 
 		$message = sprintf(
 			/* translators: 1: batch ID, 2: status */
-			__( 'Your batch job %1$s has reached final status: %2$s', 'wp-mcp-ai' ),
+			__( 'Your batch job %1$s has reached final status: %2$s', 'mcp-ai-wpoos' ),
 			$batch_id,
 			$status
 		) . "\n\n";
 
 		if ( 'completed' === $status ) {
-			$message .= __( 'The batch has been processed successfully. Use the get_batch_status tool to retrieve output file IDs and download results.', 'wp-mcp-ai' );
+			$message .= __( 'The batch has been processed successfully. Use the get_batch_status tool to retrieve output file IDs and download results.', 'mcp-ai-wpoos' );
 		} elseif ( 'failed' === $status ) {
-			$message .= __( 'The batch processing failed. Check the error file for details.', 'wp-mcp-ai' );
+			$message .= __( 'The batch processing failed. Check the error file for details.', 'mcp-ai-wpoos' );
 		} elseif ( 'expired' === $status ) {
-			$message .= __( 'The batch expired before completion. You may need to recreate it.', 'wp-mcp-ai' );
+			$message .= __( 'The batch expired before completion. You may need to recreate it.', 'mcp-ai-wpoos' );
 		}
 
 		$message .= "\n\n" . sprintf(
 			/* translators: %s: admin URL */
-			__( 'View details: %s', 'wp-mcp-ai' ),
+			__( 'View details: %s', 'mcp-ai-wpoos' ),
 			admin_url( 'admin.php?page=wp-mcp-ai-settings' )
 		);
 

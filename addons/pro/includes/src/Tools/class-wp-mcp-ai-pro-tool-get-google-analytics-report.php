@@ -33,14 +33,14 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Google Analytics Report', 'wp-mcp-ai' );
+		return __( 'Google Analytics Report', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves GA4 reporting data using the Google Analytics Data API.', 'wp-mcp-ai' );
+		return __( 'Retrieves GA4 reporting data using the Google Analytics Data API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -52,10 +52,10 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 			'properties'           => array(
 				'property_id'         => array(
 					'type'        => 'string',
-					'description' => __( 'Override the Google Analytics property ID. Falls back to the default configured in settings.', 'wp-mcp-ai' ),
+					'description' => __( 'Override the Google Analytics property ID. Falls back to the default configured in settings.', 'mcp-ai-wpoos-pro' ),
 				),
 				'metrics'             => array(
-					'description' => __( 'One or more metric names (for example, activeUsers). Comma separated strings are accepted.', 'wp-mcp-ai' ),
+					'description' => __( 'One or more metric names (for example, activeUsers). Comma separated strings are accepted.', 'mcp-ai-wpoos-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 					),
 				),
 				'dimensions'          => array(
-					'description' => __( 'Optional list of dimensions (for example, country or pagePath).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional list of dimensions (for example, country or pagePath).', 'mcp-ai-wpoos-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -84,25 +84,25 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 				),
 				'start_date'          => array(
 					'type'        => 'string',
-					'description' => __( 'Report start date in YYYY-MM-DD format or a relative keyword such as 7daysAgo.', 'wp-mcp-ai' ),
+					'description' => __( 'Report start date in YYYY-MM-DD format or a relative keyword such as 7daysAgo.', 'mcp-ai-wpoos-pro' ),
 				),
 				'end_date'            => array(
 					'type'        => 'string',
-					'description' => __( 'Report end date in YYYY-MM-DD format or a relative keyword such as today.', 'wp-mcp-ai' ),
+					'description' => __( 'Report end date in YYYY-MM-DD format or a relative keyword such as today.', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'               => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => self::MAX_REPORT_LIMIT,
-					'description' => __( 'Maximum number of rows to return (defaults to the Analytics API default).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of rows to return (defaults to the Analytics API default).', 'mcp-ai-wpoos-pro' ),
 				),
 				'offset'              => array(
 					'type'        => 'integer',
 					'minimum'     => 0,
-					'description' => __( 'Row offset to apply when paginating through a large report.', 'wp-mcp-ai' ),
+					'description' => __( 'Row offset to apply when paginating through a large report.', 'mcp-ai-wpoos-pro' ),
 				),
 				'metric_aggregations' => array(
-					'description' => __( 'Optional metric aggregations such as TOTAL or MAXIMUM.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional metric aggregations such as TOTAL or MAXIMUM.', 'mcp-ai-wpoos-pro' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -117,17 +117,17 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 				),
 				'dimension_filter'    => array(
 					'type'                 => 'object',
-					'description'          => __( 'Raw Analytics API dimension filter definition.', 'wp-mcp-ai' ),
+					'description'          => __( 'Raw Analytics API dimension filter definition.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => true,
 				),
 				'metric_filter'       => array(
 					'type'                 => 'object',
-					'description'          => __( 'Raw Analytics API metric filter definition.', 'wp-mcp-ai' ),
+					'description'          => __( 'Raw Analytics API metric filter definition.', 'mcp-ai-wpoos-pro' ),
 					'additionalProperties' => true,
 				),
 				'order_bys'           => array(
 					'type'        => 'array',
-					'description' => __( 'Ordering instructions. Provide objects with dimension or metric keys and optional desc boolean.', 'wp-mcp-ai' ),
+					'description' => __( 'Ordering instructions. Provide objects with dimension or metric keys and optional desc boolean.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'                 => 'object',
 						'properties'           => array(
@@ -146,7 +146,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 				),
 				'keep_empty_rows'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'When true, rows with zero metrics are retained.', 'wp-mcp-ai' ),
+					'description' => __( 'When true, rows with zero metrics are retained.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'metrics' ),
@@ -166,11 +166,11 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 
 		$required_capability = apply_filters( 'wp_mcp_ai_google_analytics_required_capability', 'manage_options', $context, $arguments, $this );
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_forbidden', __( 'You do not have permission to request Google Analytics reports.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_forbidden', __( 'You do not have permission to request Google Analytics reports.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ), array( 'status' => 403 ) );
 		}
 
 		$settings    = WP_MCP_AI_Admin_Settings::get_settings();
@@ -185,12 +185,12 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		}
 
 		if ( '' === $property_id ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_property', __( 'A Google Analytics property ID is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_property', __( 'A Google Analytics property ID is required.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
 		$metrics = $this->normalise_names_list( isset( $arguments['metrics'] ) ? $arguments['metrics'] : array() );
 		if ( empty( $metrics ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_metrics', __( 'At least one metric must be requested.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_metrics', __( 'At least one metric must be requested.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
 		$dimensions = $this->normalise_names_list( isset( $arguments['dimensions'] ) ? $arguments['dimensions'] : array() );
@@ -218,7 +218,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		$dimension_filter = array();
 		if ( isset( $arguments['dimension_filter'] ) ) {
 			if ( ! is_array( $arguments['dimension_filter'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_dimension_filter', __( 'The dimension filter must be provided as an object.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_dimension_filter', __( 'The dimension filter must be provided as an object.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 			}
 
 			$dimension_filter = $this->sanitize_filter_tree( $arguments['dimension_filter'] );
@@ -227,7 +227,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		$metric_filter = array();
 		if ( isset( $arguments['metric_filter'] ) ) {
 			if ( ! is_array( $arguments['metric_filter'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_metric_filter', __( 'The metric filter must be provided as an object.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_metric_filter', __( 'The metric filter must be provided as an object.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 			}
 
 			$metric_filter = $this->sanitize_filter_tree( $arguments['metric_filter'] );
@@ -250,7 +250,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 
 		$credentials = apply_filters( 'wp_mcp_ai_google_analytics_service_account_credentials', $credentials, $context, $arguments, $this );
 		if ( empty( $credentials ) || ! is_array( $credentials ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_credentials', __( 'Google Analytics credentials are not configured.', 'wp-mcp-ai' ), array( 'status' => 500 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_missing_credentials', __( 'Google Analytics credentials are not configured.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
 		}
 
 		$access_token = $this->resolve_access_token( $credentials, $arguments, $context );
@@ -336,7 +336,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 
 			return new WP_Error(
 				'wp_mcp_ai_google_analytics_http_error',
-				__( 'The request to the Google Analytics Data API failed.', 'wp-mcp-ai' ),
+				__( 'The request to the Google Analytics Data API failed.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'error'  => $response,
@@ -361,7 +361,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 				)
 			);
 
-			$message = __( 'Google Analytics rejected the report request.', 'wp-mcp-ai' );
+			$message = __( 'Google Analytics rejected the report request.', 'mcp-ai-wpoos-pro' );
 			if ( isset( $data['error']['message'] ) ) {
 				$message = sprintf( '%s %s', $message, $data['error']['message'] );
 			}
@@ -453,7 +453,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		$subject      = isset( $credentials['delegated_email'] ) ? sanitize_email( $credentials['delegated_email'] ) : '';
 
 		if ( '' === $client_email || '' === $private_key ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_credentials', __( 'Incomplete Google Analytics service account credentials.', 'wp-mcp-ai' ), array( 'status' => 500 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_credentials', __( 'Incomplete Google Analytics service account credentials.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
 		}
 
 		if ( '' === $token_uri ) {
@@ -500,7 +500,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_google_analytics_token_error',
-				__( 'Unable to obtain a Google Analytics access token.', 'wp-mcp-ai' ),
+				__( 'Unable to obtain a Google Analytics access token.', 'mcp-ai-wpoos-pro' ),
 				array(
 					'status' => 500,
 					'error'  => $response,
@@ -513,7 +513,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		$data   = json_decode( $body, true );
 
 		if ( $status < 200 || $status >= 300 || ! isset( $data['access_token'] ) ) {
-			$message = __( 'Google rejected the service account token request.', 'wp-mcp-ai' );
+			$message = __( 'Google rejected the service account token request.', 'mcp-ai-wpoos-pro' );
 			if ( isset( $data['error_description'] ) ) {
 				$message = sprintf( '%s %s', $message, $data['error_description'] );
 			}
@@ -557,7 +557,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 
 		$success = openssl_sign( $input, $signature, $private_key, 'sha256' );
 		if ( ! $success ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_signing_failed', __( 'Unable to sign the Google Analytics service account assertion.', 'wp-mcp-ai' ), array( 'status' => 500 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_signing_failed', __( 'Unable to sign the Google Analytics service account assertion.', 'mcp-ai-wpoos-pro' ), array( 'status' => 500 ) );
 		}
 
 		$segments[] = $this->base64url_encode( $signature );
@@ -650,7 +650,7 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Analytics_Report implements WP_MCP_AI_Tool_I
 		}
 
 		if ( ! is_array( $value ) ) {
-			return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_order', __( 'Order instructions must be provided as an array.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_google_analytics_invalid_order', __( 'Order instructions must be provided as an array.', 'mcp-ai-wpoos-pro' ), array( 'status' => 400 ) );
 		}
 
 		$normalised = array();

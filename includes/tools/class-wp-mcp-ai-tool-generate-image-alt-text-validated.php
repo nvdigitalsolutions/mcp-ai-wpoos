@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text_Validated extends WP_MCP_AI_Validat
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Image Alt Text (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Image Alt Text (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Generates descriptive alt text for images to improve accessibility and SEO using AI vision capabilities with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

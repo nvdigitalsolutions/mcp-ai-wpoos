@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Summarises WordPress, PHP, plugin, and assistant state for troubleshooting.
  */
 class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get MCP Environment Status', 'wp-mcp-ai' );
+		return __( 'Get MCP Environment Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns WordPress, PHP, and NV oOS configuration details to accelerate troubleshooting on live sites.', 'wp-mcp-ai' );
+		return __( 'Returns WordPress, PHP, and NV oOS configuration details to accelerate troubleshooting on live sites.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,8 +52,8 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'title'       => __( 'Check NV oOS environment health', 'wp-mcp-ai' ),
-				'description' => __( 'Summarise WordPress versions, assistant defaults, and connector warnings for the current site.', 'wp-mcp-ai' ),
+				'title'       => __( 'Check NV oOS environment health', 'mcp-ai-wpoos' ),
+				'description' => __( 'Summarise WordPress versions, assistant defaults, and connector warnings for the current site.', 'mcp-ai-wpoos' ),
 				'arguments'   => new stdClass(),
 			),
 		);
@@ -69,11 +70,11 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect the WP oOS environment.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to inspect the WP oOS environment.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -147,13 +148,16 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 			}
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: plugin count, 2: total warnings */
+			__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'mcp-ai-wpoos' ),
+			count( $summary['plugin_statuses'] ),
+			count( $summary['warnings'] )
+		);
+
 		return array(
-			'summary'     => sprintf(
-				/* translators: 1: plugin count, 2: total warnings */
-				__( 'Environment status: %1$d plugin(s) checked, %2$d warning(s)', 'wp-mcp-ai' ),
-				count( $summary['plugin_statuses'] ),
-				count( $summary['warnings'] )
-			),
+			'message'     => $summary_text, // Chat client display
+			'summary'     => $summary_text, // Backward compatibility
 			'environment' => $summary,
 		);
 	}
@@ -166,16 +170,16 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 	protected function get_supported_plugin_statuses() {
 		$definitions = array(
 			'woocommerce' => array(
-				'name'        => __( 'WooCommerce', 'wp-mcp-ai' ),
+				'name'        => __( 'WooCommerce', 'mcp-ai-wpoos' ),
 				'slug'        => 'woocommerce',
 				'plugin_file' => 'woocommerce/woocommerce.php',
-				'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'wp-mcp-ai' ),
+				'description' => __( 'Enables WooCommerce aware NV oOS tools.', 'mcp-ai-wpoos' ),
 			),
 			'jet-engine'  => array(
-				'name'        => __( 'JetEngine', 'wp-mcp-ai' ),
+				'name'        => __( 'JetEngine', 'mcp-ai-wpoos' ),
 				'slug'        => 'jet-engine',
 				'plugin_file' => 'jet-engine/jet-engine.php',
-				'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'wp-mcp-ai' ),
+				'description' => __( 'Unlocks JetEngine powered NV oOS tools.', 'mcp-ai-wpoos' ),
 			),
 		);
 
@@ -227,19 +231,19 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		$default_provider = isset( $plugin['default_provider'] ) ? $plugin['default_provider'] : '';
 
 		if ( 'openai' === $default_provider && empty( $settings['openai_api_key'] ) ) {
-			$warnings[] = __( 'OpenAI is the default provider but no API key is configured.', 'wp-mcp-ai' );
+			$warnings[] = __( 'OpenAI is the default provider but no API key is configured.', 'mcp-ai-wpoos' );
 		}
 
 		if ( 'gemini' === $default_provider && empty( $settings['gemini_api_key'] ) ) {
-			$warnings[] = __( 'Gemini is the default provider but no API key is configured.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Gemini is the default provider but no API key is configured.', 'mcp-ai-wpoos' );
 		}
 
 		if ( empty( $assistants['total_assistants'] ) ) {
-			$warnings[] = __( 'No assistants are published yet. Create or publish an assistant before exposing the chat surfaces.', 'wp-mcp-ai' );
+			$warnings[] = __( 'No assistants are published yet. Create or publish an assistant before exposing the chat surfaces.', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! empty( $assistants['default_assistant_id'] ) && empty( $assistants['default_assistant'] ) ) {
-			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → NV oOS.', 'wp-mcp-ai' );
+			$warnings[] = __( 'The configured default assistant could not be loaded. Update the default assistant in Settings → NV oOS.', 'mcp-ai-wpoos' );
 		}
 
 		foreach ( $supported_plugins as $plugin_status ) {
@@ -247,7 +251,7 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 				$plugin_name = isset( $plugin_status['name'] ) ? $plugin_status['name'] : $plugin_status['slug'];
 
 				/* translators: %s: Supported plugin name. */
-				$warnings[] = sprintf( __( '%s is not installed. Install it to unlock the related NV oOS tools.', 'wp-mcp-ai' ), $plugin_name );
+				$warnings[] = sprintf( __( '%s is not installed. Install it to unlock the related NV oOS tools.', 'mcp-ai-wpoos' ), $plugin_name );
 			}
 		}
 

@@ -14,20 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Supports JSON output or Chart.js visualization.
  */
 class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
-	/**
-	 * Chart.js CDN URL for chart rendering.
-	 *
-	 * @var string
-	 */
-	const CHARTJS_CDN_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
 
-	/**
-	 * Chart.js CDN SRI hash for security verification.
-	 *
-	 * @var string
-	 */
-	const CHARTJS_SRI_HASH = 'sha384-OLBgp1GsljhM2TJ+sbHjaiH9txEUvgdDTAzHv2P24donTt6/529l+9Ua0vFImLlb';
 
 	/**
 	 * {@inheritdoc}
@@ -40,14 +29,14 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Weather Forecast (Open-Meteo)', 'wp-mcp-ai' );
+		return __( 'Get Weather Forecast (Open-Meteo)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves hourly weather forecast data for a location using the Open-Meteo API. Supports both JSON output and interactive Chart.js visualizations.', 'wp-mcp-ai' );
+		return __( 'Retrieves hourly weather forecast data for a location using the Open-Meteo API. Supports both JSON output and interactive Chart.js visualizations.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -59,14 +48,14 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'latitude'      => array(
 					'type'        => 'number',
-					'description' => __( 'Geographic latitude in decimal degrees (required).', 'wp-mcp-ai' ),
+					'description' => __( 'Geographic latitude in decimal degrees (required).', 'mcp-ai-wpoos' ),
 				),
 				'longitude'     => array(
 					'type'        => 'number',
-					'description' => __( 'Geographic longitude in decimal degrees (required).', 'wp-mcp-ai' ),
+					'description' => __( 'Geographic longitude in decimal degrees (required).', 'mcp-ai-wpoos' ),
 				),
 				'hourly'        => array(
-					'description' => __( 'Comma separated list or array of hourly variables. Valid hourly variables include: temperature_2m, relative_humidity_2m, precipitation, rain, snowfall, cloud_cover, wind_speed_10m, wind_direction_10m, etc. Note: Do NOT use daily variables like precipitation_sum, rain_sum, snowfall_sum, temperature_2m_max, or temperature_2m_min - these are only valid for daily forecasts.', 'wp-mcp-ai' ),
+					'description' => __( 'Comma separated list or array of hourly variables. Valid hourly variables include: temperature_2m, relative_humidity_2m, precipitation, rain, snowfall, cloud_cover, wind_speed_10m, wind_direction_10m, etc. Note: Do NOT use daily variables like precipitation_sum, rain_sum, snowfall_sum, temperature_2m_max, or temperature_2m_min - these are only valid for daily forecasts.', 'mcp-ai-wpoos' ),
 					'anyOf'       => array(
 						array(
 							'type' => 'string',
@@ -82,41 +71,41 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 				),
 				'forecast_days' => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of forecast days to request (1-16).', 'wp-mcp-ai' ),
+					'description' => __( 'Number of forecast days to request (1-16).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 16,
 					'default'     => 7,
 				),
 				'timezone'      => array(
 					'type'        => 'string',
-					'description' => __( 'IANA timezone identifier to use for the response (e.g. Europe/Berlin).', 'wp-mcp-ai' ),
+					'description' => __( 'IANA timezone identifier to use for the response (e.g. Europe/Berlin).', 'mcp-ai-wpoos' ),
 				),
 				'output_format' => array(
 					'type'        => 'string',
-					'description' => __( 'Output format: "json" returns raw data (default), "chart" returns an interactive Chart.js visualization.', 'wp-mcp-ai' ),
+					'description' => __( 'Output format: "json" returns raw data (default), "chart" returns an interactive Chart.js visualization.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'json', 'chart' ),
 					'default'     => 'json',
 				),
 				'chart_type'    => array(
 					'type'        => 'string',
-					'description' => __( 'Chart type when output_format is "chart": "line" (default) for time series, "bar" for comparison.', 'wp-mcp-ai' ),
+					'description' => __( 'Chart type when output_format is "chart": "line" (default) for time series, "bar" for comparison.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'line', 'bar' ),
 					'default'     => 'line',
 				),
 				'chart_title'   => array(
 					'type'        => 'string',
-					'description' => __( 'Optional chart title. If not provided, a title will be generated from the location and variables.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional chart title. If not provided, a title will be generated from the location and variables.', 'mcp-ai-wpoos' ),
 				),
 				'chart_width'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Chart canvas width in pixels (default: 900).', 'wp-mcp-ai' ),
+					'description' => __( 'Chart canvas width in pixels (default: 900).', 'mcp-ai-wpoos' ),
 					'minimum'     => 300,
 					'maximum'     => 2000,
 					'default'     => 900,
 				),
 				'chart_height'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Chart canvas height in pixels (default: 500).', 'wp-mcp-ai' ),
+					'description' => __( 'Chart canvas height in pixels (default: 500).', 'mcp-ai-wpoos' ),
 					'minimum'     => 200,
 					'maximum'     => 1500,
 					'default'     => 500,
@@ -138,11 +127,11 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to request weather forecasts.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to request weather forecasts.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$latitude  = $this->parse_float_argument( $arguments, 'latitude' );
@@ -150,7 +139,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		$hourly    = $this->prepare_hourly_argument( $arguments );
 
 		if ( null === $latitude || null === $longitude ) {
-			return new WP_Error( 'wp_mcp_ai_missing_coordinates', __( 'Valid latitude and longitude values are required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_coordinates', __( 'Valid latitude and longitude values are required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Check if hourly validation returned an error.
@@ -159,7 +148,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		}
 
 		if ( empty( $hourly ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_hourly', __( 'At least one hourly variable must be specified.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_hourly', __( 'At least one hourly variable must be specified.', 'mcp-ai-wpoos' ) );
 		}
 
 		$query_args = array(
@@ -194,7 +183,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forecast_request_failed',
-				__( 'The weather forecast request failed.', 'wp-mcp-ai' ),
+				__( 'The weather forecast request failed.', 'mcp-ai-wpoos' ),
 				$response->get_error_message()
 			);
 		}
@@ -218,14 +207,14 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
-				__( 'The weather service returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+				__( 'The weather service returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos' ),
 				(int) $status_code
 			);
 
 			if ( ! empty( $error_detail ) ) {
 				$error_message .= ' ' . sprintf(
 					/* translators: %s: Error detail from API */
-					__( 'Error: %s', 'wp-mcp-ai' ),
+					__( 'Error: %s', 'mcp-ai-wpoos' ),
 					$error_detail
 				);
 			}
@@ -240,7 +229,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		$data = json_decode( $body, true );
 
 		if ( null === $data || ! is_array( $data ) ) {
-			return new WP_Error( 'wp_mcp_ai_forecast_bad_json', __( 'The weather service response could not be decoded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forecast_bad_json', __( 'The weather service response could not be decoded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$payload = $this->prepare_response_payload( $data );
@@ -344,7 +333,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_invalid_hourly_variable',
 				sprintf(
 					/* translators: %s: comma-separated list of invalid variables */
-					__( 'The following variables are only available for daily forecasts, not hourly: %s. For hourly precipitation data, use "precipitation" instead of "precipitation_sum". For hourly rain, use "rain" instead of "rain_sum". For hourly snowfall, use "snowfall" instead of "snowfall_sum".', 'wp-mcp-ai' ),
+					__( 'The following variables are only available for daily forecasts, not hourly: %s. For hourly precipitation data, use "precipitation" instead of "precipitation_sum". For hourly rain, use "rain" instead of "rain_sum". For hourly snowfall, use "snowfall" instead of "snowfall_sum".', 'mcp-ai-wpoos' ),
 					$invalid_list
 				)
 			);
@@ -431,7 +420,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 		if ( empty( $datasets ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_chart_data',
-				__( 'No numeric data available to create a chart.', 'wp-mcp-ai' )
+				__( 'No numeric data available to create a chart.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -568,20 +557,20 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function format_variable_label( $variable ) {
 		$labels = array(
-			'temperature_2m'       => __( 'Temperature', 'wp-mcp-ai' ),
-			'relative_humidity_2m' => __( 'Humidity', 'wp-mcp-ai' ),
-			'precipitation'        => __( 'Precipitation', 'wp-mcp-ai' ),
-			'rain'                 => __( 'Rain', 'wp-mcp-ai' ),
-			'snowfall'             => __( 'Snowfall', 'wp-mcp-ai' ),
-			'cloud_cover'          => __( 'Cloud Cover', 'wp-mcp-ai' ),
-			'wind_speed_10m'       => __( 'Wind Speed', 'wp-mcp-ai' ),
-			'wind_direction_10m'   => __( 'Wind Direction', 'wp-mcp-ai' ),
-			'apparent_temperature' => __( 'Feels Like', 'wp-mcp-ai' ),
-			'pressure_msl'         => __( 'Pressure', 'wp-mcp-ai' ),
-			'surface_pressure'     => __( 'Surface Pressure', 'wp-mcp-ai' ),
-			'visibility'           => __( 'Visibility', 'wp-mcp-ai' ),
-			'uv_index'             => __( 'UV Index', 'wp-mcp-ai' ),
-			'dewpoint_2m'          => __( 'Dew Point', 'wp-mcp-ai' ),
+			'temperature_2m'       => __( 'Temperature', 'mcp-ai-wpoos' ),
+			'relative_humidity_2m' => __( 'Humidity', 'mcp-ai-wpoos' ),
+			'precipitation'        => __( 'Precipitation', 'mcp-ai-wpoos' ),
+			'rain'                 => __( 'Rain', 'mcp-ai-wpoos' ),
+			'snowfall'             => __( 'Snowfall', 'mcp-ai-wpoos' ),
+			'cloud_cover'          => __( 'Cloud Cover', 'mcp-ai-wpoos' ),
+			'wind_speed_10m'       => __( 'Wind Speed', 'mcp-ai-wpoos' ),
+			'wind_direction_10m'   => __( 'Wind Direction', 'mcp-ai-wpoos' ),
+			'apparent_temperature' => __( 'Feels Like', 'mcp-ai-wpoos' ),
+			'pressure_msl'         => __( 'Pressure', 'mcp-ai-wpoos' ),
+			'surface_pressure'     => __( 'Surface Pressure', 'mcp-ai-wpoos' ),
+			'visibility'           => __( 'Visibility', 'mcp-ai-wpoos' ),
+			'uv_index'             => __( 'UV Index', 'mcp-ai-wpoos' ),
+			'dewpoint_2m'          => __( 'Dew Point', 'mcp-ai-wpoos' ),
 		);
 
 		if ( isset( $labels[ $variable ] ) ) {
@@ -647,13 +636,13 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 
 		if ( $location && $timezone ) {
 			/* translators: 1: latitude/longitude coordinates, 2: timezone */
-			return sprintf( __( 'Weather Forecast for %1$s (%2$s)', 'wp-mcp-ai' ), $location, $timezone );
+			return sprintf( __( 'Weather Forecast for %1$s (%2$s)', 'mcp-ai-wpoos' ), $location, $timezone );
 		} elseif ( $location ) {
 			/* translators: %s: latitude/longitude coordinates */
-			return sprintf( __( 'Weather Forecast for %s', 'wp-mcp-ai' ), $location );
+			return sprintf( __( 'Weather Forecast for %s', 'mcp-ai-wpoos' ), $location );
 		}
 
-		return __( 'Weather Forecast', 'wp-mcp-ai' );
+		return __( 'Weather Forecast', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -701,7 +690,7 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 						'display' => true,
 						'title'   => array(
 							'display' => true,
-							'text'    => __( 'Time', 'wp-mcp-ai' ),
+							'text'    => __( 'Time', 'mcp-ai-wpoos' ),
 						),
 						'ticks'   => array(
 							'maxRotation'   => 45,
@@ -730,91 +719,92 @@ class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface
 	 * @return string Complete HTML document.
 	 */
 	protected function generate_chart_html( array $config, $width, $height ) {
-		$chart_id     = 'weather-chart-' . wp_generate_password( 8, false );
-		$config_json  = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-		$chartjs_url  = esc_url( self::CHARTJS_CDN_URL );
-		$chartjs_hash = esc_attr( self::CHARTJS_SRI_HASH );
+		$chart_id    = 'weather-chart-' . wp_generate_password( 8, false );
+		$config_json = wp_json_encode( $config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+		$chartjs_url = esc_url( plugins_url( 'assets/js/vendor/chart.min.js', WP_MCP_AI_FILE ) );
 
 		// phpcs:disable WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Standalone HTML file for chart export.
-		$html = <<<HTML
+		ob_start();
+		?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather Forecast Chart</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .chart-container {
-            max-width: 100%;
-            margin: 0 auto;
-            background: white;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        .chart-header {
-            text-align: center;
-            margin-bottom: 16px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #e0e0e0;
-        }
-        .chart-header h2 {
-            color: #333;
-            font-size: 1.25rem;
-            font-weight: 600;
-        }
-        .chart-header .subtitle {
-            color: #666;
-            font-size: 0.875rem;
-            margin-top: 4px;
-        }
-        canvas {
-            max-width: 100%;
-            height: auto !important;
-        }
-        .chart-footer {
-            text-align: center;
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #e0e0e0;
-            color: #888;
-            font-size: 0.75rem;
-        }
-    </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Weather Forecast Chart</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			padding: 20px;
+		}
+		.chart-container {
+			max-width: 100%;
+			margin: 0 auto;
+			background: white;
+			padding: 24px;
+			border-radius: 12px;
+			box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+		}
+		.chart-header {
+			text-align: center;
+			margin-bottom: 16px;
+			padding-bottom: 16px;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		.chart-header h2 {
+			color: #333;
+			font-size: 1.25rem;
+			font-weight: 600;
+		}
+		.chart-header .subtitle {
+			color: #666;
+			font-size: 0.875rem;
+			margin-top: 4px;
+		}
+		canvas {
+			max-width: 100%;
+			height: auto !important;
+		}
+		.chart-footer {
+			text-align: center;
+			margin-top: 16px;
+			padding-top: 16px;
+			border-top: 1px solid #e0e0e0;
+			color: #888;
+			font-size: 0.75rem;
+		}
+	</style>
 </head>
 <body>
-    <div class="chart-container">
-        <div class="chart-header">
-            <h2>📊 Weather Data Visualization</h2>
-            <p class="subtitle">Powered by Open-Meteo API</p>
-        </div>
-        <canvas id="{$chart_id}" width="{$width}" height="{$height}"></canvas>
-        <div class="chart-footer">
-            Generated by NV oOS Weather Forecast Tool
-        </div>
-    </div>
-    <script src="{$chartjs_url}" integrity="{$chartjs_hash}" crossorigin="anonymous"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const ctx = document.getElementById('{$chart_id}').getContext('2d');
-            const chartConfig = {$config_json};
-            new Chart(ctx, chartConfig);
-        });
-    </script>
+	<div class="chart-container">
+		<div class="chart-header">
+			<h2>📊 Weather Data Visualization</h2>
+			<p class="subtitle">Powered by Open-Meteo API</p>
+		</div>
+		<canvas id="<?php echo esc_attr( $chart_id ); ?>" width="<?php echo esc_attr( $width ); ?>" height="<?php echo esc_attr( $height ); ?>"></canvas>
+		<div class="chart-footer">
+			Generated by NV oOS Weather Forecast Tool
+		</div>
+	</div>
+	<script src="<?php echo esc_url( $chartjs_url ); ?>"></script>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+			const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
+			new Chart(ctx, chartConfig);
+		});
+	</script>
 </body>
 </html>
-HTML;
+		<?php
+		$html = ob_get_clean();
 		// phpcs:enable WordPress.WP.EnqueuedResources.NonEnqueuedScript
 
 		return $html;
@@ -828,7 +818,7 @@ HTML;
 			'read-only',            // Only reads data, does not modify state.
 			'external-api',         // Makes external API calls to Open-Meteo.
 			'requires-capability',  // Requires user capabilities.
-			'network-dependent',    // Requires internet for API and Chart.js CDN.
+			'network-dependent',    // Requires internet for Open-Meteo API.
 		);
 	}
 }

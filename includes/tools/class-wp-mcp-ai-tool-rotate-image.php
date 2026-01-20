@@ -28,14 +28,14 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Rotate Image', 'wp-mcp-ai' );
+		return __( 'Rotate Image', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Rotate an image by degrees or flip it horizontally/vertically.', 'wp-mcp-ai' );
+		return __( 'Rotate an image by degrees or flip it horizontally/vertically.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,21 +49,22 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'angle'           => array(
 						'type'        => 'number',
-						'description' => __( 'Rotation angle in degrees (clockwise). Common values: 90, 180, 270.', 'wp-mcp-ai' ),
+						'description' => __( 'Rotation angle in degrees (clockwise). Common values: 90, 180, 270.', 'mcp-ai-wpoos' ),
 						'minimum'     => -360,
 						'maximum'     => 360,
 					),
 					'flip_horizontal' => array(
 						'type'        => 'boolean',
-						'description' => __( 'Flip the image horizontally (mirror).', 'wp-mcp-ai' ),
+						'description' => __( 'Flip the image horizontally (mirror).', 'mcp-ai-wpoos' ),
 						'default'     => false,
 					),
 					'flip_vertical'   => array(
 						'type'        => 'boolean',
-						'description' => __( 'Flip the image vertically.', 'wp-mcp-ai' ),
+						'description' => __( 'Flip the image vertically.', 'mcp-ai-wpoos' ),
 						'default'     => false,
 					),
-				)
+				),
+				$this->get_output_format_parameter_schema()
 			),
 			'required'             => array(),
 			'additionalProperties' => false,
@@ -95,23 +96,28 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to rotate images.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to rotate images.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit images.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
-		$angle           = isset( $arguments['angle'] ) ? floatval( $arguments['angle'] ) : 0;
+		$angle           = isset( $arguments['angle'] ) ? floatval( $arguments['angle'] ) : 0.0;
 		$flip_horizontal = isset( $arguments['flip_horizontal'] ) ? (bool) $arguments['flip_horizontal'] : false;
 		$flip_vertical   = isset( $arguments['flip_vertical'] ) ? (bool) $arguments['flip_vertical'] : false;
 
-		if ( 0 === $angle && ! $flip_horizontal && ! $flip_vertical ) {
-			return new WP_Error( 'wp_mcp_ai_no_operation', __( 'At least one of angle, flip_horizontal, or flip_vertical must be specified.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+		// Validate angle is a valid number (not NaN or Infinity).
+		if ( is_nan( $angle ) || is_infinite( $angle ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_angle', __( 'The angle parameter must be a valid number.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
+		}
+
+		if ( 0.0 === $angle && ! $flip_horizontal && ! $flip_vertical ) {
+			return new WP_Error( 'wp_mcp_ai_no_operation', __( 'At least one of angle, flip_horizontal, or flip_vertical must be specified.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		// Enrich arguments with metadata from context messages if available.
@@ -126,8 +132,9 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 		$operations = array();
 
 		// Apply rotation.
-		if ( 0 !== $angle ) {
-			$result = $image_editor->rotate( $angle );
+		// WordPress rotates counter-clockwise for positive angles, so negate for clockwise rotation.
+		if ( 0.0 !== $angle ) {
+			$result = $image_editor->rotate( -$angle );
 			if ( is_wp_error( $result ) ) {
 				if ( isset( $image_editor->temp_file ) ) {
 					$this->delete_temp_file( $image_editor->temp_file );
@@ -135,23 +142,11 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				return $result;
 			}
 			/* translators: %s: rotation angle in degrees */
-			$operations[] = sprintf( __( 'rotated %s degrees', 'wp-mcp-ai' ), $angle );
+			$operations[] = sprintf( __( 'rotated %s degrees', 'mcp-ai-wpoos' ), $angle );
 		}
 
 		// Apply horizontal flip.
 		if ( $flip_horizontal ) {
-			$result = $image_editor->flip( false, true );
-			if ( is_wp_error( $result ) ) {
-				if ( isset( $image_editor->temp_file ) ) {
-					$this->delete_temp_file( $image_editor->temp_file );
-				}
-				return $result;
-			}
-			$operations[] = __( 'flipped horizontally', 'wp-mcp-ai' );
-		}
-
-		// Apply vertical flip.
-		if ( $flip_vertical ) {
 			$result = $image_editor->flip( true, false );
 			if ( is_wp_error( $result ) ) {
 				if ( isset( $image_editor->temp_file ) ) {
@@ -159,11 +154,31 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 				}
 				return $result;
 			}
-			$operations[] = __( 'flipped vertically', 'wp-mcp-ai' );
+			$operations[] = __( 'flipped horizontally', 'mcp-ai-wpoos' );
 		}
 
-		// Save as new attachment.
-		$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'rotated' );
+		// Apply vertical flip.
+		if ( $flip_vertical ) {
+			$result = $image_editor->flip( false, true );
+			if ( is_wp_error( $result ) ) {
+				if ( isset( $image_editor->temp_file ) ) {
+					$this->delete_temp_file( $image_editor->temp_file );
+				}
+				return $result;
+			}
+			$operations[] = __( 'flipped vertically', 'mcp-ai-wpoos' );
+		}
+
+		// Check if SVG output is requested.
+		$output_format = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'default';
+
+		if ( 'svg' === $output_format ) {
+			// Convert the rotated image to SVG.
+			$storage = $this->convert_to_svg( $image_editor, $arguments, $user_id );
+		} else {
+			// Save as new raster attachment.
+			$storage = $this->save_as_attachment( $image_editor, $arguments, $user_id, 'rotated' );
+		}
 
 		// Clean up temp file if exists.
 		if ( isset( $image_editor->temp_file ) ) {
@@ -173,6 +188,13 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 		if ( is_wp_error( $storage ) ) {
 			return $storage;
 		}
+
+		$message = sprintf(
+			/* translators: 1: list of operations performed, 2: output format */
+			__( 'Successfully transformed image: %1$s%2$s.', 'mcp-ai-wpoos' ),
+			implode( ', ', $operations ),
+			'svg' === $output_format ? ' and converted to SVG' : ''
+		);
 
 		$result_data = array(
 			'attachment_id'   => $storage['attachment_id'],
@@ -185,12 +207,25 @@ class WP_MCP_AI_Tool_Rotate_Image extends WP_MCP_AI_Tool_Image_Base {
 			'flip_horizontal' => $flip_horizontal,
 			'flip_vertical'   => $flip_vertical,
 			'operation'       => 'rotate',
-			'text'            => sprintf(
-				/* translators: %s: list of operations performed */
-				__( 'Successfully transformed image: %s.', 'wp-mcp-ai' ),
-				implode( ', ', $operations )
-			),
+			'output_format'   => $output_format,
+			'text'            => $message,
+			'message'         => $message,
 		);
+
+		// Add vectorization metadata if SVG output was used.
+		if ( 'svg' === $output_format && isset( $storage['vectorized'] ) ) {
+			$result_data['vectorized']  = true;
+			$result_data['svg_size']    = isset( $storage['svg_size'] ) ? $storage['svg_size'] : $storage['bytes'];
+			$result_data['source_size'] = isset( $storage['source_size'] ) ? $storage['source_size'] : 0;
+			$result_data['duration_ms'] = isset( $storage['duration_ms'] ) ? $storage['duration_ms'] : 0;
+		}
+
+		// Add image_url structure for agentic workflow and chat client display.
+		if ( ! empty( $storage['url'] ) ) {
+			$result_data['image_url'] = array(
+				'url' => $storage['url'],
+			);
+		}
 
 		// Note: Inline content payload (base64 encoded image data) is intentionally NOT included
 		// in the default response to prevent bloating tool results sent to chat clients and LLMs.

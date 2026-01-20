@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Creates a new post or updates an existing one.
  */
 class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -24,14 +25,14 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Create or Update Post', 'wp-mcp-ai' );
+		return __( 'Create or Update Post', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new post or updates an existing one with the supplied content.', 'wp-mcp-ai' );
+		return __( 'Creates a new post or updates an existing one with the supplied content.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -43,43 +44,43 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'properties'           => array(
 				'post_id'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'wp-mcp-ai' ),
+					'description' => __( 'Existing post ID to update. Leave empty to create a new post.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'post_type'         => array(
 					'type'        => 'string',
-					'description' => __( 'The post type to create or update.', 'wp-mcp-ai' ),
+					'description' => __( 'The post type to create or update.', 'mcp-ai-wpoos' ),
 					'default'     => 'post',
 				),
 				'title'             => array(
 					'type'        => 'string',
-					'description' => __( 'Title of the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Title of the post.', 'mcp-ai-wpoos' ),
 				),
 				'content'           => array(
 					'type'        => 'string',
-					'description' => __( 'Main content for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Main content for the post.', 'mcp-ai-wpoos' ),
 				),
 				'status'            => array(
 					'type'        => 'string',
-					'description' => __( 'The status to assign to the post, e.g. draft or publish.', 'wp-mcp-ai' ),
+					'description' => __( 'The status to assign to the post, e.g. draft or publish.', 'mcp-ai-wpoos' ),
 					'default'     => 'draft',
 				),
 				'excerpt'           => array(
 					'type'        => 'string',
-					'description' => __( 'Optional excerpt for the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional excerpt for the post.', 'mcp-ai-wpoos' ),
 				),
 				'slug'              => array(
 					'type'        => 'string',
-					'description' => __( 'Optional slug to use for the post permalink.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional slug to use for the post permalink.', 'mcp-ai-wpoos' ),
 				),
 				'featured_image_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Attachment ID to set as the featured image.', 'wp-mcp-ai' ),
+					'description' => __( 'Attachment ID to set as the featured image.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'categories'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of category IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of category IDs or names to assign to the post.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -92,7 +93,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 				),
 				'tags'              => array(
 					'type'        => 'array',
-					'description' => __( 'Array of tag IDs or names to assign to the post.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of tag IDs or names to assign to the post.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'anyOf' => array(
 							array(
@@ -105,44 +106,44 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 				),
 				'page_template'     => array(
 					'type'        => 'string',
-					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'wp-mcp-ai' ),
+					'description' => __( 'Page template filename (e.g., "template-full-width.php"). Only applies to pages and custom post types that support page templates.', 'mcp-ai-wpoos' ),
 				),
 				'post_parent'       => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the parent post for hierarchical post types (e.g., pages).', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'menu_order'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Menu order for sorting hierarchical post types.', 'wp-mcp-ai' ),
+					'description' => __( 'Menu order for sorting hierarchical post types.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 				),
 				'comment_status'    => array(
 					'type'        => 'string',
-					'description' => __( 'Whether to allow comments (open or closed).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to allow comments (open or closed).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
 				'ping_status'       => array(
 					'type'        => 'string',
-					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to allow pingbacks and trackbacks (open or closed).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'open', 'closed' ),
 				),
 				'meta_input'        => array(
 					'type'                 => 'object',
-					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'wp-mcp-ai' ),
+					'description'          => __( 'Array of custom field key-value pairs to set as post meta.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => true,
 				),
 				'elementor_data'    => array(
 					'type'        => 'object',
-					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'wp-mcp-ai' ),
+					'description' => __( 'Elementor page builder data (requires Elementor plugin).', 'mcp-ai-wpoos' ),
 					'properties'  => array(
 						'template_type' => array(
 							'type'        => 'string',
-							'description' => __( 'Elementor template type (page, header, footer, section, etc).', 'wp-mcp-ai' ),
+							'description' => __( 'Elementor template type (page, header, footer, section, etc).', 'mcp-ai-wpoos' ),
 						),
 						'edit_mode'     => array(
 							'type'        => 'string',
-							'description' => __( 'Elementor editor mode (builder or default).', 'wp-mcp-ai' ),
+							'description' => __( 'Elementor editor mode (builder or default).', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'builder', 'default' ),
 						),
 					),
@@ -164,11 +165,11 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage posts.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage posts.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_id   = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
@@ -178,17 +179,17 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		if ( $post_id > 0 ) {
 			$post = get_post( $post_id );
 			if ( ! $post ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_post', __( 'The specified post could not be found.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_post', __( 'The specified post could not be found.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( '' === $post_type ) {
 				$post_type = $post->post_type;
 			} elseif ( $post->post_type !== $post_type ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not match the existing post.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not match the existing post.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( ! user_can( $user_id, 'edit_post', $post_id ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit this post.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to edit this post.', 'mcp-ai-wpoos' ) );
 			}
 		} else {
 			if ( '' === $post_type ) {
@@ -197,25 +198,25 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 
 			$post_type_object = get_post_type_object( $post_type );
 			if ( ! $post_type_object ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'mcp-ai-wpoos' ) );
 			}
 
 			$create_cap = isset( $post_type_object->cap->create_posts ) ? $post_type_object->cap->create_posts : $post_type_object->cap->edit_posts;
 
 			if ( ! user_can( $user_id, $create_cap ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to create posts of this type.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
 		$post_type_object = isset( $post_type_object ) ? $post_type_object : get_post_type_object( $post_type );
 		if ( ! $post_type_object ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_post_type', __( 'The requested post type does not exist.', 'mcp-ai-wpoos' ) );
 		}
 
 		$raw_content = isset( $arguments['content'] ) ? $arguments['content'] : '';
 		$content     = wp_kses_post( $raw_content );
 		if ( '' === $content ) {
-			return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_content', __( 'Post content is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( 'post' === $post_type ) {
@@ -236,7 +237,7 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		if ( isset( $arguments['title'] ) ) {
 			$post_data['post_title'] = sanitize_text_field( $arguments['title'] );
 		} elseif ( ! $post_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'A title is required when creating a new post.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'A title is required when creating a new post.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( isset( $arguments['excerpt'] ) ) {
@@ -301,19 +302,22 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 
 		$updated_post = get_post( $result );
 		if ( ! $updated_post ) {
-			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was saved but could not be retrieved.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_unknown_error', __( 'The post was saved but could not be retrieved.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Handle post-creation/update operations for metadata.
 		$this->handle_post_metadata( $updated_post->ID, $arguments, $post_type );
 
+		$summary_text = sprintf(
+			/* translators: 1: post ID, 2: post title */
+			__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
+			get_the_title( $updated_post ),
+			$updated_post->ID
+		);
+
 		$response = array(
-			'summary'   => sprintf(
-				/* translators: 1: post ID, 2: post title */
-				__( 'Post saved: %1$s (ID: %2$d)', 'wp-mcp-ai' ),
-				get_the_title( $updated_post ),
-				$updated_post->ID
-			),
+			'message'   => $summary_text, // Chat client display
+			'summary'   => $summary_text, // Backward compatibility
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),

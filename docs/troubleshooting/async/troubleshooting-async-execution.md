@@ -114,7 +114,7 @@ grep -A 5 "wp_mcp_ai_init_async_executor" mcp-ai-wpoos.php
 
 2. **Tool execution error**:
    - Check `wp_mcp_ai_recent_errors` option
-   - Enable logging in Settings → WP oOS
+   - Enable logging in Settings → NV oOS
 
 3. **Transient expired**:
    - Results stored in transients with 24h TTL

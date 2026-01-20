@@ -167,7 +167,11 @@
 						ProfessionalSelector.populateModels($modelSelect, response.data.models);
 						$modelSelect.prop('disabled', false);
 					} else {
-						ProfessionalSelector.showError($container, wpMcpAiProfessionalSelector.strings.errorLoading);
+						// Show specific error message if available, otherwise use generic message.
+						const errorMessage = response.data && response.data.message 
+							? response.data.message 
+							: wpMcpAiProfessionalSelector.strings.errorLoading;
+						ProfessionalSelector.showError($container, errorMessage);
 						$modelSelect.prop('disabled', false);
 					}
 				},

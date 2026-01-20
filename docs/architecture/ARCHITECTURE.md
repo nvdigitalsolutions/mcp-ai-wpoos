@@ -1,9 +1,9 @@
-# WP oOS Architecture Overview
+# NV oOS Architecture Overview
 
 **Last Updated:** December 2025
 **Version:** 1.0.0
 
-This document provides a high-level architectural overview of the Open Operator System (WP oOS) plugin. For detailed technical documentation, see the main [docs](../) directory.
+This document provides a high-level architectural overview of the Open Operator System (NV oOS) plugin. For detailed technical documentation, see the main [docs](../) directory.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ This document provides a high-level architectural overview of the Open Operator 
 
 ## System Overview
 
-WP oOS is a WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Google Gemini, Ollama) and implementing the Model Context Protocol (MCP) for tool-based AI interactions.
+NV oOS is a WordPress plugin that provides an AI Assistant framework integrating with multiple AI providers (OpenAI, Google Gemini, Ollama) and implementing the Model Context Protocol (MCP) for tool-based AI interactions.
 
 ### High-Level Architecture
 

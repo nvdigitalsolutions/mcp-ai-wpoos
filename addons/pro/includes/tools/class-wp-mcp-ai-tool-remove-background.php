@@ -33,14 +33,14 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Remove Background', 'wp-mcp-ai' );
+		return __( 'Remove Background', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Remove the background from an image, making it transparent. Supports free (rembg) and paid (remove.bg API) methods.', 'wp-mcp-ai' );
+		return __( 'Remove the background from an image, making it transparent. Supports free (rembg) and paid (remove.bg API) methods.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 				array(
 					'method' => array(
 						'type'        => 'string',
-						'description' => __( 'Background removal method: "auto" (tries free first, then paid if available), "free" (rembg only), or "paid" (remove.bg API only). Default is "auto".', 'wp-mcp-ai' ),
+						'description' => __( 'Background removal method: "auto" (tries free first, then paid if available), "free" (rembg only), or "paid" (remove.bg API only). Default is "auto".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'auto', 'free', 'paid' ),
 						'default'     => 'auto',
 					),
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to remove image backgrounds.', 'wp-mcp-ai' ),
+				__( 'You must be authenticated to remove image backgrounds.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => rest_authorization_required_code() )
 			);
 		}
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 		if ( $user_id && ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to edit images.', 'wp-mcp-ai' )
+				__( 'You do not have permission to edit images.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 				foreach ( $errors as $method_name => $error_msg ) {
 					$error_messages[] = sprintf(
 						/* translators: 1: method name, 2: error message */
-						__( '%1$s: %2$s', 'wp-mcp-ai' ),
+						__( '%1$s: %2$s', 'mcp-ai-wpoos-pro' ),
 						ucfirst( $method_name ),
 						$error_msg
 					);
@@ -180,7 +180,7 @@ class WP_MCP_AI_Tool_Remove_Background extends WP_MCP_AI_Tool_Image_Base {
 				'wp_mcp_ai_background_removal_failed',
 				sprintf(
 					/* translators: %s: error details */
-					__( 'Failed to remove background. %s', 'wp-mcp-ai' ),
+					__( 'Failed to remove background. %s', 'mcp-ai-wpoos-pro' ),
 					implode( '; ', $error_messages )
 				)
 			);
@@ -227,32 +227,32 @@ try:
     from rembg import remove
     from PIL import Image
     import io
-    
+
     if len(sys.argv) != 3:
         print("Usage: script.py <input> <output>", file=sys.stderr)
         sys.exit(1)
-    
+
     input_path = sys.argv[1]
     output_path = sys.argv[2]
-    
+
     if not os.path.exists(input_path):
         print(f"Input file not found: {input_path}", file=sys.stderr)
         sys.exit(1)
-    
+
     # Read input image.
     with open(input_path, 'rb') as f:
         input_data = f.read()
-    
+
     # Remove background.
     output_data = remove(input_data)
-    
+
     # Save output image.
     with open(output_path, 'wb') as f:
         f.write(output_data)
-    
+
     print("success")
     sys.exit(0)
-    
+
 except ImportError as e:
     print(f"rembg not installed: {e}", file=sys.stderr)
     print("Install with: pipx install rembg (recommended) or use venv", file=sys.stderr)
@@ -266,7 +266,7 @@ PYTHON;
 		if ( ! $script_path ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_failed',
-				__( 'Failed to create temporary script file.', 'wp-mcp-ai' )
+				__( 'Failed to create temporary script file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -303,7 +303,7 @@ PYTHON;
 			if ( isset( $error_data['exit_code'] ) && 2 === $error_data['exit_code'] ) {
 				return new WP_Error(
 					'wp_mcp_ai_rembg_not_installed',
-					__( 'The rembg library is not installed. On modern systems (Debian 12+, Ubuntu 23.04+), use: pipx install rembg OR create a virtual environment. See documentation for details.', 'wp-mcp-ai' )
+					__( 'The rembg library is not installed. On modern systems (Debian 12+, Ubuntu 23.04+), use: pipx install rembg OR create a virtual environment. See documentation for details.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 
@@ -311,7 +311,7 @@ PYTHON;
 				'wp_mcp_ai_rembg_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'rembg processing failed: %s', 'wp-mcp-ai' ),
+					__( 'rembg processing failed: %s', 'mcp-ai-wpoos-pro' ),
 					$error_message
 				)
 			);
@@ -321,7 +321,7 @@ PYTHON;
 		if ( ! file_exists( $output_path ) || 0 === filesize( $output_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_rembg_no_output',
-				__( 'rembg did not produce output file.', 'wp-mcp-ai' )
+				__( 'rembg did not produce output file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -362,7 +362,7 @@ PYTHON;
 
 		return new WP_Error(
 			'wp_mcp_ai_python_not_found',
-			__( 'Python is not available on this system. Please install Python 3 or configure remove.bg API key for paid service.', 'wp-mcp-ai' )
+			__( 'Python is not available on this system. Please install Python 3 or configure remove.bg API key for paid service.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -392,7 +392,7 @@ PYTHON;
 				'url'           => $result['url'],
 				'width'         => $result['width'],
 				'height'        => $result['height'],
-				'message'       => __( 'Background removed successfully. The image now has a transparent background.', 'wp-mcp-ai' ),
+				'message'       => __( 'Background removed successfully. The image now has a transparent background.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 

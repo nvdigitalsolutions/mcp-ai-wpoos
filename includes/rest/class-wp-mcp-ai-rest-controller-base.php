@@ -145,7 +145,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return $this->error(
 				'rest_forbidden',
-				__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 				403
 			);
 		}
@@ -238,7 +238,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 				'missing_parameters',
 				sprintf(
 					/* translators: %s: comma-separated list of missing parameter names */
-					__( 'Missing required parameter(s): %s', 'wp-mcp-ai' ),
+					__( 'Missing required parameter(s): %s', 'mcp-ai-wpoos' ),
 					implode( ', ', $missing )
 				),
 				400

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides a comprehensive review of all OpenAI API models as of December 2025, confirming full support in the WP oOS plugin.
+This document provides a comprehensive review of all OpenAI API models as of December 2025, confirming full support in the NV oOS plugin.
 
 ## Model Families Supported
 
@@ -227,7 +227,7 @@ Higher tiers available with increased limits.
 4. **Consider o3 Over o1**: Significantly cheaper, same/better performance
 5. **Use Realtime Mini for Cached**: 97% savings on cached audio
 
-## Implementation Status in WP oOS
+## Implementation Status in NV oOS
 
 ### ✅ Fully Configured
 - Model configurations with accurate rate limits

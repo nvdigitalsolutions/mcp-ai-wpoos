@@ -2,7 +2,7 @@
 
 ## New Settings Location
 
-**Path**: WordPress Admin → Settings → WP oOS → Orchestration → Thresholds
+**Path**: WordPress Admin → Settings → NV oOS → Orchestration → Thresholds
 
 ## UI Sections Added
 

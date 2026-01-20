@@ -1,10 +1,10 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - December 24, 2025  
-**Tool Count:** 144 unique tools (118 base + 26 Pro addon)  
-**Last Updated:** December 24, 2025
+**Status:** ✅ VERIFIED - January 15, 2025  
+**Tool Count:** 146 unique tools (119 base + 27 Pro addon)  
+**Last Updated:** January 15, 2025
 
-WP oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
+NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 
 ## Autonomous automation capabilities for AI agents
 
@@ -94,6 +94,7 @@ The tool validates Simple JWT Login configuration (plugin active, authentication
 - **Generate Veo Video** (`generate_veo_video`) generates realistic videos from text descriptions using Google's Veo models. Automatically uses Veo 3.1 (preferred) with fallback to Veo 2.0 if quota limits are reached. Supports async mode for long-running video generation tasks.【F:includes/tools/class-wp-mcp-ai-tool-generate-veo-video.php†L17-L300】
 - **Check Video Status** (`check_video_status`) checks the status of an async video generation job. Use this to poll for completion after calling generate_veo_video in async mode.【F:includes/tools/class-wp-mcp-ai-tool-check-video-status.php†L17-L150】
 - **Generate Music** (`generate_music`) generates instrumental music from a text description using Google Gemini Lyria model with controls for genre, mood, duration, and tempo, and saves the result to the Media Library.【F:includes/tools/class-wp-mcp-ai-tool-generate-music.php†L17-L200】
+- **Generate Architectural Drawing** (`generate_architectural_drawing`) **[PRO]** creates professional architectural drawings for construction and design projects. Supports 10 drawing types (floor_plan, elevation, section, detail, site_plan, reflected_ceiling_plan, roof_plan, 3d_axonometric, isometric, construction_detail) and 6 presentation styles (technical, sketched, rendered, line_drawing, annotated, schematic). Includes dimensional specifications (width, depth, height), architectural scale notation (1/4"=1'-0", 1:100, 1:50), material lists and callouts, and building code compliance (IBC, IRC, NBC, Eurocode). Dual AI providers (OpenAI DALL-E/GPT-Image-1.5 and Gemini) with automatic SVG vectorization using the vectorize_image tool. Perfect for architects, structural engineers, and construction professionals needing technical drawings with accurate dimensions and material specifications.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】
 
 ## Content Safety & Moderation
 
@@ -124,11 +125,48 @@ The following tools require the **Pro addon** and external executables to be ins
 
 ## Image manipulation (Graphic Editor Suite)
 
+- **Vectorize Image** (`vectorize_image`) converts raster images (PNG, JPEG, WebP, GIF) to SVG vector format with configurable quality settings. Uses @neplex/vectorizer library for high-quality vectorization with controls for color mode (color/binary), color precision (1-8), speckle filtering (0-100), path simplification mode (spline/polygon/none), and hierarchical layer stacking (stacked/cutout). Requires Node.js 14+ to be installed on the server. Processes images locally without external APIs. Perfect for converting logos, icons, and graphics to scalable vector format. Returns SVG file saved to WordPress Media Library with detailed conversion metrics (file size ratio, processing duration).【F:includes/tools/class-wp-mcp-ai-tool-vectorize-image.php†L1-L430】
+- **Graphic Editor Plus** (`graphic_editor_plus`) comprehensive graphic editing tool combining local operations (logo overlay, smart resize, canvas expansion) and AI-powered features (style transfer, background removal, intelligent enhancement). **Local operations** include: add_logo (overlay logo with positioning and transparency), resize_graphic (smart resize with format conversion), expand_scene (canvas expansion with background color). **AI operations** powered by Gemini include: ai_enhance (AI-powered photo enhancement), ai_style (change image style to watercolor, sketch, etc.), ai_background (remove or change background), ai_retouch (general AI-powered retouching). Use local operations for speed and precision, AI operations for intelligent transformations. Supports multiple image formats and aspect ratios.【F:includes/tools/class-wp-mcp-ai-tool-graphic-editor-plus.php†L1-L784】
 - **Resize Image** (`resize_image`) resizes an image to specific dimensions or scales proportionally while maintaining aspect ratio. Supports width, height, and percentage-based scaling.【F:includes/tools/class-wp-mcp-ai-tool-resize-image.php†L17-L150】
 - **Crop Image** (`crop_image`) crops an image to a specific region defined by coordinates and dimensions, or to a target aspect ratio.【F:includes/tools/class-wp-mcp-ai-tool-crop-image.php†L17-L150】
 - **Rotate Image** (`rotate_image`) rotates an image by degrees or flips it horizontally/vertically.【F:includes/tools/class-wp-mcp-ai-tool-rotate-image.php†L17-L150】
 - **Convert Image Format** (`convert_image_format`) converts an image to a different format (PNG, JPEG, WebP, GIF) with optional quality control.【F:includes/tools/class-wp-mcp-ai-tool-convert-image-format.php†L17-L150】
-- **Remove Background** (`remove_background`) removes the background from an image, making it transparent. Supports two methods: free (Python rembg library, requires `pip3 install rembg pillow`) and paid (remove.bg API, requires API key from https://www.remove.bg/api). The `method` parameter allows selection: "auto" (default, tries free first then paid), "free" (rembg only), or "paid" (remove.bg API only). Automatically detects Python availability and rembg installation status. When using the free method, requires Python 3.x and the rembg package installed on the server. The paid method requires a remove.bg API key configured in Settings → WP oOS → Tools → External Tools.【F:includes/tools/class-wp-mcp-ai-tool-remove-background.php†L17-L370】
+- **Remove Background** (`remove_background`) removes the background from an image, making it transparent. Supports two methods: free (Python rembg library, requires `pip3 install rembg pillow`) and paid (remove.bg API, requires API key from https://www.remove.bg/api). The `method` parameter allows selection: "auto" (default, tries free first then paid), "free" (rembg only), or "paid" (remove.bg API only). Automatically detects Python availability and rembg installation status. When using the free method, requires Python 3.x and the rembg package installed on the server. The paid method requires a remove.bg API key configured in Settings → NV oOS → Tools → External Tools.【F:includes/tools/class-wp-mcp-ai-tool-remove-background.php†L17-L370】
+
+## Architectural & Construction Tools
+
+### Professional Drawing Generation
+
+**Generate Architectural Drawing** (`generate_architectural_drawing`) **[PRO]** is a comprehensive tool for creating professional architectural and construction drawings using AI. Designed specifically for architects, structural engineers, construction managers, and design professionals.
+
+**Key Features:**
+- **10 Drawing Types**: floor_plan, elevation, section, detail, site_plan, reflected_ceiling_plan, roof_plan, 3d_axonometric, isometric, construction_detail
+- **6 Presentation Styles**: technical (precise line weights, architectural symbols), sketched (hand-drawn style), rendered (realistic with materials/lighting), line_drawing (clean uniform lines), annotated (extensive dimensions and callouts), schematic (simplified diagrams)
+- **Dimensional Specifications**: Width, depth, height with units (feet, meters, inches, centimeters)
+- **Architectural Scale Notation**: 1/4"=1'-0", 1:100, 1:50, and custom scales
+- **Material Lists**: Specify materials and finishes for automatic callouts
+- **Building Code Compliance**: IBC (International Building Code), IRC (International Residential Code), NBC (National Building Code), Eurocode standards
+- **Annotation Controls**: Dimension lines, measurement annotations, material callouts
+- **Dual AI Providers**: OpenAI (DALL-E, GPT-Image-1.5) or Gemini (gemini-2.5-flash-image)
+- **Output Formats**: PNG (raster) or SVG (vector) with automatic vectorization via `vectorize_image` tool
+- **Quality Controls**: High-quality output optimized for architectural documentation
+
+**Use Cases:**
+- Residential floor plans with room layouts and square footage
+- Commercial building elevations with material specifications
+- Construction details showing assembly methods and connections
+- Site plans with property boundaries and landscaping
+- Reflected ceiling plans for lighting and HVAC coordination
+- Isometric views for client presentations
+- Technical sections for building permit submissions
+
+**Integration:**
+- Automatically uses `vectorize_image` for SVG output when requested
+- Follows same pattern as `graphic_editor_plus` for consistency
+- Supports both raster and vector outputs for different use cases
+- Professional metadata storage for project documentation
+
+Perfect for construction workflows where accurate dimensions, code compliance, and professional presentation are essential.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-generate-architectural-drawing.php†L1-L1136】
 
 ## AI-powered media analysis
 
@@ -143,6 +181,64 @@ The following tools require the **Pro addon** and external executables to be ins
 ## Data visualization
 
 - **Create Chart** (`create_chart`) creates interactive charts using Chart.js. Supports bar, line, pie, doughnut, radar, and polar area charts. Returns HTML/JavaScript or saves as attachment.【F:includes/tools/class-wp-mcp-ai-tool-create-chart.php†L17-L300】
+
+## Spreadsheet & Data Analysis
+
+- **Pro Excel** (`pro_excel`) generates and manipulates Microsoft Excel formulas using AI-powered natural language processing. Recognizes Excel as a Turing-complete programming language (since Excel 2021 with LAMBDA functions) and provides comprehensive spreadsheet automation capabilities. Supports 6 operations:
+  - **Generate**: Creates Excel formulas from natural language descriptions (e.g., "sum A1 to A10" → `=SUM(A1:A10)`)
+  - **Explain**: Provides step-by-step explanations of complex formulas with plain English descriptions of each component
+  - **Debug**: Identifies and fixes errors in formulas, suggesting corrections and best practices
+  - **Document**: Adds inline comments and documentation to formulas for maintainability
+  - **Convert**: Transforms formulas between Excel versions (legacy → modern, traditional → LAMBDA-based)
+  - **Lambda**: Generates custom LAMBDA functions for recursive, reusable, and advanced calculations (Excel 2021+/Microsoft 365 only)
+  
+  **Excel Version Targeting**: Supports three Excel version modes:
+  - `modern` (default): Excel 2021+/Microsoft 365 with LAMBDA, LET, XLOOKUP, XMATCH, FILTER, SORT, UNIQUE, SEQUENCE
+  - `legacy`: Excel 2019 and earlier with traditional formulas (VLOOKUP, INDEX/MATCH, nested IFs)
+  - `online`: Excel Online cloud-specific features and web compatibility
+  
+  **LAMBDA Functions & Turing Completeness**: When `excel_enable_lambda` is enabled (default), the tool can generate custom LAMBDA functions that make Excel Turing-complete. These enable:
+  - Custom reusable functions with named parameters
+  - Recursive calculations (factorial, Fibonacci, tree traversal)
+  - Functional programming patterns (MAP, REDUCE, FILTER operations)
+  - Complex algorithms requiring iteration and state management
+  - Modular formula libraries that can be shared across workbooks
+  
+  **Formula Complexity Control**: The `excel_max_complexity` setting controls formula sophistication:
+  - `simple`: Basic formulas for beginners (SUM, AVERAGE, IF, VLOOKUP)
+  - `moderate` (default): Nested functions with 2-3 levels (SUMIFS, INDEX/MATCH combinations)
+  - `complex`: Advanced multi-step calculations (array formulas, complex conditionals)
+  - `advanced`: Expert-level formulas with LAMBDA, LET, recursive logic, and cutting-edge features
+  
+  **Formula Comments**: When `excel_include_comments` is enabled (default), generated formulas include inline explanatory comments for each step, making complex calculations easier to understand and maintain.
+  
+  **Optimization Modes**: The `excel_optimization_level` setting balances readability vs. performance:
+  - `readability`: Clear, maintainable formulas with descriptive intermediate steps
+  - `balanced` (default): Compromise between clarity and efficiency
+  - `performance`: Optimized for calculation speed using array formulas and minimal operations
+  
+  **Provider Integration**: Works with all supported AI providers (OpenAI, Google Gemini, Ollama) using provider-agnostic execution. Settings can be configured per-provider in the Providers tab (OpenAI/Gemini/Ollama subtabs).
+  
+  **JSON Response Format**: Returns structured responses with:
+  - `formula`: The generated Excel formula
+  - `explanation`: Plain English description of how it works
+  - `complexity`: Estimated difficulty level
+  - `excel_version`: Target Excel version
+  - `alternative_approaches`: Optional suggestions for different solution methods
+  - `warnings`: Potential issues or performance considerations
+  
+  **Capability Flags**: Marked as `pro`, `requires-credentials`, `requires-model`, `consumes-tokens`, `requires-capability` (edit_posts). Integrates with agentic workflows for multi-step formula development and debugging.
+  
+  **Use Cases**:
+  - Financial modeling: Generate complex financial formulas (NPV, IRR, amortization schedules)
+  - Data analysis: Create dynamic reports with FILTER, SORT, UNIQUE, and aggregation functions
+  - Business intelligence: Build dashboard formulas with conditional formatting and data validation
+  - Scientific calculations: Develop custom mathematical functions using LAMBDA
+  - Legacy migration: Convert old Excel formulas to modern equivalents for better performance
+  - Formula debugging: Diagnose and fix errors in existing spreadsheets
+  - Training: Generate documented formulas as learning resources for Excel users
+  
+  【F:includes/tools/class-wp-mcp-ai-tool-pro-excel.php†L1-L840】
 
 ## External data and automations
 
@@ -168,6 +264,7 @@ The following tools require the **Pro addon** and external executables to be ins
 - **Publish LinkedIn Update 🌟** (`post_linkedin_update`) submits LinkedIn UGC posts on behalf of members or organisations with optional share URLs, capability filters, and structured error messages from the Marketing API. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-linkedin-update.php†L15-L160】
 - **Publish TikTok Video 🌟** (`post_tiktok_video`) uploads externally hosted video assets to TikTok’s Open API share endpoint with optional captions, returning publish identifiers and status metadata for follow-up actions. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-post-tiktok-video.php†L15-L152】
 - **Generic REST API** 🌟 (`generic_rest`) provides a flexible HTTP client for AI assistants to integrate with any REST API endpoint, including plugins without explicit integrations. Supports all standard HTTP methods (GET, POST, PUT, PATCH, DELETE), custom headers, JSON or form-data request bodies, query parameters, and multiple authentication types (bearer token, basic auth, custom header auth). Enforces security controls including `manage_options` capability requirement, URL validation, blocking of localhost and private IP addresses (configurable via filter), and response size limits. Use this tool when you need to call external APIs, third-party services, or WordPress plugin REST endpoints that do not have dedicated tools. **Pro tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-generic-rest.php†L17-L560】
+- **Query iSAMS** 🌟 (`isams_query`) provides access to iSAMS School Management System data through authenticated REST API requests. Supports querying pupils, employees, departments, houses, terms, subjects, year groups, and admission applicants with pagination controls. The tool automatically handles authentication token management with caching (55-minute TTL) and enforces read-only access with `read` capability requirement. Requires iSAMS API credentials (URL, key, secret) to be configured in plugin settings. Returns structured school data including student records, staff information, organizational structures, and academic terms. **Pro addon tool**.【F:addons/pro/includes/tools/class-wp-mcp-ai-tool-isams-query.php†L1-L400】
 
 ## JetEngine REST utilities
 
@@ -206,7 +303,7 @@ The following tools require the **Pro addon** and external executables to be ins
 - **Send Telegram Message** (`send_telegram_message`) posts formatted updates to Telegram chats or channels using bot credentials, honours capability filters, strips unsafe markup, and records request/response metadata for operational visibility.【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L16-L232】【F:includes/tools/class-wp-mcp-ai-tool-send-telegram-message.php†L234-L314】
 - **Send WhatsApp Message** (`send_whatsapp_message`) sends text messages through the WhatsApp Cloud API with preview controls, recipient sanitisation, and detailed error handling for capability-restricted operators.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php†L15-L178】
 - **Schedule Notify.lk SMS** (`schedule_notify_sms`) queues Notify.lk SMS payloads for future delivery, resolving natural-language schedule times, storing contact metadata, and handing execution off to a dedicated WP-Cron processor.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php†L15-L220】
-- **Get System Logs** (`get_system_logs`) aggregates recent WP oOS logger entries, tails the WordPress debug/PHP error logs, and scans plugin directories for readable `.log` files so administrators can diagnose issues without leaving the assistant workflow.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L353-L668】
+- **Get System Logs** (`get_system_logs`) aggregates recent NV oOS logger entries, tails the WordPress debug/PHP error logs, and scans plugin directories for readable `.log` files so administrators can diagnose issues without leaving the assistant workflow.【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L12-L352】【F:includes/tools/class-wp-mcp-ai-tool-get-system-logs.php†L353-L668】
 - **Get MCP Environment Status** (`get_environment_status`) compiles the WordPress version, PHP version, plugin defaults, assistant counts, supported dependency status, and configuration warnings so operators can triage live incidents quickly.【F:includes/tools/class-wp-mcp-ai-tool-get-environment-status.php†L12-L178】
 - **Get Update Status** (`get_update_status`) requires the `update_core` capability and returns pending WordPress core, plugin, and theme updates with versions, download URLs, and optional component-type filtering so assistants can prioritise maintenance tasks programmatically.【F:includes/tools/class-wp-mcp-ai-tool-get-update-status.php†L12-L182】
 - **Get Site Health Status** (`get_site_health`) bootstraps the WordPress Site Health API to run direct and asynchronous diagnostics, grouping results into critical, warning, and pass buckets with sanitised descriptions, actionable recommendations, and extracted follow-up links for operators who can `view_site_health_checks`.【F:includes/tools/class-wp-mcp-ai-tool-get-site-health.php†L12-L255】

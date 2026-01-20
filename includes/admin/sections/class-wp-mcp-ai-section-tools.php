@@ -43,7 +43,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Tools & Features Configuration', 'wp-mcp-ai' );
+			return __( 'Tools & Features Configuration', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -61,7 +61,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure AI-powered tools and features for your WordPress site.', 'wp-mcp-ai' );
+			return __( 'Configure AI-powered tools and features for your WordPress site.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md';
 		}
 
 		/**
@@ -72,19 +81,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		public function get_fields() {
 			// Get available WordPress capabilities for dropdown.
 			$wp_capabilities = array(
-				'read'              => __( 'Read (Subscriber)', 'wp-mcp-ai' ),
-				'edit_posts'        => __( 'Edit Posts (Contributor)', 'wp-mcp-ai' ),
-				'publish_posts'     => __( 'Publish Posts (Author)', 'wp-mcp-ai' ),
-				'edit_others_posts' => __( 'Edit Others Posts (Editor)', 'wp-mcp-ai' ),
-				'manage_options'    => __( 'Manage Options (Administrator)', 'wp-mcp-ai' ),
+				'read'              => __( 'Read (Subscriber)', 'mcp-ai-wpoos' ),
+				'edit_posts'        => __( 'Edit Posts (Contributor)', 'mcp-ai-wpoos' ),
+				'publish_posts'     => __( 'Publish Posts (Author)', 'mcp-ai-wpoos' ),
+				'edit_others_posts' => __( 'Edit Others Posts (Editor)', 'mcp-ai-wpoos' ),
+				'manage_options'    => __( 'Manage Options (Administrator)', 'mcp-ai-wpoos' ),
 			);
 
 			$fields = array(
 				// Tool Configuration.
 				'web_search_provider'                  => array(
 					'type'        => 'select',
-					'label'       => __( 'Web Search Provider', 'wp-mcp-ai' ),
-					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'wp-mcp-ai' ),
+					'label'       => __( 'Web Search Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'mcp-ai-wpoos' ),
 					'options'     => array(
 						'duckduckgo' => 'DuckDuckGo (Free, Rate Limited)',
 						'brave'      => 'Brave Search (API Key Required)',
@@ -93,22 +102,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'enable_varnish_purge'                 => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Varnish Purge Tool', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Varnish cache purging functionality', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Varnish Purge Tool', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Varnish cache purging functionality', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'group_email_capability'               => array(
 					'type'        => 'select',
-					'label'       => __( 'Send Group Email Capability', 'wp-mcp-ai' ),
-					'description' => __( 'WordPress capability required to use the Send Group Email tool. Controls who can send bulk emails through AI assistants. Higher capabilities = more restricted access.', 'wp-mcp-ai' ),
+					'label'       => __( 'Send Group Email Capability', 'mcp-ai-wpoos' ),
+					'description' => __( 'WordPress capability required to use the Send Group Email tool. Controls who can send bulk emails through AI assistants. Higher capabilities = more restricted access.', 'mcp-ai-wpoos' ),
 					'options'     => $wp_capabilities,
 					'default'     => 'publish_posts',
 				),
 				'group_email_max_recipients'           => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Email Recipients', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum number of recipients allowed in a single group email. Higher limits increase the risk of spam. Consider your server\'s email sending limits.', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Email Recipients', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of recipients allowed in a single group email. Higher limits increase the risk of spam. Consider your server\'s email sending limits.', 'mcp-ai-wpoos' ),
 					'default'     => 100,
 					'min'         => 1,
 					'max'         => 1000,
@@ -119,15 +128,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// External Tools fields.
 				'gmail_client_id'                      => array(
 					'type'         => 'text',
-					'label'        => __( 'Gmail OAuth Client ID', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'wp-mcp-ai' ),
+					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
 				'gmail_client_secret'                  => array(
 					'type'         => 'password',
-					'label'        => __( 'Gmail OAuth Client Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai' ),
+					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
@@ -143,10 +152,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'brave_search_api_key'                 => array(
 					'type'         => 'password',
-					'label'        => __( 'Brave Search API Key', 'wp-mcp-ai' ),
+					'label'        => __( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: URL to Brave Search API */
-						__( 'API key for Brave Search integration. Get your API key from %s.', 'wp-mcp-ai' ),
+						__( 'API key for Brave Search integration. Get your API key from %s.', 'mcp-ai-wpoos' ),
 						'<a href="https://brave.com/search/api/" target="_blank">Brave Search API</a>'
 					),
 					'placeholder'  => '',
@@ -154,84 +163,84 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'cloudflare_api_token'                 => array(
 					'type'         => 'password',
-					'label'        => __( 'Cloudflare API Token', 'wp-mcp-ai' ),
-					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'wp-mcp-ai' ),
+					'label'        => __( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'cloudflare_zone_id'                   => array(
 					'type'        => 'text',
-					'label'       => __( 'Cloudflare Zone ID', 'wp-mcp-ai' ),
-					'description' => __( 'Your Cloudflare zone ID for cache management.', 'wp-mcp-ai' ),
+					'label'       => __( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
+					'description' => __( 'Your Cloudflare zone ID for cache management.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
 				'cloudways_api_key'                    => array(
 					'type'         => 'password',
-					'label'        => __( 'Cloudways API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for Cloudways hosting integration.', 'wp-mcp-ai' ),
+					'label'        => __( 'Cloudways API Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API key for Cloudways hosting integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'cloudways_email'                      => array(
 					'type'        => 'email',
-					'label'       => __( 'Cloudways Account Email', 'wp-mcp-ai' ),
-					'description' => __( 'Email address associated with your Cloudways account.', 'wp-mcp-ai' ),
+					'label'       => __( 'Cloudways Account Email', 'mcp-ai-wpoos' ),
+					'description' => __( 'Email address associated with your Cloudways account.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'you@example.com',
 				),
 				'mailjet_api_key'                      => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for Mailjet email service integration.', 'wp-mcp-ai' ),
+					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API key for Mailjet email service integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'mailjet_api_secret'                   => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet API Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'API secret for Mailjet email service.', 'wp-mcp-ai' ),
+					'label'        => __( 'Mailjet API Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API secret for Mailjet email service.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'quickbooks_api_key'                   => array(
 					'type'         => 'password',
-					'label'        => __( 'QuickBooks API Key', 'wp-mcp-ai' ),
-					'description'  => __( 'API key for QuickBooks integration.', 'wp-mcp-ai' ),
+					'label'        => __( 'QuickBooks API Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'API key for QuickBooks integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'quickbooks_client_id'                 => array(
 					'type'        => 'text',
-					'label'       => __( 'QuickBooks Client ID', 'wp-mcp-ai' ),
-					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'label'       => __( 'QuickBooks Client ID', 'mcp-ai-wpoos' ),
+					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
 				'quickbooks_client_secret'             => array(
 					'type'         => 'password',
-					'label'        => __( 'QuickBooks Client Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'wp-mcp-ai' ),
+					'label'        => __( 'QuickBooks Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
 				'google_analytics_property_id'         => array(
 					'type'        => 'text',
-					'label'       => __( 'Google Analytics Property ID', 'wp-mcp-ai' ),
-					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'wp-mcp-ai' ),
+					'label'       => __( 'Google Analytics Property ID', 'mcp-ai-wpoos' ),
+					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'mcp-ai-wpoos' ),
 					'placeholder' => '123456789',
 				),
 				'google_analytics_credentials'         => array(
 					'type'        => 'textarea',
-					'label'       => __( 'Google Analytics Service Account JSON', 'wp-mcp-ai' ),
-					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'wp-mcp-ai' ),
+					'label'       => __( 'Google Analytics Service Account JSON', 'mcp-ai-wpoos' ),
+					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'mcp-ai-wpoos' ),
 					'placeholder' => '{"type": "service_account", ...}',
 				),
 
 				// remove.bg API.
 				'removebg_api_key'                     => array(
 					'type'         => 'password',
-					'label'        => __( 'remove.bg API Key', 'wp-mcp-ai' ),
+					'label'        => __( 'remove.bg API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: URL to remove.bg API */
-						__( 'API key for remove.bg background removal service. Get your API key from %s. Note: A free tier with Python rembg is also available without an API key.', 'wp-mcp-ai' ),
+						__( 'API key for remove.bg background removal service. Get your API key from %s. Note: A free tier with Python rembg is also available without an API key.', 'mcp-ai-wpoos' ),
 						'<a href="https://www.remove.bg/api" target="_blank">remove.bg API</a>'
 					),
 					'placeholder'  => '',
@@ -241,10 +250,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// GitHub Integration fields.
 				'github_client_id'                     => array(
 					'type'         => 'text',
-					'label'        => __( 'GitHub OAuth Client ID', 'wp-mcp-ai' ),
+					'label'        => __( 'GitHub OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: URL to GitHub Developer Settings */
-						__( 'OAuth 2.0 Client ID from GitHub Developer Settings. Create an OAuth app at %s.', 'wp-mcp-ai' ),
+						__( 'OAuth 2.0 Client ID from GitHub Developer Settings. Create an OAuth app at %s.', 'mcp-ai-wpoos' ),
 						'<a href="https://github.com/settings/developers" target="_blank">GitHub Developer Settings</a>'
 					),
 					'placeholder'  => '',
@@ -252,8 +261,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'github_client_secret'                 => array(
 					'type'         => 'password',
-					'label'        => __( 'GitHub OAuth Client Secret', 'wp-mcp-ai' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'wp-mcp-ai' ),
+					'label'        => __( 'GitHub OAuth Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
@@ -271,132 +280,191 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// Plugins Integration fields.
 				'enable_jetengine_cct'                 => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable JetEngine CCT Storage', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'wp-mcp-ai' ),
-					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable JetEngine CCT Storage', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_jetengine_tools'               => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable JetEngine AI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable JetEngine AI tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable JetEngine AI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable JetEngine AI tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_woocommerce_tools'             => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable WooCommerce AI Tools', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'wp-mcp-ai' ),
-					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable WooCommerce AI Tools', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'enable_elementor_widgets'             => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Elementor AI Widgets', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable Elementor AI widgets', 'wp-mcp-ai' ),
-					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Elementor AI Widgets', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Elementor AI widgets', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 
 				// Features fields.
 				'enable_mesh'                          => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Mesh Computing', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable distributed computing features', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_federation'                    => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Federation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable federated discovery', 'wp-mcp-ai' ),
-					'description'    => __( 'Allows this instance to be discovered by and connect to other NV oOS instances.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows this instance to be discovered by and connect to other NV oOS instances.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_quiz_system'                   => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Quiz System', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Pro Version only)', 'wp-mcp-ai' ),
-					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Quiz System', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_media_toolkit'                 => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Media Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable media template management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Media Toolkit for creating and managing reusable templates for the Graphic Editor Plus tool. Templates allow you to save operation configurations (logo positions, resize settings, AI prompts) and apply them to multiple images via AI assistants or batch operations. Requires upload_files capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_document_generation_toolkit'   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Document Generation Toolkit with 3 tools for creating professional documents: pro_pdf (PDF generation), pro_word (Word documents with templates), and pro_excel_document (Excel spreadsheets with formulas). AI generates content from natural language descriptions. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs) installed on the server. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable AI Media Library', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically analyze images on upload', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable AI Media Library', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically analyze images on upload', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'ai_media_generate_alt_text'           => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Generate Alt Text', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'wp-mcp-ai' ),
-					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'wp-mcp-ai' ),
+					'label'          => __( 'Generate Alt Text', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'ai_media_generate_caption'            => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Generate Captions', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically generate image captions', 'wp-mcp-ai' ),
-					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'wp-mcp-ai' ),
+					'label'          => __( 'Generate Captions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically generate image captions', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 				'ai_media_overwrite_existing'          => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Overwrite Existing', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Replace existing alt text and captions', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, AI will overwrite any existing alt text or captions. When disabled, AI will only fill in missing metadata.', 'wp-mcp-ai' ),
+					'label'          => __( 'Overwrite Existing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Replace existing alt text and captions', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, AI will overwrite any existing alt text or captions. When disabled, AI will only fill in missing metadata.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 
 				// Comments fields.
 				'enable_ai_comments_moderation'        => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable AI Comments Moderation', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable AI Comments Moderation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'ai_comments_sensitivity'              => array(
 					'type'        => 'select',
-					'label'       => __( 'Moderation Sensitivity', 'wp-mcp-ai' ),
-					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'wp-mcp-ai' ),
+					'label'       => __( 'Moderation Sensitivity', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'low'    => __( 'Low (Permissive)', 'wp-mcp-ai' ),
-						'medium' => __( 'Medium (Balanced)', 'wp-mcp-ai' ),
-						'high'   => __( 'High (Strict)', 'wp-mcp-ai' ),
+						'low'    => __( 'Low (Permissive)', 'mcp-ai-wpoos' ),
+						'medium' => __( 'Medium (Balanced)', 'mcp-ai-wpoos' ),
+						'high'   => __( 'High (Strict)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => 'medium',
 				),
 				'ai_comments_min_confidence'           => array(
 					'type'        => 'select',
-					'label'       => __( 'Minimum Confidence Level', 'wp-mcp-ai' ),
-					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'wp-mcp-ai' ),
+					'label'       => __( 'Minimum Confidence Level', 'mcp-ai-wpoos' ),
+					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'mcp-ai-wpoos' ),
 					'options'     => array(
-						'0.5' => __( '50% (Trust AI more)', 'wp-mcp-ai' ),
-						'0.6' => __( '60%', 'wp-mcp-ai' ),
-						'0.7' => __( '70% (Balanced - Recommended)', 'wp-mcp-ai' ),
-						'0.8' => __( '80%', 'wp-mcp-ai' ),
-						'0.9' => __( '90% (Very conservative)', 'wp-mcp-ai' ),
+						'0.5' => __( '50% (Trust AI more)', 'mcp-ai-wpoos' ),
+						'0.6' => __( '60%', 'mcp-ai-wpoos' ),
+						'0.7' => __( '70% (Balanced - Recommended)', 'mcp-ai-wpoos' ),
+						'0.8' => __( '80%', 'mcp-ai-wpoos' ),
+						'0.9' => __( '90% (Very conservative)', 'mcp-ai-wpoos' ),
 					),
 					'default'     => '0.7',
 				),
 				'ai_comments_auto_hold_low_confidence' => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Hold Low Confidence Comments', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, comments that AI analyzes with low confidence will be held for moderation instead of being published or marked as spam.', 'wp-mcp-ai' ),
+					'label'          => __( 'Hold Low Confidence Comments', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, comments that AI analyzes with low confidence will be held for moderation instead of being published or marked as spam.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
 
 				// Project Management fields.
 				'enable_project_management'            => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Project Management', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable AI-powered project, task, and event management (Pro Version only)', 'wp-mcp-ai' ),
-					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 13 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Project Management', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered project, task, and event management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered project, task, and event management. Provides 13 tools for creating, updating, listing, and deleting projects, tasks, and events. Includes automatic JetEngine CCT synchronization when available. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// AI CPT Management Interface.
+				'enable_ai_cpt_management'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI CPT Management', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Add AI assistant to WordPress post/page/product/term edit screens (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI assistant integration on WordPress custom post type edit screens (posts, pages, products, terms). Adds an AI metabox that allows you to use AI tools to help create, edit, and manage content directly from the WordPress admin interface. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Places Management fields.
+				'enable_places_management'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Places Management', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered places and location management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered places management for attractions, businesses, and locations. Provides 6+ tools for creating, searching, listing, and managing places with Google Maps integration. Includes geocoding, radius search, and place data enrichment. Enhances all geospatial and mapping tools. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// ECA Management fields.
+				'enable_eca_management'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable ECA Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Extra-Curricular Activities (ECA) management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered Extra-Curricular Activities management for schools. Provides tools for creating and managing ECAs (clubs, societies, sports), managing student enrollments, viewing schedules, and syncing with iSAMS. Includes 5+ tools for comprehensive ECA administration. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Health and Wellness Management fields.
+				'enable_health_wellness_management'    => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Health & Wellness Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Health and Wellness management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered health and wellness management for individuals, families, and pets. Provides 30+ tools for managing members, medical records, policies, checkups, prescriptions, and allergies. Includes secure health data storage with proper access controls. Always ensure HIPAA/GDPR compliance for healthcare deployments. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Cloudways Pro Toolkit fields.
+				'enable_cloudways_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Cloudways Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Cloudways server and application management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered Cloudways hosting management for servers and applications. Provides 58+ tools for server management, application deployment, monitoring, security, backups, and performance optimization. Includes server operations, database management, SSL certificate management, and deployment automation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 			);
@@ -406,44 +474,44 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			$fields['enable_site_creator']                     = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Enable Site Creator', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Allow AI to create and configure sites', 'wp-mcp-ai' ),
-				'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'wp-mcp-ai' ),
+				'label'          => __( 'Enable Site Creator', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Allow AI to create and configure sites', 'mcp-ai-wpoos' ),
+				'description'    => __( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content. This feature requires manage_options capability.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 			$fields['site_creator_allow_plugin_install']       = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Allow Plugin Installation', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+				'label'          => __( 'Allow Plugin Installation', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Enable automatic plugin installation from WordPress.org', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 			$fields['site_creator_allow_theme_install']        = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Allow Theme Installation', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'wp-mcp-ai' ),
+				'label'          => __( 'Allow Theme Installation', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Enable automatic theme installation from WordPress.org', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 			$fields['site_creator_allow_option_updates']       = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Allow Option Updates', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable automatic WordPress option updates', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'wp-mcp-ai' ),
+				'label'          => __( 'Allow Option Updates', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Enable automatic WordPress option updates', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 			$fields['site_creator_allow_wp_cli_tools']         = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Allow WP-CLI Tools', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'wp-mcp-ai' ),
+				'label'          => __( 'Allow WP-CLI Tools', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Enable WP-CLI inspection and execution tools', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 			$fields['site_creator_allow_elementor_kit_import'] = array(
 				'type'           => 'checkbox',
-				'label'          => __( 'Allow Elementor Kit Import', 'wp-mcp-ai' ),
-				'checkbox_label' => __( 'Enable Elementor template kit import', 'wp-mcp-ai' ),
-				'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'wp-mcp-ai' ),
+				'label'          => __( 'Allow Elementor Kit Import', 'mcp-ai-wpoos' ),
+				'checkbox_label' => __( 'Enable Elementor template kit import', 'mcp-ai-wpoos' ),
+				'description'    => __( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'mcp-ai-wpoos' ),
 				'default'        => false,
 			);
 
@@ -459,25 +527,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$subtab_groups = array(
 				'tools_manager'  => array(
 					'id'     => 'tools_manager',
-					'label'  => __( 'Tools Manager', 'wp-mcp-ai' ),
+					'label'  => __( 'Tools Manager', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
+				'features'       => array(
+					'id'     => 'features',
+					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-tools',
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit' ),
+				),
 				'configuration'  => array(
 					'id'     => 'configuration',
-					'label'  => __( 'Configuration', 'wp-mcp-ai' ),
+					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
 				),
 				'connections'    => array(
 					'id'     => 'connections',
-					'label'  => __( 'Connections', 'wp-mcp-ai' ),
+					'label'  => __( 'Connections', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-links',
 					'fields' => array(), // Custom rendering via Integrations section.
 				),
 				'external_tools' => array(
 					'id'     => 'external_tools',
-					'label'  => __( 'External Tools', 'wp-mcp-ai' ),
+					'label'  => __( 'GitHub OAuth', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-site-alt3',
 					'fields' => array(
 						'github_client_id',
@@ -486,7 +560,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 				'plugins'        => array(
 					'id'     => 'plugins',
-					'label'  => __( 'Plugins', 'wp-mcp-ai' ),
+					'label'  => __( 'Plugins', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-plugins',
 					'fields' => array(
 						'enable_jetengine_cct',
@@ -495,21 +569,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_elementor_widgets',
 					),
 				),
-				'features'       => array(
-					'id'     => 'features',
-					'label'  => __( 'Features', 'wp-mcp-ai' ),
-					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_project_management' ),
-				),
 				'media'          => array(
 					'id'     => 'media',
-					'label'  => __( 'AI Media Library', 'wp-mcp-ai' ),
+					'label'  => __( 'AI Media Library', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'enable_ai_media_library', 'ai_media_generate_alt_text', 'ai_media_generate_caption', 'ai_media_overwrite_existing' ),
 				),
 				'comments'       => array(
 					'id'     => 'comments',
-					'label'  => __( 'AI Comments', 'wp-mcp-ai' ),
+					'label'  => __( 'AI Comments', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-comments',
 					'fields' => array( 'enable_ai_comments_moderation', 'ai_comments_sensitivity', 'ai_comments_min_confidence', 'ai_comments_auto_hold_low_confidence' ),
 				),
@@ -518,7 +586,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			// Site Creator is a Pro feature - always show tab.
 			$subtab_groups['site_creator'] = array(
 				'id'     => 'site_creator',
-				'label'  => __( 'Site Creator', 'wp-mcp-ai' ),
+				'label'  => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'icon'   => 'dashicons-admin-site',
 				'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
 			);
@@ -617,7 +685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
-		 * Render External Tools footer content.
+		 * Render GitHub OAuth footer content.
 		 */
 		private function render_external_tools_footer() {
 			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
@@ -630,18 +698,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			);
 			?>
 			<tr>
-				<th scope="row"><?php esc_html_e( 'GitHub Connection', 'wp-mcp-ai' ); ?></th>
+				<th scope="row"><?php esc_html_e( 'GitHub Connection', 'mcp-ai-wpoos' ); ?></th>
 				<td>
 					<?php if ( $github_connected ) : ?>
 						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
 							<p style="margin: 0; color: #155724;">
 								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-								<strong><?php esc_html_e( 'Connected to GitHub', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'Connected to GitHub', 'mcp-ai-wpoos' ); ?></strong>
 								<?php if ( $github_username ) : ?>
 									<?php
 									printf(
 										/* translators: %s: GitHub username */
-										esc_html__( 'as %s', 'wp-mcp-ai' ),
+										esc_html__( 'as %s', 'mcp-ai-wpoos' ),
 										'<code>' . esc_html( $github_username ) . '</code>'
 									);
 									?>
@@ -650,7 +718,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</div>
 						<p>
 							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
-								<?php esc_html_e( 'Reconnect GitHub Account', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Reconnect GitHub Account', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
 						<p class="description">
@@ -658,7 +726,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							echo wp_kses_post(
 								__(
 									'Your GitHub account is connected. You can now use GitHub integration tools to manage repositories, create Codespaces, and develop custom tools.',
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								)
 							);
 							?>
@@ -667,12 +735,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
 							<p style="margin: 0; color: #856404;">
 								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
-								<strong><?php esc_html_e( 'GitHub Not Connected', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'GitHub Not Connected', 'mcp-ai-wpoos' ); ?></strong>
 							</p>
 						</div>
 						<p>
 							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
-								<?php esc_html_e( 'Connect GitHub Account', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Connect GitHub Account', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
 						<p class="description">
@@ -680,22 +748,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							echo wp_kses_post(
 								__(
 									'Click the button above to authorize WP MCP AI to access your GitHub account. You will be redirected to GitHub to grant permissions.',
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								)
 							);
 							?>
 						</p>
 						<p class="description">
-							<strong><?php esc_html_e( 'Required Permissions:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Required Permissions:', 'mcp-ai-wpoos' ); ?></strong>
 						</p>
 						<ul style="list-style: disc; margin-left: 20px;">
 							<?php
 							// Get scopes from OAuth handler constant.
 							$scopes             = WP_MCP_AI_Github_OAuth_Handler::GITHUB_OAUTH_SCOPES;
 							$scope_descriptions = array(
-								'repo'      => __( 'Full control of private repositories', 'wp-mcp-ai' ),
-								'user'      => __( 'Read user profile data', 'wp-mcp-ai' ),
-								'codespace' => __( 'Manage GitHub Codespaces', 'wp-mcp-ai' ),
+								'repo'      => __( 'Full control of private repositories', 'mcp-ai-wpoos' ),
+								'user'      => __( 'Read user profile data', 'mcp-ai-wpoos' ),
+								'codespace' => __( 'Manage GitHub Codespaces', 'mcp-ai-wpoos' ),
 							);
 							foreach ( explode( ',', $scopes ) as $scope ) {
 								$scope = trim( $scope );
@@ -709,7 +777,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
 							<p style="margin: 0; color: #721c24;">
 								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-								<strong><?php esc_html_e( 'GitHub OAuth Credentials Required', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'GitHub OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
 							</p>
 						</div>
 						<p class="description">
@@ -717,37 +785,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							echo wp_kses_post(
 								__(
 									'To connect your GitHub account, first configure your GitHub OAuth Client ID and Client Secret in the fields above, then save your settings.',
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								)
 							);
 							?>
 						</p>
 						<p class="description">
-							<strong><?php esc_html_e( 'Setup Instructions:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
 						</p>
 						<ol style="margin-left: 20px;">
 							<li>
 								<?php
 								printf(
 									/* translators: %s: URL to GitHub Developer Settings */
-									wp_kses_post( __( 'Go to <a href="%s" target="_blank">GitHub Developer Settings</a>', 'wp-mcp-ai' ) ),
+									wp_kses_post( __( 'Go to <a href="%s" target="_blank">GitHub Developer Settings</a>', 'mcp-ai-wpoos' ) ),
 									esc_url( 'https://github.com/settings/developers' )
 								);
 								?>
 							</li>
-							<li><?php esc_html_e( 'Click "New OAuth App"', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Click "New OAuth App"', 'mcp-ai-wpoos' ); ?></li>
 							<li>
 								<?php
 								printf(
 									/* translators: %s: Callback URL */
-									esc_html__( 'Set Authorization callback URL to: %s', 'wp-mcp-ai' ),
+									esc_html__( 'Set Authorization callback URL to: %s', 'mcp-ai-wpoos' ),
 									'<br><code>' . esc_html( admin_url( 'admin-post.php?action=wp_mcp_ai_github_oauth_callback' ) ) . '</code>'
 								);
 								?>
 							</li>
-							<li><?php esc_html_e( 'Copy the Client ID and Client Secret to the fields above', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( 'Save your settings', 'wp-mcp-ai' ); ?></li>
-							<li><?php esc_html_e( 'Click the "Connect GitHub Account" button that will appear', 'wp-mcp-ai' ); ?></li>
+							<li><?php esc_html_e( 'Copy the Client ID and Client Secret to the fields above', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Save your settings', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click the "Connect GitHub Account" button that will appear', 'mcp-ai-wpoos' ); ?></li>
 						</ol>
 					<?php endif; ?>
 				</td>
@@ -756,23 +824,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'About External Tools:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'About GitHub OAuth:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
-								'External tools are third-party service integrations that extend AI capabilities beyond WordPress. Configure API credentials here to enable tools that interact with external platforms and services.',
-								'wp-mcp-ai'
+								'GitHub OAuth integration allows AI assistants to interact with your GitHub repositories, create Codespaces, and develop custom tools. Configure your OAuth credentials to enable GitHub integration.',
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
 					</p>
 					<p class="description">
-						<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Security Note:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'API credentials are stored securely in your WordPress database. Only users with manage_options capability can view or modify these settings. Never share API keys publicly or commit them to version control.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -794,31 +862,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'Plugin Integration Status:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Plugin Integration Status:', 'mcp-ai-wpoos' ); ?></strong>
 					</p>
 					<ul style="list-style: disc; margin-left: 20px;">
 						<li>
-							<strong><?php esc_html_e( 'JetEngine:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'JetEngine:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php if ( $jetengine_active ) : ?>
-								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
-								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'WooCommerce:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'WooCommerce:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php if ( $woocommerce_active ) : ?>
-								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
-								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'Elementor:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Elementor:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php if ( $elementor_active ) : ?>
-								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php else : ?>
-								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'wp-mcp-ai' ); ?></span>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</li>
 					</ul>
@@ -827,7 +895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						echo wp_kses_post(
 							__(
 								'Tools and features for inactive plugins will be automatically disabled. Install and activate the corresponding plugins to enable their AI integrations.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -846,12 +914,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'This feature requires a vision-capable AI provider (OpenAI GPT-4o or Gemini) to be configured in the Providers tab. Image analysis will use the default provider specified in General Settings.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -861,7 +929,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						echo wp_kses_post(
 							__(
 								'Each image upload will consume AI tokens. Consider the API costs when enabling this feature for high-volume sites.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -880,23 +948,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row"></th>
 				<td>
 					<p class="description">
-						<strong><?php esc_html_e( 'How it works:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'How it works:', 'mcp-ai-wpoos' ); ?></strong>
 					</p>
 					<ul style="list-style: disc; margin-left: 20px;">
-						<li><?php esc_html_e( 'AI analyzes comment text, author information, and context', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Detects spam indicators: promotional content, suspicious links, generic comments', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Detects toxic content: hate speech, harassment, threats, offensive language', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Provides a recommendation: approve, hold for moderation, or mark as spam', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'Comments from logged-in moderators are never automatically flagged', 'wp-mcp-ai' ); ?></li>
-						<li><?php esc_html_e( 'AI analysis is stored as comment metadata for review by moderators', 'wp-mcp-ai' ); ?></li>
+						<li><?php esc_html_e( 'AI analyzes comment text, author information, and context', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Detects spam indicators: promotional content, suspicious links, generic comments', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Detects toxic content: hate speech, harassment, threats, offensive language', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Provides a recommendation: approve, hold for moderation, or mark as spam', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Comments from logged-in moderators are never automatically flagged', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'AI analysis is stored as comment metadata for review by moderators', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
 					<p class="description">
-						<strong><?php esc_html_e( 'Note:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php
 						echo wp_kses_post(
 							__(
 								'This feature requires an AI provider (OpenAI or Gemini) to be configured. Each comment will consume a small amount of AI tokens.',
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							)
 						);
 						?>
@@ -918,24 +986,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<td>
 						<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 10px 0;">
 							<p style="margin: 0 0 10px 0; font-size: 14px;">
-								<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+								<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'mcp-ai-wpoos' ); ?></strong>
 							</p>
 							<p style="margin: 0 0 10px 0;">
 								<?php
 								echo wp_kses_post(
 									__(
 										'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
-										'wp-mcp-ai'
+										'mcp-ai-wpoos'
 									)
 								);
 								?>
 							</p>
 							<p style="margin: 0;">
 								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-									<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 								</a>
 								<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-									<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Learn More About Pro Tools', 'mcp-ai-wpoos' ); ?>
 								</a>
 							</p>
 						</div>
@@ -946,23 +1014,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<th scope="row"></th>
 					<td>
 						<p class="description">
-							<strong><?php esc_html_e( 'Security Note:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Security Note:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php
 							echo wp_kses_post(
 								__(
 									'Site creator tools require administrative capabilities (manage_options, install_plugins, install_themes). Only users with these capabilities can execute site creator operations. All plugins and themes are installed exclusively from the official WordPress.org repository.',
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								)
 							);
 							?>
 						</p>
 						<p class="description">
-							<strong><?php esc_html_e( 'Performance Consideration:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Performance Consideration:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php
 							echo wp_kses_post(
 								__(
 									'Site creation operations (especially plugin/theme installation) can take several minutes to complete and may temporarily impact site performance. These operations are marked as long-running and should be executed with appropriate timeouts.',
-									'wp-mcp-ai'
+									'mcp-ai-wpoos'
 								)
 							);
 							?>
@@ -1001,7 +1069,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<th scope="row" colspan="2">
 					<h3 style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccd0d4;">
 						<span class="dashicons dashicons-layout" style="margin-right: 5px;"></span>
-						<?php esc_html_e( 'Import Elementor Template Kit', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Import Elementor Template Kit', 'mcp-ai-wpoos' ); ?>
 					</h3>
 				</th>
 			</tr>
@@ -1013,7 +1081,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<div class="notice notice-warning inline" style="margin: 0;">
 							<p>
 								<span class="dashicons dashicons-warning" style="color: #dba617;"></span>
-								<?php esc_html_e( 'Elementor must be installed and activated to use this feature.', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Elementor must be installed and activated to use this feature.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						</div>
 					</td>
@@ -1033,7 +1101,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<th scope="row"></th>
 					<td>
 						<p class="description" style="margin-bottom: 15px;">
-							<?php esc_html_e( 'Import an Elementor template kit ZIP file from your Media Library to quickly create pages with pre-designed layouts.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Import an Elementor template kit ZIP file from your Media Library to quickly create pages with pre-designed layouts.', 'mcp-ai-wpoos' ); ?>
 						</p>
 
 						<form method="post" id="wp-mcp-ai-elementor-kit-form">
@@ -1044,19 +1112,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-kit-attachment">
-											<?php esc_html_e( 'Template Kit ZIP', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Template Kit ZIP', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<div style="display: flex; align-items: center; gap: 10px;">
 											<input type="hidden" name="attachment_id" id="wp-mcp-ai-kit-attachment-id" value="">
-											<input type="text" id="wp-mcp-ai-kit-attachment" class="regular-text" readonly placeholder="<?php esc_attr_e( 'No file selected', 'wp-mcp-ai' ); ?>">
+											<input type="text" id="wp-mcp-ai-kit-attachment" class="regular-text" readonly placeholder="<?php esc_attr_e( 'No file selected', 'mcp-ai-wpoos' ); ?>">
 											<button type="button" class="button" id="wp-mcp-ai-select-kit">
-												<?php esc_html_e( 'Select File', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Select File', 'mcp-ai-wpoos' ); ?>
 											</button>
 										</div>
 										<p class="description">
-											<?php esc_html_e( 'Select a ZIP file containing an Elementor template kit from your Media Library.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Select a ZIP file containing an Elementor template kit from your Media Library.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -1064,7 +1132,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-max-pages">
-											<?php esc_html_e( 'Max Pages', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Max Pages', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
@@ -1076,7 +1144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<option value="5" selected>5</option>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Maximum number of pages to create from the template kit.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Maximum number of pages to create from the template kit.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -1084,30 +1152,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<tr>
 									<th scope="row">
 										<label for="wp-mcp-ai-page-status">
-											<?php esc_html_e( 'Page Status', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Page Status', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</th>
 									<td>
 										<select name="page_status" id="wp-mcp-ai-page-status">
-											<option value="draft" selected><?php esc_html_e( 'Draft', 'wp-mcp-ai' ); ?></option>
-											<option value="publish"><?php esc_html_e( 'Published', 'wp-mcp-ai' ); ?></option>
+											<option value="draft" selected><?php esc_html_e( 'Draft', 'mcp-ai-wpoos' ); ?></option>
+											<option value="publish"><?php esc_html_e( 'Published', 'mcp-ai-wpoos' ); ?></option>
 										</select>
 										<p class="description">
-											<?php esc_html_e( 'Status for created pages.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Status for created pages.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
 
 								<tr>
-									<th scope="row"><?php esc_html_e( 'Options', 'wp-mcp-ai' ); ?></th>
+									<th scope="row"><?php esc_html_e( 'Options', 'mcp-ai-wpoos' ); ?></th>
 									<td>
 										<label style="display: block; margin-bottom: 8px;">
 											<input type="checkbox" name="overwrite_existing" value="1">
-											<?php esc_html_e( 'Overwrite existing pages with the same title', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Overwrite existing pages with the same title', 'mcp-ai-wpoos' ); ?>
 										</label>
 										<label style="display: block;">
 											<input type="checkbox" name="set_front_page" value="1">
-											<?php esc_html_e( 'Set Home page as static front page', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Set Home page as static front page', 'mcp-ai-wpoos' ); ?>
 										</label>
 									</td>
 								</tr>
@@ -1118,15 +1186,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 										<div style="display: flex; gap: 10px; margin-top: 10px;">
 											<button type="submit" name="action_type" value="test" class="button button-secondary">
 												<span class="dashicons dashicons-visibility" style="margin-top: 3px;"></span>
-												<?php esc_html_e( 'Test Import', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Test Import', 'mcp-ai-wpoos' ); ?>
 											</button>
 											<button type="submit" name="action_type" value="import" class="button button-primary">
 												<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
-												<?php esc_html_e( 'Run Import', 'wp-mcp-ai' ); ?>
+												<?php esc_html_e( 'Run Import', 'mcp-ai-wpoos' ); ?>
 											</button>
 										</div>
 										<p class="description" style="margin-top: 10px;">
-											<?php esc_html_e( 'Test Import simulates the operation without creating pages. Run Import creates the actual pages.', 'wp-mcp-ai' ); ?>
+											<?php esc_html_e( 'Test Import simulates the operation without creating pages. Run Import creates the actual pages.', 'mcp-ai-wpoos' ); ?>
 										</p>
 									</td>
 								</tr>
@@ -1151,8 +1219,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				?>
 				<div class="notice notice-error inline" style="margin: 0 0 15px;">
 					<p>
-						<strong><?php esc_html_e( 'Import Failed:', 'wp-mcp-ai' ); ?></strong>
-						<?php echo esc_html( isset( $result['message'] ) ? $result['message'] : __( 'Unknown error occurred.', 'wp-mcp-ai' ) ); ?>
+						<strong><?php esc_html_e( 'Import Failed:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php echo esc_html( isset( $result['message'] ) ? $result['message'] : __( 'Unknown error occurred.', 'mcp-ai-wpoos' ) ); ?>
 					</p>
 				</div>
 				<?php
@@ -1167,9 +1235,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<strong>
 						<?php
 						if ( $is_dry_run ) {
-							esc_html_e( 'Test Import Complete:', 'wp-mcp-ai' );
+							esc_html_e( 'Test Import Complete:', 'mcp-ai-wpoos' );
 						} else {
-							esc_html_e( 'Import Complete:', 'wp-mcp-ai' );
+							esc_html_e( 'Import Complete:', 'mcp-ai-wpoos' );
 						}
 						?>
 					</strong>
@@ -1179,15 +1247,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<?php if ( ! empty( $data['pages_created'] ) || ! empty( $data['pages_updated'] ) ) : ?>
 					<div style="margin-top: 10px;">
 						<?php if ( ! empty( $data['pages_created'] ) ) : ?>
-							<p><strong><?php esc_html_e( 'Pages Created:', 'wp-mcp-ai' ); ?></strong></p>
+							<p><strong><?php esc_html_e( 'Pages Created:', 'mcp-ai-wpoos' ); ?></strong></p>
 							<ul style="margin-left: 20px; list-style: disc;">
 								<?php foreach ( $data['pages_created'] as $page ) : ?>
 									<li>
 										<?php echo esc_html( $page['title'] ); ?>
 										<?php if ( ! $is_dry_run && ! empty( $page['edit_link'] ) ) : ?>
-											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?></a>
+											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></a>
 											<?php if ( ! empty( $page['permalink'] ) ) : ?>
-												| <a href="<?php echo esc_url( $page['permalink'] ); ?>" target="_blank"><?php esc_html_e( 'View', 'wp-mcp-ai' ); ?></a>
+												| <a href="<?php echo esc_url( $page['permalink'] ); ?>" target="_blank"><?php esc_html_e( 'View', 'mcp-ai-wpoos' ); ?></a>
 											<?php endif; ?>
 										<?php endif; ?>
 									</li>
@@ -1196,13 +1264,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<?php endif; ?>
 
 						<?php if ( ! empty( $data['pages_updated'] ) ) : ?>
-							<p><strong><?php esc_html_e( 'Pages Updated:', 'wp-mcp-ai' ); ?></strong></p>
+							<p><strong><?php esc_html_e( 'Pages Updated:', 'mcp-ai-wpoos' ); ?></strong></p>
 							<ul style="margin-left: 20px; list-style: disc;">
 								<?php foreach ( $data['pages_updated'] as $page ) : ?>
 									<li>
 										<?php echo esc_html( $page['title'] ); ?>
 										<?php if ( ! $is_dry_run && ! empty( $page['edit_link'] ) ) : ?>
-											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?></a>
+											- <a href="<?php echo esc_url( $page['edit_link'] ); ?>" target="_blank"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?></a>
 										<?php endif; ?>
 									</li>
 								<?php endforeach; ?>
@@ -1213,7 +1281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 				<?php if ( ! empty( $data['pages_skipped'] ) ) : ?>
 					<div style="margin-top: 10px;">
-						<p><strong><?php esc_html_e( 'Pages Skipped:', 'wp-mcp-ai' ); ?></strong></p>
+						<p><strong><?php esc_html_e( 'Pages Skipped:', 'mcp-ai-wpoos' ); ?></strong></p>
 						<ul style="margin-left: 20px; list-style: disc;">
 							<?php foreach ( $data['pages_skipped'] as $page ) : ?>
 								<li>
@@ -1229,7 +1297,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 				<?php if ( ! empty( $data['errors'] ) ) : ?>
 					<div style="margin-top: 10px;">
-						<p><strong style="color: #d63638;"><?php esc_html_e( 'Errors:', 'wp-mcp-ai' ); ?></strong></p>
+						<p><strong style="color: #d63638;"><?php esc_html_e( 'Errors:', 'mcp-ai-wpoos' ); ?></strong></p>
 						<ul style="margin-left: 20px; list-style: disc; color: #d63638;">
 							<?php foreach ( $data['errors'] as $error ) : ?>
 								<li>
@@ -1249,7 +1317,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<?php if ( ! empty( $data['front_page'] ) ) : ?>
 					<p style="margin-top: 10px;">
 						<span class="dashicons dashicons-admin-home" style="color: #00a32a;"></span>
-						<?php esc_html_e( 'Front page has been set.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Front page has been set.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				<?php endif; ?>
 			</div>
@@ -1274,9 +1342,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					}
 
 					mediaFrame = wp.media({
-						title: '<?php echo esc_js( __( 'Select Template Kit ZIP', 'wp-mcp-ai' ) ); ?>',
+						title: '<?php echo esc_js( __( 'Select Template Kit ZIP', 'mcp-ai-wpoos' ) ); ?>',
 						button: {
-							text: '<?php echo esc_js( __( 'Use This File', 'wp-mcp-ai' ) ); ?>'
+							text: '<?php echo esc_js( __( 'Use This File', 'mcp-ai-wpoos' ) ); ?>'
 						},
 						library: {
 							type: 'application/zip'
@@ -1301,18 +1369,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Override render_wrapper to include sub-tab navigation.
 		 */
 		public function render_wrapper() {
-			$description   = $this->get_description();
-			$subtab_groups = $this->get_subtab_groups();
-			$active_subtab = $this->get_active_subtab();
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
+			$subtab_groups     = $this->get_subtab_groups();
+			$active_subtab     = $this->get_active_subtab();
 			?>
 			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 				<?php if ( $description ) : ?>
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
 				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
+				<?php endif; ?>
 
 				<div class="wp-mcp-ai-provider-subtabs">
-					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Tools settings sub-tabs', 'wp-mcp-ai' ); ?>">
+					<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'Tools settings sub-tabs', 'mcp-ai-wpoos' ); ?>">
 						<?php foreach ( $subtab_groups as $group ) : ?>
 							<?php
 							$subtab_url = add_query_arg(
@@ -1325,7 +1403,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							);
 							$is_active  = ( $group['id'] === $active_subtab );
 							?>
-							<a href="<?php echo esc_url( $subtab_url ); ?>" 
+							<a href="<?php echo esc_url( $subtab_url ); ?>"
 								class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 								data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 								<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
@@ -1388,12 +1466,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			<div class="wp-mcp-ai-tools-manager">
 				<!-- Header Section -->
 				<div style="margin-bottom: 20px;">
-					<h3><?php esc_html_e( 'Tools Manager', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Tools Manager', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
 						<?php
 						printf(
 							/* translators: %d: Total number of registered tools */
-							esc_html__( 'View and manage all %d registered AI tools. Tools can be filtered by category and searched by name or description.', 'wp-mcp-ai' ),
+							esc_html__( 'View and manage all %d registered AI tools. Tools can be filtered by category and searched by name or description.', 'mcp-ai-wpoos' ),
 							count( $all_tools )
 						);
 						?>
@@ -1401,69 +1479,99 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				</div>
 
 				<!-- Search and Filter Bar -->
-				<div class="wp-mcp-ai-tools-filter-bar" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<div id="wp-mcp-ai-tools-filter-form" style="display: flex; gap: 10px; align-items: center;">
-						<label for="tool_search" style="font-weight: 600;">
-							<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
-						</label>
-						<input type="search" 
-								id="tool_search" 
-								name="tool_search" 
-								value="<?php echo esc_attr( $search ); ?>" 
-								placeholder="<?php esc_attr_e( 'Search tools...', 'wp-mcp-ai' ); ?>" 
-								style="flex: 1; max-width: 300px;">
+				<?php
+				$has_active_filters = ! empty( $search ) || ! empty( $filter_group );
+				$filter_bar_class   = 'wp-mcp-ai-tools-filter-bar';
+				if ( $has_active_filters ) {
+					$filter_bar_class .= ' has-active-filters';
+				}
+				?>
+				<div class="<?php echo esc_attr( $filter_bar_class ); ?>" style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
+					<div class="wp-mcp-ai-tools-filter-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: start;">
+						<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+							<label for="tool_search" style="font-weight: 600;">
+								<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+								<?php if ( ! empty( $search ) ) : ?>
+									<span class="wp-mcp-ai-filter-active-badge">
+										<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+										<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
+									</span>
+								<?php endif; ?>
+							</label>
+							<input type="search"
+									id="tool_search"
+									name="tool_search"
+									value="<?php echo esc_attr( $search ); ?>"
+									placeholder="<?php esc_attr_e( 'Search tools...', 'mcp-ai-wpoos' ); ?>"
+									style="width: 100%;">
+						</div>
 
-						<label for="tool_group" style="font-weight: 600; margin-left: 10px;">
-							<?php esc_html_e( 'Category:', 'wp-mcp-ai' ); ?>
-						</label>
-						<select id="tool_group" name="tool_group" style="min-width: 200px;">
-							<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-							<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
-								<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
-									<?php echo esc_html( $group_label ); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
+						<div class="wp-mcp-ai-filter-group" style="display: flex; flex-direction: column; gap: 8px;">
+							<label for="tool_group" style="font-weight: 600;">
+								<?php esc_html_e( 'Category:', 'mcp-ai-wpoos' ); ?>
+								<?php if ( ! empty( $filter_group ) ) : ?>
+									<span class="wp-mcp-ai-filter-active-badge">
+										<span class="dashicons dashicons-filter" style="font-size: 11px; width: 11px; height: 11px;"></span>
+										<?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?>
+									</span>
+								<?php endif; ?>
+							</label>
+							<select id="tool_group" name="tool_group" style="width: 100%;">
+								<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+								<?php foreach ( $group_labels as $group_key => $group_label ) : ?>
+									<option value="<?php echo esc_attr( $group_key ); ?>" <?php selected( $filter_group, $group_key ); ?>>
+										<?php echo esc_html( $group_label ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
 
-						<button type="button" id="wp-mcp-ai-filter-tools" class="button">
-							<?php esc_html_e( 'Filter', 'wp-mcp-ai' ); ?>
-						</button>
+						<div class="wp-mcp-ai-filter-actions" style="grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end;">
+							<button type="button" id="wp-mcp-ai-filter-tools" class="button">
+								<?php esc_html_e( 'Filter', 'mcp-ai-wpoos' ); ?>
+							</button>
 
-						<?php if ( ! empty( $search ) || ! empty( $filter_group ) ) : ?>
-							<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=tools_manager' ) ); ?>" class="button">
-								<?php esc_html_e( 'Clear', 'wp-mcp-ai' ); ?>
-							</a>
-						<?php endif; ?>
+							<?php if ( ! empty( $search ) || ! empty( $filter_group ) ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=tools&subtab=tools_manager' ) ); ?>" class="button">
+									<?php esc_html_e( 'Clear', 'mcp-ai-wpoos' ); ?>
+								</a>
+							<?php endif; ?>
+						</div>
 					</div>
 
 					<script>
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {
+							const $button = $(this);
+
+							// Add loading state
+							$button.addClass('is-loading').prop('disabled', true);
+
 							const search = $('#tool_search').val();
 							const group = $('#tool_group').val();
 							const url = new URL(window.location.href);
-							
+
 							// Update URL parameters.
 							url.searchParams.set('page', '<?php echo esc_js( WP_MCP_AI_Settings_Dashboard::PAGE_SLUG ); ?>');
 							url.searchParams.set('tab', 'tools');
 							url.searchParams.set('subtab', '<?php echo esc_js( $active_subtab ); ?>');
-							
+
 							if (search) {
 								url.searchParams.set('tool_search', search);
 							} else {
 								url.searchParams.delete('tool_search');
 							}
-							
+
 							if (group) {
 								url.searchParams.set('tool_group', group);
 							} else {
 								url.searchParams.delete('tool_group');
 							}
-							
+
 							// Navigate to filtered URL.
 							window.location.href = url.toString();
 						});
-						
+
 						// Allow Enter key to trigger filter.
 						$('#tool_search, #tool_group').on('keypress', function(e) {
 							if (e.which === 13) {
@@ -1504,7 +1612,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						}
 					}
 
-					$category_label = isset( $group_labels[ $category ] ) ? $group_labels[ $category ] : __( 'Other', 'wp-mcp-ai' );
+					$category_label = isset( $group_labels[ $category ] ) ? $group_labels[ $category ] : __( 'Other', 'mcp-ai-wpoos' );
 					?>
 
 					<div class="wp-mcp-ai-tools-category" style="margin-bottom: 30px;">
@@ -1518,11 +1626,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						<table class="wp-list-table widefat fixed striped" style="margin-bottom: 20px;">
 							<thead>
 								<tr>
-									<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 15%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 40%;"><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 15%;"><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-									<th style="width: 10%;"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+									<th style="width: 20%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+									<th style="width: 15%;"><?php esc_html_e( 'Slug', 'mcp-ai-wpoos' ); ?></th>
+									<th style="width: 55%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+									<th style="width: 10%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -1530,7 +1637,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								foreach ( $tools as $tool ) :
 									$slug        = $tool->get_slug();
 									$description = $tool->get_description();
-									$name        = $this->get_tool_display_name( $slug );
+									$name        = $this->get_tool_display_name( $slug, $tool );
 
 									// Check if tool has dependencies.
 									$dependencies = $this->check_tool_dependencies( $slug );
@@ -1538,32 +1645,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 									// Check if tool is enabled.
 									$is_enabled   = $registry->is_tool_enabled( $slug );
-									$status_text  = $is_enabled ? __( 'Enabled', 'wp-mcp-ai' ) : __( 'Disabled', 'wp-mcp-ai' );
+									$status_text  = $is_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' );
 									$status_color = $is_enabled ? '#46b450' : '#999';
 
 									// If tool is unavailable due to dependencies, override status.
 									if ( ! $is_available ) {
-										$status_text  = __( 'Unavailable', 'wp-mcp-ai' );
+										$status_text  = __( 'Unavailable', 'mcp-ai-wpoos' );
 										$status_color = '#dc3232';
 									}
 									?>
 									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>">
 										<td>
 											<strong><?php echo esc_html( $name ); ?></strong>
-											<?php if ( $this->is_pro_tool( $slug ) ) : ?>
-												<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-													<?php esc_html_e( 'Pro', 'wp-mcp-ai' ); ?>
-												</span>
-											<?php endif; ?>
-											<?php
-											$status_label = $this->get_tool_status_label( $slug );
-											if ( $status_label ) :
-												$label_config = $this->get_status_label_config( $status_label );
-												?>
-												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; margin-left: 8px; padding: 2px 6px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
-													<?php echo esc_html( $label_config['text'] ); ?>
-												</span>
-											<?php endif; ?>
 										</td>
 										<td>
 											<code style="font-size: 11px;"><?php echo esc_html( $slug ); ?></code>
@@ -1572,28 +1665,50 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 											<?php echo esc_html( $description ); ?>
 											<?php if ( ! empty( $dependencies['missing'] ) ) : ?>
 												<div style="margin-top: 5px; font-size: 12px; color: #dc3232;">
-													<strong><?php esc_html_e( 'Missing:', 'wp-mcp-ai' ); ?></strong>
+													<strong><?php esc_html_e( 'Missing:', 'mcp-ai-wpoos' ); ?></strong>
 													<?php echo esc_html( implode( ', ', $dependencies['missing'] ) ); ?>
 												</div>
 											<?php endif; ?>
 										</td>
 										<td>
-											<span class="wp-mcp-ai-tool-status" style="display: inline-block; padding: 4px 8px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 11px; font-weight: bold;">
-												<?php echo esc_html( $status_text ); ?>
-											</span>
-										</td>
-										<td>
 											<?php if ( $is_available ) : ?>
 												<label class="wp-mcp-ai-toggle-switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-													<input type="checkbox" 
-															class="wp-mcp-ai-tool-toggle" 
+													<input type="checkbox"
+															class="wp-mcp-ai-tool-toggle"
 															data-tool-slug="<?php echo esc_attr( $slug ); ?>"
 															<?php checked( $is_enabled ); ?>
 															style="opacity: 0; width: 0; height: 0;">
 													<span class="wp-mcp-ai-toggle-slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 24px; transition: .4s;"></span>
 												</label>
 											<?php else : ?>
-												<span class="dashicons dashicons-warning" style="color: #dc3232;" title="<?php esc_attr_e( 'Tool is unavailable due to missing dependencies', 'wp-mcp-ai' ); ?>"></span>
+												<span class="dashicons dashicons-warning" style="color: #dc3232;" title="<?php esc_attr_e( 'Tool is unavailable due to missing dependencies', 'mcp-ai-wpoos' ); ?>"></span>
+											<?php endif; ?>
+										</td>
+									</tr>
+									<?php
+									// Badge row - always show to display status.
+									$has_pro_badge    = $this->is_pro_tool( $slug );
+									$status_label     = $this->get_tool_status_label( $slug );
+									$has_status_label = ! empty( $status_label );
+									?>
+									<tr data-tool-slug="<?php echo esc_attr( $slug ); ?>-badges" class="wp-mcp-ai-tool-badges-row">
+										<td colspan="4" style="padding-top: 0; padding-bottom: 8px; border-top: 0;">
+											<!-- Status Badge (always shown) -->
+											<span class="wp-mcp-ai-tool-status" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: <?php echo esc_attr( $status_color ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+												<?php echo esc_html( $status_text ); ?>
+											</span>
+											<?php if ( $has_pro_badge ) : ?>
+												<span class="wp-mcp-ai-pro-badge" style="display: inline-block; margin-right: 6px; padding: 2px 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php esc_html_e( 'Pro', 'mcp-ai-wpoos' ); ?>
+												</span>
+											<?php endif; ?>
+											<?php
+											if ( $has_status_label ) :
+												$label_config = $this->get_status_label_config( $status_label );
+												?>
+												<span class="wp-mcp-ai-tool-status-label <?php echo esc_attr( $label_config['class'] ); ?>" style="display: inline-block; padding: 2px 5px; background: <?php echo esc_attr( $label_config['color'] ); ?>; color: white; border-radius: 3px; font-size: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+													<?php echo esc_html( $label_config['text'] ); ?>
+												</span>
 											<?php endif; ?>
 										</td>
 									</tr>
@@ -1610,7 +1725,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php
 							printf(
 								/* translators: %s: Search term */
-								esc_html__( 'No tools found matching "%s". Try a different search term.', 'wp-mcp-ai' ),
+								esc_html__( 'No tools found matching "%s". Try a different search term.', 'mcp-ai-wpoos' ),
 								esc_html( $search )
 							);
 							?>
@@ -1622,27 +1737,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				<div style="margin-top: 30px; padding: 15px; background: #f0f6fc; border: 1px solid #c3e6ff; border-radius: 4px;">
 					<h4 style="margin-top: 0;">
 						<span class="dashicons dashicons-info" style="color: #0073aa;"></span>
-						<?php esc_html_e( 'About Tool Categories', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'About Tool Categories', 'mcp-ai-wpoos' ); ?>
 					</h4>
 					<ul style="margin-left: 20px;">
 						<li>
-							<strong><?php esc_html_e( 'WordPress Core:', 'wp-mcp-ai' ); ?></strong>
-							<?php esc_html_e( 'Tools that work with base WordPress installation without any external dependencies.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'WordPress Core:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Tools that work with base WordPress installation without any external dependencies.', 'mcp-ai-wpoos' ); ?>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'WordPress Plugins:', 'wp-mcp-ai' ); ?></strong>
-							<?php esc_html_e( 'Tools that require specific third-party WordPress plugins to be installed and active.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'WordPress Plugins:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Tools that require specific third-party WordPress plugins to be installed and active.', 'mcp-ai-wpoos' ); ?>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'External Tools:', 'wp-mcp-ai' ); ?></strong>
-							<?php esc_html_e( 'Tools that require external API credentials or third-party service integrations.', 'wp-mcp-ai' ); ?>
+							<strong><?php esc_html_e( 'External Tools:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Tools that require external API credentials or third-party service integrations.', 'mcp-ai-wpoos' ); ?>
 						</li>
 					</ul>
 					<p style="margin-bottom: 0;">
 						<?php
 						printf(
 							/* translators: %s: Link to tool documentation */
-							wp_kses_post( __( 'For detailed information about each tool and its requirements, see the <a href="%s" target="_blank">Tool Reference Documentation</a>.', 'wp-mcp-ai' ) ),
+							wp_kses_post( __( 'For detailed information about each tool and its requirements, see the <a href="%s" target="_blank">Tool Reference Documentation</a>.', 'mcp-ai-wpoos' ) ),
 							esc_url( 'https://github.com/nvdigitalsolutions/wp-mcp-ai/blob/main/docs/tool-reference.md' )
 						);
 						?>
@@ -1656,11 +1771,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		/**
 		 * Get display name for a tool.
 		 *
-		 * @param string $slug Tool slug.
+		 * @param string                   $slug Tool slug.
+		 * @param WP_MCP_AI_Tool_Interface $tool Optional. Tool instance to get name from.
 		 * @return string Display name.
 		 */
-		private function get_tool_display_name( $slug ) {
-			// Convert slug to title case.
+		private function get_tool_display_name( $slug, $tool = null ) {
+			// If tool instance provided, use its get_name() method.
+			if ( $tool && method_exists( $tool, 'get_name' ) ) {
+				return $tool->get_name();
+			}
+
+			// Fallback: convert slug to title case.
 			$name = str_replace( '_', ' ', $slug );
 			return ucwords( $name );
 		}
@@ -1745,32 +1866,32 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$configs = array(
 				'stable'       => array(
 					'class' => 'wp-mcp-ai-status-stable',
-					'text'  => __( 'STA', 'wp-mcp-ai' ),
+					'text'  => __( 'STA', 'mcp-ai-wpoos' ),
 					'color' => '#46b450',
 				),
 				'dev'          => array(
 					'class' => 'wp-mcp-ai-status-dev',
-					'text'  => __( 'DEV', 'wp-mcp-ai' ),
+					'text'  => __( 'DEV', 'mcp-ai-wpoos' ),
 					'color' => '#f0ad4e',
 				),
 				'beta'         => array(
 					'class' => 'wp-mcp-ai-status-beta',
-					'text'  => __( 'BET', 'wp-mcp-ai' ),
+					'text'  => __( 'BET', 'mcp-ai-wpoos' ),
 					'color' => '#5bc0de',
 				),
 				'bug'          => array(
 					'class' => 'wp-mcp-ai-status-bug',
-					'text'  => __( 'BUG', 'wp-mcp-ai' ),
+					'text'  => __( 'BUG', 'mcp-ai-wpoos' ),
 					'color' => '#dc3545',
 				),
 				'deprecated'   => array(
 					'class' => 'wp-mcp-ai-status-deprecated',
-					'text'  => __( 'DEP', 'wp-mcp-ai' ),
+					'text'  => __( 'DEP', 'mcp-ai-wpoos' ),
 					'color' => '#6c757d',
 				),
 				'experimental' => array(
 					'class' => 'wp-mcp-ai-status-experimental',
-					'text'  => __( 'EXP', 'wp-mcp-ai' ),
+					'text'  => __( 'EXP', 'mcp-ai-wpoos' ),
 					'color' => '#9b59b6',
 				),
 			);
@@ -1969,7 +2090,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					self::ELEMENTOR_KIT_IMPORT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Security check failed. Please try again.', 'wp-mcp-ai' ),
+						'message' => __( 'Security check failed. Please try again.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -1982,7 +2103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					self::ELEMENTOR_KIT_IMPORT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'You do not have permission to import template kits.', 'wp-mcp-ai' ),
+						'message' => __( 'You do not have permission to import template kits.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -1995,7 +2116,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					self::ELEMENTOR_KIT_IMPORT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Elementor must be active to import template kits.', 'wp-mcp-ai' ),
+						'message' => __( 'Elementor must be active to import template kits.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -2017,7 +2138,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					self::ELEMENTOR_KIT_IMPORT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Please select a template kit ZIP file.', 'wp-mcp-ai' ),
+						'message' => __( 'Please select a template kit ZIP file.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -2035,7 +2156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					self::ELEMENTOR_KIT_IMPORT_TRANSIENT,
 					array(
 						'success' => false,
-						'message' => __( 'Import tool not available.', 'wp-mcp-ai' ),
+						'message' => __( 'Import tool not available.', 'mcp-ai-wpoos' ),
 					),
 					60
 				);
@@ -2103,24 +2224,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
 					echo wp_kses_post(
 						__(
 							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
-							'wp-mcp-ai'
+							'mcp-ai-wpoos'
 						)
 					);
 					?>
 				</p>
 				<p style="margin: 0;">
 					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-						<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Learn More About Pro Tools', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 			</div>

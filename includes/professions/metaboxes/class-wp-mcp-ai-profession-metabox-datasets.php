@@ -32,7 +32,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 	 * @return string
 	 */
 	public function get_title() {
-		return __( 'Preferred Datasets', 'wp-mcp-ai' );
+		return __( 'Preferred Datasets', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -54,6 +54,15 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 	}
 
 	/**
+	 * Get documentation URL for this metabox.
+	 *
+	 * @return string
+	 */
+	public function get_documentation_url() {
+		return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/DATASET_ASSIGNMENT_GUIDE.md';
+	}
+
+	/**
 	 * Render the metabox content.
 	 *
 	 * @param WP_Post $post The post object.
@@ -68,8 +77,8 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 				<?php
 				printf(
 					/* translators: %s: URL to settings page */
-					esc_html__( 'HuggingFace Datasets integration is not enabled. Please enable it in %s.', 'wp-mcp-ai' ),
-					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'NV oOS Settings', 'wp-mcp-ai' ) . '</a>'
+					esc_html__( 'HuggingFace Datasets integration is not enabled. Please enable it in %s.', 'mcp-ai-wpoos' ),
+					'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'NV oOS Settings', 'mcp-ai-wpoos' ) . '</a>'
 				);
 				?>
 			</p>
@@ -77,7 +86,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			return;
 		}
 
-		wp_nonce_field( 'wp_mcp_ai_save_profession_datasets', 'wp_mcp_ai_profession_datasets_nonce' );
+		wp_nonce_field( $this->get_id() . '_save', $this->get_id() . '_nonce' );
 
 		// Get currently assigned datasets.
 		$preferred_datasets = get_post_meta( $post->ID, WP_MCP_AI_Profession_CPT::META_PREFERRED_DATASETS, true );
@@ -91,32 +100,32 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 		?>
 		<div class="wp-mcp-ai-profession-datasets">
 			<p class="description">
-				<?php esc_html_e( 'Select up to 10 HuggingFace datasets that are most relevant for this profession. These datasets will be recommended when creating assistants from this profession template.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select up to 10 HuggingFace datasets that are most relevant for this profession. These datasets will be recommended when creating assistants from this profession template.', 'mcp-ai-wpoos' ); ?>
 			</p>
 
 			<?php if ( ! empty( $post->post_name ) ) : ?>
 				<p class="description" style="margin-bottom: 15px;">
-					<strong><?php esc_html_e( 'Profession Slug:', 'wp-mcp-ai' ); ?></strong> 
+					<strong><?php esc_html_e( 'Profession Slug:', 'mcp-ai-wpoos' ); ?></strong>
 					<code><?php echo esc_html( $post->post_name ); ?></code>
 					<br>
-					<em><?php esc_html_e( 'Auto-assignment is based on this slug in the dataset mappings file.', 'wp-mcp-ai' ); ?></em>
+					<em><?php esc_html_e( 'Auto-assignment is based on this slug in the dataset mappings file.', 'mcp-ai-wpoos' ); ?></em>
 				</p>
 			<?php endif; ?>
 
 			<div class="wp-mcp-ai-datasets-filters" style="margin: 15px 0;">
 				<label>
-					<?php esc_html_e( 'Filter by category:', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Filter by category:', 'mcp-ai-wpoos' ); ?>
 					<select id="wp-mcp-ai-dataset-category-filter" style="margin-left: 5px;">
-						<option value=""><?php esc_html_e( 'All Categories', 'wp-mcp-ai' ); ?></option>
-						<option value="nlp"><?php esc_html_e( 'NLP', 'wp-mcp-ai' ); ?></option>
-						<option value="vision"><?php esc_html_e( 'Vision', 'wp-mcp-ai' ); ?></option>
-						<option value="audio"><?php esc_html_e( 'Audio', 'wp-mcp-ai' ); ?></option>
-						<option value="multimodal"><?php esc_html_e( 'Multimodal', 'wp-mcp-ai' ); ?></option>
+						<option value=""><?php esc_html_e( 'All Categories', 'mcp-ai-wpoos' ); ?></option>
+						<option value="nlp"><?php esc_html_e( 'NLP', 'mcp-ai-wpoos' ); ?></option>
+						<option value="vision"><?php esc_html_e( 'Vision', 'mcp-ai-wpoos' ); ?></option>
+						<option value="audio"><?php esc_html_e( 'Audio', 'mcp-ai-wpoos' ); ?></option>
+						<option value="multimodal"><?php esc_html_e( 'Multimodal', 'mcp-ai-wpoos' ); ?></option>
 					</select>
 				</label>
 				<label style="margin-left: 15px;">
-					<?php esc_html_e( 'Search:', 'wp-mcp-ai' ); ?>
-					<input type="text" id="wp-mcp-ai-dataset-search" placeholder="<?php esc_attr_e( 'Search datasets...', 'wp-mcp-ai' ); ?>" style="width: 250px; margin-left: 5px;">
+					<?php esc_html_e( 'Search:', 'mcp-ai-wpoos' ); ?>
+					<input type="text" id="wp-mcp-ai-dataset-search" placeholder="<?php esc_attr_e( 'Search datasets...', 'mcp-ai-wpoos' ); ?>" style="width: 250px; margin-left: 5px;">
 				</label>
 			</div>
 
@@ -124,10 +133,10 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 				<thead>
 					<tr>
 						<th style="width: 40px;"></th>
-						<th><?php esc_html_e( 'Dataset', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Priority', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Dataset', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Priority', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -153,16 +162,16 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 						$is_checked   = in_array( $dataset_json, $selected_datasets_json, true );
 						$tags_string  = isset( $dataset_info['tags'] ) ? implode( ' ', $dataset_info['tags'] ) : '';
 						?>
-						<tr class="wp-mcp-ai-dataset-row" 
-							data-category="<?php echo esc_attr( $dataset_info['category'] ); ?>" 
-							data-name="<?php echo esc_attr( strtolower( $dataset_info['name'] ) ); ?>" 
+						<tr class="wp-mcp-ai-dataset-row"
+							data-category="<?php echo esc_attr( $dataset_info['category'] ); ?>"
+							data-name="<?php echo esc_attr( strtolower( $dataset_info['name'] ) ); ?>"
 							data-description="<?php echo esc_attr( strtolower( $dataset_info['description'] ) ); ?>"
 							data-tags="<?php echo esc_attr( $tags_string ); ?>">
 							<td>
-								<input type="checkbox" 
-									name="profession_preferred_datasets[]" 
-									value="<?php echo esc_attr( $dataset_json ); ?>" 
-									class="wp-mcp-ai-dataset-checkbox" 
+								<input type="checkbox"
+									name="profession_preferred_datasets[]"
+									value="<?php echo esc_attr( $dataset_json ); ?>"
+									class="wp-mcp-ai-dataset-checkbox"
 									<?php checked( $is_checked ); ?>>
 							</td>
 							<td>
@@ -186,7 +195,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 								<small style="color: #666;">
 									<?php
 									/* translators: %s: Dataset size */
-									printf( esc_html__( 'Size: %s', 'wp-mcp-ai' ), esc_html( $dataset_info['size'] ) );
+									printf( esc_html__( 'Size: %s', 'mcp-ai-wpoos' ), esc_html( $dataset_info['size'] ) );
 									?>
 								</small>
 							</td>
@@ -196,7 +205,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 			</table>
 
 			<p class="description" style="margin-top: 10px;">
-				<?php esc_html_e( 'Maximum 10 datasets can be selected. Additional selections will uncheck earlier selections.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Maximum 10 datasets can be selected. Additional selections will uncheck earlier selections.', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 
@@ -230,42 +239,42 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 		<script type="text/javascript">
 		( function() {
 			var maxDatasets = 10;
-			
+
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var checkboxes = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox' );
 				var categoryFilter = document.getElementById( 'wp-mcp-ai-dataset-category-filter' );
 				var searchInput = document.getElementById( 'wp-mcp-ai-dataset-search' );
 				var rows = document.querySelectorAll( '.wp-mcp-ai-dataset-row' );
-				
+
 				// Handle checkbox selection with max limit.
 				checkboxes.forEach( function( checkbox ) {
 					checkbox.addEventListener( 'change', function() {
 						var checked = document.querySelectorAll( '.wp-mcp-ai-dataset-checkbox:checked' );
-						
+
 						if ( checked.length > maxDatasets ) {
 							// Uncheck the first checked item.
 							checked[0].checked = false;
 						}
 					} );
 				} );
-				
+
 				// Handle filtering.
 				function filterDatasets() {
 					var category = categoryFilter.value.toLowerCase();
 					var search = searchInput.value.toLowerCase().trim();
-					
+
 					rows.forEach( function( row ) {
 						var rowCategory = row.getAttribute( 'data-category' ).toLowerCase();
 						var rowName = row.getAttribute( 'data-name' ).toLowerCase();
 						var rowDesc = row.getAttribute( 'data-description' ).toLowerCase();
 						var rowTags = row.getAttribute( 'data-tags' ).toLowerCase();
-						
+
 						var categoryMatch = ! category || rowCategory === category;
-						var searchMatch = ! search || 
-							rowName.indexOf( search ) !== -1 || 
+						var searchMatch = ! search ||
+							rowName.indexOf( search ) !== -1 ||
 							rowDesc.indexOf( search ) !== -1 ||
 							rowTags.indexOf( search ) !== -1;
-						
+
 						if ( categoryMatch && searchMatch ) {
 							row.style.display = '';
 						} else {
@@ -273,11 +282,11 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 						}
 					} );
 				}
-				
+
 				if ( categoryFilter ) {
 					categoryFilter.addEventListener( 'change', filterDatasets );
 				}
-				
+
 				if ( searchInput ) {
 					searchInput.addEventListener( 'input', filterDatasets );
 				}
@@ -285,6 +294,7 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 		} )();
 		</script>
 		<?php
+		$this->render_documentation_link();
 	}
 
 	/**
@@ -295,19 +305,12 @@ class WP_MCP_AI_Profession_Metabox_Datasets extends WP_MCP_AI_Profession_Metabox
 	 * @return void
 	 */
 	public function save( $post_id, $post ) {
-		if ( ! isset( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ) {
+		if ( ! $this->can_save( $post_id ) ) {
 			return;
 		}
 
-		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ), 'wp_mcp_ai_save_profession_datasets' ) ) {
-			return;
-		}
-
-		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-			return;
-		}
-
-		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_datasets_nonce'] ) ), 'wp_mcp_ai_profession_datasets_save' ) ) {
 			return;
 		}
 

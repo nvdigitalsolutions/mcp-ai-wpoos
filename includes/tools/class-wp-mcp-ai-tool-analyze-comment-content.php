@@ -15,6 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
  * Analyzes comment content to detect spam, toxicity, and other moderation concerns.
  */
 class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -26,14 +27,14 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Analyze Comment Content', 'wp-mcp-ai' );
+		return __( 'Analyze Comment Content', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Analyzes comment content for spam, toxicity, and moderation concerns using AI to assist with comment moderation.', 'wp-mcp-ai' );
+		return __( 'Analyzes comment content for spam, toxicity, and moderation concerns using AI to assist with comment moderation.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -45,28 +46,28 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'comment_content' => array(
 					'type'        => 'string',
-					'description' => __( 'The comment text to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'The comment text to analyze.', 'mcp-ai-wpoos' ),
 				),
 				'comment_author'  => array(
 					'type'        => 'string',
-					'description' => __( 'The name of the comment author.', 'wp-mcp-ai' ),
+					'description' => __( 'The name of the comment author.', 'mcp-ai-wpoos' ),
 				),
 				'comment_email'   => array(
 					'type'        => 'string',
-					'description' => __( 'The email address of the comment author.', 'wp-mcp-ai' ),
+					'description' => __( 'The email address of the comment author.', 'mcp-ai-wpoos' ),
 				),
 				'comment_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'The URL provided by the comment author.', 'wp-mcp-ai' ),
+					'description' => __( 'The URL provided by the comment author.', 'mcp-ai-wpoos' ),
 				),
 				'user_ip'         => array(
 					'type'        => 'string',
-					'description' => __( 'The IP address of the commenter.', 'wp-mcp-ai' ),
+					'description' => __( 'The IP address of the commenter.', 'mcp-ai-wpoos' ),
 				),
 				'sensitivity'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'low', 'medium', 'high' ),
-					'description' => __( 'Moderation sensitivity level: low (permissive), medium (balanced), high (strict).', 'wp-mcp-ai' ),
+					'description' => __( 'Moderation sensitivity level: low (permissive), medium (balanced), high (strict).', 'mcp-ai-wpoos' ),
 					'default'     => 'medium',
 				),
 			),
@@ -89,7 +90,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( $user_id && ! user_can( $user_id, 'moderate_comments' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to analyze comments.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to analyze comments.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -97,7 +98,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -106,7 +107,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( empty( $arguments['comment_content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_content',
-				__( 'Comment content is required.', 'wp-mcp-ai' ),
+				__( 'Comment content is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -259,7 +260,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'OpenAI API key is not configured.', 'wp-mcp-ai' ),
+				__( 'OpenAI API key is not configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -304,7 +305,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_api_error',
 				sprintf(
 					/* translators: %d: HTTP response code */
-					__( 'OpenAI API returned error code %d.', 'wp-mcp-ai' ),
+					__( 'OpenAI API returned error code %d.', 'mcp-ai-wpoos' ),
 					$response_code
 				),
 				array( 'status' => $response_code )
@@ -316,7 +317,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( ! isset( $body['choices'][0]['message']['content'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from OpenAI API.', 'wp-mcp-ai' ),
+				__( 'Invalid response from OpenAI API.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -347,7 +348,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_api_key',
-				__( 'Gemini API key is not configured.', 'wp-mcp-ai' ),
+				__( 'Gemini API key is not configured.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -388,7 +389,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_api_error',
 				sprintf(
 					/* translators: %d: HTTP response code */
-					__( 'Gemini API returned error code %d.', 'wp-mcp-ai' ),
+					__( 'Gemini API returned error code %d.', 'mcp-ai-wpoos' ),
 					$response_code
 				),
 				array( 'status' => $response_code )
@@ -400,7 +401,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( ! isset( $body['candidates'][0]['content']['parts'][0]['text'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from Gemini API.', 'wp-mcp-ai' ),
+				__( 'Invalid response from Gemini API.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -446,7 +447,7 @@ class WP_MCP_AI_Tool_Analyze_Comment_Content implements WP_MCP_AI_Tool_Interface
 		if ( null === $parsed ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_json',
-				__( 'Failed to parse AI response as JSON.', 'wp-mcp-ai' ),
+				__( 'Failed to parse AI response as JSON.', 'mcp-ai-wpoos' ),
 				array(
 					'status'   => 500,
 					'response' => $analysis,

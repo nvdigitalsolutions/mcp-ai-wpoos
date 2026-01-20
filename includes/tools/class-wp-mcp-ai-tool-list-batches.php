@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -32,14 +33,14 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'List Batch Jobs', 'wp-mcp-ai' );
+		return __( 'List Batch Jobs', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Lists batch processing jobs with optional filtering and pagination. Use to audit batch jobs, monitor overall processing status, or find specific jobs by criteria.', 'wp-mcp-ai' );
+		return __( 'Lists batch processing jobs with optional filtering and pagination. Use to audit batch jobs, monitor overall processing status, or find specific jobs by criteria.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,14 +52,14 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'properties'           => array(
 				'limit' => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of batch jobs to return. Range: 1-100.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of batch jobs to return. Range: 1-100.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 20,
 				),
 				'after' => array(
 					'type'        => 'string',
-					'description' => __( 'Cursor for pagination. Use the last batch ID from previous results.', 'wp-mcp-ai' ),
+					'description' => __( 'Cursor for pagination. Use the last batch ID from previous results.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'additionalProperties' => false,
@@ -94,7 +95,7 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to list batch jobs.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to list batch jobs.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -102,7 +103,7 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -147,13 +148,16 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$has_more = isset( $result['has_more'] ) ? $result['has_more'] : false;
 		$last_id  = isset( $result['last_id'] ) ? $result['last_id'] : null;
 
+		$summary_text = $this->generate_summary( $batches, $has_more );
+
 		$response = array(
 			'success'     => true,
 			'batches'     => $batches,
 			'total_count' => count( $batches ),
 			'has_more'    => $has_more,
 			'last_id'     => $last_id,
-			'summary'     => $this->generate_summary( $batches, $has_more ),
+			'message'     => $summary_text,
+			'summary'     => $summary_text,
 		);
 
 		return $response;
@@ -171,12 +175,12 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 
 		$summary = sprintf(
 			/* translators: %d: number of batch jobs */
-			_n( 'Found %d batch job.', 'Found %d batch jobs.', $total, 'wp-mcp-ai' ),
+			_n( 'Found %d batch job.', 'Found %d batch jobs.', $total, 'mcp-ai-wpoos' ),
 			$total
 		);
 
 		if ( $has_more ) {
-			$summary .= ' ' . __( 'More batches are available. Use the "after" parameter with the last batch ID to retrieve the next page.', 'wp-mcp-ai' );
+			$summary .= ' ' . __( 'More batches are available. Use the "after" parameter with the last batch ID to retrieve the next page.', 'mcp-ai-wpoos' );
 		}
 
 		// Count batches by status.
@@ -190,11 +194,11 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		if ( ! empty( $status_counts ) ) {
-			$summary .= "\n\n" . __( 'Status breakdown:', 'wp-mcp-ai' );
+			$summary .= "\n\n" . __( 'Status breakdown:', 'mcp-ai-wpoos' );
 			foreach ( $status_counts as $status => $count ) {
 				$summary .= "\n" . sprintf(
 					/* translators: 1: status, 2: count */
-					__( '- %1$s: %2$d', 'wp-mcp-ai' ),
+					__( '- %1$s: %2$d', 'mcp-ai-wpoos' ),
 					ucfirst( $status ),
 					$count
 				);

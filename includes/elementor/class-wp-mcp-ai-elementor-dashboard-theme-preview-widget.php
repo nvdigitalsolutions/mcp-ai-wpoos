@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Theme Preview', 'wp-mcp-ai' );
+		return __( 'NV oOS Theme Preview', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +61,16 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Preview Content', 'wp-mcp-ai' ),
+				'label' => __( 'Preview Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Chat theme preview', 'wp-mcp-ai' ),
+				'default'     => __( 'Chat theme preview', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -78,20 +78,20 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 		$this->add_control(
 			'description',
 			array(
-				'label'   => __( 'Description', 'wp-mcp-ai' ),
+				'label'   => __( 'Description', 'mcp-ai-wpoos' ),
 				'type'    => \Elementor\Controls_Manager::TEXTAREA,
 				'rows'    => 3,
-				'default' => __( 'Visualise the current chat tokens to confirm bubble, container, and status styling.', 'wp-mcp-ai' ),
+				'default' => __( 'Visualise the current chat tokens to confirm bubble, container, and status styling.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_token_legend',
 			array(
-				'label'        => __( 'Show token legend', 'wp-mcp-ai' ),
+				'label'        => __( 'Show token legend', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -149,16 +149,16 @@ class WP_MCP_AI_Elementor_Dashboard_Theme_Preview_Widget extends \Elementor\Widg
 			}
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $container_css is escaped in build_container_style.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $container_css is already escaped in build_container_style method.
 		echo '<div class="wp-mcp-ai-theme-preview__chat"' . $container_css . '>';
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
-		echo $this->render_sample_message( __( 'Assistant response preview', 'wp-mcp-ai' ), 'assistant', $colors );
+		echo $this->render_sample_message( __( 'Assistant response preview', 'mcp-ai-wpoos' ), 'assistant', $colors );
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
-		echo $this->render_sample_message( __( 'User confirmation bubble', 'wp-mcp-ai' ), 'user', $colors );
+		echo $this->render_sample_message( __( 'User confirmation bubble', 'mcp-ai-wpoos' ), 'user', $colors );
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
-		echo $this->render_sample_message( __( 'Tool summary example', 'wp-mcp-ai' ), 'tool', $colors );
+		echo $this->render_sample_message( __( 'Tool summary example', 'mcp-ai-wpoos' ), 'tool', $colors );
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_sample_message.
-		echo $this->render_sample_message( __( 'System status notice', 'wp-mcp-ai' ), 'system', $colors );
+		echo $this->render_sample_message( __( 'System status notice', 'mcp-ai-wpoos' ), 'system', $colors );
 		echo '</div>';
 
 		if ( $show_legend && ! empty( $grouped ) ) {

@@ -460,4 +460,54 @@ class Test_Model_Config extends WP_UnitTestCase {
 			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
 		}
 	}
+
+	/**
+	 * Test Ollama models have correct configuration.
+	 */
+	public function test_ollama_models_configuration() {
+		$ollama_models = array(
+			'llama3',
+			'llama3:70b',
+			'mistral',
+			'codellama',
+			'phi3',
+			'deepseek-coder',
+			'deepseek-r1-0528-qwen3-8b',
+			'qwen2',
+			'gemma2',
+		);
+
+		foreach ( $ollama_models as $model_id ) {
+			$config = WP_MCP_AI_Model_Config::get_model_config( $model_id );
+
+			$this->assertIsArray( $config, "Model $model_id should have a configuration" );
+			$this->assertEquals( 'ollama', $config['provider'], "Model $model_id should have ollama provider" );
+			$this->assertEquals( 0.0, $config['cost_per_1k'], "Model $model_id should have zero cost (local)" );
+			$this->assertEquals( 'active', $config['status'], "Model $model_id should be active" );
+			$this->assertGreaterThan( 0, $config['context_window'], "Model $model_id should have context window" );
+			$this->assertGreaterThan( 0, $config['tpm'], "Model $model_id should have TPM limit" );
+			$this->assertGreaterThan( 0, $config['rpm'], "Model $model_id should have RPM limit" );
+		}
+	}
+
+	/**
+	 * Test Ollama provider availability.
+	 */
+	public function test_ollama_provider_availability() {
+		// Set up Ollama endpoint.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'ollama_endpoint_url' => 'http://localhost:11434',
+			)
+		);
+
+		$providers = WP_MCP_AI_Model_Config::get_available_providers();
+
+		$this->assertArrayHasKey( 'ollama', $providers );
+		$this->assertEquals( 'Ollama (Local)', $providers['ollama'] );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+	}
 }

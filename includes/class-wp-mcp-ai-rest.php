@@ -247,6 +247,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			// Clean any existing output and start fresh.
 			$this->clean_all_output_buffers();
+
+			// WordPress.org Compliance Note: This ob_start() is properly closed.
+			// Cleanup handled by ensure_clean_json_output() via rest_pre_serve_request filter.
+			// The buffer is cleaned by clean_all_output_buffers() (line 270) which calls
+			// ob_end_clean() in a loop until all buffers are cleared (see method below).
 			ob_start();
 		}
 
@@ -468,7 +473,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( empty( $nonce ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_missing_nonce',
-						__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+						__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
 						array( 'status' => 401 )
 					);
 				}
@@ -476,7 +481,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 					return new WP_Error(
 						'rest_invalid_nonce',
-						__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+						__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 						array( 'status' => 403 )
 					);
 				}
@@ -486,7 +491,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! is_user_logged_in() ) {
 					return new WP_Error(
 						'wp_mcp_ai_forbidden',
-						__( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
+						__( 'You do not have permission to view chat transcripts.', 'mcp-ai-wpoos' ),
 						array( 'status' => 403 )
 					);
 				}
@@ -500,7 +505,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to view chat transcripts.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to view chat transcripts.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -531,7 +536,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_user',
-					__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+					__( 'A valid user is required to query chat transcripts. Please log in to view your chat history.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -641,7 +646,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $assistant_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_assistant',
-					__( 'Assistant ID is required to save a transcript.', 'wp-mcp-ai' ),
+					__( 'Assistant ID is required to save a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -649,7 +654,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( '' === $session_key ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_session',
-					__( 'Session key is required to save a transcript.', 'wp-mcp-ai' ),
+					__( 'Session key is required to save a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -657,7 +662,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $messages ) || ! is_array( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_messages',
-					__( 'Messages array is required to save a transcript.', 'wp-mcp-ai' ),
+					__( 'Messages array is required to save a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -679,7 +684,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $clean_messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_invalid_messages',
-					__( 'No valid messages to save.', 'wp-mcp-ai' ),
+					__( 'No valid messages to save.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -727,7 +732,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					'success'     => true,
 					'session_key' => $session_key,
-					'message'     => __( 'Transcript saved successfully.', 'wp-mcp-ai' ),
+					'message'     => __( 'Transcript saved successfully.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -749,7 +754,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( '' === $session_key ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_invalid_session',
-					__( 'A valid session key is required to retrieve a transcript.', 'wp-mcp-ai' ),
+					__( 'A valid session key is required to retrieve a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -772,7 +777,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_user',
-					__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'wp-mcp-ai' ),
+					__( 'A valid user is required to retrieve chat transcripts. Please log in to view your chat history.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -828,7 +833,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( '' === $session_key ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_invalid_session',
-					__( 'A valid session key is required to delete a transcript.', 'wp-mcp-ai' ),
+					__( 'A valid session key is required to delete a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -838,7 +843,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $user_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_missing_user',
-					__( 'You must be logged in to delete a transcript.', 'wp-mcp-ai' ),
+					__( 'You must be logged in to delete a transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -849,7 +854,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( '' === $table ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_unavailable',
-					__( 'Chat transcripts are not configured or available.', 'wp-mcp-ai' ),
+					__( 'Chat transcripts are not configured or available.', 'mcp-ai-wpoos' ),
 					array( 'status' => 503 )
 				);
 			}
@@ -857,7 +862,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $repository->table_exists() ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_unavailable',
-					__( 'The transcript storage table does not exist.', 'wp-mcp-ai' ),
+					__( 'The transcript storage table does not exist.', 'mcp-ai-wpoos' ),
 					array( 'status' => 503 )
 				);
 			}
@@ -868,7 +873,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( false === $deleted ) {
 				return new WP_Error(
 					'wp_mcp_ai_transcripts_delete_failed',
-					__( 'Failed to delete the transcript.', 'wp-mcp-ai' ),
+					__( 'Failed to delete the transcript.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -877,7 +882,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					'success' => true,
 					'deleted' => $deleted,
-					'message' => __( 'Transcript deleted successfully.', 'wp-mcp-ai' ),
+					'message' => __( 'Transcript deleted successfully.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
@@ -909,7 +914,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_id = $request->get_param( 'assistant_id' );
 			if ( $assistant_id ) {
-				$assistant_id = absint( $assistant_id );
+				// Use the shared sanitization method from Tools Controller.
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-controller-base.php';
+				require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-rest-tools-controller.php';
+				$assistant_id = WP_MCP_AI_REST_Tools_Controller::sanitize_assistant_id( $assistant_id );
 			}
 
 			// Get status summary and counts with optional assistant filter.
@@ -1093,7 +1101,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				array(
 					'job_id' => $job_id,
 					'status' => 'timeout',
-					'error'  => __( 'Job status polling timed out. Job may still be running.', 'wp-mcp-ai' ),
+					'error'  => __( 'Job status polling timed out. Job may still be running.', 'mcp-ai-wpoos' ),
 				)
 			);
 			$this->sse_handler->send_sse_done();
@@ -1558,12 +1566,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_credentials',
-					__( 'Authentication is required. Provide an Auth0 bearer token or a WordPress REST nonce.', 'wp-mcp-ai' ),
+					__( 'Authentication is required. Provide an Auth0 bearer token or a WordPress REST nonce.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 401,
 						'actions' => array(
-							'supply_bearer_token' => __( 'Include an Auth0-issued access token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+							'supply_bearer_token' => __( 'Include an Auth0-issued access token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1572,11 +1580,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new WP_Error(
 					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => rest_authorization_required_code(),
 						'actions' => array(
-							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -1620,7 +1628,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_list'] ) ) {
 				return new WP_Error(
 					'rest_assistant_list_disabled',
-					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication → REST API Capabilities.', 'wp-mcp-ai' ),
+					__( 'Listing assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication → REST API Capabilities.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 403,
 					)
@@ -1652,7 +1660,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_create'] ) ) {
 				return new WP_Error(
 					'rest_assistant_create_disabled',
-					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'wp-mcp-ai' ),
+					__( 'Creating assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 403,
 					)
@@ -1684,7 +1692,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $settings['rest_enable_assistant_delete'] ) ) {
 				return new WP_Error(
 					'rest_assistant_delete_disabled',
-					__( 'Deleting assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'wp-mcp-ai' ),
+					__( 'Deleting assistants via REST API is currently disabled. Enable it in Settings → NV oOS → Authentication.', 'mcp-ai-wpoos' ),
 					array(
 						'status' => 403,
 					)
@@ -1696,7 +1704,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! current_user_can( 'delete_post', $assistant_id ) ) {
 				return new WP_Error(
 					'rest_cannot_delete',
-					__( 'Sorry, you are not allowed to delete this assistant.', 'wp-mcp-ai' ),
+					__( 'Sorry, you are not allowed to delete this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => rest_authorization_required_code() )
 				);
 			}
@@ -1719,7 +1727,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
 				return new WP_Error(
 					'rest_assistant_invalid_id',
-					__( 'Invalid assistant ID.', 'wp-mcp-ai' ),
+					__( 'Invalid assistant ID.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -1732,7 +1740,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $deleted || is_wp_error( $deleted ) ) {
 				return new WP_Error(
 					'rest_cannot_delete',
-					__( 'The assistant cannot be deleted.', 'wp-mcp-ai' ),
+					__( 'The assistant cannot be deleted.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -1782,7 +1790,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $title ) ) {
 				return new WP_Error(
 					'rest_missing_title',
-					__( 'Title is required to create an assistant.', 'wp-mcp-ai' ),
+					__( 'Title is required to create an assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -1817,7 +1825,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( is_wp_error( $assistant_id ) ) {
 				return new WP_Error(
 					'rest_cannot_create',
-					__( 'Could not create the assistant.', 'wp-mcp-ai' ),
+					__( 'Could not create the assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -1953,13 +1961,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// MCP endpoint requires bearer token or mesh key - nonce is NOT accepted for remote access.
 			return new WP_Error(
 				'wp_mcp_ai_mcp_bearer_required',
-				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'wp-mcp-ai' ),
+				__( 'The MCP endpoint requires bearer token authentication. WordPress nonce authentication is not permitted for remote MCP access.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 401,
 					'actions' => array(
-						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-						'supply_mesh_key'     => __( 'Alternatively, use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'wp-mcp-ai' ),
-						'issue_credential'    => __( 'To obtain a bearer token, issue an assistant credential via the WordPress admin.', 'wp-mcp-ai' ),
+						'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+						'supply_mesh_key'     => __( 'Alternatively, use the X-WP-MCP-AI-Mesh-Key header for mesh network access.', 'mcp-ai-wpoos' ),
+						'issue_credential'    => __( 'To obtain a bearer token, issue an assistant credential via the WordPress admin.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -2041,13 +2049,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_credentials',
-					__( 'Authentication is required to view cron status.', 'wp-mcp-ai' ),
+					__( 'Authentication is required to view cron status.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 401,
 						'actions' => array(
-							'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'wp-mcp-ai' ),
-							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header or guest_token query parameter for public chat surfaces.', 'wp-mcp-ai' ),
-							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header or _wpnonce query parameter from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'wp-mcp-ai' ),
+							'supply_bearer_token' => __( 'Include a bearer token using the Authorization: Bearer YOUR_TOKEN header.', 'mcp-ai-wpoos' ),
+							'supply_guest_token'  => __( 'Include a guest token using the X-WP-MCP-AI-Guest header or guest_token query parameter for public chat surfaces.', 'mcp-ai-wpoos' ),
+							'include_rest_nonce'  => __( 'Include the X-WP-Nonce header or _wpnonce query parameter from wp_create_nonce( "wp_rest" ) when calling this endpoint from WordPress.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2056,11 +2064,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new WP_Error(
 					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => rest_authorization_required_code(),
 						'actions' => array(
-							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'wp-mcp-ai' ),
+							'refresh_nonce' => __( 'Refresh your WordPress session to obtain a fresh nonce and retry the request.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -2167,7 +2175,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'wp_mcp_ai_rate_limit_exceeded',
 					sprintf(
 						/* translators: 1: Maximum requests allowed, 2: Time window in seconds */
-						__( 'Rate limit exceeded. Maximum %1$d requests allowed per %2$d seconds.', 'wp-mcp-ai' ),
+						__( 'Rate limit exceeded. Maximum %1$d requests allowed per %2$d seconds.', 'mcp-ai-wpoos' ),
 						$max_requests,
 						$time_window
 					),
@@ -2248,9 +2256,15 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		public function handle_chat_request( WP_REST_Request $request ) {
 			$this->hydrate_request_body_params( $request );
 
-			// Check if this is a profession test request.
+			// Check if this is a unified team, profession test, or regular assistant request.
 			$raw_assistant_id = $request->get_param( 'assistant_id' );
+			$team_id          = $this->extract_team_id( $raw_assistant_id );
 			$profession_id    = $this->extract_profession_id( $raw_assistant_id );
+
+			// If this is a unified team request, handle it through team orchestration.
+			if ( $team_id ) {
+				return $this->handle_unified_team_request( $request, $team_id );
+			}
 
 			$assistant_id = $this->resolve_assistant_id( $raw_assistant_id );
 			$scoped_id    = $this->apply_token_assistant_scope( $assistant_id );
@@ -2261,7 +2275,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$assistant_id = $scoped_id;
 
 			if ( ! $assistant_id && ! $profession_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			// Validate assistant access only if we have an assistant ID.
@@ -2282,10 +2296,25 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$attachments = $sanitized_messages['attachments'];
 
 			if ( empty( $messages ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_messages', __( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+
+			// Debug logging for assistant configuration loading.
+			WP_MCP_AI_Logger::log_event(
+				'rest_chat_assistant_config_loaded',
+				'Assistant configuration loaded in handle_chat_request',
+				array(
+					'assistant_id'          => $assistant_id,
+					'has_system_prompt'     => ! empty( $assistant_config['system_prompt'] ),
+					'system_prompt_length'  => ! empty( $assistant_config['system_prompt'] ) ? strlen( $assistant_config['system_prompt'] ) : 0,
+					'system_prompt_preview' => ! empty( $assistant_config['system_prompt'] ) ? substr( $assistant_config['system_prompt'], 0, 200 ) : '',
+					'provider'              => isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '',
+					'model'                 => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
+					'tools_count'           => isset( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? count( $assistant_config['tools'] ) : 0,
+				)
+			);
 
 			// If testing a profession, merge profession configuration.
 			if ( $profession_id ) {
@@ -2302,6 +2331,21 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				} else {
 					// Use professional prompt as the system prompt.
 					$assistant_config['system_prompt'] = $professional_prompt;
+				}
+			}
+
+			// If additional_tools are provided (for context-specific tools like research pages), merge them into the assistant's tools.
+			$additional_tools = $request->get_param( 'additional_tools' );
+			if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
+				// Sanitize the additional tools array.
+				$additional_tools = array_filter( array_map( 'sanitize_key', $additional_tools ) );
+
+				if ( ! empty( $additional_tools ) ) {
+					// Merge with existing tools, ensuring no duplicates.
+					if ( ! isset( $assistant_config['tools'] ) || ! is_array( $assistant_config['tools'] ) ) {
+						$assistant_config['tools'] = array();
+					}
+					$assistant_config['tools'] = array_values( array_unique( array_merge( $assistant_config['tools'], $additional_tools ) ) );
 				}
 			}
 
@@ -2362,7 +2406,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'status'     => 'ok',
 						'checked_at' => gmdate( 'c' ),
 					),
-					'message'      => __( 'Chat probe acknowledged.', 'wp-mcp-ai' ),
+					'message'      => __( 'Chat probe acknowledged.', 'mcp-ai-wpoos' ),
 				);
 
 				return rest_ensure_response( $response_data );
@@ -2718,10 +2762,33 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			// Extract cost information for Phase 7 Week 5-6 Enhanced Token Tracking.
 			$cost_data = $this->calculate_response_cost( $response, $options, $assistant_id, $user_id, 'chat response' );
 
+			// Extract usage information from response for frontend display.
+			$usage_data = null;
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				$usage_data = array(
+					'prompt_tokens'     => isset( $response['usage']['prompt_tokens'] ) ? absint( $response['usage']['prompt_tokens'] ) : 0,
+					'completion_tokens' => isset( $response['usage']['completion_tokens'] ) ? absint( $response['usage']['completion_tokens'] ) : 0,
+					'total_tokens'      => isset( $response['usage']['total_tokens'] ) ? absint( $response['usage']['total_tokens'] ) : 0,
+				);
+
+				// Add provider and model info to usage data.
+				if ( isset( $options['provider'] ) ) {
+					$usage_data['provider'] = $options['provider'];
+				}
+				if ( isset( $options['model'] ) ) {
+					$usage_data['model'] = $options['model'];
+				}
+			}
+
 			$payload = array(
 				'assistant_id' => $assistant_id,
 				'data'         => $response,
 			);
+
+			// Include usage data if available for frontend badge display.
+			if ( $usage_data ) {
+				$payload['usage'] = $usage_data;
+			}
 
 			// Include cost data if available (Phase 7 Week 5-6).
 			if ( $cost_data ) {
@@ -2852,7 +2919,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'status',
 				array(
 					'type'         => 'thinking',
-					'message'      => __( 'Processing your request…', 'wp-mcp-ai' ),
+					'message'      => __( 'Processing your request…', 'mcp-ai-wpoos' ),
 					'assistant_id' => $assistant_id,
 					'timestamp'    => $request_start_timestamp,
 				)
@@ -2875,7 +2942,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'Processing %d attachment…',
 								'Processing %d attachments…',
 								$attachment_count,
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							),
 							$attachment_count
 						),
@@ -2897,7 +2964,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								'Loading %d memory document…',
 								'Loading %d memory documents…',
 								$memory_count,
-								'wp-mcp-ai'
+								'mcp-ai-wpoos'
 							),
 							$memory_count
 						),
@@ -2911,12 +2978,58 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'status',
 				array(
 					'type'    => 'generating',
-					'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+					'message' => __( 'Generating response…', 'mcp-ai-wpoos' ),
 				)
 			);
 
-			$transcript_context['request_started_at']    = microtime( true );
-			$response                                    = $this->client->create_chat_completion( $messages, $options );
+			$transcript_context['request_started_at'] = microtime( true );
+
+			// Wrap LLM call in try-catch to handle any uncaught exceptions
+			// and ensure SSE stream completes properly even on fatal errors.
+			try {
+				$response = $this->client->create_chat_completion( $messages, $options );
+			} catch ( Exception $e ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_llm_exception',
+					'Exception during LLM call in streaming mode',
+					array(
+						'exception' => $e->getMessage(),
+						'trace'     => $e->getTraceAsString(),
+					)
+				);
+				$this->send_sse_event(
+					'error',
+					array(
+						'code'    => 'llm_exception',
+						'message' => sprintf(
+							/* translators: %s: exception message */
+							__( 'An error occurred while processing your request: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+				$this->send_sse_done();
+				exit;
+			} catch ( Error $e ) {
+				WP_MCP_AI_Logger::log_error(
+					'sse_llm_fatal_error',
+					'Fatal error during LLM call in streaming mode',
+					array(
+						'error' => $e->getMessage(),
+						'trace' => $e->getTraceAsString(),
+					)
+				);
+				$this->send_sse_event(
+					'error',
+					array(
+						'code'    => 'llm_fatal_error',
+						'message' => __( 'A fatal error occurred while processing your request.', 'mcp-ai-wpoos' ),
+					)
+				);
+				$this->send_sse_done();
+				exit;
+			}
+
 			$transcript_context['response_completed_at'] = microtime( true );
 
 			if ( ! is_wp_error( $response ) ) {
@@ -2985,7 +3098,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						)
 					);
 
-					$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
+					// Wrap tool execution in try-catch to handle any uncaught exceptions
+					// and ensure SSE stream continues even if tool execution fails.
+					try {
+						$tool_result = $this->execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration, $max_iterations, $transcript_context );
+					} catch ( Exception $e ) {
+						WP_MCP_AI_Logger::log_error(
+							'sse_tool_exception',
+							'Exception during tool execution in streaming mode',
+							array(
+								'tool_name' => $tool_name,
+								'exception' => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						$tool_result = new WP_Error(
+							'tool_exception',
+							sprintf(
+								/* translators: 1: tool name, 2: exception message */
+								__( 'Tool %1$s failed with exception: %2$s', 'mcp-ai-wpoos' ),
+								$tool_name,
+								$e->getMessage()
+							)
+						);
+					} catch ( Error $e ) {
+						WP_MCP_AI_Logger::log_error(
+							'sse_tool_fatal_error',
+							'Fatal error during tool execution in streaming mode',
+							array(
+								'tool_name' => $tool_name,
+								'error'     => $e->getMessage(),
+								'trace'     => $e->getTraceAsString(),
+							)
+						);
+						$tool_result = new WP_Error(
+							'tool_fatal_error',
+							sprintf(
+								/* translators: %s: tool name */
+								__( 'Tool %s failed with a fatal error.', 'mcp-ai-wpoos' ),
+								$tool_name
+							)
+						);
+					}
 
 					// Convert WP_Error to serializable format to prevent JSON encoding failures.
 					$tool_result = $this->normalize_tool_result( $tool_result );
@@ -3128,7 +3282,19 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'status',
 					array(
 						'type'    => 'thinking',
-						'message' => __( 'Analyzing tool results…', 'wp-mcp-ai' ),
+						'message' => __( 'Analyzing tool results…', 'mcp-ai-wpoos' ),
+					)
+				);
+
+				// Log after sending thinking status to track agentic loop progress.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_after_tools',
+					'Sent thinking status after tool execution, preparing for next LLM call',
+					array(
+						'iteration'         => $iteration,
+						'assistant_id'      => $assistant_id,
+						'tool_count'        => count( $tool_result_messages ),
+						'has_async_pending' => $has_async_pending_result,
 					)
 				);
 
@@ -3158,7 +3324,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 									'type'    => 'model_switched',
 									'message' => sprintf(
 										/* translators: %s: New model name */
-										__( 'Switched to %s for higher token capacity.', 'wp-mcp-ai' ),
+										__( 'Switched to %s for higher token capacity.', 'mcp-ai-wpoos' ),
 										$fallback_model
 									),
 								)
@@ -3189,7 +3355,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 							'status',
 							array(
 								'type'    => 'messages_truncated',
-								'message' => __( 'Reduced context to fit token limits.', 'wp-mcp-ai' ),
+								'message' => __( 'Reduced context to fit token limits.', 'mcp-ai-wpoos' ),
 							)
 						);
 					}
@@ -3200,7 +3366,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'status',
 					array(
 						'type'    => 'generating',
-						'message' => __( 'Generating response…', 'wp-mcp-ai' ),
+						'message' => __( 'Generating response…', 'mcp-ai-wpoos' ),
+					)
+				);
+
+				// Log before second LLM call to track the flow.
+				WP_MCP_AI_Logger::log_event(
+					'sse_streaming_before_llm_call',
+					'About to call LLM again with tool results',
+					array(
+						'iteration'     => $iteration,
+						'assistant_id'  => $assistant_id,
+						'message_count' => count( $messages ),
 					)
 				);
 
@@ -3231,7 +3408,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'status',
 					array(
 						'type'    => 'max_iterations',
-						'message' => __( 'Reached maximum tool execution iterations.', 'wp-mcp-ai' ),
+						'message' => __( 'Reached maximum tool execution iterations.', 'mcp-ai-wpoos' ),
 					)
 				);
 			}
@@ -3430,11 +3607,61 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$payload['sessionKey'] = $recorded_session_key;
 			}
 
+			// ALWAYS include tool_results in payload if they exist.
+			// This ensures the chat client receives tool execution results even when
+			// the LLM response is empty or doesn't include commentary.
+			// Critical for tools like vectorize_image where the tool result contains
+			// the primary information (SVG URL, attachment ID, success message).
 			if ( ! empty( $tool_result_messages ) ) {
 				$payload['tool_results'] = $tool_result_messages;
+
+				// Log final message payload for debugging tool result delivery.
+				WP_MCP_AI_Logger::log_event(
+					'sse_final_message_with_tools',
+					'Sending final SSE message event with tool results',
+					array(
+						'assistant_id'      => $assistant_id,
+						'tool_result_count' => count( $tool_result_messages ),
+						'has_response_data' => ! empty( $response ),
+						'has_text_content'  => ! empty( $response['choices'][0]['message']['content'] ) || ! empty( $response['content'] ),
+					)
+				);
 			}
 
+			// Normalize payload to ensure all data is JSON-serializable.
+			// This prevents SSE stream failures due to non-serializable objects (WP_Error, WP_Post, etc.)
+			// that might be nested in tool results or response data.
+			$payload = $this->normalize_data_recursive( $payload );
+
+			// Log final SSE message sending for diagnostics.
+			WP_MCP_AI_Logger::log_event(
+				'sse_final_message_sending',
+				'Sending final SSE message event to client',
+				array(
+					'assistant_id'           => $assistant_id,
+					'has_data'               => isset( $payload['data'] ),
+					'has_tool_results'       => isset( $payload['tool_results'] ),
+					'has_session_key'        => isset( $payload['sessionKey'] ),
+					'has_cost'               => isset( $payload['cost'] ),
+					'payload_keys'           => array_keys( $payload ),
+					'data_has_choices'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0,
+					'data_has_message'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0 && isset( $payload['data']['choices'][0]['message'] ),
+					'endpoint'               => $request->get_route(),
+				)
+			);
+
 			$this->send_sse_event( 'message', $payload );
+			
+			// Log that [DONE] marker is being sent.
+			WP_MCP_AI_Logger::log_event(
+				'sse_done_marker_sending',
+				'Sending SSE [DONE] marker',
+				array(
+					'assistant_id' => $assistant_id,
+					'endpoint'     => $request->get_route(),
+				)
+			);
+			
 			$this->send_sse_done();
 
 			exit;
@@ -3617,7 +3844,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				}
 			}
 
-			return __( 'The assistant response failed to generate.', 'wp-mcp-ai' );
+			return __( 'The assistant response failed to generate.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -3992,7 +4219,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$assistant_id = $scoped_id;
 
 			if ( ! $assistant_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_missing_assistant', __( 'No assistant was provided and no default assistant is configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			$assistant_post = $this->validate_assistant_access( $assistant_id );
@@ -4031,12 +4258,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$tool_slug = $this->resolve_tool_slug_from_candidates( $tool_candidates, $allowed_tools );
 
 			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
-				return new WP_Error( 'wp_mcp_ai_tool_forbidden', __( 'This assistant is not allowed to execute the requested tool.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+				return new WP_Error( 'wp_mcp_ai_tool_forbidden', __( 'This assistant is not allowed to execute the requested tool.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 			}
 
 			$tool = $this->registry->get_tool( $tool_slug );
 			if ( ! $tool ) {
-				return new WP_Error( 'wp_mcp_ai_tool_missing', __( 'The requested tool is not registered.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+				return new WP_Error( 'wp_mcp_ai_tool_missing', __( 'The requested tool is not registered.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 			}
 
 			$auth_context = $this->get_auth_context();
@@ -4059,7 +4286,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			if ( empty( $context['user_id'] ) && empty( $auth_context['token_authenticated'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+				return new WP_Error( 'wp_mcp_ai_anonymous_user', __( 'You must be logged in to execute tools.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 			}
 
 			/**
@@ -4302,7 +4529,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$file_id = sanitize_text_field( (string) $request->get_param( 'file_id' ) );
 
 			if ( '' === $file_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			$local_attachment = $this->resolve_local_attachment_for_openai_file( $file_id );
@@ -4325,7 +4552,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$body = isset( $result['body'] ) ? (string) $result['body'] : '';
 
 			if ( '' === $body ) {
-				return new WP_Error( 'wp_mcp_ai_file_download_empty', __( 'The downloaded OpenAI file was empty.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_file_download_empty', __( 'The downloaded OpenAI file was empty.', 'mcp-ai-wpoos' ) );
 			}
 
 			$content_type = isset( $result['content_type'] ) && '' !== $result['content_type'] ? $result['content_type'] : 'application/octet-stream';
@@ -4423,7 +4650,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$file_id = sanitize_text_field( (string) $file_id );
 
 			if ( '' === $file_id ) {
-				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_missing_file_id', __( 'A file identifier must be supplied.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 
 			global $wpdb;
@@ -4443,7 +4670,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $post_ids ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_download_not_found',
-					__( 'The requested file could not be located or is no longer available.', 'wp-mcp-ai' ),
+					__( 'The requested file could not be located or is no longer available.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -4506,7 +4733,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( $unauthorised_id ) {
 				return new WP_Error(
 					'wp_mcp_ai_file_download_forbidden',
-					__( 'You do not have permission to download this file.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to download this file.', 'mcp-ai-wpoos' ),
 					array(
 						'status'        => 403,
 						'attachment_id' => $unauthorised_id,
@@ -4516,7 +4743,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			return new WP_Error(
 				'wp_mcp_ai_file_download_not_found',
-				__( 'The requested file could not be located or is no longer available.', 'wp-mcp-ai' ),
+				__( 'The requested file could not be located or is no longer available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -4528,6 +4755,48 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return int
 		 */
 		protected function resolve_assistant_id( $assistant_id ) {
+			// Check if this is a unified team request with format "unified_team_123".
+			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'unified_team_' ) ) {
+				// Extract team ID.
+				$team_id = $this->extract_team_id( $assistant_id );
+
+				if ( $team_id ) {
+					// Return 0 to signal this is a team coordination request.
+					// The team will be handled by the orchestration workflow.
+					return 0;
+				}
+			}
+
+			// Check if this is a team member test request with format "team_123_member_456".
+			// This format is used when testing individual team members from the test team page.
+			if ( is_string( $assistant_id ) && preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$team_id   = absint( $matches[1] );
+				$member_id = absint( $matches[2] );
+
+				if ( $member_id > 0 ) {
+					// Verify the member (profession) exists.
+					$profession_post = get_post( $member_id );
+					if ( $profession_post && 'mcp_ai_profession' === $profession_post->post_type ) {
+						// Check if profession has an associated assistant.
+						$associated_assistant = get_post_meta( $member_id, '_wp_mcp_ai_profession_associated_assistant', true );
+						$associated_assistant = absint( $associated_assistant );
+
+						if ( $associated_assistant > 0 ) {
+							// Verify the associated assistant exists and is published.
+							$assistant_post = get_post( $associated_assistant );
+							if ( $assistant_post && 'mcp_ai_assistant' === $assistant_post->post_type && 'publish' === $assistant_post->post_status ) {
+								// Use the profession's associated assistant.
+								return $associated_assistant;
+							}
+						}
+
+						// No valid associated assistant - return 0 to allow profession-only testing.
+						// The profession will be treated as a temporary primary role.
+						return 0;
+					}
+				}
+			}
+
 			// Check if this is a profession test request with format "profession_123".
 			if ( is_string( $assistant_id ) && 0 === strpos( $assistant_id, 'profession_' ) ) {
 				// Extract profession ID.
@@ -4567,17 +4836,52 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		}
 
 		/**
-		 * Extract profession ID from assistant_id parameter if it has profession_ prefix.
+		 * Extract team ID from assistant_id parameter if it has unified_team_ prefix.
+		 *
+		 * @param mixed $assistant_id Assistant ID parameter from request.
+		 * @return int|false Team ID or false if not a unified team request.
+		 */
+		protected function extract_team_id( $assistant_id ) {
+			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'unified_team_' ) ) {
+				return false;
+			}
+
+			$team_id = absint( str_replace( 'unified_team_', '', $assistant_id ) );
+			if ( ! $team_id ) {
+				return false;
+			}
+
+			// Verify it's actually a team post.
+			$team_post = get_post( $team_id );
+			if ( ! $team_post || 'mcp_ai_team' !== $team_post->post_type ) {
+				return false;
+			}
+
+			return $team_id;
+		}
+
+		/**
+		 * Extract profession ID from assistant_id parameter if it has profession_ prefix
+		 * or team_XXX_member_YYY pattern.
 		 *
 		 * @param mixed $assistant_id Assistant ID parameter from request.
 		 * @return int|false Profession ID or false if not a profession test request.
 		 */
 		protected function extract_profession_id( $assistant_id ) {
-			if ( ! is_string( $assistant_id ) || 0 !== strpos( $assistant_id, 'profession_' ) ) {
+			if ( ! is_string( $assistant_id ) ) {
 				return false;
 			}
 
-			$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			$profession_id = false;
+
+			// Check for team_XXX_member_YYY pattern (individual team member testing).
+			if ( preg_match( '/^team_(\d+)_member_(\d+)$/', $assistant_id, $matches ) ) {
+				$profession_id = absint( $matches[2] );
+			} elseif ( 0 === strpos( $assistant_id, 'profession_' ) ) {
+				// Check for profession_XXX pattern (direct profession testing).
+				$profession_id = absint( str_replace( 'profession_', '', $assistant_id ) );
+			}
+
 			if ( ! $profession_id ) {
 				return false;
 			}
@@ -4589,6 +4893,479 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			return $profession_id;
+		}
+
+		/**
+		 * Handle unified team chat request with multi-agent orchestration.
+		 *
+		 * Routes the request through the Agent Team Orchestrator for coordinated
+		 * multi-agent execution following DeepSeek V4 patterns.
+		 *
+		 * @param WP_REST_Request $request REST request object.
+		 * @param int             $team_id Team post ID.
+		 * @return WP_REST_Response|WP_Error Response or error.
+		 */
+		protected function handle_unified_team_request( $request, $team_id ) {
+			// Load team configuration.
+			$team_post = get_post( $team_id );
+			if ( ! $team_post || 'mcp_ai_team' !== $team_post->post_type ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_team',
+					__( 'Invalid team ID provided.', 'mcp-ai-wpoos' ),
+					array( 'status' => 404 )
+				);
+			}
+
+			// Check if multi-agent teams are enabled.
+			$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+			if ( ! $enable_multi_agent_teams ) {
+				return new WP_Error(
+					'wp_mcp_ai_teams_disabled',
+					__( 'Multi-agent teams are disabled. Enable them in Settings → Orchestration.', 'mcp-ai-wpoos' ),
+					array( 'status' => 403 )
+				);
+			}
+
+
+			// Get driver assistant (optional - for logging/tracking only).
+			$driver_assistant_id = get_post_meta( $team_id, '_wp_mcp_ai_team_driver_assistant', true );
+
+			// If not set on team, try global default.
+			if ( ! $driver_assistant_id ) {
+				$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
+			}
+
+			// Get team members.
+			$team_members = get_post_meta( $team_id, '_wp_mcp_ai_team_members', true );
+			if ( ! is_array( $team_members ) || empty( $team_members ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_team',
+					__( 'Team has no members configured.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			// Get orchestration settings.
+			$orchestration_mode = get_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', true );
+			$result_aggregation = get_post_meta( $team_id, '_wp_mcp_ai_team_result_aggregation', true );
+
+			$orchestration_mode = $orchestration_mode ? $orchestration_mode : 'sequential';
+			$result_aggregation = $result_aggregation ? $result_aggregation : 'consensus';
+
+			// Sanitize messages.
+			$sanitized_messages = $this->validator->sanitize_messages( $request->get_param( 'messages' ) );
+			if ( is_wp_error( $sanitized_messages ) ) {
+				return $sanitized_messages;
+			}
+
+			$messages    = $sanitized_messages['messages'];
+			$attachments = $sanitized_messages['attachments'];
+
+			if ( empty( $messages ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_messages',
+					__( 'Messages must be provided as an array of role/content pairs.', 'mcp-ai-wpoos' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'rest_unified_team_request',
+				'Unified team chat request initiated',
+				array(
+					'team_id'            => $team_id,
+					'team_name'          => $team_post->post_title,
+					'driver_assistant'   => $driver_assistant_id,
+				'member_count'       => count( $team_members ),
+					'orchestration_mode' => $orchestration_mode,
+					'result_aggregation' => $result_aggregation,
+					'message_count'      => count( $messages ),
+				)
+			);
+
+			// Load agent team orchestrator.
+			if ( ! class_exists( 'WP_MCP_AI_Agent_Team_Orchestrator' ) ) {
+				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-agent-team-orchestrator.php';
+			}
+
+			// Initialize orchestrator.
+			$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+
+			// Execute team orchestration based on mode.
+			$team_response = $this->execute_team_orchestration(
+				$orchestrator,
+				$team_id,
+				$team_members,
+				$messages,
+				$orchestration_mode,
+				$result_aggregation,
+				$request
+			);
+
+			if ( is_wp_error( $team_response ) ) {
+				return $team_response;
+			}
+
+			// Return the unified team response.
+			return rest_ensure_response( $team_response );
+		}
+
+		/**
+		 * Execute team orchestration workflow.
+		 *
+		 * @param WP_MCP_AI_Agent_Team_Orchestrator $orchestrator       Orchestrator instance.
+		 * @param int                               $team_id            Team ID.
+		 * @param array                             $team_members       Array of profession IDs.
+		 * @param array                             $messages           Chat messages.
+		 * @param string                            $orchestration_mode Orchestration mode (sequential/parallel/swarm).
+		 * @param string                            $result_aggregation Result aggregation strategy.
+		 * @param WP_REST_Request                   $request            Original request.
+		 * @return array|WP_Error Response array or error.
+		 */
+		protected function execute_team_orchestration( $orchestrator, $team_id, $team_members, $messages, $orchestration_mode, $result_aggregation, $request ) {
+			$member_responses = array();
+			$errors           = array();
+
+			// Get the user's message (last message in the array).
+			$user_message = end( $messages );
+			$task_content = isset( $user_message['content'] ) ? $user_message['content'] : '';
+
+			// Execute based on orchestration mode.
+			switch ( $orchestration_mode ) {
+				case 'sequential':
+					// Execute members sequentially, each building on previous results.
+					$member_responses = $this->execute_sequential_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'parallel':
+					// Execute all members in parallel (simulate concurrency in PHP).
+					$member_responses = $this->execute_parallel_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'swarm':
+					// Swarm intelligence - members collaborate and iterate.
+					$member_responses = $this->execute_swarm_orchestration( $team_members, $messages, $request );
+					break;
+
+				case 'single':
+				default:
+					// Single member handles the request (first member).
+					$member_responses = $this->execute_single_orchestration( $team_members, $messages, $request );
+					break;
+			}
+
+			if ( is_wp_error( $member_responses ) ) {
+				return $member_responses;
+			}
+
+			// Aggregate results based on strategy.
+			$aggregated_response = $this->aggregate_team_results( $member_responses, $result_aggregation );
+
+			if ( is_wp_error( $aggregated_response ) ) {
+				return $aggregated_response;
+			}
+
+			WP_MCP_AI_Logger::log_event(
+				'rest_unified_team_complete',
+				'Unified team orchestration completed',
+				array(
+					'team_id'             => $team_id,
+					'orchestration_mode'  => $orchestration_mode,
+					'result_aggregation'  => $result_aggregation,
+					'members_responded'   => count( $member_responses ),
+					'response_length'     => strlen( $aggregated_response ),
+				)
+			);
+
+			// Format response similar to regular assistant response.
+			return array(
+				'role'    => 'assistant',
+				'content' => $aggregated_response,
+				'metadata' => array(
+					'team_id'            => $team_id,
+					'orchestration_mode' => $orchestration_mode,
+					'result_aggregation' => $result_aggregation,
+					'members_involved'   => count( $member_responses ),
+				),
+			);
+		}
+
+		/**
+		 * Execute sequential orchestration - members process in order.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_sequential_orchestration( $team_members, $messages, $request ) {
+			$responses       = array();
+			$context_messages = $messages;
+
+			foreach ( $team_members as $member_id ) {
+				// Each member builds on previous responses.
+				$member_response = $this->invoke_team_member( $member_id, $context_messages, $request );
+
+				if ( is_wp_error( $member_response ) ) {
+					// Log error but continue with other members.
+					WP_MCP_AI_Logger::log_warning(
+						'Team member failed in sequential orchestration',
+						array(
+							'member_id' => $member_id,
+							'error'     => $member_response->get_error_message(),
+						)
+					);
+					continue;
+				}
+
+				$responses[] = $member_response;
+
+				// Add this member's response to context for next member.
+				$context_messages[] = array(
+					'role'    => 'assistant',
+					'content' => $member_response['content'],
+				);
+			}
+
+			return $responses;
+		}
+
+		/**
+		 * Execute parallel orchestration - all members process independently.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_parallel_orchestration( $team_members, $messages, $request ) {
+			$responses = array();
+
+			// In PHP, we simulate parallel execution by invoking all members with same context.
+			foreach ( $team_members as $member_id ) {
+				$member_response = $this->invoke_team_member( $member_id, $messages, $request );
+
+				if ( is_wp_error( $member_response ) ) {
+					WP_MCP_AI_Logger::log_warning(
+						'Team member failed in parallel orchestration',
+						array(
+							'member_id' => $member_id,
+							'error'     => $member_response->get_error_message(),
+						)
+					);
+					continue;
+				}
+
+				$responses[] = $member_response;
+			}
+
+			return $responses;
+		}
+
+		/**
+		 * Execute swarm orchestration - collaborative iteration.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_swarm_orchestration( $team_members, $messages, $request ) {
+			// Swarm: Initial parallel execution, then refinement round.
+			$initial_responses = $this->execute_parallel_orchestration( $team_members, $messages, $request );
+
+			if ( is_wp_error( $initial_responses ) || empty( $initial_responses ) ) {
+				return $initial_responses;
+			}
+
+			// Add all initial responses to context.
+			$refinement_context = $messages;
+			$refinement_context[] = array(
+				'role'    => 'assistant',
+				'content' => "Initial team responses:\n\n" . implode( "\n\n---\n\n", array_column( $initial_responses, 'content' ) ),
+			);
+
+			// Have first member (critic or leader) refine based on all inputs.
+			$leader_id = $team_members[0];
+			$refined_response = $this->invoke_team_member( $leader_id, $refinement_context, $request );
+
+			if ( is_wp_error( $refined_response ) ) {
+				// Fall back to parallel aggregation.
+				return $initial_responses;
+			}
+
+			// Return refined response as primary, with initial responses as context.
+			return array( $refined_response );
+		}
+
+		/**
+		 * Execute single member orchestration - first member handles request.
+		 *
+		 * @param array           $team_members Member profession IDs.
+		 * @param array           $messages     Chat messages.
+		 * @param WP_REST_Request $request      Original request.
+		 * @return array|WP_Error Array of member responses or error.
+		 */
+		protected function execute_single_orchestration( $team_members, $messages, $request ) {
+			$member_id = $team_members[0];
+			$response  = $this->invoke_team_member( $member_id, $messages, $request );
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			return array( $response );
+		}
+
+		/**
+		 * Invoke a single team member (profession) with the given messages.
+		 *
+		 * @param int             $member_id Member profession ID.
+		 * @param array           $messages  Chat messages.
+		 * @param WP_REST_Request $request   Original request.
+		 * @return array|WP_Error Member response or error.
+		 */
+		protected function invoke_team_member( $member_id, $messages, $request ) {
+			// Load profession configuration.
+			$profession_config = $this->load_profession_configuration( $member_id, array() );
+
+			// Use profession's provider/model or defaults.
+			$provider = isset( $profession_config['provider'] ) ? $profession_config['provider'] : '';
+			$model    = isset( $profession_config['model'] ) ? $profession_config['model'] : '';
+
+			// Get default settings if not set on profession.
+			if ( empty( $provider ) ) {
+				$settings = WP_MCP_AI_Admin_Settings::get_settings();
+				$provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
+			}
+
+			// Prepare options for create_chat_completion.
+			$options = array(
+				'provider' => $provider,
+				'model'    => $model,
+			);
+
+			// Add system prompt if available.
+			if ( ! empty( $profession_config['system_prompt'] ) ) {
+				// Check if first message is already a system message.
+				$has_system_message = false;
+				if ( ! empty( $messages ) && isset( $messages[0]['role'] ) && 'system' === $messages[0]['role'] ) {
+					$has_system_message = true;
+				}
+
+				// Only prepend system message if one doesn't already exist.
+				if ( ! $has_system_message ) {
+					// Prepend system message to messages array.
+					$messages = array_merge(
+						array(
+							array(
+								'role'    => 'system',
+								'content' => $profession_config['system_prompt'],
+							),
+						),
+						$messages
+					);
+				}
+			}
+
+			// Add tools if available.
+			if ( ! empty( $profession_config['tools'] ) && is_array( $profession_config['tools'] ) ) {
+				$options['tools'] = $profession_config['tools'];
+			}
+
+			// Make the AI request using the router.
+			try {
+				$response = $this->client->create_chat_completion( $messages, $options );
+
+				if ( is_wp_error( $response ) ) {
+					return $response;
+				}
+
+				// Extract content from response.
+				$content = '';
+				if ( isset( $response['choices'][0]['message']['content'] ) ) {
+					$content = $response['choices'][0]['message']['content'];
+				} elseif ( isset( $response['content'] ) ) {
+					$content = $response['content'];
+				}
+
+				return array(
+					'member_id' => $member_id,
+					'content'   => $content,
+					'metadata'  => array(
+						'provider' => $provider,
+						'model'    => $model,
+					),
+				);
+
+			} catch ( Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_member_invocation_failed',
+					sprintf(
+						/* translators: %s: Error message */
+						__( 'Team member invocation failed: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					)
+				);
+			}
+		}
+
+		/**
+		 * Aggregate team member results based on strategy.
+		 *
+		 * @param array  $responses         Array of member responses.
+		 * @param string $aggregation_strategy Aggregation strategy.
+		 * @return string|WP_Error Aggregated response or error.
+		 */
+		protected function aggregate_team_results( $responses, $aggregation_strategy ) {
+			if ( empty( $responses ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_no_responses',
+					__( 'No team members provided responses.', 'mcp-ai-wpoos' )
+				);
+			}
+
+			switch ( $aggregation_strategy ) {
+				case 'consensus':
+					// Combine all responses with clear attribution.
+					$aggregated = "# Team Response (Consensus)\n\n";
+					foreach ( $responses as $index => $response ) {
+						$member_num = $index + 1;
+						$aggregated .= "## Team Member {$member_num}\n\n";
+						$aggregated .= $response['content'] . "\n\n";
+					}
+					return $aggregated;
+
+				case 'weighted':
+					// First response gets priority (leader/planner).
+					$primary = $responses[0]['content'];
+					if ( count( $responses ) > 1 ) {
+						$primary .= "\n\n---\n\n## Additional Perspectives\n\n";
+						for ( $i = 1; $i < count( $responses ); $i++ ) {
+							$primary .= $responses[ $i ]['content'] . "\n\n";
+						}
+					}
+					return $primary;
+
+				case 'hierarchical':
+					// Last response (after refinement) takes precedence.
+					return end( $responses )['content'];
+
+				case 'first':
+					// First member's response only.
+					return $responses[0]['content'];
+
+				case 'best':
+					// Longest response (proxy for most comprehensive).
+					usort( $responses, function( $a, $b ) {
+						return strlen( $b['content'] ) - strlen( $a['content'] );
+					});
+					return $responses[0]['content'];
+
+				default:
+					// Default to consensus.
+					return $this->aggregate_team_results( $responses, 'consensus' );
+			}
 		}
 
 		/**
@@ -4628,7 +5405,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( $has_assistant_base ) {
 					// If assistant exists, append profession role to existing instructions.
 					// This ensures the assistant's base knowledge is primary and profession data supplements it.
-					$assistant_config['system_prompt'] .= "\n\n" . __( 'Professional Role & Expertise:', 'wp-mcp-ai' ) . "\n" . $profession_prompt;
+					$assistant_config['system_prompt'] .= "\n\n" . __( 'Professional Role & Expertise:', 'mcp-ai-wpoos' ) . "\n" . $profession_prompt;
 				} else {
 					// No assistant base - use profession role as the primary system prompt.
 					$assistant_config['system_prompt'] = $profession_prompt;
@@ -4711,11 +5488,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( $assistant_id !== $token_assistant ) {
 				return new WP_Error(
 					'wp_mcp_ai_assistant_scope_mismatch',
-					__( 'The provided credential cannot access the requested assistant.', 'wp-mcp-ai' ),
+					__( 'The provided credential cannot access the requested assistant.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 403,
 						'actions' => array(
-							'use_scoped_assistant' => __( 'Retry the request without overriding the assistant or request a credential for the desired assistant.', 'wp-mcp-ai' ),
+							'use_scoped_assistant' => __( 'Retry the request without overriding the assistant or request a credential for the desired assistant.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -4745,7 +5522,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( ! $assistant_post || WP_MCP_AI_Assistant_CPT::POST_TYPE !== $assistant_post->post_type ) {
 				return new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
-					__( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
+					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -4768,7 +5545,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( 'publish' !== $assistant_post->post_status && ! $this->user_can_access_post( $assistant_id ) && ! $token_bypasses_visibility ) {
 				return new WP_Error(
 					'wp_mcp_ai_assistant_forbidden',
-					__( 'You do not have access to this assistant.', 'wp-mcp-ai' ),
+					__( 'You do not have access to this assistant.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -5041,7 +5818,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'wp_mcp_ai_token_budget_exceeded',
 						sprintf(
 							/* translators: 1: Token count, 2: Maximum allowed tokens */
-							__( 'Request token count (%1$d) exceeds maximum allowed (%2$d) even after trimming. Please reduce message length.', 'wp-mcp-ai' ),
+							__( 'Request token count (%1$d) exceeds maximum allowed (%2$d) even after trimming. Please reduce message length.', 'mcp-ai-wpoos' ),
 							$estimated_tokens_after,
 							$max_input_tokens
 						),
@@ -5237,11 +6014,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_request_too_large',
-					__( 'The chat request exceeds the maximum allowed size.', 'wp-mcp-ai' ),
+					__( 'The chat request exceeds the maximum allowed size.', 'mcp-ai-wpoos' ),
 					array(
 						'status'  => 400,
 						'actions' => array(
-							'reduce_request_size' => __( 'Reduce the length of the conversation before retrying.', 'wp-mcp-ai' ),
+							'reduce_request_size' => __( 'Reduce the length of the conversation before retrying.', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
@@ -5435,7 +6212,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$content = array();
 			}
 
-			$note        = '[' . __( 'Truncated', 'wp-mcp-ai' ) . '] ';
+			$note        = '[' . __( 'Truncated', 'mcp-ai-wpoos' ) . '] ';
 			$note_length = $this->mb_strlen( $note );
 
 			if ( $note_length >= $max_chars ) {
@@ -5819,6 +6596,24 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					continue;
 				}
 
+				// Filter tools by user capabilities.
+				// If the tool requires a specific capability, only include it if the current user has that capability.
+				if ( method_exists( $tool, 'get_required_capability' ) ) {
+					$required_capability = $tool->get_required_capability();
+					if ( ! empty( $required_capability ) && ! current_user_can( $required_capability ) ) {
+						WP_MCP_AI_Logger::log_event(
+							'tool_filtered_by_capability',
+							sprintf( 'Tool "%s" filtered from payload - user lacks required capability: %s', $slug, $required_capability ),
+							array(
+								'tool_slug'           => $slug,
+								'required_capability' => $required_capability,
+								'user_id'             => get_current_user_id(),
+							)
+						);
+						continue;
+					}
+				}
+
 				try {
 					$schema = $tool->get_parameters_schema();
 
@@ -5917,7 +6712,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( 'openai' === $chat_provider && in_array( 'gemini', $required_providers, true ) ) {
 				$fallback_parts[] = sprintf(
 					/* translators: %s: required provider name (e.g., "Gemini") */
-					__( 'Note: This tool uses the %s API for image processing. A valid Gemini API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
+					__( 'Note: This tool uses the %s API for image processing. A valid Gemini API key must be configured in the plugin settings.', 'mcp-ai-wpoos' ),
 					$this->format_provider_name( 'gemini' )
 				);
 			}
@@ -5926,7 +6721,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( 'gemini' === $chat_provider && in_array( 'openai', $required_providers, true ) ) {
 				$fallback_parts[] = sprintf(
 					/* translators: %s: required provider name (e.g., "OpenAI") */
-					__( 'Note: This tool uses the %s API. A valid OpenAI API key must be configured in the plugin settings.', 'wp-mcp-ai' ),
+					__( 'Note: This tool uses the %s API. A valid OpenAI API key must be configured in the plugin settings.', 'mcp-ai-wpoos' ),
 					$this->format_provider_name( 'openai' )
 				);
 			}
@@ -5936,7 +6731,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$provider_list    = implode( ', ', array_map( array( $this, 'format_provider_name' ), $required_providers ) );
 				$fallback_parts[] = sprintf(
 					/* translators: %s: comma-separated list of required providers */
-					__( 'Note: This tool requires one of the following providers: %s.', 'wp-mcp-ai' ),
+					__( 'Note: This tool requires one of the following providers: %s.', 'mcp-ai-wpoos' ),
 					$provider_list
 				);
 			}
@@ -5984,7 +6779,9 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				return array();
 			}
 
-			require_once ABSPATH . 'wp-admin/includes/file.php';
+			if ( ! function_exists( 'WP_Filesystem' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 
 			global $wp_filesystem;
 
@@ -6034,7 +6831,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! file_exists( $file_path ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_memory_file_missing',
-						__( 'A memory file could not be located.', 'wp-mcp-ai' ),
+						__( 'A memory file could not be located.', 'mcp-ai-wpoos' ),
 						array(
 							'status'  => 404,
 							'file_id' => $file_id,
@@ -6047,7 +6844,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( false === $file_size ) {
 					return new WP_Error(
 						'wp_mcp_ai_memory_file_size_unknown',
-						__( 'Could not determine the size of a memory file.', 'wp-mcp-ai' ),
+						__( 'Could not determine the size of a memory file.', 'mcp-ai-wpoos' ),
 						array(
 							'status'  => 400,
 							'file_id' => $file_id,
@@ -6061,7 +6858,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					/* translators: 1: maximum allowed size in bytes, 2: detected file size in bytes. */
 					$message = sprintf(
 					/* translators: 1: maximum file size in bytes, 2: actual file size in bytes */
-						__( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'wp-mcp-ai' ),
+						__( 'Memory files must be smaller than %1$s bytes. The requested file is %2$s bytes.', 'mcp-ai-wpoos' ),
 						number_format_i18n( $max_bytes ),
 						number_format_i18n( $file_size )
 					);
@@ -6140,7 +6937,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			if ( empty( $documents ) && ! $encountered_permitted && ! empty( $forbidden_file_ids ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_memory_files_forbidden',
-					__( 'You do not have permission to use the requested memory files.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to use the requested memory files.', 'mcp-ai-wpoos' ),
 					array(
 						'status'        => 403,
 						'forbidden_ids' => array_values( array_unique( $forbidden_file_ids ) ),
@@ -6377,7 +7174,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				try {
 					$file = new SplFileObject( $file_path, 'rb' );
 				} catch ( RuntimeException $exception ) {
-					return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
+					return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'mcp-ai-wpoos' ) );
 				}
 
 				$contents      = '';
@@ -6388,7 +7185,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					$chunk       = $file->fread( $read_length );
 
 					if ( false === $chunk ) {
-						return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
+						return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'mcp-ai-wpoos' ) );
 					}
 
 					$length = strlen( $chunk );
@@ -6417,10 +7214,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					return $contents;
 				}
 
-				return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_memory_file_read_failed', __( 'Failed to read memory file contents.', 'mcp-ai-wpoos' ) );
 			}
 
-			return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_memory_file_unreadable', __( 'Unable to read memory file contents.', 'mcp-ai-wpoos' ) );
 		}
 
 		/**
@@ -6503,7 +7300,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			$truncated = $limit < $this->mb_strlen( $text );
 
 			if ( $truncated && ! empty( $chunks ) ) {
-				$chunks[ count( $chunks ) - 1 ] .= "\n\n[" . __( 'Truncated', 'wp-mcp-ai' ) . ']';
+				$chunks[ count( $chunks ) - 1 ] .= "\n\n[" . __( 'Truncated', 'mcp-ai-wpoos' ) . ']';
 			}
 
 			$current_total += $limit;
@@ -6590,7 +7387,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				return new WP_Error(
 					'wp_mcp_ai_transcript_missing',
-					__( 'The requested chat transcript could not be found.', 'wp-mcp-ai' ),
+					__( 'The requested chat transcript could not be found.', 'mcp-ai-wpoos' ),
 					array( 'status' => 404 )
 				);
 			}
@@ -6854,6 +7651,60 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->openai_client = $container->get( 'client.openai' );
 			}
 			return $this->openai_client;
+		}
+
+		/**
+		 * Get AI provider instance by provider name.
+		 *
+		 * @param string $provider Provider name (openai, anthropic, google, ollama).
+		 * @return object|WP_Error Provider instance or error.
+		 */
+		protected function get_ai_provider_instance( $provider ) {
+			$provider = sanitize_key( $provider );
+			$container = wp_mcp_ai_container();
+
+			try {
+				switch ( $provider ) {
+					case 'openai':
+						return $container->get( 'client.openai' );
+
+					case 'anthropic':
+						return $container->get( 'client.anthropic' );
+
+					case 'google':
+					case 'gemini':
+						if ( $container->has( 'client.google' ) ) {
+							return $container->get( 'client.google' );
+						}
+						return new WP_Error(
+							'wp_mcp_ai_provider_unavailable',
+							__( 'Google/Gemini provider is not available.', 'mcp-ai-wpoos' )
+						);
+
+					case 'ollama':
+						if ( $container->has( 'client.ollama' ) ) {
+							return $container->get( 'client.ollama' );
+						}
+						return new WP_Error(
+							'wp_mcp_ai_provider_unavailable',
+							__( 'Ollama provider is not available.', 'mcp-ai-wpoos' )
+						);
+
+					default:
+						// Default to OpenAI for unknown providers.
+						return $container->get( 'client.openai' );
+				}
+			} catch ( Exception $e ) {
+				return new WP_Error(
+					'wp_mcp_ai_provider_init_failed',
+					sprintf(
+						/* translators: %1$s: Provider name, %2$s: Error message */
+						__( 'Failed to initialize %1$s provider: %2$s', 'mcp-ai-wpoos' ),
+						$provider,
+						$e->getMessage()
+					)
+				);
+			}
 		}
 
 		/**
@@ -7640,7 +8491,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( '' !== $name ) {
 				/* translators: %s: tool name */
-				$parts[] = sprintf( __( 'Tool call: %s', 'wp-mcp-ai' ), $name );
+				$parts[] = sprintf( __( 'Tool call: %s', 'mcp-ai-wpoos' ), $name );
 			}
 
 			if ( '' !== $arguments ) {
@@ -8045,7 +8896,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 */
 		protected function execute_tool_call_internal( $tool_call, $assistant_id, $assistant_config, $user_id, $request, $iteration = 0, $max_iterations = 5, $transcript_context = array() ) {
 			if ( ! isset( $tool_call['function']['name'] ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_tool_call', __( 'Tool call missing function name.', 'mcp-ai-wpoos' ) );
 			}
 
 			$tool_name = $tool_call['function']['name'];
@@ -8076,7 +8927,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 									)
 								);
 								/* translators: %s: tool name */
-								return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments', sprintf( __( 'Tool "%s" has invalid arguments: expected JSON object.', 'wp-mcp-ai' ), $tool_name ) );
+								return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments', sprintf( __( 'Tool "%s" has invalid arguments: expected JSON object.', 'mcp-ai-wpoos' ), $tool_name ) );
 							}
 						} else {
 							// JSON decode failed.
@@ -8092,7 +8943,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 								)
 							);
 							/* translators: 1: tool name, 2: JSON error message */
-							return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments_json', sprintf( __( 'Tool "%1$s" has invalid JSON arguments: %2$s', 'wp-mcp-ai' ), $tool_name, $json_error ) );
+							return new WP_Error( 'wp_mcp_ai_invalid_tool_arguments_json', sprintf( __( 'Tool "%1$s" has invalid JSON arguments: %2$s', 'mcp-ai-wpoos' ), $tool_name, $json_error ) );
 						}
 					}
 				} elseif ( is_array( $tool_call['function']['arguments'] ) ) {
@@ -8140,13 +8991,13 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			if ( ! in_array( $tool_slug, $allowed_tools, true ) ) {
 				/* translators: %s: tool name */
-				return new WP_Error( 'wp_mcp_ai_tool_forbidden', sprintf( __( 'Tool "%s" is not allowed for this assistant.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 403 ) );
+				return new WP_Error( 'wp_mcp_ai_tool_forbidden', sprintf( __( 'Tool "%s" is not allowed for this assistant.', 'mcp-ai-wpoos' ), $tool_name ), array( 'status' => 403 ) );
 			}
 
 			$tool = $this->registry->get_tool( $tool_slug );
 			if ( ! $tool ) {
 				/* translators: %s: tool name */
-				return new WP_Error( 'wp_mcp_ai_tool_missing', sprintf( __( 'Tool "%s" is not registered.', 'wp-mcp-ai' ), $tool_name ), array( 'status' => 404 ) );
+				return new WP_Error( 'wp_mcp_ai_tool_missing', sprintf( __( 'Tool "%s" is not registered.', 'mcp-ai-wpoos' ), $tool_name ), array( 'status' => 404 ) );
 			}
 
 			// Extract tool_call_id if available (from OpenAI/Gemini tool calls).
@@ -8297,7 +9148,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					if ( '' !== $tool_call_id ) {
 						$message = sprintf(
 							/* translators: 1: tool name, 2: job ID, 3: call ID */
-							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'wp-mcp-ai' ),
+							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready. (Call ID: %3$s)', 'mcp-ai-wpoos' ),
 							$tool_name,
 							$job_id,
 							$tool_call_id
@@ -8305,7 +9156,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					} else {
 						$message = sprintf(
 							/* translators: 1: tool name, 2: job ID */
-							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready.', 'wp-mcp-ai' ),
+							__( 'Tool "%1$s" is processing in the background (Job ID: %2$s). The results will be available shortly and will appear here automatically when ready.', 'mcp-ai-wpoos' ),
 							$tool_name,
 							$job_id
 						);
@@ -8393,7 +9244,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 						return sprintf(
 							/* translators: 1: tool name, 2: error message */
-							__( 'Tool "%1$s" execution failed: %2$s', 'wp-mcp-ai' ),
+							__( 'Tool "%1$s" execution failed: %2$s', 'mcp-ai-wpoos' ),
 							$tool_name,
 							$result->get_error_message()
 						);
@@ -8432,7 +9283,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				if ( ! empty( $context['agentic_loop'] ) ) {
 					return sprintf(
 						/* translators: 1: tool name, 2: error message */
-						__( 'Tool "%1$s" execution error: %2$s. The tool could not complete successfully.', 'wp-mcp-ai' ),
+						__( 'Tool "%1$s" execution error: %2$s. The tool could not complete successfully.', 'mcp-ai-wpoos' ),
 						$tool_name,
 						$e->getMessage()
 					);

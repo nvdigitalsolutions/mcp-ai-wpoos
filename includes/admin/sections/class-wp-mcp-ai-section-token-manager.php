@@ -31,7 +31,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Token Usage Manager', 'wp-mcp-ai' );
+			return __( 'Token Usage Manager', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -58,7 +58,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Monitor and manage API token consumption across all users, tools, and the entire site.', 'wp-mcp-ai' );
+			return __( 'Monitor and manage API token consumption across all users, tools, and the entire site.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/performance/TOKEN_MANAGEMENT_GUIDE.md';
 		}
 
 		/**
@@ -78,24 +87,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<nav class="wp-mcp-ai-token-manager__nav">
 					<a href="<?php echo esc_url( $this->get_view_url( 'per_user' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_user' === $active_view ? 'active' : ''; ?>">
 						<span class="dashicons dashicons-admin-users"></span>
-						<?php esc_html_e( 'Per User', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Per User', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( $this->get_view_url( 'per_tool' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_tool' === $active_view ? 'active' : ''; ?>">
 						<span class="dashicons dashicons-admin-tools"></span>
-						<?php esc_html_e( 'Per Tool', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Per Tool', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( $this->get_view_url( 'per_site' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_site' === $active_view ? 'active' : ''; ?>">
 						<span class="dashicons dashicons-admin-site-alt3"></span>
-						<?php esc_html_e( 'Per Site', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Per Site', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( $this->get_view_url( 'per_models' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'per_models' === $active_view ? 'active' : ''; ?>">
 						<span class="dashicons dashicons-admin-generic"></span>
-						<?php esc_html_e( 'Per Models', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Per Models', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( $this->get_view_url( 'model_manager' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'model_manager' === $active_view ? 'active' : ''; ?>">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Model Manager', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<?php if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) : ?>
 						<a href="<?php echo esc_url( $this->get_view_url( 'analytics' ) ); ?>" class="wp-mcp-ai-token-manager__nav-item <?php echo 'analytics' === $active_view ? 'active' : ''; ?>">
 							<span class="dashicons dashicons-chart-line"></span>
-							<?php esc_html_e( 'Analytics', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Analytics', 'mcp-ai-wpoos' ); ?>
 						</a>
 					<?php endif; ?>
 				</nav>
@@ -115,6 +128,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							break;
 						case 'per_models':
 							$this->render_per_models_view();
+							break;
+						case 'model_manager':
+							$this->render_model_manager_view();
 							break;
 						case 'analytics':
 							if ( class_exists( 'WP_MCP_AI_Analytics_Engine' ) ) {
@@ -180,24 +196,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			?>
-			<h3><?php esc_html_e( 'Token Usage by User', 'wp-mcp-ai' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'View and manage token consumption for each user across all AI models and providers.', 'wp-mcp-ai' ); ?></p>
+			<h3><?php esc_html_e( 'Token Usage by User', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'View and manage token consumption for each user across all AI models and providers.', 'mcp-ai-wpoos' ); ?></p>
 
 			<!-- Analytics Charts Section -->
 			<div class="wp-mcp-ai-analytics-section">
 				<div class="wp-mcp-ai-chart-controls">
-					<h3><?php esc_html_e( 'Usage Analytics', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Usage Analytics', 'mcp-ai-wpoos' ); ?></h3>
 					<div class="wp-mcp-ai-chart-controls-right">
-						<label for="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-label"><?php esc_html_e( 'Time Period:', 'wp-mcp-ai' ); ?></label>
+						<label for="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-label"><?php esc_html_e( 'Time Period:', 'mcp-ai-wpoos' ); ?></label>
 						<select id="wp-mcp-ai-chart-period" class="wp-mcp-ai-chart-period-select">
-							<option value="1"><?php esc_html_e( 'Today', 'wp-mcp-ai' ); ?></option>
-							<option value="7" selected><?php esc_html_e( 'Last 7 Days', 'wp-mcp-ai' ); ?></option>
-							<option value="30"><?php esc_html_e( 'Last 30 Days', 'wp-mcp-ai' ); ?></option>
-							<option value="90"><?php esc_html_e( 'Last 90 Days', 'wp-mcp-ai' ); ?></option>
+							<option value="1"><?php esc_html_e( 'Today', 'mcp-ai-wpoos' ); ?></option>
+							<option value="7" selected><?php esc_html_e( 'Last 7 Days', 'mcp-ai-wpoos' ); ?></option>
+							<option value="30"><?php esc_html_e( 'Last 30 Days', 'mcp-ai-wpoos' ); ?></option>
+							<option value="90"><?php esc_html_e( 'Last 90 Days', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 						<button type="button" id="wp-mcp-ai-refresh-charts" class="button">
 							<span class="dashicons dashicons-update"></span>
-							<?php esc_html_e( 'Refresh', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
 						</button>
 					</div>
 				</div>
@@ -220,40 +236,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			<?php if ( empty( $user_ids ) ) : ?>
 				<div class="notice notice-info inline">
-					<p><?php esc_html_e( 'No token usage data has been recorded yet. Usage will appear here once users start interacting with AI assistants.', 'wp-mcp-ai' ); ?></p>
+					<p><?php esc_html_e( 'No token usage data has been recorded yet. Usage will appear here once users start interacting with AI assistants.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php else : ?>
 				<!-- Bulk Actions Toolbar -->
 				<div class="tablenav top" style="margin-bottom: 10px;">
 					<div class="alignleft actions bulkactions">
-						<label for="bulk-tier-selector" class="screen-reader-text"><?php esc_html_e( 'Select bulk tier action', 'wp-mcp-ai' ); ?></label>
+						<label for="bulk-tier-selector" class="screen-reader-text"><?php esc_html_e( 'Select bulk tier action', 'mcp-ai-wpoos' ); ?></label>
 						<select name="bulk_tier" id="bulk-tier-selector">
-							<option value=""><?php esc_html_e( 'Bulk Tier Assignment', 'wp-mcp-ai' ); ?></option>
-							<option value="free"><?php esc_html_e( 'Set to Free Tier', 'wp-mcp-ai' ); ?></option>
-							<option value="pro"><?php esc_html_e( 'Set to Pro Tier', 'wp-mcp-ai' ); ?></option>
-							<option value="enterprise"><?php esc_html_e( 'Set to Enterprise Tier', 'wp-mcp-ai' ); ?></option>
+							<option value=""><?php esc_html_e( 'Bulk Tier Assignment', 'mcp-ai-wpoos' ); ?></option>
+							<option value="free"><?php esc_html_e( 'Set to Free Tier', 'mcp-ai-wpoos' ); ?></option>
+							<option value="pro"><?php esc_html_e( 'Set to Pro Tier', 'mcp-ai-wpoos' ); ?></option>
+							<option value="enterprise"><?php esc_html_e( 'Set to Enterprise Tier', 'mcp-ai-wpoos' ); ?></option>
 						</select>
 						<button type="button" id="wp-mcp-ai-apply-bulk-tier" class="button action" disabled>
-							<?php esc_html_e( 'Apply', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Apply', 'mcp-ai-wpoos' ); ?>
 						</button>
 					</div>
 				</div>
 
+				<div class="wp-mcp-ai-table-wrapper">
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
 							<th class="check-column">
 								<input type="checkbox" id="wp-mcp-ai-select-all-users" />
 							</th>
-							<th><?php esc_html_e( 'User', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Tier', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'User', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Tier', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Total Requests', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Prompt Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Completion Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Cached Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Est. Cost (USD)', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -301,16 +318,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 									if ( $cost > 0 ) {
 										echo esc_html( '$' . number_format( $cost, 4 ) );
 									} else {
-										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'mcp-ai-wpoos' ) . '</span>';
 									}
 									?>
 								</td>
 								<td>
 									<button type="button" class="button button-small wp-mcp-ai-reset-user-usage" data-user-id="<?php echo esc_attr( $user_id ); ?>" data-user-name="<?php echo esc_attr( $user->display_name ); ?>">
-										<?php esc_html_e( 'Reset', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Reset', 'mcp-ai-wpoos' ); ?>
 									</button>
 									<button type="button" class="button button-small wp-mcp-ai-view-user-details" data-user-id="<?php echo esc_attr( $user_id ); ?>">
-										<?php esc_html_e( 'Details', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?>
 									</button>
 								</td>
 							</tr>
@@ -322,13 +339,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<?php endforeach; ?>
 					</tbody>
 				</table>
+				</div>
 
 				<div style="margin-top: 20px;">
 					<button type="button" id="wp-mcp-ai-export-usage-csv" class="button button-primary">
-						<?php esc_html_e( 'Export to CSV', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Export to CSV', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" id="wp-mcp-ai-reset-all-usage" class="button button-secondary">
-						<?php esc_html_e( 'Reset All Users\' Token Usage', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Reset All Users\' Token Usage', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
 			<?php endif; ?>
@@ -357,8 +375,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$filter_group = isset( $_GET['tool_group'] ) ? sanitize_key( $_GET['tool_group'] ) : '';
 
 			?>
-		<h3><?php esc_html_e( 'Token Limits by Tool', 'wp-mcp-ai' ); ?></h3>
-		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'wp-mcp-ai' ); ?></p>
+		<h3><?php esc_html_e( 'Token Limits by Tool', 'mcp-ai-wpoos' ); ?></h3>
+		<p class="description"><?php esc_html_e( 'Configure daily token usage limits and multipliers for individual tools. Different tools can have different limits based on their resource requirements. Multipliers adjust base tier limits for resource-intensive tools.', 'mcp-ai-wpoos' ); ?></p>
 
 			<?php
 			// Render filter bar if component is available.
@@ -387,19 +405,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<div class="notice notice-info inline" style="margin: 15px 0;">
 				<p>
 					<span class="dashicons dashicons-lightbulb" style="color: #f0b849; vertical-align: middle;"></span>
-					<strong><?php esc_html_e( 'Optimization Available:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Optimization Available:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php
 					if ( 'custom' === $current_preset ) {
-						esc_html_e( 'Your settings appear to be custom configured. You can apply a preset for optimized performance.', 'wp-mcp-ai' );
+						esc_html_e( 'Your settings appear to be custom configured. You can apply a preset for optimized performance.', 'mcp-ai-wpoos' );
 					} else {
 						/* translators: %d: Number of tools that can be optimized */
-						printf( esc_html__( '%d tools have settings that differ from recommended values. Choose a preset to optimize based on your needs.', 'wp-mcp-ai' ), absint( $mismatched_count ) );
+						printf( esc_html__( '%d tools have settings that differ from recommended values. Choose a preset to optimize based on your needs.', 'mcp-ai-wpoos' ), absint( $mismatched_count ) );
 					}
 					?>
 				</p>
 				<p>
 					<label for="wp-mcp-ai-preset-selector" style="font-weight: 600; margin-right: 10px;">
-						<?php esc_html_e( 'Select Preset:', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Select Preset:', 'mcp-ai-wpoos' ); ?>
 					</label>
 					<select id="wp-mcp-ai-preset-selector" style="min-width: 200px;">
 						<?php foreach ( $presets as $preset_key => $preset_data ) : ?>
@@ -409,10 +427,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<?php endforeach; ?>
 					</select>
 					<button type="button" id="wp-mcp-ai-apply-preset" class="button button-secondary">
-						<?php esc_html_e( 'Apply Preset', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Apply Preset', 'mcp-ai-wpoos' ); ?>
 					</button>
 					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-secondary" style="margin-left: 10px;">
-						<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</p>
 				<div id="wp-mcp-ai-preset-description" style="margin-top: 10px; padding: 8px 12px; background: #f0f0f0; border-left: 3px solid #0073aa; font-size: 13px;">
@@ -426,10 +444,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<div class="notice notice-success inline" style="margin: 15px 0;">
 				<p>
 					<span class="dashicons dashicons-yes-alt" style="color: #46b450; vertical-align: middle;"></span>
-					<strong><?php esc_html_e( 'Optimal Configuration:', 'wp-mcp-ai' ); ?></strong>
-					<?php esc_html_e( 'Your tools are using the balanced (recommended) preset with optimal settings for performance and cost.', 'wp-mcp-ai' ); ?>
+					<strong><?php esc_html_e( 'Optimal Configuration:', 'mcp-ai-wpoos' ); ?></strong>
+					<?php esc_html_e( 'Your tools are using the balanced (recommended) preset with optimal settings for performance and cost.', 'mcp-ai-wpoos' ); ?>
 					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-small" style="margin-left: 10px;">
-						<?php esc_html_e( 'View Details', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'View Details', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</p>
 			</div>
@@ -437,7 +455,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<div class="notice notice-info inline" style="margin: 15px 0;">
 				<p>
 					<span class="dashicons dashicons-admin-settings" style="color: #0073aa; vertical-align: middle;"></span>
-					<strong><?php esc_html_e( 'Current Preset:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Current Preset:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php
 					$current_preset_data = isset( $presets[ $current_preset ] ) ? $presets[ $current_preset ] : null;
 					if ( $current_preset_data ) {
@@ -445,7 +463,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					}
 					?>
 					<button type="button" id="wp-mcp-ai-view-recommendations" class="button button-small" style="margin-left: 10px;">
-						<?php esc_html_e( 'Change Preset', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Change Preset', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</p>
 			</div>
@@ -453,50 +471,51 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 		<!-- Tier Reference Card -->
 		<div class="wp-mcp-ai-tier-reference" style="background: #f9f9f9; border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-			<h4 style="margin-top: 0;"><?php esc_html_e( 'Tier Base Limits (tokens/day)', 'wp-mcp-ai' ); ?></h4>
+			<h4 style="margin-top: 0;"><?php esc_html_e( 'Tier Base Limits (tokens/day)', 'mcp-ai-wpoos' ); ?></h4>
 			<div style="display: flex; gap: 20px;">
 				<div>
 					<span class="wp-mcp-ai-tier-badge" style="background-color: #999; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-						<?php esc_html_e( 'FREE', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'FREE', 'mcp-ai-wpoos' ); ?>
 					</span>
 					<strong><?php echo esc_html( number_format_i18n( 50000 ) ); ?></strong>
 				</div>
 				<div>
 					<span class="wp-mcp-ai-tier-badge" style="background-color: #0073aa; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-						<?php esc_html_e( 'PRO', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'PRO', 'mcp-ai-wpoos' ); ?>
 					</span>
 					<strong><?php echo esc_html( number_format_i18n( 200000 ) ); ?></strong>
 				</div>
 				<div>
 					<span class="wp-mcp-ai-tier-badge" style="background-color: #46b450; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; text-transform: uppercase;">
-						<?php esc_html_e( 'ENTERPRISE', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'ENTERPRISE', 'mcp-ai-wpoos' ); ?>
 					</span>
 					<strong><?php echo esc_html( number_format_i18n( 1000000 ) ); ?></strong>
 				</div>
 			</div>
 			<p class="description" style="margin-bottom: 0; margin-top: 10px;">
-				<?php esc_html_e( 'Tool multipliers are applied to these base limits. For example, a tool with a 2.0× multiplier would have 100k tokens/day for Free tier users (50k × 2.0).', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Tool multipliers are applied to these base limits. For example, a tool with a 2.0× multiplier would have 100k tokens/day for Free tier users (50k × 2.0).', 'mcp-ai-wpoos' ); ?>
 			</p>
 		</div>
 
+		<div class="wp-mcp-ai-table-wrapper">
 		<table class="wp-list-table widefat fixed striped">
 			<thead>
 				<tr>
-					<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 12%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 15%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Preferred AI model for this tool', 'wp-mcp-ai' ); ?>">
-						<?php esc_html_e( 'Preferred Model', 'wp-mcp-ai' ); ?>
+					<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Tool Slug', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Preferred AI model for this tool', 'mcp-ai-wpoos' ); ?>">
+						<?php esc_html_e( 'Preferred Model', 'mcp-ai-wpoos' ); ?>
 						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
 					</th>
-					<th style="width: 8%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'wp-mcp-ai' ); ?>">
-						<?php esc_html_e( 'Multiplier', 'wp-mcp-ai' ); ?>
+					<th style="width: 8%;" class="wp-mcp-ai-tooltip" title="<?php esc_attr_e( 'Multiplier applied to base tier limits for this tool', 'mcp-ai-wpoos' ); ?>">
+						<?php esc_html_e( 'Multiplier', 'mcp-ai-wpoos' ); ?>
 						<span class="dashicons dashicons-info" style="font-size: 14px; vertical-align: middle;"></span>
 					</th>
-					<th style="width: 12%;"><?php esc_html_e( 'Effective Limits', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 8%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 8%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 9%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
-					<th style="width: 10%;"><?php esc_html_e( 'Usage %', 'wp-mcp-ai' ); ?></th>
+					<th style="width: 12%;"><?php esc_html_e( 'Effective Limits', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Users', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 8%;"><?php esc_html_e( 'Total Requests', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 9%;"><?php esc_html_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 10%;"><?php esc_html_e( 'Usage %', 'mcp-ai-wpoos' ); ?></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -567,15 +586,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<td>
 							<strong><?php echo esc_html( $tool_name ); ?></strong>
 							<?php if ( ! $match_status['matches'] ) : ?>
-								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon" 
-										style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;" 
+								<span class="dashicons dashicons-lightbulb wp-mcp-ai-recommendation-icon"
+										style="color: #f0b849; font-size: 16px; vertical-align: middle; cursor: help;"
 										title="<?php echo esc_attr( $match_status['reason'] ); ?>"></span>
 							<?php endif; ?>
 						</td>
 						<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
 						<td>
-							<select 
-								class="wp-mcp-ai-tool-model-input" 
+							<select
+								class="wp-mcp-ai-tool-model-input"
 								data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 								style="width: 100%; max-width: 250px;"
 							>
@@ -606,35 +625,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						</td>
 						<td>
 							<div style="position: relative; display: inline-block;">
-								<input 
-									type="number" 
-									class="wp-mcp-ai-tool-multiplier-input" 
-									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" 
+								<input
+									type="number"
+									class="wp-mcp-ai-tool-multiplier-input"
+									data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 									data-recommended="<?php echo esc_attr( $recommendation['multiplier'] ); ?>"
-									value="<?php echo esc_attr( $multiplier ); ?>" 
-									min="0.1" 
-									max="10" 
-									step="0.1" 
-									style="width: 70px;" 
+									value="<?php echo esc_attr( $multiplier ); ?>"
+									min="0.1"
+									max="10"
+									step="0.1"
+									style="width: 70px;"
 								/>×
 								<?php if ( ! $match_status['multiplier_matches'] ) : ?>
 									<span class="wp-mcp-ai-recommended-value" style="display: block; font-size: 10px; color: #f0b849; font-style: italic;">
 										<?php
 										/* translators: %s: recommended multiplier value */
-										printf( esc_html__( 'Rec: %s×', 'wp-mcp-ai' ), esc_html( $recommendation['multiplier'] ) );
+										printf( esc_html__( 'Rec: %s×', 'mcp-ai-wpoos' ), esc_html( $recommendation['multiplier'] ) );
 										?>
 									</span>
 								<?php endif; ?>
 							</div>
 						</td>
 						<td style="font-size: 11px;">
-							<div title="<?php esc_attr_e( 'Free tier limit', 'wp-mcp-ai' ); ?>">
+							<div title="<?php esc_attr_e( 'Free tier limit', 'mcp-ai-wpoos' ); ?>">
 								<span style="color: #999;">F:</span> <?php echo esc_html( number_format_i18n( $free_limit ) ); ?>
 							</div>
-							<div title="<?php esc_attr_e( 'Pro tier limit', 'wp-mcp-ai' ); ?>">
+							<div title="<?php esc_attr_e( 'Pro tier limit', 'mcp-ai-wpoos' ); ?>">
 								<span style="color: #0073aa;">P:</span> <?php echo esc_html( number_format_i18n( $pro_limit ) ); ?>
 							</div>
-							<div title="<?php esc_attr_e( 'Enterprise tier limit', 'wp-mcp-ai' ); ?>">
+							<div title="<?php esc_attr_e( 'Enterprise tier limit', 'mcp-ai-wpoos' ); ?>">
 								<span style="color: #46b450;">E:</span> <?php echo esc_html( number_format_i18n( $enterprise_limit ) ); ?>
 							</div>
 						</td>
@@ -653,29 +672,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		</div>
 
 		<!-- Recommendations Modal -->
 		<div id="wp-mcp-ai-recommendations-modal" class="wp-mcp-ai-modal" style="display: none;">
 			<div class="wp-mcp-ai-modal-overlay"></div>
 			<div class="wp-mcp-ai-modal-content" style="max-width: 900px; max-height: 80vh; overflow-y: auto;">
 				<div class="wp-mcp-ai-modal-header">
-					<h2><?php esc_html_e( 'Tool Configuration Recommendations', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( 'Tool Configuration Recommendations', 'mcp-ai-wpoos' ); ?></h2>
 					<button type="button" class="wp-mcp-ai-modal-close">&times;</button>
 				</div>
 				<div class="wp-mcp-ai-modal-body">
 					<p class="description">
-						<?php esc_html_e( 'These recommendations are based on analysis of tool complexity, resource requirements, and typical usage patterns. Choose a preset that matches your deployment needs.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'These recommendations are based on analysis of tool complexity, resource requirements, and typical usage patterns. Choose a preset that matches your deployment needs.', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<!-- Presets -->
-					<h3><?php esc_html_e( 'Available Presets', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Available Presets', 'mcp-ai-wpoos' ); ?></h3>
+					<div class="wp-mcp-ai-table-wrapper">
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
-								<th style="width: 20%;"><?php esc_html_e( 'Preset', 'wp-mcp-ai' ); ?></th>
-								<th style="width: 15%;"><?php esc_html_e( 'Multiplier Adjustment', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
-								<th style="width: 15%;"><?php esc_html_e( 'Best For', 'wp-mcp-ai' ); ?></th>
+								<th style="width: 20%;"><?php esc_html_e( 'Preset', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Multiplier Adjustment', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+								<th style="width: 15%;"><?php esc_html_e( 'Best For', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -684,10 +705,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							$current_preset = WP_MCP_AI_Tool_Recommendations::detect_current_preset();
 
 							$best_for = array(
-								'conservative' => __( 'Cost Control', 'wp-mcp-ai' ),
-								'balanced'     => __( 'Most Sites', 'wp-mcp-ai' ),
-								'performance'  => __( 'High Traffic', 'wp-mcp-ai' ),
-								'aggressive'   => __( 'Complex Operations', 'wp-mcp-ai' ),
+								'conservative' => __( 'Cost Control', 'mcp-ai-wpoos' ),
+								'balanced'     => __( 'Most Sites', 'mcp-ai-wpoos' ),
+								'performance'  => __( 'High Traffic', 'mcp-ai-wpoos' ),
+								'aggressive'   => __( 'Complex Operations', 'mcp-ai-wpoos' ),
 							);
 
 							foreach ( $presets as $preset_key => $preset_data ) :
@@ -707,18 +728,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
+					</div>
 
-					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tool Categories', 'wp-mcp-ai' ); ?></h3>
+					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tool Categories', 'mcp-ai-wpoos' ); ?></h3>
 					<p class="description">
-						<?php esc_html_e( 'Tools are grouped into categories based on their characteristics. Multipliers are applied to base tier limits.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Tools are grouped into categories based on their characteristics. Multipliers are applied to base tier limits.', 'mcp-ai-wpoos' ); ?>
 					</p>
+					<div class="wp-mcp-ai-table-wrapper">
 					<table class="wp-list-table widefat fixed striped">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Tool Count', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Base Multiplier', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Tool Count', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Base Multiplier', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
@@ -735,19 +758,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 							<?php endforeach; ?>
 						</tbody>
 					</table>
+					</div>
 
-					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tools Needing Optimization', 'wp-mcp-ai' ); ?></h3>
+					<h3 style="margin-top: 20px;"><?php esc_html_e( 'Tools Needing Optimization', 'mcp-ai-wpoos' ); ?></h3>
 					<?php
 					$mismatched = WP_MCP_AI_Tool_Recommendations::get_mismatched_tools();
 					if ( ! empty( $mismatched ) ) :
 						?>
+						<div class="wp-mcp-ai-table-wrapper">
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
-									<th><?php esc_html_e( 'Tool', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Category', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Current Multiplier', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Recommended', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Tool', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Category', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Current Multiplier', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Recommended', 'mcp-ai-wpoos' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -761,15 +786,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 								<?php endforeach; ?>
 							</tbody>
 						</table>
+						</div>
 					<?php else : ?>
 						<div class="notice notice-success inline">
-							<p><?php esc_html_e( 'All tools are using recommended settings!', 'wp-mcp-ai' ); ?></p>
+							<p><?php esc_html_e( 'All tools are using recommended settings!', 'mcp-ai-wpoos' ); ?></p>
 						</div>
 					<?php endif; ?>
 				</div>
 				<div class="wp-mcp-ai-modal-footer">
 					<button type="button" class="button button-secondary wp-mcp-ai-modal-close">
-						<?php esc_html_e( 'Close', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Close', 'mcp-ai-wpoos' ); ?>
 					</button>
 				</div>
 			</div>
@@ -845,7 +871,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 		<p class="submit">
 			<button type="button" id="wp-mcp-ai-save-all-tool-settings" class="button button-primary">
-					<?php esc_html_e( 'Save All Tool Settings', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Save All Tool Settings', 'mcp-ai-wpoos' ); ?>
 			</button>
 			<span class="spinner" style="float: none; margin: 0 10px;"></span>
 			<span id="wp-mcp-ai-tool-settings-message" style="margin-left: 10px;"></span>
@@ -871,8 +897,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			$site_stats = $this->get_site_wide_statistics();
 
 			?>
-			<h3><?php esc_html_e( 'Site-Wide Token Statistics', 'wp-mcp-ai' ); ?></h3>
-			<p class="description"><?php esc_html_e( 'Aggregate token usage statistics across all users, providers, models, and tools on this site.', 'wp-mcp-ai' ); ?></p>
+			<h3><?php esc_html_e( 'Site-Wide Token Statistics', 'mcp-ai-wpoos' ); ?></h3>
+			<p class="description"><?php esc_html_e( 'Aggregate token usage statistics across all users, providers, models, and tools on this site.', 'mcp-ai-wpoos' ); ?></p>
 
 			<!-- Summary Cards -->
 			<div class="wp-mcp-ai-stats-grid">
@@ -881,7 +907,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-admin-users"></span>
 					</div>
 					<div class="wp-mcp-ai-stats-card__content">
-						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Active Users', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Active Users', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-stats-card__value"><?php echo esc_html( number_format_i18n( $site_stats['total_users'] ) ); ?></div>
 					</div>
 				</div>
@@ -891,7 +917,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-performance"></span>
 					</div>
 					<div class="wp-mcp-ai-stats-card__content">
-						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Total Requests', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-stats-card__value"><?php echo esc_html( number_format_i18n( $site_stats['total_requests'] ) ); ?></div>
 					</div>
 				</div>
@@ -901,7 +927,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-chart-bar"></span>
 					</div>
 					<div class="wp-mcp-ai-stats-card__content">
-						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-stats-card__value"><?php echo esc_html( number_format_i18n( $site_stats['total_tokens'] ) ); ?></div>
 					</div>
 				</div>
@@ -911,7 +937,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-admin-tools"></span>
 					</div>
 					<div class="wp-mcp-ai-stats-card__content">
-						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Tools Used', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Tools Used', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-stats-card__value"><?php echo esc_html( number_format_i18n( $site_stats['tools_used'] ) ); ?></div>
 					</div>
 				</div>
@@ -921,14 +947,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 						<span class="dashicons dashicons-money-alt"></span>
 					</div>
 					<div class="wp-mcp-ai-stats-card__content">
-						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Est. Total Cost', 'wp-mcp-ai' ); ?></div>
+						<div class="wp-mcp-ai-stats-card__label"><?php esc_html_e( 'Est. Total Cost', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-stats-card__value">
 							<?php
 							$total_cost = isset( $site_stats['total_cost'] ) ? $site_stats['total_cost'] : 0.0;
 							if ( $total_cost > 0 ) {
 								echo esc_html( '$' . number_format( $total_cost, 2 ) );
 							} else {
-								echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+								echo '<span style="color: #999;">' . esc_html__( 'N/A', 'mcp-ai-wpoos' ) . '</span>';
 							}
 							?>
 						</div>
@@ -938,8 +964,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 
 			<!-- Analytics Charts Section -->
 			<div class="wp-mcp-ai-analytics-section" style="margin-top: 30px;">
-				<h4><?php esc_html_e( 'Usage Distribution', 'wp-mcp-ai' ); ?></h4>
-				
+				<h4><?php esc_html_e( 'Usage Distribution', 'mcp-ai-wpoos' ); ?></h4>
+
 				<!-- Provider & Model Distribution Charts -->
 				<div class="wp-mcp-ai-chart-row">
 					<div class="wp-mcp-ai-chart-container wp-mcp-ai-chart-half">
@@ -952,17 +978,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</div>
 
 			<!-- Usage by Provider -->
-			<h4><?php esc_html_e( 'Usage by Provider', 'wp-mcp-ai' ); ?></h4>
+			<h4><?php esc_html_e( 'Usage by Provider', 'mcp-ai-wpoos' ); ?></h4>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
-						<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
+						<th><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Requests', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Prompt Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Completion Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Cached Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th><?php esc_html_e( 'Est. Cost (USD)', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -983,7 +1010,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 									if ( $provider_cost > 0 ) {
 										echo esc_html( '$' . number_format( $provider_cost, 4 ) );
 									} else {
-										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'mcp-ai-wpoos' ) . '</span>';
 									}
 									?>
 								</td>
@@ -993,29 +1020,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					else :
 						?>
 						<tr>
-							<td colspan="7" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="7" class="no-items"><?php esc_html_e( 'No provider data available yet.', 'mcp-ai-wpoos' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
 			</table>
 
 			<!-- Top Models -->
-			<h4><?php esc_html_e( 'Top Models by Usage', 'wp-mcp-ai' ); ?></h4>
+			<h4><?php esc_html_e( 'Top Models by Usage', 'mcp-ai-wpoos' ); ?></h4>
 			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
-				<?php esc_html_e( 'Top 10 AI models sorted by total token usage. Models with the same name from different providers are tracked separately.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Top 10 AI models sorted by total token usage. Models with the same name from different providers are tracked separately.', 'mcp-ai-wpoos' ); ?>
 				<?php if ( ! empty( $site_stats['top_models'] ) ) : ?>
-					<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 8px;"><?php esc_html_e( 'PROVIDER', 'wp-mcp-ai' ); ?></span>
-					<span style="font-size: 11px; margin-left: 5px;"><?php esc_html_e( 'badges indicate models used across multiple providers', 'wp-mcp-ai' ); ?></span>
+					<span class="wp-mcp-ai-provider-badge" style="display: inline-block; background-color: #0073aa; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; margin-left: 8px;"><?php esc_html_e( 'PROVIDER', 'mcp-ai-wpoos' ); ?></span>
+					<span style="font-size: 11px; margin-left: 5px;"><?php esc_html_e( 'badges indicate models used across multiple providers', 'mcp-ai-wpoos' ); ?></span>
 				<?php endif; ?>
 			</p>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-models-table">
 				<thead>
 					<tr>
-						<th style="width: 35%;"><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 12%;"><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 13%;"><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 35%;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 12%;"><?php esc_html_e( 'Requests', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 13%;"><?php esc_html_e( 'Est. Cost (USD)', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -1057,7 +1085,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 									if ( $model_cost > 0 ) {
 										echo esc_html( '$' . number_format( $model_cost, 4 ) );
 									} else {
-										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+										echo '<span style="color: #999;">' . esc_html__( 'N/A', 'mcp-ai-wpoos' ) . '</span>';
 									}
 									?>
 								</td>
@@ -1067,25 +1095,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					else :
 						?>
 						<tr>
-							<td colspan="5" class="no-items"><?php esc_html_e( 'No model data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="5" class="no-items"><?php esc_html_e( 'No model data available yet.', 'mcp-ai-wpoos' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
 			</table>
+			</div>
 
 			<!-- Top Tools -->
-			<h4 style="margin-top: 30px;"><?php esc_html_e( 'Top Tools by Usage', 'wp-mcp-ai' ); ?></h4>
+			<h4 style="margin-top: 30px;"><?php esc_html_e( 'Top Tools by Usage', 'mcp-ai-wpoos' ); ?></h4>
 			<p class="description" style="margin-top: -5px; margin-bottom: 10px;">
-				<?php esc_html_e( 'Top 10 AI tools sorted by total token usage across all users.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Top 10 AI tools sorted by total token usage across all users.', 'mcp-ai-wpoos' ); ?>
 			</p>
+			<div class="wp-mcp-ai-table-wrapper">
 			<table class="wp-list-table widefat fixed striped wp-mcp-ai-top-tools-table">
 				<thead>
 					<tr>
-						<th style="width: 35%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 20%;"><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'Total Users', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'Total Requests', 'wp-mcp-ai' ); ?></th>
-						<th style="width: 15%;"><?php esc_html_e( 'Tokens Used', 'wp-mcp-ai' ); ?></th>
+						<th style="width: 35%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 20%;"><?php esc_html_e( 'Tool Slug', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Users', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Total Requests', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Tokens Used', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -1109,11 +1139,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 					else :
 						?>
 						<tr>
-							<td colspan="5" class="no-items"><?php esc_html_e( 'No tool data available yet.', 'wp-mcp-ai' ); ?></td>
+							<td colspan="5" class="no-items"><?php esc_html_e( 'No tool data available yet.', 'mcp-ai-wpoos' ); ?></td>
 						</tr>
 					<?php endif; ?>
 				</tbody>
 			</table>
+			</div>
 			<?php
 		}
 
@@ -1139,6 +1170,404 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		}
 
 		/**
+		 * Render Model Manager view.
+		 *
+		 * Displays interface for discovering, researching, and adding AI models.
+		 */
+		private function render_model_manager_view() {
+			// AJAX handlers are now loaded in the main plugin file during admin_init.
+
+			?>
+			<div class="wp-mcp-ai-model-manager">
+				<div class="wp-mcp-ai-model-manager__header">
+					<h2><?php esc_html_e( 'AI Model Manager', 'mcp-ai-wpoos' ); ?></h2>
+					<p class="description">
+						<?php esc_html_e( 'Discover, research, and add new AI models to the plugin configuration using the built-in research tools.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</div>
+
+				<!-- Quick Actions -->
+				<div class="wp-mcp-ai-model-manager__actions">
+					<div class="wp-mcp-ai-card">
+						<h3><span class="dashicons dashicons-search"></span> <?php esc_html_e( 'Discover New Models', 'mcp-ai-wpoos' ); ?></h3>
+						<p><?php esc_html_e( 'Automatically discover newly released models from all configured AI providers.', 'mcp-ai-wpoos' ); ?></p>
+						<button type="button" class="button button-primary" id="wp-mcp-ai-discover-models">
+							<?php esc_html_e( 'Discover Models', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class="spinner" style="float: none; margin: 0 10px;"></span>
+					</div>
+
+					<div class="wp-mcp-ai-card">
+						<h3><span class="dashicons dashicons-admin-generic"></span> <?php esc_html_e( 'Research Specific Model', 'mcp-ai-wpoos' ); ?></h3>
+						<p><?php esc_html_e( 'Research a specific model by ID to get its specifications and configuration.', 'mcp-ai-wpoos' ); ?></p>
+						<div class="wp-mcp-ai-research-form">
+							<input type="text" id="wp-mcp-ai-model-id" placeholder="<?php esc_attr_e( 'e.g., gpt-4.5-turbo', 'mcp-ai-wpoos' ); ?>" class="regular-text" />
+							<select id="wp-mcp-ai-model-provider" class="regular-text">
+								<option value=""><?php esc_html_e( 'Select Provider', 'mcp-ai-wpoos' ); ?></option>
+								<option value="openai">OpenAI</option>
+								<option value="anthropic">Anthropic (Claude)</option>
+								<option value="gemini">Google Gemini</option>
+								<option value="huggingface">Hugging Face</option>
+								<option value="ollama">Ollama (Local)</option>
+								<option value="lm_studio">LM Studio (Local)</option>
+								<option value="cloudflare">Cloudflare Workers AI</option>
+							</select>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-research-model">
+								<?php esc_html_e( 'Research Model', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="spinner" style="float: none; margin: 0 10px;"></span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Results Area -->
+				<div id="wp-mcp-ai-model-manager-results" style="margin-top: 20px;"></div>
+
+				<!-- Available Tools Info -->
+				<div class="wp-mcp-ai-model-manager__info" style="margin-top: 30px;">
+					<h3><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos' ); ?></h3>
+					<p><?php esc_html_e( 'The Model Manager uses three built-in tools for AI model management:', 'mcp-ai-wpoos' ); ?></p>
+					<ul style="list-style: disc; margin-left: 20px;">
+						<li><strong>research_model</strong> - <?php esc_html_e( 'Uses AI to research model specifications from documentation', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>discover_new_models</strong> - <?php esc_html_e( 'Queries provider APIs to find newly released models', 'mcp-ai-wpoos' ); ?></li>
+						<li><strong>add_model_config</strong> - <?php esc_html_e( 'Adds researched models to the orchestration configuration', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+					<p>
+						<?php
+						$docs_url = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/MODEL-RESEARCH-TOOLS.md';
+						printf(
+							/* translators: %s: Documentation URL */
+							wp_kses_post( __( 'For detailed documentation, see <a href="%s" target="_blank">Model Research Tools Documentation</a>', 'mcp-ai-wpoos' ) ),
+							esc_url( $docs_url )
+						);
+						?>
+					</p>
+				</div>
+
+				<!-- Configured Models List -->
+				<div class="wp-mcp-ai-model-manager__configured" style="margin-top: 30px;">
+					<h3><?php esc_html_e( 'Currently Configured Models', 'mcp-ai-wpoos' ); ?></h3>
+					<p class="description">
+						<?php
+						printf(
+							/* translators: %s: Per Models view link */
+							wp_kses_post( __( 'View and edit existing model configurations in the %s view.', 'mcp-ai-wpoos' ) ),
+							'<a href="' . esc_url( $this->get_view_url( 'per_models' ) ) . '">' . esc_html__( 'Per Models', 'mcp-ai-wpoos' ) . '</a>'
+						);
+						?>
+					</p>
+					<?php
+					$all_configs = WP_MCP_AI_Model_Config::get_all_configs();
+					$providers   = array();
+					foreach ( $all_configs as $model_id => $config ) {
+						$provider = isset( $config['provider'] ) ? $config['provider'] : 'unknown';
+						if ( ! isset( $providers[ $provider ] ) ) {
+							$providers[ $provider ] = array();
+						}
+						$providers[ $provider ][] = $model_id;
+					}
+					?>
+					<div class="wp-mcp-ai-providers-summary">
+						<?php foreach ( $providers as $provider => $models ) : ?>
+							<div class="wp-mcp-ai-provider-card">
+								<h4><?php echo esc_html( ucfirst( $provider ) ); ?></h4>
+								<p>
+									<?php
+									printf(
+										/* translators: %d: number of models */
+										esc_html( _n( '%d model configured', '%d models configured', count( $models ), 'mcp-ai-wpoos' ) ),
+										esc_html( count( $models ) )
+									);
+									?>
+								</p>
+							</div>
+						<?php endforeach; ?>
+					</div>
+				</div>
+			</div>
+
+			<style>
+			.wp-mcp-ai-model-manager__actions {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 20px;
+				margin: 20px 0;
+			}
+			.wp-mcp-ai-card {
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 20px;
+			}
+			.wp-mcp-ai-card h3 {
+				margin-top: 0;
+				display: flex;
+				align-items: center;
+				gap: 8px;
+			}
+			.wp-mcp-ai-card .dashicons {
+				color: #2271b1;
+			}
+			.wp-mcp-ai-research-form {
+				display: flex;
+				gap: 10px;
+				align-items: center;
+				flex-wrap: wrap;
+			}
+			#wp-mcp-ai-model-manager-results {
+				background: #fff;
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 20px;
+				display: none;
+			}
+			#wp-mcp-ai-model-manager-results.has-content {
+				display: block;
+			}
+			.wp-mcp-ai-providers-summary {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+				gap: 15px;
+				margin-top: 15px;
+			}
+			.wp-mcp-ai-provider-card {
+				background: #f6f7f7;
+				padding: 15px;
+				border-radius: 4px;
+				border-left: 3px solid #2271b1;
+			}
+			.wp-mcp-ai-provider-card h4 {
+				margin: 0 0 5px 0;
+			}
+			.wp-mcp-ai-provider-card p {
+				margin: 0;
+				color: #646970;
+			}
+			.wp-mcp-ai-model-result {
+				border: 1px solid #c3c4c7;
+				border-radius: 4px;
+				padding: 15px;
+				margin: 10px 0;
+			}
+			.wp-mcp-ai-model-result h4 {
+				margin-top: 0;
+			}
+			.wp-mcp-ai-model-specs {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 10px;
+				margin: 15px 0;
+			}
+			.wp-mcp-ai-model-spec {
+				padding: 10px;
+				background: #f6f7f7;
+				border-radius: 3px;
+			}
+			.wp-mcp-ai-model-spec strong {
+				display: block;
+				margin-bottom: 3px;
+				color: #1d2327;
+			}
+			</style>
+
+			<script>
+			jQuery(document).ready(function($) {
+				// Discover models action
+				$('#wp-mcp-ai-discover-models').on('click', function() {
+					var button = $(this);
+					var spinner = button.next('.spinner');
+					var resultsDiv = $('#wp-mcp-ai-model-manager-results');
+
+					button.prop('disabled', true);
+					spinner.addClass('is-active');
+					resultsDiv.html('<p><?php esc_html_e( 'Discovering models...', 'mcp-ai-wpoos' ); ?></p>').addClass('has-content');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_discover_models',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>'
+						},
+						success: function(response) {
+							if (response.success) {
+								renderDiscoveryResults(response.data);
+							} else {
+								resultsDiv.html('<div class="notice notice-error"><p>' + (response.data || '<?php esc_html_e( 'Failed to discover models.', 'mcp-ai-wpoos' ); ?>') + '</p></div>');
+							}
+						},
+						error: function() {
+							resultsDiv.html('<div class="notice notice-error"><p><?php esc_html_e( 'Failed to discover models. Please try again.', 'mcp-ai-wpoos' ); ?></p></div>');
+						},
+						complete: function() {
+							button.prop('disabled', false);
+							spinner.removeClass('is-active');
+						}
+					});
+				});
+
+				// Research model action
+				$('#wp-mcp-ai-research-model').on('click', function() {
+					var button = $(this);
+					var spinner = button.next('.spinner');
+					var modelId = $('#wp-mcp-ai-model-id').val();
+					var provider = $('#wp-mcp-ai-model-provider').val();
+					var resultsDiv = $('#wp-mcp-ai-model-manager-results');
+
+					if (!modelId || !provider) {
+						alert('<?php esc_html_e( 'Please enter a model ID and select a provider.', 'mcp-ai-wpoos' ); ?>');
+						return;
+					}
+
+					button.prop('disabled', true);
+					spinner.addClass('is-active');
+					resultsDiv.html('<p><?php esc_html_e( 'Researching model...', 'mcp-ai-wpoos' ); ?></p>').addClass('has-content');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_research_model',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>',
+							model_id: modelId,
+							provider: provider
+						},
+						success: function(response) {
+							if (response.success) {
+								renderResearchResults(response.data, modelId);
+							} else {
+								resultsDiv.html('<div class="notice notice-error"><p>' + (response.data || '<?php esc_html_e( 'Failed to research model.', 'mcp-ai-wpoos' ); ?>') + '</p></div>');
+							}
+						},
+						error: function() {
+							resultsDiv.html('<div class="notice notice-error"><p><?php esc_html_e( 'Failed to research model. Please try again.', 'mcp-ai-wpoos' ); ?></p></div>');
+						},
+						complete: function() {
+							button.prop('disabled', false);
+							spinner.removeClass('is-active');
+						}
+					});
+				});
+
+				function renderDiscoveryResults(data) {
+					var html = '<h3><?php esc_html_e( 'Discovery Results', 'mcp-ai-wpoos' ); ?></h3>';
+
+					if (data.discovered && data.discovered.length > 0) {
+						html += '<h4><?php esc_html_e( 'Newly Discovered Models', 'mcp-ai-wpoos' ); ?> (' + data.discovered.length + ')</h4>';
+						data.discovered.forEach(function(model) {
+							html += '<div class="wp-mcp-ai-model-result">';
+							html += '<h4>' + escapeHtml(model.name) + ' (' + escapeHtml(model.provider) + ')</h4>';
+							html += '<p><code>' + escapeHtml(model.model_id) + '</code></p>';
+							html += '<button class="button button-primary research-and-add-btn" data-model-id="' + escapeHtml(model.model_id) + '" data-provider="' + escapeHtml(model.provider) + '"><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos' ); ?></button>';
+							html += '</div>';
+						});
+					}
+
+					if (data.already_exists && data.already_exists.length > 0) {
+						html += '<h4><?php esc_html_e( 'Already Configured', 'mcp-ai-wpoos' ); ?> (' + data.already_exists.length + ')</h4>';
+						html += '<p><?php esc_html_e( 'These models are already in your configuration:', 'mcp-ai-wpoos' ); ?></p>';
+						html += '<ul>';
+						data.already_exists.forEach(function(model) {
+							html += '<li><code>' + escapeHtml(model.model_id) + '</code> (' + escapeHtml(model.provider) + ')</li>';
+						});
+						html += '</ul>';
+					}
+
+					if (!data.discovered || data.discovered.length === 0) {
+						html += '<p><?php esc_html_e( 'No new models discovered. All provider models are already configured.', 'mcp-ai-wpoos' ); ?></p>';
+					}
+
+					$('#wp-mcp-ai-model-manager-results').html(html).addClass('has-content');
+
+					// Bind research and add buttons
+					$('.research-and-add-btn').on('click', function() {
+						var btn = $(this);
+						var modelId = btn.data('model-id');
+						var provider = btn.data('provider');
+
+						$('#wp-mcp-ai-model-id').val(modelId);
+						$('#wp-mcp-ai-model-provider').val(provider);
+						$('#wp-mcp-ai-research-model').click();
+					});
+				}
+
+				function renderResearchResults(data, modelId) {
+					var html = '<h3><?php esc_html_e( 'Research Results', 'mcp-ai-wpoos' ); ?></h3>';
+					html += '<div class="wp-mcp-ai-model-result">';
+					html += '<h4>' + escapeHtml(data.name) + '</h4>';
+					html += '<p><strong><?php esc_html_e( 'Provider:', 'mcp-ai-wpoos' ); ?></strong> ' + escapeHtml(data.provider) + '</p>';
+					html += '<div class="wp-mcp-ai-model-specs">';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Context Window', 'mcp-ai-wpoos' ); ?></strong>' + Number(data.context_window).toLocaleString() + ' tokens</div>';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Cost per 1K', 'mcp-ai-wpoos' ); ?></strong>$' + data.cost_per_1k + '</div>';
+					html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></strong>' + escapeHtml(data.status) + '</div>';
+					if (data._research_metadata && data._research_metadata.confidence) {
+						html += '<div class="wp-mcp-ai-model-spec"><strong><?php esc_html_e( 'Confidence', 'mcp-ai-wpoos' ); ?></strong>' + data._research_metadata.confidence + '%</div>';
+					}
+					html += '</div>';
+					html += '<button class="button button-primary" id="add-researched-model" data-model-id="' + escapeHtml(modelId) + '"><?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?></button>';
+					html += '</div>';
+
+					$('#wp-mcp-ai-model-manager-results').html(html).addClass('has-content');
+
+					// Store data for add action
+					$('#add-researched-model').data('config', data);
+				}
+
+				// Add researched model
+				$(document).on('click', '#add-researched-model', function() {
+					var button = $(this);
+					var config = button.data('config');
+					var modelId = button.data('model-id');
+
+					if (!config || !modelId) return;
+
+					button.prop('disabled', true).text('<?php esc_html_e( 'Adding...', 'mcp-ai-wpoos' ); ?>');
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: {
+							action: 'wp_mcp_ai_add_model_config',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_model_manager' ) ); ?>',
+							model_id: modelId,
+							config: JSON.stringify(config)
+						},
+						success: function(response) {
+							if (response.success) {
+								button.text('<?php esc_html_e( 'Added!', 'mcp-ai-wpoos' ); ?>').removeClass('button-primary').addClass('button-secondary');
+								$('<div class="notice notice-success inline"><p>' + escapeHtml(response.data.message || '<?php esc_html_e( 'Model added successfully!', 'mcp-ai-wpoos' ); ?>') + '</p></div>').insertBefore('#wp-mcp-ai-model-manager-results');
+								setTimeout(function() {
+									location.reload();
+								}, 2000);
+							} else {
+								alert('<?php esc_html_e( 'Failed to add model:', 'mcp-ai-wpoos' ); ?> ' + (response.data || ''));
+								button.prop('disabled', false).text('<?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?>');
+							}
+						},
+						error: function() {
+							alert('<?php esc_html_e( 'Failed to add model. Please try again.', 'mcp-ai-wpoos' ); ?>');
+							button.prop('disabled', false).text('<?php esc_html_e( 'Add to Configuration', 'mcp-ai-wpoos' ); ?>');
+						}
+					});
+				});
+
+				function escapeHtml(text) {
+					if (typeof text !== 'string') return text;
+					var map = {
+						'&': '&amp;',
+						'<': '&lt;',
+						'>': '&gt;',
+						'"': '&quot;',
+						"'": '&#039;'
+					};
+					return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+				}
+			});
+			</script>
+			<?php
+		}
+
+		/**
 		 * Render detailed usage breakdown for a user.
 		 *
 		 * @param int   $user_id User ID.
@@ -1147,19 +1576,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		private function render_user_details( $user_id, $usage ) {
 			?>
 			<div class="wp-mcp-ai-user-details">
-				<h4><?php esc_html_e( 'Detailed Usage Breakdown', 'wp-mcp-ai' ); ?></h4>
+				<h4><?php esc_html_e( 'Detailed Usage Breakdown', 'mcp-ai-wpoos' ); ?></h4>
 				<table class="widefat">
 					<thead>
 						<tr>
-							<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Requests', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Prompt Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Completion Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Total Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Cached Tokens', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Est. Cost (USD)', 'wp-mcp-ai' ); ?></th>
-							<th><?php esc_html_e( 'Last Used', 'wp-mcp-ai' ); ?></th>
+							<th><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Requests', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Prompt Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Completion Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Total Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Cached Tokens', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Est. Cost (USD)', 'mcp-ai-wpoos' ); ?></th>
+							<th><?php esc_html_e( 'Last Used', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -1191,7 +1620,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 										if ( $cost > 0 ) {
 											echo esc_html( '$' . number_format( $cost, 4 ) );
 										} else {
-											echo '<span style="color: #999;">' . esc_html__( 'N/A', 'wp-mcp-ai' ) . '</span>';
+											echo '<span style="color: #999;">' . esc_html__( 'N/A', 'mcp-ai-wpoos' ) . '</span>';
 										}
 										?>
 									</td>
@@ -1262,15 +1691,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				<nav class="wp-mcp-ai-analytics__nav" style="margin-bottom: 20px; border-bottom: 1px solid #ccc;">
 					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'trends' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'trends' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'trends' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'trends' === $analytics_tab ? 'bold' : 'normal'; ?>;">
 						<span class="dashicons dashicons-chart-line"></span>
-						<?php esc_html_e( 'Trends', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Trends', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'patterns' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'patterns' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'patterns' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'patterns' === $analytics_tab ? 'bold' : 'normal'; ?>;">
 						<span class="dashicons dashicons-chart-bar"></span>
-						<?php esc_html_e( 'Patterns', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Patterns', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="<?php echo esc_url( $this->get_analytics_tab_url( 'anomalies' ) ); ?>" class="wp-mcp-ai-analytics__nav-item <?php echo 'anomalies' === $analytics_tab ? 'active' : ''; ?>" style="display: inline-block; padding: 10px 15px; text-decoration: none; border-bottom: <?php echo 'anomalies' === $analytics_tab ? '2px solid #2271b1' : 'none'; ?>; font-weight: <?php echo 'anomalies' === $analytics_tab ? 'bold' : 'normal'; ?>;">
 						<span class="dashicons dashicons-warning"></span>
-						<?php esc_html_e( 'Anomalies', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Anomalies', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</nav>
 
@@ -1319,9 +1748,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		private function render_analytics_trends_tab() {
 			?>
 			<div class="wp-mcp-ai-analytics-trends-content">
-				<h3><?php esc_html_e( 'Usage Trend Analysis', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Usage Trend Analysis', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Linear regression analysis of token usage over time with trend projections.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Linear regression analysis of token usage over time with trend projections.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<?php
@@ -1341,9 +1770,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		private function render_analytics_patterns_tab() {
 			?>
 			<div class="wp-mcp-ai-analytics-patterns-content">
-				<h3><?php esc_html_e( 'Usage Pattern Analysis', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Usage Pattern Analysis', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Discover hourly and daily usage patterns to optimize resource allocation.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Discover hourly and daily usage patterns to optimize resource allocation.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<?php
@@ -1362,9 +1791,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		private function render_analytics_anomalies_tab() {
 			?>
 			<div class="wp-mcp-ai-analytics-anomalies-content">
-				<h3><?php esc_html_e( 'Anomaly Detection', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Anomaly Detection', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'Statistical anomaly detection using Z-score analysis to identify unusual usage patterns.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Statistical anomaly detection using Z-score analysis to identify unusual usage patterns.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<?php
@@ -1382,12 +1811,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 		 * Override render_wrapper to exclude the form table.
 		 */
 		public function render_wrapper() {
-			$description = $this->get_description();
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
 			?>
 			<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 				<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 				<?php if ( $description ) : ?>
 					<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
+				<?php endif; ?>
+				<?php if ( $documentation_url ) : ?>
+					<p class="section-documentation">
+						<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+						<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+							<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+						</a>
+					</p>
 				<?php endif; ?>
 				<?php $this->render(); ?>
 			</div>
@@ -1404,24 +1843,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			?>
 			<div style="padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa; margin: 20px 0;">
 				<p style="margin: 0 0 10px 0; font-size: 14px;">
-					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Get NV oOS Pro for Premium Features', 'mcp-ai-wpoos' ); ?></strong>
 				</p>
 				<p style="margin: 0 0 10px 0;">
 					<?php
 					echo wp_kses_post(
 						__(
 							'Enable AI assistants to automatically install themes, plugins, update options, and create content. More powerful features available in the Pro addon.',
-							'wp-mcp-ai'
+							'mcp-ai-wpoos'
 						)
 					);
 					?>
 				</p>
 				<p style="margin: 0;">
 					<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary" style="margin-right: 10px;">
-						<?php esc_html_e( 'Get NV oOS Pro', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://link.nvdigital.solutions/wpoos-pro-info" target="_blank" class="button">
-						<?php esc_html_e( 'Learn More About Pro Tools', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Learn More About Pro Tools', 'mcp-ai-wpoos' ); ?>
 					</a>
 				</p>
 			</div>

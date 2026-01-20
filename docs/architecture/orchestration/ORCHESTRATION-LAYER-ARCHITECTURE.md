@@ -1,11 +1,11 @@
-# WP oOS Dynamic AI Orchestration Layer Architecture
+# NV oOS Dynamic AI Orchestration Layer Architecture
 
 **Last Updated:** November 5, 2024  
 **Plugin Version:** 1.0.0
 
 ## Overview
 
-This document explains the **novel differentiators** of the WP oOS (Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, WP oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
+This document explains the **novel differentiators** of the NV oOS (Open Operator System) orchestration layer compared to standard SSE (Server-Sent Events) and MCP (Model Context Protocol) implementations. While SSE and MCP provide the foundational communication protocols, NV oOS adds a sophisticated **orchestration and enforcement layer** that transforms passive streaming into an intelligent, policy-aware, resource-managed system.
 
 **Critical Context:** This orchestration layer exists fundamentally to **overcome PHP's architectural limitations** for real-time AI streaming — limitations that typically make Node.js the default choice for these systems. Understanding this context is essential to appreciating the technical novelty and patent-worthiness of the implementation.
 
@@ -57,15 +57,15 @@ PHP is fundamentally **terrible** at:
 - **Go microservices** for high-concurrency streaming protocols
 - **Redis/RabbitMQ** for inter-process communication and state management
 
-### The WP oOS Innovation: Orchestration Layer as PHP Workaround
+### The NV oOS Innovation: Orchestration Layer as PHP Workaround
 
-**WP oOS achieves what PHP shouldn't be able to do** — real-time AI orchestration, streaming responses, and autonomous agent coordination — by implementing a sophisticated **orchestration layer** that creates a "persistent-behavior illusion" within WordPress/PHP's synchronous, request-based architecture.
+**NV oOS achieves what PHP shouldn't be able to do** — real-time AI orchestration, streaming responses, and autonomous agent coordination — by implementing a sophisticated **orchestration layer** that creates a "persistent-behavior illusion" within WordPress/PHP's synchronous, request-based architecture.
 
 This is the **core technical innovation** that makes the system patent-worthy: not just implementing MCP/SSE in PHP, but building a complete orchestration subsystem that compensates for PHP's architectural deficiencies.
 
-#### How WP oOS Overcomes PHP's Limitations
+#### How NV oOS Overcomes PHP's Limitations
 
-| PHP Limitation | Node.js Native Solution | WP oOS Orchestration Workaround |
+| PHP Limitation | Node.js Native Solution | NV oOS Orchestration Workaround |
 |----------------|------------------------|----------------------------------|
 | **No persistent state** | In-memory variables survive across requests | **Registry & Policy Engine** — Maintains tool availability, budget allocations, and policy state in WordPress database and transient cache |
 | **Blocking I/O** | Async/await with non-blocking operations | **Predictive Budget Allocator** — Pre-calculates resource needs and fails fast before blocking operations start |
@@ -77,7 +77,7 @@ This is the **core technical innovation** that makes the system patent-worthy: n
 
 #### The "Persistent-Behavior Illusion"
 
-WP oOS creates the **appearance of persistence** where none exists:
+NV oOS creates the **appearance of persistence** where none exists:
 
 1. **Budget tracking appears continuous** — Each request reconstructs budget state from database/cache, applies new usage, and persists back
 2. **Tool registry appears always-available** — Registry rebuilds on each request but caches tool definitions in WordPress transients
@@ -85,9 +85,9 @@ WP oOS creates the **appearance of persistence** where none exists:
 4. **SSE streaming appears non-blocking** — PHP's output buffering and chunked transfer encoding create illusion of async streaming
 5. **Policy enforcement appears stateful** — Capability checks leverage WordPress's user system to reconstruct authorization context each request
 
-**In essence:** WP oOS wraps WordPress (a request-based framework) in a **controlled, pseudo-persistent AI runtime**, giving it the same orchestration behaviors as Node's event loop — but implemented through database state, dynamic cron jobs, and predictive resource scheduling.
+**In essence:** NV oOS wraps WordPress (a request-based framework) in a **controlled, pseudo-persistent AI runtime**, giving it the same orchestration behaviors as Node's event loop — but implemented through database state, dynamic cron jobs, and predictive resource scheduling.
 
-This architectural workaround is what makes WP oOS novel and patent-relevant — it achieves **distributed orchestration with deterministic resource gating** in an environment specifically designed NOT to support such patterns.
+This architectural workaround is what makes NV oOS novel and patent-relevant — it achieves **distributed orchestration with deterministic resource gating** in an environment specifically designed NOT to support such patterns.
 
 ---
 
@@ -124,9 +124,9 @@ This architectural workaround is what makes WP oOS novel and patent-relevant —
 
 ---
 
-## 🔹 What WP oOS Adds: Novel Differentiators
+## 🔹 What NV oOS Adds: Novel Differentiators
 
-The **WP oOS Dynamic AI Orchestration Layer** extends both SSE and MCP with five major innovations:
+The **NV oOS Dynamic AI Orchestration Layer** extends both SSE and MCP with five major innovations:
 
 ### 1. Real-Time Resource Budget Enforcement
 
@@ -422,7 +422,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ---
 
-## 🔹 Visual Comparison: Node.js Event Loop vs WP oOS Orchestration
+## 🔹 Visual Comparison: Node.js Event Loop vs NV oOS Orchestration
 
 ### Node.js Native Architecture (Typical AI Streaming System)
 
@@ -467,7 +467,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ---
 
-### WP oOS Architecture (PHP/WordPress Compensated System)
+### NV oOS Architecture (PHP/WordPress Compensated System)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -489,7 +489,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 └─────────────────────────────────────────────────────────────┘
                               ↕
          ┌────────────────────────────────────────┐
-         │    WP oOS Orchestration Layer (DB)     │
+         │    NV oOS Orchestration Layer (DB)     │
          │                                        │
          │  ┌──────────────────────────────────┐ │
          │  │   Registry & Policy Engine       │ │
@@ -538,7 +538,7 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ### Side-by-Side Mechanism Comparison
 
-| Feature | Node.js Native | WP oOS Equivalent |
+| Feature | Node.js Native | NV oOS Equivalent |
 |---------|---------------|-------------------|
 | **Persistent State** | In-memory variables | Database + transient cache |
 | **Event Loop** | Built-in async/await | WordPress cron scheduler |
@@ -553,15 +553,15 @@ Creates an **autonomous scheduling layer** where AI agents can create time-based
 
 ### The Technical Achievement
 
-WP oOS successfully implements **every major capability** of a Node.js AI orchestration system — but does so by building a sophisticated compensation layer that works **despite** PHP's architectural constraints, not because of them.
+NV oOS successfully implements **every major capability** of a Node.js AI orchestration system — but does so by building a sophisticated compensation layer that works **despite** PHP's architectural constraints, not because of them.
 
 This is the **patent's core innovation**: proving that sophisticated AI orchestration is achievable in PHP/WordPress through a novel orchestration architecture that recreates persistent, event-driven behavior in a stateless, synchronous environment.
 
 ---
 
-## 🔹 Comparison Table: Standard vs WP oOS Extension
+## 🔹 Comparison Table: Standard vs NV oOS Extension
 
-| Aspect | Current SSE/MCP | WP oOS Orchestration Extension |
+| Aspect | Current SSE/MCP | NV oOS Orchestration Extension |
 |--------|-----------------|-------------------------------|
 | **Streaming Control** | Passive one-way output | Feedback-aware, pause/resume with predictive budgeting |
 | **Tool Access** | Open, context-agnostic | Capability-gated via policy engine with per-tool authorization |
@@ -581,7 +581,7 @@ This is the **patent's core innovation**: proving that sophisticated AI orchestr
 
 Think of **SSE + MCP** as "**the plumbing**" — they let data flow between client and server, defining the pipe structure and message format.
 
-The **WP oOS orchestration layer** adds the "**smart water regulator**":
+The **NV oOS orchestration layer** adds the "**smart water regulator**":
 - Measures flow rate in real-time
 - Predicts overuse before pipes burst
 - Enforces permissions on who can use which taps
@@ -589,7 +589,7 @@ The **WP oOS orchestration layer** adds the "**smart water regulator**":
 - Keeps detailed logs of all water usage
 - Adjusts flow based on current system capacity
 
-Just as a modern smart home water system prevents flooding and ensures fair distribution, WP oOS prevents resource exhaustion and ensures secure, policy-compliant AI operations.
+Just as a modern smart home water system prevents flooding and ensures fair distribution, NV oOS prevents resource exhaustion and ensures secure, policy-compliant AI operations.
 
 ---
 
@@ -619,7 +619,7 @@ Client Receives Tokens
 
 ---
 
-### WP oOS Orchestrated Flow
+### NV oOS Orchestrated Flow
 
 ```
 Client Request
@@ -659,7 +659,7 @@ Client Receives Optimized Response
 
 ---
 
-### WP oOS Cron Manager Subsystem Flow
+### NV oOS Cron Manager Subsystem Flow
 
 ```
 AI Agent Request (Cron Tool)
@@ -787,7 +787,7 @@ class WP_MCP_AI_Orchestrator {
 - API rate limits hit unexpectedly
 - Cascading failures across sessions
 
-**With WP oOS Orchestration:**
+**With NV oOS Orchestration:**
 - Dynamic allocation matches request to available resources
 - Predictive budgeting prevents exhaustion before it occurs
 - Safety margins protect against rate limit violations
@@ -800,7 +800,7 @@ class WP_MCP_AI_Orchestrator {
 - No intelligent load balancing
 - Resource contention not managed
 
-**WP oOS Implementation:**
+**NV oOS Implementation:**
 - Workload tiers enable graceful degradation
 - Multi-provider load balancing spreads requests
 - Dynamic budget reallocation optimizes throughput
@@ -841,7 +841,7 @@ class WP_MCP_AI_Orchestrator {
 - Risk of resource exhaustion affecting all users
 - No audit trail of who used which tools
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Editors can access content tools; administrators access system tools
 - Each user gets fair resource allocation based on tier
 - Predictive management prevents one user from exhausting resources
@@ -857,7 +857,7 @@ class WP_MCP_AI_Orchestrator {
 - Resource usage not tracked
 - Compliance requirements not addressed
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Complete audit trail meets compliance requirements
 - Capability-based access enforces least privilege
 - Resource budgets tracked per user/session
@@ -872,11 +872,284 @@ class WP_MCP_AI_Orchestrator {
 - No adaptation to hosting constraints
 - Frequent fatal errors from exhaustion
 
-**With WP oOS Orchestration**:
+**With NV oOS Orchestration**:
 - Automatic detection of 128MB limit → Low tier
 - Token limit reduced to 1,000 to prevent exhaustion
 - Request timeout adjusted to fit PHP execution time
 - Predictive budgeting prevents memory errors
+
+---
+
+## 🔹 Dead Letter Queue & SLA-Based Prioritization
+
+**Added:** January 2026  
+**Version:** 1.1.0
+
+### Overview
+
+The orchestration layer now includes enterprise-grade failure handling and intelligent job prioritization when RabbitMQ is unavailable. This enhancement addresses two critical operational needs:
+
+1. **Persistent Failure Handling** - Failed operations (webhooks, cron jobs, async tools) survive beyond max retries for manual intervention
+2. **SLA-Based Prioritization** - Jobs automatically assigned to tiers (real-time, near real-time, batch) with capacity-aware concurrency limits
+
+### The Challenge: WordPress Cron Limitations
+
+WordPress's native cron system, while functional for basic scheduling, lacks:
+- **Failure persistence** - Failed jobs are logged but not recoverable
+- **Priority queuing** - All jobs treated equally regardless of latency requirements
+- **Retry strategies** - No exponential backoff or jitter for transient failures
+- **Capacity management** - No per-tier concurrency limits based on resource availability
+- **Observability** - Limited visibility into failure patterns and queue health
+
+### Dead Letter Queue (DLQ)
+
+**Purpose:** Capture permanently failed operations for manual review and retry.
+
+**Architecture:**
+```
+Job Execution → Max Retries (3) → DLQ Storage
+                    ↓                    ↓
+               Exponential         Admin UI + WP-CLI
+               Backoff + Jitter    for Management
+```
+
+**Supported Item Types:**
+1. **Webhooks** - HTTP callback delivery failures
+2. **Cron Jobs** - Scheduled task execution failures
+3. **Async Tools** - Background tool execution failures
+4. **Job Queue Items** - General queue processing failures
+
+**Key Features:**
+- **Persistent Storage** - WordPress option with max 1000 items, auto-pruning
+- **Retry History** - Full audit trail of retry attempts with timestamps
+- **30-Day Retention** - Automatic cleanup via weekly cron job
+- **Admin UI** - Filter by type/status, bulk operations (retry/dismiss/delete)
+- **WP-CLI Commands** - Full command-line interface for automation
+
+**Implementation:**
+```php
+// Automatic DLQ integration in Job Queue Manager
+if ( $retry_count >= 3 ) {
+    WP_MCP_AI_Dead_Letter_Queue::add(
+        'job_queue',
+        $job_id,
+        $error_message,
+        $job_data,
+        $retry_count
+    );
+}
+```
+
+### SLA-Based Prioritization with Little's Law
+
+**Purpose:** Ensure latency-sensitive jobs aren't blocked by long-running batch operations.
+
+**Three-Tier System:**
+
+| Tier | SLA Target | Priority | Max Concurrent | Use Cases |
+|------|-----------|----------|----------------|-----------|
+| **Real-time** | < 1s | 100 | 5 | Live UI interactions, chat responses |
+| **Near real-time** | 1-30s | 50 | 3 | API calls, webhook deliveries |
+| **Batch** | > 30s | 10 | 2 | Background processing, bulk operations |
+
+**Automatic Tier Assignment:**
+
+The system infers tier from tool capabilities:
+```php
+// Tool declares capabilities
+public function get_capabilities() {
+    return array( 'realtime', 'async' );
+}
+
+// SLA Manager auto-assigns tier
+$tier = WP_MCP_AI_SLA_Manager::get_tier_for_tool( $tool );
+$priority = WP_MCP_AI_SLA_Manager::get_priority( $tier );
+```
+
+**Little's Law Capacity Planning:**
+
+The SLA Manager uses Little's Law (`L = λ × W`) for intelligent capacity allocation:
+
+- **L** = Queue length (jobs waiting)
+- **λ** = Arrival rate (jobs/second)
+- **W** = Wait time (seconds)
+
+This enables:
+- **Predictive capacity** - Calculate required workers before overload
+- **Tuning recommendations** - Suggest increasing concurrent limits when at risk
+- **SLA compliance monitoring** - Alert when tier targets may be violated
+
+**Concurrency Enforcement:**
+```php
+protected static function apply_sla_tier_limits( $pending_jobs, $active_jobs ) {
+    // Count active jobs per tier
+    $active_by_tier = array(
+        'realtime'      => 0,
+        'near_realtime' => 0,
+        'batch'         => 0,
+    );
+    
+    foreach ( $active_jobs as $job ) {
+        $tier = $job['sla_tier'] ?? 'batch';
+        $active_by_tier[ $tier ]++;
+    }
+    
+    // Filter pending jobs that have capacity
+    return array_filter( $pending_jobs, function( $job ) use ( $active_by_tier ) {
+        $tier = $job['sla_tier'] ?? 'batch';
+        $limit = WP_MCP_AI_SLA_Manager::get_max_concurrent( $tier );
+        return $active_by_tier[ $tier ] < $limit;
+    } );
+}
+```
+
+### Exponential Backoff with Jitter
+
+**Purpose:** Prevent thundering herd problem and provide graceful failure handling.
+
+**Retry Strategy:**
+```php
+$config = array(
+    'initial_delay'  => 10,    // 10 seconds
+    'multiplier'     => 2.0,   // Double each time
+    'max_delay'      => 300,   // 5 minutes max
+    'max_attempts'   => 3,
+    'jitter_factor'  => 0.2,   // ±20% randomness
+);
+
+// Calculate next retry delay
+$delay = WP_MCP_AI_Retry_Strategy::calculate_delay( $attempt, $config );
+
+// Example progression: 10s → 20s → 40s (with ±20% jitter)
+```
+
+**Per-Operation Configurations:**
+- **Webhooks:** 10s initial, 5min max (±20% jitter)
+- **Cron Jobs:** 30s initial, 10min max (±15% jitter)
+- **Async Tools:** 15s initial, 5min max (±10% jitter)
+- **Crawl4AI:** 30s initial, 5min max (±10% jitter)
+
+### Integration with Crawl4AI
+
+The DLQ and retry strategy enhance Crawl4AI operations:
+
+```php
+// Exponential backoff for transient errors
+if ( 'timeout' !== $status && $retry_count < 3 ) {
+    $backoff_delay = $poll_interval * pow( 2, $retry_count );
+    wp_schedule_single_event( 
+        time() + $backoff_delay, 
+        self::CRON_HOOK, 
+        array( $task_id ) 
+    );
+    return;
+}
+
+// Move to DLQ after max retries
+WP_MCP_AI_Dead_Letter_Queue::add(
+    'crawl4ai',
+    $task_id,
+    'Max retries exceeded: ' . $error_message,
+    $task_data,
+    $retry_count
+);
+```
+
+### Admin UI Components
+
+**1. DLQ Manager Page** (`wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`)
+- List view with type/status filters
+- Bulk actions: retry, dismiss, delete
+- Statistics dashboard (total/active/dismissed)
+- Per-item retry history display
+
+**2. Cron Manager Enhancement**
+- DLQ statistics section (failed items by type)
+- SLA tier configuration table
+- Real-time tuning recommendations
+- Quick link to DLQ Manager
+
+**3. Dashboard Widget**
+- At-a-glance DLQ status (failure counts)
+- SLA compliance indicators (critical/warning/healthy)
+- Quick action buttons to management pages
+
+### WP-CLI Commands
+
+**DLQ Management:**
+```bash
+# List failed items
+wp mcp-ai dlq list --type=webhook --format=table
+
+# View statistics
+wp mcp-ai dlq stats --format=json
+
+# Retry specific item
+wp mcp-ai dlq retry abc123def456
+
+# Purge old items
+wp mcp-ai dlq purge --days=7 --yes
+```
+
+**SLA Monitoring:**
+```bash
+# View tier configuration
+wp mcp-ai sla status
+
+# Get tuning recommendations
+wp mcp-ai sla tune
+
+# Analyze specific tier with Little's Law
+wp mcp-ai sla analyze realtime --format=json
+
+# Enable/disable SLA prioritization
+wp mcp-ai sla enable
+```
+
+### Performance Impact
+
+- **Storage:** Single WordPress option (~500KB for 1000 items)
+- **CPU Overhead:** <1ms for tier inference and priority sorting
+- **Memory:** Negligible - lazy loading and efficient caching
+- **Throughput:** Improved - real-time jobs no longer blocked by batch operations
+
+### Observability & Monitoring
+
+**Metrics Tracked:**
+- DLQ size and growth rate
+- Per-tier queue depth
+- SLA compliance rates
+- Retry success/failure rates
+- Queue processing latency
+
+**Tuning Recommendations:**
+The system provides proactive recommendations:
+- "Realtime tier: Queue depth exceeds capacity, increase concurrent workers"
+- "Batch tier: High utilization (>80%), consider adding capacity"
+- "Near-realtime tier: SLA target at risk, review job complexity"
+
+### Benefits Over Standard WordPress Cron
+
+| Feature | WordPress Cron | With DLQ + SLA |
+|---------|---------------|----------------|
+| **Failure Handling** | Logged only | Persistent, retryable |
+| **Prioritization** | None | 3-tier SLA-based |
+| **Retry Strategy** | Fixed attempts | Exponential backoff + jitter |
+| **Capacity Management** | Unlimited | Per-tier concurrency limits |
+| **Observability** | Basic logs | Admin UI + Dashboard + CLI |
+| **Capacity Planning** | Manual | Little's Law automation |
+
+### Why This Strengthens the Patent
+
+The DLQ and SLA prioritization system further demonstrates NV oOS's **architectural compensation** for PHP/WordPress limitations:
+
+1. **Persistent Failure Handling** - Simulates Node.js's error recovery in stateless environment
+2. **Intelligent Prioritization** - Provides Node.js-like priority queue without event loop
+3. **Predictive Capacity** - Uses Little's Law for capacity planning typically done by orchestrators
+4. **Graceful Degradation** - Exponential backoff prevents cascade failures common in synchronous systems
+5. **Enterprise Observability** - Admin UI and CLI provide visibility absent from WordPress cron
+
+**Innovation:** Extending WordPress cron from "fire-and-forget" scheduler to **production-grade orchestration platform** with failure recovery, SLA guarantees, and capacity management - all within PHP's request-based constraints.
 
 ---
 
@@ -912,14 +1185,14 @@ The orchestration layer architecture enables future innovations:
 - [tool-reference.md](../../reference/tools/tool-reference.md) - Complete catalog of orchestrated tools
 - [mcp-server-authentication.md](../../reference/api/mcp-server-authentication.md) - Authentication implementation
 - [rest-api.md](../../reference/api/rest-api.md) - REST API and SSE endpoint documentation
-- [BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using WP oOS
+- [BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md) - Best practices for using NV oOS
 - [DOCUMENTATION_INDEX.md](../../DOCUMENTATION_INDEX.md) - Complete documentation index
 
 ---
 
 ## 🔹 Summary
 
-The WP oOS Dynamic AI Orchestration Layer represents a **fundamental architectural leap** beyond standard SSE and MCP implementations:
+The NV oOS Dynamic AI Orchestration Layer represents a **fundamental architectural leap** beyond standard SSE and MCP implementations:
 
 | Innovation | Impact |
 |------------|--------|
@@ -937,7 +1210,7 @@ This orchestration layer is the **novel contribution** disclosed in the provisio
 
 **The Core Innovation:**
 
-Most AI streaming systems use Node.js because it was **designed** for real-time, persistent, async operations. WP oOS achieves the same results in PHP/WordPress — which was **explicitly not designed** for these patterns — by implementing a sophisticated orchestration layer that:
+Most AI streaming systems use Node.js because it was **designed** for real-time, persistent, async operations. NV oOS achieves the same results in PHP/WordPress — which was **explicitly not designed** for these patterns — by implementing a sophisticated orchestration layer that:
 
 1. **Recreates Node's event loop behavior** using WordPress cron and database state persistence
 2. **Simulates persistent memory** through registry caching and predictive budget reconstruction
@@ -951,7 +1224,7 @@ The patent's strength lies not in implementing MCP/SSE (which are standard proto
 
 The inclusion of the **Cron Manager subsystem** further strengthens the patent's autonomous orchestration capabilities by enabling AI agents to create, monitor, and manage scheduled operations that inherit the same resource budgets and capability constraints as real-time sessions, ensuring policy compliance during deferred execution — effectively extending the "persistent-behavior illusion" across time-shifted workloads.
 
-**In other words:** WP oOS proves that sophisticated AI orchestration is possible in PHP/WordPress, but only through this novel architectural compensation layer — which is precisely what makes it patentable as a technical workaround to fundamental platform limitations.
+**In other words:** NV oOS proves that sophisticated AI orchestration is possible in PHP/WordPress, but only through this novel architectural compensation layer — which is precisely what makes it patentable as a technical workaround to fundamental platform limitations.
 
 ---
 

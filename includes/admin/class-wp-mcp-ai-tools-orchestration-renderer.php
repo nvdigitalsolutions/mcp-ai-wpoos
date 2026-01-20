@@ -34,6 +34,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 * Render the complete tools orchestration view.
 		 *
 		 * @return string HTML output or fallback on error.
+		 * @throws Exception If the tool registry is not available.
 		 */
 		public static function render_tools_view() {
 			try {
@@ -66,9 +67,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 
 				ob_start();
 				?>
-				<h3><?php esc_html_e( 'Tool Orchestration Settings', 'wp-mcp-ai' ); ?></h3>
+				<h3><?php esc_html_e( 'Tool Orchestration Settings', 'mcp-ai-wpoos' ); ?></h3>
 				<p class="description">
-					<?php esc_html_e( 'View and manage orchestration settings for each tool. Click "Edit" to customize capability flags and force synchronous execution for specific tools. Custom settings override default tool behavior.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'View and manage orchestration settings for each tool. Click "Edit" to customize capability flags and force synchronous execution for specific tools. Custom settings override default tool behavior.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<?php
@@ -89,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 
 				<?php if ( empty( $all_tools ) ) : ?>
 					<div class="notice notice-warning inline">
-						<p><?php esc_html_e( 'No tools are currently registered. Please check your plugin configuration.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'No tools are currently registered. Please check your plugin configuration.', 'mcp-ai-wpoos' ); ?></p>
 					</div>
 				<?php else : ?>
 					<?php
@@ -123,7 +124,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				// Return simple fallback.
 				return sprintf(
 					'<div class="notice notice-warning inline"><p>%s</p></div>',
-					esc_html__( 'Tools orchestration view temporarily unavailable. Please refresh the page.', 'wp-mcp-ai' )
+					esc_html__( 'Tools orchestration view temporarily unavailable. Please refresh the page.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -145,12 +146,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				<table class="wp-list-table widefat fixed striped">
 					<thead>
 						<tr>
-							<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 13%;"><?php esc_html_e( 'Slug', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 28%;"><?php esc_html_e( 'Capability Flags', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 13%;"><?php esc_html_e( 'Model Requirements', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 18%;"><?php esc_html_e( 'Orchestration Info', 'wp-mcp-ai' ); ?></th>
-							<th style="width: 10%;"><?php esc_html_e( 'Actions', 'wp-mcp-ai' ); ?></th>
+							<th style="width: 18%;"><?php esc_html_e( 'Tool Name', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 13%;"><?php esc_html_e( 'Slug', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 28%;"><?php esc_html_e( 'Capability Flags', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 13%;"><?php esc_html_e( 'Model Requirements', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 18%;"><?php esc_html_e( 'Orchestration Info', 'mcp-ai-wpoos' ); ?></th>
+							<th style="width: 10%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -182,7 +183,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			} catch ( Exception $e ) {
 				return sprintf(
 					'<div class="notice notice-warning inline"><p>%s</p></div>',
-					esc_html__( 'Tools table temporarily unavailable.', 'wp-mcp-ai' )
+					esc_html__( 'Tools table temporarily unavailable.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -247,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 						if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 							require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-editable-capability-flags-renderer.php';
 						}
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
 						echo WP_MCP_AI_Editable_Capability_Flags_Renderer::render( $tool_slug, $capability_flags, $has_custom_flags, $force_sync );
 						?>
 					</td>
@@ -265,19 +266,19 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 					</td>
 					<td class="wp-mcp-ai-tool-actions">
 						<button type="button" class="button button-small wp-mcp-ai-edit-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-							<?php esc_html_e( 'Edit', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
 						</button>
 						<div class="wp-mcp-ai-edit-actions" style="display: none;">
 							<button type="button" class="button button-small button-primary wp-mcp-ai-save-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-								<?php esc_html_e( 'Save', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Save', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<button type="button" class="button button-small wp-mcp-ai-cancel-edit" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">
-								<?php esc_html_e( 'Cancel', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos' ); ?>
 							</button>
 							<?php if ( $has_custom_flags || $force_sync ) : ?>
 								<br>
 								<button type="button" class="button button-small button-link-delete wp-mcp-ai-reset-tool" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>" style="margin-top: 5px;">
-									<?php esc_html_e( 'Reset to Default', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'Reset to Default', 'mcp-ai-wpoos' ); ?>
 								</button>
 							<?php endif; ?>
 						</div>
@@ -289,7 +290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			} catch ( Exception $e ) {
 				return sprintf(
 					'<tr><td colspan="6">%s</td></tr>',
-					esc_html__( 'Error rendering tool row.', 'wp-mcp-ai' )
+					esc_html__( 'Error rendering tool row.', 'mcp-ai-wpoos' )
 				);
 			}
 		}
@@ -302,7 +303,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 */
 		private static function render_capability_flags( $capability_flags ) {
 			if ( empty( $capability_flags ) || ! is_array( $capability_flags ) ) {
-				return '<span style="color: #999; font-style: italic;">' . esc_html__( 'None', 'wp-mcp-ai' ) . '</span>';
+				return '<span style="color: #999; font-style: italic;">' . esc_html__( 'None', 'mcp-ai-wpoos' ) . '</span>';
 			}
 
 			// Group flags by category for better display.
@@ -389,27 +390,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 
 			return array(
 				'requirements' => array(
-					'label' => __( 'Requirements', 'wp-mcp-ai' ),
+					'label' => __( 'Requirements', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $requirement_flags ),
 					'color' => '#d63638',
 				),
 				'operational'  => array(
-					'label' => __( 'Operational', 'wp-mcp-ai' ),
+					'label' => __( 'Operational', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $operational_flags ),
 					'color' => '#2271b1',
 				),
 				'network'      => array(
-					'label' => __( 'Network', 'wp-mcp-ai' ),
+					'label' => __( 'Network', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $network_flags ),
 					'color' => '#f0b849',
 				),
 				'data'         => array(
-					'label' => __( 'Data', 'wp-mcp-ai' ),
+					'label' => __( 'Data', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $data_flags ),
 					'color' => '#46b450',
 				),
 				'tier'         => array(
-					'label' => __( 'Tier', 'wp-mcp-ai' ),
+					'label' => __( 'Tier', 'mcp-ai-wpoos' ),
 					'flags' => array_values( $tier_flags ),
 					'color' => '#9b51e0',
 				),
@@ -424,7 +425,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 		 */
 		private static function render_model_requirements( $model_requirements ) {
 			if ( empty( $model_requirements ) || ! is_array( $model_requirements ) ) {
-				return '<span style="color: #999; font-style: italic;">' . esc_html__( 'Any', 'wp-mcp-ai' ) . '</span>';
+				return '<span style="color: #999; font-style: italic;">' . esc_html__( 'Any', 'mcp-ai-wpoos' ) . '</span>';
 			}
 
 			ob_start();
@@ -458,43 +459,43 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 			<div style="font-size: 11px;">
 				<?php if ( ! empty( $flow_stages ) && ! in_array( 'anytime', $flow_stages, true ) ) : ?>
 					<div style="margin-bottom: 4px;">
-						<strong><?php esc_html_e( 'Flow:', 'wp-mcp-ai' ); ?></strong>
+						<strong><?php esc_html_e( 'Flow:', 'mcp-ai-wpoos' ); ?></strong>
 						<?php echo esc_html( implode( ', ', $flow_stages ) ); ?>
 					</div>
 				<?php endif; ?>
 				<?php if ( $has_rules ) : ?>
 					<div style="margin-bottom: 4px;">
 						<span class="dashicons dashicons-admin-generic" style="font-size: 14px; color: #2271b1; vertical-align: middle;"></span>
-						<span style="color: #2271b1; font-weight: bold;"><?php esc_html_e( 'Has Rules', 'wp-mcp-ai' ); ?></span>
+						<span style="color: #2271b1; font-weight: bold;"><?php esc_html_e( 'Has Rules', 'mcp-ai-wpoos' ); ?></span>
 					</div>
 				<?php endif; ?>
 				<?php if ( $is_read_only ) : ?>
 					<div style="color: #46b450;">
 						<span class="dashicons dashicons-visibility" style="font-size: 14px; vertical-align: middle;"></span>
-						<?php esc_html_e( 'Read-only', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Read-only', 'mcp-ai-wpoos' ); ?>
 					</div>
 				<?php elseif ( $is_state_changing ) : ?>
 					<div style="color: #d63638;">
 						<span class="dashicons dashicons-edit" style="font-size: 14px; vertical-align: middle;"></span>
-						<?php esc_html_e( 'Modifies state', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Modifies state', 'mcp-ai-wpoos' ); ?>
 					</div>
 				<?php endif; ?>
 				<?php if ( $requires_creds ) : ?>
 					<div style="color: #f0b849;">
 						<span class="dashicons dashicons-lock" style="font-size: 14px; vertical-align: middle;"></span>
-						<?php esc_html_e( 'Requires credentials', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Requires credentials', 'mcp-ai-wpoos' ); ?>
 					</div>
 				<?php endif; ?>
 				<?php if ( $external_api ) : ?>
 					<div style="color: #2271b1;">
 						<span class="dashicons dashicons-cloud" style="font-size: 14px; vertical-align: middle;"></span>
-						<?php esc_html_e( 'External API', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'External API', 'mcp-ai-wpoos' ); ?>
 					</div>
 				<?php endif; ?>
 				<?php if ( $long_running ) : ?>
 					<div style="color: #f0b849;">
 						<span class="dashicons dashicons-clock" style="font-size: 14px; vertical-align: middle;"></span>
-						<?php esc_html_e( 'Long-running', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Long-running', 'mcp-ai-wpoos' ); ?>
 					</div>
 				<?php endif; ?>
 			</div>
@@ -517,25 +518,25 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Orchestration_Renderer' ) ) {
 				?>
 				<!-- Summary Statistics -->
 				<div class="wp-mcp-ai-tools-summary" style="margin-top: 20px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-					<h4 style="margin-top: 0;"><?php esc_html_e( 'Tools Summary', 'wp-mcp-ai' ); ?></h4>
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Tools Summary', 'mcp-ai-wpoos' ); ?></h4>
 					<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
 						<?php
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_stat_card method.
-						echo self::render_stat_card( $stats['total_tools'], __( 'Total Tools', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['tools_with_capabilities'], __( 'With Capabilities', 'wp-mcp-ai' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['tools_with_model_reqs'], __( 'With Model Reqs', 'wp-mcp-ai' ), '#8c68cd' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['tools_with_rules'], __( 'With Rules', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['read_only_tools'], __( 'Read-only', 'wp-mcp-ai' ), '#46b450' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['state_changing_tools'], __( 'State-changing', 'wp-mcp-ai' ), '#d63638' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['external_api_tools'], __( 'External API', 'wp-mcp-ai' ), '#2271b1' );
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						echo self::render_stat_card( $stats['long_running_tools'], __( 'Long-running', 'wp-mcp-ai' ), '#f0b849' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['total_tools'], __( 'Total Tools', 'mcp-ai-wpoos' ), '#2271b1' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['tools_with_capabilities'], __( 'With Capabilities', 'mcp-ai-wpoos' ), '#46b450' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['tools_with_model_reqs'], __( 'With Model Reqs', 'mcp-ai-wpoos' ), '#8c68cd' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['tools_with_rules'], __( 'With Rules', 'mcp-ai-wpoos' ), '#2271b1' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['read_only_tools'], __( 'Read-only', 'mcp-ai-wpoos' ), '#46b450' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['state_changing_tools'], __( 'State-changing', 'mcp-ai-wpoos' ), '#d63638' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['external_api_tools'], __( 'External API', 'mcp-ai-wpoos' ), '#2271b1' );
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Method handles escaping internally.
+						echo self::render_stat_card( $stats['long_running_tools'], __( 'Long-running', 'mcp-ai-wpoos' ), '#f0b849' );
 						?>
 					</div>
 				</div>

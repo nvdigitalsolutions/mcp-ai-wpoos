@@ -22,6 +22,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
+	
 	const DEFAULT_MODEL = 'omni-moderation-latest';
 
 	/**
@@ -35,14 +37,14 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Moderate Content', 'wp-mcp-ai' );
+		return __( 'Moderate Content', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Analyzes text or images for potentially harmful content using OpenAI Moderation API. Checks for violations across multiple categories including sexual content, hate speech, harassment, self-harm, and violence.', 'wp-mcp-ai' );
+		return __( 'Analyzes text or images for potentially harmful content using OpenAI Moderation API. Checks for violations across multiple categories including sexual content, hate speech, harassment, self-harm, and violence.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -54,11 +56,11 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'input'   => array(
 					'type'        => 'string',
-					'description' => __( 'The text content to moderate. For batch moderation, provide an array of strings.', 'wp-mcp-ai' ),
+					'description' => __( 'The text content to moderate. For batch moderation, provide an array of strings.', 'mcp-ai-wpoos' ),
 				),
 				'model'   => array(
 					'type'        => 'string',
-					'description' => __( 'The moderation model to use.', 'wp-mcp-ai' ),
+					'description' => __( 'The moderation model to use.', 'mcp-ai-wpoos' ),
 					'enum'        => array(
 						'omni-moderation-latest',
 						'text-moderation-latest',
@@ -67,7 +69,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'timeout' => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds.', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds.', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 60,
 					'default'     => 30,
@@ -115,7 +117,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( ! user_can( $user_id, 'read' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to moderate content.', 'wp-mcp-ai' ),
+					__( 'You do not have permission to moderate content.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -123,7 +125,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -133,7 +135,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! isset( $arguments['input'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_input',
-				__( 'No input content was provided for moderation.', 'wp-mcp-ai' ),
+				__( 'No input content was provided for moderation.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -148,7 +150,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( '' === $input ) {
 				return new WP_Error(
 					'wp_mcp_ai_empty_input',
-					__( 'Input content cannot be empty.', 'wp-mcp-ai' ),
+					__( 'Input content cannot be empty.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
@@ -175,14 +177,14 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( empty( $input ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_empty_input',
-					__( 'All input items are empty.', 'wp-mcp-ai' ),
+					__( 'All input items are empty.', 'mcp-ai-wpoos' ),
 					array( 'status' => 400 )
 				);
 			}
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_input',
-				__( 'Input must be a string or array of strings.', 'wp-mcp-ai' ),
+				__( 'Input must be a string or array of strings.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -217,19 +219,23 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! isset( $response['results'] ) || ! is_array( $response['results'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'OpenAI returned an invalid moderation response.', 'wp-mcp-ai' ),
+				__( 'OpenAI returned an invalid moderation response.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
 
 		// Build formatted result.
-		$results = $response['results'];
+		$results       = $response['results'];
+		$summary_data  = $this->generate_summary( $results );
+		$message_text  = isset( $summary_data['recommendation'] ) ? $summary_data['recommendation'] : __( 'Content moderation complete.', 'mcp-ai-wpoos' );
+		
 		$result  = array(
+			'message'       => $message_text,
 			'moderation_id' => isset( $response['id'] ) ? $response['id'] : '',
 			'model'         => isset( $response['model'] ) ? $response['model'] : $model,
 			'results_count' => count( $results ),
 			'results'       => $this->format_results( $results ),
-			'summary'       => $this->generate_summary( $results ),
+			'summary'       => $summary_data,
 		);
 
 		return $result;
@@ -328,7 +334,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add text recommendation.
 		if ( $summary['is_safe'] ) {
-			$summary['recommendation'] = __( 'Content appears safe for publication.', 'wp-mcp-ai' );
+			$summary['recommendation'] = __( 'Content appears safe for publication.', 'mcp-ai-wpoos' );
 		} else {
 			$summary['recommendation'] = sprintf(
 				/* translators: %d: number of flagged items */
@@ -336,7 +342,7 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 					'%d item was flagged and requires review before publication.',
 					'%d items were flagged and require review before publication.',
 					$total_flagged,
-					'wp-mcp-ai'
+					'mcp-ai-wpoos'
 				),
 				$total_flagged
 			);

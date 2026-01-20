@@ -42,8 +42,8 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 		public static function register_page() {
 			self::$page_hook = add_submenu_page(
 				'tools.php',
-				__( 'MCP Server Diagnostic', 'wp-mcp-ai' ),
-				__( 'NV oOS MCP Test', 'wp-mcp-ai' ),
+				__( 'MCP Server Diagnostic', 'mcp-ai-wpoos' ),
+				__( 'NV oOS MCP Test', 'mcp-ai-wpoos' ),
 				'manage_options',
 				'wp-mcp-ai-mcp-diagnostic',
 				array( __CLASS__, 'render_page' )
@@ -84,14 +84,14 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 					'nonce'   => wp_create_nonce( 'wp-mcp-ai-mcp-diagnostic' ),
 					'i18n'    => array(
-						'testing'         => __( 'Testing...', 'wp-mcp-ai' ),
-						'testingEndpoint' => __( 'Testing MCP endpoint...', 'wp-mcp-ai' ),
-						'testingMethod'   => __( 'Testing method...', 'wp-mcp-ai' ),
-						'success'         => __( 'Success!', 'wp-mcp-ai' ),
-						'error'           => __( 'Error!', 'wp-mcp-ai' ),
-						'unknownError'    => __( 'Unknown error occurred', 'wp-mcp-ai' ),
-						'testEndpoint'    => __( 'Test MCP Endpoint', 'wp-mcp-ai' ),
-						'viewResponse'    => __( 'View Response', 'wp-mcp-ai' ),
+						'testing'         => __( 'Testing...', 'mcp-ai-wpoos' ),
+						'testingEndpoint' => __( 'Testing MCP endpoint...', 'mcp-ai-wpoos' ),
+						'testingMethod'   => __( 'Testing method...', 'mcp-ai-wpoos' ),
+						'success'         => __( 'Success!', 'mcp-ai-wpoos' ),
+						'error'           => __( 'Error!', 'mcp-ai-wpoos' ),
+						'unknownError'    => __( 'Unknown error occurred', 'mcp-ai-wpoos' ),
+						'testEndpoint'    => __( 'Test MCP Endpoint', 'mcp-ai-wpoos' ),
+						'viewResponse'    => __( 'View Response', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -107,49 +107,49 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			$current_user = wp_get_current_user();
 			?>
 			<div class="wrap">
-				<h1><?php esc_html_e( 'MCP Server Diagnostics', 'wp-mcp-ai' ); ?></h1>
+				<h1><?php esc_html_e( 'MCP Server Diagnostics', 'mcp-ai-wpoos' ); ?></h1>
 				<p class="description">
-					<?php esc_html_e( 'Test and verify MCP (Model Context Protocol) server functionality, endpoints, and capabilities.', 'wp-mcp-ai' ); ?>
+					<?php esc_html_e( 'Test and verify MCP (Model Context Protocol) server functionality, endpoints, and capabilities.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<!-- MCP Protocol Information -->
 				<div class="card">
-					<h2><?php esc_html_e( '1. MCP Protocol Information', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '1. MCP Protocol Information', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Property', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Value', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Property', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Value', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td><strong><?php esc_html_e( 'Protocol Version', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Protocol Version', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td><code>2024-11-05</code></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Server Name', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Server Name', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td><code>NV oOS</code></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Server Version', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Server Version', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td><code><?php echo esc_html( WP_MCP_AI_VERSION ); ?></code></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'REST Namespace', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'REST Namespace', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td><code>mcp-ai/v1</code></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'MCP Endpoint URL', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'MCP Endpoint URL', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td><code><?php echo esc_html( $rest_url ); ?></code></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Supported Methods', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Supported Methods', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
-									<code>initialize</code>, 
-									<code>tools/list</code>, 
-									<code>tools/call</code>, 
-									<code>resources/list</code>, 
+									<code>initialize</code>,
+									<code>tools/list</code>,
+									<code>tools/call</code>,
+									<code>resources/list</code>,
 									<code>prompts/list</code>
 								</td>
 							</tr>
@@ -159,19 +159,19 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- REST Endpoint Connectivity -->
 				<div class="card">
-					<h2><?php esc_html_e( '2. REST Endpoint Connectivity', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '2. REST Endpoint Connectivity', 'mcp-ai-wpoos' ); ?></h2>
 					<p class="description">
-						<?php esc_html_e( 'Test basic connectivity to the MCP REST endpoint.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Test basic connectivity to the MCP REST endpoint.', 'mcp-ai-wpoos' ); ?>
 					</p>
-					
+
 					<div id="mcp-endpoint-test-result" style="margin: 15px 0;"></div>
-					
+
 					<button type="button" class="button button-primary" id="test-mcp-endpoint">
-						<?php esc_html_e( 'Test MCP Endpoint', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Test MCP Endpoint', 'mcp-ai-wpoos' ); ?>
 					</button>
-					
+
 					<div style="margin-top: 15px;">
-						<h3><?php esc_html_e( 'Expected Response Format (JSON-RPC 2.0)', 'wp-mcp-ai' ); ?></h3>
+						<h3><?php esc_html_e( 'Expected Response Format (JSON-RPC 2.0)', 'mcp-ai-wpoos' ); ?></h3>
 						<pre style="background: #f5f5f5; padding: 10px; overflow-x: auto;"><code>{
 	"jsonrpc": "2.0",
 	"id": 1,
@@ -186,31 +186,31 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- MCP Methods Testing -->
 				<div class="card">
-					<h2><?php esc_html_e( '3. MCP Methods Testing', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '3. MCP Methods Testing', 'mcp-ai-wpoos' ); ?></h2>
 					<p class="description">
-						<?php esc_html_e( 'Test individual MCP protocol methods to verify functionality.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Test individual MCP protocol methods to verify functionality.', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<?php
 					$methods = array(
 						'initialize'     => array(
-							'label'       => __( 'Initialize', 'wp-mcp-ai' ),
-							'description' => __( 'Get server capabilities and protocol version', 'wp-mcp-ai' ),
+							'label'       => __( 'Initialize', 'mcp-ai-wpoos' ),
+							'description' => __( 'Get server capabilities and protocol version', 'mcp-ai-wpoos' ),
 							'params'      => array(),
 						),
 						'tools/list'     => array(
-							'label'       => __( 'Tools List', 'wp-mcp-ai' ),
-							'description' => __( 'List all available tools', 'wp-mcp-ai' ),
+							'label'       => __( 'Tools List', 'mcp-ai-wpoos' ),
+							'description' => __( 'List all available tools', 'mcp-ai-wpoos' ),
 							'params'      => array(),
 						),
 						'resources/list' => array(
-							'label'       => __( 'Resources List', 'wp-mcp-ai' ),
-							'description' => __( 'List available resources', 'wp-mcp-ai' ),
+							'label'       => __( 'Resources List', 'mcp-ai-wpoos' ),
+							'description' => __( 'List available resources', 'mcp-ai-wpoos' ),
 							'params'      => array(),
 						),
 						'prompts/list'   => array(
-							'label'       => __( 'Prompts List', 'wp-mcp-ai' ),
-							'description' => __( 'List available prompts', 'wp-mcp-ai' ),
+							'label'       => __( 'Prompts List', 'mcp-ai-wpoos' ),
+							'description' => __( 'List available prompts', 'mcp-ai-wpoos' ),
 							'params'      => array(),
 						),
 					);
@@ -221,21 +221,21 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						<div class="mcp-method-test" style="margin: 20px 0; padding: 15px; border: 1px solid #ddd; background: #fafafa;">
 							<h3><?php echo esc_html( $config['label'] ); ?> <code><?php echo esc_html( $method ); ?></code></h3>
 							<p><?php echo esc_html( $config['description'] ); ?></p>
-							
-							<button 
-								type="button" 
-								class="button button-secondary test-mcp-method" 
+
+							<button
+								type="button"
+								class="button button-secondary test-mcp-method"
 								data-method="<?php echo esc_attr( $method ); ?>"
 								data-method-id="<?php echo esc_attr( $method_id ); ?>">
 								<?php
 								printf(
 									/* translators: %s: method label */
-									esc_html__( 'Test %s', 'wp-mcp-ai' ),
+									esc_html__( 'Test %s', 'mcp-ai-wpoos' ),
 									esc_html( $config['label'] )
 								);
 								?>
 							</button>
-							
+
 							<div id="result-<?php echo esc_attr( $method_id ); ?>" class="mcp-test-result" style="margin-top: 10px;"></div>
 						</div>
 					<?php endforeach; ?>
@@ -243,53 +243,53 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- Authentication Methods -->
 				<div class="card">
-					<h2><?php esc_html_e( '4. Authentication Methods', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '4. Authentication Methods', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Method', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Details', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Method', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td><strong><?php esc_html_e( 'WordPress Nonce', 'wp-mcp-ai' ); ?></strong></td>
-								<td><span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'wp-mcp-ai' ); ?></span></td>
-								<td><?php esc_html_e( 'Standard WordPress authentication for same-origin requests', 'wp-mcp-ai' ); ?></td>
+								<td><strong><?php esc_html_e( 'WordPress Nonce', 'mcp-ai-wpoos' ); ?></strong></td>
+								<td><span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span></td>
+								<td><?php esc_html_e( 'Standard WordPress authentication for same-origin requests', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Assistant Credentials', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Assistant Credentials', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( class_exists( 'WP_MCP_AI_Credentials' ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td><?php esc_html_e( 'Bearer tokens for assistant-specific access', 'wp-mcp-ai' ); ?></td>
+								<td><?php esc_html_e( 'Bearer tokens for assistant-specific access', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Auth0 Integration', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'Auth0 Integration', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( ! empty( $settings['auth0_domain'] ) && ! empty( $settings['auth0_audience'] ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'Configured', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'Configured', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: orange;">⚠ <?php esc_html_e( 'Not Configured', 'wp-mcp-ai' ); ?></span>
+										<span style="color: orange;">⚠ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td>
 									<?php if ( ! empty( $settings['auth0_domain'] ) ) : ?>
-										<?php esc_html_e( 'Domain:', 'wp-mcp-ai' ); ?> <code><?php echo esc_html( $settings['auth0_domain'] ); ?></code>
+										<?php esc_html_e( 'Domain:', 'mcp-ai-wpoos' ); ?> <code><?php echo esc_html( $settings['auth0_domain'] ); ?></code>
 									<?php else : ?>
-										<?php esc_html_e( 'Auth0 domain not configured', 'wp-mcp-ai' ); ?>
+										<?php esc_html_e( 'Auth0 domain not configured', 'mcp-ai-wpoos' ); ?>
 									<?php endif; ?>
 								</td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'Guest Tokens', 'wp-mcp-ai' ); ?></strong></td>
-								<td><span style="color: green;">✓ <?php esc_html_e( 'Available', 'wp-mcp-ai' ); ?></span></td>
-								<td><?php esc_html_e( 'Temporary tokens for public chat surfaces', 'wp-mcp-ai' ); ?></td>
+								<td><strong><?php esc_html_e( 'Guest Tokens', 'mcp-ai-wpoos' ); ?></strong></td>
+								<td><span style="color: green;">✓ <?php esc_html_e( 'Available', 'mcp-ai-wpoos' ); ?></span></td>
+								<td><?php esc_html_e( 'Temporary tokens for public chat surfaces', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
 						</tbody>
 					</table>
@@ -297,7 +297,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- Tool Registry -->
 				<div class="card">
-					<h2><?php esc_html_e( '5. Tool Registry', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '5. Tool Registry', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$registry = null;
 					if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
@@ -316,23 +316,23 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<?php
 							printf(
 								/* translators: %d: number of tools */
-								esc_html__( 'Total tools registered: %d', 'wp-mcp-ai' ),
+								esc_html__( 'Total tools registered: %d', 'mcp-ai-wpoos' ),
 								absint( $tools_count )
 							);
 							?>
 						</p>
-						
+
 						<?php if ( $tools_count > 0 ) : ?>
 							<details style="margin-top: 15px;">
 								<summary style="cursor: pointer; font-weight: bold;">
-									<?php esc_html_e( 'View All Registered Tools', 'wp-mcp-ai' ); ?>
+									<?php esc_html_e( 'View All Registered Tools', 'mcp-ai-wpoos' ); ?>
 								</summary>
 								<table class="widefat striped" style="margin-top: 10px;">
 									<thead>
 										<tr>
-											<th><?php esc_html_e( 'Tool Slug', 'wp-mcp-ai' ); ?></th>
-											<th><?php esc_html_e( 'Name', 'wp-mcp-ai' ); ?></th>
-											<th><?php esc_html_e( 'Description', 'wp-mcp-ai' ); ?></th>
+											<th><?php esc_html_e( 'Tool Slug', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Name', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
 										</tr>
 									</thead>
 									<tbody>
@@ -348,13 +348,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							</details>
 						<?php endif; ?>
 					<?php else : ?>
-						<p style="color: red;"><?php esc_html_e( 'Tool Registry not available!', 'wp-mcp-ai' ); ?></p>
+						<p style="color: red;"><?php esc_html_e( 'Tool Registry not available!', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 				</div>
 
 				<!-- Assistants Configuration -->
 				<div class="card">
-					<h2><?php esc_html_e( '6. Assistants Configuration', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '6. Assistants Configuration', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$assistants = get_posts(
 						array(
@@ -370,7 +370,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<?php
 							printf(
 								/* translators: %d: number of assistants */
-								esc_html__( 'Total assistants configured: %d', 'wp-mcp-ai' ),
+								esc_html__( 'Total assistants configured: %d', 'mcp-ai-wpoos' ),
 								count( $assistants )
 							);
 							?>
@@ -378,10 +378,10 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 						<table class="widefat striped">
 							<thead>
 								<tr>
-									<th><?php esc_html_e( 'Assistant', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Provider', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Model', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Tools Count', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Assistant', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Provider', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Tools Count', 'mcp-ai-wpoos' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -407,46 +407,46 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							</tbody>
 						</table>
 					<?php else : ?>
-						<p><?php esc_html_e( 'No assistants configured yet.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'No assistants configured yet.', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 				</div>
 
 				<!-- Federation & Mesh -->
 				<?php if ( ! empty( $settings['enable_federation'] ) || ! empty( $settings['enable_mesh'] ) ) : ?>
 					<div class="card">
-						<h2><?php esc_html_e( '7. Federation & Mesh Networking', 'wp-mcp-ai' ); ?></h2>
+						<h2><?php esc_html_e( '7. Federation & Mesh Networking', 'mcp-ai-wpoos' ); ?></h2>
 						<table class="widefat striped">
 							<thead>
 								<tr>
-									<th><?php esc_html_e( 'Feature', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-									<th><?php esc_html_e( 'Details', 'wp-mcp-ai' ); ?></th>
+									<th><?php esc_html_e( 'Feature', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									<th><?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
 								<tr>
-									<td><strong><?php esc_html_e( 'Federation', 'wp-mcp-ai' ); ?></strong></td>
+									<td><strong><?php esc_html_e( 'Federation', 'mcp-ai-wpoos' ); ?></strong></td>
 									<td>
 										<?php if ( ! empty( $settings['enable_federation'] ) ) : ?>
-											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'wp-mcp-ai' ); ?></span>
+											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php else : ?>
-											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'wp-mcp-ai' ); ?></span>
+											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php endif; ?>
 									</td>
 									<td>
 										<?php if ( ! empty( $settings['enable_federation'] ) ) : ?>
-											<?php esc_html_e( 'Region:', 'wp-mcp-ai' ); ?> 
+											<?php esc_html_e( 'Region:', 'mcp-ai-wpoos' ); ?>
 											<code><?php echo esc_html( isset( $settings['federation_regions'] ) ? $settings['federation_regions'] : 'global' ); ?></code>
 										<?php endif; ?>
 									</td>
 								</tr>
 								<tr>
-									<td><strong><?php esc_html_e( 'Mesh Networking', 'wp-mcp-ai' ); ?></strong></td>
+									<td><strong><?php esc_html_e( 'Mesh Networking', 'mcp-ai-wpoos' ); ?></strong></td>
 									<td>
 										<?php if ( ! empty( $settings['enable_mesh'] ) ) : ?>
-											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'wp-mcp-ai' ); ?></span>
+											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php else : ?>
-											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'wp-mcp-ai' ); ?></span>
+											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php endif; ?>
 									</td>
 									<td>
@@ -455,7 +455,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 											$peer_count = count( $settings['mesh_peer_sites'] );
 											printf(
 												/* translators: %d: number of peer sites */
-												esc_html__( '%d peer sites configured', 'wp-mcp-ai' ),
+												esc_html__( '%d peer sites configured', 'mcp-ai-wpoos' ),
 												absint( $peer_count )
 											);
 										}
@@ -469,59 +469,59 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- System Requirements -->
 				<div class="card">
-					<h2><?php esc_html_e( '8. System Requirements', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '8. System Requirements', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<thead>
 							<tr>
-								<th><?php esc_html_e( 'Requirement', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Status', 'wp-mcp-ai' ); ?></th>
-								<th><?php esc_html_e( 'Details', 'wp-mcp-ai' ); ?></th>
+								<th><?php esc_html_e( 'Requirement', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?></th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr>
-								<td><strong><?php esc_html_e( 'WordPress Version', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'WordPress Version', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( version_compare( get_bloginfo( 'version' ), '6.0', '>=' ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'OK', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'OK', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: red;">✗ <?php esc_html_e( 'Update Required', 'wp-mcp-ai' ); ?></span>
+										<span style="color: red;">✗ <?php esc_html_e( 'Update Required', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td><?php echo esc_html( get_bloginfo( 'version' ) ); ?> (<?php esc_html_e( 'Minimum: 6.0', 'wp-mcp-ai' ); ?>)</td>
+								<td><?php echo esc_html( get_bloginfo( 'version' ) ); ?> (<?php esc_html_e( 'Minimum: 6.0', 'mcp-ai-wpoos' ); ?>)</td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'PHP Version', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'PHP Version', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( version_compare( PHP_VERSION, '7.4', '>=' ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'OK', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'OK', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: red;">✗ <?php esc_html_e( 'Update Required', 'wp-mcp-ai' ); ?></span>
+										<span style="color: red;">✗ <?php esc_html_e( 'Update Required', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td><?php echo esc_html( PHP_VERSION ); ?> (<?php esc_html_e( 'Minimum: 7.4', 'wp-mcp-ai' ); ?>)</td>
+								<td><?php echo esc_html( PHP_VERSION ); ?> (<?php esc_html_e( 'Minimum: 7.4', 'mcp-ai-wpoos' ); ?>)</td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'REST API', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'REST API', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( function_exists( 'rest_url' ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
 								<td><?php echo esc_html( rest_url() ); ?></td>
 							</tr>
 							<tr>
-								<td><strong><?php esc_html_e( 'JSON Support', 'wp-mcp-ai' ); ?></strong></td>
+								<td><strong><?php esc_html_e( 'JSON Support', 'mcp-ai-wpoos' ); ?></strong></td>
 								<td>
 									<?php if ( function_exists( 'json_encode' ) && function_exists( 'json_decode' ) ) : ?>
-										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: green;">✓ <?php esc_html_e( 'Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php else : ?>
-										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'wp-mcp-ai' ); ?></span>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Available', 'mcp-ai-wpoos' ); ?></span>
 									<?php endif; ?>
 								</td>
-								<td><?php esc_html_e( 'Required for JSON-RPC 2.0 protocol', 'wp-mcp-ai' ); ?></td>
+								<td><?php esc_html_e( 'Required for JSON-RPC 2.0 protocol', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
 						</tbody>
 					</table>
@@ -529,7 +529,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- Recent MCP Activity -->
 				<div class="card">
-					<h2><?php esc_html_e( '9. Recent MCP Activity', 'wp-mcp-ai' ); ?></h2>
+					<h2><?php esc_html_e( '9. Recent MCP Activity', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$recent_activity = get_option( 'wp_mcp_ai_recent_activity', array() );
 
@@ -542,9 +542,9 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 							<table class="widefat striped">
 								<thead>
 									<tr>
-										<th><?php esc_html_e( 'Time', 'wp-mcp-ai' ); ?></th>
-										<th><?php esc_html_e( 'Event', 'wp-mcp-ai' ); ?></th>
-										<th><?php esc_html_e( 'Details', 'wp-mcp-ai' ); ?></th>
+										<th><?php esc_html_e( 'Time', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Event', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Details', 'mcp-ai-wpoos' ); ?></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -558,13 +558,13 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 								</tbody>
 							</table>
 						<?php } else { ?>
-							<p><?php esc_html_e( 'No recent MCP activity recorded.', 'wp-mcp-ai' ); ?></p>
+							<p><?php esc_html_e( 'No recent MCP activity recorded.', 'mcp-ai-wpoos' ); ?></p>
 						<?php } ?>
 					<?php } else { ?>
-						<p><?php esc_html_e( 'Activity logging is not enabled.', 'wp-mcp-ai' ); ?></p>
+						<p><?php esc_html_e( 'Activity logging is not enabled.', 'mcp-ai-wpoos' ); ?></p>
 						<p>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>">
-								<?php esc_html_e( 'Enable logging in settings', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Enable logging in settings', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
 					<?php } ?>
@@ -572,41 +572,41 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 				<!-- Troubleshooting Guide -->
 				<div class="card">
-					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'wp-mcp-ai' ); ?></h2>
-					
-					<h3><?php esc_html_e( 'Common Issues:', 'wp-mcp-ai' ); ?></h3>
+					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+
+					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
 						<li>
-							<strong><?php esc_html_e( 'MCP endpoint not responding:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'MCP endpoint not responding:', 'mcp-ai-wpoos' ); ?></strong>
 							<ul>
-								<li><?php esc_html_e( 'Check that REST API is enabled in WordPress', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Verify permalink structure is not set to "Plain"', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Check for .htaccess or server configuration issues', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check that REST API is enabled in WordPress', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Verify permalink structure is not set to "Plain"', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check for .htaccess or server configuration issues', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'Authentication failures:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Authentication failures:', 'mcp-ai-wpoos' ); ?></strong>
 							<ul>
-								<li><?php esc_html_e( 'Verify Auth0 domain and audience are correct', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Check that assistant credentials are properly generated', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Ensure CORS headers are configured for cross-origin requests', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Verify Auth0 domain and audience are correct', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check that assistant credentials are properly generated', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Ensure CORS headers are configured for cross-origin requests', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
 						</li>
 						<li>
-							<strong><?php esc_html_e( 'Tools not available:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Tools not available:', 'mcp-ai-wpoos' ); ?></strong>
 							<ul>
-								<li><?php esc_html_e( 'Check that tools are assigned to the assistant', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Verify user has required capabilities for the tools', 'wp-mcp-ai' ); ?></li>
-								<li><?php esc_html_e( 'Check tool registry initialization in error logs', 'wp-mcp-ai' ); ?></li>
+								<li><?php esc_html_e( 'Check that tools are assigned to the assistant', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Verify user has required capabilities for the tools', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check tool registry initialization in error logs', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
 						</li>
 					</ul>
 
-					<h3><?php esc_html_e( 'Useful Links:', 'wp-mcp-ai' ); ?></h3>
+					<h3><?php esc_html_e( 'Useful Links:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
-						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'wp-mcp-ai' ); ?></a></li>
-						<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>"><?php esc_html_e( 'Manage Assistants', 'wp-mcp-ai' ); ?></a></li>
-						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'wp-mcp-ai' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'mcp-ai-wpoos' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_assistant' ) ); ?>"><?php esc_html_e( 'Manage Assistants', 'mcp-ai-wpoos' ); ?></a></li>
+						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' ) ); ?>"><?php esc_html_e( 'Dashboard Diagnostic', 'mcp-ai-wpoos' ); ?></a></li>
 					</ul>
 				</div>
 			</div>
@@ -620,7 +620,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-mcp-diagnostic', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -647,7 +647,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Request failed: %s', 'wp-mcp-ai' ),
+							__( 'Request failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -663,7 +663,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %d: HTTP status code */
-							__( 'Unexpected response code: %d', 'wp-mcp-ai' ),
+							__( 'Unexpected response code: %d', 'mcp-ai-wpoos' ),
 							$response_code
 						),
 					)
@@ -674,7 +674,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			if ( ! isset( $data['jsonrpc'] ) || '2.0' !== $data['jsonrpc'] ) {
 				wp_send_json_error(
 					array(
-						'message' => __( 'Invalid JSON-RPC 2.0 response format.', 'wp-mcp-ai' ),
+						'message' => __( 'Invalid JSON-RPC 2.0 response format.', 'mcp-ai-wpoos' ),
 					)
 				);
 				return;
@@ -682,7 +682,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 
 			wp_send_json_success(
 				array(
-					'message'  => __( 'MCP endpoint is responding correctly!', 'wp-mcp-ai' ),
+					'message'  => __( 'MCP endpoint is responding correctly!', 'mcp-ai-wpoos' ),
 					'response' => $data,
 				)
 			);
@@ -695,14 +695,14 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 			check_ajax_referer( 'wp-mcp-ai-mcp-diagnostic', 'nonce' );
 
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
 			$method = isset( $_POST['method'] ) ? sanitize_text_field( wp_unslash( $_POST['method'] ) ) : '';
 
 			if ( empty( $method ) ) {
-				wp_send_json_error( array( 'message' => __( 'Method parameter is required.', 'wp-mcp-ai' ) ) );
+				wp_send_json_error( array( 'message' => __( 'Method parameter is required.', 'mcp-ai-wpoos' ) ) );
 				return;
 			}
 
@@ -729,7 +729,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					array(
 						'message' => sprintf(
 							/* translators: %s: error message */
-							__( 'Request failed: %s', 'wp-mcp-ai' ),
+							__( 'Request failed: %s', 'mcp-ai-wpoos' ),
 							$response->get_error_message()
 						),
 					)
@@ -745,7 +745,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					array(
 						'message'  => sprintf(
 							/* translators: %d: HTTP status code */
-							__( 'Unexpected response code: %d', 'wp-mcp-ai' ),
+							__( 'Unexpected response code: %d', 'mcp-ai-wpoos' ),
 							$response_code
 						),
 						'response' => $data,
@@ -759,8 +759,8 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 					array(
 						'message'  => sprintf(
 							/* translators: %s: error message */
-							__( 'MCP error: %s', 'wp-mcp-ai' ),
-							isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Unknown error', 'wp-mcp-ai' )
+							__( 'MCP error: %s', 'mcp-ai-wpoos' ),
+							isset( $data['error']['message'] ) ? $data['error']['message'] : __( 'Unknown error', 'mcp-ai-wpoos' )
 						),
 						'response' => $data,
 					)
@@ -772,7 +772,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				array(
 					'message'  => sprintf(
 						/* translators: %s: method name */
-						__( 'Method %s executed successfully!', 'wp-mcp-ai' ),
+						__( 'Method %s executed successfully!', 'mcp-ai-wpoos' ),
 						$method
 					),
 					'response' => $data,

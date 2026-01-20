@@ -78,6 +78,10 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-gemini-vide
 
 // Load async tool orchestration services.
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-orchestrator.php';
+
+// Load agent coordination services (DeepSeek V4 enhancements - Phase 1).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-communication-service.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-team-orchestrator.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
@@ -341,15 +345,15 @@ function wp_mcp_ai_get_async_health_monitor() {
 function wp_mcp_ai_generate_gemini_image_fallback_text( $content ) {
 	// Check for error conditions first.
 	if ( isset( $content['error'] ) ) {
-		return isset( $content['message'] ) ? $content['message'] : __( 'Image generation failed.', 'wp-mcp-ai' );
+		return isset( $content['message'] ) ? $content['message'] : __( 'Image generation failed.', 'mcp-ai-wpoos' );
 	}
 
 	// Success with attachment ID - most complete result.
 	if ( ! empty( $content['attachment_id'] ) ) {
-		$title = isset( $content['title'] ) ? $content['title'] : __( 'Gemini Image', 'wp-mcp-ai' );
+		$title = isset( $content['title'] ) ? $content['title'] : __( 'Gemini Image', 'mcp-ai-wpoos' );
 		$text  = sprintf(
 			/* translators: 1: image title, 2: attachment ID */
-			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'wp-mcp-ai' ),
+			__( 'Successfully generated image "%1$s" (ID: %2$d).', 'mcp-ai-wpoos' ),
 			$title,
 			$content['attachment_id']
 		);
@@ -358,7 +362,7 @@ function wp_mcp_ai_generate_gemini_image_fallback_text( $content ) {
 		if ( ! empty( $content['revised_prompt'] ) ) {
 			$text .= ' ' . sprintf(
 				/* translators: %s: revised prompt from Gemini */
-				__( 'Description: %s', 'wp-mcp-ai' ),
+				__( 'Description: %s', 'mcp-ai-wpoos' ),
 				$content['revised_prompt']
 			);
 		}
@@ -374,7 +378,7 @@ function wp_mcp_ai_generate_gemini_image_fallback_text( $content ) {
 		if ( ! empty( $format_parts ) ) {
 			$text .= ' ' . sprintf(
 				/* translators: %s: format details */
-				__( 'Format: %s', 'wp-mcp-ai' ),
+				__( 'Format: %s', 'mcp-ai-wpoos' ),
 				implode( ', ', $format_parts )
 			);
 		}
@@ -387,13 +391,13 @@ function wp_mcp_ai_generate_gemini_image_fallback_text( $content ) {
 		$url = ! empty( $content['download_url'] ) ? $content['download_url'] : $content['url'];
 		return sprintf(
 			/* translators: %s: image URL */
-			__( 'Image generated successfully. URL: %s', 'wp-mcp-ai' ),
+			__( 'Image generated successfully. URL: %s', 'mcp-ai-wpoos' ),
 			$url
 		);
 	}
 
 	// Incomplete metadata - provide generic success message.
-	return __( 'Image generation completed.', 'wp-mcp-ai' );
+	return __( 'Image generation completed.', 'mcp-ai-wpoos' );
 }
 
 /**

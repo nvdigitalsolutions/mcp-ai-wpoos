@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Executes Site Health tests and returns aggregated results.
  */
 class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Capability required to run the tool.
 	 */
@@ -29,14 +30,14 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Site Health Status', 'wp-mcp-ai' );
+		return __( 'Get Site Health Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Runs WordPress Site Health tests and returns grouped critical, warning, and passing results.', 'wp-mcp-ai' );
+		return __( 'Runs WordPress Site Health tests and returns grouped critical, warning, and passing results.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -88,7 +89,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'capability' => self::REQUIRED_CAPABILITY,
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view Site Health results.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view Site Health results.', 'mcp-ai-wpoos' ) );
 		}
 
 		$is_multisite   = is_multisite();
@@ -104,7 +105,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'is_site_member' => false,
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -139,7 +140,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'wp_site_health_exists' => $wp_site_health_exists,
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'The WordPress Site Health component is unavailable.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'The WordPress Site Health component is unavailable.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! $get_tests_callable ) {
@@ -150,7 +151,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'get_tests_callable'    => false,
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'The Site Health API is not available on this installation.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'The Site Health API is not available on this installation.', 'mcp-ai-wpoos' ) );
 		}
 
 		$site_health = $this->get_site_health_instance();
@@ -162,7 +163,7 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'site_health_type' => is_object( $site_health ) ? get_class( $site_health ) : gettype( $site_health ),
 				)
 			);
-			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'Could not initialise the Site Health API.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_dependency', __( 'Could not initialise the Site Health API.', 'mcp-ai-wpoos' ) );
 		}
 
 		$tests = WP_Site_Health::get_tests();
@@ -189,12 +190,21 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$results[ $bucket ][] = $this->format_test_result( $test_identifier, $result );
 		}
 
+		$summary_data = array(
+			'critical' => count( $results['critical'] ),
+			'warning'  => count( $results['warning'] ),
+			'pass'     => count( $results['pass'] ),
+		);
+
 		return array(
-			'summary' => array(
-				'critical' => count( $results['critical'] ),
-				'warning'  => count( $results['warning'] ),
-				'pass'     => count( $results['pass'] ),
+			'message' => sprintf(
+				/* translators: 1: critical count, 2: warning count, 3: pass count */
+				__( 'Site Health: %1$d critical, %2$d warning, %3$d passing', 'mcp-ai-wpoos' ),
+				$summary_data['critical'],
+				$summary_data['warning'],
+				$summary_data['pass']
 			),
+			'summary' => $summary_data,
 			'tests'   => $results,
 		);
 	}

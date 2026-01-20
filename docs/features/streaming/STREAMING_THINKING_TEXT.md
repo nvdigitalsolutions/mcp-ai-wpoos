@@ -312,7 +312,7 @@ You can customize the appearance using CSS variables:
 ### Manual Testing with Gemini
 
 1. **Configure Gemini 2.0 Flash Thinking**:
-   - Go to Settings → WP oOS
+   - Go to Settings → NV oOS
    - Set provider to "Gemini"
    - Select "gemini-2.0-flash-thinking-exp" model
    - Ensure streaming is enabled
@@ -452,4 +452,4 @@ You can customize the appearance using CSS variables:
 
 ## License
 
-This feature is part of Open Operator System (WP oOS) and is licensed under GPLv3 or later.
+This feature is part of Open Operator System (NV oOS) and is licensed under GPLv3 or later.

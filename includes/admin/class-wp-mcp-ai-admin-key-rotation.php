@@ -31,8 +31,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			// Verify user has permission.
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_die(
-					esc_html__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
-					esc_html__( 'Permission Denied', 'wp-mcp-ai' ),
+					esc_html__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
+					esc_html__( 'Permission Denied', 'mcp-ai-wpoos' ),
 					array( 'response' => 403 )
 				);
 			}
@@ -40,8 +40,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			// Verify nonce.
 			if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['_wpnonce'] ), 'wp_mcp_ai_rotate_master_key' ) ) {
 				wp_die(
-					esc_html__( 'Security check failed. Please try again.', 'wp-mcp-ai' ),
-					esc_html__( 'Security Error', 'wp-mcp-ai' ),
+					esc_html__( 'Security check failed. Please try again.', 'mcp-ai-wpoos' ),
+					esc_html__( 'Security Error', 'mcp-ai-wpoos' ),
 					array( 'response' => 403 )
 				);
 			}
@@ -95,8 +95,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 				?>
 				<div class="notice notice-success is-dismissible">
 					<p>
-						<strong><?php esc_html_e( 'Master encryption key rotated successfully.', 'wp-mcp-ai' ); ?></strong>
-						<?php esc_html_e( 'All encrypted secrets have been re-encrypted with the new key.', 'wp-mcp-ai' ); ?>
+						<strong><?php esc_html_e( 'Master encryption key rotated successfully.', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'All encrypted secrets have been re-encrypted with the new key.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				</div>
 				<?php
@@ -110,7 +110,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 					?>
 					<div class="notice notice-error is-dismissible">
 						<p>
-							<strong><?php esc_html_e( 'Master key rotation failed:', 'wp-mcp-ai' ); ?></strong>
+							<strong><?php esc_html_e( 'Master key rotation failed:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php echo esc_html( $error['message'] ); ?>
 						</p>
 						<?php if ( ! empty( $error['data'] ) ) : ?>
@@ -119,7 +119,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 							</p>
 						<?php endif; ?>
 						<p>
-							<?php esc_html_e( 'All changes have been rolled back. No data was lost.', 'wp-mcp-ai' ); ?>
+							<?php esc_html_e( 'All changes have been rolled back. No data was lost.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
 					<?php
@@ -134,33 +134,33 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			$master_key_exists = get_option( WP_MCP_AI_Encryption::MASTER_KEY_OPTION );
 			?>
 			<div class="wp-mcp-ai-key-rotation-section">
-				<h3><?php esc_html_e( 'Master Encryption Key Rotation', 'wp-mcp-ai' ); ?></h3>
-				
+				<h3><?php esc_html_e( 'Master Encryption Key Rotation', 'mcp-ai-wpoos' ); ?></h3>
+
 				<?php if ( $master_key_exists ) : ?>
 					<p>
-						<?php esc_html_e( 'Rotating the master encryption key will re-encrypt all stored secrets with a new key. This operation is atomic and will automatically roll back if any errors occur.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'Rotating the master encryption key will re-encrypt all stored secrets with a new key. This operation is atomic and will automatically roll back if any errors occur.', 'mcp-ai-wpoos' ); ?>
 					</p>
-					
+
 					<p class="description">
-						<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai' ); ?></strong>
-						<?php esc_html_e( 'Always create a database backup before rotating encryption keys. While the rotation process includes automatic rollback, a backup provides additional safety.', 'wp-mcp-ai' ); ?>
+						<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'Always create a database backup before rotating encryption keys. While the rotation process includes automatic rollback, a backup provides additional safety.', 'mcp-ai-wpoos' ); ?>
 					</p>
 
 					<?php self::render_rotation_stats(); ?>
 
-					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm( '<?php esc_attr_e( 'Are you sure you want to rotate the master encryption key? This will re-encrypt all secrets.', 'wp-mcp-ai' ); ?>' );">
+					<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" onsubmit="return confirm( '<?php esc_attr_e( 'Are you sure you want to rotate the master encryption key? This will re-encrypt all secrets.', 'mcp-ai-wpoos' ); ?>' );">
 						<?php wp_nonce_field( 'wp_mcp_ai_rotate_master_key' ); ?>
 						<input type="hidden" name="action" value="wp_mcp_ai_rotate_master_key">
-						
+
 						<p>
 							<button type="submit" class="button button-secondary">
-								<?php esc_html_e( 'Rotate Master Key', 'wp-mcp-ai' ); ?>
+								<?php esc_html_e( 'Rotate Master Key', 'mcp-ai-wpoos' ); ?>
 							</button>
 						</p>
 					</form>
 				<?php else : ?>
 					<p>
-						<?php esc_html_e( 'No master encryption key has been generated yet. A key will be automatically created when you first encrypt data.', 'wp-mcp-ai' ); ?>
+						<?php esc_html_e( 'No master encryption key has been generated yet. A key will be automatically created when you first encrypt data.', 'mcp-ai-wpoos' ); ?>
 					</p>
 				<?php endif; ?>
 			</div>
@@ -185,12 +185,12 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			if ( $count > 0 ) {
 				?>
 				<p>
-					<strong><?php esc_html_e( 'Encrypted secrets:', 'wp-mcp-ai' ); ?></strong>
+					<strong><?php esc_html_e( 'Encrypted secrets:', 'mcp-ai-wpoos' ); ?></strong>
 					<?php
 					echo esc_html(
 						sprintf(
 							/* translators: %d: number of encrypted secrets */
-							_n( '%d secret will be re-encrypted', '%d secrets will be re-encrypted', $count, 'wp-mcp-ai' ),
+							_n( '%d secret will be re-encrypted', '%d secrets will be re-encrypted', $count, 'mcp-ai-wpoos' ),
 							$count
 						)
 					);

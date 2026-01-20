@@ -2,7 +2,7 @@
 
 ## Task Overview
 
-**Objective**: Address high-priority gap from code review - systematic fix of ~500 instances of missing output escaping across the WP oOS codebase.
+**Objective**: Address high-priority gap from code review - systematic fix of ~500 instances of missing output escaping across the NV oOS codebase.
 
 **Status**: IN PROGRESS (14% complete)
 

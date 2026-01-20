@@ -66,7 +66,7 @@ pip3 install mpi4py av
 ```
 
 ### Step 4: Configure in WordPress
-1. Go to **Settings → WP oOS → Tools → Jukebox**
+1. Go to **Settings → NV oOS → Tools → Jukebox**
 2. Set **Python Path**: `/usr/bin/python3` (or path from `which python3`)
 3. Set **Installation Path**: Full path to your jukebox directory
 4. Click **Save Changes**
@@ -141,7 +141,7 @@ If you encounter issues on Cloudways:
 
 1. **Check Python version:** Must be 3.7+
 2. **Verify permissions:** Server must allow command execution
-3. **Check logs:** WordPress debug log or WP oOS logs
+3. **Check logs:** WordPress debug log or NV oOS logs
 4. **GPU availability:** Confirm server has compatible GPU
 5. **Storage space:** Ensure 20GB+ available for models
 

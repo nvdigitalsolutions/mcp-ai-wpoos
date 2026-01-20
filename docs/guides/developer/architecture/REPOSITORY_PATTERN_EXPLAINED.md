@@ -1,4 +1,4 @@
-# Understanding "3 Data Access Repositories" in WP oOS
+# Understanding "3 Data Access Repositories" in NV oOS
 
 **Question**: What does "Repositories: 3 data access repositories" mean?
 

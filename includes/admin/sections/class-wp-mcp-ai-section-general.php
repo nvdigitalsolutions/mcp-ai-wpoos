@@ -29,7 +29,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'General Settings', 'wp-mcp-ai' );
+			return __( 'General Settings', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -56,7 +56,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure basic plugin settings and operational parameters.', 'wp-mcp-ai' );
+			return __( 'Configure basic plugin settings and operational parameters.', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md';
 		}
 
 		/**
@@ -67,10 +76,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		public function get_fields() {
 			// Get available providers for dropdown.
 			$provider_options = array(
-				'openai'    => __( 'OpenAI', 'wp-mcp-ai' ),
-				'gemini'    => __( 'Google Gemini', 'wp-mcp-ai' ),
-				'ollama'    => __( 'Ollama (Local AI)', 'wp-mcp-ai' ),
-				'lm_studio' => __( 'LM Studio (Local AI)', 'wp-mcp-ai' ),
+				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+				'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
 			);
 
 			// Get available assistants for dropdown.
@@ -79,78 +90,71 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			return array(
 				'default_provider'                      => array(
 					'type'        => 'select',
-					'label'       => __( 'Default AI Provider', 'wp-mcp-ai' ),
-					'description' => __( 'The primary AI provider used when no specific provider is specified. This affects new conversations and REST API requests. Make sure the selected provider is properly configured in the Providers tab.', 'wp-mcp-ai' ),
+					'label'       => __( 'Default AI Provider', 'mcp-ai-wpoos' ),
+					'description' => __( 'The primary AI provider used when no specific provider is specified. This affects new conversations and REST API requests. Make sure the selected provider is properly configured in the Providers tab.', 'mcp-ai-wpoos' ),
 					'options'     => $provider_options,
 					'default'     => 'openai',
 				),
 				'default_assistant'                     => array(
 					'type'        => 'select',
-					'label'       => __( 'Default Assistant', 'wp-mcp-ai' ),
-					'description' => __( 'The assistant used by default when one is not explicitly specified in REST API interactions. Leave as "None" to require explicit assistant selection.', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Assistant', 'mcp-ai-wpoos' ),
+					'description' => __( 'The assistant used by default when one is not explicitly specified in REST API interactions. Leave as "None" to require explicit assistant selection.', 'mcp-ai-wpoos' ),
 					'options'     => $assistant_options,
 					'default'     => 0,
 				),
 				'enable_logging'                        => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Enable Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable basic error and activity logging', 'wp-mcp-ai' ),
-					'description'    => __( 'Records errors, warnings, and key activity (tool executions, API requests) to help troubleshoot issues. View logs in the Advanced tab.', 'wp-mcp-ai' ),
+					'label'          => __( 'Enable Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable basic error and activity logging', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Records errors, warnings, and key activity (tool executions, API requests) to help troubleshoot issues. View logs in the Advanced tab.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_extended_logging'               => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Extended Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'wp-mcp-ai' ),
+					'label'          => __( 'Extended Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable verbose debug logging with full request/response data', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Logs complete API request/response payloads, context data, and detailed execution traces. Warning: This can generate very large log files and may impact site performance. Only enable for short-term debugging.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_agentic_loop_logging'           => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Agentic Loop Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable detailed logging for agentic loop iterations and tool calls', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs each iteration of the agentic loop, including tool calls, tool results, and iteration timing. Useful for debugging assistant behavior and tool execution flow.', 'wp-mcp-ai' ),
+					'label'          => __( 'Agentic Loop Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable detailed logging for agentic loop iterations and tool calls', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Logs each iteration of the agentic loop, including tool calls, tool results, and iteration timing. Useful for debugging assistant behavior and tool execution flow.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_api_logging'                    => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'API Request/Response Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable logging for AI provider API requests and responses', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs API requests to OpenAI, Anthropic, Gemini, LM Studio and their responses. Helps debug API connectivity and response issues.', 'wp-mcp-ai' ),
+					'label'          => __( 'API Request/Response Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable logging for AI provider API requests and responses', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Logs API requests to OpenAI, Anthropic, Gemini, LM Studio and their responses. Helps debug API connectivity and response issues.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_tool_execution_logging'         => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Tool Execution Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable detailed logging for individual tool executions', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs each tool execution with arguments and results. Useful for debugging tool behavior and data flow.', 'wp-mcp-ai' ),
+					'label'          => __( 'Tool Execution Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable detailed logging for individual tool executions', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Logs each tool execution with arguments and results. Useful for debugging tool behavior and data flow.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_chat_interaction_logging'       => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Chat Interaction Logging', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Enable logging for chat requests and responses', 'wp-mcp-ai' ),
-					'description'    => __( 'Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'wp-mcp-ai' ),
-					'default'        => false,
-				),
-				'show_usage_costs'                      => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Show Usage Costs', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Display token usage and estimated costs in chat interface', 'wp-mcp-ai' ),
-					'description'    => __( 'Shows small badges with total tokens and estimated cost (in USD) after each assistant response in the frontend chat. Helps users understand API usage and costs in real-time. Phase 7: Enhanced Token Tracking with Real-Time Cost Attribution.', 'wp-mcp-ai' ),
+					'label'          => __( 'Chat Interaction Logging', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable logging for chat requests and responses', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Logs complete chat interactions including user messages and assistant responses. Helps track conversation flow and debugging message handling.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'delete_on_uninstall'                   => array(
 					'type'           => 'checkbox',
-					'label'          => __( 'Delete Data on Uninstall', 'wp-mcp-ai' ),
-					'checkbox_label' => __( 'Remove all plugin data when uninstalling', 'wp-mcp-ai' ),
-					'description'    => __( 'When enabled, all settings and data will be deleted when the plugin is uninstalled.', 'wp-mcp-ai' ),
+					'label'          => __( 'Delete Data on Uninstall', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Remove all plugin data when uninstalling', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, all settings and data will be deleted when the plugin is uninstalled.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'max_history_messages'                  => array(
 					'type'        => 'number',
-					'label'       => __( 'Max History Messages', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum number of previous messages to include in chat context. Higher values provide more context but increase token usage.', 'wp-mcp-ai' ),
+					'label'       => __( 'Max History Messages', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of previous messages to include in chat context. Higher values provide more context but increase token usage.', 'mcp-ai-wpoos' ),
 					'default'     => 10,
 					'placeholder' => '10',
 					'min'         => 1,
@@ -158,8 +162,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				),
 				'request_timeout'                       => array(
 					'type'        => 'number',
-					'label'       => __( 'Request Timeout (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'How long to wait for AI provider responses before timing out. Increase for complex requests or slower providers.', 'wp-mcp-ai' ),
+					'label'       => __( 'Request Timeout (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'How long to wait for AI provider responses before timing out. Increase for complex requests or slower providers.', 'mcp-ai-wpoos' ),
 					'default'     => 60,
 					'placeholder' => '60',
 					'min'         => 10,
@@ -168,71 +172,71 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				// Custom Filters fields.
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
-					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Light Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4.1-mini',
 				),
 				'filter_default_advanced_model'         => array(
 					'type'        => 'text',
-					'label'       => __( 'Default Advanced Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Advanced Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4.1',
 				),
 				'filter_max_agentic_iterations'         => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Agentic Iterations', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Agentic Iterations', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '5',
 				),
 				'filter_resource_max_tokens'            => array(
 					'type'        => 'number',
-					'label'       => __( 'Resource Max Tokens', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'label'       => __( 'Resource Max Tokens', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'Auto',
 				),
 				'filter_resource_request_timeout'       => array(
 					'type'        => 'number',
-					'label'       => __( 'Resource Request Timeout (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'label'       => __( 'Resource Request Timeout (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'Auto',
 				),
 				'filter_max_retries'                    => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Retries', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Retries', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '3',
 				),
 				'filter_max_retry_delay'                => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Retry Delay (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Retry Delay (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '60',
 				),
 				'filter_max_attachment_bytes'           => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Attachment Size (bytes)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Attachment Size (bytes)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '10485760',
 				),
 				'filter_default_ollama_endpoint_url'    => array(
 					'type'        => 'url',
-					'label'       => __( 'Default Ollama Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Ollama Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'http://localhost:11434',
 				),
 				'filter_default_lm_studio_endpoint_url' => array(
 					'type'        => 'url',
-					'label'       => __( 'Default LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234', 'wp-mcp-ai' ),
+					'label'       => __( 'Default LM Studio Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'http://localhost:1234',
 				),
@@ -248,19 +252,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			return array(
 				'core'           => array(
 					'id'     => 'core',
-					'label'  => __( 'Core Settings', 'wp-mcp-ai' ),
+					'label'  => __( 'Core Settings', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'default_provider', 'default_assistant' ),
 				),
 				'behavior'       => array(
 					'id'     => 'behavior',
-					'label'  => __( 'Behavior & Limits', 'wp-mcp-ai' ),
+					'label'  => __( 'Behavior & Limits', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-performance',
 					'fields' => array( 'max_history_messages', 'request_timeout' ),
 				),
 				'logs'           => array(
 					'id'     => 'logs',
-					'label'  => __( 'Log Management', 'wp-mcp-ai' ),
+					'label'  => __( 'Log Management', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-database',
 					'fields' => array(
 						'enable_logging',
@@ -269,15 +273,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'enable_api_logging',
 						'enable_tool_execution_logging',
 						'enable_chat_interaction_logging',
-						'show_usage_costs',
 						'delete_on_uninstall',
 					),
 				),
 				'custom_filters' => array(
 					'id'          => 'custom_filters',
-					'label'       => __( 'Custom AI Settings (Filters)', 'wp-mcp-ai' ),
+					'label'       => __( 'Custom AI Settings (Filters)', 'mcp-ai-wpoos' ),
 					'icon'        => 'dashicons-filter',
-					'description' => __( 'Configure advanced AI behavior settings through a user-friendly interface. These settings override WordPress filter defaults and allow you to customize AI operations without writing code. <strong>Leave fields empty to use system defaults.</strong>', 'wp-mcp-ai' ),
+					'description' => __( 'Configure advanced AI behavior settings through a user-friendly interface. These settings override WordPress filter defaults and allow you to customize AI operations without writing code. <strong>Leave fields empty to use system defaults.</strong>', 'mcp-ai-wpoos' ),
 					'fields'      => array(
 						'filter_default_light_model',
 						'filter_default_advanced_model',
@@ -331,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 */
 		private function get_assistant_options() {
 			$options = array(
-				0 => __( 'None (explicit selection required)', 'wp-mcp-ai' ),
+				0 => __( 'None (explicit selection required)', 'mcp-ai-wpoos' ),
 			);
 
 			// Get published assistants.
@@ -399,23 +402,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			// Organize fields into logical groups for better UX.
 			$groups = array(
 				'model_selection'     => array(
-					'title'  => __( 'AI Model Selection', 'wp-mcp-ai' ),
+					'title'  => __( 'AI Model Selection', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_default_light_model', 'filter_default_advanced_model' ),
 				),
 				'resource_management' => array(
-					'title'  => __( 'Resource Management', 'wp-mcp-ai' ),
+					'title'  => __( 'Resource Management', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_agentic_iterations', 'filter_resource_max_tokens', 'filter_resource_request_timeout' ),
 				),
 				'retry_handling'      => array(
-					'title'  => __( 'Retry & Error Handling', 'wp-mcp-ai' ),
+					'title'  => __( 'Retry & Error Handling', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_retries', 'filter_max_retry_delay' ),
 				),
 				'file_limits'         => array(
-					'title'  => __( 'File & Attachment Limits', 'wp-mcp-ai' ),
+					'title'  => __( 'File & Attachment Limits', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_attachment_bytes' ),
 				),
 				'endpoint_urls'       => array(
-					'title'  => __( 'Local AI Endpoint URLs', 'wp-mcp-ai' ),
+					'title'  => __( 'Local AI Endpoint URLs', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url' ),
 				),
 			);
@@ -442,19 +445,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * Override render_wrapper to include sub-tab navigation.
 		 */
 		public function render_wrapper() {
-			$description   = $this->get_description();
-			$subtab_groups = $this->get_subtab_groups();
-			$active_subtab = $this->get_active_subtab();
-			$active_group  = isset( $subtab_groups[ $active_subtab ] ) ? $subtab_groups[ $active_subtab ] : null;
+			$description       = $this->get_description();
+			$documentation_url = $this->get_documentation_url();
+			$subtab_groups     = $this->get_subtab_groups();
+			$active_subtab     = $this->get_active_subtab();
+			$active_group      = isset( $subtab_groups[ $active_subtab ] ) ? $subtab_groups[ $active_subtab ] : null;
 			?>
 		<div class="settings-section" id="section-<?php echo esc_attr( $this->get_id() ); ?>">
 			<h2><?php echo esc_html( $this->get_title() ); ?></h2>
 			<?php if ( $description ) : ?>
 				<p class="section-description"><?php echo wp_kses_post( $description ); ?></p>
 			<?php endif; ?>
+			<?php if ( $documentation_url ) : ?>
+				<p class="section-documentation">
+					<span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+					<a href="<?php echo esc_url( $documentation_url ); ?>" target="_blank" rel="noopener noreferrer">
+						<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+						<span class="dashicons dashicons-external" style="font-size: 14px; text-decoration: none;"></span>
+					</a>
+				</p>
+			<?php endif; ?>
 
 			<div class="wp-mcp-ai-provider-subtabs">
-				<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'General settings sub-tabs', 'wp-mcp-ai' ); ?>">
+				<nav class="wp-mcp-ai-subtab-nav" aria-label="<?php esc_attr_e( 'General settings sub-tabs', 'mcp-ai-wpoos' ); ?>">
 					<?php foreach ( $subtab_groups as $group ) : ?>
 						<?php
 						$subtab_url = add_query_arg(
@@ -467,7 +480,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						);
 						$is_active  = ( $group['id'] === $active_subtab );
 						?>
-						<a href="<?php echo esc_url( $subtab_url ); ?>" 
+						<a href="<?php echo esc_url( $subtab_url ); ?>"
 							class="wp-mcp-ai-subtab <?php echo esc_attr( $is_active ? 'wp-mcp-ai-subtab-active' : '' ); ?>"
 							data-subtab="<?php echo esc_attr( $group['id'] ); ?>">
 							<span class="dashicons <?php echo esc_attr( $group['icon'] ); ?>"></span>
@@ -506,10 +519,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			$entries = WP_MCP_AI_Logger::get_recent_error_messages();
 			?>
 			<div class="wp-mcp-ai-error-log-section" style="margin-top: 30px;">
-				<h3><?php esc_html_e( 'Recent Error & Activity Log', 'wp-mcp-ai' ); ?></h3>
-				<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'wp-mcp-ai' ); ?></p>
+				<h3><?php esc_html_e( 'Recent Error & Activity Log', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Recent error and warning messages (most recent first). Expand an entry to view additional context.', 'mcp-ai-wpoos' ); ?></p>
 				<?php if ( empty( $entries ) ) : ?>
-					<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'wp-mcp-ai' ); ?></p>
+					<p class="description"><?php esc_html_e( 'No error or warning messages have been recorded yet.', 'mcp-ai-wpoos' ); ?></p>
 				<?php else : ?>
 					<ul class="wp-mcp-ai-log-preview" style="list-style: none; padding: 0; margin: 15px 0;">
 						<?php
@@ -554,7 +567,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 								<span class="wp-mcp-ai-log-preview__message"><?php echo esc_html( $message_label ); ?></span>
 								<?php if ( '' !== $context_label ) : ?>
 									<details class="wp-mcp-ai-log-preview__context" style="margin-top: 10px;">
-										<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'wp-mcp-ai' ); ?></summary>
+										<summary style="cursor: pointer; color: #0073aa;"><?php esc_html_e( 'Context details', 'mcp-ai-wpoos' ); ?></summary>
 										<pre style="background: #fff; padding: 10px; margin-top: 10px; overflow-x: auto; border: 1px solid #ddd; border-radius: 3px; font-size: 0.85em;"><?php echo esc_html( $context_label ); ?></pre>
 									</details>
 								<?php endif; ?>
@@ -580,26 +593,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 							<?php
 							if ( $log_file_exists ) {
 								if ( '' === $log_size_display ) {
-									$log_size_display = __( 'Unknown size', 'wp-mcp-ai' );
+									$log_size_display = __( 'Unknown size', 'mcp-ai-wpoos' );
 								}
 
 								printf(
 									/* translators: 1: Path to the PHP error log. 2: Human readable size. */
-									esc_html__( 'PHP error log: %1$s (%2$s).', 'wp-mcp-ai' ),
+									esc_html__( 'PHP error log: %1$s (%2$s).', 'mcp-ai-wpoos' ),
 									'<code>' . esc_html( $log_file_path ) . '</code>',
 									esc_html( $log_size_display )
 								);
 							} else {
 								printf(
 									/* translators: %s: Path to the PHP error log. */
-									esc_html__( 'PHP error log: %s (not created yet).', 'wp-mcp-ai' ),
+									esc_html__( 'PHP error log: %s (not created yet).', 'mcp-ai-wpoos' ),
 									'<code>' . esc_html( $log_file_path ) . '</code>'
 								);
 							}
 							?>
 						</p>
 					<?php else : ?>
-						<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'wp-mcp-ai' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Unable to determine the PHP error log location. Check your server configuration if you need to inspect or prune the log.', 'mcp-ai-wpoos' ); ?></p>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -637,7 +650,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			if ( isset( $input['default_provider'] ) ) {
 				$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
 				if ( ! in_array( $input['default_provider'], $valid_providers, true ) ) {
-					$errors[] = __( 'Invalid AI provider selected.', 'wp-mcp-ai' );
+					$errors[] = __( 'Invalid AI provider selected.', 'mcp-ai-wpoos' );
 				}
 			}
 
@@ -647,7 +660,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				if ( $assistant_id > 0 ) {
 					$assistant = get_post( $assistant_id );
 					if ( ! $assistant || 'mcp_ai_assistant' !== $assistant->post_type ) {
-						$errors[] = __( 'Invalid assistant selected.', 'wp-mcp-ai' );
+						$errors[] = __( 'Invalid assistant selected.', 'mcp-ai-wpoos' );
 					}
 				}
 			}
@@ -687,7 +700,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Agentic Iterations: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Agentic Iterations: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -700,7 +713,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Resource Max Tokens: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Resource Max Tokens: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -713,7 +726,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Resource Request Timeout: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Resource Request Timeout: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -726,7 +739,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Retries: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Retries: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -739,7 +752,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Retry Delay: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Retry Delay: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -752,7 +765,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Attachment Size: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Attachment Size: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -760,14 +773,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 			if ( isset( $input['filter_default_ollama_endpoint_url'] ) && '' !== $input['filter_default_ollama_endpoint_url'] ) {
 				$url = filter_var( $input['filter_default_ollama_endpoint_url'], FILTER_VALIDATE_URL );
 				if ( false === $url ) {
-					$errors[] = __( 'Default Ollama Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
+					$errors[] = __( 'Default Ollama Endpoint URL must be a valid URL.', 'mcp-ai-wpoos' );
 				}
 			}
 
 			if ( isset( $input['filter_default_lm_studio_endpoint_url'] ) && '' !== $input['filter_default_lm_studio_endpoint_url'] ) {
 				$url = filter_var( $input['filter_default_lm_studio_endpoint_url'], FILTER_VALIDATE_URL );
 				if ( false === $url ) {
-					$errors[] = __( 'Default LM Studio Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
+					$errors[] = __( 'Default LM Studio Endpoint URL must be a valid URL.', 'mcp-ai-wpoos' );
 				}
 			}
 

@@ -18,7 +18,7 @@ This guide explains how to connect the WordPress plugin to a local or remote LM 
    - Note the port if you changed it
 
 3. **Configure in WordPress**
-   - Navigate to **Settings → WP oOS**
+   - Navigate to **Settings → NV oOS**
    - Find **LM Studio Configuration** section
    - Enter endpoint URL: `http://127.0.0.1:1234`
    - Click **Test Connection** (should show success)
@@ -27,7 +27,7 @@ This guide explains how to connect the WordPress plugin to a local or remote LM 
    - Click **Save Changes**
 
 4. **Set as Default Provider (Optional)**
-   - In **Settings → WP oOS**
+   - In **Settings → NV oOS**
    - Find **Default AI Provider** dropdown
    - Select **LM Studio (Local AI)**
    - Click **Save Changes**
@@ -48,7 +48,7 @@ Or test a custom endpoint:
 
 ### Method 2: WordPress Admin Test
 
-1. Go to **Settings → WP oOS**
+1. Go to **Settings → NV oOS**
 2. Enter LM Studio endpoint URL
 3. Click **Test Connection** button
 4. Look for green checkmark and success message
@@ -197,7 +197,7 @@ The plugin uses these LM Studio endpoints:
 - The plugin no longer caps timeouts at PHP's `max_execution_time` setting for external HTTP requests
 
 **If you still get timeout errors:**
-1. **Increase the custom timeout** in **Settings → WP oOS → Request Timeout**
+1. **Increase the custom timeout** in **Settings → NV oOS → Request Timeout**
    - Set to 180 or 240 seconds for complex queries
    - This overrides the default 120-second minimum
 
@@ -277,6 +277,6 @@ Both work identically for local connections:
 If you encounter issues:
 1. Check LM Studio logs
 2. Check WordPress error logs
-3. Enable debug logging in **Settings → WP oOS**
+3. Enable debug logging in **Settings → NV oOS**
 4. Test with the command-line script
 5. Verify network connectivity with `curl` or `ping`

@@ -49,14 +49,14 @@ class WP_MCP_AI_Tool_Generate_Image_Caption_Validated extends WP_MCP_AI_Validate
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Image Caption (Validated)', 'wp-mcp-ai' );
+		return __( 'Generate Image Caption (Validated)', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates detailed captions for images to provide context and enhance content using AI vision capabilities with Symfony Validator for argument validation.', 'wp-mcp-ai' );
+		return __( 'Generates detailed captions for images to provide context and enhance content using AI vision capabilities with Symfony Validator for argument validation.', 'mcp-ai-wpoos' );
 	}
 
 	/**

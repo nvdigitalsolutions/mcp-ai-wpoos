@@ -20,7 +20,7 @@
 
 ## Introduction
 
-This guide provides step-by-step instructions for using HuggingFace datasets in WP oOS. The integration allows you to query 50+ popular datasets directly from WordPress without downloading them, using the HuggingFace Dataset Viewer API.
+This guide provides step-by-step instructions for using HuggingFace datasets in NV oOS. The integration allows you to query 50+ popular datasets directly from WordPress without downloading them, using the HuggingFace Dataset Viewer API.
 
 **What You Can Do:**
 - Browse and search datasets
@@ -42,7 +42,7 @@ This guide provides step-by-step instructions for using HuggingFace datasets in 
 
 ### Required
 - WordPress 6.0 or higher
-- WP oOS plugin installed and activated
+- NV oOS plugin installed and activated
 - User role with `read` capability (minimum)
 - Active internet connection
 
@@ -58,7 +58,7 @@ This guide provides step-by-step instructions for using HuggingFace datasets in 
 ### Step 1: Enable HuggingFace Datasets
 
 1. Log in to WordPress admin dashboard
-2. Navigate to **WP oOS → Settings**
+2. Navigate to **NV oOS → Settings**
 3. Click on the **Providers** tab
 4. Scroll to **HuggingFace Dataset Viewer** section
 5. Check the box: **"Enable tools for querying HuggingFace datasets"**
@@ -77,7 +77,7 @@ Settings → Providers → HuggingFace Dataset Viewer
 1. Go to https://huggingface.co/settings/tokens
 2. Create a new token with "read" access
 3. Copy the token (starts with "hf_...")
-4. Paste in WP oOS → Settings → Providers → HuggingFace API Token field
+4. Paste in NV oOS → Settings → Providers → HuggingFace API Token field
 5. Save Changes
 ```
 
@@ -88,7 +88,7 @@ Settings → Providers → HuggingFace Dataset Viewer
 
 ### Step 3: Verify Installation
 
-Navigate to **WP oOS → HF Datasets** in the WordPress admin menu. You should see:
+Navigate to **NV oOS → HF Datasets** in the WordPress admin menu. You should see:
 - A visual catalog of featured datasets
 - Filter options (Category, Priority, Search)
 - Preview buttons for each dataset
@@ -950,7 +950,7 @@ Error: This dataset is gated and requires authentication
 
 **Solutions:**
 1. Get HuggingFace API token from https://huggingface.co/settings/tokens
-2. Add token in WP oOS → Settings → Providers
+2. Add token in NV oOS → Settings → Providers
 3. Accept dataset terms on HuggingFace website first
 
 ---
@@ -1107,7 +1107,7 @@ function wpoos_get_review_examples() {
 - **Dataset Catalog**: See `docs/HUGGINGFACE_TOP_DATASETS.md`
 - **API Reference**: See `docs/HUGGINGFACE_DATASETS_IMPLEMENTATION_PLAN.md`
 - **HuggingFace Docs**: https://huggingface.co/docs/dataset-viewer
-- **WP oOS Main Docs**: See `docs/DOCUMENTATION_INDEX.md`
+- **NV oOS Main Docs**: See `docs/DOCUMENTATION_INDEX.md`
 
 ---
 
@@ -1117,7 +1117,7 @@ function wpoos_get_review_examples() {
 A: No, public datasets work without an account. Only private/gated datasets require authentication.
 
 **Q: How many datasets are available?**  
-A: 50+ curated datasets are featured in WP oOS, but you can access thousands more from HuggingFace Hub.
+A: 50+ curated datasets are featured in NV oOS, but you can access thousands more from HuggingFace Hub.
 
 **Q: Is there a cost?**  
 A: Free tier allows 60 requests/hour. HuggingFace Pro ($9/month) offers higher limits.
@@ -1135,5 +1135,5 @@ A: Yes, as long as the dataset has Dataset Viewer enabled on HuggingFace Hub.
 
 **Last Updated:** December 23, 2025  
 **Version:** 1.0.0  
-**Plugin:** WP oOS (Open Operator System)  
+**Plugin:** NV oOS (Open Operator System)  
 **Feature Status:** Production Ready ✅

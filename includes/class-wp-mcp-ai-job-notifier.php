@@ -230,7 +230,143 @@ class WP_MCP_AI_Job_Notifier {
 		$cache_key = self::CACHE_PREFIX . sanitize_key( $job_id );
 		$status    = get_transient( $cache_key );
 
+		// Enhance status with Little's Law metrics if job is running.
+		if ( is_array( $status ) && isset( $status['status'] ) && 'running' === $status['status'] ) {
+			$status = self::add_littles_law_metrics( $status );
+		}
+
 		return is_array( $status ) ? $status : null;
+	}
+
+	/**
+	 * Add Little's Law metrics to job status.
+	 *
+	 * Calculates predicted completion time and queue position using Little's Law:
+	 * L = λ × W
+	 *
+	 * @param array $status Job status data.
+	 * @return array Enhanced status with Little's Law metrics.
+	 */
+	protected static function add_littles_law_metrics( $status ) {
+		$job_id   = isset( $status['job_id'] ) ? $status['job_id'] : '';
+		$metadata = isset( $status['metadata'] ) ? $status['metadata'] : array();
+
+		// Get job type/tool for SLA tier determination.
+		$tool_name = isset( $metadata['tool'] ) ? sanitize_key( $metadata['tool'] ) : '';
+		$sla_tier  = self::infer_sla_tier_from_tool( $tool_name );
+
+		// Get current time and start time.
+		$current_time = time();
+		$started_at   = isset( $status['started_at'] ) ? strtotime( $status['started_at'] ) : $current_time;
+		$elapsed_time = max( 0, $current_time - $started_at );
+
+		// Get SLA target for this tier.
+		$sla_target = self::get_sla_target_for_tier( $sla_tier );
+
+		// Estimate completion based on progress.
+		$progress = isset( $status['progress'] ) ? floatval( $status['progress'] ) : 0;
+		if ( $progress > 0 && $progress < 100 ) {
+			// Estimate total time = elapsed / (progress / 100).
+			$estimated_total     = $elapsed_time / ( $progress / 100 );
+			$estimated_remaining = max( 0, $estimated_total - $elapsed_time );
+		} else {
+			// No progress info, use SLA target as estimate.
+			$estimated_remaining = $sla_target;
+		}
+
+		// Add Little's Law metrics to status.
+		$status['littles_law'] = array(
+			'sla_tier'             => $sla_tier,
+			'sla_target'           => $sla_target,
+			'elapsed_time'         => $elapsed_time,
+			'estimated_remaining'  => $estimated_remaining,
+			'estimated_total'      => isset( $estimated_total ) ? $estimated_total : null,
+			'sla_compliance'       => self::calculate_sla_compliance( $elapsed_time, $estimated_remaining, $sla_target ),
+			'predicted_completion' => date( 'c', $current_time + $estimated_remaining ),
+		);
+
+		return $status;
+	}
+
+	/**
+	 * Infer SLA tier from tool name.
+	 *
+	 * @param string $tool_name Tool name.
+	 * @return string SLA tier (realtime, near_realtime, batch).
+	 */
+	protected static function infer_sla_tier_from_tool( $tool_name ) {
+		// Default tool-to-tier mapping.
+		$tier_map = array(
+			'web_search'         => 'near_realtime',
+			'generate_veo_video' => 'batch',
+			'crawl4ai'           => 'batch',
+			'generate_image'     => 'near_realtime',
+			'transcribe_audio'   => 'near_realtime',
+			'analyze_video'      => 'batch',
+			'save_post'          => 'realtime',
+			'get_user_info'      => 'realtime',
+		);
+
+		/**
+		 * Filter the tool-to-tier mapping for SLA classification.
+		 *
+		 * Allows customization of which SLA tier is assigned to each tool
+		 * without modifying code.
+		 *
+		 * @since 1.2.0
+		 *
+		 * @param array $tier_map Associative array of tool_name => tier.
+		 */
+		$tier_map = apply_filters( 'wp_mcp_ai_tool_sla_tier_map', $tier_map );
+
+		// Check if tool is in our map.
+		if ( isset( $tier_map[ $tool_name ] ) ) {
+			return sanitize_key( $tier_map[ $tool_name ] );
+		}
+
+		// Default to batch for unknown tools.
+		return 'batch';
+	}
+
+	/**
+	 * Get SLA target in seconds for a tier.
+	 *
+	 * @param string $tier SLA tier.
+	 * @return float SLA target in seconds.
+	 */
+	protected static function get_sla_target_for_tier( $tier ) {
+		$targets = array(
+			'realtime'      => 1.0,
+			'near_realtime' => 30.0,
+			'batch'         => 300.0,
+		);
+
+		return isset( $targets[ $tier ] ) ? $targets[ $tier ] : 300.0;
+	}
+
+	/**
+	 * Calculate SLA compliance status.
+	 *
+	 * @param float $elapsed_time        Time elapsed so far (seconds).
+	 * @param float $estimated_remaining Estimated remaining time (seconds).
+	 * @param float $sla_target          SLA target (seconds).
+	 * @return string Compliance status (on_track, at_risk, violated).
+	 */
+	protected static function calculate_sla_compliance( $elapsed_time, $estimated_remaining, $sla_target ) {
+		$estimated_total = $elapsed_time + $estimated_remaining;
+
+		// Already exceeded SLA.
+		if ( $elapsed_time > $sla_target ) {
+			return 'violated';
+		}
+
+		// Projected to exceed SLA.
+		if ( $estimated_total > $sla_target ) {
+			return 'at_risk';
+		}
+
+		// Within SLA bounds.
+		return 'on_track';
 	}
 
 	/**
@@ -243,12 +379,12 @@ class WP_MCP_AI_Job_Notifier {
 	 */
 	public static function register_webhook( $job_id, $webhook_url, $events = array() ) {
 		if ( ! is_string( $webhook_url ) || ! filter_var( $webhook_url, FILTER_VALIDATE_URL ) ) {
-			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		$job_id = sanitize_text_field( $job_id );
 		if ( '' === $job_id ) {
-			return new WP_Error( 'invalid_job_id', __( 'Invalid job ID provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'invalid_job_id', __( 'Invalid job ID provided.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( empty( $events ) ) {
@@ -262,7 +398,7 @@ class WP_MCP_AI_Job_Notifier {
 		}
 
 		if ( count( $webhooks[ $job_id ] ) >= self::MAX_WEBHOOKS_PER_JOB ) {
-			return new WP_Error( 'too_many_webhooks', __( 'Maximum webhooks per job exceeded.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'too_many_webhooks', __( 'Maximum webhooks per job exceeded.', 'mcp-ai-wpoos' ) );
 		}
 
 		$webhooks[ $job_id ][] = array(
@@ -355,6 +491,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * Send a webhook notification.
 	 *
 	 * Hooked to 'wp_mcp_ai_send_webhook' action for async delivery.
+	 * Tracks delivery attempts and moves to dead letter queue after max retries.
 	 *
 	 * @param string $url     Webhook URL.
 	 * @param array  $payload Payload to send.
@@ -380,6 +517,67 @@ class WP_MCP_AI_Job_Notifier {
 					'error' => $response->get_error_message(),
 				)
 			);
+
+			// Track webhook delivery failures and add to DLQ after max retries.
+			self::handle_webhook_failure( $url, $payload, $response );
+		}
+	}
+
+	/**
+	 * Handle webhook delivery failure.
+	 *
+	 * Tracks retry attempts and moves to dead letter queue after max failures.
+	 *
+	 * @param string   $url      Webhook URL.
+	 * @param array    $payload  Webhook payload.
+	 * @param WP_Error $error    Error object.
+	 */
+	protected static function handle_webhook_failure( $url, $payload, $error ) {
+		// Generate identifier for this webhook + payload combination.
+		$identifier = md5( $url . wp_json_encode( $payload ) );
+
+		// Track retry count in transients (expires after 1 hour).
+		$retry_key   = 'wp_mcp_ai_webhook_retry_' . $identifier;
+		$retry_count = get_transient( $retry_key );
+
+		if ( false === $retry_count ) {
+			$retry_count = 0;
+		}
+
+		$retry_count = absint( $retry_count ) + 1;
+		$max_retries = 3;
+
+		// Store updated retry count.
+		set_transient( $retry_key, $retry_count, HOUR_IN_SECONDS );
+
+		// If max retries exceeded, move to dead letter queue.
+		if ( $retry_count >= $max_retries && class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$retry_history = array();
+			for ( $i = 0; $i < $retry_count; $i++ ) {
+				$retry_history[] = array(
+					'timestamp' => time() - ( ( $retry_count - $i - 1 ) * 300 ),
+					'result'    => 'failed',
+					'error'     => $error->get_error_message(),
+				);
+			}
+
+			WP_MCP_AI_Dead_Letter_Queue::add(
+				WP_MCP_AI_Dead_Letter_Queue::TYPE_WEBHOOK,
+				$identifier,
+				array(
+					'url'     => $url,
+					'payload' => $payload,
+				),
+				sprintf(
+					'Webhook delivery failed after %d attempts: %s',
+					$retry_count,
+					$error->get_error_message()
+				),
+				$retry_history
+			);
+
+			// Clear retry transient since it's now in DLQ.
+			delete_transient( $retry_key );
 		}
 	}
 

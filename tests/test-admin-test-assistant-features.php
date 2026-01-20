@@ -231,6 +231,48 @@ class Test_Admin_Test_Assistant_Features extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that usage costs and capability flags settings are properly passed to JavaScript.
+	 */
+	public function test_usage_costs_and_capability_flags_config() {
+		global $wp_scripts;
+
+		// Set the show_usage_costs option.
+		$settings                          = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings['show_usage_costs']      = true;
+		$settings['show_capability_flags'] = true;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+
+		// Set the current screen to test assistant page.
+		set_current_screen( 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant' );
+
+		// Trigger enqueue scripts.
+		$hook = 'mcp_ai_assistant_page_wp-mcp-ai-test-assistant';
+		do_action( 'admin_enqueue_scripts', $hook );
+
+		// Check that the script is enqueued.
+		$this->assertTrue( wp_script_is( 'wp-mcp-ai-chat', 'enqueued' ) || wp_script_is( 'wp-mcp-ai-chat', 'registered' ) );
+
+		// Get the localized data.
+		if ( isset( $wp_scripts->registered['wp-mcp-ai-chat'] ) ) {
+			$script_data = $wp_scripts->registered['wp-mcp-ai-chat'];
+
+			// Check if extra data exists.
+			if ( isset( $script_data->extra['data'] ) ) {
+				$extra_data = $script_data->extra['data'];
+
+				// Verify that showUsageCosts and showCapabilityFlags are in the localized data.
+				$this->assertStringContainsString( 'showUsageCosts', $extra_data );
+				$this->assertStringContainsString( 'showCapabilityFlags', $extra_data );
+			}
+		}
+
+		// Clean up.
+		$settings['show_usage_costs']      = false;
+		$settings['show_capability_flags'] = false;
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
+	}
+
+	/**
 	 * Test that get_assistant_professionals returns empty array for assistant without professions.
 	 */
 	public function test_get_assistant_professionals_returns_empty_for_no_professions() {

@@ -92,7 +92,7 @@ The validation whitelist includes:
    ```
 
 3. **Configure WordPress Plugin**
-   - Go to **Settings → WP oOS → Tools → Jukebox**
+   - Go to **Settings → NV oOS → Tools → Jukebox**
    - Set **Python Path**: `/usr/bin/python3` (or your Python path)
    - Set **Installation Path**: `/opt/jukebox` (or wherever you cloned it)
    - Click **Save Changes**
@@ -187,7 +187,7 @@ Checks installation status and configuration.
     "step_2": "Clone the Jukebox repository: git clone https://github.com/openai/jukebox.git",
     "step_3": "Install Jukebox dependencies: pip install -r jukebox/requirements.txt",
     "step_4": "Install additional dependencies: pip install mpi4py av",
-    "step_5": "Configure the installation path in WP oOS settings.",
+    "step_5": "Configure the installation path in NV oOS settings.",
     "note": "Jukebox requires significant GPU resources (CUDA-capable GPU with 16GB+ VRAM recommended)."
   }
 }
@@ -272,10 +272,10 @@ Jukebox is **extremely compute-intensive**. Generation times vary based on:
 
 #### 1. "Jukebox installation path is not configured"
 
-**Solution:** Configure the installation path in WP oOS settings.
+**Solution:** Configure the installation path in NV oOS settings.
 
 ```
-Settings → WP oOS → Tools → Jukebox
+Settings → NV oOS → Tools → Jukebox
 ```
 
 #### 2. "Python is not available at the configured path"
@@ -368,8 +368,8 @@ All Jukebox operations are logged via `WP_MCP_AI_Logger`:
 - [OpenAI Jukebox Blog Post](https://openai.com/index/jukebox/)
 - [Jukebox GitHub Repository](https://github.com/openai/jukebox)
 - [Jukebox Paper](https://arxiv.org/abs/2005.00341)
-- [WP oOS Tool Reference](../../../reference/tools/tool-reference.md)
-- [WP oOS Architecture](../../../architecture/ARCHITECTURE.md)
+- [NV oOS Tool Reference](../../../reference/tools/tool-reference.md)
+- [NV oOS Architecture](../../../architecture/ARCHITECTURE.md)
 
 ## Future Enhancements
 

@@ -6,7 +6,7 @@
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Tested up to: 6.7.1
+ * Tested up to: 6.7
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -16,6 +16,8 @@
  * Network: true
  *
  * @package WP_MCP_AI
+ *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName
  *
  * Copyright (c) 2025 NV Digital Solutions (https://nvdigitalsolutions.com)
  * This plugin is licensed under the GNU General Public License v3 or later.
@@ -76,14 +78,13 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 	}
 
 	/**
-	 * Register PHP version notice on init to avoid early translation loading.
+	 * Register PHP version notice directly on admin_notices.
 	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+	 * This notice doesn't use translation functions, so there's no risk of
+	 * early translation loading. However, we follow the same direct hook pattern
+	 * as other admin notices for consistency.
 	 */
-	function wp_mcp_ai_register_php_version_notice() {
-		add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
-	}
-	add_action( 'init', 'wp_mcp_ai_register_php_version_notice' );
+	add_action( 'admin_notices', 'wp_mcp_ai_php_version_notice' );
 
 	/**
 	 * Prevent plugin activation on incompatible PHP versions.
@@ -126,14 +127,13 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 			}
 
 			/**
-			 * Register dev deps error notice on init to avoid early translation loading.
+			 * Register dev deps error notice directly on admin_notices.
 			 *
-			 * WordPress 6.7.0+ requires translations to be loaded at init or later.
+			 * This notice doesn't use translation functions, so there's no risk of
+			 * early translation loading. However, we follow the same direct hook pattern
+			 * as other admin notices for consistency.
 			 */
-			function wp_mcp_ai_register_dev_deps_error_notice() {
-				add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
-			}
-			add_action( 'init', 'wp_mcp_ai_register_dev_deps_error_notice' );
+			add_action( 'admin_notices', 'wp_mcp_ai_dev_deps_error_notice' );
 		}
 
 		// Log the issue.
@@ -352,6 +352,25 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
+	/**
+	 * Determine whether third-party plugin integrations should be loaded.
+	 *
+	 * Integrations are loaded when:
+	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
+	 *
+	 * This ensures that when using base + pro as separate plugins, JetEngine
+	 * integrations are available for chat transcript storage and other Pro features.
+	 *
+	 * @since 1.1.0
+	 * @return bool Whether integrations should be loaded.
+	 */
+	function wp_mcp_ai_should_load_integrations() {
+		return ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+	}
+}
+
 // Start output buffering early to catch any warnings/notices from includes.
 // Suppress any output that could break JSON responses later.
 // Skip buffering during Elementor AJAX requests and editor page loads to avoid interfering with Elementor operations.
@@ -416,6 +435,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-cache.php';
 // Load profession search helper for reusable search functionality.
 require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-profession-search-helper.php';
 
+// Load tool presets helper for reusable tool selection presets.
+require_once WP_MCP_AI_PATH . 'includes/helpers/class-wp-mcp-ai-tool-presets-helper.php';
+
 // Load REST API context parameter fix to prevent caching issues.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php';
 
@@ -444,6 +466,9 @@ require_once WP_MCP_AI_PATH . 'includes/container-helpers.php';
 // This includes token budget manager and performance monitor services.
 require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 
+// Load agent roles (DeepSeek V4 orchestration enhancements - Phase 1).
+require_once WP_MCP_AI_PATH . 'includes/agents-init.php';
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
@@ -458,6 +483,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-lm-studio-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
@@ -524,8 +550,19 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-peer-verifier
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation-directory-rest.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-federation.php';
 
+// Load ISO 27001 Asset Inventory REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-asset-inventory-rest.php';
+
+// Load ISO 27001 Security Training REST API.
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-rest.php';
+
+// Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
+require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
+
 // Load third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), load JetEngine integrations
+// since Pro features may depend on them for chat transcript storage and other functionality.
+if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetformbuilder-tool-handlers.php';
@@ -538,7 +575,6 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-pricing-checker.php';
 	// Performance monitor CCT is now loaded via services-init.php.
 	require_once WP_MCP_AI_PATH . 'includes/blocks/class-wp-mcp-ai-performance-blocks.php';
-	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-chatkit-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-simple-jwt-login-integration.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-integration-simple-jwt.php';
@@ -547,7 +583,18 @@ if ( ! wp_mcp_ai_is_base_version() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-media.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-comments.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/github-integration-init.php';
+	// Google Drive OAuth removed - now handled in PRO addon's Remote Sites feature.
+	require_once WP_MCP_AI_PATH . 'includes/integrations/meta-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudways-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 }
+
+// Load Elementor integration for all versions (base and full).
+// Elementor widgets are part of the base plugin and do not require Pro addon.
+// Widgets are automatically available when Elementor plugin is installed.
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-elementor-integration.php';
 
 // Load assistant builder blocks for all versions (base and full).
 // These blocks provide Gutenberg block editor support for the AI Chat, Assistant Selector,.
@@ -564,12 +611,56 @@ if ( ! $skip_buffering ) {
 // Frontend AJAX handlers for Performance widgets are now only available with Pro addon.
 
 if ( is_admin() ) {
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-scripts.php';
+	WP_MCP_AI_Admin_Scripts::init();
+
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-cron-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-token-manager.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-crawl4ai-monitor.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-performance-reporter.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
+
+	// Load DeepSeek V4 Orchestration Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+
+	// Load ISO 27001 Asset Inventory System (Control A.5.9).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
+	// Initialize Asset Inventory singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Asset_Inventory::get_instance();
+
+	// Load ISO 27001 Security Training System (Control A.6.3).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-training.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-training-admin.php';
+	// Initialize Security Training singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Security_Training::get_instance();
+
+	// Load ISO 27001 Supplier Security Management (Controls A.5.19-A.5.22).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-supplier-security.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-supplier-security-admin.php';
+	// Initialize Supplier Security singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Supplier_Security::get_instance();
+
+	// Load ISO 27001 Information Labelling System (Control A.5.13).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-information-labelling.php';
+	// Initialize Information Labelling singleton.
+	WP_MCP_AI_Information_Labelling::get_instance();
+
+	// Load ISO 27001 Incident Learning System (Control A.5.27).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-incident-learning.php';
+	// Initialize Incident Learning singleton.
+	WP_MCP_AI_Incident_Learning::get_instance();
+
+	// Load ISO 27001 Security Audit System (Control A.5.35).
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-security-audit.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-audit-admin.php';
+	// Initialize Security Audit singleton.
+	// Note: Admin page now initialized by Pro Dashboard.
+	WP_MCP_AI_Security_Audit::get_instance();
 
 	// Load diagnostic pages (always available under Tools menu).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-dashboard-diagnostic.php';
@@ -584,6 +675,10 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-auth0-setup.php';
 	wp_mcp_ai_container()->get( 'admin.auth0_setup' );
 
+	// Initialize Admin Settings to register OAuth and admin-post handlers.
+	// This must be initialized to register Gmail, Meta, QuickBooks, Mailjet OAuth hooks.
+	wp_mcp_ai_container()->get( 'admin.settings' );
+
 	// Load test assistant page (submenu of AI Assistants CPT).
 	// Test pages are excluded from production builds. Load them conditionally.
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-assistant.php' ) ) {
@@ -597,10 +692,40 @@ if ( is_admin() ) {
 		wp_mcp_ai_container()->get( 'admin.test_profession' );
 	}
 
+	// Load test model page (submenu of AI Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-model.php';
+		wp_mcp_ai_container()->get( 'admin.test_model' );
+	}
+
 	// Load test team page (submenu of AI Teams CPT).
 	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php' ) ) {
 		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-test-team.php';
 		wp_mcp_ai_container()->get( 'admin.test_team' );
+	}
+
+	// Load profession settings page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php';
+		wp_mcp_ai_container()->get( 'admin.profession_settings' );
+	}
+
+	// Load team settings page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php';
+		wp_mcp_ai_container()->get( 'admin.team_settings' );
+	}
+
+	// Load profession research page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.profession_research' );
+	}
+
+	// Load team research page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.team_research' );
 	}
 
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
@@ -634,8 +759,36 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-key-rotation.php';
 	WP_MCP_AI_Admin_Key_Rotation::init();
 
+	// Load Model Manager AJAX handlers.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-model-manager-ajax.php';
+
+	// Load ISO 27001 certification badge display.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-iso27001-badge.php';
+
+	// Load Pro Dashboard for ISO 27001 compliance management.
+	require_once WP_MCP_AI_PATH . 'includes/data/class-wp-mcp-ai-compliance-data.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-database.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-license.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-helper.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-settings.php';
+
+	// Initialize Pro Dashboard components.
+	new WP_MCP_AI_Pro_Database();
+	new WP_MCP_AI_Pro_License();
+	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
+	new WP_MCP_AI_Pro_Dashboard_REST();
+
 	/**
 	 * Add plugin action links in the plugins list.
+	 *
+	 * Note: These links use untranslated text to avoid triggering translation loading
+	 * before the init action. "Settings" and "Diagnostic" are common technical terms
+	 * that are widely understood and often left untranslated in WordPress plugins.
 	 *
 	 * @param array $links Existing plugin action links.
 	 * @return array Modified plugin action links.
@@ -645,22 +798,14 @@ if ( is_admin() ) {
 		$diagnostic_link = admin_url( 'tools.php?page=wp-mcp-ai-diagnostic' );
 
 		$plugin_links = array(
-			'settings'   => '<a href="' . esc_url( $settings_link ) . '">' . esc_html__( 'Settings', 'wp-mcp-ai' ) . '</a>',
-			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">' . esc_html__( 'Diagnostic', 'wp-mcp-ai' ) . '</a>',
+			'settings'   => '<a href="' . esc_url( $settings_link ) . '">Settings</a>',
+			'diagnostic' => '<a href="' . esc_url( $diagnostic_link ) . '">Diagnostic</a>',
 		);
 
 		return array_merge( $plugin_links, $links );
 	}
 
-	/**
-	 * Register plugin action links on init to avoid early translation loading.
-	 *
-	 * WordPress 6.7.0+ requires translations to be loaded at init or later.
-	 */
-	function wp_mcp_ai_register_plugin_action_links() {
-		add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
-	}
-	add_action( 'init', 'wp_mcp_ai_register_plugin_action_links' );
+	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -680,7 +825,9 @@ WP_MCP_AI_REST_API_Context_Fix::init();
 WP_MCP_AI_HTTP::bootstrap();
 
 // Initialize third-party plugin integrations only when not in base version mode.
-if ( ! wp_mcp_ai_is_base_version() ) {
+// However, if Pro addon is active (even with base version), initialize integrations
+// since Pro features may depend on them.
+if ( wp_mcp_ai_should_load_integrations() ) {
 	if ( class_exists( 'WP_MCP_AI_JetEngine_Tool_Handlers' ) ) {
 		WP_MCP_AI_JetEngine_Tool_Handlers::bootstrap();
 	}
@@ -727,6 +874,7 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 	/**
 	 * Main plugin container class.
 	 */
+	// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed,Squiz.Commenting.ClassComment.Missing -- Plugin container class documented in file header
 	final class WP_MCP_AI {
 		/**
 		 * Singleton instance.
@@ -943,15 +1091,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 
 			// Check if this is an Elementor action.
 			if ( strpos( $action, 'elementor' ) === 0 ) {
-				// Suppress display_errors to prevent debug output from breaking JSON responses.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor AJAX requests to prevent breaking the editor.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 
 				// Track the current buffer level before starting our buffer.
 				// This allows us to clean only the buffer(s) we create.
@@ -960,6 +1102,10 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 				// Start output buffering to catch any stray output that could break JSON responses.
 				// This protects against any echoed content, warnings, or notices that occur.
 				// during the Elementor save process.
+				//
+				// WordPress.org Compliance Note: This ob_start() is properly closed.
+				// Cleanup handled by clean_elementor_output_buffer() on shutdown hook (line 1078).
+				// The buffer is cleaned via ob_end_clean() in a loop (lines 1114-1117).
 				ob_start();
 
 				// Register a shutdown function to clean the buffer before Elementor sends its response.
@@ -1016,6 +1162,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 		 * at the correct time according to WordPress 6.7+ requirements.
 		 * This prevents "_load_textdomain_just_in_time was called incorrectly" warnings.
 		 *
+		 * Elementor integration is part of the base plugin (not requiring Pro addon).
+		 * Widgets can be enabled/disabled via the settings checkbox.
+		 *
 		 * @since 1.1.0
 		 */
 		public function init_elementor_integration() {
@@ -1056,16 +1205,9 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			if ( 'elementor' === $action && current_user_can( 'edit_posts' ) ) {
 				remove_action( 'admin_enqueue_scripts', 'wp_auth_check_load' );
 
-				// Prevent debug output from breaking Elementor's JSON responses.
-				// When WP_DEBUG is enabled, PHP warnings/notices can break the editor.
-				// We cannot use WP_DEBUG_DISPLAY here because we need to suppress errors.
-				// specifically for Elementor editor to prevent breaking the UI.
-				// Error suppression is intentional: some hosts disable ini_set changes,
-				// and we prefer graceful degradation over throwing warnings.
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-					// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed, WordPress.PHP.NoSilencedErrors.Discouraged -- Required for Elementor editor compatibility.
-					@ini_set( 'display_errors', '0' );
-				}
+				// Note: Previously we suppressed display_errors via ini_set for Elementor compatibility.
+				// This has been removed per WordPress.org plugin guidelines.
+				// Elementor handles its own error suppression when needed.
 			}
 		}
 	}
@@ -1198,6 +1340,10 @@ if ( ! has_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_f
 	add_action( 'wp_mcp_ai_cleanup_openai_files', 'wp_mcp_ai_cleanup_openai_files_handler' );
 }
 
+if ( ! has_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler' ) ) {
+	add_action( 'wp_mcp_ai_deep_research_background', 'wp_mcp_ai_deep_research_background_handler', 10, 1 );
+}
+
 if ( ! function_exists( 'wp_mcp_ai_cleanup_gemini_files_handler' ) ) {
 	/**
 	 * Cron job handler for cleaning up old Gemini files.
@@ -1241,6 +1387,49 @@ if ( ! function_exists( 'wp_mcp_ai_cleanup_openai_files_handler' ) ) {
 			'Daily OpenAI file cleanup completed.',
 			$result
 		);
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_deep_research_background_handler' ) ) {
+	/**
+	 * Cron job handler for background deep research execution.
+	 *
+	 * Runs when a deep research job is scheduled in background mode.
+	 *
+	 * @param array $args Cron job arguments containing job parameters.
+	 */
+	function wp_mcp_ai_deep_research_background_handler( $args ) {
+		if ( ! is_array( $args ) ) {
+			return;
+		}
+
+		// Extract job parameters.
+		$job_id          = isset( $args['job_id'] ) ? sanitize_text_field( $args['job_id'] ) : '';
+		$topic           = isset( $args['topic'] ) ? sanitize_text_field( $args['topic'] ) : '';
+		$depth           = isset( $args['depth'] ) ? sanitize_key( $args['depth'] ) : 'standard';
+		$focus_areas     = isset( $args['focus_areas'] ) && is_array( $args['focus_areas'] ) ? $args['focus_areas'] : array();
+		$include_sources = isset( $args['include_sources'] ) ? (bool) $args['include_sources'] : true;
+		$user_id         = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+
+		if ( empty( $job_id ) || empty( $topic ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Deep research background job missing required parameters.',
+				array( 'args' => $args )
+			);
+			return;
+		}
+
+		// Execute the research via the tool's static method.
+		if ( class_exists( 'WP_MCP_AI_Tool_Deep_Research' ) ) {
+			WP_MCP_AI_Tool_Deep_Research::execute_background_research(
+				$job_id,
+				$topic,
+				$depth,
+				$focus_areas,
+				$include_sources,
+				$user_id
+			);
+		}
 	}
 }
 
@@ -1385,7 +1574,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 
 		?>
 		<div class="notice <?php echo esc_attr( $notice_class ); ?> is-dismissible">
-			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'wp-mcp-ai' ); ?></h3>
+			<h3><?php esc_html_e( 'Open Operator System Security Warning', 'mcp-ai-wpoos' ); ?></h3>
 			<p><strong><?php echo esc_html( $recommendation ); ?></strong></p>
 			
 			<?php if ( ! empty( $summary ) ) : ?>
@@ -1393,7 +1582,7 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 					<?php
 					printf(
 						/* translators: 1: number of critical issues, 2: number of warnings */
-						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'wp-mcp-ai' ),
+						esc_html__( 'Security Check Results: %1$d critical issue(s), %2$d warning(s)', 'mcp-ai-wpoos' ),
 						isset( $summary['critical'] ) ? absint( $summary['critical'] ) : 0,
 						isset( $summary['warning'] ) ? absint( $summary['warning'] ) : 0
 					);
@@ -1418,14 +1607,14 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 			<?php endif; ?>
 
 			<p>
-				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'This plugin handles sensitive AI API keys and data. Using it on an insecure site puts your API keys and user data at risk.', 'mcp-ai-wpoos' ); ?>
 			</p>
 			<p>
 				<em>
 					<?php
 					printf(
 						/* translators: %s: code snippet for wp-config.php */
-						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'wp-mcp-ai' ),
+						esc_html__( 'To bypass this security check, add %s to your wp-config.php file. Only do this if you understand the risks.', 'mcp-ai-wpoos' ),
 						'<code>define( \'WP_MCP_AI_SKIP_SECURITY_CHECK\', true );</code>'
 					);
 					?>
@@ -1437,14 +1626,31 @@ if ( ! function_exists( 'wp_mcp_ai_activation_security_notice' ) ) {
 }
 
 /**
- * Register activation security notice on init to avoid early translation loading.
+ * Run deferred activation security check.
  *
  * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * This function runs the security check on admin_init (after init completes)
+ * and stores results for display in admin_notices.
  */
-function wp_mcp_ai_register_activation_security_notice() {
-	add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+function wp_mcp_ai_run_deferred_activation_security_check() {
+	// Check if we need to run the deferred activation security check.
+	if ( get_transient( 'wp_mcp_ai_run_activation_security_check' ) ) {
+		delete_transient( 'wp_mcp_ai_run_activation_security_check' );
+		wp_mcp_ai_check_activation_security();
+	}
 }
-add_action( 'init', 'wp_mcp_ai_register_activation_security_notice' );
+add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
+
+/**
+ * Register activation security notice directly on admin_notices.
+ *
+ * WordPress 6.7.0+ requires translations to be loaded at init or later.
+ * By hooking directly to admin_notices instead of using admin_init as an intermediary,
+ * we ensure translation functions are only called when the notice is actually rendered,
+ * which happens after init completes. This prevents the "_load_textdomain_just_in_time
+ * was called incorrectly" warning.
+ */
+add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
@@ -1475,8 +1681,11 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		$registry->init();
 
-		// Check site security and store result for display in admin notice.
-		wp_mcp_ai_check_activation_security();
+		// Set a flag to run security check on next admin_init instead of during activation.
+		// This avoids triggering translation loading before the init action (WordPress 6.7+ requirement).
+		// The security check tool uses translation functions, which would trigger the
+		// "_load_textdomain_just_in_time was called incorrectly" warning if called during activation.
+		set_transient( 'wp_mcp_ai_run_activation_security_check', true, HOUR_IN_SECONDS );
 
 		// Schedule file cleanup cron job (daily).
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' ) ) {

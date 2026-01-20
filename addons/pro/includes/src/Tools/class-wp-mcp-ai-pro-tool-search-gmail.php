@@ -30,14 +30,14 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Search Gmail Messages', 'wp-mcp-ai' );
+		return __( 'Search Gmail Messages', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Searches the configured Gmail inbox and returns recent matches, including sender, subject, and snippets.', 'wp-mcp-ai' );
+		return __( 'Searches the configured Gmail inbox and returns recent matches, including sender, subject, and snippets.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -47,27 +47,31 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'       => array(
+				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'Gmail search query string. Supports the same syntax as the Gmail web interface.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional Gmail connection ID from Remote Sites. If not provided, uses settings-based credentials.', 'mcp-ai-wpoos-pro' ),
 				),
-				'max_results' => array(
+				'query'         => array(
+					'type'        => 'string',
+					'description' => __( 'Gmail search query string. Supports the same syntax as the Gmail web interface.', 'mcp-ai-wpoos-pro' ),
+				),
+				'max_results'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum number of messages to return (1-50).', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum number of messages to return (1-50).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 					'default'     => 5,
 				),
-				'label_ids'   => array(
+				'label_ids'     => array(
 					'type'        => 'array',
-					'description' => __( 'Optional Gmail label IDs to filter the results (for example INBOX or CATEGORY_PROMOTIONS).', 'wp-mcp-ai' ),
+					'description' => __( 'Optional Gmail label IDs to filter the results (for example INBOX or CATEGORY_PROMOTIONS).', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'page_token'  => array(
+				'page_token'    => array(
 					'type'        => 'string',
-					'description' => __( 'Page token returned by a previous Gmail search response to fetch the next page of results.', 'wp-mcp-ai' ),
+					'description' => __( 'Page token returned by a previous Gmail search response to fetch the next page of results.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'query' ),
@@ -88,32 +92,88 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		$required_capability = apply_filters( 'wp_mcp_ai_search_gmail_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to search Gmail.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to search Gmail.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_gmail_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		// Check if connection_id is provided.
+		$connection_id = isset( $arguments['connection_id'] ) ? sanitize_key( $arguments['connection_id'] ) : '';
 
-		$client_id       = isset( $settings['gmail_client_id'] ) ? trim( (string) $settings['gmail_client_id'] ) : '';
-		$client_secret   = isset( $settings['gmail_client_secret'] ) ? trim( (string) $settings['gmail_client_secret'] ) : '';
-		$refresh_token   = isset( $settings['gmail_refresh_token'] ) ? trim( (string) $settings['gmail_refresh_token'] ) : '';
-		$configured_user = isset( $settings['gmail_user_email'] ) ? trim( (string) $settings['gmail_user_email'] ) : '';
+		$client_id       = '';
+		$client_secret   = '';
+		$refresh_token   = '';
+		$configured_user = '';
+
+		if ( ! empty( $connection_id ) ) {
+			// Load credentials from Remote Sites connection.
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Remote_Site_Manager' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+			}
+
+			$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
+			if ( empty( $connection ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_connection_not_found',
+					sprintf(
+						/* translators: %s: connection ID. */
+						__( 'Gmail connection "%s" not found. Please check your connection settings.', 'mcp-ai-wpoos-pro' ),
+						$connection_id
+					)
+				);
+			}
+
+			if ( ! empty( $connection['connection_type'] ) && 'gmail' !== $connection['connection_type'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_gmail_wrong_connection_type',
+					sprintf(
+						/* translators: %s: connection type. */
+						__( 'Connection "%s" is not a Gmail connection. Please use a Gmail connection type.', 'mcp-ai-wpoos-pro' ),
+						$connection['connection_type']
+					)
+				);
+			}
+
+			$client_id       = isset( $connection['client_id'] ) ? trim( (string) $connection['client_id'] ) : '';
+			$client_secret   = isset( $connection['client_secret'] ) ? trim( (string) $connection['client_secret'] ) : '';
+			$refresh_token   = isset( $connection['refresh_token'] ) ? trim( (string) $connection['refresh_token'] ) : '';
+			$configured_user = isset( $connection['user_email'] ) ? trim( (string) $connection['user_email'] ) : '';
+
+			// Decrypt encrypted fields.
+			if ( ! empty( $client_secret ) ) {
+				$client_secret = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $client_secret );
+			}
+			if ( ! empty( $refresh_token ) ) {
+				$refresh_token = WP_MCP_AI_Pro_Remote_Site_Manager::decrypt_value( $refresh_token );
+			}
+		} else {
+			// Fall back to settings-based credentials for backward compatibility.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			$client_id       = isset( $settings['gmail_client_id'] ) ? trim( (string) $settings['gmail_client_id'] ) : '';
+			$client_secret   = isset( $settings['gmail_client_secret'] ) ? trim( (string) $settings['gmail_client_secret'] ) : '';
+			$refresh_token   = isset( $settings['gmail_refresh_token'] ) ? trim( (string) $settings['gmail_refresh_token'] ) : '';
+			$configured_user = isset( $settings['gmail_user_email'] ) ? trim( (string) $settings['gmail_user_email'] ) : '';
+		}
 
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_gmail_missing_credentials',
-				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token in the WP oOS settings.', 'wp-mcp-ai' )
+				__( 'Gmail API credentials are not configured. Add the client ID, client secret, and refresh token either in a Gmail connection (Remote Sites) or in the WP oOS settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		$query = isset( $arguments['query'] ) ? trim( (string) $arguments['query'] ) : '';
 
 		if ( '' === $query ) {
-			return new WP_Error( 'wp_mcp_ai_gmail_missing_query', __( 'A Gmail search query is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_missing_query', __( 'A Gmail search query is required.', 'mcp-ai-wpoos-pro' ) );
 		}
+
+		// Load timeout from settings.
+		$settings = WP_MCP_AI_Admin_Settings::get_settings();
+		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
 		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
 		if ( $max_results < 1 ) {
@@ -142,8 +202,6 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$page_token = isset( $arguments['page_token'] ) ? trim( (string) $arguments['page_token'] ) : '';
 
-		$timeout = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
-
 		$access_token = $this->request_access_token( $client_id, $client_secret, $refresh_token, $timeout );
 		if ( is_wp_error( $access_token ) ) {
 			return $access_token;
@@ -167,7 +225,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Admin_Settings::log( 'Gmail search request failed.', array( 'error' => $response->get_error_message() ) );
 
-			return new WP_Error( 'wp_mcp_ai_gmail_http_error', __( 'The Gmail search request failed.', 'wp-mcp-ai' ), $response );
+			return new WP_Error( 'wp_mcp_ai_gmail_http_error', __( 'The Gmail search request failed.', 'mcp-ai-wpoos-pro' ), $response );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
@@ -178,7 +236,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_gmail_http_status',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'Gmail returned an unexpected HTTP status: %d.', 'wp-mcp-ai' ),
+					__( 'Gmail returned an unexpected HTTP status: %d.', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				),
 				array(
@@ -193,7 +251,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $list_payload ) ) {
 			WP_MCP_AI_Admin_Settings::log( 'Gmail search returned invalid JSON.', array( 'body' => $body ) );
 
-			return new WP_Error( 'wp_mcp_ai_gmail_invalid_json', __( 'Gmail returned an invalid response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_invalid_json', __( 'Gmail returned an invalid response.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$messages = array();
@@ -247,7 +305,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $response ) ) {
 			WP_MCP_AI_Admin_Settings::log( 'Gmail token request failed.', array( 'error' => $response->get_error_message() ) );
 
-			return new WP_Error( 'wp_mcp_ai_gmail_token_error', __( 'Failed to refresh the Gmail access token.', 'wp-mcp-ai' ), $response );
+			return new WP_Error( 'wp_mcp_ai_gmail_token_error', __( 'Failed to refresh the Gmail access token.', 'mcp-ai-wpoos-pro' ), $response );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
@@ -258,7 +316,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_gmail_token_status',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'The Gmail token endpoint returned an unexpected status: %d.', 'wp-mcp-ai' ),
+					__( 'The Gmail token endpoint returned an unexpected status: %d.', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				),
 				array(
@@ -273,7 +331,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( JSON_ERROR_NONE !== json_last_error() || empty( $payload['access_token'] ) ) {
 			WP_MCP_AI_Admin_Settings::log( 'Gmail token response returned invalid JSON.', array( 'body' => $body ) );
 
-			return new WP_Error( 'wp_mcp_ai_gmail_token_invalid', __( 'Gmail returned an invalid token response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_token_invalid', __( 'Gmail returned an invalid token response.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		return (string) $payload['access_token'];
@@ -319,7 +377,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 				)
 			);
 
-			return new WP_Error( 'wp_mcp_ai_gmail_message_error', __( 'Failed to load Gmail message details.', 'wp-mcp-ai' ), $response );
+			return new WP_Error( 'wp_mcp_ai_gmail_message_error', __( 'Failed to load Gmail message details.', 'mcp-ai-wpoos-pro' ), $response );
 		}
 
 		$status_code = (int) wp_remote_retrieve_response_code( $response );
@@ -336,7 +394,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_gmail_message_status',
 				sprintf(
 					/* translators: %1$s: Gmail message ID, %2$d: HTTP status code. */
-					__( 'Gmail returned an unexpected status (%2$d) while loading message %1$s.', 'wp-mcp-ai' ),
+					__( 'Gmail returned an unexpected status (%2$d) while loading message %1$s.', 'mcp-ai-wpoos-pro' ),
 					$message_id,
 					$status_code
 				),
@@ -358,7 +416,7 @@ class WP_MCP_AI_Pro_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MC
 				)
 			);
 
-			return new WP_Error( 'wp_mcp_ai_gmail_message_invalid', __( 'Gmail returned an invalid message response.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_gmail_message_invalid', __( 'Gmail returned an invalid message response.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$headers = isset( $payload['payload']['headers'] ) && is_array( $payload['payload']['headers'] ) ? $payload['payload']['headers'] : array();

@@ -132,7 +132,7 @@ This script:
 
 1. **Initial Setup:**
    ```
-   Navigate to: Settings → WP oOS → Advanced → Data Management
+   Navigate to: Settings → NV oOS → Advanced → Data Management
    ```
 
 2. **Perform Reseed:**

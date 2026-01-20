@@ -49,8 +49,8 @@ class WP_MCP_AI_Chat_Rate_Limiting_Test extends WP_UnitTestCase {
 
 		// Delete all rate limit transients.
 		$wpdb->query(
-			"DELETE FROM {$wpdb->options} 
-			WHERE option_name LIKE '_transient_wp_mcp_ai_rate_limit_%' 
+			"DELETE FROM {$wpdb->options}
+			WHERE option_name LIKE '_transient_wp_mcp_ai_rate_limit_%'
 			OR option_name LIKE '_transient_timeout_wp_mcp_ai_rate_limit_%'"
 		);
 	}

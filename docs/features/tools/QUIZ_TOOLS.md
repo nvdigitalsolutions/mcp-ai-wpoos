@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, and grade quizzes. This toolkit includes 7 new tools that enable full quiz lifecycle management.
+The Quiz Tools provide a complete assessment system for tutors and educators to create, manage, grade quizzes, and visualize analytics. This toolkit includes 9 tools that enable full quiz lifecycle management with Chart.js visualizations.
 
 **⚠️ Important: This is a Full Version feature that must be enabled before use.**
 
@@ -12,14 +12,14 @@ The Quiz Tools provide a complete assessment system for tutors and educators to 
 
 To enable the quiz system:
 1. Ensure you are NOT in Base Version mode (do not define `WP_MCP_AI_BASE_VERSION` constant)
-2. Go to **WP Admin → Settings → WP oOS → Tools & Features**
+2. Go to **WP Admin → Settings → NV oOS → Tools & Features**
 3. Navigate to the **Features** subtab
 4. Check **"Enable Quiz System"**
 5. Save changes
 
 Once enabled, the system will:
 - Register quiz and submission custom post types (CPT)
-- Load all 7 quiz management tools
+- Load all 9 quiz management tools
 - Enable automatic JetEngine CCT synchronization (when available)
 
 **Storage Architecture:**
@@ -34,6 +34,8 @@ Once enabled, the system will:
 - **Flexible Grading**: Manual grading with per-question feedback
 - **Result Tracking**: Comprehensive results and submission management
 - **Permission Control**: Role-based access for tutors and students
+- **Quiz Editing**: Update existing quizzes with new questions or settings
+- **Analytics & Visualization**: Chart.js powered analytics with 5 chart types
 - **JetEngine Integration**: Automatic CCT synchronization for advanced queries and REST API access
 
 ## Storage & REST API Access
@@ -48,6 +50,10 @@ Once enabled, the system will:
 When JetEngine is active, quiz data is automatically synchronized to:
 - `quizzes` CCT - Available at `/wp-json/jet-cct/quizzes`
 - `quiz_submissions` CCT - Available at `/wp-json/jet-cct/quiz_submissions`
+
+**New CCT Fields (v1.1):**
+- `started_at` - ISO 8601 timestamp when quiz was started
+- `completion_time` - Time taken to complete quiz in minutes
 
 This enables:
 - Advanced filtering and queries via JetEngine REST API
@@ -105,7 +111,58 @@ Creates a new quiz with questions.
 }
 ```
 
-### 2. get_quiz
+### 2. update_quiz
+
+Updates an existing quiz with new questions or settings.
+
+**Slug**: `update_quiz`
+
+**Parameters**:
+- `quiz_id` (integer, required): ID of the quiz to update
+- `title` (string, optional): New title for the quiz
+- `description` (string, optional): New description or instructions
+- `time_limit` (integer, optional): New time limit in minutes (0 = no limit)
+- `questions` (array, optional): New array of questions (replaces all existing questions)
+  - Same structure as create_quiz questions
+- `passing_score` (integer, optional): New minimum percentage to pass (0-100)
+
+**Returns**:
+- `quiz_id`: Quiz ID
+- `title`: Updated quiz title
+- `description`: Updated description
+- `time_limit`: Updated time limit
+- `question_count`: Number of questions
+- `total_points`: Total possible points
+- `passing_score`: Passing percentage
+- `updated_fields`: Array of fields that were updated
+- `updated_at`: Timestamp of update
+
+**Permissions**: Only the quiz author or users with `edit_others_posts` capability can update quizzes.
+
+**Example**:
+```json
+{
+  "quiz_id": 123,
+  "title": "JavaScript Fundamentals - Updated",
+  "time_limit": 45,
+  "questions": [
+    {
+      "question": "What is the output of typeof null?",
+      "type": "multiple_choice",
+      "options": ["null", "object", "undefined"],
+      "correct_answer": "object",
+      "points": 3
+    }
+  ]
+}
+```
+
+**Notes**:
+- At least one field must be provided to update
+- Updating questions replaces all existing questions
+- CCT synchronization is automatically triggered on update
+
+### 3. get_quiz
 
 Retrieves details of a specific quiz.
 
@@ -124,7 +181,7 @@ Retrieves details of a specific quiz.
 - `total_points`: Total possible points
 - `passing_score`: Passing percentage
 
-### 3. list_quizzes
+### 4. list_quizzes
 
 Lists available quizzes with pagination.
 
@@ -141,7 +198,7 @@ Lists available quizzes with pagination.
 - `page`: Current page
 - `total_pages`: Total pages
 
-### 4. submit_quiz_answer
+### 5. submit_quiz_answer
 
 Submits answers for a quiz with optional time tracking.
 
@@ -168,7 +225,7 @@ Submits answers for a quiz with optional time tracking.
 - For quizzes with time limits, `started_at` is required and submission will be rejected if time limit is exceeded.
 - A 1-minute grace period is allowed for submission processing.
 
-### 5. grade_quiz
+### 6. grade_quiz
 
 Grades a quiz submission.
 
@@ -190,9 +247,9 @@ Grades a quiz submission.
 
 **Permissions**: Only the quiz author or users with `edit_others_posts` capability can grade.
 
-### 6. get_quiz_submissions
+### 7. get_quiz_submissions
 
-Retrieves all submissions for a quiz.
+Retrieves all submissions for a quiz with embedded Chart.js visualizations.
 
 **Slug**: `get_quiz_submissions`
 
@@ -207,12 +264,23 @@ Retrieves all submissions for a quiz.
 - `total`: Total submissions
 - `page`: Current page
 - `total_pages`: Total pages
+- `charts`: Chart.js configurations for:
+  - `status_overview` - Doughnut chart showing graded vs pending
+  - `pass_fail` - Doughnut chart showing passed vs failed (if graded submissions exist)
+  - `score_distribution` - Bar chart of score ranges (if graded submissions exist)
+
+**Chart Integration**:
+```javascript
+const result = await getQuizSubmissions({ quiz_id: 123 });
+const ctx = document.getElementById('statusChart').getContext('2d');
+new Chart(ctx, result.charts.status_overview);
+```
 
 **Permissions**: Only the quiz author or users with `edit_others_posts` capability can view.
 
-### 7. get_quiz_results
+### 8. get_quiz_results
 
-Retrieves detailed results for a graded submission.
+Retrieves detailed results for a graded submission with embedded Chart.js visualization.
 
 **Slug**: `get_quiz_results`
 
@@ -229,8 +297,107 @@ Retrieves detailed results for a graded submission.
 - `percentage`: Percentage score (if graded)
 - `passed`: Pass/fail status (if graded)
 - `overall_feedback`: Tutor feedback (if provided)
+- `chart`: Chart.js configuration showing performance by question (if graded)
+
+**Chart Integration**:
+```javascript
+const result = await getQuizResults({ submission_id: 456 });
+if (result.chart) {
+    const ctx = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctx, result.chart);
+}
+```
+
+**Chart Details**:
+- Type: Bar chart
+- Shows points earned vs points possible for each question
+- Helps students visualize their performance across questions
 
 **Permissions**: Students can view their own results, quiz authors can view all results.
+
+### 9. get_quiz_analytics
+
+Generates Chart.js visualization data for quiz analytics.
+
+**Slug**: `get_quiz_analytics`
+
+**Parameters**:
+- `quiz_id` (integer, required): ID of the quiz to analyze
+- `chart_types` (array, optional): Types of charts to generate. Options:
+  - `score_distribution` - Bar chart showing distribution of scores
+  - `pass_fail_rate` - Doughnut chart showing pass/fail percentages
+  - `completion_times` - Bar chart showing time taken to complete
+  - `question_performance` - Bar chart showing success rate per question
+  - `submission_timeline` - Line chart showing submissions over time
+
+**Returns**:
+- `quiz_id`: Quiz ID
+- `quiz_title`: Quiz title
+- `total_submissions`: Number of graded submissions analyzed
+- `passing_score`: Passing score percentage
+- `charts`: Object containing requested Chart.js configurations
+  - Each chart includes `type`, `data`, and `options` for Chart.js
+- `stats`: Summary statistics
+  - `average_score`: Average percentage score
+  - `median_score`: Median percentage score
+  - `pass_rate`: Percentage of students who passed
+  - `average_completion`: Average completion time in minutes
+
+**Chart.js Integration**:
+```javascript
+// Example: Render score distribution chart
+const ctx = document.getElementById('scoreChart').getContext('2d');
+const chartConfig = result.charts.score_distribution;
+new Chart(ctx, chartConfig);
+```
+
+**Example Response**:
+```json
+{
+  "quiz_id": 123,
+  "total_submissions": 25,
+  "charts": {
+    "score_distribution": {
+      "type": "bar",
+      "data": {
+        "labels": ["0-10%", "11-20%", ...],
+        "datasets": [{
+          "label": "Number of Students",
+          "data": [0, 1, 2, 5, 8, 6, 3, 0, 0, 0],
+          "backgroundColor": "rgba(54, 162, 235, 0.6)"
+        }]
+      },
+      "options": { ... }
+    },
+    "pass_fail_rate": {
+      "type": "doughnut",
+      "data": {
+        "labels": ["Passed", "Failed"],
+        "datasets": [{
+          "data": [18, 7],
+          "backgroundColor": [
+            "rgba(75, 192, 192, 0.6)",
+            "rgba(255, 99, 132, 0.6)"
+          ]
+        }]
+      }
+    }
+  },
+  "stats": {
+    "average_score": 74.5,
+    "median_score": 76.0,
+    "pass_rate": 72.0,
+    "average_completion": 12.3
+  }
+}
+```
+
+**Permissions**: Only quiz author or users with `edit_others_posts` capability.
+
+**Notes**:
+- Requires at least one graded submission
+- All Chart.js configurations are ready to use
+- Statistics exclude pending submissions
 
 ## Workflow Example
 
@@ -255,6 +422,17 @@ Tutor uses grade_quiz to score each question and provide feedback
 ### 4. Student Views Results
 ```
 Student uses get_quiz_results to see their score, answers, and feedback
+```
+
+### 5. Tutor Analyzes Performance
+```
+Tutor uses get_quiz_analytics to generate Chart.js visualizations
+Renders charts showing:
+- Score distribution across all students
+- Pass/fail rates
+- Time spent on quiz
+- Performance by question
+- Submission timeline
 ```
 
 ## Custom Post Types

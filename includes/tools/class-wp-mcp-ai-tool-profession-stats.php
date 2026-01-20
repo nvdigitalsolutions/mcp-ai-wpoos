@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Gets profession statistics.
  */
 class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -26,14 +27,14 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Profession Statistics', 'wp-mcp-ai' );
+		return __( 'Get Profession Statistics', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves statistics about professions including counts by category, total professions, and category distribution.', 'wp-mcp-ai' );
+		return __( 'Retrieves statistics about professions including counts by category, total professions, and category distribution.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,7 +43,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 	public function get_parameters_schema() {
 		return array(
 			'type'                 => 'object',
-			'properties'           => array(),
+			'properties'           => new stdClass(),
 			'additionalProperties' => false,
 		);
 	}
@@ -62,14 +63,14 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $required_capability && $user_id && ! user_can( $user_id, $required_capability ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'You do not have permission to view profession statistics.', 'wp-mcp-ai' ),
+				'message' => __( 'You do not have permission to view profession statistics.', 'mcp-ai-wpoos' ),
 			);
 		}
 
 		if ( $user_id && is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				'message' => __( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -77,7 +78,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Profession system not available.', 'wp-mcp-ai' ),
+				'message' => __( 'Profession system not available.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -99,13 +100,13 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Category labels.
 		$category_labels = array(
-			'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
-			'creative'   => __( 'Creative Services', 'wp-mcp-ai' ),
-			'technical'  => __( 'Technical/STEM', 'wp-mcp-ai' ),
-			'healthcare' => __( 'Healthcare/Medical', 'wp-mcp-ai' ),
-			'legal'      => __( 'Legal', 'wp-mcp-ai' ),
-			'financial'  => __( 'Financial', 'wp-mcp-ai' ),
-			'other'      => __( 'Other', 'wp-mcp-ai' ),
+			'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+			'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
+			'technical'  => __( 'Technical/STEM', 'mcp-ai-wpoos' ),
+			'healthcare' => __( 'Healthcare/Medical', 'mcp-ai-wpoos' ),
+			'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
+			'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
+			'other'      => __( 'Other', 'mcp-ai-wpoos' ),
 		);
 
 		return array(

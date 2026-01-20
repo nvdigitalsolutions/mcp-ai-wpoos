@@ -1,6 +1,6 @@
 # Chart.js Integration for Token Manager
 
-This directory contains Chart.js integration for the WP oOS Token Manager enhancement (Phase 3).
+This directory contains Chart.js integration for the NV oOS Token Manager enhancement (Phase 3).
 
 ## Files
 
@@ -111,7 +111,7 @@ When implementing Phase 3 of the Token Manager enhancement:
 ## License
 
 Chart.js is released under the MIT License.
-WP oOS integration code is licensed under GPLv3 or later.
+NV oOS integration code is licensed under GPLv3 or later.
 
 ## Version
 

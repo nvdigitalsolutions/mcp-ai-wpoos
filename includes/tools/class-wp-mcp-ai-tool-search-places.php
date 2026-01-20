@@ -19,6 +19,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  */
 class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
 
+	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -30,14 +32,14 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Search Places', 'wp-mcp-ai' );
+		return __( 'Search Places', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Search for businesses, landmarks, and points of interest using Google Maps Places API. Supports nearby search and text search with AI-powered contextual results.', 'wp-mcp-ai' );
+		return __( 'Search for businesses, landmarks, and points of interest using Google Maps Places API. Supports nearby search and text search with AI-powered contextual results.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,34 +51,34 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties'           => array(
 				'query'     => array(
 					'type'        => 'string',
-					'description' => __( 'Search query text (e.g., "coffee shops", "restaurants in downtown"). Required for text search.', 'wp-mcp-ai' ),
+					'description' => __( 'Search query text (e.g., "coffee shops", "restaurants in downtown"). Required for text search.', 'mcp-ai-wpoos' ),
 				),
 				'latitude'  => array(
 					'type'        => 'number',
-					'description' => __( 'Latitude coordinate for the search center. Required for nearby search.', 'wp-mcp-ai' ),
+					'description' => __( 'Latitude coordinate for the search center. Required for nearby search.', 'mcp-ai-wpoos' ),
 				),
 				'longitude' => array(
 					'type'        => 'number',
-					'description' => __( 'Longitude coordinate for the search center. Required for nearby search.', 'wp-mcp-ai' ),
+					'description' => __( 'Longitude coordinate for the search center. Required for nearby search.', 'mcp-ai-wpoos' ),
 				),
 				'radius'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Search radius in meters (max 50000). Default is 1500 meters.', 'wp-mcp-ai' ),
+					'description' => __( 'Search radius in meters (max 50000). Default is 1500 meters.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 50000,
 					'default'     => 1500,
 				),
 				'type'      => array(
 					'type'        => 'string',
-					'description' => __( 'Place type to filter results (e.g., "restaurant", "cafe", "hotel", "museum", "park"). See Google Places API documentation for full list.', 'wp-mcp-ai' ),
+					'description' => __( 'Place type to filter results (e.g., "restaurant", "cafe", "hotel", "museum", "park"). See Google Places API documentation for full list.', 'mcp-ai-wpoos' ),
 				),
 				'keyword'   => array(
 					'type'        => 'string',
-					'description' => __( 'Additional keyword to match against place names and types.', 'wp-mcp-ai' ),
+					'description' => __( 'Additional keyword to match against place names and types.', 'mcp-ai-wpoos' ),
 				),
 				'timeout'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds (5-60).', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds (5-60).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 60,
 				),
@@ -91,16 +93,16 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'Find nearby restaurants', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `search_places` tool to find restaurants near a location. Ask for the location, get coordinates if needed using geocoding, then search for type "restaurant" within a reasonable radius.', 'wp-mcp-ai' ),
+				'label'   => __( 'Find nearby restaurants', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `search_places` tool to find restaurants near a location. Ask for the location, get coordinates if needed using geocoding, then search for type "restaurant" within a reasonable radius.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Find coffee shops', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `search_places` tool with type "cafe" to find coffee shops near a specified location.', 'wp-mcp-ai' ),
+				'label'   => __( 'Find coffee shops', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `search_places` tool with type "cafe" to find coffee shops near a specified location.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Search for points of interest', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `search_places` tool with a text query to find specific places, landmarks, or businesses. This is useful for trip planning and local discovery.', 'wp-mcp-ai' ),
+				'label'   => __( 'Search for points of interest', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `search_places` tool with a text query to find specific places, landmarks, or businesses. This is useful for trip planning and local discovery.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -117,16 +119,16 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to search places.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to search places.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			if ( ! user_can( $user_id, 'read' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search places.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to search places.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -168,7 +170,7 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_missing_parameters',
-				__( 'Either "query" or both "latitude" and "longitude" must be provided.', 'wp-mcp-ai' ),
+				__( 'Either "query" or both "latitude" and "longitude" must be provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -183,20 +185,23 @@ class WP_MCP_AI_Tool_Search_Places implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! empty( $query ) ) {
 			$summary = sprintf(
 				/* translators: 1: number of places, 2: search query */
-				__( 'Found %1$d place(s) for "%2$s"', 'wp-mcp-ai' ),
+				__( 'Found %1$d place(s) for "%2$s"', 'mcp-ai-wpoos' ),
 				$place_count,
 				$query
 			);
 		} else {
 			$summary = sprintf(
 				/* translators: %d: number of places */
-				__( 'Found %d nearby place(s)', 'wp-mcp-ai' ),
+				__( 'Found %d nearby place(s)', 'mcp-ai-wpoos' ),
 				$place_count
 			);
 		}
 
 		$result = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$result
 		);
 

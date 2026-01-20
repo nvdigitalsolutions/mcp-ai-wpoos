@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides functionality to add/subscribe email addresses to Newsletter plugin.
  */
 class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether Newsletter plugin is available.
 	 *
@@ -28,7 +29,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Add Subscriber tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Add Subscriber tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +43,14 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Add Newsletter Subscriber', 'wp-mcp-ai' );
+		return __( 'Add Newsletter Subscriber', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Add a new email subscriber to the Newsletter plugin. Supports name, lists, and custom fields. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Add a new email subscriber to the Newsletter plugin. Supports name, lists, and custom fields. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,33 +62,33 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'email'       => array(
 					'type'        => 'string',
-					'description' => __( 'Email address of the subscriber.', 'wp-mcp-ai' ),
+					'description' => __( 'Email address of the subscriber.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
 				'name'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional name of the subscriber.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional name of the subscriber.', 'mcp-ai-wpoos' ),
 				),
 				'surname'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional surname/last name of the subscriber.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional surname/last name of the subscriber.', 'mcp-ai-wpoos' ),
 				),
 				'lists'       => array(
 					'type'        => 'array',
-					'description' => __( 'Optional array of list IDs to subscribe to.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional array of list IDs to subscribe to.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
 				),
 				'status'      => array(
 					'type'        => 'string',
-					'description' => __( 'Subscription status: confirmed, not_confirmed, or unsubscribed. Default: confirmed.', 'wp-mcp-ai' ),
+					'description' => __( 'Subscription status: confirmed, not_confirmed, or unsubscribed. Default: confirmed.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'confirmed', 'not_confirmed', 'unsubscribed' ),
 					'default'     => 'confirmed',
 				),
 				'send_emails' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to send confirmation/welcome emails. Default: false.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to send confirmation/welcome emails. Default: false.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -105,27 +106,27 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to add newsletter subscribers.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to add newsletter subscribers.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Validate email.
 		if ( empty( $arguments['email'] ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_email', __( 'Email address is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_email', __( 'Email address is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		$email = sanitize_email( $arguments['email'] );
 		if ( ! is_email( $email ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		global $wpdb;
@@ -176,7 +177,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 			);
 
 			if ( false === $result ) {
-				return new WP_Error( 'wp_mcp_ai_update_failed', __( 'Failed to update subscriber.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_update_failed', __( 'Failed to update subscriber.', 'mcp-ai-wpoos' ) );
 			}
 
 			return array(
@@ -185,7 +186,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 				'email'         => $email,
 				'action'        => 'updated',
 				'status'        => $status,
-				'message'       => __( 'Subscriber updated successfully.', 'wp-mcp-ai' ),
+				'message'       => __( 'Subscriber updated successfully.', 'mcp-ai-wpoos' ),
 			);
 		} else {
 			// Insert new subscriber.
@@ -197,7 +198,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 			);
 
 			if ( false === $result ) {
-				return new WP_Error( 'wp_mcp_ai_insert_failed', __( 'Failed to add subscriber.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_insert_failed', __( 'Failed to add subscriber.', 'mcp-ai-wpoos' ) );
 			}
 
 			$subscriber_id = $wpdb->insert_id;
@@ -211,7 +212,7 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 				'email'         => $email,
 				'action'        => 'created',
 				'status'        => $status,
-				'message'       => __( 'Subscriber added successfully.', 'wp-mcp-ai' ),
+				'message'       => __( 'Subscriber added successfully.', 'mcp-ai-wpoos' ),
 			);
 		}
 	}

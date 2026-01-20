@@ -104,7 +104,8 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to reset user token usage.');
 						$button.prop('disabled', false).text('Reset');
@@ -143,7 +144,8 @@
 			}, {
 				success: function(response) {
 					if (response.success) {
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to reset all token usage.');
 						$button.prop('disabled', false).text('Reset All Users\' Token Usage');
@@ -212,7 +214,7 @@
 						} else {
 							$button.text('Saved!');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1000);
 						}
 					} else {
@@ -285,7 +287,7 @@
 						} else {
 							$message.text(response.data.message).addClass('notice notice-success');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1500);
 						}
 					} else {
@@ -430,7 +432,8 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message);
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to assign tiers.');
 						$button.prop('disabled', false).text('Apply');
@@ -639,7 +642,7 @@
 							
 							self.showNotice('Preset applied successfully. Reloading page...', 'success');
 							setTimeout(function() {
-								window.location.reload();
+								window.location.href = window.location.href;
 							}, 1000);
 						} else {
 							self.showNotice(response.data.message || 'Failed to apply preset.', 'error');
@@ -725,7 +728,8 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message || 'Recommendations applied successfully!');
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to apply recommendations.');
 						$button.prop('disabled', false).text('Apply Recommended Settings to All Tools');
@@ -805,7 +809,9 @@
 				success: function(response) {
 					if (response.success) {
 						alert(response.data.message || 'Preset applied successfully!');
-						window.location.reload();
+						// Use window.location.href instead of reload() to prevent browser form resubmission
+						// This ensures we don't trigger POST form resubmission warnings or cached form data
+						window.location.href = window.location.href;
 					} else {
 						alert(response.data.message || 'Failed to apply preset.');
 						$button.prop('disabled', false).text('Apply Preset');
@@ -936,6 +942,67 @@
 	 * Initialize Cloudways connection test handlers.
 	 */
 	function initCloudwaysHandlers() {
+		// Test Cloudways connection
+		$('#wp-mcp-ai-test-cloudways-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-cloudways-test-result');
+			const $accountInfo = $('#wp-mcp-ai-cloudways-account-info');
+			const email = $('input[name="wp_mcp_ai_settings[cloudways_email]"]').val();
+			const apiKey = $('input[name="wp_mcp_ai_settings[cloudways_api_key]"]').val();
+
+			if (!email || !apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter both email and API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Cloudways...</span>');
+			$accountInfo.html('');
+
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_cloudways_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					email: email,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+						if (response.data.account_info) {
+							const accountData = response.data.account_info;
+							let html = '<div style="background: #f0f0f1; padding: 10px; border-radius: 4px; margin-top: 10px;">';
+							html += '<p style="margin: 0 0 5px 0;"><strong>Account Information:</strong></p>';
+							html += '<ul style="margin: 0; padding-left: 20px;">';
+							if (accountData.email) {
+								html += '<li><strong>Email:</strong> ' + accountData.email + '</li>';
+							}
+							if (accountData.server_count !== undefined) {
+								html += '<li><strong>Servers:</strong> ' + accountData.server_count + '</li>';
+							}
+							html += '</ul></div>';
+							$accountInfo.html(html);
+						}
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+						$accountInfo.html('');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+					$accountInfo.html('');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+
+		// Existing fetch data handler
 		$('#wp-mcp-ai-fetch-cloudways-data').on('click', function (e) {
 			e.preventDefault();
 			const $button = $(this);
@@ -1039,6 +1106,56 @@
 		});
 	}
 
+	/**
+	 * Initialize iSAMS connection test handlers.
+	 */
+	function initISAMSHandlers() {
+		// Test iSAMS connection
+		$('#wp-mcp-ai-test-isams-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-isams-test-result');
+			const apiUrl = $('input[name="wp_mcp_ai_settings[isams_api_url]"]').val();
+			const apiKey = $('input[name="wp_mcp_ai_settings[isams_api_key]"]').val();
+			const apiSecret = $('input[name="wp_mcp_ai_settings[isams_api_secret]"]').val();
+
+			if (!apiUrl || !apiKey || !apiSecret) {
+				$result.html('<span style="color: #d63638;">Please enter all credentials (URL, API Key, and API Secret) first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to iSAMS...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_isams_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_url: apiUrl,
+					api_key: apiKey,
+					api_secret: apiSecret
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
@@ -1049,6 +1166,7 @@
 			initBraveSearchHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
+			initISAMSHandlers();
 			initChatClientPresetsHandlers();
 		}
 	});

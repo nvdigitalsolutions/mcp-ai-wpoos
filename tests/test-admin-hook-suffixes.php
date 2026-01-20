@@ -233,4 +233,46 @@ class Test_Admin_Hook_Suffixes extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'ajaxUrl', $localized_data, 'Ajax URL should be localized' );
 		$this->assertStringContainsString( 'nonce', $localized_data, 'Nonce should be localized' );
 	}
+
+	/**
+	 * Test that Pro Dashboard enqueues assets on correct hook.
+	 */
+	public function test_pro_dashboard_enqueues_assets_on_correct_hook() {
+		global $wp_scripts, $wp_styles;
+
+		// Trigger the admin_menu action to register menus.
+		do_action( 'admin_menu' );
+
+		// Reset scripts and styles.
+		$wp_scripts = null;
+		$wp_styles  = null;
+
+		// Trigger enqueue with a different hook (should not enqueue).
+		do_action( 'admin_enqueue_scripts', 'some-other-page' );
+
+		// Verify Pro Dashboard styles are NOT enqueued.
+		$this->assertFalse(
+			isset( $wp_styles->registered['wp-mcp-ai-pro-dashboard'] ),
+			'Pro Dashboard styles should not be enqueued on other pages'
+		);
+
+		// Reset scripts and styles.
+		$wp_scripts = null;
+		$wp_styles  = null;
+
+		// Trigger enqueue with the correct hook for top-level page.
+		do_action( 'admin_enqueue_scripts', 'toplevel_page_nvoos-pro-dashboard' );
+
+		// Verify Pro Dashboard styles ARE enqueued.
+		$this->assertTrue(
+			isset( $wp_styles->registered['wp-mcp-ai-pro-dashboard'] ),
+			'Pro Dashboard styles should be enqueued on the correct page'
+		);
+
+		// Verify Pro Dashboard scripts ARE enqueued.
+		$this->assertTrue(
+			isset( $wp_scripts->registered['wp-mcp-ai-pro-dashboard'] ),
+			'Pro Dashboard scripts should be enqueued on the correct page'
+		);
+	}
 }

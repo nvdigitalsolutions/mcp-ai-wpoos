@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -32,14 +33,14 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Batch Status', 'wp-mcp-ai' );
+		return __( 'Get Batch Status', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves the status and details of a batch processing job. Use to monitor progress, check completion, get output file IDs, or troubleshoot failed jobs.', 'wp-mcp-ai' );
+		return __( 'Retrieves the status and details of a batch processing job. Use to monitor progress, check completion, get output file IDs, or troubleshoot failed jobs.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,7 +52,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'batch_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The ID of the batch job to retrieve.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the batch job to retrieve.', 'mcp-ai-wpoos' ),
 				),
 			),
 			'required'             => array( 'batch_id' ),
@@ -87,7 +88,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to retrieve batch job status.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to retrieve batch job status.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -95,7 +96,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -104,7 +105,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! isset( $arguments['batch_id'] ) || '' === trim( $arguments['batch_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_batch_id',
-				__( 'Batch ID is required.', 'wp-mcp-ai' ),
+				__( 'Batch ID is required.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -132,6 +133,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			'request_counts' => isset( $result['request_counts'] ) ? $result['request_counts'] : array(),
 			'metadata'       => isset( $result['metadata'] ) ? $result['metadata'] : array(),
 			'summary'        => $this->generate_summary( $result ),
+			'message'        => $this->generate_summary( $result ), // Chat client display
 			'raw_result'     => $result,
 		);
 
@@ -150,7 +152,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$summary = sprintf(
 			/* translators: 1: batch ID, 2: status */
-			__( 'Batch Job ID: %1$s, Status: %2$s', 'wp-mcp-ai' ),
+			__( 'Batch Job ID: %1$s, Status: %2$s', 'mcp-ai-wpoos' ),
 			$batch_id,
 			ucfirst( $status )
 		);
@@ -158,11 +160,11 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Add status-specific details.
 		switch ( $status ) {
 			case 'validating':
-				$summary .= "\n" . __( 'The batch is currently being validated. This usually takes a few moments.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch is currently being validated. This usually takes a few moments.', 'mcp-ai-wpoos' );
 				break;
 
 			case 'in_progress':
-				$summary .= "\n" . __( 'The batch is being processed. Check back later for completion.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch is being processed. Check back later for completion.', 'mcp-ai-wpoos' );
 				if ( isset( $result['request_counts'] ) && is_array( $result['request_counts'] ) ) {
 					$total     = isset( $result['request_counts']['total'] ) ? $result['request_counts']['total'] : 0;
 					$completed = isset( $result['request_counts']['completed'] ) ? $result['request_counts']['completed'] : 0;
@@ -170,7 +172,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 						$progress = round( ( $completed / $total ) * 100 );
 						$summary .= "\n" . sprintf(
 							/* translators: 1: completed count, 2: total count, 3: percentage */
-							__( 'Progress: %1$d of %2$d requests completed (%3$d%%)', 'wp-mcp-ai' ),
+							__( 'Progress: %1$d of %2$d requests completed (%3$d%%)', 'mcp-ai-wpoos' ),
 							$completed,
 							$total,
 							$progress
@@ -180,21 +182,21 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 				break;
 
 			case 'completed':
-				$summary .= "\n" . __( 'The batch has been completed successfully!', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch has been completed successfully!', 'mcp-ai-wpoos' );
 				if ( isset( $result['output_file_id'] ) && $result['output_file_id'] ) {
 					$summary .= "\n" . sprintf(
 						/* translators: %s: output file ID */
-						__( 'Output File ID: %s', 'wp-mcp-ai' ),
+						__( 'Output File ID: %s', 'mcp-ai-wpoos' ),
 						$result['output_file_id']
 					);
-					$summary .= "\n" . __( 'Download the output file to retrieve your results.', 'wp-mcp-ai' );
+					$summary .= "\n" . __( 'Download the output file to retrieve your results.', 'mcp-ai-wpoos' );
 				}
 				if ( isset( $result['request_counts'] ) && is_array( $result['request_counts'] ) ) {
 					$total    = isset( $result['request_counts']['total'] ) ? $result['request_counts']['total'] : 0;
 					$failed   = isset( $result['request_counts']['failed'] ) ? $result['request_counts']['failed'] : 0;
 					$summary .= "\n" . sprintf(
 						/* translators: 1: completed count, 2: failed count */
-						__( 'Successfully completed: %1$d requests, Failed: %2$d requests', 'wp-mcp-ai' ),
+						__( 'Successfully completed: %1$d requests, Failed: %2$d requests', 'mcp-ai-wpoos' ),
 						$total - $failed,
 						$failed
 					);
@@ -202,27 +204,27 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 				break;
 
 			case 'failed':
-				$summary .= "\n" . __( 'The batch has failed. Check the error file for details.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch has failed. Check the error file for details.', 'mcp-ai-wpoos' );
 				if ( isset( $result['error_file_id'] ) && $result['error_file_id'] ) {
 					$summary .= "\n" . sprintf(
 						/* translators: %s: error file ID */
-						__( 'Error File ID: %s', 'wp-mcp-ai' ),
+						__( 'Error File ID: %s', 'mcp-ai-wpoos' ),
 						$result['error_file_id']
 					);
 				}
 				break;
 
 			case 'expired':
-				$summary .= "\n" . __( 'The batch has expired before completion. You may need to recreate it.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch has expired before completion. You may need to recreate it.', 'mcp-ai-wpoos' );
 				break;
 
 			case 'cancelled':
 			case 'cancelling':
-				$summary .= "\n" . __( 'The batch has been cancelled or is being cancelled.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'The batch has been cancelled or is being cancelled.', 'mcp-ai-wpoos' );
 				break;
 
 			default:
-				$summary .= "\n" . __( 'Status is unknown. Check raw result for details.', 'wp-mcp-ai' );
+				$summary .= "\n" . __( 'Status is unknown. Check raw result for details.', 'mcp-ai-wpoos' );
 				break;
 		}
 

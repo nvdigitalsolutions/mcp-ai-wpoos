@@ -75,8 +75,8 @@ class WP_MCP_AI_Credential_Repository {
 
 		// Search through all assistants' credentials.
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);
@@ -135,7 +135,7 @@ class WP_MCP_AI_Credential_Repository {
 		if ( ! $saved ) {
 			return new WP_Error(
 				'wp_mcp_ai_credential_save_failed',
-				__( 'Failed to save credential.', 'wp-mcp-ai' )
+				__( 'Failed to save credential.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -243,8 +243,8 @@ class WP_MCP_AI_Credential_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);
@@ -280,8 +280,8 @@ class WP_MCP_AI_Credential_Repository {
 		global $wpdb;
 
 		$query = $wpdb->prepare(
-			"SELECT post_id, meta_value 
-			FROM {$wpdb->postmeta} 
+			"SELECT post_id, meta_value
+			FROM {$wpdb->postmeta}
 			WHERE meta_key = %s",
 			$this->credentials_meta_key
 		);

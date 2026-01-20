@@ -15,6 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Gets detailed information about a profession.
  */
 class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -26,14 +27,14 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Profession Details', 'wp-mcp-ai' );
+		return __( 'Get Profession Details', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieves detailed information about a specific profession including expertise areas, role description, warnings, knowledge base content, and default tools.', 'wp-mcp-ai' );
+		return __( 'Retrieves detailed information about a specific profession including expertise areas, role description, warnings, knowledge base content, and default tools.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -45,7 +46,7 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties'           => array(
 				'profession_slug' => array(
 					'type'        => 'string',
-					'description' => __( 'The slug of the profession to retrieve (e.g., "graphic_designer", "data_scientist", "marine_biologist")', 'wp-mcp-ai' ),
+					'description' => __( 'The slug of the profession to retrieve (e.g., "graphic_designer", "data_scientist", "marine_biologist")', 'mcp-ai-wpoos' ),
 					'minLength'   => 1,
 				),
 			),
@@ -65,12 +66,12 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$profession_slug = isset( $arguments['profession_slug'] ) ? sanitize_key( $arguments['profession_slug'] ) : '';
 
 		if ( empty( $profession_slug ) ) {
-			return new WP_Error( 'missing_profession', __( 'Profession slug is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'missing_profession', __( 'Profession slug is required.', 'mcp-ai-wpoos' ) );
 		}
 
 		// Get profession service.
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
-			return new WP_Error( 'system_unavailable', __( 'Profession system not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'system_unavailable', __( 'Profession system not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$profession_service = wp_mcp_ai_get_profession_service();
@@ -81,18 +82,21 @@ class WP_MCP_AI_Tool_Get_Profession implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'profession_not_found',
 				sprintf(
 					/* translators: %s: profession slug */
-					__( 'Profession "%s" not found.', 'wp-mcp-ai' ),
+					__( 'Profession "%s" not found.', 'mcp-ai-wpoos' ),
 					$profession_slug
 				)
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: %s: profession name */
+			__( 'Profession: %s', 'mcp-ai-wpoos' ),
+			isset( $profession['name'] ) ? $profession['name'] : $profession_slug
+		);
+
 		return array(
-			'summary'    => sprintf(
-				/* translators: %s: profession name */
-				__( 'Profession: %s', 'wp-mcp-ai' ),
-				isset( $profession['name'] ) ? $profession['name'] : $profession_slug
-			),
+			'message'    => $summary_text,
+			'summary'    => $summary_text,
 			'success'    => true,
 			'profession' => $profession,
 		);

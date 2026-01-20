@@ -107,7 +107,7 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 
 			$this->assertNotNull( $decoded, "block.json for {$block_type} should contain valid JSON" );
 			$this->assertArrayHasKey( 'name', $decoded, "block.json for {$block_type} should have a name" );
-			$this->assertStringStartsWith( 'wp-mcp-ai/', $decoded['name'], 'Block name should start with wp-mcp-ai/' );
+			$this->assertStringStartsWith( 'mcp-ai-wpoos/', $decoded['name'], 'Block name should start with mcp-ai-wpoos/' );
 		}
 	}
 
@@ -185,7 +185,7 @@ class Test_Assistant_Builder_Blocks extends WP_UnitTestCase {
 		// Should have NV oOS category first.
 		$this->assertIsArray( $result );
 		$this->assertGreaterThan( count( $existing_categories ), count( $result ) );
-		$this->assertEquals( 'wp-mcp-ai', $result[0]['slug'] );
+		$this->assertEquals( 'mcp-ai-wpoos', $result[0]['slug'] );
 		$this->assertStringContainsString( 'NV oOS', $result[0]['title'] );
 	}
 }

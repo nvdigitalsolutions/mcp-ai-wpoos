@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Retrieves Rank Math SEO insights for a single post.
  */
 class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Check whether the tool can be registered.
 	 *
@@ -28,7 +29,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Rank Math SEO plugin must be installed and activated to use the Rank Math SEO tool.', 'wp-mcp-ai' );
+		return __( 'The Rank Math SEO plugin must be installed and activated to use the Rank Math SEO tool.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -51,14 +52,14 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get Rank Math SEO Overview', 'wp-mcp-ai' );
+		return __( 'Get Rank Math SEO Overview', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns Rank Math SEO details for a specific post, including focus keywords, SEO score, schema configuration, and Pro features (Content AI, Analytics, Link Counter, Image SEO) if Rank Math Pro is installed.', 'wp-mcp-ai' );
+		return __( 'Returns Rank Math SEO details for a specific post, including focus keywords, SEO score, schema configuration, and Pro features (Content AI, Analytics, Link Counter, Image SEO) if Rank Math Pro is installed.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -70,12 +71,12 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'post_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'ID of the post to inspect. Required if a URL is not provided.', 'wp-mcp-ai' ),
+					'description' => __( 'ID of the post to inspect. Required if a URL is not provided.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'url'     => array(
 					'type'        => 'string',
-					'description' => __( 'Permalink for the post to inspect. Used when a post ID is not supplied.', 'wp-mcp-ai' ),
+					'description' => __( 'Permalink for the post to inspect. Used when a post ID is not supplied.', 'mcp-ai-wpoos' ),
 					'format'      => 'uri',
 				),
 			),
@@ -100,7 +101,7 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_rankmath_missing_plugin', __( 'Rank Math SEO is not available on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rankmath_missing_plugin', __( 'Rank Math SEO is not available on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post_id = 0;
@@ -114,22 +115,22 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		if ( ! $post_id ) {
-			return new WP_Error( 'wp_mcp_ai_rankmath_missing_post', __( 'Unable to determine the post to analyse.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rankmath_missing_post', __( 'Unable to determine the post to analyse.', 'mcp-ai-wpoos' ) );
 		}
 
 		$post = get_post( $post_id );
 		if ( ! $post || 'revision' === $post->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_rankmath_invalid_post', __( 'The requested post could not be found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rankmath_invalid_post', __( 'The requested post could not be found.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'edit_post', $post_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_rankmath_forbidden', __( 'You do not have permission to inspect Rank Math SEO data for this post.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rankmath_forbidden', __( 'You do not have permission to inspect Rank Math SEO data for this post.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_rankmath_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_rankmath_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$seo_score_raw = $this->get_meta_value( 'seo_score', $post_id );
@@ -140,20 +141,20 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 			if ( $seo_score >= 81 ) {
 				$score_rating = array(
 					'slug'        => 'great',
-					'label'       => __( 'Great', 'wp-mcp-ai' ),
-					'explanation' => __( 'The post passes most Rank Math SEO tests (score between 81 and 100).', 'wp-mcp-ai' ),
+					'label'       => __( 'Great', 'mcp-ai-wpoos' ),
+					'explanation' => __( 'The post passes most Rank Math SEO tests (score between 81 and 100).', 'mcp-ai-wpoos' ),
 				);
 			} elseif ( $seo_score >= 51 ) {
 				$score_rating = array(
 					'slug'        => 'good',
-					'label'       => __( 'Good', 'wp-mcp-ai' ),
-					'explanation' => __( 'There is room for improvement (score between 51 and 80).', 'wp-mcp-ai' ),
+					'label'       => __( 'Good', 'mcp-ai-wpoos' ),
+					'explanation' => __( 'There is room for improvement (score between 51 and 80).', 'mcp-ai-wpoos' ),
 				);
 			} else {
 				$score_rating = array(
 					'slug'        => 'needs-improvement',
-					'label'       => __( 'Needs Improvement', 'wp-mcp-ai' ),
-					'explanation' => __( 'The post fails many Rank Math SEO tests (score 50 or lower).', 'wp-mcp-ai' ),
+					'label'       => __( 'Needs Improvement', 'mcp-ai-wpoos' ),
+					'explanation' => __( 'The post fails many Rank Math SEO tests (score 50 or lower).', 'mcp-ai-wpoos' ),
 				);
 			}
 		}
@@ -193,13 +194,16 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$schema_data = $this->get_schema_data( $post_id );
 
+		$summary_text = sprintf(
+			/* translators: 1: post title, 2: SEO score */
+			__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'mcp-ai-wpoos' ),
+			get_the_title( $post ),
+			$seo_score ? $seo_score : 0
+		);
+
 		$result = array(
-			'summary'   => sprintf(
-				/* translators: 1: post title, 2: SEO score */
-				__( 'Rank Math SEO for "%1$s": Score %2$d/100', 'wp-mcp-ai' ),
-				get_the_title( $post ),
-				$seo_score ? $seo_score : 0
-			),
+			'message'   => $summary_text,
+			'summary'   => $summary_text,
 			'post'      => array(
 				'ID'        => $post->ID,
 				'title'     => get_the_title( $post ),
@@ -453,10 +457,10 @@ class WP_MCP_AI_Tool_Get_RankMath_SEO implements WP_MCP_AI_Tool_Interface, WP_MC
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$keywords = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT keyword, position, clicks, impressions 
-					FROM `{$wpdb->prefix}rank_math_analytics_objects` 
-					WHERE object_id = %d 
-					ORDER BY impressions DESC 
+					"SELECT keyword, position, clicks, impressions
+					FROM `{$wpdb->prefix}rank_math_analytics_objects`
+					WHERE object_id = %d
+					ORDER BY impressions DESC
 					LIMIT 10",
 					$post_id
 				)

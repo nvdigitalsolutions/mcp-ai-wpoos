@@ -3,7 +3,7 @@
 ## Problem Statement
 Streaming text was not showing in the chat bubble UI during AI response generation. Console logs showed:
 ```
-[WP oOS] SSE message event received: {hasChoices: false, hasDelta: false, hasContent: false}
+[NV oOS] SSE message event received: {hasChoices: false, hasDelta: false, hasContent: false}
 ```
 
 The streaming message element was created, but remained empty with no text content visible to users.
@@ -37,7 +37,7 @@ The streaming message element was created, but remained empty with no text conte
 
 #### 1. Enhanced Logging (lines 8290-8297)
 ```javascript
-console.log('[WP oOS] SSE message event received:', {
+console.log('[NV oOS] SSE message event received:', {
     hasChoices: !!(data.choices),
     hasDelta: !!(data.choices && data.choices[0] && data.choices[0].delta),
     hasContent: !!(data.choices && data.choices[0] && data.choices[0].delta && data.choices[0].delta.content),

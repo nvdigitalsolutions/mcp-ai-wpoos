@@ -1,6 +1,6 @@
 # STDIO Transport for Local Agent Integration
 
-This document describes how to use the STDIO transport for connecting local MCP clients (like Claude Desktop) to WordPress via WP oOS.
+This document describes how to use the STDIO transport for connecting local MCP clients (like Claude Desktop) to WordPress via NV oOS.
 
 ## Overview
 
@@ -43,7 +43,7 @@ wp mcp-ai stdio --assistant-id=123
 
 ## Claude Desktop Configuration
 
-Add WP oOS as an MCP server in Claude Desktop's configuration file.
+Add NV oOS as an MCP server in Claude Desktop's configuration file.
 
 ### Configuration File Locations
 
@@ -244,10 +244,10 @@ Check `debug.log` for diagnostic messages.
 
 ## Integration with Agentic Workflows
 
-The STDIO transport integrates seamlessly with WP oOS's agentic workflow capabilities:
+The STDIO transport integrates seamlessly with NV oOS's agentic workflow capabilities:
 
 1. Claude Desktop sends tool calls via STDIO
-2. WP oOS executes tools and returns results
+2. NV oOS executes tools and returns results
 3. Claude Desktop processes results and may issue follow-up calls
 4. Multi-step workflows complete automatically
 

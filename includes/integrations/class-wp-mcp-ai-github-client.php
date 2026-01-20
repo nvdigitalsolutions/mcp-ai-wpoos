@@ -51,7 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			if ( empty( $this->access_token ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_github_no_token',
-					__( 'GitHub access token is not configured.', 'wp-mcp-ai' )
+					__( 'GitHub access token is not configured.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -86,14 +86,14 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 				if ( isset( $headers['X-RateLimit-Remaining'] ) && '0' === $headers['X-RateLimit-Remaining'] ) {
 					return new WP_Error(
 						'wp_mcp_ai_github_rate_limit',
-						__( 'GitHub API rate limit exceeded. Please try again later.', 'wp-mcp-ai' )
+						__( 'GitHub API rate limit exceeded. Please try again later.', 'mcp-ai-wpoos' )
 					);
 				}
 			}
 
 			if ( $status_code >= 400 ) {
 				$error_data = json_decode( $response_body, true );
-				$message    = isset( $error_data['message'] ) ? $error_data['message'] : __( 'GitHub API request failed.', 'wp-mcp-ai' );
+				$message    = isset( $error_data['message'] ) ? $error_data['message'] : __( 'GitHub API request failed.', 'mcp-ai-wpoos' );
 
 				return new WP_Error(
 					'wp_mcp_ai_github_api_error',
@@ -222,7 +222,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 
 			return isset( $ref['object']['sha'] ) ? $ref['object']['sha'] : new WP_Error(
 				'wp_mcp_ai_github_no_sha',
-				__( 'Could not determine branch SHA.', 'wp-mcp-ai' )
+				__( 'Could not determine branch SHA.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -347,7 +347,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_Client' ) ) {
 			if ( strlen( $content ) > 100 * 1024 * 1024 ) {
 				return new WP_Error(
 					'wp_mcp_ai_github_file_too_large',
-					__( 'File content exceeds GitHub size limit of 100MB.', 'wp-mcp-ai' )
+					__( 'File content exceeds GitHub size limit of 100MB.', 'mcp-ai-wpoos' )
 				);
 			}
 

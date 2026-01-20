@@ -169,7 +169,7 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		if ( ! $team_id ) {
 			return new WP_Error(
 				'invalid_team_id',
-				__( 'Invalid team ID provided.', 'wp-mcp-ai' ),
+				__( 'Invalid team ID provided.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -182,9 +182,18 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			);
 			return new WP_Error(
 				'team_cpt_not_loaded',
-				__( 'Team system is not available.', 'wp-mcp-ai' ),
+				__( 'Team system is not available.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
+		}
+
+		// Get team post to access title.
+		$team_post = get_post( $team_id );
+
+		// Get driver assistant.
+		$driver_assistant_id = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_DRIVER_ASSISTANT, true );
+		if ( ! $driver_assistant_id ) {
+			$driver_assistant_id = get_option( 'wp_mcp_ai_team_default_driver_assistant', 0 );
 		}
 
 		// Get team members from meta.
@@ -193,6 +202,11 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		if ( ! is_array( $team_members ) ) {
 			$team_members = array();
 		}
+
+		// Get team orchestration settings for multi-agent coordination.
+		$orchestration_mode         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+		$result_aggregation         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+		$enable_multi_agent_teams   = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 
 		// Build member data.
 		$members = array();
@@ -222,13 +236,13 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 			$tools     = get_post_meta( $member_id, WP_MCP_AI_Profession_CPT::META_DEFAULT_TOOLS, true );
 
 			$category_labels = array(
-				'advisory'   => __( 'Advisory/Consulting', 'wp-mcp-ai' ),
-				'creative'   => __( 'Creative Services', 'wp-mcp-ai' ),
-				'technical'  => __( 'Technical', 'wp-mcp-ai' ),
-				'healthcare' => __( 'Healthcare', 'wp-mcp-ai' ),
-				'legal'      => __( 'Legal', 'wp-mcp-ai' ),
-				'financial'  => __( 'Financial', 'wp-mcp-ai' ),
-				'other'      => __( 'Other', 'wp-mcp-ai' ),
+				'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+				'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
+				'technical'  => __( 'Technical', 'mcp-ai-wpoos' ),
+				'healthcare' => __( 'Healthcare', 'mcp-ai-wpoos' ),
+				'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
+				'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
+				'other'      => __( 'Other', 'mcp-ai-wpoos' ),
 			);
 
 			$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '' );
@@ -256,9 +270,16 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 		return new WP_REST_Response(
 			array(
-				'team_id' => $team_id,
-				'members' => $members,
-				'count'   => count( $members ),
+				'team_id'                  => $team_id,
+				'team_title'               => $team_post ? $team_post->post_title : '',
+				'driver_assistant_id'      => $driver_assistant_id ? absint( $driver_assistant_id ) : 0,
+				'has_driver_assistant'     => (bool) $driver_assistant_id,
+				'members'                  => $members,
+				'count'                    => count( $members ),
+				'orchestration_mode'       => $orchestration_mode ? $orchestration_mode : 'sequential',
+				'result_aggregation'       => $result_aggregation ? $result_aggregation : 'consensus',
+				'multi_agent_enabled'      => $enable_multi_agent_teams,
+				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
 			),
 			200
 		);

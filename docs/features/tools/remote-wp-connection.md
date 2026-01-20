@@ -39,7 +39,7 @@ The Remote WordPress/WooCommerce Connection Tool enables AI assistants to access
 3. Enter an application name (e.g., "AI Assistant")
 4. Click **Add New Application Password**
 5. Copy the generated password
-6. In WP oOS, enter the username and paste the application password
+6. In NV oOS, enter the username and paste the application password
 
 #### Basic Auth
 
@@ -146,15 +146,20 @@ Get media library items.
 ### WooCommerce Data
 
 #### `get_wc_products`
-Get WooCommerce products.
+Get WooCommerce products with **AUTOMATIC variation support** - variations are included by default.
+
+**IMPORTANT:** When `include_variations` is enabled (default), variable products are represented **ONLY by their variations** (not the parent product) to provide accurate stock quantities and avoid confusion. Each variation includes `parent_id` and `parent_name` for reference.
 
 **Parameters:**
 - `connection_id` (string, required): Connection ID
 - `per_page` (integer): Results per page (1-100, default: 10)
 - `page` (integer): Page number (default: 1)
-- `search` (string): Search term
+- `search` (string): Search term (searches product titles)
 - `sku` (string): Product SKU filter
 - `status` (string): Product status filter
+- `category` (string): Filter by category slug or ID
+- `type` (string): Filter by product type (simple, variable, grouped, external)
+- `include_variations` (boolean): Include product variations in results (**default: true** - when enabled, variable products are replaced with their variations)
 
 **Example:**
 ```json
@@ -165,24 +170,82 @@ Get WooCommerce products.
   "status": "publish"
 }
 ```
+Note: Variations are automatically included - no need to specify `include_variations`!
+
+**Example - Basic search (variations automatically included):**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_products",
+  "search": "shirt"
+}
+```
+Note: No need to specify `include_variations: true` - variations are fetched automatically!
+
+**Example - Exclude variations:**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_products",
+  "search": "shirt",
+  "include_variations": false
+}
+```
 
 **Returns:**
 ```json
 {
-  "summary": "Retrieved 20 product(s)",
+  "summary": "Retrieved 3 product(s) with 12 variation(s). Note: Variable products are represented by their variations only, not the parent product.",
   "products": [
     {
-      "id": 123,
-      "name": "T-Shirt",
-      "sku": "TSH-001",
+      "id": 101,
+      "name": "Simple Product",
+      "type": "simple",
+      "sku": "SIMPLE-001",
+      "price": "15.99",
+      "stock_quantity": 25,
+      "stock_status": "instock"
+    },
+    {
+      "id": 456,
+      "parent_id": 123,
+      "parent_name": "T-Shirt",
+      "attributes": [
+        {"name": "Size", "option": "Medium"},
+        {"name": "Color", "option": "Blue"}
+      ],
+      "sku": "TSH-001-M-BLUE",
       "price": "19.99",
       "stock_quantity": 50,
       "stock_status": "instock"
+    },
+    {
+      "id": 457,
+      "parent_id": 123,
+      "parent_name": "T-Shirt",
+      "attributes": [
+        {"name": "Size", "option": "Large"},
+        {"name": "Color", "option": "Red"}
+      ],
+      "sku": "TSH-001-L-RED",
+      "price": "19.99",
+      "stock_quantity": 30,
+      "stock_status": "instock"
     }
   ],
-  "count": 20
+  "count": 13,
+  "parent_count": 3,
+  "variation_count": 12
 }
 ```
+
+**IMPORTANT:** When `include_variations` is true (the default), variable products are **NOT included** in the results - only their variations are returned. This prevents stock confusion since parent variable products typically have `stock_quantity: null` (stock is managed at the variation level). Each variation includes `parent_id`, `parent_name`, `stock_quantity`, `stock_status`, `sku`, `price`, and `attributes` fields. 
+
+**Note:** Simple products and other non-variable product types are always included in results regardless of the `include_variations` setting. Only variable product parents are replaced with their variations.
+
+You do NOT need to make a separate call to `get_wc_product_variations` unless you want to get variations for a specific product ID only.
+
+**Performance Optimization:** The variation fetching is optimized using batched logic that separates products by type before making API calls. This approach leverages the Remote Site Manager's caching layer for improved performance, especially with multiple variable products.
 
 #### `get_wc_product`
 Get a single product by ID.
@@ -190,6 +253,47 @@ Get a single product by ID.
 **Parameters:**
 - `connection_id` (string, required): Connection ID
 - `post_id` (integer, required): Product ID
+
+#### `get_wc_product_variations`
+Get all variations for a specific variable product.
+
+**Parameters:**
+- `connection_id` (string, required): Connection ID
+- `post_id` (integer, required): Product ID of the parent variable product
+
+**Example:**
+```json
+{
+  "connection_id": "conn_abc123",
+  "action": "get_wc_product_variations",
+  "post_id": 123
+}
+```
+
+**Returns:**
+```json
+{
+  "summary": "Retrieved 8 variation(s) for product ID 123",
+  "variations": [
+    {
+      "id": 456,
+      "attributes": [
+        {"name": "Size", "option": "Small"},
+        {"name": "Color", "option": "Red"}
+      ],
+      "sku": "TSH-001-S-RED",
+      "price": "19.99",
+      "regular_price": "19.99",
+      "sale_price": "",
+      "stock_quantity": 25,
+      "stock_status": "instock",
+      "manage_stock": true
+    }
+  ],
+  "count": 8,
+  "product_id": 123
+}
+```
 
 #### `get_wc_orders`
 Get WooCommerce orders.
@@ -235,7 +339,25 @@ Get WooCommerce product categories.
 
 ## Use Cases
 
-### Check Product Stock
+### Check Product Stock with Variations
+
+**Prompt:** "Check the current stock for all sizes and colors of our blue T-shirt on the production store"
+
+**Tool Call - Single call gets everything:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_products",
+    "search": "blue t-shirt"
+  }
+}
+```
+
+**Response:** Returns all variations with individual stock levels for each size/color combination. The parent variable product is NOT included - only the variations are returned with accurate stock quantities. Each variation includes `parent_id` and `parent_name` for reference. No second call needed!
+
+### Check Product Stock by SKU
 
 **Prompt:** "Check the current stock quantity for SKU 'TSH-001' on our production store"
 
@@ -247,6 +369,41 @@ Get WooCommerce product categories.
     "connection_id": "conn_prod_store",
     "action": "get_wc_products",
     "sku": "TSH-001"
+  }
+}
+```
+
+Note: Variations are automatically included with their stock quantities.
+
+### Get Variations for a Specific Product
+
+**Prompt:** "Show me all available variations and stock levels for product ID 123"
+
+**Tool Call:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_product_variations",
+    "post_id": 123
+  }
+}
+```
+
+### Search Products by Category
+
+**Prompt:** "Show me all products in the 'shirts' category"
+
+**Tool Call:**
+```json
+{
+  "tool": "remote_wp_connection",
+  "arguments": {
+    "connection_id": "conn_prod_store",
+    "action": "get_wc_products",
+    "category": "shirts",
+    "include_variations": false
   }
 }
 ```
@@ -362,7 +519,7 @@ Get WooCommerce product categories.
 
 ## Related Documentation
 
-- [Tool Reference](../tool-reference.md)
-- [Tool Grouping](../tool-grouping.md)
-- [Security Best Practices](../../security/best-practices.md)
-- [WooCommerce Integration](../../integrations/woocommerce.md)
+- [Tool Reference](../../reference/tools/tool-reference.md)
+- [Tool Grouping](../../reference/tools/tool-grouping.md)
+- [Security Best Practices](../security/SECURITY_HARDENING.md)
+- [WP All Import/Export Integration](../integrations/WP_ALL_IMPORT_EXPORT_INTEGRATION.md)

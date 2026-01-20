@@ -465,7 +465,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 				'wp_mcp_ai_input_tokens_exceeded',
 				sprintf(
 					/* translators: %1$d: used tokens, %2$d: maximum allowed tokens */
-					__( 'Input exceeds maximum token limit. Used: %1$d tokens, Maximum: %2$d tokens. Please reduce message length or split into chunks.', 'wp-mcp-ai' ),
+					__( 'Input exceeds maximum token limit. Used: %1$d tokens, Maximum: %2$d tokens. Please reduce message length or split into chunks.', 'mcp-ai-wpoos' ),
 					$budget['used'],
 					$max_input_tokens
 				),
@@ -522,7 +522,7 @@ class WP_MCP_AI_Token_Budget_Manager {
 				'wp_mcp_ai_tpm_limit_exceeded',
 				sprintf(
 					/* translators: %1$s: model name, %2$d: TPM limit, %3$d: requested tokens */
-					__( 'Request too large for %1$s. Limit: %2$d TPM, Requested: %3$d tokens. Please reduce the input size, use a smaller max_tokens value, or switch to a model with higher limits.', 'wp-mcp-ai' ),
+					__( 'Request too large for %1$s. Limit: %2$d TPM, Requested: %3$d tokens. Please reduce the input size, use a smaller max_tokens value, or switch to a model with higher limits.', 'mcp-ai-wpoos' ),
 					$model_name,
 					$tpm_limit,
 					$total_tokens

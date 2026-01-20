@@ -11,11 +11,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Analyzes if a file is suitable for OpenAI processing.
  */
 class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum file sizes for different purposes (in bytes).
@@ -54,14 +56,14 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Analyze File Suitability', 'wp-mcp-ai' );
+		return __( 'Analyze File Suitability', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Analyzes if a WordPress attachment file is suitable for OpenAI processing. Checks file size, format, and provides recommendations.', 'wp-mcp-ai' );
+		return __( 'Analyzes if a WordPress attachment file is suitable for OpenAI processing. Checks file size, format, and provides recommendations.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -73,17 +75,17 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			'properties' => array(
 				'file_id'       => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID to analyze.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID to analyze.', 'mcp-ai-wpoos' ),
 				),
 				'purpose'       => array(
 					'type'        => 'string',
-					'description' => __( 'Intended purpose for the file.', 'wp-mcp-ai' ),
+					'description' => __( 'Intended purpose for the file.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'assistants', 'fine-tune', 'batch', 'vision', 'whisper' ),
 					'default'     => 'assistants',
 				),
 				'check_content' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to perform content analysis (default: true).', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to perform content analysis (default: true).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -97,9 +99,9 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate file_id.
 		if ( empty( $arguments['file_id'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The file_id parameter is required.', 'wp-mcp-ai' ),
+			return new WP_Error(
+				'missing_file_id',
+				__( 'The file_id parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -107,25 +109,25 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$file_path = get_attached_file( $file_id );
 
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The file could not be found.', 'wp-mcp-ai' ),
+			return new WP_Error(
+				'file_not_found',
+				__( 'The file could not be found.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		// Validate purpose.
 		if ( empty( $arguments['purpose'] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'The purpose parameter is required.', 'wp-mcp-ai' ),
+			return new WP_Error(
+				'missing_purpose',
+				__( 'The purpose parameter is required.', 'mcp-ai-wpoos' )
 			);
 		}
 
 		$purpose = sanitize_key( $arguments['purpose'] );
 		if ( ! isset( self::MAX_FILE_SIZES[ $purpose ] ) ) {
-			return array(
-				'success' => false,
-				'error'   => __( 'Invalid purpose specified.', 'wp-mcp-ai' ),
+			return new WP_Error(
+				'invalid_purpose',
+				__( 'Invalid purpose specified.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -134,10 +136,24 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		// Perform analysis.
 		$analysis = $this->analyze_file( $file_id, $file_path, $purpose, $check_content );
 
-		return array(
-			'success' => true,
-			'data'    => $analysis,
-		);
+		// Generate user-facing message based on analysis.
+		if ( $analysis['suitable'] ) {
+			$message = sprintf(
+				/* translators: 1: file type, 2: purpose */
+				__( 'File (type: %1$s) is suitable for %2$s purpose.', 'mcp-ai-wpoos' ),
+				$analysis['file_type'],
+				$purpose
+			);
+		} else {
+			$warning_count = count( $analysis['warnings'] );
+			$message       = sprintf(
+				/* translators: %d: number of warnings */
+				_n( 'File has %d warning preventing use.', 'File has %d warnings preventing use.', $warning_count, 'mcp-ai-wpoos' ),
+				$warning_count
+			);
+		}
+
+		return $this->format_chat_response( $analysis, $message );
 	}
 
 	/**
@@ -167,13 +183,13 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			$suitable   = false;
 			$warnings[] = sprintf(
 				/* translators: 1: file size, 2: max size, 3: purpose */
-				__( 'File size (%1$s) exceeds maximum allowed for %3$s purpose (%2$s).', 'wp-mcp-ai' ),
+				__( 'File size (%1$s) exceeds maximum allowed for %3$s purpose (%2$s).', 'mcp-ai-wpoos' ),
 				size_format( $file_size ),
 				size_format( $max_size ),
 				$purpose
 			);
 		} elseif ( $file_size > ( $max_size * 0.9 ) ) {
-			$recommendations[] = __( 'File size is close to the maximum. Consider compressing if possible.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'File size is close to the maximum. Consider compressing if possible.', 'mcp-ai-wpoos' );
 		}
 
 		// Check file type.
@@ -181,7 +197,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			$suitable   = false;
 			$warnings[] = sprintf(
 				/* translators: 1: file extension, 2: purpose, 3: allowed types */
-				__( 'File type "%1$s" is not supported for %2$s purpose. Allowed types: %3$s.', 'wp-mcp-ai' ),
+				__( 'File type "%1$s" is not supported for %2$s purpose. Allowed types: %3$s.', 'mcp-ai-wpoos' ),
 				$file_ext,
 				$purpose,
 				implode( ', ', $allowed_types )
@@ -204,7 +220,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			if ( empty( $warnings ) ) {
 				$recommendations[] = sprintf(
 					/* translators: %s: purpose */
-					__( 'File is optimal for %s purpose.', 'wp-mcp-ai' ),
+					__( 'File is optimal for %s purpose.', 'mcp-ai-wpoos' ),
 					$purpose
 				);
 			}
@@ -236,7 +252,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$image_info = getimagesize( $file_path );
 
 		if ( ! $image_info ) {
-			$warnings[] = __( 'Unable to read image properties.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Unable to read image properties.', 'mcp-ai-wpoos' );
 			return;
 		}
 
@@ -244,12 +260,12 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 		// OpenAI vision prefers images not too large.
 		if ( $width > 4096 || $height > 4096 ) {
-			$recommendations[] = __( 'Image dimensions are very large. Consider resizing for faster processing.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Image dimensions are very large. Consider resizing for faster processing.', 'mcp-ai-wpoos' );
 		}
 
 		// Check if image is too small.
 		if ( $width < 100 || $height < 100 ) {
-			$warnings[] = __( 'Image is very small. May not provide good results for vision tasks.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Image is very small. May not provide good results for vision tasks.', 'mcp-ai-wpoos' );
 		}
 	}
 
@@ -265,11 +281,11 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		$file_size = filesize( $file_path );
 
 		// Whisper works best with clear audio.
-		$recommendations[] = __( 'For best transcription results, ensure audio has minimal background noise.', 'wp-mcp-ai' );
+		$recommendations[] = __( 'For best transcription results, ensure audio has minimal background noise.', 'mcp-ai-wpoos' );
 
 		// Warn about very short files.
 		if ( $file_size < 10240 ) { // Less than 10KB.
-			$warnings[] = __( 'Audio file seems very short. May not contain useful content.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Audio file seems very short. May not contain useful content.', 'mcp-ai-wpoos' );
 		}
 	}
 
@@ -287,7 +303,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 			// Check if file is empty.
 			if ( $file_size < 10 ) {
-				$warnings[] = __( 'File appears to be empty or nearly empty.', 'wp-mcp-ai' );
+				$warnings[] = __( 'File appears to be empty or nearly empty.', 'mcp-ai-wpoos' );
 				return;
 			}
 
@@ -296,7 +312,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 				$this->check_jsonl_format( $file_path, $warnings, $recommendations );
 			}
 
-			$recommendations[] = __( 'Text-based files should use UTF-8 encoding for best results.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Text-based files should use UTF-8 encoding for best results.', 'mcp-ai-wpoos' );
 		}
 	}
 
@@ -310,7 +326,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	private function check_jsonl_format( $file_path, &$warnings, &$recommendations ) {
 		$handle = fopen( $file_path, 'r' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		if ( ! $handle ) {
-			$warnings[] = __( 'Unable to read JSONL file.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Unable to read JSONL file.', 'mcp-ai-wpoos' );
 			return;
 		}
 
@@ -333,9 +349,9 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		if ( $line_count > 0 && $valid_json === 0 ) {
-			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'wp-mcp-ai' );
+			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'mcp-ai-wpoos' );
 		} elseif ( $valid_json < $line_count ) {
-			$warnings[] = __( 'Some lines in JSONL file may not be valid JSON.', 'wp-mcp-ai' );
+			$warnings[] = __( 'Some lines in JSONL file may not be valid JSON.', 'mcp-ai-wpoos' );
 		}
 	}
 

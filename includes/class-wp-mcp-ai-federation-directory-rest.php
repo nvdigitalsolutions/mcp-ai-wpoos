@@ -166,7 +166,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'report_peer' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'check_user_permission' ),
 				'args'                => array(
 					'id'      => array(
 						'required'          => true,
@@ -202,7 +202,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			if ( empty( $nonce ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_missing_nonce',
-					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'wp-mcp-ai' ),
+					__( 'Authentication nonce is required. Include the X-WP-Nonce header from wp_create_nonce( "wp_rest" ).', 'mcp-ai-wpoos' ),
 					array( 'status' => 401 )
 				);
 			}
@@ -210,7 +210,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
 				return new WP_Error(
 					'rest_invalid_nonce',
-					__( 'Could not verify the request nonce.', 'wp-mcp-ai' ),
+					__( 'Could not verify the request nonce.', 'mcp-ai-wpoos' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -219,8 +219,29 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'You do not have permission to perform this action.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to perform this action.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check if user is logged in (for reporting and other user actions).
+	 *
+	 * Requires authentication but not admin capabilities.
+	 * Used for endpoints that any logged-in user can access.
+	 *
+	 * @param WP_REST_Request|null $request Request object.
+	 * @return bool|WP_Error True if user is logged in, WP_Error otherwise.
+	 */
+	public function check_user_permission( $request = null ) {
+		if ( ! is_user_logged_in() ) {
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'You must be logged in to perform this action.', 'mcp-ai-wpoos' ),
+				array( 'status' => 401 )
 			);
 		}
 
@@ -250,7 +271,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 				'fetch_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to fetch well-known document: %s', 'wp-mcp-ai' ),
+					__( 'Failed to fetch well-known document: %s', 'mcp-ai-wpoos' ),
 					$response->get_error_message()
 				),
 				array( 'status' => 500 )
@@ -263,7 +284,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 				'invalid_response',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Well-known endpoint returned status code %d', 'wp-mcp-ai' ),
+					__( 'Well-known endpoint returned status code %d', 'mcp-ai-wpoos' ),
 					$status_code
 				),
 				array( 'status' => 400 )
@@ -276,7 +297,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! is_array( $data ) ) {
 			return new WP_Error(
 				'invalid_json',
-				__( 'Well-known document is not valid JSON', 'wp-mcp-ai' ),
+				__( 'Well-known document is not valid JSON', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -289,7 +310,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 					'missing_field',
 					sprintf(
 						/* translators: %s: field name */
-						__( 'Required field missing: %s', 'wp-mcp-ai' ),
+						__( 'Required field missing: %s', 'mcp-ai-wpoos' ),
 						$field
 					),
 					array( 'status' => 400 )
@@ -371,7 +392,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'success' => true,
 				'peer_id' => $peer_id,
-				'message' => __( 'Peer registered successfully', 'wp-mcp-ai' ),
+				'message' => __( 'Peer registered successfully', 'mcp-ai-wpoos' ),
 			),
 			201
 		);
@@ -469,7 +490,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! $post || WP_MCP_AI_AI_Peer_CPT::POST_TYPE !== $post->post_type ) {
 			return new WP_Error(
 				'peer_not_found',
-				__( 'Peer not found', 'wp-mcp-ai' ),
+				__( 'Peer not found', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -691,7 +712,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! $post || WP_MCP_AI_AI_Peer_CPT::POST_TYPE !== $post->post_type ) {
 			return new WP_Error(
 				'peer_not_found',
-				__( 'Peer not found', 'wp-mcp-ai' ),
+				__( 'Peer not found', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -702,7 +723,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! $wellknown_url ) {
 			return new WP_Error(
 				'no_wellknown_url',
-				__( 'Peer has no well-known URL', 'wp-mcp-ai' ),
+				__( 'Peer has no well-known URL', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -717,7 +738,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		return new WP_REST_Response(
 			array(
 				'success' => true,
-				'message' => __( 'Peer reverified successfully', 'wp-mcp-ai' ),
+				'message' => __( 'Peer reverified successfully', 'mcp-ai-wpoos' ),
 				'result'  => $result,
 			),
 			200
@@ -739,7 +760,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		if ( ! $post || WP_MCP_AI_AI_Peer_CPT::POST_TYPE !== $post->post_type ) {
 			return new WP_Error(
 				'peer_not_found',
-				__( 'Peer not found', 'wp-mcp-ai' ),
+				__( 'Peer not found', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
 			);
 		}
@@ -774,7 +795,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		return new WP_REST_Response(
 			array(
 				'success' => true,
-				'message' => __( 'Report submitted successfully', 'wp-mcp-ai' ),
+				'message' => __( 'Report submitted successfully', 'mcp-ai-wpoos' ),
 			),
 			200
 		);

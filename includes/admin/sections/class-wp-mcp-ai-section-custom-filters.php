@@ -32,7 +32,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		 * @return string
 		 */
 		public function get_title() {
-			return __( 'Custom AI Settings (Filters)', 'wp-mcp-ai' );
+			return __( 'Custom AI Settings (Filters)', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -63,7 +63,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Configure advanced AI behavior settings through a user-friendly interface. These settings override WordPress filter defaults and allow you to customize AI operations without writing code. <strong>Leave fields empty to use system defaults.</strong>', 'wp-mcp-ai' );
+			return __( 'Configure advanced AI behavior settings through a user-friendly interface. These settings override WordPress filter defaults and allow you to customize AI operations without writing code. <strong>Leave fields empty to use system defaults.</strong>', 'mcp-ai-wpoos' );
+		}
+
+		/**
+		 * Get documentation URL for this section.
+		 *
+		 * @return string
+		 */
+		public function get_documentation_url() {
+			return 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/developer/architecture/CUSTOM-AI-SETTINGS-FILTERS.md';
 		}
 
 		/**
@@ -76,15 +85,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				// Model Selection Filters.
 				'filter_default_light_model'            => array(
 					'type'        => 'text',
-					'label'       => __( 'Default Light Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Light Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for simple tasks. Overrides the wp_mcp_ai_default_light_model filter. Default: gpt-4o-mini', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4.1-mini',
 				),
 				'filter_default_advanced_model'         => array(
 					'type'        => 'text',
-					'label'       => __( 'Default Advanced Model', 'wp-mcp-ai' ),
-					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Advanced Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default AI model for complex tasks. Overrides the wp_mcp_ai_default_advanced_model filter. Default: gpt-4.1', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'gpt-4.1',
 				),
@@ -92,22 +101,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				// Resource Management Filters.
 				'filter_max_agentic_iterations'         => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Agentic Iterations', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Agentic Iterations', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of tool execution loops per request. Prevents infinite loops. Range: 1-50. Default: 5', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '5',
 				),
 				'filter_resource_max_tokens'            => array(
 					'type'        => 'number',
-					'label'       => __( 'Resource Max Tokens', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'label'       => __( 'Resource Max Tokens', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum tokens for AI responses based on workload tier. Overrides the wp_mcp_ai_resource_max_tokens filter. Leave empty for auto-detection.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'Auto',
 				),
 				'filter_resource_request_timeout'       => array(
 					'type'        => 'number',
-					'label'       => __( 'Resource Request Timeout (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'wp-mcp-ai' ),
+					'label'       => __( 'Resource Request Timeout (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Request timeout based on workload tier. Overrides the wp_mcp_ai_resource_request_timeout filter. Leave empty for auto-detection.', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'Auto',
 				),
@@ -115,15 +124,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				// Retry and Error Handling.
 				'filter_max_retries'                    => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Retries', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Retries', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum retry attempts for failed API requests. Overrides the wp_mcp_ai_max_retries filter. Default: 3', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '3',
 				),
 				'filter_max_retry_delay'                => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Retry Delay (seconds)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Retry Delay (seconds)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum delay between retry attempts. Overrides the wp_mcp_ai_max_retry_delay filter. Default: 60', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '60',
 				),
@@ -131,8 +140,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				// File and Attachment Limits.
 				'filter_max_attachment_bytes'           => array(
 					'type'        => 'number',
-					'label'       => __( 'Max Attachment Size (bytes)', 'wp-mcp-ai' ),
-					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'wp-mcp-ai' ),
+					'label'       => __( 'Max Attachment Size (bytes)', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum size for file attachments in chat. Overrides the wp_mcp_ai_max_attachment_bytes filter. Default: 10485760 (10MB)', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => '10485760',
 				),
@@ -140,24 +149,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				// Endpoint URLs.
 				'filter_default_ollama_endpoint_url'    => array(
 					'type'        => 'url',
-					'label'       => __( 'Default Ollama Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'wp-mcp-ai' ),
+					'label'       => __( 'Default Ollama Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default endpoint URL for Ollama local AI. Overrides the wp_mcp_ai_default_ollama_endpoint_url filter. Default: http://localhost:11434', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'http://localhost:11434',
 				),
 				'filter_default_lm_studio_endpoint_url' => array(
 					'type'        => 'url',
-					'label'       => __( 'Default LM Studio Endpoint URL', 'wp-mcp-ai' ),
-					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234', 'wp-mcp-ai' ),
+					'label'       => __( 'Default LM Studio Endpoint URL', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default endpoint URL for LM Studio local AI. Overrides the wp_mcp_ai_default_lm_studio_endpoint_url filter. Default: http://localhost:1234', 'mcp-ai-wpoos' ),
 					'default'     => '',
 					'placeholder' => 'http://localhost:1234',
 				),
 				'filter_lm_studio_fallback_model'       => array(
 					'type'        => 'text',
-					'label'       => __( 'LM Studio Fallback Model', 'wp-mcp-ai' ),
-					'description' => __( 'Model to use when LM Studio provider is selected but no model is specified. Overrides the wp_mcp_ai_lm_studio_fallback_model filter. Defaults to the "Default Model" setting for OpenAI compatibility. Leave empty to use default behavior.', 'wp-mcp-ai' ),
+					'label'       => __( 'LM Studio Fallback Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model to use when LM Studio provider is selected but no model is specified. Overrides the wp_mcp_ai_lm_studio_fallback_model filter. Defaults to the "Default Model" setting for OpenAI compatibility. Leave empty to use default behavior.', 'mcp-ai-wpoos' ),
 					'default'     => '',
-					'placeholder' => __( 'Uses Default Model setting', 'wp-mcp-ai' ),
+					'placeholder' => __( 'Uses Default Model setting', 'mcp-ai-wpoos' ),
 				),
 			);
 		}
@@ -171,23 +180,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 			// Organize fields into logical groups for better UX.
 			$groups = array(
 				'model_selection'     => array(
-					'title'  => __( 'AI Model Selection', 'wp-mcp-ai' ),
+					'title'  => __( 'AI Model Selection', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_default_light_model', 'filter_default_advanced_model' ),
 				),
 				'resource_management' => array(
-					'title'  => __( 'Resource Management', 'wp-mcp-ai' ),
+					'title'  => __( 'Resource Management', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_agentic_iterations', 'filter_resource_max_tokens', 'filter_resource_request_timeout' ),
 				),
 				'retry_handling'      => array(
-					'title'  => __( 'Retry & Error Handling', 'wp-mcp-ai' ),
+					'title'  => __( 'Retry & Error Handling', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_retries', 'filter_max_retry_delay' ),
 				),
 				'file_limits'         => array(
-					'title'  => __( 'File & Attachment Limits', 'wp-mcp-ai' ),
+					'title'  => __( 'File & Attachment Limits', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_max_attachment_bytes' ),
 				),
 				'endpoint_urls'       => array(
-					'title'  => __( 'Local AI Endpoint URLs', 'wp-mcp-ai' ),
+					'title'  => __( 'Local AI Endpoint URLs', 'mcp-ai-wpoos' ),
 					'fields' => array( 'filter_default_ollama_endpoint_url', 'filter_default_lm_studio_endpoint_url', 'filter_lm_studio_fallback_model' ),
 				),
 			);
@@ -273,7 +282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Agentic Iterations: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Agentic Iterations: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -286,7 +295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Resource Max Tokens: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Resource Max Tokens: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -299,7 +308,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Resource Request Timeout: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Resource Request Timeout: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -312,7 +321,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Retries: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Retries: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -325,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Retry Delay: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Retry Delay: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -338,7 +347,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 				);
 
 				if ( is_wp_error( $result ) ) {
-					$errors[] = __( 'Max Attachment Size: ', 'wp-mcp-ai' ) . $result->get_error_message();
+					$errors[] = __( 'Max Attachment Size: ', 'mcp-ai-wpoos' ) . $result->get_error_message();
 				}
 			}
 
@@ -346,14 +355,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Custom_Filters' ) ) {
 			if ( isset( $input['filter_default_ollama_endpoint_url'] ) && '' !== $input['filter_default_ollama_endpoint_url'] ) {
 				$url = filter_var( $input['filter_default_ollama_endpoint_url'], FILTER_VALIDATE_URL );
 				if ( false === $url ) {
-					$errors[] = __( 'Default Ollama Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
+					$errors[] = __( 'Default Ollama Endpoint URL must be a valid URL.', 'mcp-ai-wpoos' );
 				}
 			}
 
 			if ( isset( $input['filter_default_lm_studio_endpoint_url'] ) && '' !== $input['filter_default_lm_studio_endpoint_url'] ) {
 				$url = filter_var( $input['filter_default_lm_studio_endpoint_url'], FILTER_VALIDATE_URL );
 				if ( false === $url ) {
-					$errors[] = __( 'Default LM Studio Endpoint URL must be a valid URL.', 'wp-mcp-ai' );
+					$errors[] = __( 'Default LM Studio Endpoint URL must be a valid URL.', 'mcp-ai-wpoos' );
 				}
 			}
 

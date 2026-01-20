@@ -100,7 +100,7 @@ The fix includes comprehensive debug logging to help diagnose future issues:
 To verify the fix works:
 
 1. **Enable Debug Logging**: 
-   - Go to WordPress Admin → Settings → WP oOS
+   - Go to WordPress Admin → Settings → NV oOS
    - Enable "Debug Logging"
 
 2. **Test the Flow**:
@@ -112,7 +112,7 @@ To verify the fix works:
    - It should load successfully
 
 3. **Check Logs**:
-   - Go to WordPress Admin → Settings → WP oOS → Logs
+   - Go to WordPress Admin → Settings → NV oOS → Logs
    - Look for the debug entries showing successful save and retrieve
 
 ## Backward Compatibility

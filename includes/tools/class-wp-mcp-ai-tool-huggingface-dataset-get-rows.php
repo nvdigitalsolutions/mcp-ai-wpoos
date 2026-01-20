@@ -9,6 +9,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+
 if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 	/**
 	 * Provides paginated access to dataset rows with offset and length control.
@@ -16,6 +18,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 	 * @since 1.0.0
 	 */
 	class WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+		use WP_MCP_AI_Tool_Chat_Response;
 
 		/**
 		 * Check if the tool is available.
@@ -33,7 +37,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 		 * @return string
 		 */
 		public static function get_unavailable_reason() {
-			return __( 'The HuggingFace Dataset Get Rows tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' );
+			return __( 'The HuggingFace Dataset Get Rows tool is disabled because HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -51,7 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 		 * @return string
 		 */
 		public function get_name() {
-			return __( 'HuggingFace Dataset Get Rows', 'wp-mcp-ai' );
+			return __( 'HuggingFace Dataset Get Rows', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -60,7 +64,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 		 * @return string
 		 */
 		public function get_description() {
-			return __( 'Retrieve rows from a HuggingFace dataset split', 'wp-mcp-ai' );
+			return __( 'Retrieve rows from a HuggingFace dataset split', 'mcp-ai-wpoos' );
 		}
 
 		/**
@@ -187,7 +191,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 			if ( empty( $settings['enable_huggingface_datasets'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_disabled',
-					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'wp-mcp-ai' )
+					__( 'HuggingFace Datasets integration is not enabled. Enable it in NV oOS → Providers settings.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -202,7 +206,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 			if ( empty( $dataset ) || empty( $split ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_hf_datasets_missing_params',
-					__( 'Dataset and split are required.', 'wp-mcp-ai' )
+					__( 'Dataset and split are required.', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -216,7 +220,12 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_Get_Rows' ) ) {
 				return $result;
 			}
 
-			return $result;
+			// Add message field for chat response.
+			$count = isset( $result['rows'] ) ? count( $result['rows'] ) : 0;
+			/* translators: %d: number of rows */
+			$message = sprintf( __( 'Successfully retrieved %d rows from dataset.', 'mcp-ai-wpoos' ), $count );
+
+			return $this->ensure_response_message( $result, $message );
 		}
 	}
 }

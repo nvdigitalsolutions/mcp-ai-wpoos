@@ -180,13 +180,21 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array Sanitized provider priority list.
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
-			if ( ! is_array( $priority_list ) ) {
-				return array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			// Get available providers dynamically from Model Config.
+			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$available_providers = $configured_providers;
+				}
 			}
 
-			$available_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
-			$sanitized           = array();
-			$seen                = array();
+			if ( ! is_array( $priority_list ) ) {
+				return $available_providers;
+			}
+
+			$sanitized = array();
+			$seen      = array();
 
 			foreach ( $priority_list as $provider ) {
 				$provider = sanitize_key( $provider );
@@ -252,6 +260,15 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 		 * @return array
 		 */
 		public static function get_default_settings() {
+			// Get dynamic provider list from Model Config.
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
+				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
+				if ( ! empty( $configured_providers ) ) {
+					$provider_list = $configured_providers;
+				}
+			}
+
 			return array(
 				'openai_api_key'                       => '',
 				'gemini_api_key'                       => '',
@@ -264,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'default_model'                        => 'gpt-4.1',
 				'default_gemini_model'                 => 'gemini-2.5-flash',
 				'default_provider'                     => 'openai',
-				'provider_priority_list'               => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' ),
+				'provider_priority_list'               => $provider_list,
 				'web_search_provider'                  => 'duckduckgo',
 				'brave_search_api_key'                 => '',
 				'google_maps_api_key'                  => '',
@@ -284,6 +301,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'crawl4ai_base_url'                    => '',
 				'crawl4ai_api_key'                     => '',
 				'cloudflare_api_token'                 => '',
+				'cloudflare_account_id'                => '',
+				'cloudflare_model'                     => '@cf/meta/llama-3.2-3b-instruct',
+				'cloudflare_image_model'               => '@cf/stabilityai/stable-diffusion-xl-base-1.0',
+				'cloudflare_image_width'               => 1024,
+				'cloudflare_image_height'              => 1024,
+				'cloudflare_image_num_steps'           => 20,
+				'cloudflare_image_guidance'            => 7.5,
 				'cloudflare_zone_id'                   => '',
 				'enable_varnish_purge'                 => false,
 				'cloudways_email'                      => '',
@@ -319,6 +343,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'mailjet_api_secret'                   => '',
 				'mailjet_from_email'                   => '',
 				'mailjet_from_name'                    => '',
+				'mailjet_client_id'                    => '',
+				'mailjet_client_secret'                => '',
 				'removebg_api_key'                     => '',
 				'quickbooks_company_id'                => '',
 				'quickbooks_api_key'                   => '',
@@ -348,10 +374,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'openai_image_size'                    => '1024x1024',
 				'openai_image_quality'                 => 'medium',
 				'openai_image_response_format'         => 'b64_json',
-				'openai_speech_model'                  => 'gpt-4o-mini-tts',
+				'openai_speech_model'                  => 'tts-1',
 				'openai_speech_voice'                  => 'alloy',
 				'openai_speech_format'                 => 'mp3',
-				'openai_transcribe_model'              => 'gpt-4o-mini-transcribe',
+				'openai_transcribe_model'              => 'whisper-1',
 				'openai_transcribe_response_format'    => 'verbose_json',
 				'openai_transcribe_language'           => '',
 				'openai_transcribe_temperature'        => '',
@@ -435,18 +461,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			// Fallback to basic definitions (this should not happen in practice).
 			return array(
 				'container-border'     => array(
-					'label'       => __( 'Container border', 'wp-mcp-ai' ),
+					'label'       => __( 'Container border', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#d5d5d5',
 					'format'      => 'hex',
-					'description' => __( 'Border surrounding the chat interface.', 'wp-mcp-ai' ),
+					'description' => __( 'Border surrounding the chat interface.', 'mcp-ai-wpoos' ),
 				),
 				'container-background' => array(
-					'label'       => __( 'Container background', 'wp-mcp-ai' ),
+					'label'       => __( 'Container background', 'mcp-ai-wpoos' ),
 					'group'       => 'container',
 					'default'     => '#fff',
 					'format'      => 'hex',
-					'description' => __( 'Main background color for the chat container.', 'wp-mcp-ai' ),
+					'description' => __( 'Main background color for the chat container.', 'mcp-ai-wpoos' ),
 				),
 			);
 		}

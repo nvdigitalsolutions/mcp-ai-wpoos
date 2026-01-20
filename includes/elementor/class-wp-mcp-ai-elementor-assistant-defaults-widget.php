@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Defaults', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Defaults', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Assistant model defaults', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Assistant model defaults', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,22 +79,22 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Choose which assistant to display defaults for. Only published assistants appear in this list.', 'wp-mcp-ai' ),
+				'description' => __( 'Choose which assistant to display defaults for. Only published assistants appear in this list.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_system_prompt',
 			array(
-				'label'        => __( 'Show system prompt', 'wp-mcp-ai' ),
+				'label'        => __( 'Show system prompt', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -103,10 +103,10 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Select an assistant in the widget settings to view its defaults.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'wp-mcp-ai' ),
+				'default'     => __( 'Select an assistant in the widget settings to view its defaults.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no assistant is selected…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -152,8 +152,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
-				echo '<h3 class="wp-mcp-ai-assistant-defaults__title">' . $title_output . '</h3>';
+				echo '<h3 class="wp-mcp-ai-assistant-defaults__title">' . wp_kses_post( $title_output ) . '</h3>';
 			}
 		}
 
@@ -179,18 +178,18 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		echo '<dl class="wp-mcp-ai-assistant-defaults__list">';
 
 		if ( '' !== $provider_label ) {
-			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Provider', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Provider', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $provider_label ) . '</dd>';
 		}
 
 		if ( '' !== $model ) {
-			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Model', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Model', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $model ) . '</dd>';
 		}
 
 		if ( null !== $temperature && '' !== $temperature ) {
 			$temperature_value = number_format_i18n( floatval( $temperature ), 2 );
-			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Temperature', 'wp-mcp-ai' ) . '</dt>';
+			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Temperature', 'mcp-ai-wpoos' ) . '</dt>';
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $temperature_value ) . '</dd>';
 		}
 
@@ -201,7 +200,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 
 			if ( '' !== $prompt_output ) {
 				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt">';
-				echo '<h4 class="wp-mcp-ai-assistant-defaults__system-prompt-heading">' . esc_html__( 'System prompt', 'wp-mcp-ai' ) . '</h4>';
+				echo '<h4 class="wp-mcp-ai-assistant-defaults__system-prompt-heading">' . esc_html__( 'System prompt', 'mcp-ai-wpoos' ) . '</h4>';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt-content">' . $prompt_output . '</div>';
 				echo '</div>';
@@ -217,7 +216,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Select an assistant', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Select an assistant', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;
@@ -272,9 +271,9 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 
 		switch ( $provider ) {
 			case 'openai':
-				return __( 'OpenAI', 'wp-mcp-ai' );
+				return __( 'OpenAI', 'mcp-ai-wpoos' );
 			case 'gemini':
-				return __( 'Gemini', 'wp-mcp-ai' );
+				return __( 'Gemini', 'mcp-ai-wpoos' );
 		}
 
 		return ucwords( str_replace( array( '-', '_' ), ' ', $provider ) );

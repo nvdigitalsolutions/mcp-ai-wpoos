@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Generates a Simple JWT Login bearer token for the current user.
  */
 class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether the tool can be registered.
 	 *
@@ -54,32 +55,32 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 	 */
 	public static function get_unavailable_reason() {
 		if ( ! self::are_simple_jwt_classes_available() ) {
-			return __( 'Install and activate the Simple JWT Login plugin to mint bearer tokens.', 'wp-mcp-ai' );
+			return __( 'Install and activate the Simple JWT Login plugin to mint bearer tokens.', 'mcp-ai-wpoos' );
 		}
 
 		try {
 			$wordpress_data = new \SimpleJWTLogin\Modules\WordPressData();
 			$settings       = new \SimpleJWTLogin\Modules\SimpleJWTLoginSettings( $wordpress_data );
 		} catch ( \Exception $exception ) {
-			return __( 'Simple JWT Login could not be initialised. Review the plugin configuration and try again.', 'wp-mcp-ai' );
+			return __( 'Simple JWT Login could not be initialised. Review the plugin configuration and try again.', 'mcp-ai-wpoos' );
 		}
 
 		$auth_settings = $settings->getAuthenticationSettings();
 		if ( method_exists( $auth_settings, 'isAuthenticationEnabled' ) && ! $auth_settings->isAuthenticationEnabled() ) {
-			return __( 'Enable authentication in the Simple JWT Login settings to mint tokens.', 'wp-mcp-ai' );
+			return __( 'Enable authentication in the Simple JWT Login settings to mint tokens.', 'mcp-ai-wpoos' );
 		}
 
 		try {
 			$key_factory = \SimpleJWTLogin\Helpers\Jwt\JwtKeyFactory::getFactory( $settings );
 		} catch ( \Exception $exception ) {
-			return __( 'Simple JWT Login could not access the signing keys. Review the plugin configuration and try again.', 'wp-mcp-ai' );
+			return __( 'Simple JWT Login could not access the signing keys. Review the plugin configuration and try again.', 'mcp-ai-wpoos' );
 		}
 
 		$private_key = $key_factory->getPrivateKey();
 		$algorithm   = $settings->getGeneralSettings()->getJWTDecryptAlgorithm();
 
 		if ( empty( $private_key ) || empty( $algorithm ) ) {
-			return __( 'Configure a signing algorithm and private key in Simple JWT Login before generating tokens.', 'wp-mcp-ai' );
+			return __( 'Configure a signing algorithm and private key in Simple JWT Login before generating tokens.', 'mcp-ai-wpoos' );
 		}
 
 		return '';
@@ -110,14 +111,14 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Simple JWT Token', 'wp-mcp-ai' );
+		return __( 'Generate Simple JWT Token', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a Simple JWT Login bearer credential for the currently authenticated WordPress user.', 'wp-mcp-ai' );
+		return __( 'Creates a Simple JWT Login bearer credential for the currently authenticated WordPress user.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -129,7 +130,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'claims' => array(
 					'type'                 => 'object',
-					'description'          => __( 'Optional custom claims to merge into the JWT payload.', 'wp-mcp-ai' ),
+					'description'          => __( 'Optional custom claims to merge into the JWT payload.', 'mcp-ai-wpoos' ),
 					'additionalProperties' => array(
 						'type' => array( 'string', 'number', 'integer', 'boolean', 'null' ),
 					),
@@ -150,17 +151,17 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 		$acting_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $acting_user_id ) {
-			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_requires_auth', __( 'You must be logged in to mint a Simple JWT Login token.', 'wp-mcp-ai' ), array( 'status' => 401 ) );
+			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_requires_auth', __( 'You must be logged in to mint a Simple JWT Login token.', 'mcp-ai-wpoos' ), array( 'status' => 401 ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $acting_user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_wrong_site', __( 'The current user does not belong to this site.', 'wp-mcp-ai' ), array( 'status' => 403 ) );
+			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_wrong_site', __( 'The current user does not belong to this site.', 'mcp-ai-wpoos' ), array( 'status' => 403 ) );
 		}
 
 		if ( ! self::are_simple_jwt_classes_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_simple_jwt_login_missing',
-				__( 'The Simple JWT Login plugin is required to generate bearer tokens.', 'wp-mcp-ai' ),
+				__( 'The Simple JWT Login plugin is required to generate bearer tokens.', 'mcp-ai-wpoos' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -171,7 +172,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 		} catch ( \Exception $exception ) {
 			return new WP_Error(
 				'wp_mcp_ai_simple_jwt_login_configuration',
-				__( 'Simple JWT Login could not be initialised. Check the plugin configuration and try again.', 'wp-mcp-ai' ),
+				__( 'Simple JWT Login could not be initialised. Check the plugin configuration and try again.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'details' => array(
@@ -186,14 +187,14 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 		if ( method_exists( $auth_settings, 'isAuthenticationEnabled' ) && ! $auth_settings->isAuthenticationEnabled() ) {
 			return new WP_Error(
 				'wp_mcp_ai_simple_jwt_login_disabled',
-				__( 'Simple JWT Login authentication is disabled. Enable authentication in the plugin settings to mint tokens.', 'wp-mcp-ai' ),
+				__( 'Simple JWT Login authentication is disabled. Enable authentication in the plugin settings to mint tokens.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
 
 		$user = get_userdata( $acting_user_id );
 		if ( ! $user ) {
-			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_user_missing', __( 'Unable to load the current WordPress user.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+			return new WP_Error( 'wp_mcp_ai_simple_jwt_login_user_missing', __( 'Unable to load the current WordPress user.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 		}
 
 		$claims = array();
@@ -202,7 +203,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 				if ( ! is_string( $claim_key ) || '' === $claim_key ) {
 					return new WP_Error(
 						'wp_mcp_ai_simple_jwt_login_invalid_claim',
-						__( 'Claim keys must be non-empty strings.', 'wp-mcp-ai' ),
+						__( 'Claim keys must be non-empty strings.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -210,7 +211,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 				if ( is_array( $claim_value ) || is_object( $claim_value ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_simple_jwt_login_invalid_claim',
-						__( 'Claim values must be scalar or null.', 'wp-mcp-ai' ),
+						__( 'Claim values must be scalar or null.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -248,7 +249,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 			if ( empty( $private_key ) || empty( $algorithm ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_simple_jwt_login_missing_keys',
-					__( 'Simple JWT Login is not configured with a private key for signing tokens.', 'wp-mcp-ai' ),
+					__( 'Simple JWT Login is not configured with a private key for signing tokens.', 'mcp-ai-wpoos' ),
 					array( 'status' => 500 )
 				);
 			}
@@ -257,7 +258,7 @@ class WP_MCP_AI_Tool_Generate_Simple_JWT_Token implements WP_MCP_AI_Tool_Interfa
 		} catch ( \Exception $exception ) {
 			return new WP_Error(
 				'wp_mcp_ai_simple_jwt_login_token_error',
-				__( 'The Simple JWT Login token could not be generated.', 'wp-mcp-ai' ),
+				__( 'The Simple JWT Login token could not be generated.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 500,
 					'details' => array(

@@ -11,12 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Generates descriptive captions for videos using AI vision models with video understanding.
  */
 class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -29,14 +31,14 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generate Video Caption', 'wp-mcp-ai' );
+		return __( 'Generate Video Caption', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Generates concise, descriptive captions for videos to provide context and enhance accessibility using AI vision models with video understanding capabilities.', 'wp-mcp-ai' );
+		return __( 'Generates concise, descriptive captions for videos to provide context and enhance accessibility using AI vision models with video understanding capabilities.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -48,22 +50,22 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'video_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'URL of the video to caption. Supports MP4 and QuickTime formats.', 'wp-mcp-ai' ),
+					'description' => __( 'URL of the video to caption. Supports MP4 and QuickTime formats.', 'mcp-ai-wpoos' ),
 				),
 				'url'           => $this->get_url_parameter_schema( 'video' ),
 				'attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the video to caption.', 'wp-mcp-ai' ),
+					'description' => __( 'WordPress attachment ID of the video to caption.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
 				'file_id'       => $this->get_file_id_parameter_schema(),
 				'context'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional context about the video to help generate more relevant captions.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional context about the video to help generate more relevant captions.', 'mcp-ai-wpoos' ),
 				),
 				'max_length'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Maximum caption length in characters. Default is 200.', 'wp-mcp-ai' ),
+					'description' => __( 'Maximum caption length in characters. Default is 200.', 'mcp-ai-wpoos' ),
 					'minimum'     => 50,
 					'maximum'     => 500,
 					'default'     => 200,
@@ -88,7 +90,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		if ( ! $user_id || ! user_can( $user_id, 'upload_files' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to generate video captions.', 'wp-mcp-ai' ),
+				__( 'You do not have permission to generate video captions.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -96,7 +98,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -121,7 +123,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 				if ( ! $video_url ) {
 					return new WP_Error(
 						'wp_mcp_ai_invalid_attachment',
-						__( 'Invalid attachment ID provided.', 'wp-mcp-ai' ),
+						__( 'Invalid attachment ID provided.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -131,7 +133,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 				if ( ! $mime_type || false === strpos( $mime_type, 'video/' ) ) {
 					return new WP_Error(
 						'wp_mcp_ai_not_video',
-						__( 'The provided attachment is not a video file.', 'wp-mcp-ai' ),
+						__( 'The provided attachment is not a video file.', 'mcp-ai-wpoos' ),
 						array( 'status' => 400 )
 					);
 				}
@@ -147,7 +149,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		if ( '' === $video_url ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_video',
-				__( 'You must provide video_url, url, attachment_id, or file_id.', 'wp-mcp-ai' ),
+				__( 'You must provide video_url, url, attachment_id, or file_id.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -184,8 +186,12 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 			$caption = substr( $caption, 0, $max_length - 3 ) . '...';
 		}
 
+		$message = __( 'Successfully generated video caption.', 'mcp-ai-wpoos' );
+
 		$result = array(
 			'caption' => $caption,
+			'text'    => $message,
+			'message' => $message,
 			'success' => true,
 		);
 
@@ -217,7 +223,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 			/* translators: %d: maximum caption length */
 			__(
 				'Generate a concise, descriptive caption for this video in %d characters or less. The caption should briefly describe what happens in the video, including main subjects, actions, and setting. Make it engaging and informative.',
-				'wp-mcp-ai'
+				'mcp-ai-wpoos'
 			),
 			$max_length
 		);
@@ -225,7 +231,7 @@ class WP_MCP_AI_Tool_Generate_Video_Caption implements WP_MCP_AI_Tool_Interface,
 		if ( ! empty( $user_context ) ) {
 			$prompt = sprintf(
 				/* translators: 1: context, 2: prompt */
-				__( 'Context: %1$s\n\n%2$s', 'wp-mcp-ai' ),
+				__( 'Context: %1$s\n\n%2$s', 'mcp-ai-wpoos' ),
 				$user_context,
 				$prompt
 			);

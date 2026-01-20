@@ -24,14 +24,14 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Submit Quiz Answer', 'wp-mcp-ai' );
+		return __( 'Submit Quiz Answer', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Submits answers for a quiz. Creates a submission record for grading.', 'wp-mcp-ai' );
+		return __( 'Submits answers for a quiz. Creates a submission record for grading.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -43,23 +43,23 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			'properties'           => array(
 				'quiz_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'The ID of the quiz being answered.', 'wp-mcp-ai' ),
+					'description' => __( 'The ID of the quiz being answered.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'answers'    => array(
 					'type'        => 'array',
-					'description' => __( 'Array of answers to quiz questions.', 'wp-mcp-ai' ),
+					'description' => __( 'Array of answers to quiz questions.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
 							'question_index' => array(
 								'type'        => 'integer',
-								'description' => __( 'Zero-based index of the question.', 'wp-mcp-ai' ),
+								'description' => __( 'Zero-based index of the question.', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
 							'answer'         => array(
 								'type'        => 'string',
-								'description' => __( 'The submitted answer.', 'wp-mcp-ai' ),
+								'description' => __( 'The submitted answer.', 'mcp-ai-wpoos-pro' ),
 							),
 						),
 						'required'   => array( 'question_index', 'answer' ),
@@ -67,12 +67,12 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 				),
 				'user_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'User ID submitting the answers. Defaults to current user.', 'wp-mcp-ai' ),
+					'description' => __( 'User ID submitting the answers. Defaults to current user.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
 				'started_at' => array(
 					'type'        => 'string',
-					'description' => __( 'ISO 8601 timestamp when the quiz was started. Used to validate time limits.', 'wp-mcp-ai' ),
+					'description' => __( 'ISO 8601 timestamp when the quiz was started. Used to validate time limits.', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date-time',
 				),
 			),
@@ -92,7 +92,23 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		$current_user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $current_user_id || ! user_can( $current_user_id, 'read' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit quiz answers.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit quiz answers.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Rate limiting: Check for too many submissions in a short time.
+		$rate_limit_key     = 'wp_mcp_ai_quiz_submit_' . $current_user_id;
+		$recent_submissions = get_transient( $rate_limit_key );
+
+		if ( false === $recent_submissions ) {
+			$recent_submissions = 0;
+		}
+
+		// Allow max 5 submissions per 5 minutes per user.
+		if ( $recent_submissions >= 5 ) {
+			return new WP_Error(
+				'wp_mcp_ai_rate_limit_exceeded',
+				__( 'Too many submission attempts. Please wait a few minutes before trying again.', 'mcp-ai-wpoos-pro' )
+			);
 		}
 
 		$quiz_id    = isset( $arguments['quiz_id'] ) ? absint( $arguments['quiz_id'] ) : 0;
@@ -101,17 +117,17 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		$started_at = isset( $arguments['started_at'] ) ? sanitize_text_field( $arguments['started_at'] ) : '';
 
 		if ( ! $quiz_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_quiz_id', __( 'Quiz ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( empty( $answers ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_answers', __( 'At least one answer is required.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_answers', __( 'At least one answer is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$quiz = get_post( $quiz_id );
 
 		if ( ! $quiz || 'mcp_ai_quiz' !== $quiz->post_type ) {
-			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_quiz_not_found', __( 'Quiz not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz time limit.
@@ -124,7 +140,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			$current_timestamp = current_time( 'timestamp' );
 
 			if ( false === $started_timestamp ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_timestamp', __( 'Invalid started_at timestamp format.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_timestamp', __( 'Invalid started_at timestamp format.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			// Calculate elapsed time in minutes.
@@ -136,7 +152,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 					'wp_mcp_ai_time_limit_exceeded',
 					sprintf(
 						/* translators: 1: time limit, 2: elapsed time */
-						__( 'Time limit exceeded. Quiz time limit: %1$d minutes. Time taken: %2$.1f minutes.', 'wp-mcp-ai' ),
+						__( 'Time limit exceeded. Quiz time limit: %1$d minutes. Time taken: %2$.1f minutes.', 'mcp-ai-wpoos-pro' ),
 						$time_limit,
 						$elapsed_minutes
 					)
@@ -148,7 +164,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 				'wp_mcp_ai_missing_start_time',
 				sprintf(
 					/* translators: %d: time limit in minutes */
-					__( 'This quiz has a %d minute time limit. Please provide started_at timestamp.', 'wp-mcp-ai' ),
+					__( 'This quiz has a %d minute time limit. Please provide started_at timestamp.', 'mcp-ai-wpoos-pro' ),
 					$time_limit
 				)
 			);
@@ -156,12 +172,12 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check if submitting for another user.
 		if ( $user_id !== $current_user_id && ! user_can( $current_user_id, 'edit_users' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit on behalf of other users.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to submit on behalf of other users.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate submitted user exists.
 		if ( ! get_userdata( $user_id ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_user', __( 'The specified user does not exist.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_user', __( 'The specified user does not exist.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Check if submission already exists.
@@ -177,7 +193,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		if ( ! empty( $existing ) ) {
-			return new WP_Error( 'wp_mcp_ai_duplicate_submission', __( 'A submission for this quiz already exists.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_duplicate_submission', __( 'A submission for this quiz already exists.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Get quiz questions for validation.
@@ -202,7 +218,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 					'wp_mcp_ai_invalid_question_index',
 					sprintf(
 						/* translators: %d: question index */
-						__( 'Invalid question index: %d', 'wp-mcp-ai' ),
+						__( 'Invalid question index: %d', 'mcp-ai-wpoos-pro' ),
 						$question_index
 					)
 				);
@@ -221,7 +237,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 								'wp_mcp_ai_invalid_true_false_answer',
 								sprintf(
 									/* translators: %d: question index */
-									__( 'Invalid true/false answer for question %d. Use: true, false, yes, no, 1, or 0.', 'wp-mcp-ai' ),
+									__( 'Invalid true/false answer for question %d. Use: true, false, yes, no, 1, or 0.', 'mcp-ai-wpoos-pro' ),
 									$question_index + 1
 								)
 							);
@@ -249,7 +265,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 									'wp_mcp_ai_invalid_multiple_choice_answer',
 									sprintf(
 										/* translators: %d: question index */
-										__( 'Answer for question %d is not one of the valid options.', 'wp-mcp-ai' ),
+										__( 'Answer for question %d is not one of the valid options.', 'mcp-ai-wpoos-pro' ),
 										$question_index + 1
 									)
 								);
@@ -264,7 +280,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 								'wp_mcp_ai_empty_answer',
 								sprintf(
 									/* translators: %d: question index */
-									__( 'Answer for question %d cannot be empty.', 'wp-mcp-ai' ),
+									__( 'Answer for question %d cannot be empty.', 'mcp-ai-wpoos-pro' ),
 									$question_index + 1
 								)
 							);
@@ -281,7 +297,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Ensure we have at least one valid answer.
 		if ( empty( $sanitized_answers ) ) {
-			return new WP_Error( 'wp_mcp_ai_no_valid_answers', __( 'No valid answers were provided.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_no_valid_answers', __( 'No valid answers were provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Create submission post.
@@ -289,7 +305,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			'post_type'   => 'mcp_ai_submission',
 			'post_title'  => sprintf(
 				/* translators: 1: quiz title, 2: user display name */
-				__( '%1$s - %2$s', 'wp-mcp-ai' ),
+				__( '%1$s - %2$s', 'mcp-ai-wpoos-pro' ),
 				get_the_title( $quiz ),
 				get_userdata( $user_id )->display_name
 			),
@@ -329,12 +345,18 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			update_post_meta( $submission_id, '_mcp_ai_submission_completion_time', $completion_time_minutes );
 		}
 
+		// Store IP address for anti-cheating measures.
+		$ip_address = $this->get_client_ip();
+		if ( $ip_address ) {
+			update_post_meta( $submission_id, '_mcp_ai_submission_ip_address', $ip_address );
+		}
+
 		$submission = get_post( $submission_id );
 
 		$result = array(
 			'summary'       => sprintf(
 				/* translators: %s: quiz title */
-				__( 'Quiz submission created for: %s', 'wp-mcp-ai' ),
+				__( 'Quiz submission created for: %s', 'mcp-ai-wpoos-pro' ),
 				get_the_title( $quiz )
 			),
 			'submission_id' => $submission_id,
@@ -356,7 +378,44 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 			$result['completion_time_minutes'] = $completion_time_minutes;
 		}
 
+		// Increment rate limit counter (5 minutes window).
+		set_transient( $rate_limit_key, $recent_submissions + 1, 5 * MINUTE_IN_SECONDS );
+
 		return $result;
+	}
+
+	/**
+	 * Get client IP address for anti-cheating measures.
+	 *
+	 * @return string Client IP address.
+	 */
+	private function get_client_ip() {
+		$ip_address = '';
+
+		// Check for various proxy headers.
+		$headers = array(
+			'HTTP_CLIENT_IP',
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_X_FORWARDED',
+			'HTTP_X_CLUSTER_CLIENT_IP',
+			'HTTP_FORWARDED_FOR',
+			'HTTP_FORWARDED',
+			'REMOTE_ADDR',
+		);
+
+		foreach ( $headers as $header ) {
+			if ( isset( $_SERVER[ $header ] ) && ! empty( $_SERVER[ $header ] ) ) {
+				$ip_address = sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) );
+				// If multiple IPs, take the first one.
+				if ( strpos( $ip_address, ',' ) !== false ) {
+					$ip_parts   = explode( ',', $ip_address );
+					$ip_address = trim( $ip_parts[0] );
+				}
+				break;
+			}
+		}
+
+		return $ip_address;
 	}
 
 	/**
@@ -364,6 +423,7 @@ class WP_MCP_AI_Tool_Submit_Quiz_Answer implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_capability_flags() {
 		return array(
+			'pro',
 			'write',
 			'local-only',
 			'requires-capability',

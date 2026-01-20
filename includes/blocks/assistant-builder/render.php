@@ -11,8 +11,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Check user permissions.
 if ( ! current_user_can( 'edit_posts' ) ) {
-	echo '<div class="wp-block-wp-mcp-ai-assistant-builder__notice">';
-	echo '<p>' . esc_html__( 'You do not have permission to use the Assistant Builder.', 'wp-mcp-ai' ) . '</p>';
+	echo '<div class="wp-block-mcp-ai-wpoos-assistant-builder__notice">';
+	echo '<p>' . esc_html__( 'You do not have permission to use the Assistant Builder.', 'mcp-ai-wpoos' ) . '</p>';
 	echo '</div>';
 	return;
 }
@@ -29,7 +29,7 @@ $show_tool_descriptions  = isset( $attributes['showToolDescriptions'] ) ? $attri
 $enable_streaming        = isset( $attributes['enableStreaming'] ) ? $attributes['enableStreaming'] : true;
 $chat_placeholder        = isset( $attributes['chatPlaceholder'] ) && '' !== $attributes['chatPlaceholder']
 	? $attributes['chatPlaceholder']
-	: __( 'Describe the assistant you want to create...', 'wp-mcp-ai' );
+	: __( 'Describe the assistant you want to create...', 'mcp-ai-wpoos' );
 $allowed_file_types      = isset( $attributes['allowedFileTypes'] ) ? $attributes['allowedFileTypes'] : '.pdf,.txt,.md,.doc,.docx,.csv,.json';
 $max_files               = isset( $attributes['maxFiles'] ) ? absint( $attributes['maxFiles'] ) : 10;
 $max_file_size_mb        = isset( $attributes['maxFileSizeMB'] ) ? absint( $attributes['maxFileSizeMB'] ) : 10;
@@ -38,8 +38,8 @@ $max_file_size_mb        = isset( $attributes['maxFileSizeMB'] ) ? absint( $attr
 $unique_id = wp_unique_id( 'wp-mcp-ai-assistant-builder-' );
 
 // Build wrapper classes.
-$wrapper_classes   = array( 'wp-block-wp-mcp-ai-assistant-builder' );
-$wrapper_classes[] = 'wp-block-wp-mcp-ai-assistant-builder--' . sanitize_html_class( $layout );
+$wrapper_classes   = array( 'wp-block-mcp-ai-wpoos-assistant-builder' );
+$wrapper_classes[] = 'wp-block-mcp-ai-wpoos-assistant-builder--' . sanitize_html_class( $layout );
 
 // Get wrapper attributes - handle both block and non-block contexts.
 // Check if we're in a proper block rendering context (has $block object).
@@ -121,14 +121,14 @@ $config = array(
 			}
 		}
 		?>
-		<div class="wp-block-wp-mcp-ai-assistant-selector" data-block-id="<?php echo esc_attr( $unique_id ); ?>-selector">
+		<div class="wp-block-mcp-ai-wpoos-assistant-selector" data-block-id="<?php echo esc_attr( $unique_id ); ?>-selector">
 			<label for="<?php echo esc_attr( $unique_id ); ?>-select">
-				<?php esc_html_e( 'Select an Assistant:', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Select an Assistant:', 'mcp-ai-wpoos' ); ?>
 			</label>
 			<select id="<?php echo esc_attr( $unique_id ); ?>-select" class="wp-mcp-ai-assistant-selector__select">
-				<option value=""><?php esc_html_e( '— Select an assistant —', 'wp-mcp-ai' ); ?></option>
+				<option value=""><?php esc_html_e( '— Select an assistant —', 'mcp-ai-wpoos' ); ?></option>
 				<?php foreach ( $assistants as $assistant ) : ?>
-					<option 
+					<option
 						value="<?php echo esc_attr( $assistant['id'] ); ?>"
 						data-tools="<?php echo esc_attr( wp_json_encode( $assistant['tools'] ) ); ?>"
 						data-shortcuts="<?php echo esc_attr( wp_json_encode( $assistant['shortcuts'] ) ); ?>"
@@ -139,13 +139,13 @@ $config = array(
 				<?php endforeach; ?>
 			</select>
 			<button type="button" class="wp-mcp-ai-assistant-selector__start button button-primary" disabled>
-				<?php esc_html_e( 'Start Chat', 'wp-mcp-ai' ); ?>
+				<?php esc_html_e( 'Start Chat', 'mcp-ai-wpoos' ); ?>
 			</button>
 		</div>
 	<?php endif; ?>
 
 	<?php if ( $show_tools_grid ) : ?>
-		<div class="wp-block-wp-mcp-ai-assistant-builder__tools" style="display: none;">
+		<div class="wp-block-mcp-ai-wpoos-assistant-builder__tools" style="display: none;">
 			<?php
 			// Include tools-grid render.php inline.
 			$tools_attributes = array(
@@ -165,7 +165,7 @@ $config = array(
 	<?php endif; ?>
 
 	<?php if ( $show_knowledge_base ) : ?>
-		<div class="wp-block-wp-mcp-ai-assistant-builder__knowledge-base" style="display: none;">
+		<div class="wp-block-mcp-ai-wpoos-assistant-builder__knowledge-base" style="display: none;">
 			<?php
 			// Include knowledge-base render.php inline.
 			$kb_attributes = array(
@@ -185,7 +185,7 @@ $config = array(
 		</div>
 	<?php endif; ?>
 
-	<div class="wp-block-wp-mcp-ai-assistant-builder__chat" style="display: none;">
+	<div class="wp-block-mcp-ai-wpoos-assistant-builder__chat" style="display: none;">
 		<!-- Chat interface will be initialized via JavaScript -->
 	</div>
 

@@ -100,7 +100,7 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 
 ## What Users Will See
 
-When visiting **WordPress Admin → WP oOS → Orchestration**, users will now see:
+When visiting **WordPress Admin → NV oOS → Orchestration**, users will now see:
 
 ### 1. Orchestration Intro Banner
 - Blue box with key features list
@@ -191,7 +191,7 @@ When visiting **WordPress Admin → WP oOS → Orchestration**, users will now s
 ## Next Steps for User
 
 1. Navigate to WordPress Admin
-2. Go to **WP oOS** menu → **Orchestration** tab
+2. Go to **NV oOS** menu → **Orchestration** tab
 3. Verify that presets are now visible
 4. Try applying different presets
 5. Test slider controls

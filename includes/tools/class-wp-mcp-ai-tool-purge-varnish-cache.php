@@ -20,6 +20,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
  * Provides a tool for purging Varnish cache entries.
  */
 class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	const DEFAULT_TIMEOUT = 30;
 
 	const MAX_TIMEOUT = 120;
@@ -39,14 +40,14 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Purge Varnish Cache', 'wp-mcp-ai' );
+		return __( 'Purge Varnish Cache', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Purges the local Varnish cache. Supports full-cache purges (bans) and specific URL purges.', 'wp-mcp-ai' );
+		return __( 'Purges the local Varnish cache. Supports full-cache purges (bans) and specific URL purges.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -58,12 +59,12 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 			'properties'           => array(
 				'purge_everything' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to purge the entire Varnish cache using a ban.', 'wp-mcp-ai' ),
+					'description' => __( 'Whether to purge the entire Varnish cache using a ban.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'urls'             => array(
 					'type'        => 'array',
-					'description' => __( 'Specific URLs to purge from Varnish. Provide absolute URLs.', 'wp-mcp-ai' ),
+					'description' => __( 'Specific URLs to purge from Varnish. Provide absolute URLs.', 'mcp-ai-wpoos' ),
 					'items'       => array(
 						'type'   => 'string',
 						'format' => 'uri',
@@ -71,7 +72,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 				),
 				'timeout'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Optional timeout in seconds for the Varnish PURGE request.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional timeout in seconds for the Varnish PURGE request.', 'mcp-ai-wpoos' ),
 					'minimum'     => self::MIN_TIMEOUT,
 					'maximum'     => self::MAX_TIMEOUT,
 				),
@@ -91,15 +92,15 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the Varnish cache.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to purge the Varnish cache.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_settings', __( 'The admin settings component is not available.', 'mcp-ai-wpoos' ) );
 		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
@@ -109,11 +110,11 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $enabled ) {
 			return new WP_Error(
 				'wp_mcp_ai_varnish_disabled',
-				__( 'Varnish purge is not enabled in the plugin settings.', 'wp-mcp-ai' ),
+				__( 'Varnish purge is not enabled in the plugin settings.', 'mcp-ai-wpoos' ),
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'enable_varnish_purge' => __( 'Enable Varnish purge in the NV oOS settings.', 'wp-mcp-ai' ),
+						'enable_varnish_purge' => __( 'Enable Varnish purge in the NV oOS settings.', 'mcp-ai-wpoos' ),
 					),
 				)
 			);
@@ -123,7 +124,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		$urls             = isset( $arguments['urls'] ) && is_array( $arguments['urls'] ) ? $arguments['urls'] : array();
 
 		if ( ! $purge_everything && empty( $urls ) ) {
-			return new WP_Error( 'wp_mcp_ai_empty_purge', __( 'Provide purge_everything or at least one URL to purge.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_empty_purge', __( 'Provide purge_everything or at least one URL to purge.', 'mcp-ai-wpoos' ) );
 		}
 
 		$timeout = $this->resolve_timeout( $arguments, $context, $settings );
@@ -160,7 +161,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$summary = array(
-			'message'          => __( 'Varnish cache purge completed successfully.', 'wp-mcp-ai' ),
+			'message'          => __( 'Varnish cache purge completed successfully.', 'mcp-ai-wpoos' ),
 			'purge_everything' => $purge_everything,
 			'urls_purged'      => ! empty( $urls ) ? count( array_filter( $urls, 'is_string' ) ) : 0,
 			'results'          => $results,
@@ -195,7 +196,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 
 		return array(
 			'type'    => 'ban',
-			'message' => __( 'Varnish accepted the ban (purge all) request.', 'wp-mcp-ai' ),
+			'message' => __( 'Varnish accepted the ban (purge all) request.', 'mcp-ai-wpoos' ),
 			'status'  => $response['status'],
 		);
 	}
@@ -226,7 +227,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'    => 'url',
 			'url'     => $this->mask_url( $url ),
-			'message' => __( 'Varnish accepted the URL purge request.', 'wp-mcp-ai' ),
+			'message' => __( 'Varnish accepted the URL purge request.', 'mcp-ai-wpoos' ),
 			'status'  => $response['status'],
 		);
 	}
@@ -279,7 +280,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_varnish_http_error',
-				__( 'The Varnish PURGE request failed to complete.', 'wp-mcp-ai' ),
+				__( 'The Varnish PURGE request failed to complete.', 'mcp-ai-wpoos' ),
 				array( 'error' => $response )
 			);
 		}
@@ -301,7 +302,7 @@ class WP_MCP_AI_Tool_Purge_Varnish_Cache implements WP_MCP_AI_Tool_Interface, WP
 				'wp_mcp_ai_varnish_error',
 				sprintf(
 					/* translators: %d: HTTP status code. */
-					__( 'Varnish returned an error status: %d', 'wp-mcp-ai' ),
+					__( 'Varnish returned an error status: %d', 'mcp-ai-wpoos' ),
 					$code
 				),
 				array(

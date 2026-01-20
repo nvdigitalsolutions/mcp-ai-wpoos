@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides functionality to unsubscribe or remove Newsletter plugin subscribers.
  */
 class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether Newsletter plugin is available.
 	 *
@@ -28,7 +29,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Newsletter Unsubscribe tool is disabled because the Newsletter plugin is not active.', 'wp-mcp-ai' );
+		return __( 'The Newsletter Unsubscribe tool is disabled because the Newsletter plugin is not active.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -42,14 +43,14 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Unsubscribe Newsletter Subscriber', 'wp-mcp-ai' );
+		return __( 'Unsubscribe Newsletter Subscriber', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Unsubscribe or remove a subscriber from the Newsletter plugin by email or ID. Requires Newsletter plugin.', 'wp-mcp-ai' );
+		return __( 'Unsubscribe or remove a subscriber from the Newsletter plugin by email or ID. Requires Newsletter plugin.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,16 +62,16 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 			'properties'           => array(
 				'email'         => array(
 					'type'        => 'string',
-					'description' => __( 'Email address of the subscriber to unsubscribe.', 'wp-mcp-ai' ),
+					'description' => __( 'Email address of the subscriber to unsubscribe.', 'mcp-ai-wpoos' ),
 					'format'      => 'email',
 				),
 				'subscriber_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'Subscriber ID to unsubscribe (alternative to email).', 'wp-mcp-ai' ),
+					'description' => __( 'Subscriber ID to unsubscribe (alternative to email).', 'mcp-ai-wpoos' ),
 				),
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'Action to perform: unsubscribe (set status to unsubscribed) or delete (remove completely).', 'wp-mcp-ai' ),
+					'description' => __( 'Action to perform: unsubscribe (set status to unsubscribed) or delete (remove completely).', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'unsubscribe', 'delete' ),
 					'default'     => 'unsubscribe',
 				),
@@ -88,17 +89,17 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! self::is_available() ) {
-			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_newsletter_missing', __( 'Newsletter plugin is not active on this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage newsletter subscribers.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to manage newsletter subscribers.', 'mcp-ai-wpoos' ) );
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
 		global $wpdb;
@@ -112,15 +113,15 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		} elseif ( ! empty( $arguments['email'] ) ) {
 			$email = sanitize_email( $arguments['email'] );
 			if ( ! is_email( $email ) ) {
-				return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+				return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
 			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) );
 		} else {
-			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Either email or subscriber_id is required.', 'wp-mcp-ai' ), array( 'status' => 400 ) );
+			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Either email or subscriber_id is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}
 
 		if ( ! $subscriber ) {
-			return new WP_Error( 'wp_mcp_ai_subscriber_not_found', __( 'Subscriber not found.', 'wp-mcp-ai' ), array( 'status' => 404 ) );
+			return new WP_Error( 'wp_mcp_ai_subscriber_not_found', __( 'Subscriber not found.', 'mcp-ai-wpoos' ), array( 'status' => 404 ) );
 		}
 
 		$action = isset( $arguments['action'] ) ? sanitize_key( $arguments['action'] ) : 'unsubscribe';
@@ -134,7 +135,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 			);
 
 			if ( false === $result ) {
-				return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete subscriber.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_delete_failed', __( 'Failed to delete subscriber.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Trigger action for other plugins/automations.
@@ -145,7 +146,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 				'subscriber_id' => (int) $subscriber->id,
 				'email'         => $subscriber->email,
 				'action'        => 'deleted',
-				'message'       => __( 'Subscriber deleted successfully.', 'wp-mcp-ai' ),
+				'message'       => __( 'Subscriber deleted successfully.', 'mcp-ai-wpoos' ),
 			);
 		} else {
 			// Mark as unsubscribed.
@@ -158,7 +159,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 			);
 
 			if ( false === $result ) {
-				return new WP_Error( 'wp_mcp_ai_update_failed', __( 'Failed to unsubscribe subscriber.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_update_failed', __( 'Failed to unsubscribe subscriber.', 'mcp-ai-wpoos' ) );
 			}
 
 			// Trigger action for other plugins/automations.
@@ -169,7 +170,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 				'subscriber_id' => (int) $subscriber->id,
 				'email'         => $subscriber->email,
 				'action'        => 'unsubscribed',
-				'message'       => __( 'Subscriber unsubscribed successfully.', 'wp-mcp-ai' ),
+				'message'       => __( 'Subscriber unsubscribed successfully.', 'mcp-ai-wpoos' ),
 			);
 		}
 	}

@@ -25,9 +25,9 @@ Or right-click anywhere on the page → **Inspect** → **Console** tab
 └─────────────────────────────────────────────────────┘
 ```
 
-### Step 2: Navigate to WP oOS Page
+### Step 2: Navigate to NV oOS Page
 
-Make sure you're on a WordPress page with the WP oOS chat widget loaded.
+Make sure you're on a WordPress page with the NV oOS chat widget loaded.
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -36,7 +36,7 @@ Make sure you're on a WordPress page with the WP oOS chat widget loaded.
 │                                                     │
 │  ┌─────────────────────────┐                       │
 │  │  💬 Chat Widget         │                       │
-│  │  Ask me anything...     │  ← WP oOS widget      │
+│  │  Ask me anything...     │  ← NV oOS widget      │
 │  └─────────────────────────┘                       │
 └─────────────────────────────────────────────────────┘
 ```
@@ -221,7 +221,7 @@ Start
   │
   ▼
 Does wpMcpAiTestGetTranscript exist?
-  ├─ No → Navigate to page with WP oOS chat
+  ├─ No → Navigate to page with NV oOS chat
   └─ Yes ↓
          │
          ▼
@@ -245,7 +245,7 @@ Does wpMcpAiTestGetTranscript exist?
 
 ---
 
-**Remember:** Open the Developer Console (F12) on a page with WP oOS chat widget, then run:
+**Remember:** Open the Developer Console (F12) on a page with NV oOS chat widget, then run:
 ```javascript
 wpMcpAiTestGetTranscript('your-session-key-here')
 ```

@@ -1,6 +1,6 @@
 # WordPress.org Submission Guide
 
-This guide explains the changes made to ensure the WP oOS base version complies with WordPress.org plugin directory requirements and is optimized for upload.
+This guide explains the changes made to ensure the NV oOS base version complies with WordPress.org plugin directory requirements and is optimized for upload.
 
 ## ✅ Changes Summary
 
@@ -36,7 +36,7 @@ This guide explains the changes made to ensure the WP oOS base version complies 
 
 ```php
 /**
- * Plugin Name: Open Operator System (WP oOS) - Base
+ * Plugin Name: Open Operator System (NV oOS) - Base
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
  * Description: AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 35+ core tools. Patent Pending (Application #19/410,504).
  * Version: 1.0.0

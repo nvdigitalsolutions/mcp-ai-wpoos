@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * Enables AI-powered location-based queries with map context and rich insights.
  */
 class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Shortcuts_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -30,14 +31,14 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Gemini Geospatial Query', 'wp-mcp-ai' );
+		return __( 'Gemini Geospatial Query', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Ask location-based questions using Gemini AI with Google Maps grounding. Returns AI-generated answers about places, directions, and local information with map context tokens for visualization.', 'wp-mcp-ai' );
+		return __( 'Ask location-based questions using Gemini AI with Google Maps grounding. Returns AI-generated answers about places, directions, and local information with map context tokens for visualization.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -49,29 +50,29 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'query'       => array(
 					'type'        => 'string',
-					'description' => __( 'Natural language query about locations, places, directions, or local information (e.g., "What are the best coffee shops near Central Park?", "Tell me about restaurants with outdoor seating in downtown Seattle").', 'wp-mcp-ai' ),
+					'description' => __( 'Natural language query about locations, places, directions, or local information (e.g., "What are the best coffee shops near Central Park?", "Tell me about restaurants with outdoor seating in downtown Seattle").', 'mcp-ai-wpoos' ),
 				),
 				'latitude'    => array(
 					'type'        => 'number',
-					'description' => __( 'Optional latitude to provide location context for more relevant results.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional latitude to provide location context for more relevant results.', 'mcp-ai-wpoos' ),
 				),
 				'longitude'   => array(
 					'type'        => 'number',
-					'description' => __( 'Optional longitude to provide location context for more relevant results.', 'wp-mcp-ai' ),
+					'description' => __( 'Optional longitude to provide location context for more relevant results.', 'mcp-ai-wpoos' ),
 				),
 				'model'       => array(
 					'type'        => 'string',
-					'description' => __( 'Gemini model to use (defaults to configured model).', 'wp-mcp-ai' ),
+					'description' => __( 'Gemini model to use (defaults to configured model).', 'mcp-ai-wpoos' ),
 				),
 				'temperature' => array(
 					'type'        => 'number',
-					'description' => __( 'Creativity level (0.0-2.0). Lower values are more focused, higher values more creative.', 'wp-mcp-ai' ),
+					'description' => __( 'Creativity level (0.0-2.0). Lower values are more focused, higher values more creative.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0.0,
 					'maximum'     => 2.0,
 				),
 				'timeout'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Request timeout in seconds (5-120).', 'wp-mcp-ai' ),
+					'description' => __( 'Request timeout in seconds (5-120).', 'mcp-ai-wpoos' ),
 					'minimum'     => 5,
 					'maximum'     => 120,
 				),
@@ -87,20 +88,20 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'Find local attractions', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `gemini_geospatial_query` tool to ask about tourist attractions, landmarks, or points of interest in a specific area. The AI will provide detailed information with map context.', 'wp-mcp-ai' ),
+				'label'   => __( 'Find local attractions', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `gemini_geospatial_query` tool to ask about tourist attractions, landmarks, or points of interest in a specific area. The AI will provide detailed information with map context.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Get dining recommendations', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `gemini_geospatial_query` tool to find restaurants, cafes, or food options with specific features (e.g., "dog friendly", "outdoor seating", "vegan options") in any location.', 'wp-mcp-ai' ),
+				'label'   => __( 'Get dining recommendations', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `gemini_geospatial_query` tool to find restaurants, cafes, or food options with specific features (e.g., "dog friendly", "outdoor seating", "vegan options") in any location.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Plan a route', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `gemini_geospatial_query` tool to ask about routes, directions, or travel planning between locations. The AI provides detailed guidance with real-time map data.', 'wp-mcp-ai' ),
+				'label'   => __( 'Plan a route', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `gemini_geospatial_query` tool to ask about routes, directions, or travel planning between locations. The AI provides detailed guidance with real-time map data.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Explore an area', 'wp-mcp-ai' ),
-				'payload' => __( 'Use the `gemini_geospatial_query` tool to learn about a neighborhood, city, or region. Get AI-powered summaries of area highlights, demographics, and local culture.', 'wp-mcp-ai' ),
+				'label'   => __( 'Explore an area', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `gemini_geospatial_query` tool to learn about a neighborhood, city, or region. Get AI-powered summaries of area highlights, demographics, and local culture.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -117,16 +118,16 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use geospatial queries.', 'wp-mcp-ai' ), array( 'status' => rest_authorization_required_code() ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You must be authenticated to use geospatial queries.', 'mcp-ai-wpoos' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
 		if ( $user_id ) {
 			if ( ! user_can( $user_id, 'read' ) ) {
-				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to use geospatial queries.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to use geospatial queries.', 'mcp-ai-wpoos' ) );
 			}
 
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai' ) );
+				return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 			}
 		}
 
@@ -135,7 +136,7 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 		if ( empty( $query ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_query',
-				__( 'A query is required for geospatial search.', 'wp-mcp-ai' ),
+				__( 'A query is required for geospatial search.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -199,15 +200,18 @@ class WP_MCP_AI_Tool_Gemini_Geospatial_Query implements WP_MCP_AI_Tool_Interface
 		if ( ! empty( $response['content'] ) ) {
 			$summary = sprintf(
 				/* translators: %s: query text */
-				__( 'Geospatial query completed for: %s', 'wp-mcp-ai' ),
+				__( 'Geospatial query completed for: %s', 'mcp-ai-wpoos' ),
 				$query
 			);
 		} else {
-			$summary = __( 'Geospatial query completed, but no content was returned.', 'wp-mcp-ai' );
+			$summary = __( 'Geospatial query completed, but no content was returned.', 'mcp-ai-wpoos' );
 		}
 
 		$response = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary, // Chat client.
+				'summary' => $summary, // Backward compatibility.
+			),
 			$response
 		);
 

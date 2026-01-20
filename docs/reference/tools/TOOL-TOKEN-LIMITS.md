@@ -56,7 +56,7 @@ These defaults can be overridden via the admin UI or programmatically.
 
 ### Admin UI
 
-Navigate to **Settings → WP oOS** and scroll to the "Tool Token Usage Limits" section.
+Navigate to **Settings → NV oOS** and scroll to the "Tool Token Usage Limits" section.
 
 **Features**:
 - Configure limits for featured tools (Crawl4AI, General Tools)

@@ -1,8 +1,8 @@
-# Security Hardening Documentation - WP oOS Plugin
+# Security Hardening Documentation - NV oOS Plugin
 
 ## Overview
 
-This document describes the security measures implemented in the Open Operator System (WP oOS) plugin to protect against common web vulnerabilities.
+This document describes the security measures implemented in the Open Operator System (NV oOS) plugin to protect against common web vulnerabilities.
 
 ## Security Audit Summary
 
@@ -114,7 +114,7 @@ wp_nonce_field( 'wp_mcp_ai_save_settings' );
 All privileged operations verify user capabilities:
 
 #### Admin Pages (All use `manage_options`)
-- WP oOS Settings Dashboard
+- NV oOS Settings Dashboard
 - JetEngine Integration
 - WooCommerce Integration
 - Elementor Integration
@@ -344,7 +344,7 @@ $posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['w
 
 ## Conclusion
 
-The WP oOS plugin follows WordPress security best practices and has been thoroughly audited for common vulnerabilities. The security hardening phase addressed all identified issues and added comprehensive test coverage to prevent regressions.
+The NV oOS plugin follows WordPress security best practices and has been thoroughly audited for common vulnerabilities. The security hardening phase addressed all identified issues and added comprehensive test coverage to prevent regressions.
 
 ### Security Strengths
 
@@ -377,7 +377,7 @@ The plugin provides configurable security settings for handling HTTP requests to
 
 ### Settings Location
 
-**Settings → WP oOS → Security**
+**Settings → NV oOS → Security**
 
 ### Available Settings
 

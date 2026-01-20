@@ -30,7 +30,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 	 * Widget title shown in the Elementor editor.
 	 */
 	public function get_title() {
-		return __( 'NV oOS Assistant Tools', 'wp-mcp-ai' );
+		return __( 'NV oOS Assistant Tools', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -61,17 +61,17 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Content', 'wp-mcp-ai' ),
+				'label' => __( 'Content', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'title',
 			array(
-				'label'       => __( 'Title', 'wp-mcp-ai' ),
+				'label'       => __( 'Title', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'Available assistant tools', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Enter heading text…', 'wp-mcp-ai' ),
+				'default'     => __( 'Available assistant tools', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Enter heading text…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -79,22 +79,22 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->add_control(
 			'assistant_id',
 			array(
-				'label'       => __( 'Assistant', 'wp-mcp-ai' ),
+				'label'       => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::SELECT,
 				'options'     => $this->get_assistant_options(),
 				'default'     => '',
 				'label_block' => true,
-				'description' => __( 'Choose which assistant to display tools for. Only published assistants appear in this list.', 'wp-mcp-ai' ),
+				'description' => __( 'Choose which assistant to display tools for. Only published assistants appear in this list.', 'mcp-ai-wpoos' ),
 			)
 		);
 
 		$this->add_control(
 			'show_descriptions',
 			array(
-				'label'        => __( 'Show descriptions', 'wp-mcp-ai' ),
+				'label'        => __( 'Show descriptions', 'mcp-ai-wpoos' ),
 				'type'         => \Elementor\Controls_Manager::SWITCHER,
-				'label_on'     => __( 'Yes', 'wp-mcp-ai' ),
-				'label_off'    => __( 'No', 'wp-mcp-ai' ),
+				'label_on'     => __( 'Yes', 'mcp-ai-wpoos' ),
+				'label_off'    => __( 'No', 'mcp-ai-wpoos' ),
 				'return_value' => 'yes',
 				'default'      => 'yes',
 			)
@@ -103,10 +103,10 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$this->add_control(
 			'empty_message',
 			array(
-				'label'       => __( 'Empty state message', 'wp-mcp-ai' ),
+				'label'       => __( 'Empty state message', 'mcp-ai-wpoos' ),
 				'type'        => \Elementor\Controls_Manager::TEXT,
-				'default'     => __( 'No tools have been assigned to this assistant yet.', 'wp-mcp-ai' ),
-				'placeholder' => __( 'Add guidance for when no tools are available…', 'wp-mcp-ai' ),
+				'default'     => __( 'No tools have been assigned to this assistant yet.', 'mcp-ai-wpoos' ),
+				'placeholder' => __( 'Add guidance for when no tools are available…', 'mcp-ai-wpoos' ),
 				'label_block' => true,
 			)
 		);
@@ -158,7 +158,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		}
 
 		if ( ! $assistant_id ) {
-			echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'Select an assistant in the widget settings to view its tools.', 'wp-mcp-ai' ) . '</p>';
+			echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'Select an assistant in the widget settings to view its tools.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '</div>';
 			return;
 		}
@@ -170,13 +170,12 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		if ( empty( $tool_items ) ) {
 			if ( ! $registry && ! empty( $tools['requested'] ) ) {
-				echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'The tool registry is currently unavailable.', 'wp-mcp-ai' ) . '</p>';
+				echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'The tool registry is currently unavailable.', 'mcp-ai-wpoos' ) . '</p>';
 			} else {
 				$empty_output = $this->format_text_inline( $empty_message );
 
 				if ( '' !== $empty_output ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
-					echo '<p class="wp-mcp-ai-assistant-tools__notice">' . $empty_output . '</p>';
+					echo '<p class="wp-mcp-ai-assistant-tools__notice">' . wp_kses_post( $empty_output ) . '</p>';
 				}
 			}
 		} else {
@@ -196,12 +195,12 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 				if ( '' !== $slug ) {
 					/* translators: %s: tool slug. */
-					$copy_label   = sprintf( esc_html__( 'Copy the %s tool slug', 'wp-mcp-ai' ), $slug );
-					$success_text = esc_html__( 'Copied!', 'wp-mcp-ai' );
-					$failure_text = esc_html__( 'Copy failed', 'wp-mcp-ai' );
+					$copy_label   = sprintf( esc_html__( 'Copy the %s tool slug', 'mcp-ai-wpoos' ), $slug );
+					$success_text = esc_html__( 'Copied!', 'mcp-ai-wpoos' );
+					$failure_text = esc_html__( 'Copy failed', 'mcp-ai-wpoos' );
 
 					echo '<span class="wp-mcp-ai-assistant-tools__slug">';
-					echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'wp-mcp-ai' ) . '</span> ';
+					echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'mcp-ai-wpoos' ) . '</span> ';
 					echo '<button type="button" class="wp-mcp-ai-assistant-tools__copy-button" data-slug="' . esc_attr( $slug ) . '" data-success-message="' . esc_attr( $success_text ) . '" data-failure-message="' . esc_attr( $failure_text ) . '" aria-label="' . esc_attr( $copy_label ) . '">';
 					echo '<code class="wp-mcp-ai-assistant-tools__slug-code">' . esc_html( $slug ) . '</code>';
 					echo '<span class="wp-mcp-ai-assistant-tools__copy-feedback" aria-hidden="true" style="display:none;">' . esc_html( $success_text ) . '</span>';
@@ -234,7 +233,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 			if ( '' !== $missing_list ) {
 				echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
-				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'wp-mcp-ai' ) . ' ';
+				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'mcp-ai-wpoos' ) . ' ';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item already escaped via array_map('esc_html').
 				echo $missing_list;
 				echo '</p>';
@@ -258,151 +257,158 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		$printed = true;
 
-		$style = <<<'CSS'
+		ob_start();
+		?>
+<style>
 .wp-mcp-ai-assistant-tools__copy-button {
-    background: none;
-    border: 0;
-    padding: 0;
-    font: inherit;
-    color: inherit;
-    display: inline-flex;
-    align-items: center;
-    cursor: pointer;
+	background: none;
+	border: 0;
+	padding: 0;
+	font: inherit;
+	color: inherit;
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
 }
 
 .wp-mcp-ai-assistant-tools__copy-button:focus-visible {
-    outline: 2px solid currentColor;
-    outline-offset: 2px;
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
 }
 
 .wp-mcp-ai-assistant-tools__copy-feedback {
-    margin-left: 0.5rem;
-    font-size: 0.85em;
+	margin-left: 0.5rem;
+	font-size: 0.85em;
 }
-CSS;
+</style>
+		<?php
+		$style = ob_get_clean();
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS is hardcoded above.
-		echo '<style>' . $style . '</style>';
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CSS output is static content above.
+		echo $style;
 
-		$script = <<<'JS'
+		ob_start();
+		?>
 ( function() {
-    var selector = '.wp-mcp-ai-assistant-tools__copy-button';
+	var selector = '.wp-mcp-ai-assistant-tools__copy-button';
 
-    function setFeedback( button, isSuccess ) {
-        var feedback = button.querySelector( '.wp-mcp-ai-assistant-tools__copy-feedback' );
+	function setFeedback( button, isSuccess ) {
+		var feedback = button.querySelector( '.wp-mcp-ai-assistant-tools__copy-feedback' );
 
-        if ( ! feedback ) {
-            return;
-        }
+		if ( ! feedback ) {
+			return;
+		}
 
-        var message = isSuccess ? button.getAttribute( 'data-success-message' ) : button.getAttribute( 'data-failure-message' );
+		var message = isSuccess ? button.getAttribute( 'data-success-message' ) : button.getAttribute( 'data-failure-message' );
 
-        if ( ! message ) {
-            return;
-        }
+		if ( ! message ) {
+			return;
+		}
 
-        feedback.textContent = message;
-        feedback.style.display = '';
-        feedback.setAttribute( 'aria-hidden', 'false' );
+		feedback.textContent = message;
+		feedback.style.display = '';
+		feedback.setAttribute( 'aria-hidden', 'false' );
 
-        clearTimeout( button._wpMcpAiCopyTimeout );
-        button._wpMcpAiCopyTimeout = setTimeout( function() {
-            feedback.style.display = 'none';
-            feedback.setAttribute( 'aria-hidden', 'true' );
-        }, 2000 );
-    }
+		clearTimeout( button._wpMcpAiCopyTimeout );
+		button._wpMcpAiCopyTimeout = setTimeout( function() {
+			feedback.style.display = 'none';
+			feedback.setAttribute( 'aria-hidden', 'true' );
+		}, 2000 );
+	}
 
-    function copyWithFallback( text ) {
-        return new Promise( function( resolve, reject ) {
-            try {
-                var textarea = document.createElement( 'textarea' );
-                textarea.value = text;
-                textarea.setAttribute( 'readonly', '' );
-                textarea.style.position = 'absolute';
-                textarea.style.left = '-9999px';
-                document.body.appendChild( textarea );
-                textarea.select();
+	function copyWithFallback( text ) {
+		return new Promise( function( resolve, reject ) {
+			try {
+				var textarea = document.createElement( 'textarea' );
+				textarea.value = text;
+				textarea.setAttribute( 'readonly', '' );
+				textarea.style.position = 'absolute';
+				textarea.style.left = '-9999px';
+				document.body.appendChild( textarea );
+				textarea.select();
 
-                var successful = document.execCommand( 'copy' );
-                document.body.removeChild( textarea );
+				var successful = document.execCommand( 'copy' );
+				document.body.removeChild( textarea );
 
-                if ( successful ) {
-                    resolve();
-                    return;
-                }
+				if ( successful ) {
+					resolve();
+					return;
+				}
 
-                reject();
-            } catch ( error ) {
-                reject( error );
-            }
-        } );
-    }
+				reject();
+			} catch ( error ) {
+				reject( error );
+			}
+		} );
+	}
 
-    function copySlug( slug ) {
-        if ( navigator.clipboard && navigator.clipboard.writeText ) {
-            return navigator.clipboard.writeText( slug ).catch( function() {
-                return copyWithFallback( slug );
-            } );
-        }
+	function copySlug( slug ) {
+		if ( navigator.clipboard && navigator.clipboard.writeText ) {
+			return navigator.clipboard.writeText( slug ).catch( function() {
+				return copyWithFallback( slug );
+			} );
+		}
 
-        return copyWithFallback( slug );
-    }
+		return copyWithFallback( slug );
+	}
 
-    function bindCopy( button ) {
-        if ( button.dataset.wpMcpAiCopyBound ) {
-            return;
-        }
+	function bindCopy( button ) {
+		if ( button.dataset.wpMcpAiCopyBound ) {
+			return;
+		}
 
-        button.dataset.wpMcpAiCopyBound = '1';
+		button.dataset.wpMcpAiCopyBound = '1';
 
-        button.addEventListener( 'click', function() {
-            var slug = button.getAttribute( 'data-slug' );
+		button.addEventListener( 'click', function() {
+			var slug = button.getAttribute( 'data-slug' );
 
-            if ( ! slug ) {
-                return;
-            }
+			if ( ! slug ) {
+				return;
+			}
 
-            copySlug( slug )
-                .then( function() {
-                    setFeedback( button, true );
-                } )
-                .catch( function() {
-                    setFeedback( button, false );
-                } );
-        } );
-    }
+			copySlug( slug )
+				.then( function() {
+					setFeedback( button, true );
+				} )
+				.catch( function() {
+					setFeedback( button, false );
+				} );
+		} );
+	}
 
-    function init( context ) {
-        var scope = context || document;
-        var buttons = scope.querySelectorAll( selector );
+	function init( context ) {
+		var scope = context || document;
+		var buttons = scope.querySelectorAll( selector );
 
-        if ( ! buttons.length ) {
-            return;
-        }
+		if ( ! buttons.length ) {
+			return;
+		}
 
-        buttons.forEach( bindCopy );
-    }
+		buttons.forEach( bindCopy );
+	}
 
-    if ( document.readyState !== 'loading' ) {
-        init();
-    } else {
-        document.addEventListener( 'DOMContentLoaded', function() {
-            init();
-        } );
-    }
+	if ( document.readyState !== 'loading' ) {
+		init();
+	} else {
+		document.addEventListener( 'DOMContentLoaded', function() {
+			init();
+		} );
+	}
 
-    document.addEventListener( 'elementor/popup/show', function( event ) {
-        init( event && event.target ? event.target : document );
-    } );
+	document.addEventListener( 'elementor/popup/show', function( event ) {
+		init( event && event.target ? event.target : document );
+	} );
 } )();
-JS;
+		<?php
+		$script = ob_get_clean();
 
 		if ( function_exists( 'wp_print_inline_script_tag' ) ) {
 			wp_print_inline_script_tag( $script );
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is hardcoded above.
+		// Fallback for older WordPress versions.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript output is static content above.
 		echo '<script>' . $script . '</script>';
 	}
 
@@ -412,7 +418,7 @@ JS;
 	 * @return array
 	 */
 	protected function get_assistant_options() {
-		$options = array( '' => __( 'Select an assistant…', 'wp-mcp-ai' ) );
+		$options = array( '' => __( 'Select an assistant…', 'mcp-ai-wpoos' ) );
 
 		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			return $options;

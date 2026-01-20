@@ -1,24 +1,238 @@
-# WP oOS Documentation Index
+# NV oOS Documentation Index
 
-**Last Updated:** December 29, 2025  
+**Last Updated:** January 18, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
-This document provides a comprehensive index of all documentation available for the Open Operator System (WP oOS) plugin.
+This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 659+ files (640+ in docs/ folder, 16 essential files in root)
+**Total Documentation:** 653+ files (647+ in docs/ folder, 6 essential files in root)
+
+> **📌 JANUARY 18, 2026 UPDATE (LATEST):** 
+> - **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page
+> - **Root Cause**: Tool registry returned empty array during preset application
+> - **Solution**: Refactored to iterate through tool categories first (200+ tools), then check registry
+> - **Documentation**: Complete fix details and testing plan in `docs/fixes/`
+> - **Root Directory Cleanup** - Removed duplicate FIX_SUMMARY.md from root, consolidated into docs/fixes/
+
+> **📌 JANUARY 13, 2026 UPDATE:** 
+> - **PR #2883 Review & Integration** - Gmail OAuth UX enhancement documented, auto-display redirect URI in admin
+> - **Root Directory Organization** - 14 MD files moved from root to proper subdirectories
+> - **Migration Reports Organized** - 9 files moved to `docs/implementation-history/2026/migrations/`
+> - **Fix Documentation Consolidated** - Gmail OAuth files consolidated, FlowHub fixes moved to `docs/fixes/`
+> - **Root Now Clean** - Only 6 essential files remain in repository root
+
+> **📌 JANUARY 8, 2026 UPDATE (WEEK 2):** 
+> - **Complete Code Review & Gap Analysis** - Comprehensive audit completed. Grade: A- (93/100). Production ready! See [CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)
+> - **Development Dependencies Removed** - Repository now production-ready with `composer install --no-dev` completed
+> - **Root Directory Reorganization** - 19 temporary fix documents consolidated. See [Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md)
+
+> **📌 JANUARY 6, 2026 UPDATE (WEEK 2)**: 
+> - **100% ISO 27001:2022 Compliance Achieved** - 83 of 83 applicable controls implemented (was 56%)
+> - **SOC 2 & HIPAA Frameworks Added** - SOC 2: 100% (54/54), HIPAA: 98% (42/43)
+> - **Pro CPT Documentation** - Events, Quizzes, and Places (21 tools total)
+> - **Root Directory Organization** - Moved 25 files to organized subdirectories
+> - **Pro Dashboard Modernization** - Singleton pattern with industry standards
+> - **PM Assistant Fixes** - 6 critical modal and chat fixes
+> - **WordPress 6.7+ Compatibility** - Translation timing fixes
+> - **Text Domain Migration** - Complete migration to mcp-ai-wpoos (12,773 instances)
+> - **Production Ready** - Dev dependencies removed from vendor
+
+> **📌 JANUARY 3, 2026 UPDATE**: Gap Documentation Review completed - 100% high-priority completion achieved! All 10 critical items complete including Code Coverage Dashboard. Overall quality score: 98/100 (up from 95/100). Production ready with A+ grade. See [Gap Documentation Review Summary](GAP_DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Status Update](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md) for details.
+
+> **📌 JANUARY 2, 2026 UPDATE**: Code Review and Root Directory Organization completed. Tool count verification: 193 unique tools (127 base + 66 Pro). Repository organization improved - moved 8 fix/implementation files from root to proper docs/ subdirectories. See [Code Review Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md) and [Organization Summary](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md) for details.
 
 > **📌 DECEMBER 29, 2025 UPDATE**: Comprehensive documentation review completed - 659 files reviewed, 100% feature coverage verified, zero significant gaps found. Overall documentation grade A (95/100). See [Documentation Review Summary](DOCUMENTATION_REVIEW_SUMMARY.md) and [Full Review](implementation-history/2025/documentation/DOCUMENTATION_REVIEW_2025-12-29.md) for details.
 
 > **📌 DECEMBER 25, 2025 UPDATE**: Complete codebase review performed - Full PHP/JS linting, security scan, architecture assessment. Overall grade A- (92/100) - Production Ready. See [Comprehensive Code Review](implementation-history/2025/code-reviews/COMPREHENSIVE_CODE_REVIEW_2025-12-25.md) and [Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-25.md) for details.
 
-> **📌 DECEMBER 24, 2025 UPDATE**: Comprehensive code review completed - Version and tool count inconsistencies fixed, documentation updated. See [Code Review Summary](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2025-12-24.md) for details.
+---
 
-> **📌 DECEMBER 23, 2025 UPDATE**: Weekly commits summary added - Complete consolidation of all changes from December 16-23, 2025 with ZERO information loss.
+## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
+
+### Web Browser Pro Tool Proposal (January 9, 2026) 🌐 **NEW PROPOSAL** ⭐
+
+**NEW:** Evaluation and decision to create Playwright-based browser automation Pro tool:
+
+- **[PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md)** ⭐ **NEW (Jan 9)**
+  - Full technical evaluation of Playwright integration options
+  - Analysis: Enhance web_search vs Create new Pro tool
+  - **Decision: Create new Pro tool `web_browser`**
+  - Architecture design (external Playwright service)
+  - Security considerations and mitigations
+  - 8-week implementation roadmap
+  - Complete capability flags and parameter schema
+
+- **[WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md)** ⭐ **NEW (Jan 9)**
+  - Executive decision summary for stakeholders
+  - **Key rationale: Base version size management** (118 tools, 17MB)
+  - Playwright would add ~200MB dependencies (10x increase)
+  - Pro tool justification: Resource-intensive, advanced features
+  - Clear use case comparison: web_search vs web_browser
+  - Implementation plan and success metrics
+
+**Decision Factors:**
+- ⚠️ Base version already large (118 tools, 17MB includes)
+- Browser automation requires 200-500MB RAM per instance
+- Advanced use cases justify Pro tier pricing
+- External service architecture (proven with Crawl4AI)
+
+### Complete Code Review & Gap Analysis (January 8, 2026) 🔍 **LATEST** ⭐
+
+**NEW:** Comprehensive code review and plugin gap analysis - **Grade: A- (93/100)**
+
+- **[CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md](CODE_REVIEW_AND_GAP_ANALYSIS_2026-01-08.md)** ⭐ **NEW (Jan 8)**
+  - Complete codebase audit covering code quality, security, features, documentation
+  - **Production Ready Status: ✅ APPROVED**
+  - Overall Grade: A- (93/100)
+  - Code Quality: 95/100 (Excellent)
+  - Security: 100/100 (Perfect)
+  - Documentation: 95/100 (Excellent)
+  - Feature Completeness: 92/100 (Good)
+  - Test Coverage: 85/100 (Good)
+  - **Key Finding:** Development dependencies removed for production deployment
+  - Tool Analysis: 215 tools total (96% mature, 3 buggy tools auto-disabled)
+  - Documentation Analysis: 838 files reviewed
+  - Gap Prioritization: High/Medium/Low with effort estimates
+  - Production Readiness Checklist
+  - Recommendations for short-term and long-term improvements
+
+### Root Directory Reorganization (January 8, 2026) 📁 **CLEANUP COMPLETE**
+
+Complete consolidation and reorganization of temporary documentation files:
+
+- **[Root Directory Consolidation](../ROOT-DOCS-REORGANIZATION.md)** ⭐ **NEW (Jan 8)**
+  - Cleaned up 19 temporary fix documentation files from root
+  - Consolidated Chart.js and Pro Dashboard fixes into single document
+  - Root directory now contains only 6 essential files
+  - All historical information preserved in proper hierarchy
+  
+- **[CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md](implementation-history/2026/fixes/CHART-JS-PRO-DASHBOARD-CONSOLIDATION.md)** ⭐ **NEW (Jan 8)**
+  - Comprehensive consolidation of all Chart.js and Pro Dashboard fixes
+  - Covers 15 root MD files → 1 consolidated reference
+  - Technical architecture, testing procedures, and lessons learned
+  - Cross-referenced with detailed docs in `docs/fixes/` and `docs/troubleshooting/`
+  
+- **[pro-dashboard-visual-test-guide.md](testing/pro-dashboard-visual-test-guide.md)** ⭐ **MOVED (Jan 8)**
+  - Visual testing guide for Pro Dashboard charts
+  - Moved from root to proper testing documentation location
+  - Complete visual reference with expected chart appearances
+
+**Files Consolidated:**
+- 8 Chart.js fix summaries
+- 4 Pro Dashboard fix summaries  
+- 2 Pull request summaries
+- 3 Implementation summaries
+- 1 Visual test guide
+- 1 Monitoring tab summary
+
+### Dead Letter Queue & SLA Prioritization (January 3, 2026) ⭐ **NEW FEATURES**
+
+Enterprise-grade failure handling and intelligent job prioritization for WordPress-native cron:
+
+- **[dead-letter-queue.md](architecture/dead-letter-queue.md)** ⭐ **NEW (Jan 3)**
+  - Persistent storage for failed webhooks, cron jobs, async tools, and queue items
+  - Automatic retry with exponential backoff + jitter (prevents thundering herd)
+  - Max 1000 items with 30-day retention and weekly cleanup cron
+  - Admin UI at `wp-admin/admin.php?page=wp-mcp-ai-dlq-manager`
+  - WP-CLI commands: `wp mcp-ai dlq list/stats/retry/dismiss/delete/purge/clear`
+  - Integration: Job Queue Manager, Job Notifier, Crawl4AI
+  
+- **[sla-prioritization.md](architecture/sla-prioritization.md)** ⭐ **NEW (Jan 3)**
+  - Three-tier SLA system: Real-time (<1s), Near real-time (1-30s), Batch (>30s)
+  - Little's Law capacity planning (`L = λ × W`) for optimal worker allocation
+  - Per-tier concurrency limits (realtime: 5, near-realtime: 3, batch: 2)
+  - Automatic tier inference from tool capabilities
+  - Tuning recommendations and queue health monitoring
+  - WP-CLI commands: `wp mcp-ai sla status/tune/analyze/enable/disable`
+
+- **Enhanced Admin UI:**
+  - DLQ Manager page with filters, bulk actions, and statistics
+  - Cron Manager shows DLQ stats and SLA tier configuration
+  - WordPress Dashboard widget for at-a-glance queue health
+  - Color-coded status indicators (green/yellow/red)
+
+- **Updated Documentation:**
+  - `ORCHESTRATION-LAYER-ARCHITECTURE.md` - New DLQ & SLA section (20KB → 30KB)
+  - `job-notification-system.md` - Webhook retry and DLQ integration
+  - Complete API reference and troubleshooting guides
+
+**Impact:** Transforms WordPress cron from "fire-and-forget" to production-grade orchestration with failure recovery, SLA guarantees, and capacity management.
+
+### Gap Documentation Review (January 3, 2026) 🎉 **100% HIGH-PRIORITY COMPLETE**
+
+Comprehensive review of all gap documentation with exceptional results:
+
+- **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** ⭐ **NEW (Jan 3)**
+  - **🎉 100% high-priority completion achieved** (10 of 10 items complete)
+  - Quality Score: 98/100 (up from 95/100)
+  - Production Readiness: 98/100 (up from 95/100)
+  - All critical gaps addressed including:
+    - Output Escaping (66 systematic fixes) ✅
+    - CI/CD Quality Gates (GitHub Actions active) ✅
+    - Code Coverage Dashboard (Codecov integration) ✅
+    - OpenAI Batch API (50% cost reduction) ✅
+    - OpenAI Moderation API (11 violation categories) ✅
+    - Gemini Batch Embeddings, Safety Settings, Thinking Mode ✅
+  - Medium-Priority: 67% complete (8 of 12 items)
+  - Status: **Production Ready** ✅
+
+- **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** ⭐ **NEW (Jan 3)**
+  - Master status document (19KB) with detailed analysis
+  - All 6 gap documents reviewed and updated
+  - Complete implementation progress tracking
+  - Phase completion status for OpenAI and Gemini APIs
+  - Consolidated priority tracking and recommendations
+
+### Code Coverage Dashboard (January 3, 2026) ⭐ **NEW FEATURE**
+
+Complete code coverage tracking and visualization system:
+
+- **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** ⭐ **NEW (Jan 3)**
+  - Codecov integration with badge ✅
+  - Automatic coverage reporting in CI/CD
+  - Interactive online dashboard at codecov.io
+  - Local HTML dashboard generation
+  - Component-based coverage tracking
+  - Coverage targets: 70%+ core, 80%+ REST API
+  - PHPUnit with Xdebug for PHP coverage
+  - Jest for JavaScript coverage
+  - Instructions for viewing and generating reports
+
+### Code Review and Repository Organization (January 2, 2026)
+
+Post-December 23 changes review with tool count verification:
+
+- **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+  - Comprehensive code review (A- grade, 92/100)
+  - Security: 10/10 (zero vulnerabilities)
+  - JavaScript: 10/10 (ESLint clean)
+  - Architecture: 9.5/10 (excellent design)
+  - Tool count verification: 193 unique tools
+    - Base tools: 127 (corrected from 95)
+    - Pro tools: 66 (corrected from 64)
+  - PHP linting results: 1,083 errors, 1,294 warnings
+  - 235 auto-fixable issues identified
+  - Production ready status confirmed
+
+- **[CODE_REVIEW_SUMMARY_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+  - Quick summary of code review findings
+  - Score breakdown by category
+  - Actions taken and documentation updates
+  - Tool inventory verification details
+  - Linting results and recommendations
+
+- **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** ⭐ **NEW (Jan 2)**
+  - Root directory cleanup: 15 → 7 files
+  - Moved 6 fix documents to `docs/fixes/`
+  - Moved 2 implementation summaries to `docs/implementation-summaries/`
+  - Updated all cross-references
+  - Created `docs/implementation-summaries/README.md`
+  - Improved repository organization and documentation discovery
 
 ---
 
-## 🆕 Weekly Summaries ⭐ **LATEST UPDATES**
+## 🆕 Weekly Summaries
 
 ### Weekly Commits Summary (December 16-23, 2025)
 Comprehensive consolidation of all commits and changes from the past week:
@@ -110,7 +324,7 @@ Complete review of all implementations vs. documentation coverage:
 ## 🆕 Project Management System Documentation (December 24, 2025) ⭐ **NEW**
 
 ### Comprehensive Project Management Gap Analysis and Strategy
-Complete review and enhancement of project management capabilities for the WP oOS repository:
+Complete review and enhancement of project management capabilities for the NV oOS repository:
 
 - **[PROJECT_MANAGEMENT_GAP_ANALYSIS.md](PROJECT_MANAGEMENT_GAP_ANALYSIS.md)** ⭐ **NEW (Dec 24)**
   - Comprehensive gap analysis of internal WordPress PM features and GitHub repository management
@@ -322,7 +536,7 @@ Symfony Process component integration for Pro addon tools completed:
 ## Previous Updates (December 8, 2025)
 
 ### Symfony Integration Analysis
-Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
+Comprehensive evaluation of Symfony framework components for NV oOS enhancement:
 
 - **[SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md](implementation-history/2025/implementations/integrations/SYMFONY_INTEGRATION_EXECUTIVE_SUMMARY.md)** ⭐ **START HERE**
   - Decision-maker focused overview
@@ -331,7 +545,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
   - 14KB, quick read (~15 minutes)
 
 - **[SYMFONY_AI_INTEGRATION_ANALYSIS.md](implementation-history/2025/implementations/integrations/SYMFONY_AI_INTEGRATION_ANALYSIS.md)**
-  - Deep-dive on Symfony AI capabilities vs WP oOS features
+  - Deep-dive on Symfony AI capabilities vs NV oOS features
   - Semantic search/RAG implementation proposal
   - Phase-based rollout plan (Q1-Q3 2026)
   - 26KB, technical analysis
@@ -377,8 +591,9 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ### For New Users
 1. [README.md](../README.md) - Start here for overview and installation
 2. [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) - Step-by-step setup guide
-3. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
-4. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
+3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+4. [remote-client-quickstart.md](getting-started/quick-starts/remote-client-quickstart.md) - Quick start for remote clients
+5. [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) - Best practices and recommendations
 
 ### For Developers
 1. **[CONSOLIDATED_BUGS_AND_FIXES.md](implementation-history/2025/summaries/CONSOLIDATED_BUGS_AND_FIXES.md)** - **NEW:** Comprehensive bugs and fixes report (Pro addon, async execution, SSE streaming, code quality)
@@ -394,10 +609,11 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ### For System Administrators
 1. [deployment-troubleshooting.md](getting-started/installation-setup/deployment-troubleshooting.md) - Troubleshooting guide
 2. [mcp-server-authentication.md](reference/api/mcp-server-authentication.md) - Authentication setup
-3. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
-4. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
-5. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
-6. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
+3. [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) - Google OAuth setup for Gmail integration
+4. [tools-manager.md](guides/admin/tools/tools-manager.md) - Tools Manager admin interface guide
+5. [rate-limit-protection.md](features/performance/rate-limit-protection.md) - Rate limiting configuration
+6. [multisite-support.md](getting-started/installation-setup/multisite-support.md) - Multisite considerations
+7. [mesh-compute-pooling.md](features/federation/mesh-compute-pooling.md) - Distributed compute pooling across sites
 
 ### Historical Documentation
 - **[Archive Directory](archive/README.md)** - 95+ historical documents organized by category
@@ -437,7 +653,7 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [USE_CASES_AND_QUICKSTARTS.md](getting-started/USE_CASES_AND_QUICKSTARTS.md) | **NEW:** Comprehensive use cases and quickstart guides covering 7 major categories (41KB) | Everyone |
 | [QUICK_START_5_MINUTES.md](getting-started/QUICK_START_5_MINUTES.md) | 5-minute quick start guide from zero to first chat | Beginners |
 | [mcp-ai-plugin-setup-checklist.md](getting-started/installation-setup/mcp-ai-plugin-setup-checklist.md) | Complete setup checklist for new installations | Admins |
-| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using WP oOS | All Users |
+| [BEST_PRACTICES.md](guides/developer/best-practices/BEST_PRACTICES.md) | Recommended practices for using NV oOS | All Users |
 
 ### Architecture & Design
 
@@ -447,6 +663,8 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [CURRENT-STATE-AGENTIC-WORKFLOW.md](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md) | **NEW:** Current state documentation showing how assistants and processing work together for agentic workflows (comprehensive guide with examples) | Everyone |
 | [agentic-workflow-architecture.md](architecture/core/agentic-workflow-architecture.md) | Detailed agentic workflow architecture, optimizations, and testing | Developers |
 | [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) | Novel orchestration layer differentiators vs standard SSE/MCP (20KB) | Developers |
+| [dead-letter-queue.md](architecture/dead-letter-queue.md) | **NEW (Jan 2026):** Dead Letter Queue for persistent failure handling (12KB) | Developers/Admins |
+| [sla-prioritization.md](architecture/sla-prioritization.md) | **NEW (Jan 2026):** SLA-based job prioritization with Little's Law capacity planning (16KB) | Developers/Admins |
 | [ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-IMPLEMENTATION.md) | Complete implementation guide with code examples and PR #852 enhancements | Developers |
 | [ORCHESTRATION-DASHBOARD-SUMMARY.md](architecture/orchestration/ORCHESTRATION-DASHBOARD-SUMMARY.md) | User-friendly feature overview, use cases, and quick start guide | Users/Admins |
 | [ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md](visual-guides/orchestration/ORCHESTRATION-DASHBOARD-VISUAL-GUIDE.md) | Visual walkthrough with UI layouts and component details | All Users |
@@ -459,10 +677,19 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [BUILD-ARTIFACTS-CLARIFICATION.md](troubleshooting/common/BUILD-ARTIFACTS-CLARIFICATION.md) | Build artifacts and base vs core terminology clarification | Developers/Admins |
 | [memory-limits.md](features/memory/memory-limits.md) | Memory management and limits | Developers |
 
+### Proposals & Planning
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [PLAYWRIGHT_INTEGRATION_EVALUATION.md](proposals/PLAYWRIGHT_INTEGRATION_EVALUATION.md) | **NEW (Jan 2026):** Full technical evaluation of Playwright browser automation integration - Decision to create Pro tool `web_browser` (15KB) | Developers/Decision Makers |
+| [WEB_BROWSER_PRO_TOOL_SUMMARY.md](proposals/WEB_BROWSER_PRO_TOOL_SUMMARY.md) | **NEW (Jan 2026):** Executive summary for web_browser Pro tool decision - Base version size management rationale (7KB) | Stakeholders/Admins |
+
 ### Integration Guides
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [google-oauth-setup.md](getting-started/installation-setup/google-oauth-setup.md) | Google OAuth 2.0 setup for Gmail integration | Admins/Users |
+| [oauth-settings-architecture.md](architecture/integrations/oauth-settings-architecture.md) | OAuth settings architecture and hybrid system design | Developers |
 | [chatkit-integration.md](guides/developer/integration/chatkit-integration.md) | ChatKit module integration | Developers |
 | [elementor-widgets.md](architecture/integrations/elementor-widgets.md) | Elementor widget documentation | Users/Devs |
 | [jet-engine-rest-routes.md](reference/api/jet-engine-rest-routes.md) | JetEngine REST API reference | Developers |
@@ -488,6 +715,18 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [rate-limit-protection.md](features/performance/rate-limit-protection.md) | Rate limiting configuration | Admins |
 | [../SECURITY.md](../SECURITY.md) | Security policies and vulnerability reporting | Everyone |
 
+### Compliance Frameworks ⭐ **100% ISO 27001, SOC 2, HIPAA**
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [compliance/README.md](compliance/README.md) | **NEW:** Compliance overview and framework index | Admins/Compliance |
+| [compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md](compliance/MULTI-FRAMEWORK-COMPLIANCE-SUMMARY.md) | Multi-framework implementation summary with dashboard integration | Admins/Auditors |
+| [compliance/iso27001/](compliance/iso27001/) | **100% Compliant** - ISO/IEC 27001:2022 (83 of 83 controls, ~90KB docs) | Admins/Auditors |
+| [compliance/soc2/](compliance/soc2/) | **100% Compliant** - SOC 2 Trust Services (54 of 54 criteria) | Admins/Auditors |
+| [compliance/hipaa/](compliance/hipaa/) | **98% Compliant** - HIPAA Security Rule (42 of 43 safeguards) | Healthcare/Admins |
+
+**Pro Dashboard:** `wp-admin/admin.php?page=nvoos-pro-dashboard-multi-framework` for real-time compliance scores.
+
 ### Mesh Networking
 
 | Document | Description | Audience |
@@ -505,6 +744,9 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [gemini-api-enhancements.md](reference/api/gemini/gemini-api-enhancements.md) | Gemini API enhancements (list_models, count_tokens, embeddings, streaming) | Developers |
 | [send-group-email-usage.md](features/tools/communication/send-group-email-usage.md) | Complete usage guide for Send Group Email tool | Users/Devs |
 | [tool-image-download.md](guides/developer/tool-development/tool-image-download.md) | Image download tool specifics | Developers |
+| **[CRAWL4AI_SERVICE_IMPLEMENTATION.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_IMPLEMENTATION.md)** ⭐ **NEW (Jan 2026)** | **Complete Crawl4AI remote service implementation** - Copy-paste ready Python/FastAPI code, Docker deployment, browser pool management (30KB) | Developers |
+| **[CRAWL4AI_SERVICE_REFERENCE.md](features/tools/crawl4ai/CRAWL4AI_SERVICE_REFERENCE.md)** ⭐ **NEW (Jan 2026)** | **Crawl4AI service API reference** - REST endpoints, deployment guides, integration examples, troubleshooting (32KB) | Developers/Admins |
+| [CRAWL4AI-JOB-TRACKING.md](features/tools/crawl4ai/CRAWL4AI-JOB-TRACKING.md) | Job tracking enhancement for Crawl4AI (all job types tracked) | Developers |
 
 ### Chat Features
 
@@ -513,6 +755,17 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 | [CROSS-WIDGET-COMMUNICATION.md](guides/user/chat/CROSS-WIDGET-COMMUNICATION.md) | Load sessions between User Chat History and Chat widgets | Users/Devs |
 | [chat-history-persistence.md](guides/user/chat/chat-history-persistence.md) | Chat history persistence system | Users/Devs |
 | [chat-history-persistence-quickstart.md](getting-started/quick-starts/chat-history-persistence-quickstart.md) | Quick guide for chat persistence | Users |
+
+### Pro Features ⭐ **PRO ADDON**
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| [PRO_CPT_OVERVIEW.md](features/pro-cpt/PRO_CPT_OVERVIEW.md) | **NEW:** Events, Quizzes, and Places CPT overview (21 tools) | Users/Admins |
+
+**Pro Custom Post Types:**
+- **Events** (5 tools) - Calendar management, Google Calendar integration
+- **Quizzes** (9 tools) - Assessments, grading, analytics, JetEngine CCT
+- **Places** (7 tools) - Location management, Google Places API integration
 
 ### Performance & Optimization
 
@@ -563,18 +816,32 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 
 | Document | Description | Audience |
 |----------|-------------|----------|
-| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | **NEW (Dec 6, 2025):** Executive summary of comprehensive gap analysis | Everyone |
-| **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | **NEW (Dec 6, 2025):** Full gap analysis - 365 files, 9 categories, 35 gaps identified | Developers/QA |
-| **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | **NEW (Dec 6, 2025):** Step-by-step quick fixes with code examples | Developers |
-| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | **Master Code Review** - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
+| **[GAP_DOCUMENTATION_REVIEW_SUMMARY.md](GAP_DOCUMENTATION_REVIEW_SUMMARY.md)** | **⭐ NEW (Jan 3, 2026):** Gap documentation review - 100% high-priority completion! Quality: 98/100 | Everyone |
+| **[GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md](implementation-history/2025/summaries/GAP_DOCUMENTATION_STATUS_UPDATE_2026-01-03.md)** | **NEW (Jan 3, 2026):** Master status update - all 6 gap documents reviewed, phase tracking | Developers/PM |
+| **[CODE_REVIEW_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_2026-01-02.md)** | **NEW (Jan 2, 2026):** Comprehensive code review - Tool count verification (193 tools), Grade A- (92/100) | Developers/QA |
+| **[CODE_REVIEW_SUMMARY_2026-01-02.md](implementation-history/2025/code-reviews/CODE_REVIEW_SUMMARY_2026-01-02.md)** | **NEW (Jan 2, 2026):** Quick summary of January 2 code review findings and actions | Everyone |
+| **[ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md](implementation-history/2025/documentation/ROOT_DIRECTORY_ORGANIZATION_2026-01-02.md)** | **NEW (Jan 2, 2026):** Root cleanup - moved 8 files to proper docs/ locations | Developers |
+| **[GAP_ANALYSIS_EXECUTIVE_SUMMARY.md](implementation-history/2025/summaries/GAP_ANALYSIS_EXECUTIVE_SUMMARY.md)** | Executive summary of comprehensive gap analysis (Dec 6, 2025) | Everyone |
+| **[PLUGIN_GAP_ANALYSIS.md](implementation-history/2025/summaries/PLUGIN_GAP_ANALYSIS.md)** | Full gap analysis - 365 files, 9 categories, 35 gaps identified (Dec 6, 2025) | Developers/QA |
+| **[QUICK_WINS_GAP_FIXES.md](implementation-history/2025/summaries/QUICK_WINS_GAP_FIXES.md)** | Step-by-step quick fixes with code examples (Dec 6, 2025) | Developers |
+| [CODE-REVIEW-MASTER.md](guides/developer/best-practices/CODE-REVIEW-MASTER.md) | Master Code Review - Comprehensive assessment (95/100 score, consolidates 6 reviews) | Developers |
 | [archive/](archive/README.md) | Historical code reviews (archived for reference) | Developers |
 | [SETTINGS_PAGE_CODE_REVIEW.md](implementation-history/2025/code-reviews/SETTINGS_PAGE_CODE_REVIEW.md) | Settings page architecture review (debugging-focused) | Developers |
 | [ACTION_ITEMS.md](implementation-history/2025/summaries/ACTION_ITEMS.md) | Prioritized development tasks (9KB) | Developers |
+
+### Testing & Code Coverage
+
+| Document | Description | Audience |
+|----------|-------------|----------|
+| **[CODE_COVERAGE_DASHBOARD.md](guides/developer/testing/CODE_COVERAGE_DASHBOARD.md)** | **⭐ NEW (Jan 3, 2026):** Code coverage dashboard with Codecov integration, auto-reporting in CI/CD | Developers/QA |
+| [TESTING_AND_QUALITY_REPORT.md](guides/developer/testing/TESTING_AND_QUALITY_REPORT.md) | Comprehensive testing analysis - 2,106 tests, 73.4% pass rate, code quality metrics | Developers/QA |
+| [CRON_TESTING_GUIDE.md](guides/developer/testing/CRON_TESTING_GUIDE.md) | Complete guide for testing cron jobs and verifying visibility in admin UI | All Users |
 
 ### Technical Documentation
 
 | Document | Description | Audience |
 |----------|-------------|----------|
+| [gmail-oauth-fix-summary.md](fixes/gmail-oauth-fix-summary.md) | Gmail OAuth integration fix (400 Bad Request) | Developers/Admins |
 | [OPENAI-STABILIZATION.md](features/ai-providers/openai/OPENAI-STABILIZATION.md) | OpenAI integration stability (12KB) | Developers |
 | [TRANSCRIPT_RECONSTRUCTION_FIX.md](implementation-history/2025/fixes/chat/TRANSCRIPT_RECONSTRUCTION_FIX.md) | Transcript reconstruction fix | Developers |
 | [GET_OPEN_METEO_FIX.md](fixes/GET_OPEN_METEO_FIX.md) | Weather forecast chart iframe rendering fix | Developers |
@@ -590,10 +857,20 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 ## 📊 Documentation Statistics
 
 ### Coverage
-- **Total Documentation Files:** 51+ (46+ in docs/, 5+ in root)
+- **Total Documentation Files:** 659+ files (654+ in docs/, 5 in root)
 - **Total Documentation Size:** ~408KB+
 - **Main README Size:** 1,400+ lines
 - **Average Doc Size:** ~8.8KB
+
+### Root Directory (Cleaned January 6, 2026)
+Essential files only (reduced from 30 to 5 files):
+1. README.md - Main plugin documentation
+2. CHANGELOG.md - Version history
+3. CONTRIBUTING.md - Contributor guidelines
+4. SECURITY.md - Security policy
+5. BUILD.md - Build instructions
+
+**Note:** Previously had readme.txt and tool-status.txt in root, but core MD files are the essentials.
 
 ### Categories
 - **Setup & Installation:** 4 documents
@@ -603,38 +880,52 @@ Comprehensive evaluation of Symfony framework components for WP oOS enhancement:
 - **API & Tools:** 4 documents
 - **Performance & Optimization:** 6 documents
 - **MCP Protocol:** 3 documents
-- **Development:** 6 documents
+- **Development:** 9 documents (updated with testing section)
 - **Troubleshooting:** 4 documents
 - **Technical Details:** 2 documents
 
-### Completeness Score
+### Completeness Score (Updated January 3, 2026)
 - ✅ **User Documentation:** 90% - Excellent coverage
-- ✅ **Developer Documentation:** 95% - Comprehensive
+- ✅ **Developer Documentation:** 98% - Comprehensive (up from 95%)
+- ✅ **Testing Documentation:** 90% - Very Good (new category)
 - ✅ **API Documentation:** 85% - Very good
-- ✅ **Security Documentation:** 90% - Excellent
+- ✅ **Security Documentation:** 100% - Complete (up from 90%)
 - ⚠️ **Video/Visual Guides:** 0% - Opportunity for improvement
+
+### Quality Metrics (January 2026)
+- **Overall Quality Score:** 98/100 (up from 95/100)
+- **Documentation Grade:** A+ (up from A)
+- **Gap Completion:** 100% high-priority (10 of 10 items)
+- **Production Readiness:** 98/100 ✅ Approved
 
 ---
 
 ## 🎯 Documentation Recommendations
 
-### Immediate Priorities
+### Immediate Priorities (January 2026 Status)
 1. ✅ Create this documentation index (completed)
 2. ✅ Add quick reference card for common tasks (completed)
-3. [ ] Create troubleshooting flowcharts
-4. [ ] Add video walkthroughs for setup
+3. ✅ Complete code coverage dashboard (completed January 3, 2026)
+4. ✅ Review and update all gap documentation (completed January 3, 2026)
+5. ✅ Organize root directory (completed January 2, 2026)
+6. [ ] Create troubleshooting flowcharts
+7. [ ] Add video walkthroughs for setup
 
 ### Short-term Improvements
 1. [ ] Add more code examples to tool documentation
 2. [ ] Create architecture diagrams
 3. [ ] Expand troubleshooting scenarios
 4. [ ] Add performance tuning guide
+5. [ ] Complete end-to-end test suite (10-13 hours planned)
+6. [ ] Complete parameter documentation (2-3 hours planned)
 
 ### Long-term Goals
 1. [ ] Create interactive documentation site
 2. [ ] Add video tutorials
 3. [ ] Create plugin showcase examples
 4. [ ] Build community wiki
+5. [ ] Implement Gemini Phase 2 features (22-28 hours, Q1 2026)
+6. [ ] Advanced PM features for v2.0.0 (30-40 hours, Q3-Q4 2026)
 
 ---
 

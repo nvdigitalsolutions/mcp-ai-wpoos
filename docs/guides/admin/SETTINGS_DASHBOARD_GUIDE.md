@@ -32,6 +32,9 @@ The NV oOS Settings Dashboard is a modern, tabbed interface for managing all plu
 2. Navigate to **Settings → NV oOS**
 3. The Settings Dashboard loads with the **Overview** tab active
 
+![General Settings Page](../../screenshots/admin/04-settings-general.png)
+*Main NV oOS Settings Dashboard with tabbed interface*
+
 ### Direct URL
 
 ```
@@ -173,6 +176,9 @@ Core plugin configuration and global defaults.
 
 Configure API keys and settings for each AI provider.
 
+![AI Providers Tab](../../screenshots/admin/58-ai-providers-tab.png)
+*AI Providers configuration interface*
+
 ### OpenAI
 
 **API Key** - Already covered in General tab
@@ -273,6 +279,9 @@ Configure API keys and settings for each AI provider.
 
 Configure authentication methods for API access and remote MCP clients.
 
+![Authentication Settings](../../screenshots/admin/10-settings-authentication.png)
+*Authentication configuration interface*
+
 ### Auth0 Configuration (Optional)
 
 **Enable Auth0**
@@ -334,6 +343,9 @@ Configure authentication methods for API access and remote MCP clients.
 ## Tab 5: Tools & Features
 
 Enable/disable tools and configure tool-specific settings.
+
+![Tools Manager Full List](../../screenshots/admin/59-tools-manager-full-list.png)
+*Tools Manager showing all 169 available tools with status labels and categories*
 
 ### Tool Filter Bar
 
@@ -462,7 +474,10 @@ Configure AI model orchestration, tool recommendations, and queue profiles.
 
 ## Tab 7: Token Manager
 
-Covered in detail in the [Token Management User Guide](TOKEN_MANAGEMENT_GUIDE.md).
+Covered in detail in the [Token Management User Guide](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md).
+
+![Token Manager](../../screenshots/admin/52-token-manager-empty-state.png)
+*Token Manager interface for tracking and managing API token usage*
 
 ### Quick Summary
 
@@ -476,6 +491,9 @@ Covered in detail in the [Token Management User Guide](TOKEN_MANAGEMENT_GUIDE.md
 ## Tab 8: Security
 
 Security hardening, monitoring, and emergency controls.
+
+![Security Settings](../../screenshots/admin/11-settings-security.png)
+*Security configuration interface*
 
 ### Root Security Key
 
@@ -875,12 +893,12 @@ Click **Save All** (top right) to force-save all tabs.
 
 ## Related Documentation
 
-- [Token Management User Guide](TOKEN_MANAGEMENT_GUIDE.md) - Deep dive on token limits
+- [Token Management User Guide](../../features/performance/TOKEN_MANAGEMENT_GUIDE.md) - Deep dive on token limits
 - [Quick Reference Guide](../../QUICK_REFERENCE.md) - Fast access to common tasks
 - [Architecture Guide](../../architecture/core/COPILOT_ARCHITECTURE_GUIDE.md) - Technical implementation
 - [Settings Registry](../../architecture/core/ARCHITECTURE_QUICK_REFERENCE.md#settings-registry) - Developer reference
-- [Federation Guide](../federation/federation-discovery.md) - Mesh networking details
-- [Security Hardening](../security/SECURITY_HARDENING.md) - Security best practices
+- [Federation Guide](../../features/federation/federation-discovery.md) - Mesh networking details
+- [Security Hardening](../../features/security/SECURITY_HARDENING.md) - Security best practices
 
 ---
 

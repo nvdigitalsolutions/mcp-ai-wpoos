@@ -11,7 +11,7 @@ STATUS:    ✅ PASSED - ALL CHECKS SUCCESSFUL
 EXECUTIVE SUMMARY
 --------------------------------------------------------------------------------
 
-The Open Operator System (WP oOS) plugin has been thoroughly tested to
+The Open Operator System (NV oOS) plugin has been thoroughly tested to
 verify that recent changes in PR #989 did not breach the plugin or introduce
 any breaking changes.
 
