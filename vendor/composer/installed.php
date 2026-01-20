@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-sanitization-rules',
-        'version' => 'dev-copilot/review-sanitization-rules',
-        'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
+        'pretty_version' => 'dev-copilot/fix-provider-tab-bug',
+        'version' => 'dev-copilot/fix-provider-tab-bug',
+        'reference' => '43f7f79f5b674de12866d0b2455a577362407aac',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-sanitization-rules',
-            'version' => 'dev-copilot/review-sanitization-rules',
-            'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
+            'pretty_version' => 'dev-copilot/fix-provider-tab-bug',
+            'version' => 'dev-copilot/fix-provider-tab-bug',
+            'reference' => '43f7f79f5b674de12866d0b2455a577362407aac',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
