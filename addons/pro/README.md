@@ -165,24 +165,29 @@ All packages are:
 
 ### Production Dependencies Strategy
 
-The Pro add-on uses a selective `.gitignore` strategy to include production dependencies in the repository:
+The Pro add-on leverages production dependencies from the base plugin's `node_modules/` directory (managed via the root `package.json`). This ensures all Pro addon NPM packages are available without duplicating dependencies:
 
-```gitignore
-# Ignore all node_modules by default
-/addons/pro/node_modules/*
-
-# But include production dependencies (negation patterns)
-!/addons/pro/node_modules/sharp/
-!/addons/pro/node_modules/katex/
-!/addons/pro/node_modules/ics/
-# ... (see .gitignore for full list)
+```json
+// Base plugin package.json includes all Pro dependencies:
+{
+  "dependencies": {
+    "@turf/turf": "^7.3.2",
+    "sharp": "^0.33.5",
+    "katex": "^0.16.11",
+    "ics": "^3.8.1",
+    "prettier": "^3.4.2",
+    "mjml": "^4.18.0",
+    "fluent-ffmpeg": "^2.1.3",
+    // ... (see package.json for full list)
+  }
+}
 ```
 
 This ensures:
-- ✅ **Zero-config deployment** - Clone and activate
-- ✅ **No build step required** - All dependencies included
+- ✅ **Centralized dependency management** - All dependencies in one place
+- ✅ **No duplication** - Shared dependencies between base and Pro
 - ✅ **Production-ready** - Works immediately in WordPress
-- ✅ **Offline capable** - No npm registry access needed
+- ✅ **Simple updates** - Update versions in one location
 
 ### File Size Optimization
 

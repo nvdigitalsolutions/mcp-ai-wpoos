@@ -341,32 +341,74 @@ function wp_mcp_ai_register_all_npm_filters() {
  */
 
 /**
- * Check if auto-registration is enabled
+ * Auto-register NPM filters on init hook
  *
- * Auto-registration can be controlled via constant or filter.
- * Default is enabled if Node.js is available.
+ * Deferred to init hook to avoid instantiating Process Service during plugin activation.
+ * This prevents fatal errors when proc_open is not available on the server.
  */
-$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' ) 
-	? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
-	: true;
+function wp_mcp_ai_auto_register_npm_filters() {
+	/**
+	 * Check if auto-registration is enabled
+	 *
+	 * Auto-registration can be controlled via constant or filter.
+	 * Default is enabled if Node.js is available.
+	 */
+	$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' ) 
+		? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
+		: true;
 
-/**
- * Filter to control auto-registration of NPM filters.
- *
- * @param bool $auto_register Whether to auto-register filters.
- */
-$auto_register = apply_filters( 'wp_mcp_ai_auto_register_npm_filters', $auto_register );
+	/**
+	 * Filter to control auto-registration of NPM filters.
+	 *
+	 * @param bool $auto_register Whether to auto-register filters.
+	 */
+	$auto_register = apply_filters( 'wp_mcp_ai_auto_register_npm_filters', $auto_register );
 
-// Auto-register if enabled and Node.js is available.
-if ( $auto_register && wp_mcp_ai_is_nodejs_available() ) {
-	wp_mcp_ai_register_all_npm_filters();
+	// Auto-register if enabled and Node.js is available.
+	if ( $auto_register && wp_mcp_ai_is_nodejs_available() ) {
+		wp_mcp_ai_register_all_npm_filters();
+	}
 }
+add_action( 'init', 'wp_mcp_ai_auto_register_npm_filters', 20 );
 
 /**
  * ============================================================================
  * ADMIN NOTICES
  * ============================================================================
  */
+
+/**
+ * Check if vendor packages are available
+ *
+ * @return array Array with 'available' boolean and 'missing' array of package names.
+ */
+function wp_mcp_ai_check_vendor_packages() {
+	$packages = array(
+		'prettier'       => 'assets/vendor/prettier/standalone.js',
+		'mjml'           => 'assets/vendor/mjml/lib/index.js',
+		'fluent-ffmpeg'  => 'assets/vendor/fluent-ffmpeg/index.js',
+		'sharp'          => 'assets/vendor/sharp/lib/index.js',
+		'katex'          => 'assets/vendor/katex/dist/katex.min.js',
+		'ics'            => 'assets/vendor/ics/index.js',
+		'turf'           => 'assets/vendor/turf/dist/cjs/index.cjs',
+	);
+
+	$missing = array();
+	foreach ( $packages as $name => $path ) {
+		$full_path = WP_MCP_AI_PRO_PATH . $path;
+		// Also check for alternate paths that might exist.
+		$alt_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $name;
+		
+		if ( ! file_exists( $full_path ) && ! is_dir( $alt_path ) ) {
+			$missing[] = $name;
+		}
+	}
+
+	return array(
+		'available' => empty( $missing ),
+		'missing'   => $missing,
+	);
+}
 
 /**
  * Show admin notice if Node.js is not available but tools require it
@@ -402,25 +444,53 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 		return;
 	}
 
+	// Check if vendor packages are available.
+	$package_check = wp_mcp_ai_check_vendor_packages();
+	
 	// Check if Node.js is available.
-	if ( ! wp_mcp_ai_is_nodejs_available() ) {
+	$nodejs_available = wp_mcp_ai_is_nodejs_available();
+
+	// Show notice if either packages are missing or Node.js is unavailable.
+	if ( ! $package_check['available'] || ! $nodejs_available ) {
 		?>
 		<div class="notice notice-warning is-dismissible">
 			<p>
 				<strong><?php esc_html_e( 'NV oOS Pro: Node.js Integration Required', 'mcp-ai-wpoos-pro' ); ?></strong>
 			</p>
+			<?php if ( ! $package_check['available'] ) : ?>
 			<p>
 				<?php
 				echo wp_kses_post(
 					sprintf(
-						/* translators: %1$s: link to Node.js download, %2$s: link to documentation */
-						__( 'Some Pro features require Node.js to be installed on your server. Please install <a href="%1$s" target="_blank">Node.js</a> and run <code>npm install</code> in the Pro addon directory. See <a href="%2$s" target="_blank">integration guide</a> for details.', 'mcp-ai-wpoos-pro' ),
-						'https://nodejs.org/',
+						/* translators: %s: link to documentation */
+						__( 'Some required NPM packages are missing from the vendor directory. This may indicate an incomplete installation. Please download the complete Pro addon package or contact support. See <a href="%s" target="_blank">integration guide</a> for details.', 'mcp-ai-wpoos-pro' ),
 						admin_url( 'admin.php?page=wp-mcp-ai-settings#npm-integration' )
 					)
 				);
 				?>
 			</p>
+			<?php if ( ! empty( $package_check['missing'] ) ) : ?>
+			<p>
+				<strong><?php esc_html_e( 'Missing packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
+				<?php echo esc_html( implode( ', ', $package_check['missing'] ) ); ?>
+			</p>
+			<?php endif; ?>
+			<?php endif; ?>
+			
+			<?php if ( ! $nodejs_available ) : ?>
+			<p>
+				<?php
+				echo wp_kses_post(
+					sprintf(
+						/* translators: %s: link to Node.js download */
+						__( 'Node.js is not installed on your server. Some Pro features require Node.js to execute. Please install <a href="%s" target="_blank">Node.js</a> on your server.', 'mcp-ai-wpoos-pro' ),
+						'https://nodejs.org/'
+					)
+				);
+				?>
+			</p>
+			<?php endif; ?>
+			
 			<p>
 				<strong><?php esc_html_e( 'Features requiring Node.js:', 'mcp-ai-wpoos-pro' ); ?></strong>
 			</p>

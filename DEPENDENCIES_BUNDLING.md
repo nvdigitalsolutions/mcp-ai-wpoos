@@ -1,265 +1,220 @@
-# Production Dependencies Bundling - Implementation Summary
+# Dependencies Bundling Guide
 
-## Problem Statement
-The following production npm dependencies were required at runtime but were not bundled into the plugin, causing the plugin to fail when `node_modules/` was not present:
+This document explains how NPM dependencies are managed and bundled in the Open Operator System plugin.
 
-**Not Bundled (❌):**
-- `@microsoft/fetch-event-source@^2.0.1`
-- `@types/pdfkit@^0.17.4`  
-- `docx@^9.5.1`
-- `exceljs@^4.4.0`
-- `pdfkit@^0.17.2`
+## Overview
 
-**Already Bundled (✅):**
-- `@neplex/vectorizer@^0.0.5` (copied to vendor)
-- `chart.js@^4.4.1` (copied to vendor)
-- `dompurify@^3.3.0` (bundled in browser JS)
-- `ky@^1.14.0` (bundled in browser JS)
-- `marked@^17.0.0` (bundled in browser JS)
+The plugin uses a two-tier dependency management system:
 
-## Solution Overview
+1. **Base Plugin**: Manages its own dependencies via `package.json`
+2. **Pro Addon**: Manages Pro-specific dependencies via `addons/pro/package.json`
 
-We followed the existing patterns in the codebase for bundling dependencies, implementing three distinct strategies based on use case:
+## Base Plugin Dependencies
 
-### Strategy 1: Pre-Built UMD Copy (Chart.js pattern)
-**Used for:** Pre-built browser libraries with no dependencies
+Located in root `package.json`:
 
-**Example:** Chart.js
-```bash
-# package.json postinstall script
-cp node_modules/chart.js/dist/chart.umd.min.js assets/js/vendor/chart.min.js
-```
-
-**Characteristics:**
-- Pre-minified UMD bundle (~209KB)
-- No build step required
-- Directly enqueued in WordPress
-
-### Strategy 2: Full Package Copy with Native Bindings (Vectorizer pattern)
-**Used for:** Node.js packages with native binaries
-
-**Example:** @neplex/vectorizer
-```bash
-# package.json postinstall script
-rm -rf assets/js/vendor/neplex-vectorizer
-mkdir -p assets/js/vendor/neplex-vectorizer
-cp -r node_modules/@neplex/vectorizer* assets/js/vendor/neplex-vectorizer/
-```
-
-**Characteristics:**
-- Entire package copied including `.node` native binaries
-- Standalone script uses fallback: vendor path → node_modules
-- Used by `bin/vectorize-image.js`
-
-### Strategy 3: esbuild Bundling for Browser (New - Browser ES6 imports)
-**Used for:** Browser JavaScript with ES6 imports
-
-**Example:** @microsoft/fetch-event-source, marked, dompurify, ky
-```javascript
-// assets/js/sse-service.js
-import { fetchEventSource } from '@microsoft/fetch-event-source';
-
-// assets/js/chat-markdown-service.js
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
-
-// assets/js/chat-http-client-service.js
-import ky from 'ky';
-```
-
-**Build Process:**
-```bash
-# esbuild.config.js (bundled option)
+```json
 {
-  bundle: true,
-  format: 'iife',
-  platform: 'browser',
-  entryPoints: ['assets/js/chat-bundle.js'],
-  outfile: 'assets/js/chat-bundle.min.js'
+  "dependencies": {
+    "@microsoft/fetch-event-source": "^2.0.1",  // SSE for streaming
+    "@neplex/vectorizer": "^0.0.5",              // Vector embeddings
+    "chart.js": "^4.4.7",                        // Charts in admin
+    "dompurify": "^3.3.0",                       // HTML sanitization
+    "ky": "^1.14.0",                             // HTTP client
+    "marked": "^17.0.0"                          // Markdown parsing
+  }
 }
 ```
 
-**Result:** `chat-bundle.min.js` (350KB) - includes all dependencies
+### Base Plugin Bundling
 
-### Strategy 4: esbuild Bundling for Node.js (NEW - Document generation)
-**Used for:** Node.js packages used server-side (pdfkit, docx, exceljs)
+- **Bundled into `chat-bundle.min.js`**: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`
+- **Copied to `assets/js/vendor/`**: `chart.js`, `@neplex/vectorizer`
 
-**Implementation:**
-
-#### 1. Created Standalone Scripts
-```
-addons/pro/scripts/
-├── generate-pdf.js      (uses pdfkit)
-├── generate-word.js     (uses docx)
-└── generate-excel.js    (uses exceljs)
+Build commands:
+```bash
+npm run build:js        # Bundles chat dependencies
+npm run install:chartjs # Copies chart.js
+npm run install:vectorizer # Copies vectorizer
 ```
 
-#### 2. Created esbuild Configuration for Node.js
-```javascript
-// esbuild.config.pro.js
-const nodeScriptOptions = {
-  bundle: true,
-  platform: 'node',  // Target Node.js, not browser
-  target: 'node14',
-  format: 'cjs',     // CommonJS for Node.js
-  external: ['fs', 'path'], // Don't bundle Node.js built-ins
-  minify: false,     // Keep readable for debugging
-  sourcemap: true
-};
-```
+## Pro Addon Dependencies
 
-#### 3. Build Output
-```
-addons/pro/bin/
-├── generate-pdf.bundle.js      (2.5MB - includes pdfkit)
-├── generate-word.bundle.js     (837KB - includes docx)
-├── generate-excel.bundle.js    (2.3MB - includes exceljs)
-└── data/                       (PDFKit font files)
-    ├── Helvetica.afm
-    ├── Times-Roman.afm
-    └── ... (14 font files total)
-```
+Located in `addons/pro/package.json`:
 
-#### 4. Updated PHP Tools
-Changed from dynamic script creation to using pre-bundled scripts:
-
-**Before:**
-```php
-protected function generate_pdf_document($data) {
-    // Create Node.js script on the fly
-    $script = $this->create_pdf_generation_script();
-    $script_file = $temp_file . '.js';
-    file_put_contents($script_file, $script);
-    
-    // Execute
-    exec("node $script_file $json_file $output_file");
-    
-    // Cleanup
-    unlink($script_file);
+```json
+{
+  "dependencies": {
+    "@turf/turf": "^7.3.2",        // Geospatial analysis
+    "@types/pdfkit": "^0.17.4",    // TypeScript types
+    "chart.js": "^4.4.7",          // Charts (also in base)
+    "docx": "^9.5.1",              // Word document generation
+    "exceljs": "^4.4.0",           // Excel generation
+    "fluent-ffmpeg": "^2.1.3",     // Video processing
+    "ics": "^3.8.1",               // Calendar export
+    "katex": "^0.16.11",           // Math rendering
+    "mjml": "^4.18.0",             // Email templates
+    "pdfkit": "^0.17.2",           // PDF generation
+    "prettier": "^3.4.2",          // Code formatting
+    "sharp": "^0.33.5"             // Image processing
+  }
 }
 ```
 
-**After:**
-```php
-protected function generate_pdf_document($data) {
-    // Use pre-bundled script
-    $script_file = $this->get_pdf_generation_script_path();
-    // Returns: WP_MCP_AI_PRO_PATH . 'bin/generate-pdf.bundle.js'
-    
-    if (is_wp_error($script_file)) {
-        return $script_file; // Script not found error
-    }
-    
-    // Execute (no temp file creation needed)
-    exec("node $script_file $json_file $output_file");
+### Pro Addon Bundling
+
+Pro addon uses a **vendor directory pattern** for production distribution:
+
+1. **Development**: Dependencies installed in `addons/pro/node_modules/`
+2. **Production**: Dependencies copied to `addons/pro/assets/vendor/` during build
+3. **Services/Tools**: Check vendor directory first, then node_modules (fallback for dev)
+
+#### Bundling Process
+
+**Automatic (via postinstall)**:
+```bash
+cd addons/pro
+npm install  # Automatically runs copy-dependencies.js
+```
+
+**Manual**:
+```bash
+cd addons/pro
+node scripts/copy-dependencies.js
+```
+
+#### What Gets Copied
+
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| @turf/turf | 53.2 KB | dist/ (cjs & esm) |
+| katex | 2.8 MB | dist/ (fonts, CSS, JS) |
+| ics | 6.0 KB | dist/index.js |
+| sharp | 279.8 KB | lib/ |
+| prettier | 99.3 KB | standalone.js, parsers |
+| mjml | 1.8 KB | lib/ |
+| fluent-ffmpeg | 111.4 KB | index.js, lib/ |
+
+**Total**: 3.4 MB
+
+#### Special Cases
+
+**Document Generation (PDF, Word, Excel)**:
+- Bundled into standalone scripts via esbuild
+- Located in `addons/pro/bin/`
+- `generate-pdf.bundle.js`, `generate-word.bundle.js`, `generate-excel.bundle.js`
+
+**Chart.js**:
+- Duplicated in base and Pro for different contexts
+- Base: Admin dashboard charts
+- Pro: Health analytics charts
+
+## PHP Dependencies (Composer)
+
+Located in root `composer.json`:
+
+```json
+{
+  "require": {
+    "rahul900day/tiktoken-php": "^1.0",
+    "symfony/http-client": "^6.1|^7.0",
+    "nyholm/psr7": "^1.8",
+    "symfony/validator": "^6.4|^7.0",
+    "symfony/cache": "^6.4|^7.0",
+    "symfony/filesystem": "^6.4|^7.0",
+    "symfony/process": "^6.4|^7.0"
+  }
 }
 ```
+
+PHP dependencies are:
+- Installed via `composer install`
+- Located in `vendor/` (included in distribution)
+- Used for validation, HTTP clients, caching, etc.
+
+## Git Strategy
+
+### Base Plugin
+- `node_modules/` excluded
+- `assets/js/vendor/` included
+
+### Pro Addon
+- `addons/pro/node_modules/` excluded
+- `addons/pro/assets/vendor/` included
 
 ## Build Process
 
-### Development Workflow
+### Development Setup
 ```bash
-# 1. Install dependencies
+# Install all dependencies
 npm install
+cd addons/pro && npm install
 
-# Automatically runs postinstall:
-# - Copies chart.js to assets/js/vendor/
-# - Copies vectorizer to assets/js/vendor/neplex-vectorizer/
-# - Bundles Pro addon scripts: npm run build:js:pro
-
-# 2. Build all assets
+# Build all assets
 npm run build
-# Runs: build:css && build:js && build:js:pro
-
-# Or build individually:
-npm run build:js      # Browser JS (chat-bundle.min.js)
-npm run build:js:pro  # Pro addon Node.js scripts
 ```
 
-### Distribution Build
+### Production Build
 ```bash
-# Build plugin ZIP
-./bin/build-plugin-zip.sh --pro
+# Run plugin build script
+./bin/build-plugin-zip.sh --combined
 
-# Creates: build/mcp-ai-wpoos-pro-X.Y.Z.zip
-# Includes:
-# - addons/pro/bin/*.bundle.js (bundled scripts)
-# - addons/pro/bin/data/* (PDFKit fonts)
-# - assets/js/vendor/chart.min.js
-# - assets/js/vendor/neplex-vectorizer/
-# - assets/js/chat-bundle.min.js (with embedded deps)
-#
-# Excludes:
-# - node_modules/ (via .distignore)
-# - *.map files
-# - tests/
+# This creates a distribution with:
+# - Base plugin with its dependencies
+# - Pro addon with vendor directory
+# - No node_modules directories
 ```
 
-## Files Modified
+## Service/Tool Pattern
 
-### New Files
-- `addons/pro/scripts/generate-pdf.js` - Standalone PDF generator
-- `addons/pro/scripts/generate-word.js` - Standalone Word generator
-- `addons/pro/scripts/generate-excel.js` - Standalone Excel generator
-- `esbuild.config.pro.js` - Node.js bundling configuration
-- `addons/pro/bin/*.bundle.js` - Bundled scripts (generated)
-- `addons/pro/bin/data/*` - PDFKit font files (copied)
+All Pro services and tools follow this pattern for package availability checks:
 
-### Modified Files
-- `package.json` - Added `build:js:pro` script, updated postinstall
-- `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-pdf.php`
-- `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-word.php`
-- `addons/pro/includes/tools/document-generation/class-wp-mcp-ai-tool-pro-excel.php`
+```php
+public function is_available() {
+    // Check vendor directory first (production)
+    $vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/package/file.js';
+    
+    // Fallback to node_modules (development)
+    $node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/package/file.js';
+    
+    if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
+        return false;
+    }
+    
+    return true;
+}
+```
 
-## Testing
+## Troubleshooting
 
-All document generation tools tested successfully without `node_modules/`:
+### Package Not Found in Production
 
-### PDF Generation
+1. Check if package is in `addons/pro/package.json`
+2. Run `cd addons/pro && npm install` to trigger copy
+3. Verify file exists in `addons/pro/assets/vendor/`
+4. Check service/tool uses correct vendor path
+
+### Development vs Production Mismatch
+
+Services/tools check both paths automatically:
+- Production: `assets/vendor/`
+- Development: `node_modules/`
+
+### Build Fails
+
 ```bash
-echo '{"title":"Test","content":"Test PDF"}' > test.json
-node addons/pro/bin/generate-pdf.bundle.js test.json output.pdf
-# ✅ Output: PDF generated successfully
+# Clean install
+rm -rf node_modules addons/pro/node_modules
+npm install
+cd addons/pro && npm install
+
+# Rebuild
+npm run build
 ```
 
-### Word Generation
-```bash
-echo '{"title":"Test","sections":[{"heading":"Intro","content":"Test"}]}' > test.json
-node addons/pro/bin/generate-word.bundle.js test.json output.docx
-# ✅ Output: Word document generated successfully  
-```
+## Reference
 
-### Excel Generation
-```bash
-echo '{"data":[["Name","Age"],["John",30]]}' > test.json
-node addons/pro/bin/generate-excel.bundle.js test.json output.xlsx
-# ✅ Output: Excel document generated successfully
-```
-
-## Bundle Sizes
-
-| Component | Method | Size | Notes |
-|-----------|--------|------|-------|
-| chart.js | Pre-built copy | 209 KB | UMD bundle |
-| vectorizer | Package copy | ~2.5 MB | Includes .node binaries |
-| chat-bundle | esbuild (browser) | 350 KB | 4 deps bundled |
-| generate-pdf.bundle | esbuild (node) | 2.5 MB | Includes pdfkit + fonts |
-| generate-word.bundle | esbuild (node) | 837 KB | Includes docx |
-| generate-excel.bundle | esbuild (node) | 2.3 MB | Includes exceljs |
-| **Total Pro addon** | | **~6 MB** | All Node.js bundles |
-
-## Summary
-
-✅ **All production dependencies are now bundled into the plugin**
-✅ **No `node_modules/` required in production**
-✅ **Follows established patterns in codebase**
-✅ **Tested and working**
-✅ **Build process is automated**
-
-The solution uses four different strategies optimized for each use case:
-1. Pre-built UMD copy (Chart.js)
-2. Full package copy with native binaries (Vectorizer)
-3. esbuild browser bundling (SSE, marked, dompurify, ky)
-4. esbuild Node.js bundling (pdfkit, docx, exceljs) ← NEW
-
-All dependencies are self-contained within the plugin distribution.
+- **Copy Script**: `addons/pro/scripts/copy-dependencies.js`
+- **Pro Settings**: `includes/admin/class-wp-mcp-ai-pro-settings.php`
+- **Build Config**: `esbuild.config.pro.js`
+- **Package Files**: `package.json`, `addons/pro/package.json`

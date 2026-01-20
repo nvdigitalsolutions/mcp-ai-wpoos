@@ -142,6 +142,384 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			return $toolkit_status;
 		}
 
+	/**
+	 * Get PHP function requirements status grouped by system.
+	 *
+	 * Checks availability of PHP functions needed for Pro features.
+	 * Functions are grouped by the system/feature that requires them.
+	 *
+	 * @return array PHP function status information grouped by system.
+	 */
+	public static function get_php_requirements_status() {
+		// Systems and their required PHP functions.
+		$systems = array(
+			'process_service' => array(
+				'name'        => __( 'Process Service & Node.js Integration', 'mcp-ai-wpoos' ),
+				'description' => __( 'Core service for external process execution, Node.js tools, and NPM package integration.', 'mcp-ai-wpoos' ),
+				'functions'    => array( 'proc_open', 'proc_close', 'proc_terminate' ),
+				'critical'     => true,
+				'tools'        => array(
+					__( 'All Node.js-based tools', 'mcp-ai-wpoos' ),
+					__( 'NPM integration (Prettier, MJML, FFmpeg)', 'mcp-ai-wpoos' ),
+					__( 'Image optimization (Sharp)', 'mcp-ai-wpoos' ),
+					__( 'Video processing', 'mcp-ai-wpoos' ),
+					__( 'Math equation rendering', 'mcp-ai-wpoos' ),
+				),
+			),
+			'wp_cli'         => array(
+				'name'        => __( 'WP-CLI Integration', 'mcp-ai-wpoos' ),
+				'description' => __( 'Command-line interface for WordPress management and automation.', 'mcp-ai-wpoos' ),
+				'functions'    => array( 'proc_open', 'proc_close' ),
+				'critical'     => false,
+				'tools'        => array(
+					__( 'check_wp_cli tool', 'mcp-ai-wpoos' ),
+					__( 'WP-CLI command execution', 'mcp-ai-wpoos' ),
+				),
+			),
+			'performance'    => array(
+				'name'        => __( 'Performance Monitoring & Testing', 'mcp-ai-wpoos' ),
+				'description' => __( 'PHPUnit test execution and performance benchmarking from admin interface.', 'mcp-ai-wpoos' ),
+				'functions'    => array( 'exec' ),
+				'critical'     => false,
+				'tools'        => array(
+					__( 'Performance monitoring dashboard', 'mcp-ai-wpoos' ),
+					__( 'PHPUnit test runner', 'mcp-ai-wpoos' ),
+					__( 'Benchmark tests', 'mcp-ai-wpoos' ),
+				),
+			),
+			'documents'      => array(
+				'name'        => __( 'Document Generation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+				'functions'    => array( 'exec' ),
+				'critical'     => false,
+				'tools'        => array(
+					__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
+					__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
+					__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
+				),
+			),
+		);
+
+		// Check function availability.
+		$results = array();
+		$all_critical_ok = true;
+
+		foreach ( $systems as $system_id => $system ) {
+			$system_functions = array();
+			$all_available = true;
+
+			foreach ( $system['functions'] as $func_name ) {
+				$available = function_exists( $func_name );
+				$system_functions[ $func_name ] = array(
+					'available' => $available,
+					'name'      => $func_name,
+				);
+
+				if ( ! $available ) {
+					$all_available = false;
+					if ( $system['critical'] ) {
+						$all_critical_ok = false;
+					}
+				}
+			}
+
+			$results[ $system_id ] = array(
+				'name'         => $system['name'],
+				'description'  => $system['description'],
+				'functions'     => $system_functions,
+				'tools'         => $system['tools'],
+				'critical'      => $system['critical'],
+				'all_available' => $all_available,
+				'status'        => $all_available ? 'ok' : ( $system['critical'] ? 'critical' : 'warning' ),
+			);
+		}
+
+		// Get disabled functions list.
+		$disabled_functions = ini_get( 'disable_functions' );
+		$disabled_list = $disabled_functions ? array_map( 'trim', explode( ',', $disabled_functions ) ) : array();
+
+		// Check if any systems have issues.
+		$systems_with_issues = array_filter(
+			$results,
+			function( $s ) {
+				return ! $s['all_available'];
+			}
+		);
+		$has_any_issues = ! $all_critical_ok || count( $systems_with_issues ) > 0;
+
+		return array(
+			'systems'          => $results,
+			'disabled_list'    => $disabled_list,
+			'all_critical_ok'  => $all_critical_ok,
+			'has_any_issues'   => $has_any_issues,
+		);
+	}
+
+		/**
+		 * Get comprehensive toolkit details grouped by system.
+		 *
+		 * Returns detailed information about each toolkit including status,
+		 * PHP requirements, NPM dependencies, tools count, and categorization.
+		 *
+		 * @return array Toolkit details grouped by system.
+		 */
+		public static function get_toolkit_details() {
+			$settings = get_option( 'wp_mcp_ai_settings', array() );
+
+			$toolkits = array(
+				'media_toolkit' => array(
+					'name'        => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_media_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate' ),
+					'npm_packages' => array( 'sharp', 'fluent-ffmpeg', 'katex', '@neplex/vectorizer' ),
+					'tools_count' => 4,
+					'tools'       => array(
+						__( 'optimize_image tool', 'mcp-ai-wpoos' ),
+						__( 'process_video tool', 'mcp-ai-wpoos' ),
+						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
+						__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'document_generation' => array(
+					'name'        => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_document_generation_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'exec' ),
+					'npm_packages' => array( 'pdfkit', 'docx', 'exceljs' ),
+					'tools_count' => 3,
+					'tools'       => array(
+						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
+						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
+						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'project_management' => array(
+					'name'        => __( 'Project Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_project_management'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'ics' ),
+					'tools_count' => 1,
+					'tools'       => array(
+						__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'places_management' => array(
+					'name'        => __( 'Places Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_places_management'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( '@turf/turf' ),
+					'tools_count' => 1,
+					'tools'       => array(
+						__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'health_wellness_management' => array(
+					'name'        => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_health_wellness_management'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'chart.js' ),
+					'tools_count' => 1,
+					'tools'       => array(
+						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'quiz_system' => array(
+					'name'        => __( 'Quiz System', 'mcp-ai-wpoos' ),
+					'description' => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_quiz_system'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'katex' ),
+					'tools_count' => 2,
+					'tools'       => array(
+						__( 'create_quiz tool', 'mcp-ai-wpoos' ),
+						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'eca_management' => array(
+					'name'        => __( 'ECA Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_eca_management'] ),
+					'category'    => 'core',
+					'php_functions' => array(),
+					'npm_packages' => array(),
+					'tools_count' => 3,
+					'tools'       => array(
+						__( 'manage_eca tool', 'mcp-ai-wpoos' ),
+						__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
+						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'code_formatting' => array(
+					'name'        => __( 'Code Formatting', 'mcp-ai-wpoos' ),
+					'description' => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
+					'enabled'     => true,
+					'category'    => 'infrastructure',
+					'php_functions' => array( 'proc_open', 'proc_close' ),
+					'npm_packages' => array( 'prettier', 'mjml' ),
+					'tools_count' => 2,
+					'tools'       => array(
+						__( 'format_code tool', 'mcp-ai-wpoos' ),
+						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
+					),
+				),
+			);
+
+			// Check PHP function availability for each toolkit.
+			foreach ( $toolkits as $toolkit_id => &$toolkit ) {
+				$toolkit['php_available'] = true;
+				$toolkit['php_status'] = array();
+
+				foreach ( $toolkit['php_functions'] as $func_name ) {
+					$available = function_exists( $func_name );
+					$toolkit['php_status'][ $func_name ] = $available;
+					if ( ! $available ) {
+						$toolkit['php_available'] = false;
+					}
+				}
+
+				// Check NPM package availability.
+				$toolkit['npm_available'] = true;
+				$toolkit['npm_status'] = array();
+
+				foreach ( $toolkit['npm_packages'] as $package ) {
+					$installed = self::check_package_installed( $package );
+					$toolkit['npm_status'][ $package ] = $installed;
+					if ( ! $installed ) {
+						$toolkit['npm_available'] = false;
+					}
+				}
+
+				// Overall status.
+				$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'];
+				$toolkit['has_issues'] = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
+			}
+
+			return $toolkits;
+		}
+
+		/**
+		 * Render a toolkit card with detailed information.
+		 *
+		 * Displays toolkit status, requirements, dependencies, and tools list.
+		 *
+		 * @param string $toolkit_id Toolkit identifier.
+		 * @param array  $toolkit    Toolkit details.
+		 * @return void
+		 */
+		private static function render_toolkit_card( $toolkit_id, $toolkit ) {
+			$status_class = $toolkit['fully_operational'] ? 'operational' : ( $toolkit['enabled'] ? 'partial' : 'disabled' );
+			$status_text = $toolkit['fully_operational'] ? __( 'Operational', 'mcp-ai-wpoos' ) : ( $toolkit['enabled'] ? __( 'Enabled (Issues)', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) );
+			$category_badge = $toolkit['category'];
+			?>
+			<div class="wp-mcp-ai-toolkit-card" data-toolkit="<?php echo esc_attr( $toolkit_id ); ?>">
+					<div class="toolkit-header">
+						<h3>
+							<?php echo esc_html( $toolkit['name'] ); ?>
+							<span class="toolkit-status-badge <?php echo esc_attr( $status_class ); ?>">
+								<?php echo esc_html( $status_text ); ?>
+							</span>
+							<span class="toolkit-category-badge <?php echo esc_attr( $category_badge ); ?>">
+								<?php echo esc_html( ucfirst( $category_badge ) ); ?>
+							</span>
+						</h3>
+						<p class="toolkit-description"><?php echo esc_html( $toolkit['description'] ); ?></p>
+					</div>
+
+					<?php if ( $toolkit['has_issues'] && $toolkit['enabled'] ) : ?>
+						<div class="toolkit-warning">
+							<span class="dashicons dashicons-warning"></span>
+							<strong><?php esc_html_e( 'Warning:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'This toolkit is enabled but has missing dependencies or PHP function requirements.', 'mcp-ai-wpoos' ); ?>
+						</div>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $toolkit['php_functions'] ) ) : ?>
+						<details class="toolkit-section">
+							<summary>
+								<?php esc_html_e( 'PHP Requirements', 'mcp-ai-wpoos' ); ?>
+								<span class="section-badge <?php echo $toolkit['php_available'] ? 'ok' : 'error'; ?>">
+									<?php echo $toolkit['php_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</summary>
+							<table class="toolkit-details-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'PHP Function', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $toolkit['php_status'] as $func_name => $available ) : ?>
+										<tr>
+											<td><code><?php echo esc_html( $func_name ); ?></code></td>
+											<td>
+												<span class="status-indicator <?php echo $available ? 'available' : 'unavailable'; ?>">
+													<?php echo $available ? '✓' : '✗'; ?>
+												</span>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</details>
+					<?php endif; ?>
+
+					<?php if ( ! empty( $toolkit['npm_packages'] ) ) : ?>
+						<details class="toolkit-section">
+							<summary>
+								<?php esc_html_e( 'NPM Dependencies', 'mcp-ai-wpoos' ); ?>
+								<span class="section-badge <?php echo $toolkit['npm_available'] ? 'ok' : 'error'; ?>">
+									<?php echo $toolkit['npm_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
+								</span>
+							</summary>
+							<table class="toolkit-details-table">
+								<thead>
+									<tr>
+										<th><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
+										<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php foreach ( $toolkit['npm_status'] as $package => $installed ) : ?>
+										<tr>
+											<td><code><?php echo esc_html( $package ); ?></code></td>
+											<td>
+												<span class="status-indicator <?php echo $installed ? 'available' : 'unavailable'; ?>">
+													<?php echo $installed ? '✓' : '✗'; ?>
+												</span>
+											</td>
+										</tr>
+									<?php endforeach; ?>
+								</tbody>
+							</table>
+						</details>
+					<?php endif; ?>
+
+					<details class="toolkit-section">
+						<summary>
+							<?php esc_html_e( 'Tools', 'mcp-ai-wpoos' ); ?>
+							<span class="tools-count">(<?php echo absint( $toolkit['tools_count'] ); ?>)</span>
+						</summary>
+						<ul class="toolkit-tools-list">
+							<?php foreach ( $toolkit['tools'] as $tool ) : ?>
+								<li><?php echo esc_html( $tool ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					</details>
+				</div>
+			<?php
+		}
+
 		/**
 		 * Get pro toolkit status information.
 		 *
@@ -152,7 +530,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		public static function get_pro_toolkit_status() {
 			$status = array(
 				'pro_dashboard_enabled' => defined( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED' ) && WP_MCP_AI_PRO_DASHBOARD_ENABLED,
-				'base_version'          => defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION,
+				'base_version'          => ! defined( 'WP_MCP_AI_PRO_VERSION' ),
 				'debug_mode'            => defined( 'WP_DEBUG' ) && WP_DEBUG,
 				'php_version'           => PHP_VERSION,
 				'wp_version'            => get_bloginfo( 'version' ),
@@ -263,18 +641,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check for other Pro addon packages.
-			$pro_packages = array(
-				'@turf/turf',
-				'@types/pdfkit',
-				'fluent-ffmpeg',
-				'ics',
-				'katex',
-				'mjml',
-				'prettier',
-				'sharp',
+			// Check for Pro addon packages in vendor directory.
+			$pro_vendor_packages = array(
+				'@turf/turf'     => 'turf/dist/esm/index.js',
+				'@types/pdfkit'  => false, // TypeScript types only, no runtime file.
+				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
+				'ics'            => 'ics/index.js',
+				'katex'          => 'katex/dist/katex.min.js',
+				'mjml'           => 'mjml/lib/index.js',
+				'prettier'       => 'prettier/standalone.js',
+				'sharp'          => 'sharp/lib/index.js',
 			);
-			if ( in_array( $package, $pro_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// @types packages don't have runtime files.
+				if ( false === $pro_vendor_packages[ $package ] ) {
+					return true; // TypeScript type definitions are always available.
+				}
+				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
+				if ( file_exists( $vendor_path ) ) {
+					return true;
+				}
+			}
+
+			// Fallback: Check Pro node_modules (for development).
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
 				if ( file_exists( $pro_node_modules_path ) ) {
 					return true;
@@ -412,6 +802,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$packages         = self::get_npm_packages();
 			$pro_status       = self::get_pro_toolkit_status();
 			$toolkit_status   = self::get_individual_toolkit_status();
+			$toolkit_details  = self::get_toolkit_details();
 			$total_packages   = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
 			?>
 			<div class="wrap wp-mcp-ai-pro-settings">
@@ -476,6 +867,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</div>
 				</div>
 
+				<!-- Toolkit Details Section -->
+				<div style="margin-top: 30px;">
+					<h2><?php esc_html_e( 'Comprehensive Toolkit Information', 'mcp-ai-wpoos' ); ?></h2>
+					<p class="description">
+						<?php esc_html_e( 'Detailed view of each toolkit including status, dependencies, and tools.', 'mcp-ai-wpoos' ); ?>
+					</p>
+					
+					<div class="wp-mcp-ai-toolkit-grid">
+						<?php foreach ( $toolkit_details as $toolkit_id => $toolkit ) : ?>
+							<?php self::render_toolkit_card( $toolkit_id, $toolkit ); ?>
+						<?php endforeach; ?>
+					</div>
+				</div>
+
 				<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
 					<h3><?php esc_html_e( 'About This Page', 'mcp-ai-wpoos' ); ?></h3>
 					<p>
@@ -486,6 +891,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<li><?php esc_html_e( 'Pro Dashboard and feature flags status', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Optional integration status (JetEngine, WooCommerce, etc.)', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'System information (PHP, WordPress versions)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Comprehensive toolkit details with dependencies and requirements', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
 					<p>
 						<em><?php esc_html_e( 'This is a lightweight, read-only display. No package management functionality is included to keep the plugin size minimal.', 'mcp-ai-wpoos' ); ?></em>
@@ -574,6 +980,216 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					padding: 2px 6px;
 					border-radius: 3px;
 					font-size: 13px;
+				}
+
+				/* Toolkit Grid */
+				.wp-mcp-ai-toolkit-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+					gap: 20px;
+					margin-top: 20px;
+				}
+
+				@media (max-width: 768px) {
+					.wp-mcp-ai-toolkit-grid {
+						grid-template-columns: 1fr;
+					}
+				}
+
+				/* Toolkit Cards */
+				.wp-mcp-ai-toolkit-card {
+					background: #fff;
+					border: 1px solid #c3c4c7;
+					padding: 20px;
+					box-shadow: 0 1px 1px rgba(0,0,0,.04);
+					border-radius: 4px;
+				}
+
+				.wp-mcp-ai-toolkit-card .toolkit-header h3 {
+					margin: 0 0 10px 0;
+					font-size: 16px;
+					font-weight: 600;
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					flex-wrap: wrap;
+				}
+
+				.wp-mcp-ai-toolkit-card .toolkit-description {
+					margin: 0 0 15px 0;
+					color: #646970;
+					font-size: 14px;
+				}
+
+				/* Toolkit Status Badges */
+				.toolkit-status-badge {
+					display: inline-block;
+					padding: 3px 10px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+
+				.toolkit-status-badge.operational {
+					background: #00a32a;
+					color: #fff;
+				}
+
+				.toolkit-status-badge.partial {
+					background: #d63638;
+					color: #fff;
+				}
+
+				.toolkit-status-badge.disabled {
+					background: #646970;
+					color: #fff;
+				}
+
+				/* Category Badges */
+				.toolkit-category-badge {
+					display: inline-block;
+					padding: 3px 10px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+
+				.toolkit-category-badge.core {
+					background: #2271b1;
+					color: #fff;
+				}
+
+				.toolkit-category-badge.specialized {
+					background: #8c7ae6;
+					color: #fff;
+				}
+
+				.toolkit-category-badge.infrastructure {
+					background: #50e3c2;
+					color: #000;
+				}
+
+				/* Toolkit Warning */
+				.toolkit-warning {
+					background: #fcf0f1;
+					border-left: 4px solid #d63638;
+					padding: 12px;
+					margin-bottom: 15px;
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					font-size: 13px;
+				}
+
+				.toolkit-warning .dashicons {
+					color: #d63638;
+					flex-shrink: 0;
+				}
+
+				/* Toolkit Sections (Collapsible) */
+				.toolkit-section {
+					margin: 15px 0;
+					border: 1px solid #e0e0e0;
+					border-radius: 4px;
+					overflow: hidden;
+				}
+
+				.toolkit-section summary {
+					padding: 12px 15px;
+					background: #f6f7f7;
+					cursor: pointer;
+					font-weight: 600;
+					font-size: 13px;
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					user-select: none;
+				}
+
+				.toolkit-section summary:hover {
+					background: #e9eaeb;
+				}
+
+				.toolkit-section[open] summary {
+					border-bottom: 1px solid #e0e0e0;
+				}
+
+				.toolkit-section .section-badge {
+					display: inline-block;
+					padding: 2px 8px;
+					border-radius: 3px;
+					font-size: 11px;
+					font-weight: 600;
+					text-transform: uppercase;
+				}
+
+				.toolkit-section .section-badge.ok {
+					background: #00a32a;
+					color: #fff;
+				}
+
+				.toolkit-section .section-badge.error {
+					background: #d63638;
+					color: #fff;
+				}
+
+				.toolkit-section .tools-count {
+					color: #646970;
+					font-weight: 400;
+				}
+
+				/* Toolkit Details Tables */
+				.toolkit-details-table {
+					width: 100%;
+					border-collapse: collapse;
+					margin: 0;
+				}
+
+				.toolkit-details-table thead th {
+					background: #f9f9f9;
+					padding: 10px 15px;
+					text-align: left;
+					font-size: 12px;
+					font-weight: 600;
+					border-bottom: 1px solid #e0e0e0;
+				}
+
+				.toolkit-details-table tbody td {
+					padding: 10px 15px;
+					border-bottom: 1px solid #f0f0f1;
+					font-size: 13px;
+				}
+
+				.toolkit-details-table tbody tr:last-child td {
+					border-bottom: none;
+				}
+
+				.toolkit-details-table .status-indicator {
+					font-size: 16px;
+					font-weight: bold;
+				}
+
+				.toolkit-details-table .status-indicator.available {
+					color: #00a32a;
+				}
+
+				.toolkit-details-table .status-indicator.unavailable {
+					color: #d63638;
+				}
+
+				/* Toolkit Tools List */
+				.toolkit-tools-list {
+					margin: 0;
+					padding: 15px 15px 15px 40px;
+					list-style: disc;
+				}
+
+				.toolkit-tools-list li {
+					padding: 5px 0;
+					font-size: 13px;
+					color: #646970;
 				}
 			</style>
 			<?php

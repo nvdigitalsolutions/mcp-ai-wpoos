@@ -151,6 +151,9 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if health & wellness management is enabled.
@@ -202,7 +205,7 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 
 		// Generate chart based on return format.
 		$return_format = isset( $arguments['return_format'] ) ? sanitize_text_field( $arguments['return_format'] ) : 'html';
-		
+
 		switch ( $return_format ) {
 			case 'config':
 				return array(
@@ -250,9 +253,11 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	 * @return bool True if Chart.js is available.
 	 */
 	private function check_chartjs_availability() {
-		// Check if chart.js package exists in node_modules.
-		$chartjs_path = WP_MCP_AI_PRO_PATH . 'node_modules/chart.js/dist/chart.umd.js';
-		if ( ! file_exists( $chartjs_path ) ) {
+		// Check if package exists in vendor directory (production) or node_modules (development).
+		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/chart.js/chart.umd.js';
+		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/chart.js/dist/chart.umd.js';
+
+		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
 			return false;
 		}
 
@@ -308,11 +313,11 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		// Query medical records with vital signs.
 		// This is a simplified implementation.
 		return array(
-			'labels'   => array(), // Date labels
+			'labels'   => array(), // Date labels.
 			'datasets' => array(
 				array(
 					'label' => ucwords( str_replace( '_', ' ', $metric ) ),
-					'data'  => array(), // Metric values
+					'data'  => array(), // Metric values.
 				),
 			),
 		);
@@ -367,20 +372,20 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function build_chart_config( $data, $arguments ) {
 		$chart_type = isset( $arguments['chart_type'] ) ? sanitize_text_field( $arguments['chart_type'] ) : 'line';
-		
+
 		return array(
-			'type' => $chart_type,
-			'data' => $data,
+			'type'    => $chart_type,
+			'data'    => $data,
 			'options' => array(
-				'responsive' => true,
+				'responsive'          => true,
 				'maintainAspectRatio' => false,
-				'plugins' => array(
+				'plugins'             => array(
 					'legend' => array(
 						'position' => 'top',
 					),
-					'title' => array(
+					'title'  => array(
 						'display' => true,
-						'text' => isset( $arguments['chart_title'] ) ? $arguments['chart_title'] : 'Health Metrics',
+						'text'    => isset( $arguments['chart_title'] ) ? $arguments['chart_title'] : 'Health Metrics',
 					),
 				),
 			),
@@ -395,8 +400,8 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	 * @return string HTML markup.
 	 */
 	private function generate_chart_html( $config, $arguments ) {
-		$width  = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
-		$height = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
+		$width     = isset( $arguments['width'] ) ? absint( $arguments['width'] ) : 600;
+		$height    = isset( $arguments['height'] ) ? absint( $arguments['height'] ) : 400;
 		$canvas_id = 'health-chart-' . uniqid();
 
 		$html = sprintf(
