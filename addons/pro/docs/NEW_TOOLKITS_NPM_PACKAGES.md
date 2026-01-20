@@ -78,14 +78,14 @@ The following packages will be added to `addons/pro/package.json` in Phase 2:
 "ffmpeg-static": "^5.2.0",
 "ffprobe-static": "^3.1.0",
 "gif-encoder": "^0.7.2",
-"video-stitch": "^2.0.0",
+"video-stitch": "^1.7.1",
 "subtitle": "^3.0.0"
 ```
 
 - **ffmpeg-static**: Bundled FFmpeg binary for video processing
 - **ffprobe-static**: Video metadata extraction
 - **gif-encoder**: Create GIFs from video frames
-- **video-stitch**: Merge multiple videos
+- **video-stitch**: Merge multiple videos (v1.7.1 latest, last updated 2022)
 - **subtitle**: Subtitle parsing and generation (v3.x stable, v4.x is alpha only)
 
 ## Complete package.json Dependencies Section (Phase 2)
@@ -126,7 +126,7 @@ When Phase 2 begins, the complete dependencies section will be:
     "stripe": "^14.0.0",
     "subtitle": "^3.0.0",
     "twitter-api-v2": "^1.15.2",
-    "video-stitch": "^2.0.0"
+    "video-stitch": "^1.7.1"
   }
 }
 ```
