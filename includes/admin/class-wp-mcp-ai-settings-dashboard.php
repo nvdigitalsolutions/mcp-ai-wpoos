@@ -187,6 +187,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
+			// IMPORTANT: Many sections use subtabs with critical data tables:
+			// - Providers tab: Each provider (OpenAI, Gemini, Ollama, etc.) has its own subtab
+			// - Advanced tab: Performance, Logging, Federation, Data Management, Settings Management
+			// - Integrations tab: Various third-party integrations
+			// - Tools tab: Tool categories and individual tool configurations
+			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
 			foreach ( $_POST as $key => $value ) {
 				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
@@ -256,6 +262,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// - Empty string '' in sanitize_settings() triggers ALL sections across ALL tabs (see line 139)
 				// - This is safe for Simple Settings Page because it displays ALL fields from multiple tabs
 				// - For regular tab-based saves, we only sanitize the active tab to preserve other tabs' data
+				//
+				// SUBTAB HANDLING (VERY IMPORTANT):
+				// - When saving from a subtab (e.g., Providers → Gemini), only that subtab's fields are posted
+				// - Section-based sanitization knows which fields belong to each subtab
+				// - The merge strategy below (line 326+) preserves data from OTHER subtabs
+				// - Sensitive key protection (line 329+) prevents empty values from overwriting existing keys
+				// - This ensures subtabbed views with important tables save correctly without data loss
 				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
 				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved   = false;
@@ -983,30 +996,54 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Check if file was uploaded.
-			if ( ! isset( $_FILES['settings_file'] ) ) {
-				wp_send_json_error( array( 'message' => __( 'No file uploaded.', 'mcp-ai-wpoos' ) ) );
+			if ( ! isset( $_FILES['settings_file'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
+				wp_send_json_error( array( 'message' => __( 'No file uploaded or upload error occurred.', 'mcp-ai-wpoos' ) ) );
 			}
 
 			$file = $_FILES['settings_file'];
 
-			// Validate file type.
-			if ( 'application/json' !== $file['type'] && 'text/plain' !== $file['type'] ) {
+			// Validate file size (max 5MB for settings file).
+			$max_size = 5 * MB_IN_BYTES;
+			if ( $file['size'] > $max_size ) {
+				wp_send_json_error( array(
+					'message' => sprintf(
+						/* translators: %s: Maximum file size */
+						__( 'File too large. Maximum size: %s', 'mcp-ai-wpoos' ),
+						size_format( $max_size )
+					),
+				) );
+			}
+
+			// Validate file type using WordPress function (more secure than client MIME type).
+			$filetype = wp_check_filetype( $file['name'], array( 'json' => 'application/json' ) );
+			if ( 'json' !== $filetype['ext'] || 'application/json' !== $filetype['type'] ) {
 				wp_send_json_error( array( 'message' => __( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos' ) ) );
 			}
 
-			// Read file contents.
+			// Read file contents with size validation.
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Reading uploaded file for import.
 			$json_content = file_get_contents( $file['tmp_name'] );
 
-			if ( false === $json_content ) {
-				wp_send_json_error( array( 'message' => __( 'Failed to read uploaded file.', 'mcp-ai-wpoos' ) ) );
+			if ( false === $json_content || empty( $json_content ) ) {
+				wp_send_json_error( array( 'message' => __( 'Failed to read uploaded file or file is empty.', 'mcp-ai-wpoos' ) ) );
+			}
+
+			// Additional size check after reading to prevent memory issues.
+			if ( strlen( $json_content ) > $max_size ) {
+				wp_send_json_error( array( 'message' => __( 'File content too large.', 'mcp-ai-wpoos' ) ) );
 			}
 
 			// Decode JSON.
 			$import_data = json_decode( $json_content, true );
 
-			if ( null === $import_data ) {
-				wp_send_json_error( array( 'message' => __( 'Invalid JSON format.', 'mcp-ai-wpoos' ) ) );
+			if ( null === $import_data || JSON_ERROR_NONE !== json_last_error() ) {
+				wp_send_json_error( array(
+					'message' => sprintf(
+						/* translators: %s: JSON error message */
+						__( 'Invalid JSON format: %s', 'mcp-ai-wpoos' ),
+						json_last_error_msg()
+					),
+				) );
 			}
 
 			// Validate import data structure.
@@ -1046,7 +1083,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			wp_send_json_success( array(
 				'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
 				'imported_count' => count( $sanitized_settings ),
-				'imported_from'  => isset( $import_data['site_url'] ) ? $import_data['site_url'] : 'unknown',
+				'imported_from'  => isset( $import_data['site_url'] ) ? esc_url( $import_data['site_url'] ) : 'unknown',
 			) );
 		}
 
