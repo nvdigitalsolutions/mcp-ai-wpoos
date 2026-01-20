@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-tab-subtab-saving-issue',
-        'version' => 'dev-copilot/fix-tab-subtab-saving-issue',
-        'reference' => '278a3f6b9983a7e8d9cc195981304b66f751888a',
+        'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
+        'version' => 'dev-copilot/fix-timeout-setting-issue',
+        'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-tab-subtab-saving-issue',
-            'version' => 'dev-copilot/fix-tab-subtab-saving-issue',
-            'reference' => '278a3f6b9983a7e8d9cc195981304b66f751888a',
+            'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
+            'version' => 'dev-copilot/fix-timeout-setting-issue',
+            'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
