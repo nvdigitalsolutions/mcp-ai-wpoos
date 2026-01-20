@@ -142,6 +142,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
 			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
+			// Debug logging for subtab sanitization.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+				if ( $enable_logging ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s',
+							$this->get_id(),
+							$active_subtab,
+							$submitted_subtab,
+							$is_form_submit ? 'YES' : 'NO',
+							count( $active_field_keys ),
+							implode( ', ', array_slice( $active_field_keys, 0, 10 ) )
+						)
+					);
+				}
+			}
+
 			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
@@ -162,6 +181,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		protected function sanitize_fields( $input, $fields, $is_form_submit = true ) {
 			$sanitized = array();
 
+			// DEFENSIVE: Filter input to only include fields that are defined in $fields.
+			// This prevents fields from other subtabs from being processed if they somehow
+			// end up in the POST data (e.g., browser autofill, JavaScript manipulation, etc.).
+			$filtered_input = array();
+			foreach ( $fields as $key => $field ) {
+				if ( isset( $input[ $key ] ) ) {
+					$filtered_input[ $key ] = $input[ $key ];
+				}
+			}
+
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
@@ -177,18 +206,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {
 						// Checkbox is checked if present in input, unchecked otherwise.
-						$sanitized[ $key ] = isset( $input[ $key ] ) ? (bool) $input[ $key ] : false;
+						$sanitized[ $key ] = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
 					}
 					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
 				}
 
-				// For other field types, skip if not present in input.
-				if ( ! isset( $input[ $key ] ) ) {
+				// For other field types, skip if not present in filtered input.
+				if ( ! isset( $filtered_input[ $key ] ) ) {
 					continue;
 				}
 
-				$value = $input[ $key ];
+				$value = $filtered_input[ $key ];
 
 				switch ( $type ) {
 					case 'text':
