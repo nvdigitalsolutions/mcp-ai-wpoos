@@ -202,10 +202,12 @@ const dependencies = [
 		],
 	},
 	{
-		name: 'facebook-node-sdk',
+		name: 'facebook-nodejs-business-sdk',
+		dirs: [
+			{ src: 'dist', dest: 'facebook-nodejs-business-sdk/dist' },
+		],
 		files: [
-			{ src: 'lib', dest: 'facebook-node-sdk/lib', isDir: true },
-			{ src: 'package.json', dest: 'facebook-node-sdk/package.json' },
+			{ src: 'package.json', dest: 'facebook-nodejs-business-sdk/package.json' },
 		],
 	},
 	{

@@ -30,14 +30,18 @@ The following packages will be added to `addons/pro/package.json` in Phase 2:
 
 ```json
 "twitter-api-v2": "^1.15.2",
-"facebook-node-sdk": "^0.6.0",
-"linkedin-api-client": "^1.0.0",
+"facebook-nodejs-business-sdk": "^24.0.1",
+"linkedin-api-client": "^0.3.0",
 "axios": "^1.6.5"
 ```
 
 - **twitter-api-v2**: Twitter/X API v2 integration
-- **facebook-node-sdk**: Facebook Graph API and Instagram integration
-- **linkedin-api-client**: LinkedIn Marketing API integration
+- **facebook-nodejs-business-sdk**: Official Facebook/Meta Business SDK (v24.0.1)
+  - Supports Marketing API, Pages API, Instagram API
+  - Actively maintained by Meta
+- **linkedin-api-client**: Official LinkedIn API client (beta v0.3.0)
+  - Supports Rest.li protocol  
+  - OAuth2 authentication
 - **axios**: HTTP client for various social media APIs
 
 ### Advanced Analytics Toolkit Packages
@@ -100,7 +104,7 @@ When Phase 2 begins, the complete dependencies section will be:
     "d3": "^7.8.5",
     "docx": "^9.5.1",
     "exceljs": "^4.4.0",
-    "facebook-node-sdk": "^0.6.0",
+    "facebook-nodejs-business-sdk": "^24.0.1",
     "fast-csv": "^5.0.0",
     "ffmpeg-static": "^5.2.0",
     "ffprobe-static": "^3.1.0",
@@ -112,7 +116,7 @@ When Phase 2 begins, the complete dependencies section will be:
     "ics": "^3.8.1",
     "iso-639-1": "^3.1.0",
     "katex": "^0.16.11",
-    "linkedin-api-client": "^1.0.0",
+    "linkedin-api-client": "^0.3.0",
     "mathjs": "^12.3.0",
     "mjml": "^4.18.0",
     "pdfkit": "^0.17.2",
@@ -196,7 +200,7 @@ All 32 NPM packages (12 existing + 20 new) have been verified to work with Node.
 
 **New Packages (Verified Compatible)**:
 - ✅ stripe, @woocommerce/woocommerce-rest-api - E-commerce
-- ✅ axios, twitter-api-v2, facebook-node-sdk - Social Media
+- ✅ axios, twitter-api-v2, facebook-nodejs-business-sdk - Social Media
 - ✅ d3, mathjs, regression, fast-csv - Analytics
 - ✅ i18next, franc, iso-639-1 - Multilingual
 - ✅ ffmpeg-static, ffprobe-static - Video production
