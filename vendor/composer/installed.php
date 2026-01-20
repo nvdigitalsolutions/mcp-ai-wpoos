@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-settings-page-issues-again',
         'version' => 'dev-copilot/fix-settings-page-issues-again',
-        'reference' => '0c65106cd1857a8286f06f912ca334f8016621c3',
+        'reference' => 'd4c0c1946ac3b7fc03fee8790e247cfcf6b9f423',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-settings-page-issues-again',
             'version' => 'dev-copilot/fix-settings-page-issues-again',
-            'reference' => '0c65106cd1857a8286f06f912ca334f8016621c3',
+            'reference' => 'd4c0c1946ac3b7fc03fee8790e247cfcf6b9f423',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
