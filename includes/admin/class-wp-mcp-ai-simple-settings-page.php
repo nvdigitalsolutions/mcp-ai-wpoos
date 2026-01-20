@@ -6,8 +6,8 @@
  * of all saved settings values for easy verification and editing.
  * 
  * This page displays fields from multiple tabs (General and Providers)
- * in a single flat view. When saving, it uses the save_all_tabs flag
- * to ensure all posted fields are sanitized properly regardless of tab.
+ * organized in separate tab sections. Each tab has its own form to avoid
+ * browser warnings about multiple forms in a single form element.
  *
  * @package WP_MCP_AI
  */
@@ -58,8 +58,20 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			$general_fields   = $this->get_general_fields();
 			$providers_fields = $this->get_providers_fields();
 
-			// Merge field definitions.
-			$all_fields = array_merge( $general_fields, $providers_fields );
+			// Get active tab from query parameter, default to 'general'.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for tab switching.
+			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
+
+			// Validate tab value.
+			if ( ! in_array( $active_tab, array( 'general', 'providers' ), true ) ) {
+				$active_tab = 'general';
+			}
+
+			// Determine which fields to display based on active tab.
+			$current_fields = ( 'providers' === $active_tab ) ? $providers_fields : $general_fields;
+
+			// Group fields by logical categories instead of alphabetical.
+			$grouped_fields = $this->group_fields_by_category( $current_fields, $active_tab );
 
 			?>
 			<div class="wrap">
@@ -88,43 +100,77 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					</p>
 				</div>
 
+				<nav class="nav-tab-wrapper wp-clearfix" aria-label="<?php esc_attr_e( 'Settings tabs', 'mcp-ai-wpoos' ); ?>">
+					<?php
+					$tabs = array(
+						'general'   => array(
+							'title' => __( 'General Settings', 'mcp-ai-wpoos' ),
+							'icon'  => 'dashicons-admin-settings',
+						),
+						'providers' => array(
+							'title' => __( 'AI Providers', 'mcp-ai-wpoos' ),
+							'icon'  => 'dashicons-admin-generic',
+						),
+					);
+
+					foreach ( $tabs as $tab_id => $tab ) :
+						$tab_url = add_query_arg(
+							array(
+								'page' => self::PAGE_SLUG,
+								'tab'  => $tab_id,
+							),
+							admin_url( 'options-general.php' )
+						);
+						$active_class = ( $tab_id === $active_tab ) ? 'nav-tab-active' : '';
+						?>
+						<a href="<?php echo esc_url( $tab_url ); ?>" class="nav-tab <?php echo esc_attr( $active_class ); ?>">
+							<span class="dashicons <?php echo esc_attr( $tab['icon'] ); ?>"></span>
+							<?php echo esc_html( $tab['title'] ); ?>
+						</a>
+					<?php endforeach; ?>
+				</nav>
+
 				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 					<?php wp_nonce_field( 'wp_mcp_ai_save_settings' ); ?>
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
-					<input type="hidden" name="active_tab" value="general" />
-					<input type="hidden" name="save_all_tabs" value="1" />
+					<input type="hidden" name="active_tab" value="<?php echo esc_attr( $active_tab ); ?>" />
 					<input type="hidden" name="redirect_page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
 
-					<table class="wp-list-table widefat fixed striped">
-						<thead>
-							<tr>
-								<th style="width: 35%;"><?php esc_html_e( 'Setting', 'mcp-ai-wpoos' ); ?></th>
-								<th style="width: 45%;"><?php esc_html_e( 'Value', 'mcp-ai-wpoos' ); ?></th>
-								<th style="width: 20%;"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
-							</tr>
-						</thead>
-						<tbody>
-							<?php
-							// Sort fields alphabetically by key for easier scanning.
-							ksort( $all_fields );
+					<?php foreach ( $grouped_fields as $group_name => $group_fields ) : ?>
+						<?php if ( ! empty( $group_fields ) ) : ?>
+							<h2 style="margin-top: 30px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #ccc;">
+								<?php echo esc_html( $group_name ); ?>
+							</h2>
 
-							foreach ( $all_fields as $key => $field ) {
-								$this->render_setting_row( $key, $field, $settings );
-							}
-							?>
-						</tbody>
-					</table>
+							<table class="wp-list-table widefat fixed striped">
+								<thead>
+									<tr>
+										<th style="width: 35%;"><?php esc_html_e( 'Setting', 'mcp-ai-wpoos' ); ?></th>
+										<th style="width: 45%;"><?php esc_html_e( 'Value', 'mcp-ai-wpoos' ); ?></th>
+										<th style="width: 20%;"><?php esc_html_e( 'Type', 'mcp-ai-wpoos' ); ?></th>
+									</tr>
+								</thead>
+								<tbody>
+									<?php
+									foreach ( $group_fields as $key => $field ) {
+										$this->render_setting_row( $key, $field, $settings );
+									}
+									?>
+								</tbody>
+							</table>
+						<?php endif; ?>
+					<?php endforeach; ?>
 
 					<div style="margin-top: 20px;">
 						<p>
-							<strong><?php esc_html_e( 'Total Settings:', 'mcp-ai-wpoos' ); ?></strong>
-							<?php echo esc_html( count( $all_fields ) ); ?>
+							<strong><?php esc_html_e( 'Settings on This Tab:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php echo esc_html( count( $current_fields ) ); ?>
 						</p>
 						<p>
 							<strong><?php esc_html_e( 'Settings with Values:', 'mcp-ai-wpoos' ); ?></strong>
 							<?php
 							$count_with_values = 0;
-							foreach ( $all_fields as $key => $field ) {
+							foreach ( $current_fields as $key => $field ) {
 								if ( isset( $settings[ $key ] ) && '' !== $settings[ $key ] ) {
 									$count_with_values++;
 								}
@@ -134,7 +180,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 						</p>
 					</div>
 
-					<?php submit_button( __( 'Save All Settings', 'mcp-ai-wpoos' ) ); ?>
+					<?php submit_button( __( 'Save Settings', 'mcp-ai-wpoos' ) ); ?>
 				</form>
 			</div>
 			<?php
@@ -339,6 +385,98 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			}
 		}
 
+
+		/**
+		 * Group fields by logical categories for better organization.
+		 *
+		 * @param array  $fields     Field definitions.
+		 * @param string $active_tab Active tab name.
+		 * @return array Grouped fields array.
+		 */
+		private function group_fields_by_category( $fields, $active_tab ) {
+			$grouped = array();
+
+			if ( 'providers' === $active_tab ) {
+				// Group provider fields by provider type.
+				$provider_groups = array(
+					'OpenAI'          => array(),
+					'Google Gemini'   => array(),
+					'Anthropic'       => array(),
+					'Ollama'          => array(),
+					'LM Studio'       => array(),
+					'Cloudflare'      => array(),
+					'Other Providers' => array(),
+				);
+
+				foreach ( $fields as $key => $field ) {
+					if ( false !== stripos( $key, 'openai' ) ) {
+						$provider_groups['OpenAI'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'gemini' ) || false !== stripos( $key, 'google' ) ) {
+						$provider_groups['Google Gemini'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'anthropic' ) || false !== stripos( $key, 'claude' ) ) {
+						$provider_groups['Anthropic'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'ollama' ) ) {
+						$provider_groups['Ollama'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'lm_studio' ) || false !== stripos( $key, 'lmstudio' ) ) {
+						$provider_groups['LM Studio'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'cloudflare' ) ) {
+						$provider_groups['Cloudflare'][ $key ] = $field;
+					} else {
+						$provider_groups['Other Providers'][ $key ] = $field;
+					}
+				}
+
+				// Only include non-empty groups.
+				foreach ( $provider_groups as $group_name => $group_fields ) {
+					if ( ! empty( $group_fields ) ) {
+						$grouped[ $group_name ] = $group_fields;
+					}
+				}
+			} else {
+				// Group general settings by category.
+				$general_groups = array(
+					'Core Settings'        => array(),
+					'Authentication'       => array(),
+					'Features & Tools'     => array(),
+					'Debugging & Logging'  => array(),
+					'Performance'          => array(),
+					'Integration Settings' => array(),
+					'Other Settings'       => array(),
+				);
+
+				foreach ( $fields as $key => $field ) {
+					if ( false !== stripos( $key, 'auth' ) || false !== stripos( $key, 'secret' ) || false !== stripos( $key, 'key_rotation' ) ) {
+						$general_groups['Authentication'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'debug' ) || false !== stripos( $key, 'log' ) || false !== stripos( $key, 'error' ) ) {
+						$general_groups['Debugging & Logging'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'cache' ) || false !== stripos( $key, 'performance' ) || false !== stripos( $key, 'timeout' ) ) {
+						$general_groups['Performance'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'tool' ) || false !== stripos( $key, 'feature' ) || false !== stripos( $key, 'enable' ) ) {
+						$general_groups['Features & Tools'][ $key ] = $field;
+					} elseif ( false !== stripos( $key, 'integration' ) || false !== stripos( $key, 'webhook' ) || false !== stripos( $key, 'api_endpoint' ) ) {
+						$general_groups['Integration Settings'][ $key ] = $field;
+					} elseif ( in_array( $key, array( 'default_model', 'default_provider', 'max_tokens', 'temperature' ), true ) ) {
+						$general_groups['Core Settings'][ $key ] = $field;
+					} else {
+						$general_groups['Other Settings'][ $key ] = $field;
+					}
+				}
+
+				// Only include non-empty groups.
+				foreach ( $general_groups as $group_name => $group_fields ) {
+					if ( ! empty( $group_fields ) ) {
+						$grouped[ $group_name ] = $group_fields;
+					}
+				}
+			}
+
+			// If no groups were created, return all fields under a default group.
+			if ( empty( $grouped ) ) {
+				$grouped[ __( 'All Settings', 'mcp-ai-wpoos' ) ] = $fields;
+			}
+
+			return $grouped;
+		}
 
 		/**
 		 * Get field definitions from General section.

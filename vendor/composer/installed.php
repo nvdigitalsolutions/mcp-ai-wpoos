@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-undefined-variable-pro-notice',
-        'version' => 'dev-copilot/fix-undefined-variable-pro-notice',
-        'reference' => '4178a674f6d3458aa4302d2444bdfdbb5d472ee7',
+        'pretty_version' => 'dev-copilot/refactor-simple-settings-page',
+        'version' => 'dev-copilot/refactor-simple-settings-page',
+        'reference' => '81d6d2daf79060f458563942107bbea51fb5cd12',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-undefined-variable-pro-notice',
-            'version' => 'dev-copilot/fix-undefined-variable-pro-notice',
-            'reference' => '4178a674f6d3458aa4302d2444bdfdbb5d472ee7',
+            'pretty_version' => 'dev-copilot/refactor-simple-settings-page',
+            'version' => 'dev-copilot/refactor-simple-settings-page',
+            'reference' => '81d6d2daf79060f458563942107bbea51fb5cd12',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
