@@ -13,21 +13,11 @@ This created a frustrating user experience where settings appeared to be randoml
 
 ## Root Cause
 
-The issue was traced to how number fields handle empty string values during sanitization:
+The issue had two components:
 
-1. When a form is submitted, only fields from the active tab are included in the POST data
-2. However, during sanitization, if any section encountered a number field with an empty value, it would save it as an empty string (`''`) in the database
-3. When the field was later rendered, the code would:
-   - Retrieve the empty string from the database via `get_setting($key, $default)`
-   - The `isset()` check would return true (because the key exists)
-   - But the empty string value would be treated as falsy
-   - The field's default value would be shown in the UI
+1. **Empty String Overwrite Bug**: When a number field received an empty string value ('') during sanitization, it would overwrite the existing value in the database. Later when rendered, the empty string was treated as falsy and the field's default value was displayed.
 
-This created a vicious cycle where:
-- Field is saved as empty string
-- Field displays as default value (60)
-- User doesn't notice and saves again
-- Empty string persists
+2. **Default Value Mismatch**: The database default for `request_timeout` was set to 200 seconds in `class-wp-mcp-ai-admin-settings-base.php`, but the field definition in `class-wp-mcp-ai-section-general.php` specified a default of 60 seconds. This inconsistency caused confusion when the field displayed 60 instead of the intended 200.
 
 ## Solution
 
