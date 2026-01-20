@@ -3,7 +3,11 @@
  * Simple Settings Page for NV oOS
  *
  * A diagnostic page under Settings > NV oOS that shows a flat list
- * of all saved settings values for easy verification.
+ * of all saved settings values for easy verification and editing.
+ * 
+ * This page displays fields from multiple tabs (General and Providers)
+ * in a single flat view. When saving, it uses the save_all_tabs flag
+ * to ensure all posted fields are sanitized properly regardless of tab.
  *
  * @package WP_MCP_AI
  */
@@ -88,6 +92,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					<?php wp_nonce_field( 'wp_mcp_ai_save_settings' ); ?>
 					<input type="hidden" name="action" value="wp_mcp_ai_save_settings" />
 					<input type="hidden" name="active_tab" value="general" />
+					<input type="hidden" name="save_all_tabs" value="1" />
 					<input type="hidden" name="redirect_page" value="<?php echo esc_attr( self::PAGE_SLUG ); ?>" />
 
 					<table class="wp-list-table widefat fixed striped">

@@ -176,6 +176,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$posted_settings = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
 			$active_tab      = isset( $_POST['active_tab'] ) ? sanitize_key( $_POST['active_tab'] ) : '';
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
+			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
 
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
@@ -200,16 +201,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( $enable_logging ) {
 				error_log(
 					sprintf(
-						'[NV oOS Settings] Save attempt - Tab: %s, Posted fields: %d, Posted keys: %s',
+						'[NV oOS Settings] Save attempt - Tab: %s, Save all tabs: %s, Posted fields: %d, Posted keys: %s',
 						$active_tab,
+						$save_all_tabs ? 'YES' : 'NO',
 						count( $posted_settings ),
 						implode( ', ', array_keys( $posted_settings ) )
 					)
 				);
 			}
 
-			// Only sanitize settings from the active tab to avoid clearing checkboxes from other tabs.
-			$sanitized_new = $this->sanitize_settings( $posted_settings, $active_tab );
+			// Sanitize settings - use all tabs if save_all_tabs flag is set (e.g., from simple settings page).
+			// Otherwise only sanitize the active tab to avoid clearing checkboxes from other tabs.
+			$sanitized_new = $save_all_tabs ? $this->sanitize_settings( $posted_settings, '' ) : $this->sanitize_settings( $posted_settings, $active_tab );
 
 			// Log sanitization results.
 			if ( $enable_logging ) {
