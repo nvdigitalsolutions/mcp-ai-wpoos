@@ -269,6 +269,35 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Health and Wellness Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/health-wellness-management-init.php';
 
+		// ========================================================================
+		// NEW PRO TOOLKITS (Phase 1 - Foundation)
+		// ========================================================================
+
+		// Load E-commerce Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/ecommerce-toolkit-init.php';
+		}
+
+		// Load Social Media Management Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/social-media-toolkit-init.php';
+		}
+
+		// Load Advanced Analytics Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_analytics_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/analytics-toolkit-init.php';
+		}
+
+		// Load Multi-language Content Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/multilingual-toolkit-init.php';
+		}
+
+		// Load Video Production Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_video_production_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/video-production-toolkit-init.php';
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 

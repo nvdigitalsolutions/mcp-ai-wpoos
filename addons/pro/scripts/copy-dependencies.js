@@ -154,6 +154,176 @@ const dependencies = [
 			{ src: 'package.json', dest: 'fluent-ffmpeg/package.json' },
 		],
 	},
+	// ========================================================================
+	// NEW PRO TOOLKITS PACKAGES (Phase 2+)
+	// ========================================================================
+	// E-commerce Toolkit
+	{
+		name: '@woocommerce/woocommerce-rest-api',
+		files: [
+			{ src: 'dist/index.js', dest: 'woocommerce-rest-api/index.js' },
+			{ src: 'package.json', dest: 'woocommerce-rest-api/package.json' },
+		],
+	},
+	{
+		name: 'stripe',
+		dirs: [
+			{ src: 'lib', dest: 'stripe/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'stripe/package.json' },
+		],
+	},
+	{
+		name: 'currency.js',
+		files: [
+			{ src: 'dist/currency.min.js', dest: 'currency.js/currency.min.js' },
+			{ src: 'package.json', dest: 'currency.js/package.json' },
+		],
+	},
+	// Social Media Toolkit
+	{
+		name: 'twitter-api-v2',
+		dirs: [
+			{ src: 'dist', dest: 'twitter-api-v2/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'twitter-api-v2/package.json' },
+		],
+	},
+	{
+		name: 'axios',
+		dirs: [
+			{ src: 'dist', dest: 'axios/dist' },
+		],
+		files: [
+			{ src: 'index.js', dest: 'axios/index.js' },
+			{ src: 'package.json', dest: 'axios/package.json' },
+		],
+	},
+	{
+		name: 'facebook-nodejs-business-sdk',
+		dirs: [
+			{ src: 'dist', dest: 'facebook-nodejs-business-sdk/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'facebook-nodejs-business-sdk/package.json' },
+		],
+	},
+	{
+		name: 'linkedin-api-client',
+		dirs: [
+			{ src: 'dist', dest: 'linkedin-api-client/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'linkedin-api-client/package.json' },
+		],
+	},
+	// Analytics Toolkit
+	{
+		name: 'd3',
+		dirs: [
+			{ src: 'dist', dest: 'd3/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'd3/package.json' },
+		],
+	},
+	{
+		name: 'mathjs',
+		dirs: [
+			{ src: 'lib', dest: 'mathjs/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'mathjs/package.json' },
+		],
+	},
+	{
+		name: 'regression',
+		files: [
+			{ src: 'dist/regression.min.js', dest: 'regression/regression.min.js' },
+			{ src: 'package.json', dest: 'regression/package.json' },
+		],
+	},
+	{
+		name: 'fast-csv',
+		dirs: [
+			{ src: 'build', dest: 'fast-csv/build' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'fast-csv/package.json' },
+		],
+	},
+	// Multilingual Toolkit
+	{
+		name: 'i18next',
+		dirs: [
+			{ src: 'dist', dest: 'i18next/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'i18next/package.json' },
+		],
+	},
+	{
+		name: 'franc',
+		files: [
+			{ src: 'index.js', dest: 'franc/index.js' },
+			{ src: 'data', dest: 'franc/data', isDir: true },
+			{ src: 'package.json', dest: 'franc/package.json' },
+		],
+	},
+	{
+		name: 'google-translate-api-x',
+		files: [
+			{ src: 'dist', dest: 'google-translate-api-x/dist', isDir: true },
+			{ src: 'package.json', dest: 'google-translate-api-x/package.json' },
+		],
+	},
+	{
+		name: 'iso-639-1',
+		files: [
+			{ src: 'index.js', dest: 'iso-639-1/index.js' },
+			{ src: 'data', dest: 'iso-639-1/data', isDir: true },
+			{ src: 'package.json', dest: 'iso-639-1/package.json' },
+		],
+	},
+	// Video Production Toolkit
+	{
+		name: 'ffmpeg-static',
+		files: [
+			{ src: 'index.js', dest: 'ffmpeg-static/index.js' },
+			{ src: 'package.json', dest: 'ffmpeg-static/package.json' },
+		],
+	},
+	{
+		name: 'ffprobe-static',
+		files: [
+			{ src: 'index.js', dest: 'ffprobe-static/index.js' },
+			{ src: 'package.json', dest: 'ffprobe-static/package.json' },
+		],
+	},
+	{
+		name: 'gif-encoder',
+		files: [
+			{ src: 'lib', dest: 'gif-encoder/lib', isDir: true },
+			{ src: 'package.json', dest: 'gif-encoder/package.json' },
+		],
+	},
+	{
+		name: 'video-stitch',
+		files: [
+			{ src: 'dist/index.js', dest: 'video-stitch/index.js' },
+			{ src: 'package.json', dest: 'video-stitch/package.json' },
+		],
+	},
+	{
+		name: 'subtitle',
+		files: [
+			{ src: 'index.js', dest: 'subtitle/index.js' },
+			{ src: 'lib', dest: 'subtitle/lib', isDir: true },
+			{ src: 'package.json', dest: 'subtitle/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;
