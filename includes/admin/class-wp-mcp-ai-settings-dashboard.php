@@ -211,12 +211,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Use Simple Settings Saver for flat settings page (save_all_tabs flag).
-			// This provides individual field-level sanitization for better performance and clarity.
-			// For the main dashboard, use the section-based system for complex validation.
-			// CRITICAL: Do NOT use Simple Settings Saver when a subtab is active, because it will
-			// set ALL unposted checkboxes to false, clearing settings from inactive subtabs.
-			if ( $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
+			// DEPRECATED: Simple Settings Saver is disabled because it's incompatible with partial forms.
+			// All settings pages in this plugin use tabs/subtabs that only show partial fields.
+			// The Simple Settings Saver's checkbox handling (setting all unposted checkboxes to false)
+			// causes data loss when saving from tabs/subtabs. Use section-based sanitization instead.
+			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX
+			$use_simple_settings_saver = false; // Force disabled.
+			
+			if ( $use_simple_settings_saver && $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				// Initialize field types for the Simple Settings Saver.
 				WP_MCP_AI_Simple_Settings_Saver::init_field_types();
 
