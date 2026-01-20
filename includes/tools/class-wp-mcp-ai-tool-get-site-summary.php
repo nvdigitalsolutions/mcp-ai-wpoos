@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Provides basic site metadata and content statistics.
  */
 class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -67,8 +68,11 @@ class WP_MCP_AI_Tool_Get_Site_Summary implements WP_MCP_AI_Tool_Interface, WP_MC
 		$page_counts = wp_count_posts( 'page' );
 		$users       = count_users();
 
+		$summary_text = sprintf( __( 'Site: %s', 'mcp-ai-wpoos' ), get_bloginfo( 'name' ) );
+
 		return array(
-			'summary'          => sprintf( __( 'Site: %s', 'mcp-ai-wpoos' ), get_bloginfo( 'name' ) ),
+			'message'          => $summary_text,
+			'summary'          => $summary_text,
 			'site_name'        => get_bloginfo( 'name' ),
 			'site_description' => get_bloginfo( 'description' ),
 			'site_url'         => home_url(),

@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Queries the ReliefWeb API for recent humanitarian reports.
  */
 class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Base endpoint for ReliefWeb report searches.
 	 */
@@ -287,12 +288,15 @@ class WP_MCP_AI_Tool_ReliefWeb_Reports implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of reports found */
+			__( 'Found %d ReliefWeb report(s)', 'mcp-ai-wpoos' ),
+			isset( $decoded['count'] ) ? (int) $decoded['count'] : count( $results )
+		);
+
 		return array(
-			'summary'  => sprintf(
-				/* translators: %d: number of reports found */
-				__( 'Found %d ReliefWeb report(s)', 'mcp-ai-wpoos' ),
-				isset( $decoded['count'] ) ? (int) $decoded['count'] : count( $results )
-			),
+			'message'  => $summary_text,
+			'summary'  => $summary_text,
 			'filters'  => array_filter(
 				array(
 					'country'       => $country,

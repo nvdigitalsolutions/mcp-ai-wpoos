@@ -34,6 +34,20 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	protected $communication_service;
 
 	/**
+	 * Load monitor instance
+	 *
+	 * @var WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	protected $load_monitor;
+
+	/**
+	 * Tool execution orchestrator instance
+	 *
+	 * @var WP_MCP_AI_Tool_Execution_Orchestrator|null
+	 */
+	protected $tool_orchestrator;
+
+	/**
 	 * Predefined team templates
 	 *
 	 * @var array
@@ -44,9 +58,13 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Agent_Communication_Service|null $communication_service Communication service.
+	 * @param WP_MCP_AI_Tool_Load_Monitor|null          $load_monitor Load monitor instance.
+	 * @param WP_MCP_AI_Tool_Execution_Orchestrator|null $tool_orchestrator Tool orchestrator instance.
 	 */
-	public function __construct( $communication_service = null ) {
+	public function __construct( $communication_service = null, $load_monitor = null, $tool_orchestrator = null ) {
 		$this->communication_service = $communication_service ?? new WP_MCP_AI_Agent_Communication_Service();
+		$this->load_monitor          = $load_monitor;
+		$this->tool_orchestrator     = $tool_orchestrator;
 		$this->init_team_templates();
 	}
 
@@ -66,6 +84,12 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		$task_type = sanitize_key( $task_requirements['task_type'] );
 
+		// Check system capacity before composing team (Phase 2.3).
+		$capacity_check = $this->check_system_capacity_for_team( $task_requirements );
+		if ( is_wp_error( $capacity_check ) ) {
+			return $capacity_check;
+		}
+
 		// Get team template for task type.
 		$template = $this->get_team_template( $task_type );
 		if ( ! $template ) {
@@ -74,7 +98,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		}
 
 		// Find available agents for each role.
-		$team_members = $this->find_agents_for_roles( $template['roles'] );
+		$team_members = $this->find_agents_for_roles( $template['roles'], $task_requirements );
 
 		if ( empty( $team_members ) ) {
 			return new WP_Error(
@@ -724,5 +748,174 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 				'info'
 			);
 		}
+	}
+
+	/**
+	 * Check system capacity before composing team
+	 *
+	 * Ensures sufficient capacity available for multi-agent workflow.
+	 * Phase 2.3: Multi-Agent Integration with capacity awareness.
+	 *
+	 * @param array $task_requirements Task requirements.
+	 * @return true|WP_Error True if capacity sufficient, error otherwise.
+	 */
+	protected function check_system_capacity_for_team( $task_requirements ) {
+		$monitor = $this->get_load_monitor();
+		if ( ! $monitor ) {
+			// Load monitor not available - allow team composition.
+			return true;
+		}
+
+		// Get system capacity metrics.
+		$system_metrics = $monitor->get_system_load_metrics();
+
+		// Check if system is in critical state.
+		if ( 'critical' === $system_metrics['health_status'] ) {
+			// Check if this is a critical priority request.
+			$is_critical = isset( $task_requirements['priority'] ) && 'critical' === $task_requirements['priority'];
+			
+			if ( ! $is_critical ) {
+				return new WP_Error(
+					'wp_mcp_ai_insufficient_capacity',
+					sprintf(
+						/* translators: %s: health status */
+						__( 'System capacity is %s. Team workflow deferred to prevent overload.', 'mcp-ai-wpoos' ),
+						$system_metrics['health_status']
+					),
+					array(
+						'health_status'       => $system_metrics['health_status'],
+						'available_capacity'  => $system_metrics['available_capacity'],
+						'overall_utilization' => $system_metrics['overall_utilization'],
+					)
+				);
+			}
+		}
+
+		// Log capacity check.
+		$this->log_team_action(
+			'capacity_check',
+			'Team composition capacity check',
+			array(
+				'task_type'           => isset( $task_requirements['task_type'] ) ? $task_requirements['task_type'] : 'unknown',
+				'health_status'       => $system_metrics['health_status'],
+				'available_capacity'  => $system_metrics['available_capacity'],
+			)
+		);
+
+		return true;
+	}
+
+	/**
+	 * Find profession-based agent for role
+	 *
+	 * Queries profession CPT with agent_role metadata.
+	 * Phase 2.3: Multi-Agent Integration.
+	 *
+	 * @param string $role Agent role (planner, executor, critic, etc.).
+	 * @param array  $task_requirements Task requirements.
+	 * @return array|null Agent data or null.
+	 */
+	protected function find_profession_agent_for_role( $role, $task_requirements = array() ) {
+		// Query professions with agent_role meta.
+		$args = array(
+			'post_type'      => 'mcp_ai_profession',
+			'post_status'    => 'publish',
+			'posts_per_page' => 10,
+			'meta_query'     => array(
+				array(
+					'key'     => '_agent_role',
+					'value'   => $role,
+					'compare' => '=',
+				),
+			),
+		);
+
+		$query = new WP_Query( $args );
+
+		if ( ! $query->have_posts() ) {
+			wp_reset_postdata();
+			return null;
+		}
+
+		// Get first matching profession.
+		$query->the_post();
+		$post_id = get_the_ID();
+		
+		$profession_data = array(
+			'id'         => $post_id,
+			'role'       => $role,
+			'type'       => 'profession',
+			'profession' => get_post_field( 'post_name', $post_id ),
+			'name'       => get_the_title(),
+			'tools'      => get_post_meta( $post_id, '_tool_slugs', true ),
+			'config'     => get_post_meta( $post_id, '_orchestration_config', true ),
+		);
+
+		wp_reset_postdata();
+		
+		return $profession_data;
+	}
+
+	/**
+	 * Find generic agent for role (fallback)
+	 *
+	 * @param string $role Agent role.
+	 * @return array|null Agent data or null.
+	 */
+	protected function find_generic_agent_for_role( $role ) {
+		// Get generic agent by role.
+		$agent_role = wp_mcp_ai_get_agent_role( $role );
+		
+		if ( ! $agent_role ) {
+			return null;
+		}
+
+		return array(
+			'id'   => 'generic_' . $role,
+			'role' => $role,
+			'type' => 'generic',
+			'name' => ucfirst( $role ) . ' Agent',
+		);
+	}
+
+	/**
+	 * Get load monitor instance
+	 *
+	 * @return WP_MCP_AI_Tool_Load_Monitor|null
+	 */
+	protected function get_load_monitor() {
+		if ( null === $this->load_monitor && class_exists( 'WP_MCP_AI_Tool_Load_Monitor' ) ) {
+			$this->load_monitor = new WP_MCP_AI_Tool_Load_Monitor();
+		}
+		return $this->load_monitor;
+	}
+
+	/**
+	 * Get tool orchestrator instance
+	 *
+	 * @return WP_MCP_AI_Tool_Execution_Orchestrator|null
+	 */
+	protected function get_tool_orchestrator() {
+		if ( null === $this->tool_orchestrator && class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
+			$this->tool_orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator();
+		}
+		return $this->tool_orchestrator;
+	}
+
+	/**
+	 * Get system capacity metrics for team
+	 *
+	 * Public method for external capacity queries.
+	 * Phase 2.3: Multi-Agent Integration.
+	 *
+	 * @return array|null Capacity metrics or null.
+	 */
+	public function get_team_capacity_metrics() {
+		$monitor = $this->get_load_monitor();
+		if ( ! $monitor ) {
+			return null;
+		}
+
+		return $monitor->get_system_load_metrics();
 	}
 }

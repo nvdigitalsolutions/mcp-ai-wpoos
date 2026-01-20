@@ -56,6 +56,15 @@ class WP_MCP_AI_Process_Service {
 	}
 
 	/**
+	 * Check if process control functions are available.
+	 *
+	 * @return bool True if proc_open, proc_close, and proc_terminate are available.
+	 */
+	private function is_process_available() {
+		return function_exists( 'proc_open' ) && function_exists( 'proc_close' ) && function_exists( 'proc_terminate' );
+	}
+
+	/**
 	 * Execute a command and return the result.
 	 *
 	 * @param string|array $command Command to execute. Can be a string or array of arguments.
@@ -67,6 +76,14 @@ class WP_MCP_AI_Process_Service {
 	 * @return array|WP_Error Array with 'output', 'error', 'exit_code' on success, WP_Error on failure.
 	 */
 	public function run( $command, array $options = array() ) {
+		// Check if process functions are available.
+		if ( ! $this->is_process_available() ) {
+			return new \WP_Error(
+				'process_unavailable',
+				__( 'Process control functions (proc_open, proc_close) are disabled on this server. Please contact your hosting provider to enable these functions.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		// Parse options.
 		$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : $this->default_timeout;
 		$cwd     = isset( $options['cwd'] ) ? $options['cwd'] : null;
@@ -139,6 +156,17 @@ class WP_MCP_AI_Process_Service {
 	 * @return array Array with 'output', 'error', 'exit_code', 'success'.
 	 */
 	public function run_silent( $command, array $options = array() ) {
+		// Check if process functions are available.
+		if ( ! $this->is_process_available() ) {
+			return array(
+				'output'    => '',
+				'error'     => 'Process control functions (proc_open, proc_close) are disabled on this server.',
+				'exit_code' => -1,
+				'success'   => false,
+				'disabled'  => true,
+			);
+		}
+
 		// Parse options.
 		$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : $this->default_timeout;
 		$cwd     = isset( $options['cwd'] ) ? $options['cwd'] : null;
@@ -192,6 +220,11 @@ class WP_MCP_AI_Process_Service {
 
 		$result = $this->run_silent( array( $check_command, $command ), array( 'timeout' => 5 ) );
 
+		// If process functions are disabled, command checking is not available.
+		if ( isset( $result['disabled'] ) && $result['disabled'] ) {
+			return false;
+		}
+
 		return $result['success'] && ! empty( $result['output'] );
 	}
 
@@ -205,6 +238,11 @@ class WP_MCP_AI_Process_Service {
 		$check_command = stripos( PHP_OS, 'WIN' ) === 0 ? 'where' : 'which';
 
 		$result = $this->run_silent( array( $check_command, $command ), array( 'timeout' => 5 ) );
+
+		// If process functions are disabled, command path detection is not available.
+		if ( isset( $result['disabled'] ) && $result['disabled'] ) {
+			return false;
+		}
 
 		if ( $result['success'] && ! empty( $result['output'] ) ) {
 			$paths = explode( "\n", trim( $result['output'] ) );
@@ -241,6 +279,14 @@ class WP_MCP_AI_Process_Service {
 	 * @return array|WP_Error Result array or WP_Error on failure.
 	 */
 	public function run_with_callback( $command, callable $callback, array $options = array() ) {
+		// Check if process functions are available.
+		if ( ! $this->is_process_available() ) {
+			return new \WP_Error(
+				'process_unavailable',
+				__( 'Process control functions (proc_open, proc_close) are disabled on this server. Please contact your hosting provider to enable these functions.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		// Parse options.
 		$timeout = isset( $options['timeout'] ) ? absint( $options['timeout'] ) : $this->default_timeout;
 		$cwd     = isset( $options['cwd'] ) ? $options['cwd'] : null;

@@ -54,6 +54,16 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 }
 
 /**
+ * Define base version mode constant.
+ * 
+ * Defaults to false (full mode with all available tools).
+ * Set to true in wp-config.php to enable base mode (core tools only).
+ */
+if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
+	define( 'WP_MCP_AI_BASE_VERSION', false );
+}
+
+/**
  * Check PHP version compatibility before loading any classes.
  *
  * This plugin requires PHP 7.4 or later. On older PHP versions, class files
@@ -338,12 +348,12 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
 	 * Check if base version mode is enabled.
 	 *
-	 * Full version is enabled by default, providing all 105+ tools.
-	 * To enable base version mode (only core 74 tools), add this to wp-config.php:
+	 * Full version is enabled by default, providing all available tools.
+	 * Base version mode is only active if explicitly set to true in wp-config.php:
 	 * define( 'WP_MCP_AI_BASE_VERSION', true );
 	 *
-	 * Base version mode excludes tools requiring third-party plugins
-	 * (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
+	 * Base version mode limits the plugin to core tools only, excluding tools that require
+	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
 	 *
 	 * @return bool Whether base version mode is active.
 	 */
@@ -621,6 +631,9 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-security-monitor-admin.php';
 	WP_MCP_AI_Security_Monitor_Admin::init();
 
+	// Load DeepSeek V4 Orchestration Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-orchestration-dashboard.php';
+
 	// Load ISO 27001 Asset Inventory System (Control A.5.9).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
@@ -701,6 +714,30 @@ if ( is_admin() ) {
 		wp_mcp_ai_container()->get( 'admin.test_team' );
 	}
 
+	// Load profession settings page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-settings.php';
+		wp_mcp_ai_container()->get( 'admin.profession_settings' );
+	}
+
+	// Load team settings page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-settings.php';
+		wp_mcp_ai_container()->get( 'admin.team_settings' );
+	}
+
+	// Load profession research page (submenu of Professions CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-profession-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.profession_research' );
+	}
+
+	// Load team research page (submenu of Teams CPT).
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-team-research-page.php';
+		wp_mcp_ai_container()->get( 'admin.team_research' );
+	}
+
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
 
@@ -748,6 +785,7 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-settings.php';
 
 	// Initialize Pro Dashboard components.
 	new WP_MCP_AI_Pro_Database();

@@ -10700,6 +10700,52 @@
                 });
             }
 
+            // Handle team mode toggle
+            const teamModeToggle = container.querySelector('.wp-mcp-ai-chat__team-mode-toggle');
+            if (teamModeToggle && instanceConfig.teamData) {
+                teamModeToggle.addEventListener('click', function (event) {
+                    if (event && typeof event.preventDefault === 'function') {
+                        event.preventDefault();
+                    }
+
+                    const currentMode = teamModeToggle.getAttribute('data-mode');
+                    const newMode = currentMode === 'individual' ? 'unified' : 'individual';
+
+                    // Update button state
+                    teamModeToggle.setAttribute('data-mode', newMode);
+                    
+                    if (newMode === 'unified') {
+                        teamModeToggle.setAttribute('aria-label', 'Switch to individual member mode');
+                        teamModeToggle.setAttribute('title', 'Currently in unified team mode - all members coordinate');
+                        
+                        // Update assistant ID to unified team format
+                        state.config.assistantId = 'unified_team_' + instanceConfig.teamData.id;
+                        
+                        console.log('[Team Mode] Switched to unified mode:', state.config.assistantId);
+                    } else {
+                        teamModeToggle.setAttribute('aria-label', 'Switch to unified team mode');
+                        teamModeToggle.setAttribute('title', 'Switch between unified team and individual member modes');
+                        
+                        // Revert to original assistant ID (first team member or original assistant)
+                        if (instanceConfig.teamData.members && instanceConfig.teamData.members.length > 0) {
+                            state.config.assistantId = 'team_' + instanceConfig.teamData.id + '_member_' + instanceConfig.teamData.members[0];
+                        }
+                        
+                        console.log('[Team Mode] Switched to individual mode:', state.config.assistantId);
+                    }
+
+                    // Start a new conversation when switching modes
+                    startNewConversation(state);
+                    
+                    // Show notification
+                    const modeLabel = newMode === 'unified' ? 'Unified Team Mode' : 'Individual Member Mode';
+                    setStatus(container, 'Switched to ' + modeLabel);
+                    setTimeout(function() {
+                        clearStatus(container);
+                    }, 2000);
+                });
+            }
+
             // Initialize save, export and quota monitoring UI controls
             const saveButton = container.querySelector('.wp-mcp-ai-chat__save');
             const exportButton = container.querySelector('.wp-mcp-ai-chat__export');
@@ -12982,6 +13028,92 @@
         return '';
     }
 
+    /**
+     * Ensure final assistant and tool messages are present in conversation for persistence.
+     * This systematic validation maintains conversation continuity for agentic chat flow.
+     * 
+     * Called before saveConversationToStorage to guarantee that:
+     * 1. Tool results always have a corresponding assistant message
+     * 2. Assistant messages are present even when empty/filtered
+     * 3. The conversation state is complete for LLM continuation
+     * 
+     * @param {Object} state - Chat state object
+     * @param {Object} data - Response data from the API
+     * @param {Object} assistantMessage - The assistant message being processed
+     * @param {boolean} hasToolResults - Whether tool results are present in the response
+     */
+    function ensureFinalMessagesPresent(state, data, assistantMessage, hasToolResults) {
+        if (!state || !state.conversation || !Array.isArray(state.conversation)) {
+            return;
+        }
+
+        // Check if the assistant message was already added to conversation
+        const assistantMessageInConversation = state.conversation.indexOf(assistantMessage) !== -1;
+        
+        // CASE 1: Tool results exist but no assistant message in conversation
+        // This can happen when tools execute but the assistant provides no response
+        if (hasToolResults && !assistantMessageInConversation) {
+            // Ensure assistant message has at least minimal content for LLM continuity
+            if (!assistantMessage.content && !assistantMessage.tool_calls) {
+                assistantMessage.content = ''; // Empty but present for conversation structure
+            }
+            
+            // Ensure display metadata exists for proper UI restoration
+            if (!assistantMessage.display) {
+                assistantMessage.display = {
+                    bubbleType: 'assistant',
+                    text: assistantMessage.content || '',
+                    attachments: [],
+                    addedByValidation: true // Flag for debugging
+                };
+            }
+            
+            // Add the assistant message to maintain conversation flow
+            state.conversation.push(assistantMessage);
+            
+            if (window.console && console.log) {
+                console.log('[NV oOS] ensureFinalMessagesPresent: Added missing assistant message for tool results', {
+                    conversationLength: state.conversation.length,
+                    hasContent: !!assistantMessage.content,
+                    hasToolCalls: !!assistantMessage.tool_calls
+                });
+            }
+        }
+        
+        // CASE 2: Validate that tool results in conversation have proper structure
+        if (hasToolResults && data && Array.isArray(data.tool_results)) {
+            data.tool_results.forEach(function(toolResult) {
+                if (toolResult && toolResult.role === 'tool') {
+                    // Check if this tool result is in conversation
+                    const toolInConversation = state.conversation.some(function(msg) {
+                        return msg.role === 'tool' && 
+                               msg.tool_call_id === toolResult.tool_call_id;
+                    });
+                    
+                    // If tool result is missing, this is likely an async pending result
+                    // or it was already processed - no action needed
+                    if (!toolInConversation && window.console && console.log) {
+                        console.log('[NV oOS] ensureFinalMessagesPresent: Tool result not yet in conversation (may be async pending)', {
+                            tool_name: toolResult.name,
+                            tool_call_id: toolResult.tool_call_id
+                        });
+                    }
+                }
+            });
+        }
+        
+        // CASE 3: Log final conversation state for debugging
+        if (window.console && console.log) {
+            const lastMessage = state.conversation[state.conversation.length - 1];
+            console.log('[NV oOS] ensureFinalMessagesPresent: Validation complete', {
+                conversationLength: state.conversation.length,
+                lastMessageRole: lastMessage ? lastMessage.role : 'none',
+                assistantMessagePresent: assistantMessageInConversation,
+                hasToolResults: hasToolResults
+            });
+        }
+    }
+
     function handleChatResponse(state, data) {
         // Capture and save the session key if provided by the server
         if (data && data.sessionKey && state.config) {
@@ -13458,6 +13590,24 @@
 
             appendMessage(state.messagesEl, 'system', { text: notice }, false, { state: state });
             setStatus(state.container, notice);
+
+            // IMPORTANT: Even though we have no display content or tool_calls, we must still
+            // persist an assistant message to maintain conversation continuity for the LLM.
+            // This ensures the agentic chat flow remains intact across page reloads.
+            // Without this, the conversation state would be incomplete, causing issues when
+            // the chat continues or tool results are processed later.
+            assistantMessage.content = ''; // Empty content to maintain conversation structure
+            assistantMessage.display = {
+                bubbleType: 'assistant',
+                text: '',
+                attachments: [],
+                isEmptyResponse: true // Flag to indicate this was an empty response
+            };
+            state.conversation.push(assistantMessage);
+            
+            // Save the conversation to persist the empty assistant message
+            saveConversationToStorage(state);
+            saveConversationToCCT(state, { silent: true });
 
             return Promise.resolve();
         }
@@ -14205,6 +14355,12 @@
             setStatus(state.container, '');
         }
 
+        // SYSTEMATIC VALIDATION: Ensure final assistant/tool messages persist
+        // This validation guarantees conversation continuity for agentic chat flow.
+        // It ensures that when tool_results are present, there's always a corresponding
+        // assistant message in the conversation, maintaining proper LLM context.
+        ensureFinalMessagesPresent(state, data, assistantMessage, hasToolResults);
+        
         // Save conversation to localStorage after all messages have been added.
         // This ensures that assistant responses to tool results persist on page reload.
         saveConversationToStorage(state);

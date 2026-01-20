@@ -15,12 +15,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Provides a tool for generating images via Cloudflare Workers AI and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	const DEFAULT_MODEL     = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
 	const DEFAULT_WIDTH     = 1024;
@@ -323,6 +325,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			);
 		}
 
+		$text    = implode( ' ', $text_parts );
+		$message = $text;
+
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
 			'url'           => $storage['url'],
@@ -339,7 +344,8 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			'model'         => $model,
 			'provider'      => 'cloudflare',
 			'created'       => isset( $image['created'] ) ? $image['created'] : time(),
-			'text'          => implode( ' ', $text_parts ),
+			'text'          => $text,
+			'message'       => $message,
 		);
 
 		if ( null !== $seed ) {

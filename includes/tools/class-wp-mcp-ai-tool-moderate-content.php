@@ -22,6 +22,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
+	
 	const DEFAULT_MODEL = 'omni-moderation-latest';
 
 	/**
@@ -223,13 +225,17 @@ class WP_MCP_AI_Tool_Moderate_Content implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Build formatted result.
-		$results = $response['results'];
+		$results       = $response['results'];
+		$summary_data  = $this->generate_summary( $results );
+		$message_text  = isset( $summary_data['recommendation'] ) ? $summary_data['recommendation'] : __( 'Content moderation complete.', 'mcp-ai-wpoos' );
+		
 		$result  = array(
+			'message'       => $message_text,
 			'moderation_id' => isset( $response['id'] ) ? $response['id'] : '',
 			'model'         => isset( $response['model'] ) ? $response['model'] : $model,
 			'results_count' => count( $results ),
 			'results'       => $this->format_results( $results ),
-			'summary'       => $this->generate_summary( $results ),
+			'summary'       => $summary_data,
 		);
 
 		return $result;

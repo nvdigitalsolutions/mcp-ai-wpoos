@@ -25,6 +25,12 @@ require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-rend
 // Load dashboard controller.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-dashboard.php';
 
+// Load simple settings saver (for optimized flat settings page).
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-saver.php';
+
+// Load simple settings page (Settings menu diagnostic page).
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-simple-settings-page.php';
+
 // Register autoloader for settings sections (lazy loading).
 // This loads section class files only when they are actually instantiated,.
 
@@ -124,6 +130,10 @@ function wp_mcp_ai_init_settings_dashboard() {
 		// This creates the top-level "NV oOS" menu item.
 		// Store the instance globally for potential access by other code.
 		$GLOBALS['wp_mcp_ai_settings_dashboard'] = $container->get( 'admin.settings_dashboard' );
+
+		// Initialize simple settings page (Settings menu).
+		// This provides a flat diagnostic view of all saved settings.
+		$GLOBALS['wp_mcp_ai_simple_settings_page'] = new WP_MCP_AI_Simple_Settings_Page();
 
 		// Initialize integration admin pages.
 		// Note: Plugin integrations (JetEngine, WooCommerce, Elementor) now use sections instead of standalone page.

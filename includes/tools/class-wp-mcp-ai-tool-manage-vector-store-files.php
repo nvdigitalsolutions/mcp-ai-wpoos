@@ -12,11 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Manages files in OpenAI vector stores.
  */
 class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -160,12 +163,39 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
+		$success      = empty( $errors );
+		$total        = count( $file_ids );
+		$added_count  = count( $results );
+		$errors_count = count( $errors );
+
+		if ( $success ) {
+			$message = sprintf(
+				/* translators: %d: number of files */
+				_n(
+					'Successfully added %d file to vector store',
+					'Successfully added %d files to vector store',
+					$added_count,
+					'mcp-ai-wpoos'
+				),
+				$added_count
+			);
+		} else {
+			$message = sprintf(
+				/* translators: 1: number of successful files, 2: number of failed files */
+				__( 'Added %1$d file(s) to vector store, %2$d failed', 'mcp-ai-wpoos' ),
+				$added_count,
+				$errors_count
+			);
+		}
+
 		return array(
-			'success' => empty( $errors ),
+			'success' => $success,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
 				'added'  => $results,
 				'errors' => $errors,
-				'total'  => count( $file_ids ),
+				'total'  => $total,
 			),
 		);
 	}
@@ -206,12 +236,39 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
+		$success        = empty( $errors );
+		$total          = count( $file_ids );
+		$removed_count  = count( $results );
+		$errors_count   = count( $errors );
+
+		if ( $success ) {
+			$message = sprintf(
+				/* translators: %d: number of files */
+				_n(
+					'Successfully removed %d file from vector store',
+					'Successfully removed %d files from vector store',
+					$removed_count,
+					'mcp-ai-wpoos'
+				),
+				$removed_count
+			);
+		} else {
+			$message = sprintf(
+				/* translators: 1: number of successful files, 2: number of failed files */
+				__( 'Removed %1$d file(s) from vector store, %2$d failed', 'mcp-ai-wpoos' ),
+				$removed_count,
+				$errors_count
+			);
+		}
+
 		return array(
-			'success' => empty( $errors ),
+			'success' => $success,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
 				'removed' => $results,
 				'errors'  => $errors,
-				'total'   => count( $file_ids ),
+				'total'   => $total,
 			),
 		);
 	}
@@ -248,11 +305,24 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
+		$files    = isset( $result['data'] ) ? $result['data'] : array();
+		$count    = count( $files );
+		$has_more = isset( $result['has_more'] ) ? $result['has_more'] : false;
+
+		$message = $this->format_collection_response(
+			$count,
+			__( 'file', 'mcp-ai-wpoos' ),
+			__( 'files', 'mcp-ai-wpoos' ),
+			$has_more
+		);
+
 		return array(
 			'success' => true,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
-				'files'    => isset( $result['data'] ) ? $result['data'] : array(),
-				'has_more' => isset( $result['has_more'] ) ? $result['has_more'] : false,
+				'files'    => $files,
+				'has_more' => $has_more,
 				'first_id' => isset( $result['first_id'] ) ? $result['first_id'] : null,
 				'last_id'  => isset( $result['last_id'] ) ? $result['last_id'] : null,
 			),

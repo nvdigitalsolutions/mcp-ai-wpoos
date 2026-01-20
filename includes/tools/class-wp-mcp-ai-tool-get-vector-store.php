@@ -12,11 +12,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
  * Retrieves OpenAI vector store details.
  */
 class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -78,12 +81,26 @@ class WP_MCP_AI_Tool_Get_Vector_Store implements WP_MCP_AI_Tool_Interface, WP_MC
 			);
 		}
 
+		$vector_store_name = isset( $result['name'] ) ? $result['name'] : null;
+		$vector_store_id   = isset( $result['id'] ) ? $result['id'] : null;
+		$status            = isset( $result['status'] ) ? $result['status'] : null;
+
+		$message = sprintf(
+			/* translators: 1: vector store name, 2: vector store ID, 3: status */
+			__( 'Successfully retrieved vector store "%1$s" (ID: %2$s, Status: %3$s)', 'mcp-ai-wpoos' ),
+			$vector_store_name ? $vector_store_name : __( 'Unknown', 'mcp-ai-wpoos' ),
+			$vector_store_id,
+			$status ? $status : __( 'unknown', 'mcp-ai-wpoos' )
+		);
+
 		return array(
 			'success' => true,
+			'message' => $message,
+			'text'    => $message,
 			'data'    => array(
-				'id'             => isset( $result['id'] ) ? $result['id'] : null,
-				'name'           => isset( $result['name'] ) ? $result['name'] : null,
-				'status'         => isset( $result['status'] ) ? $result['status'] : null,
+				'id'             => $vector_store_id,
+				'name'           => $vector_store_name,
+				'status'         => $status,
 				'file_counts'    => isset( $result['file_counts'] ) ? $result['file_counts'] : array(),
 				'created_at'     => isset( $result['created_at'] ) ? $result['created_at'] : null,
 				'last_active_at' => isset( $result['last_active_at'] ) ? $result['last_active_at'] : null,

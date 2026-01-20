@@ -36,6 +36,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cache_Helper' ) ) {
  * Works with any configured AI provider (OpenAI, Gemini, Anthropic, Ollama, etc.)
  */
 class WP_MCP_AI_Tool_Deep_Research implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Maximum number of search queries to perform.

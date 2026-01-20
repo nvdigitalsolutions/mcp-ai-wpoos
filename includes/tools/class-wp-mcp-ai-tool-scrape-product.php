@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Scrapes product information from URLs and downloads product images to WordPress media library.
  */
 class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -177,7 +179,10 @@ class WP_MCP_AI_Tool_Scrape_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		$product_data = array_merge(
-			array( 'summary' => $summary ),
+			array(
+				'message' => $summary,
+				'summary' => $summary,
+			),
 			$product_data
 		);
 

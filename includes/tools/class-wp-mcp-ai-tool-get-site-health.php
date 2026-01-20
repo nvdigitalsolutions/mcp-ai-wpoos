@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Executes Site Health tests and returns aggregated results.
  */
 class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Capability required to run the tool.
 	 */
@@ -189,12 +190,21 @@ class WP_MCP_AI_Tool_Get_Site_Health implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$results[ $bucket ][] = $this->format_test_result( $test_identifier, $result );
 		}
 
+		$summary_data = array(
+			'critical' => count( $results['critical'] ),
+			'warning'  => count( $results['warning'] ),
+			'pass'     => count( $results['pass'] ),
+		);
+
 		return array(
-			'summary' => array(
-				'critical' => count( $results['critical'] ),
-				'warning'  => count( $results['warning'] ),
-				'pass'     => count( $results['pass'] ),
+			'message' => sprintf(
+				/* translators: 1: critical count, 2: warning count, 3: pass count */
+				__( 'Site Health: %1$d critical, %2$d warning, %3$d passing', 'mcp-ai-wpoos' ),
+				$summary_data['critical'],
+				$summary_data['warning'],
+				$summary_data['pass']
 			),
+			'summary' => $summary_data,
 			'tests'   => $results,
 		);
 	}

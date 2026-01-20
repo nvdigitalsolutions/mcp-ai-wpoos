@@ -336,6 +336,68 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables the Media Toolkit for creating and managing reusable templates for the Graphic Editor Plus tool. Templates allow you to save operation configurations (logo positions, resize settings, AI prompts) and apply them to multiple images via AI assistants or batch operations. Requires upload_files capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_document_generation_toolkit'   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the Document Generation Toolkit with 3 tools for creating professional documents: pro_pdf (PDF generation), pro_word (Word documents with templates), and pro_excel_document (Excel spreadsheets with formulas). AI generates content from natural language descriptions. Requires upload_files capability and Node.js with npm packages (pdfkit, docx, exceljs) installed on the server. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Excel and Document Generation Settings (Pro).
+				'excel_default_version'                => array(
+					'type'        => 'select',
+					'label'       => __( 'Excel Version Target', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default Excel version for formula generation. Modern (Excel 2021+/Microsoft 365) supports LAMBDA, LET, XLOOKUP, and other advanced functions. Legacy (Excel 2019 and earlier) uses traditional formulas. Excel Online supports cloud-specific features.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'modern' => __( 'Modern (Excel 2021+/Microsoft 365 - LAMBDA supported)', 'mcp-ai-wpoos' ),
+						'legacy' => __( 'Legacy (Excel 2019 and earlier - Traditional formulas)', 'mcp-ai-wpoos' ),
+						'online' => __( 'Excel Online (Cloud features)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'modern',
+					'pro_badge'   => true,
+				),
+				'excel_enable_lambda'                  => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable LAMBDA Functions', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, the Pro Excel tool can generate LAMBDA functions for custom, reusable, and recursive formulas. LAMBDA makes Excel Turing-complete, enabling advanced programming capabilities. Requires Excel 2021+ or Microsoft 365.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'pro_badge'      => true,
+				),
+				'excel_max_complexity'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'Maximum Formula Complexity', 'mcp-ai-wpoos' ),
+					'description' => __( 'Controls the complexity level for generated formulas. Simple formulas are easier to understand and maintain. Complex formulas offer more sophisticated solutions but may be harder to debug. Advanced formulas use cutting-edge Excel features.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'simple'   => __( 'Simple (Basic formulas, easy to understand)', 'mcp-ai-wpoos' ),
+						'moderate' => __( 'Moderate (Nested functions, intermediate complexity)', 'mcp-ai-wpoos' ),
+						'complex'  => __( 'Complex (Advanced formulas with multiple steps)', 'mcp-ai-wpoos' ),
+						'advanced' => __( 'Advanced (LAMBDA, recursive, expert-level)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'moderate',
+					'pro_badge'   => true,
+				),
+				'excel_include_comments'               => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Include Formula Comments', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Add explanatory comments to generated formulas', 'mcp-ai-wpoos' ),
+					'description'    => __( 'When enabled, generated formulas include inline comments explaining each step and component. This makes formulas easier to understand and maintain, especially for complex calculations.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'pro_badge'      => true,
+				),
+				'excel_optimization_level'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Formula Optimization', 'mcp-ai-wpoos' ),
+					'description' => __( 'Choose how formulas are optimized. Readability prioritizes clear, maintainable code. Performance focuses on calculation speed and efficiency. Balanced provides a compromise between the two.', 'mcp-ai-wpoos' ),
+					'options'     => array(
+						'readability' => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
+						'performance' => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
+						'balanced'    => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'balanced',
+					'pro_badge'   => true,
+				),
 
 				// Media fields.
 				'enable_ai_media_library'              => array(
@@ -451,6 +513,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered health and wellness management for individuals, families, and pets. Provides 30+ tools for managing members, medical records, policies, checkups, prescriptions, and allergies. Includes secure health data storage with proper access controls. Always ensure HIPAA/GDPR compliance for healthcare deployments. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Cloudways Pro Toolkit fields.
+				'enable_cloudways_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Cloudways Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Cloudways server and application management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered Cloudways hosting management for servers and applications. Provides 58+ tools for server management, application deployment, monitoring, security, backups, and performance optimization. Includes server operations, database management, SSL certificate management, and deployment automation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -509,31 +580,37 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		protected function get_subtab_groups() {
 			$subtab_groups = array(
-				'tools_manager'  => array(
+				'tools_manager'       => array(
 					'id'     => 'tools_manager',
 					'label'  => __( 'Tools Manager', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-list-view',
 					'fields' => array(), // Custom rendering, no form fields.
 				),
-				'features'       => array(
+				'features'            => array(
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit' ),
 				),
-				'configuration'  => array(
+				'configuration'       => array(
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
 				),
-				'connections'    => array(
+				'document_generation' => array(
+					'id'     => 'document_generation',
+					'label'  => __( 'Document Generation', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-media-spreadsheet',
+					'fields' => array( 'excel_default_version', 'excel_enable_lambda', 'excel_max_complexity', 'excel_include_comments', 'excel_optimization_level' ),
+				),
+				'connections'         => array(
 					'id'     => 'connections',
 					'label'  => __( 'Connections', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-links',
 					'fields' => array(), // Custom rendering via Integrations section.
 				),
-				'external_tools' => array(
+				'external_tools'      => array(
 					'id'     => 'external_tools',
 					'label'  => __( 'GitHub OAuth', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-site-alt3',
@@ -542,7 +619,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'github_client_secret',
 					),
 				),
-				'plugins'        => array(
+				'plugins'             => array(
 					'id'     => 'plugins',
 					'label'  => __( 'Plugins', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-plugins',
@@ -553,13 +630,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_elementor_widgets',
 					),
 				),
-				'media'          => array(
+				'media'               => array(
 					'id'     => 'media',
 					'label'  => __( 'AI Media Library', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-format-image',
 					'fields' => array( 'enable_ai_media_library', 'ai_media_generate_alt_text', 'ai_media_generate_caption', 'ai_media_overwrite_existing' ),
 				),
-				'comments'       => array(
+				'comments'            => array(
 					'id'     => 'comments',
 					'label'  => __( 'AI Comments', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-comments',

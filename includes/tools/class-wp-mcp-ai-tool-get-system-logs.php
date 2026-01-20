@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Returns recent log entries from WordPress and NV oOS.
  */
 class WP_MCP_AI_Tool_Get_System_Logs implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */

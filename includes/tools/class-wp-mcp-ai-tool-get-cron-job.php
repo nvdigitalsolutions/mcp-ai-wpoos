@@ -17,6 +17,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
  * Allows users to get details of a specific WordPress cron job.
  */
 class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -113,13 +114,16 @@ class WP_MCP_AI_Tool_Get_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$creator = __( 'System', 'mcp-ai-wpoos' );
 		}
 
+		$summary_text = sprintf(
+			/* translators: 1: cron hook name, 2: job ID */
+			__( 'Cron job: %1$s (ID: %2$s)', 'mcp-ai-wpoos' ),
+			$hook,
+			$job_id
+		);
+
 		$result = array(
-			'summary'  => sprintf(
-				/* translators: 1: cron hook name, 2: job ID */
-				__( 'Cron job: %1$s (ID: %2$s)', 'mcp-ai-wpoos' ),
-				$hook,
-				$job_id
-			),
+			'message'  => $summary_text, // Chat client display
+			'summary'  => $summary_text, // Backward compatibility
 			'job_id'   => $job_id,
 			'hook'     => $hook,
 			'schedule' => $schedule,

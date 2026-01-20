@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Creates a new post or updates an existing one.
  */
 class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -307,13 +308,16 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		// Handle post-creation/update operations for metadata.
 		$this->handle_post_metadata( $updated_post->ID, $arguments, $post_type );
 
+		$summary_text = sprintf(
+			/* translators: 1: post ID, 2: post title */
+			__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
+			get_the_title( $updated_post ),
+			$updated_post->ID
+		);
+
 		$response = array(
-			'summary'   => sprintf(
-				/* translators: 1: post ID, 2: post title */
-				__( 'Post saved: %1$s (ID: %2$d)', 'mcp-ai-wpoos' ),
-				get_the_title( $updated_post ),
-				$updated_post->ID
-			),
+			'message'   => $summary_text, // Chat client display
+			'summary'   => $summary_text, // Backward compatibility
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),

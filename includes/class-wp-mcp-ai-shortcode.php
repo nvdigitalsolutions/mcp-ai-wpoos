@@ -441,6 +441,7 @@ class WP_MCP_AI_Shortcode {
 				array(
 					'assistant'             => '',
 					'profession'            => '',
+					'team'                  => '', // Team ID for multi-agent coordination.
 					'allow_guests'          => 'false',
 					'save_transcript'       => 'true',
 					'enable_streaming'      => 'true',
@@ -516,6 +517,60 @@ class WP_MCP_AI_Shortcode {
 			} else {
 				$permissions_assistant_id = absint( $assistant_id );
 				$assistant                = get_post( $assistant_id );
+			}
+
+			// Handle team parameter for multi-agent coordination.
+			$team_id = ! empty( $atts['team'] ) ? absint( $atts['team'] ) : 0;
+			$team_data = null;
+			$team_members = array();
+			$orchestration_mode = '';
+			$result_aggregation = '';
+			$multi_agent_enabled = false;
+			$supports_unified_mode = false;
+
+			if ( $team_id > 0 ) {
+				$team_post = get_post( $team_id );
+				if ( $team_post && 'mcp_ai_team' === $team_post->post_type ) {
+					// Team exists - check if multi-agent is enabled.
+					$multi_agent_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+
+					if ( $multi_agent_enabled ) {
+						// Load team configuration.
+						$team_members = get_post_meta( $team_id, '_wp_mcp_ai_team_members', true );
+						if ( ! is_array( $team_members ) ) {
+							$team_members = array();
+						}
+
+						$orchestration_mode = get_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', true );
+						$result_aggregation = get_post_meta( $team_id, '_wp_mcp_ai_team_result_aggregation', true );
+
+						$orchestration_mode = $orchestration_mode ? $orchestration_mode : 'sequential';
+						$result_aggregation = $result_aggregation ? $result_aggregation : 'consensus';
+
+						$supports_unified_mode = count( $team_members ) > 1;
+
+						$team_data = array(
+							'id'                    => $team_id,
+							'title'                 => $team_post->post_title,
+							'members'               => $team_members,
+							'orchestration_mode'    => $orchestration_mode,
+							'result_aggregation'    => $result_aggregation,
+							'multi_agent_enabled'   => $multi_agent_enabled,
+							'supports_unified_mode' => $supports_unified_mode,
+						);
+
+						WP_MCP_AI_Logger::log_event(
+							'shortcode_team_detected',
+							'Team chat interface initialized',
+							array(
+								'team_id'                => $team_id,
+								'member_count'           => count( $team_members ),
+								'orchestration_mode'     => $orchestration_mode,
+								'supports_unified_mode'  => $supports_unified_mode,
+							)
+						);
+					}
+				}
 			}
 
 			// Validate assistant for permissions (not required for profession tests with no associated assistant).
@@ -639,7 +694,8 @@ class WP_MCP_AI_Shortcode {
 				'id'                    => $instance_id,
 				'assistantId'           => $assistant_id, // This preserves "profession_XXX" format for profession tests.
 				'userId'                => get_current_user_id(),
-				'restUrl'               => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ),
+				'restUrl'               => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'        => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
 				'messagesEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-client' ) ) ),
 				'toolsEndpoint'         => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
 				'filesEndpoint'         => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
@@ -659,6 +715,11 @@ class WP_MCP_AI_Shortcode {
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
+
+			// Add team information if team is configured.
+			if ( ! empty( $team_data ) ) {
+				$config['teamData'] = $team_data;
+			}
 
 			// Get tool shortcuts - for profession tests, get them from the profession's associated assistant if available.
 			$shortcuts_assistant_id = $is_profession_test && isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
@@ -921,6 +982,21 @@ class WP_MCP_AI_Shortcode {
 						</svg>
 						<span class="screen-reader-text"><?php esc_html_e( 'Start new conversation', 'mcp-ai-wpoos' ); ?></span>
 					</button>
+					<?php if ( ! empty( $team_data ) && $supports_unified_mode ) : ?>
+					<button
+						type="button"
+						class="wp-mcp-ai-chat__team-mode-toggle"
+						data-mode="individual"
+						aria-label="<?php echo esc_attr__( 'Switch to unified team mode', 'mcp-ai-wpoos' ); ?>"
+						title="<?php echo esc_attr__( 'Switch between unified team and individual member modes', 'mcp-ai-wpoos' ); ?>"
+					>
+						<svg class="wp-mcp-ai-chat__team-mode-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+							<!-- Switch/Shuffle icon - clearly indicates mode toggling -->
+							<path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
+						</svg>
+						<span class="screen-reader-text"><?php esc_html_e( 'Team mode toggle', 'mcp-ai-wpoos' ); ?></span>
+					</button>
+					<?php endif; ?>
 					<?php if ( ! empty( $cpt_actions ) ) : ?>
 					<div class="wp-mcp-ai-chat__cpt-actions" role="group" aria-label="<?php echo esc_attr__( 'Post type actions', 'mcp-ai-wpoos' ); ?>"></div>
 					<?php endif; ?>

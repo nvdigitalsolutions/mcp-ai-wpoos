@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Supports JSON output or Chart.js visualization.
  */
 class WP_MCP_AI_Tool_Get_Open_Meteo_Forecast implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 
 

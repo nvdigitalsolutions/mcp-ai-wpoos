@@ -80,7 +80,8 @@
 .wp-mcp-ai-chat__history-toggle,
 .wp-mcp-ai-chat__new-chat,
 .wp-mcp-ai-chat__export,
-.wp-mcp-ai-chat__save {
+.wp-mcp-ai-chat__save,
+.wp-mcp-ai-chat__team-mode-toggle {
     appearance: none;
     border-radius: 999px;
     border: 1px solid var(--wp-mcp-ai-color-shortcut-border, rgba(148, 163, 184, 0.35));
@@ -99,7 +100,8 @@
 .wp-mcp-ai-chat__history-toggle:hover,
 .wp-mcp-ai-chat__new-chat:hover,
 .wp-mcp-ai-chat__export:hover,
-.wp-mcp-ai-chat__save:hover {
+.wp-mcp-ai-chat__save:hover,
+.wp-mcp-ai-chat__team-mode-toggle:hover {
     background: var(--wp-mcp-ai-color-shortcut-hover-background, rgba(59, 130, 246, 0.12));
     border-color: var(--wp-mcp-ai-color-shortcut-hover-border, rgba(59, 130, 246, 0.35));
     color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
@@ -108,7 +110,8 @@
 .wp-mcp-ai-chat__history-toggle:focus,
 .wp-mcp-ai-chat__new-chat:focus,
 .wp-mcp-ai-chat__export:focus,
-.wp-mcp-ai-chat__save:focus {
+.wp-mcp-ai-chat__save:focus,
+.wp-mcp-ai-chat__team-mode-toggle:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--wp-mcp-ai-color-shortcut-focus-ring, rgba(59, 130, 246, 0.45));
 }
@@ -119,10 +122,25 @@
     color: var(--wp-mcp-ai-color-shortcut-hover-text, #0f172a);
 }
 
+/* Team mode toggle - active state for unified mode */
+.wp-mcp-ai-chat__team-mode-toggle[data-mode="unified"] {
+    background: linear-gradient(135deg, #f0f6fc 0%, #e3f2fd 100%);
+    border-color: #2271b1;
+    color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.wp-mcp-ai-chat__team-mode-toggle[data-mode="unified"]:hover {
+    background: linear-gradient(135deg, #e3f2fd 0%, #d0e7fa 100%);
+    border-color: #135e96;
+    color: #135e96;
+}
+
 .wp-mcp-ai-chat__history-toggle-icon,
 .wp-mcp-ai-chat__new-chat-icon,
 .wp-mcp-ai-chat__export-icon,
-.wp-mcp-ai-chat__save-icon {
+.wp-mcp-ai-chat__save-icon,
+.wp-mcp-ai-chat__team-mode-icon {
     width: 20px;
     height: 20px;
     fill: currentColor;
@@ -2753,18 +2771,24 @@
         padding: 0.75rem;
     }
     
-    /* Full-width action buttons on mobile */
+    /* Keep action buttons in a row on mobile (side by side) */
     .wp-mcp-ai-chat__actions {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: 0.5rem;
+        justify-content: flex-end;
     }
     
     .wp-mcp-ai-chat__submit,
-    .wp-mcp-ai-chat__build,
-    .wp-mcp-ai-chat__attach {
-        width: 100%;
+    .wp-mcp-ai-chat__build {
+        flex: 1 1 auto;
         justify-content: center;
         padding: 0.75rem 1rem;
+        min-height: 44px;
+    }
+    
+    .wp-mcp-ai-chat__attach {
+        flex: 0 0 auto;
         min-height: 44px;
     }
     

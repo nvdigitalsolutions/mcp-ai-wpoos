@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentation Link Rendering - Visual Mockup</title>
-    <!-- WordPress Admin Dashicons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dashicons/0.9.0/dashicons.min.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -51,28 +49,20 @@
         .section-documentation a:hover {
             color: #135e96;
         }
-        .dashicons {
-            font-family: 'dashicons';
+        .icon {
             display: inline-block;
-            line-height: 1;
-            font-weight: 400;
-            font-style: normal;
-            speak: never;
-            text-decoration: inherit;
-            text-transform: none;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
             width: 20px;
             height: 20px;
-            font-size: 20px;
-            vertical-align: top;
+            vertical-align: middle;
         }
-        .dashicons-book-alt:before {
-            content: "\f331";
+        .icon svg {
+            width: 100%;
+            height: 100%;
+            fill: currentColor;
         }
-        .dashicons-external:before {
-            content: "\f504";
+        .icon-small {
+            width: 14px;
+            height: 14px;
         }
         .comparison-box {
             border: 2px solid #dc3232;
@@ -131,10 +121,18 @@
             <h2>General Settings</h2>
             <p class="section-description">Configure basic plugin settings and operational parameters.</p>
             <p class="section-documentation">
-                <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+                <span class="icon" style="color: #2271b1;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M16 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 6h10v2H5V6zm8 6H5v-2h8v2z"/>
+                    </svg>
+                </span>
                 <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/getting-started/QUICK_START_5_MINUTES.md" target="_blank" rel="noopener noreferrer">
                     View Documentation
-                    <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                    <span class="icon icon-small">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path d="M14 6l-1.5 1.5L15 10H6v2h9l-2.5 2.5L14 16l5-5-5-5z"/>
+                        </svg>
+                    </span>
                 </a>
             </p>
         </div>
@@ -147,10 +145,18 @@
         <h2>Authentication Settings</h2>
         <p class="section-description">Configure authentication methods for REST API access (Auth0, JWT, Guest tokens).</p>
         <p class="section-documentation">
-            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <span class="icon" style="color: #2271b1;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M16 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 6h10v2H5V6zm8 6H5v-2h8v2z"/>
+                </svg>
+            </span>
             <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/api/authentication.md" target="_blank" rel="noopener noreferrer">
                 View Documentation
-                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                <span class="icon icon-small">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M14 6l-1.5 1.5L15 10H6v2h9l-2.5 2.5L14 16l5-5-5-5z"/>
+                    </svg>
+                </span>
             </a>
         </p>
     </div>
@@ -160,10 +166,18 @@
         <h2>AI Provider Settings</h2>
         <p class="section-description">Configure AI provider credentials and connection settings for OpenAI, Gemini, Ollama, and LM Studio.</p>
         <p class="section-documentation">
-            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <span class="icon" style="color: #2271b1;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M16 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 6h10v2H5V6zm8 6H5v-2h8v2z"/>
+                </svg>
+            </span>
             <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/guides/admin/SETTINGS_DASHBOARD_GUIDE.md#providers-tab" target="_blank" rel="noopener noreferrer">
                 View Documentation
-                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                <span class="icon icon-small">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M14 6l-1.5 1.5L15 10H6v2h9l-2.5 2.5L14 16l5-5-5-5z"/>
+                    </svg>
+                </span>
             </a>
         </p>
     </div>
@@ -173,10 +187,18 @@
         <h2>Tools & Features Configuration</h2>
         <p class="section-description">Enable and configure available MCP AI tools and integrations.</p>
         <p class="section-documentation">
-            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <span class="icon" style="color: #2271b1;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M16 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 6h10v2H5V6zm8 6H5v-2h8v2z"/>
+                </svg>
+            </span>
             <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/reference/tools/tool-reference.md" target="_blank" rel="noopener noreferrer">
                 View Documentation
-                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                <span class="icon icon-small">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M14 6l-1.5 1.5L15 10H6v2h9l-2.5 2.5L14 16l5-5-5-5z"/>
+                    </svg>
+                </span>
             </a>
         </p>
     </div>
@@ -186,10 +208,18 @@
         <h2>Orchestration Settings</h2>
         <p class="section-description">Configure orchestration layer behavior, token management, and workload distribution.</p>
         <p class="section-documentation">
-            <span class="dashicons dashicons-book-alt" style="color: #2271b1;"></span>
+            <span class="icon" style="color: #2271b1;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                    <path d="M16 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM5 6h10v2H5V6zm8 6H5v-2h8v2z"/>
+                </svg>
+            </span>
             <a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">
                 View Documentation
-                <span class="dashicons dashicons-external" style="font-size: 14px;"></span>
+                <span class="icon icon-small">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M14 6l-1.5 1.5L15 10H6v2h9l-2.5 2.5L14 16l5-5-5-5z"/>
+                    </svg>
+                </span>
             </a>
         </p>
     </div>
@@ -199,11 +229,12 @@
         <ul>
             <li>✅ Documentation links are now visible in all 10 affected settings sections</li>
             <li>✅ Styled with WordPress admin colors (#2271b1) for consistency</li>
-            <li>✅ Book icon (dashicons-book-alt) clearly indicates documentation</li>
+            <li>✅ Book icon clearly indicates documentation</li>
             <li>✅ External link icon shows that the link opens in a new tab</li>
             <li>✅ Highlighted background helps the link stand out</li>
             <li>✅ Security attributes (<code>rel="noopener noreferrer"</code>) included</li>
             <li>✅ All URLs properly escaped for security</li>
+            <li>✅ <strong>No external CDN dependencies - uses inline SVG icons</strong></li>
         </ul>
     </div>
 

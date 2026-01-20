@@ -40,6 +40,39 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	public function register_settings() {
 		// Call parent to register base fields (assistant).
 		parent::register_settings();
+
+		// Add project-specific settings.
+		add_settings_field(
+			'enable_research',
+			__( 'Enable Research & Add', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_enable_research_field' ),
+			$this->option_name,
+			$this->option_name . '_section'
+		);
+	}
+
+	/**
+	 * Render enable research field.
+	 */
+	public function render_enable_research_field() {
+		$options = get_option( $this->option_name, array() );
+		$value   = isset( $options['enable_research'] ) ? (bool) $options['enable_research'] : true;
+
+		?>
+		<label>
+			<input
+				type="checkbox"
+				name="<?php echo esc_attr( $this->option_name ); ?>[enable_research]"
+				id="enable_research"
+				value="1"
+				<?php checked( $value, true ); ?>
+			/>
+			<?php esc_html_e( 'Enable the Research & Add page for project research', 'mcp-ai-wpoos-pro' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'When enabled, users can access the Research & Add page to create projects using AI assistance.', 'mcp-ai-wpoos-pro' ); ?>
+		</p>
+		<?php
 	}
 
 	/**
@@ -57,7 +90,16 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	public function sanitize_settings( $input ) {
 		// Call parent sanitization for base fields.
-		return parent::sanitize_settings( $input );
+		$sanitized = parent::sanitize_settings( $input );
+
+		// Add project-specific sanitization.
+		if ( isset( $input['enable_research'] ) ) {
+			$sanitized['enable_research'] = (bool) $input['enable_research'];
+		} else {
+			$sanitized['enable_research'] = false;
+		}
+
+		return $sanitized;
 	}
 }
 

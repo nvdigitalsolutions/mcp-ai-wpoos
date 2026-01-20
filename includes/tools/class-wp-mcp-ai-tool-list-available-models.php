@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Lists all OpenAI models available to the configured API key.
  */
 class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -122,15 +123,18 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 			}
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of models */
+			__( 'Found %d available OpenAI models.', 'mcp-ai-wpoos' ),
+			count( $models )
+		);
+
 		return array(
 			'success'     => true,
+			'message'     => $summary_text, // Chat client display
+			'summary'     => $summary_text, // Backward compatibility
 			'models'      => $models,
 			'total_count' => count( $models ),
-			'summary'     => sprintf(
-				/* translators: %d: number of models */
-				__( 'Found %d available OpenAI models.', 'mcp-ai-wpoos' ),
-				count( $models )
-			),
 		);
 	}
 

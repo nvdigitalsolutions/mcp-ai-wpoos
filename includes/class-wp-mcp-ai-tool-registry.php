@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 	/**
@@ -807,10 +808,16 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * Determine if base version mode is enabled.
 		 *
 		 * Base version mode excludes tools that require third-party plugins or external API credentials.
+		 * When Pro addon is loaded, base version mode is automatically disabled to provide full functionality.
 		 *
 		 * @return bool
 		 */
 		protected function is_base_version() {
+			// If Pro addon is loaded, disable base version mode to enable all tools.
+			if ( defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+				return false;
+			}
+
 			/**
 			 * Filter whether to enable base version mode.
 			 *

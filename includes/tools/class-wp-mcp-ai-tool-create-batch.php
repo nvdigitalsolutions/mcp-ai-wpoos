@@ -21,6 +21,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  * @since 1.0.0
  */
 class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -160,13 +161,16 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Format the response.
+		$summary_text = $this->generate_summary( $result );
+
 		$response = array(
 			'success'    => true,
 			'batch_id'   => isset( $result['id'] ) ? $result['id'] : '',
 			'status'     => isset( $result['status'] ) ? $result['status'] : '',
 			'endpoint'   => isset( $result['endpoint'] ) ? $result['endpoint'] : '',
 			'created_at' => isset( $result['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $result['created_at'] ) : '',
-			'summary'    => $this->generate_summary( $result ),
+			'message'    => $summary_text, // Chat client display
+			'summary'    => $summary_text, // Backward compatibility
 			'raw_result' => $result,
 		);
 

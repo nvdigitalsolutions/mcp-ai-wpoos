@@ -3,6 +3,17 @@
 ## [Unreleased]
 
 ### Fixed
+- **Tool Preset Multiplier Application (January 18, 2026)**: Fixed broken "Apply Preset" button on Token Manager page (PR #2990)
+  - **Root Cause**: `get_all_recommendations()` only queried tool registry which returned empty array during preset application
+  - **Solution**: Modified method to iterate through `$tool_categories` static property first (200+ tools), then check registry for dynamic tools
+  - **Impact**: Preset application now works correctly for Conservative, Balanced, Performance, and Aggressive presets
+  - **Files Changed**: `includes/class-wp-mcp-ai-tool-recommendations.php` (refactored into 2 new private helper methods)
+  - **Testing**: Comprehensive manual testing plan in `docs/fixes/TOOL_PRESET_MULTIPLIER_TESTING_PLAN.md`
+  - **Documentation**: Complete fix details in `docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md`
+  - Broke after PR #2984 which updated tool recommendations system
+  - Zero security vulnerabilities introduced, maintains backward compatibility
+  - Better code organization and maintainability
+
 - **Audio Transcription MIME Type (January 11, 2026)**: Fixed transcription button creating video files instead of audio files
   - Added `getSupportedAudioMimeType()` helper function to check browser support
   - MediaRecorder now explicitly requests audio-only MIME types (audio/webm, audio/ogg, etc.)

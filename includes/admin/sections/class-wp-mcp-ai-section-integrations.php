@@ -79,6 +79,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 			$gmail_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
 			$drive_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
+			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<em>(Pro Version required)</em>', 'mcp-ai-wpoos' );
 
 			return array(
 				// Gmail OAuth.
@@ -168,6 +169,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'       => __( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
+				),
+				'enable_cloudflare_pro_toolkit'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Cloudflare Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Cloudflare advanced features and integrations (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables AI-powered Cloudflare integration toolkit including cache purging, zone management, DNS operations, and advanced CDN features. Provides additional tools for managing Cloudflare services through AI assistants. Requires Cloudflare API Token and Zone ID to be configured. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
 				),
 
 				// Cloudways.
@@ -415,7 +423,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'cloudflare',
 					'label'  => __( 'Cloudflare', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-cloud',
-					'fields' => array( 'cloudflare_api_token', 'cloudflare_zone_id' ),
+					'fields' => array( 'cloudflare_api_token', 'cloudflare_zone_id', 'enable_cloudflare_pro_toolkit' ),
 				),
 				'cloudways'        => array(
 					'id'     => 'cloudways',
@@ -1556,10 +1564,33 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Cloudflare footer content.
 		 */
 		private function render_cloudflare_footer() {
+			$settings              = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_api_token         = ! empty( $settings['cloudflare_api_token'] );
+			$has_zone_id           = ! empty( $settings['cloudflare_zone_id'] );
+			$cloudflare_connected  = ! empty( $settings['cloudflare_connected'] );
+			$pro_toolkit_enabled   = ! empty( $settings['enable_cloudflare_pro_toolkit'] );
+			$is_pro_active         = defined( 'WP_MCP_AI_PRO_VERSION' );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Cloudflare Connection', 'mcp-ai-wpoos' ); ?></th>
 				<td>
+					<?php if ( $cloudflare_connected && $has_api_token && $has_zone_id ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+							<p style="margin: 0; color: #155724;">
+								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+								<strong><?php esc_html_e( 'Connected to Cloudflare', 'mcp-ai-wpoos' ); ?></strong>
+								<?php if ( ! empty( $settings['cloudflare_zone_name'] ) ) : ?>
+									<?php
+									printf(
+										/* translators: %s: Cloudflare zone name */
+										esc_html__( '- Zone: %s', 'mcp-ai-wpoos' ),
+										'<code>' . esc_html( $settings['cloudflare_zone_name'] ) . '</code>'
+									);
+									?>
+								<?php endif; ?>
+							</p>
+						</div>
+					<?php endif; ?>
 					<p>
 						<button type="button" id="wp-mcp-ai-test-cloudflare-connection" class="button button-secondary">
 							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
@@ -1572,6 +1603,53 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					</p>
 				</td>
 			</tr>
+			<?php if ( $pro_toolkit_enabled ) : ?>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Pro Toolkit Status', 'mcp-ai-wpoos' ); ?></th>
+					<td>
+						<?php if ( $is_pro_active ) : ?>
+							<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+								<p style="margin: 0; color: #155724;">
+									<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+									<strong><?php esc_html_e( 'Cloudflare Pro Toolkit Active', 'mcp-ai-wpoos' ); ?></strong>
+								</p>
+							</div>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									__(
+										'The Cloudflare Pro Toolkit is enabled. AI assistants can now use advanced Cloudflare features including cache purging, zone management, and DNS operations.',
+										'mcp-ai-wpoos'
+									)
+								);
+								?>
+							</p>
+						<?php else : ?>
+							<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+								<p style="margin: 0; color: #856404;">
+									<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+									<strong><?php esc_html_e( 'Pro Addon Required', 'mcp-ai-wpoos' ); ?></strong>
+								</p>
+							</div>
+							<p class="description">
+								<?php
+								echo wp_kses_post(
+									__(
+										'The Cloudflare Pro Toolkit setting is enabled but requires the Pro addon to be installed and active. Install the Pro addon to unlock advanced Cloudflare features.',
+										'mcp-ai-wpoos'
+									)
+								);
+								?>
+							</p>
+							<p>
+								<a href="https://link.nvdigital.solutions/wpoos-pro-buy" target="_blank" class="button button-primary">
+									<?php esc_html_e( 'Get NV oOS Pro', 'mcp-ai-wpoos' ); ?>
+								</a>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+			<?php endif; ?>
 			<tr>
 				<th scope="row"></th>
 				<td>
@@ -1582,6 +1660,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Create an API token in your Cloudflare dashboard under "My Profile" > "API Tokens"', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Token needs "Zone.Cache Purge" permission for cache management', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Find your Zone ID in the Overview page of your domain', 'mcp-ai-wpoos' ); ?></li>
+						<?php if ( $is_pro_active || $pro_toolkit_enabled ) : ?>
+							<li><?php esc_html_e( 'Pro Toolkit enables additional permissions: DNS edit, Zone settings, and Analytics read', 'mcp-ai-wpoos' ); ?></li>
+						<?php endif; ?>
 					</ul>
 				</td>
 			</tr>

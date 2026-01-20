@@ -15,8 +15,12 @@ Thanks for taking the time to contribute! This guide summarises the steps you ne
 1. Fork the repository and clone it locally.
 2. Install PHP dependencies via Composer:
    ```bash
+   # For development (installs dev dependencies like PHPUnit, PHPCS)
    composer install
    ```
+   
+   **Note:** The repository itself is kept in a production-ready state with only production dependencies committed (using `composer install --no-dev`). This ensures the plugin can be cloned and used directly in production. When developing, you'll need to run `composer install` (without `--no-dev`) to get the dev dependencies for testing and linting.
+   
 3. Start your local WordPress environment and install/activate the plugin.
 4. Copy the sample assistant export if you would like quick seed data:
    ```bash

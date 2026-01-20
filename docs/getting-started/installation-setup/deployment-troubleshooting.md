@@ -229,6 +229,108 @@ The plugin includes automatic detection and graceful degradation:
 - The plugin will attempt to load production dependencies only (degraded mode)
 - Full functionality is restored once dependencies are properly reinstalled
 
+## Process Functions Disabled (proc_open, proc_close, proc_terminate)
+
+### Problem
+Features requiring external command execution fail with error: `Call to undefined function proc_close()` or similar errors for `proc_open()` or `proc_terminate()`.
+
+### Root Cause
+This error occurs when:
+1. PHP's process control functions (`proc_open`, `proc_close`, `proc_terminate`) are disabled in your hosting environment's `php.ini` configuration
+2. The plugin tries to execute external commands (e.g., Node.js scripts for image vectorization)
+3. Many shared hosting providers disable these functions for security reasons
+
+### Affected Features
+When these functions are disabled, the following features will not work:
+- **Image Vectorization**: The `vectorize_image` tool (requires Node.js)
+- **SVG Generation**: Automatic SVG vectorization in image generation tools
+- **Process Service**: Any features using the Symfony Process Service
+
+### Solution
+
+**Option 1: Enable Process Functions on Cloudways (Recommended)**
+
+Cloudways users can enable these functions through the Application Settings page:
+
+1. Log in to your Cloudways platform
+2. Go to **Servers** → Select your server
+3. Go to **Settings & Packages** → **Application Settings**
+4. Click on the **PHP FPM** tab
+5. Find the `disable_functions` directive in the editor
+6. Remove `proc_open`, `proc_close`, and `proc_terminate` from the list
+7. Save changes and restart PHP-FPM
+
+**Before:**
+```ini
+disable_functions = proc_open,proc_close,proc_terminate,exec,shell_exec,system,...
+```
+
+**After:**
+```ini
+disable_functions = exec,shell_exec,system,...
+```
+
+**Option 2: Enable Process Functions on Standard Hosting**
+
+Contact your hosting provider or (if you manage your own server) edit `php.ini`:
+
+```ini
+; Find this line in php.ini
+disable_functions = proc_open,proc_close,proc_terminate,exec,...
+
+; Remove proc_open, proc_close, and proc_terminate from the list
+disable_functions = exec,...
+```
+
+Restart PHP-FPM or Apache after making changes.
+
+**Option 3: Use Plugin Without Process Features**
+
+The plugin will continue to work without these functions, but:
+- Image vectorization will not be available
+- Tools requiring Node.js execution will be disabled
+- All other plugin features remain operational
+
+### Verification
+
+Check if process functions are available:
+
+```php
+<?php
+// Create a test file: check-proc-functions.php
+$functions = array('proc_open', 'proc_close', 'proc_terminate');
+foreach ($functions as $func) {
+    if (function_exists($func)) {
+        echo $func . ' is ENABLED' . PHP_EOL;
+    } else {
+        echo $func . ' is DISABLED' . PHP_EOL;
+    }
+}
+
+// Check what functions are disabled
+$disabled = ini_get('disable_functions');
+echo 'Disabled functions: ' . ($disabled ?: 'none') . PHP_EOL;
+```
+
+Run it:
+```bash
+php check-proc-functions.php
+```
+
+### Plugin Behavior
+
+The plugin includes automatic detection and graceful degradation:
+- **When process functions are disabled:**
+  - Tools requiring them return clear error messages
+  - Node.js features are automatically disabled
+  - Rest of plugin functionality remains operational
+  - No fatal errors or plugin breakage
+
+- **When process functions are enabled:**
+  - Full Node.js integration available
+  - Image vectorization works
+  - Process Service fully functional
+
 ## Performance Tests Failing (exec() Disabled)
 
 ### Problem

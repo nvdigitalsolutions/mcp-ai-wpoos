@@ -18,6 +18,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
  * Lists WP All Import templates configured on the site.
  */
 class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 	/**
 	 * Determine whether WP All Import is available.
 	 *
@@ -133,12 +134,15 @@ class WP_MCP_AI_Tool_List_All_Import_Templates implements WP_MCP_AI_Tool_Interfa
 			);
 		}
 
+		$summary_text = sprintf(
+			/* translators: %d: number of import templates */
+			__( 'Found %d import template(s)', 'mcp-ai-wpoos' ),
+			count( $results )
+		);
+
 		return array(
-			'summary' => sprintf(
-				/* translators: %d: number of import templates */
-				__( 'Found %d import template(s)', 'mcp-ai-wpoos' ),
-				count( $results )
-			),
+			'message' => $summary_text,
+			'summary' => $summary_text,
 			'imports' => $results,
 			'count'   => count( $results ),
 		);

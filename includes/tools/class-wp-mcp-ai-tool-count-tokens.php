@@ -18,6 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * consider using OpenAI's tiktoken library on the client side.
  */
 class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * Number of tokens added per message for formatting (im_start, role, im_end).
@@ -264,7 +265,8 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		$response = array(
-			'summary'          => implode( ' ', $summary_parts ),
+			'message'          => implode( ' ', $summary_parts ), // Chat client display
+			'summary'          => implode( ' ', $summary_parts ), // Backward compatibility
 			'estimated_tokens' => $estimated_tokens,
 			'counting_method'  => $counting_method,
 			'details'          => $details,
