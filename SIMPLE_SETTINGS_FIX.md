@@ -2,21 +2,29 @@
 
 ## Problem Statement
 
-The simple settings page at `/wp-admin/options-general.php?page=wp-mcp-ai-simple-settings` was not saving any data. Additionally, logging was enabled but no logs were appearing in the "console".
+The simple settings page at `/wp-admin/options-general.php?page=wp-mcp-ai-simple-settings` was not persisting settings correctly, showing `saved=0` in the redirect URL even after submitting the form with data.
 
 ## Issues Fixed
 
-### 1. Simple Settings Saver Class Not Loaded ✅
+### 1. save_all_tabs Flag Not Properly Handled (January 2026) ✅
+
+**Problem:** The Simple Settings page sends `save_all_tabs=1` to indicate all tabs should be processed, but `handle_save_settings()` was still only processing the active tab. This caused most fields to be ignored during sanitization, resulting in `saved=0` or very low field counts.
+
+**Fix:** Updated the sanitization logic in `handle_save_settings()` to check the `save_all_tabs` flag. When true, pass an empty string to `sanitize_settings()` so ALL sections are processed instead of just the active tab's sections.
+
+```php
+// Line 246 in class-wp-mcp-ai-settings-dashboard.php
+$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
+$sanitized_new = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
+```
+
+### 2. Simple Settings Saver Class Not Loaded (Previous) ✅
 
 **Problem:** The `WP_MCP_AI_Simple_Settings_Saver` class existed but was never included/loaded, so it couldn't be used.
 
 **Fix:** Added `require_once` in `settings-dashboard-init.php` to load the class.
 
-### 2. Settings Not Saved Individually ✅
-
-**Problem:** The simple settings page was using the complex section-based sanitization system instead of individual field handling.
-
-**Fix:** Updated `handle_save_settings()` to detect the `save_all_tabs` flag and use the Simple Settings Saver for individual field-level sanitization.
+**Note:** As of line 219 in the settings dashboard, the Simple Settings Saver is currently disabled (`$use_simple_settings_saver = false`) because it's incompatible with partial forms. The section-based sanitization is used instead.
 
 ### 3. Array to String Conversion Warnings ✅
 
@@ -43,7 +51,7 @@ The simple settings page at `/wp-admin/options-general.php?page=wp-mcp-ai-simple
 
 ## How Settings Saving Works Now
 
-### Flow
+### Flow for Simple Settings Page
 
 ```
 User fills form → Clicks "Save Settings"
@@ -52,10 +60,21 @@ User fills form → Clicks "Save Settings"
                 ↓
     handle_save_settings() method
                 ↓
-        Detects save_all_tabs flag?
+        Checks save_all_tabs flag?
                 ↓
-        YES: Use Simple Settings Saver
-             (Individual field sanitization)
+        YES: $tab_to_sanitize = ''
+              (process ALL tabs)
+        NO:  $tab_to_sanitize = $active_tab
+              (process ONLY active tab)
+                ↓
+        sanitize_settings($posted_settings, $tab_to_sanitize)
+                ↓
+        If $tab_to_sanitize is empty:
+          → Processes ALL sections from ALL tabs
+        If $tab_to_sanitize has value:
+          → Processes ONLY sections from that tab
+                ↓
+        Merges sanitized fields with existing settings
                 ↓
         Saves to database
                 ↓
@@ -64,21 +83,16 @@ User fills form → Clicks "Save Settings"
         User sees "Settings saved successfully! X fields updated"
 ```
 
-### Individual Field Handling
+### Section-Based Sanitization
 
-Each field is sanitized based on its type:
+The system now uses section-based sanitization for both the main dashboard and Simple Settings page:
 
-| Field Type | Sanitization |
-|------------|--------------|
-| `checkbox` | Boolean conversion |
-| `password` | Text sanitization, preserves existing if empty |
-| `url` | URL validation |
-| `email` | Email validation |
-| `number` | Integer conversion |
-| `float` | Float conversion |
-| `textarea` | Textarea sanitization |
-| `array` | Array of sanitized strings |
-| `text` (default) | Text sanitization |
+- **Main Dashboard**: Processes only the active tab to prevent clearing checkboxes from other tabs
+- **Simple Settings Page**: Processes ALL tabs because `save_all_tabs=1` is sent
+
+### Field Sanitization
+
+Each field is sanitized by its section's `sanitize()` method, which handles different field types appropriately:
 
 ## Where to Find Logs
 

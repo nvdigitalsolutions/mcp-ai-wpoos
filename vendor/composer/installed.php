@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-provider-tab-bug',
-        'version' => 'dev-copilot/fix-provider-tab-bug',
-        'reference' => '43f7f79f5b674de12866d0b2455a577362407aac',
+        'pretty_version' => 'dev-copilot/debug-settings-persistence-issue',
+        'version' => 'dev-copilot/debug-settings-persistence-issue',
+        'reference' => '02293f01df9b6abdc90ae16435df7bf293cc5a96',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-provider-tab-bug',
-            'version' => 'dev-copilot/fix-provider-tab-bug',
-            'reference' => '43f7f79f5b674de12866d0b2455a577362407aac',
+            'pretty_version' => 'dev-copilot/debug-settings-persistence-issue',
+            'version' => 'dev-copilot/debug-settings-persistence-issue',
+            'reference' => '02293f01df9b6abdc90ae16435df7bf293cc5a96',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
