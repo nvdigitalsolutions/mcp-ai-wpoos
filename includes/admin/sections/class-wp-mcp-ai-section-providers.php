@@ -772,61 +772,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'     => '@cf/openai/whisper',
 				),
 
-				// Excel and Spreadsheet Tools Settings.
-				'excel_default_version'              => array(
-					'type'        => 'select',
-					'label'       => __( 'Excel Version Target', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default Excel version for formula generation. Modern (Excel 2021+/Microsoft 365) supports LAMBDA, LET, XLOOKUP, and other advanced functions. Legacy (Excel 2019 and earlier) uses traditional formulas. Excel Online supports cloud-specific features.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'modern' => __( 'Modern (Excel 2021+/Microsoft 365 - LAMBDA supported)', 'mcp-ai-wpoos' ),
-						'legacy' => __( 'Legacy (Excel 2019 and earlier - Traditional formulas)', 'mcp-ai-wpoos' ),
-						'online' => __( 'Excel Online (Cloud features)', 'mcp-ai-wpoos' ),
-					),
-					'default'     => 'modern',
-					'pro_badge'   => true,
-				),
-				'excel_enable_lambda'                => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable LAMBDA Functions', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When enabled, the Pro Excel tool can generate LAMBDA functions for custom, reusable, and recursive formulas. LAMBDA makes Excel Turing-complete, enabling advanced programming capabilities. Requires Excel 2021+ or Microsoft 365.', 'mcp-ai-wpoos' ),
-					'default'        => true,
-					'pro_badge'      => true,
-				),
-				'excel_max_complexity'               => array(
-					'type'        => 'select',
-					'label'       => __( 'Maximum Formula Complexity', 'mcp-ai-wpoos' ),
-					'description' => __( 'Controls the complexity level for generated formulas. Simple formulas are easier to understand and maintain. Complex formulas offer more sophisticated solutions but may be harder to debug. Advanced formulas use cutting-edge Excel features.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'simple'   => __( 'Simple (Basic formulas, easy to understand)', 'mcp-ai-wpoos' ),
-						'moderate' => __( 'Moderate (Nested functions, intermediate complexity)', 'mcp-ai-wpoos' ),
-						'complex'  => __( 'Complex (Advanced formulas with multiple steps)', 'mcp-ai-wpoos' ),
-						'advanced' => __( 'Advanced (LAMBDA, recursive, expert-level)', 'mcp-ai-wpoos' ),
-					),
-					'default'     => 'moderate',
-					'pro_badge'   => true,
-				),
-				'excel_include_comments'             => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Include Formula Comments', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Add explanatory comments to generated formulas', 'mcp-ai-wpoos' ),
-					'description'    => __( 'When enabled, generated formulas include inline comments explaining each step and component. This makes formulas easier to understand and maintain, especially for complex calculations.', 'mcp-ai-wpoos' ),
-					'default'        => true,
-					'pro_badge'      => true,
-				),
-				'excel_optimization_level'           => array(
-					'type'        => 'select',
-					'label'       => __( 'Formula Optimization', 'mcp-ai-wpoos' ),
-					'description' => __( 'Choose how formulas are optimized. Readability prioritizes clear, maintainable code. Performance focuses on calculation speed and efficiency. Balanced provides a compromise between the two.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'readability' => __( 'Readability (Clear, maintainable formulas)', 'mcp-ai-wpoos' ),
-						'performance' => __( 'Performance (Fast, efficient calculations)', 'mcp-ai-wpoos' ),
-						'balanced'    => __( 'Balanced (Compromise between both)', 'mcp-ai-wpoos' ),
-					),
-					'default'     => 'balanced',
-					'pro_badge'   => true,
-				),
-
 				// Google Maps Settings.
 				'google_maps_api_key'                => array(
 					'type'         => 'password',
@@ -859,7 +804,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'openai',
 					'label'  => __( 'OpenAI', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'excel_default_version', 'excel_enable_lambda', 'excel_max_complexity', 'excel_include_comments', 'excel_optimization_level' ),
+					'fields' => array( 'enable_openai', 'openai_api_key', 'default_model', 'openai_embedding_model', 'openai_organization_id', 'openai_image_model', 'openai_image_size', 'openai_image_quality', 'openai_image_response_format', 'openai_transcribe_model', 'openai_transcribe_response_format', 'openai_transcribe_language', 'openai_transcribe_temperature', 'openai_speech_model', 'openai_speech_voice', 'openai_speech_format', 'enable_high_token_model_switch', 'high_token_fallback_model', 'enable_voice_activity_detection', 'vad_silence_threshold', 'vad_min_speech_duration', 'vad_audio_threshold' ),
 				),
 				'anthropic'            => array(
 					'id'     => 'anthropic',
@@ -871,13 +816,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'gemini',
 					'label'  => __( 'Google Gemini', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'gemini_audio_language', 'gemini_speech_voice', 'excel_default_version', 'excel_enable_lambda', 'excel_max_complexity', 'excel_include_comments', 'excel_optimization_level' ),
+					'fields' => array( 'enable_gemini', 'gemini_api_key', 'default_gemini_model', 'gemini_image_model', 'gemini_image_mime_type', 'gemini_image_aspect_ratio', 'gemini_video_model', 'gemini_video_resolution', 'gemini_video_aspect_ratio', 'gemini_video_duration', 'gemini_audio_language', 'gemini_speech_voice' ),
 				),
 				'ollama'               => array(
 					'id'     => 'ollama',
 					'label'  => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-desktop',
-					'fields' => array( 'enable_ollama', 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface', 'excel_default_version', 'excel_enable_lambda', 'excel_max_complexity', 'excel_include_comments', 'excel_optimization_level' ),
+					'fields' => array( 'enable_ollama', 'ollama_endpoint_url', 'ollama_model', 'ollama_network_interface' ),
 				),
 				'lm_studio'            => array(
 					'id'     => 'lm_studio',

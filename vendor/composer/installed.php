@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
-        'version' => 'dev-copilot/fix-timeout-setting-issue',
-        'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
+        'pretty_version' => 'dev-copilot/review-sanitization-rules',
+        'version' => 'dev-copilot/review-sanitization-rules',
+        'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-timeout-setting-issue',
-            'version' => 'dev-copilot/fix-timeout-setting-issue',
-            'reference' => 'e3b45e82a198a597c22f607f1b6f1490f3bf2d9e',
+            'pretty_version' => 'dev-copilot/review-sanitization-rules',
+            'version' => 'dev-copilot/review-sanitization-rules',
+            'reference' => '43a0adc2d9c1bc540600d0d7ddbeea6d2f7092c0',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
