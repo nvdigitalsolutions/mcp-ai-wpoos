@@ -4,7 +4,7 @@
  *
  * A diagnostic page under Settings > NV oOS that shows a flat list
  * of all saved settings values for easy verification and editing.
- * 
+ *
  * This page displays fields from multiple tabs (General and Providers)
  * organized in logical groups. Uses the save_all_tabs flag to ensure
  * all visible fields are saved together, preventing data loss.
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			?>
 			<div class="wrap">
 				<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
-				
+
 				<?php
 				// Display settings errors/updates from WordPress Settings API.
 				// This automatically shows "Settings saved." message when updated=true query param is present.
@@ -330,9 +330,9 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				case 'checkbox':
 					?>
 					<label>
-						<input 
-							type="checkbox" 
-							name="<?php echo esc_attr( $input_name ); ?>" 
+						<input
+							type="checkbox"
+							name="<?php echo esc_attr( $input_name ); ?>"
 							value="1"
 							<?php checked( $value, true ); ?>
 						/>
@@ -343,9 +343,9 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 
 				case 'textarea':
 					?>
-					<textarea 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						rows="3" 
+					<textarea
+						name="<?php echo esc_attr( $input_name ); ?>"
+						rows="3"
 						style="width: 100%;"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 					><?php echo esc_textarea( $value ); ?></textarea>
@@ -363,7 +363,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 							<option value=""><?php esc_html_e( '— Select —', 'mcp-ai-wpoos' ); ?></option>
 						<?php endif; ?>
 						<?php foreach ( $options as $option_value => $option_label ) : ?>
-							<option 
+							<option
 								value="<?php echo esc_attr( $option_value ); ?>"
 								<?php selected( $value, $option_value ); ?>
 							>
@@ -383,10 +383,10 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 						echo '<p style="margin: 0 0 5px 0; color: #4caf50;"><em>' . esc_html__( '••• Current value is set (leave blank to keep existing)', 'mcp-ai-wpoos' ) . '</em></p>';
 					}
 					?>
-					<input 
-						type="password" 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="" 
+					<input
+						type="password"
+						name="<?php echo esc_attr( $input_name ); ?>"
+						value=""
 						placeholder="<?php echo esc_attr( $placeholder ? $placeholder : __( 'Enter new value or leave blank to keep existing', 'mcp-ai-wpoos' ) ); ?>"
 						style="width: 100%;"
 						autocomplete="off"
@@ -405,10 +405,10 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					// Ensure value is numeric to prevent array-to-string conversion.
 					$numeric_value = is_numeric( $value ) ? $value : '';
 					?>
-					<input 
-						type="number" 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $numeric_value ); ?>" 
+					<input
+						type="number"
+						name="<?php echo esc_attr( $input_name ); ?>"
+						value="<?php echo esc_attr( $numeric_value ); ?>"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						<?php if ( '' !== $min ) : ?>min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
 						<?php if ( '' !== $max ) : ?>max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
@@ -422,10 +422,10 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 
 				case 'url':
 					?>
-					<input 
-						type="url" 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_url( $value ); ?>" 
+					<input
+						type="url"
+						name="<?php echo esc_attr( $input_name ); ?>"
+						value="<?php echo esc_url( $value ); ?>"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						style="width: 100%;"
 					/>
@@ -437,10 +437,10 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 
 				case 'email':
 					?>
-					<input 
-						type="email" 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>" 
+					<input
+						type="email"
+						name="<?php echo esc_attr( $input_name ); ?>"
+						value="<?php echo esc_attr( $value ); ?>"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						style="width: 100%;"
 					/>
@@ -459,10 +459,10 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					// Ensure value is scalar (string, int, float, bool) to prevent array-to-string conversion.
 					$safe_value = is_scalar( $value ) ? $value : '';
 					?>
-					<input 
-						type="text" 
-						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $safe_value ); ?>" 
+					<input
+						type="text"
+						name="<?php echo esc_attr( $input_name ); ?>"
+						value="<?php echo esc_attr( $safe_value ); ?>"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						style="width: 100%;"
 					/>

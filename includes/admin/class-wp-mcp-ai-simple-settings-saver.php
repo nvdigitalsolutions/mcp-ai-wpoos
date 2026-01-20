@@ -5,7 +5,7 @@
  * Provides a streamlined, optimized approach to saving settings
  * with better performance and less complexity than the full
  * section-based sanitization system.
- * 
+ *
  * This can be used as an alternative to the modular section system
  * when performance is critical or when dealing with simple flat
  * settings structures.
@@ -33,7 +33,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 
 		/**
 		 * Initialize field type definitions.
-		 * 
+		 *
 		 * This method should be called once during plugin initialization
 		 * to register field types for automatic sanitization.
 		 */
@@ -182,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 			// Process each posted field.
 			foreach ( $posted_data as $key => $value ) {
 				$field_type = isset( self::$field_types[ $key ] ) ? self::$field_types[ $key ] : 'text';
-				
+
 				$sanitized[ $key ] = self::sanitize_field( $value, $field_type, $key, $existing );
 			}
 
@@ -290,7 +290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 		 */
 		public static function batch_update( $updates ) {
 			$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			
+
 			foreach ( $updates as $key => $value ) {
 				$type = self::get_field_type( $key );
 				$existing[ $key ] = self::sanitize_field( $value, $type, $key, $existing );
