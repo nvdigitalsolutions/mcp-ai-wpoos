@@ -337,7 +337,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Author URI: https://nvdigitalsolutions.com\
  * License: GPLv3 or later\
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html\
- * Text Domain: mcp-ai-wpoos-base\
+ * Text Domain: mcp-ai-wpoos\
  * Domain Path: /languages\
  * Network: true\
  *\
