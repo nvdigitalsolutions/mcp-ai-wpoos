@@ -325,8 +325,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Redirect back to the same tab that was being edited.
+			// Check if a custom redirect page is specified (e.g., for simple settings page).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
+			$redirect_page = isset( $_POST['redirect_page'] ) ? sanitize_key( $_POST['redirect_page'] ) : self::PAGE_SLUG;
+
 			$redirect_args = array(
-				'page'    => self::PAGE_SLUG,
+				'page'    => $redirect_page,
 				'updated' => 'true',
 			);
 
@@ -344,10 +348,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$redirect_args['view'] = $active_view;
 			}
 
+			// Determine redirect URL based on page type.
+			if ( self::PAGE_SLUG === $redirect_page ) {
+				// Main dashboard - use admin.php.
+				$redirect_url = admin_url( 'admin.php' );
+			} else {
+				// Simple settings page - use options-general.php.
+				$redirect_url = admin_url( 'options-general.php' );
+			}
+
 			wp_safe_redirect(
 				add_query_arg(
 					$redirect_args,
-					admin_url( 'admin.php' )
+					$redirect_url
 				)
 			);
 			exit;
