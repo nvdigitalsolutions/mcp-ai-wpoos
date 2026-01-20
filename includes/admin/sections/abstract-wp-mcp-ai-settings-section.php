@@ -192,8 +192,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 				switch ( $type ) {
 					case 'text':
-					case 'password':
 						$sanitized[ $key ] = sanitize_text_field( $value );
+						break;
+
+					case 'password':
+						// CRITICAL: Only save password fields if they contain a value.
+						// Empty password fields should not overwrite existing saved values.
+						// This prevents accidental deletion of API keys when saving other subtabs.
+						$trimmed_value = trim( sanitize_text_field( $value ) );
+						if ( '' !== $trimmed_value ) {
+							$sanitized[ $key ] = $trimmed_value;
+						}
+						// If empty, skip adding to sanitized array to preserve existing value.
 						break;
 
 					case 'url':
