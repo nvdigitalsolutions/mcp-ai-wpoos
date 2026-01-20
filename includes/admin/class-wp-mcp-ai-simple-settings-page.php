@@ -265,7 +265,11 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					<?php if ( is_array( $value ) && ! empty( $value ) ) : ?>
 						<p style="margin: 8px 0 0 0; color: #666;">
 							<strong><?php esc_html_e( 'Current order:', 'mcp-ai-wpoos' ); ?></strong>
-							<?php echo esc_html( implode( ' > ', $value ) ); ?>
+							<?php
+							// Ensure all array elements are strings to prevent conversion warnings.
+							$safe_values = array_map( 'strval', array_filter( $value, 'is_scalar' ) );
+							echo esc_html( implode( ' > ', $safe_values ) );
+							?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -350,11 +354,13 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				case 'slider':
 					$min = isset( $field['min'] ) ? $field['min'] : '';
 					$max = isset( $field['max'] ) ? $field['max'] : '';
+					// Ensure value is numeric to prevent array-to-string conversion.
+					$numeric_value = is_numeric( $value ) ? $value : '';
 					?>
 					<input 
 						type="number" 
 						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>" 
+						value="<?php echo esc_attr( $numeric_value ); ?>" 
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						<?php if ( '' !== $min ) : ?>min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
 						<?php if ( '' !== $max ) : ?>max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
@@ -402,11 +408,13 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					if ( $is_sensitive && ! empty( $value ) ) {
 						echo '<p style="margin: 0 0 5px 0; color: #4caf50;"><em>' . esc_html__( '••• Current value is set', 'mcp-ai-wpoos' ) . '</em></p>';
 					}
+					// Ensure value is scalar (string, int, float, bool) to prevent array-to-string conversion.
+					$safe_value = is_scalar( $value ) ? $value : '';
 					?>
 					<input 
 						type="text" 
 						name="<?php echo esc_attr( $input_name ); ?>" 
-						value="<?php echo esc_attr( $value ); ?>" 
+						value="<?php echo esc_attr( $safe_value ); ?>" 
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
 						style="width: 100%;"
 					/>
