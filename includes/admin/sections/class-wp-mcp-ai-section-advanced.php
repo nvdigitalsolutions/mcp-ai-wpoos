@@ -212,6 +212,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'icon'   => 'dashicons-admin-settings',
 					'fields' => array( 'enable_opcache_reset' ),
 				),
+				'settings_management'    => array(
+					'id'     => 'settings_management',
+					'label'  => __( 'Settings Management', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-database-export',
+					'fields' => array(), // No form fields, custom content only.
+				),
 			);
 		}
 
@@ -279,6 +285,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			if ( 'data_management' === $active_subtab ) {
 				echo '</table>'; // Close the form table.
 				$this->render_data_management();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+			}
+
+			// Render settings management if we're on the settings_management sub-tab.
+			if ( 'settings_management' === $active_subtab ) {
+				echo '</table>'; // Close the form table.
+				$this->render_settings_management();
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
 			}
 		}
@@ -1462,6 +1475,298 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				'seeded'                     => $playbooks_seeded,
 				'last_sync'                  => $last_sync,
 			);
+		}
+
+		/**
+		 * Render Settings Management section.
+		 *
+		 * Provides tools for backup, restore, import, export, and maintenance of plugin settings.
+		 */
+		private function render_settings_management() {
+			// Get current settings count.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings_count = count( $settings );
+
+			// Get backup count.
+			global $wpdb;
+			$backup_count = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name LIKE %s",
+					'wp_mcp_ai_settings_backup_%'
+				)
+			);
+			?>
+			<div class="wp-mcp-ai-settings-management" style="padding: 20px; max-width: 800px;">
+				<h3><?php esc_html_e( 'Settings Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage plugin settings: export for backup, import from file, clear caches, check system health, or reset to defaults.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<!-- Settings Health Status -->
+				<div class="wp-mcp-ai-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; margin: 20px 0;">
+					<h4 style="margin-top: 0;">
+						<span class="dashicons dashicons-heart" style="color: #d63638;"></span>
+						<?php esc_html_e( 'Settings Health', 'mcp-ai-wpoos' ); ?>
+					</h4>
+					<div id="wp-mcp-ai-settings-health-status">
+						<p><em><?php esc_html_e( 'Click "Check Health" to run diagnostics...', 'mcp-ai-wpoos' ); ?></em></p>
+					</div>
+					<p>
+						<button type="button" id="wp-mcp-ai-check-settings-health" class="button button-secondary">
+							<span class="dashicons dashicons-search"></span>
+							<?php esc_html_e( 'Check Settings Health', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+				</div>
+
+				<!-- Export/Import Section -->
+				<div class="wp-mcp-ai-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; margin: 20px 0;">
+					<h4 style="margin-top: 0;">
+						<span class="dashicons dashicons-database-export"></span>
+						<?php esc_html_e( 'Backup & Restore', 'mcp-ai-wpoos' ); ?>
+					</h4>
+					<p>
+						<strong><?php esc_html_e( 'Current Settings:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php
+						printf(
+							/* translators: %d: Number of settings fields */
+							esc_html( _n( '%d field configured', '%d fields configured', $settings_count, 'mcp-ai-wpoos' ) ),
+							absint( $settings_count )
+						);
+						?>
+						<br>
+						<strong><?php esc_html_e( 'Backups Available:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php echo esc_html( absint( $backup_count ) ); ?>
+						<?php esc_html_e( '(automatic backups from recent saves)', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<button type="button" id="wp-mcp-ai-export-settings" class="button button-primary">
+							<span class="dashicons dashicons-download"></span>
+							<?php esc_html_e( 'Export Settings (JSON)', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<p class="description" style="margin: 5px 0 0 0;">
+							<?php esc_html_e( 'Download all plugin settings as a JSON file for backup or migration to another site.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+
+					<div style="margin: 15px 0;">
+						<label for="wp-mcp-ai-import-file" style="display: inline-block; margin-right: 10px;">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Import Settings:', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<input type="file" id="wp-mcp-ai-import-file" accept=".json,application/json" />
+						<button type="button" id="wp-mcp-ai-import-settings" class="button button-secondary" disabled>
+							<?php esc_html_e( 'Upload & Import', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<p class="description" style="margin: 5px 0 0 0;">
+							<?php esc_html_e( 'Import settings from a previously exported JSON file. Current settings will be backed up before import.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				</div>
+
+				<!-- Cache Management Section -->
+				<div class="wp-mcp-ai-card" style="background: #fff; border: 1px solid #ccd0d4; padding: 15px; margin: 20px 0;">
+					<h4 style="margin-top: 0;">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Cache Management', 'mcp-ai-wpoos' ); ?>
+					</h4>
+					<p><?php esc_html_e( 'If settings changes are not taking effect, clear all settings-related caches.', 'mcp-ai-wpoos' ); ?></p>
+					<p>
+						<button type="button" id="wp-mcp-ai-clear-cache" class="button button-secondary">
+							<span class="dashicons dashicons-trash"></span>
+							<?php esc_html_e( 'Clear All Caches', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+				</div>
+
+				<!-- Reset Section -->
+				<div class="wp-mcp-ai-card" style="background: #fff; border: 1px solid #f0c36d; padding: 15px; margin: 20px 0;">
+					<h4 style="margin-top: 0; color: #996800;">
+						<span class="dashicons dashicons-warning" style="color: #996800;"></span>
+						<?php esc_html_e( 'Reset to Defaults', 'mcp-ai-wpoos' ); ?>
+					</h4>
+					<p class="description">
+						<strong><?php esc_html_e( 'Warning:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php esc_html_e( 'This will reset ALL settings to their default values. Current settings will be backed up before reset.', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<p>
+						<button type="button" id="wp-mcp-ai-reset-settings" class="button button-secondary">
+							<span class="dashicons dashicons-undo"></span>
+							<?php esc_html_e( 'Reset All Settings', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+				</div>
+
+				<!-- Status Messages -->
+				<div id="wp-mcp-ai-settings-management-message" class="notice" style="display: none; margin: 15px 0;">
+					<p></p>
+				</div>
+			</div>
+
+			<script type="text/javascript">
+			jQuery(document).ready(function($) {
+				const nonce = <?php echo wp_json_encode( wp_create_nonce( 'wp-mcp-ai-dashboard' ) ); ?>;
+
+				// Enable import button when file is selected.
+				$('#wp-mcp-ai-import-file').on('change', function() {
+					$('#wp-mcp-ai-import-settings').prop('disabled', !this.files.length);
+				});
+
+				// Export settings.
+				$('#wp-mcp-ai-export-settings').on('click', function() {
+					window.location.href = ajaxurl + '?action=wp_mcp_ai_export_settings&nonce=' + nonce;
+				});
+
+				// Import settings.
+				$('#wp-mcp-ai-import-settings').on('click', function() {
+					const fileInput = document.getElementById('wp-mcp-ai-import-file');
+					if (!fileInput.files.length) {
+						alert(<?php echo wp_json_encode( __( 'Please select a JSON file to import.', 'mcp-ai-wpoos' ) ); ?>);
+						return;
+					}
+
+					if (!confirm(<?php echo wp_json_encode( __( 'Import settings from file? Your current settings will be backed up first.', 'mcp-ai-wpoos' ) ); ?>)) {
+						return;
+					}
+
+					const formData = new FormData();
+					formData.append('action', 'wp_mcp_ai_import_settings');
+					formData.append('nonce', nonce);
+					formData.append('settings_file', fileInput.files[0]);
+
+					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Importing...', 'mcp-ai-wpoos' ) ); ?>);
+
+					$.ajax({
+						url: ajaxurl,
+						type: 'POST',
+						data: formData,
+						processData: false,
+						contentType: false,
+						success: function(response) {
+							if (response.success) {
+								$('#wp-mcp-ai-settings-management-message')
+									.removeClass('notice-error')
+									.addClass('notice-success')
+									.find('p').text(response.data.message + ' (' + response.data.imported_count + ' fields)');
+								$('#wp-mcp-ai-settings-management-message').slideDown();
+								setTimeout(function() {
+									window.location.reload();
+								}, 2000);
+							} else {
+								$('#wp-mcp-ai-settings-management-message')
+									.removeClass('notice-success')
+									.addClass('notice-error')
+									.find('p').text(response.data.message || <?php echo wp_json_encode( __( 'Import failed.', 'mcp-ai-wpoos' ) ); ?>);
+								$('#wp-mcp-ai-settings-management-message').slideDown();
+								$('#wp-mcp-ai-import-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Upload & Import', 'mcp-ai-wpoos' ) ); ?>);
+							}
+						},
+						error: function() {
+							alert(<?php echo wp_json_encode( __( 'AJAX error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+							$('#wp-mcp-ai-import-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Upload & Import', 'mcp-ai-wpoos' ) ); ?>);
+						}
+					});
+				});
+
+				// Clear cache.
+				$('#wp-mcp-ai-clear-cache').on('click', function() {
+					if (!confirm(<?php echo wp_json_encode( __( 'Clear all settings caches?', 'mcp-ai-wpoos' ) ); ?>)) {
+						return;
+					}
+
+					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Clearing...', 'mcp-ai-wpoos' ) ); ?>);
+
+					$.post(ajaxurl, {
+						action: 'wp_mcp_ai_clear_settings_cache',
+						nonce: nonce
+					}, function(response) {
+						if (response.success) {
+							$('#wp-mcp-ai-settings-management-message')
+								.removeClass('notice-error')
+								.addClass('notice-success')
+								.find('p').text(response.data.message);
+							$('#wp-mcp-ai-settings-management-message').slideDown();
+						} else {
+							alert(response.data.message || <?php echo wp_json_encode( __( 'Failed to clear cache.', 'mcp-ai-wpoos' ) ); ?>);
+						}
+						$('#wp-mcp-ai-clear-cache').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Clear All Caches', 'mcp-ai-wpoos' ) ); ?>);
+					});
+				});
+
+				// Reset settings.
+				$('#wp-mcp-ai-reset-settings').on('click', function() {
+					if (!confirm(<?php echo wp_json_encode( __( 'Reset ALL settings to defaults? This cannot be undone! (Current settings will be backed up)', 'mcp-ai-wpoos' ) ); ?>)) {
+						return;
+					}
+
+					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Resetting...', 'mcp-ai-wpoos' ) ); ?>);
+
+					$.post(ajaxurl, {
+						action: 'wp_mcp_ai_reset_settings',
+						nonce: nonce
+					}, function(response) {
+						if (response.success) {
+							$('#wp-mcp-ai-settings-management-message')
+								.removeClass('notice-error')
+								.addClass('notice-success')
+								.find('p').text(response.data.message);
+							$('#wp-mcp-ai-settings-management-message').slideDown();
+							setTimeout(function() {
+								window.location.reload();
+							}, 2000);
+						} else {
+							alert(response.data.message || <?php echo wp_json_encode( __( 'Failed to reset settings.', 'mcp-ai-wpoos' ) ); ?>);
+							$('#wp-mcp-ai-reset-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Reset All Settings', 'mcp-ai-wpoos' ) ); ?>);
+						}
+					});
+				});
+
+				// Check settings health.
+				$('#wp-mcp-ai-check-settings-health').on('click', function() {
+					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Checking...', 'mcp-ai-wpoos' ) ); ?>);
+
+					$.post(ajaxurl, {
+						action: 'wp_mcp_ai_check_settings_health',
+						nonce: nonce
+					}, function(response) {
+						if (response.success) {
+							let statusHtml = '<h5>' + response.data.message + '</h5>';
+							
+							if (response.data.issues && response.data.issues.length > 0) {
+								statusHtml += '<div class="notice notice-error inline"><ul>';
+								response.data.issues.forEach(function(issue) {
+									statusHtml += '<li><strong>Issue:</strong> ' + issue + '</li>';
+								});
+								statusHtml += '</ul></div>';
+							}
+
+							if (response.data.warnings && response.data.warnings.length > 0) {
+								statusHtml += '<div class="notice notice-warning inline"><ul>';
+								response.data.warnings.forEach(function(warning) {
+									statusHtml += '<li><strong>Warning:</strong> ' + warning + '</li>';
+								});
+								statusHtml += '</ul></div>';
+							}
+
+							if (response.data.info && response.data.info.length > 0) {
+								statusHtml += '<div class="notice notice-info inline"><ul>';
+								response.data.info.forEach(function(info) {
+									statusHtml += '<li>' + info + '</li>';
+								});
+								statusHtml += '</ul></div>';
+							}
+
+							$('#wp-mcp-ai-settings-health-status').html(statusHtml);
+						} else {
+							$('#wp-mcp-ai-settings-health-status').html('<p class="notice notice-error inline">' + (response.data.message || <?php echo wp_json_encode( __( 'Health check failed.', 'mcp-ai-wpoos' ) ); ?>) + '</p>');
+						}
+						$('#wp-mcp-ai-check-settings-health').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Check Settings Health', 'mcp-ai-wpoos' ) ); ?>);
+					});
+				});
+			});
+			</script>
+			<?php
 		}
 	}
 }
