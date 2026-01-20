@@ -49,7 +49,7 @@ Key changes:
 2. Removes `mcp-ai-wpoos-base.php` from the ZIP
 3. Uses `mcp-ai-wpoos.php` as the main plugin file
 4. Updates plugin header to remove "Complete" from the name
-5. Sets `WP_MCP_AI_BASE_VERSION` constant to `true`
+5. Keeps `WP_MCP_AI_BASE_VERSION` constant as `false` to load all base features
 
 ## Final Structure
 
@@ -92,8 +92,10 @@ mcp-ai-wpoos-1.1.0.zip
  *              Works standalone with optional third-party plugin integrations.
  */
 // ...
-define( 'WP_MCP_AI_BASE_VERSION', true );
+define( 'WP_MCP_AI_BASE_VERSION', false ); // ← false to load all base features
 ```
+
+**Note**: `WP_MCP_AI_BASE_VERSION` must be `false` in the base version to ensure all included integration files are loaded. Setting it to `true` would skip loading files that are present in the ZIP, causing fatal errors.
 
 ### Complete Version (`mcp-ai-wpoos.php` in combined ZIP)
 ```php
@@ -103,7 +105,7 @@ define( 'WP_MCP_AI_BASE_VERSION', true );
  *              Includes 109 tools with base features and Pro add-on...
  */
 // ...
-define( 'WP_MCP_AI_BASE_VERSION', false );
+define( 'WP_MCP_AI_BASE_VERSION', false ); // ← Same as base, Pro addon is the differentiator
 ```
 
 ## Testing
@@ -113,7 +115,7 @@ Automated tests verified:
 - ✅ Main file present: `mcp-ai-wpoos.php`
 - ✅ Repository file removed: `mcp-ai-wpoos-base.php` not in ZIP
 - ✅ Plugin header updated: No "Complete" in name
-- ✅ BASE_VERSION constant: Set to `true`
+- ✅ BASE_VERSION constant: Kept as `false` to load all base features
 
 ## Building the Base Version
 

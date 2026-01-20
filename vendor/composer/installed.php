@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-        'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-        'reference' => '697b492de22915924dee0a9e7f1aba39d38921bd',
+        'pretty_version' => 'dev-copilot/fix-plugin-activation-error-please-work',
+        'version' => 'dev-copilot/fix-plugin-activation-error-please-work',
+        'reference' => 'dcf35c59c7b6b090579c83a657ad46783b089684',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-            'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-            'reference' => '697b492de22915924dee0a9e7f1aba39d38921bd',
+            'pretty_version' => 'dev-copilot/fix-plugin-activation-error-please-work',
+            'version' => 'dev-copilot/fix-plugin-activation-error-please-work',
+            'reference' => 'dcf35c59c7b6b090579c83a657ad46783b089684',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

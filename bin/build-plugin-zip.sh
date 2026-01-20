@@ -320,13 +320,11 @@ if [ "$BUILD_BASE" = true ]; then
         echo "✓ Updated mcp-ai-wpoos.php header for base version"
     fi
     
-    # Ensure WP_MCP_AI_BASE_VERSION is set to true for base version
-    # This constant is checked throughout the plugin to exclude pro features
-    if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
-        # Find the line that sets WP_MCP_AI_BASE_VERSION to false and change it to true
-        sed -i "s/define( 'WP_MCP_AI_BASE_VERSION', false )/define( 'WP_MCP_AI_BASE_VERSION', true )/" "build/${BASE_SLUG}/mcp-ai-wpoos.php"
-        echo "✓ Set WP_MCP_AI_BASE_VERSION to true in base version"
-    fi
+    # Keep WP_MCP_AI_BASE_VERSION as false for base version
+    # The base version should load all available tools and integrations
+    # Setting it to true would skip loading integration files that are included in the ZIP
+    # The only difference from combined version is that Pro addon files are excluded
+    echo "✓ Keeping WP_MCP_AI_BASE_VERSION as false (loads all base features)"
     
     # Create ZIP
     cd build
