@@ -79,6 +79,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 			$gmail_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
 			$drive_notice  = $is_pro_active ? ' ' . __( '<em>(Pro also supports multiple connections via Remote Sites.)</em>', 'mcp-ai-wpoos' ) : ' ' . __( '<em>(Base supports 1 connection. Pro enables multiple via Remote Sites.)</em>', 'mcp-ai-wpoos' );
+			$pro_notice    = $is_pro_active ? '' : ' ' . __( '<em>(Pro Version required)</em>', 'mcp-ai-wpoos' );
 
 			return array(
 				// Gmail OAuth.
