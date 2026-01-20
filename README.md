@@ -143,11 +143,54 @@ NV oOS implements a comprehensive orchestration layer for managing AI operations
 
 > **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
-### Why This Architecture Is Novel: Overcoming PHP's Limitations
+### Core Orchestration Layer: Overcoming PHP's Limitations
 
 **Critical Context:** Most real-time AI streaming systems are built with Node.js, Python FastAPI, or Go — platforms designed for asynchronous, event-driven operations. These platforms natively support:
 - Long-lived connections and persistent state
 - Non-blocking I/O and parallel execution
+- Event loops and asynchronous callbacks
+- WebSocket protocols and SSE streaming
+
+**NV oOS achieves the same capabilities in PHP/WordPress** — an environment fundamentally not designed for these patterns — through a sophisticated **orchestration layer** that creates a "persistent-behavior illusion":
+
+1. **Real-Time Budget Enforcement** - Monitors token/memory usage during streaming, prevents exhaustion through predictive allocation
+2. **Capability-Based Tool Gating** - WordPress role-based access control for AI tool execution  
+3. **Predictive Optimization** - Analyzes usage patterns to prevent resource overruns before they occur
+4. **Distributed Orchestration** - Multi-provider support with policy-aware routing
+5. **Auditability & Compliance** - Complete governance layer with logging and rate limiting
+6. **Cron-Based Task Orchestration** - Extends orchestration to async operations with budget inheritance
+
+### Multi-Agent Orchestration Enhancement (DeepSeek V4-Inspired)
+
+**Added:** January 2026 (v1.1.0)
+
+Building upon the core orchestration layer, NV oOS now includes a **sophisticated multi-agent coordination framework** inspired by DeepSeek V4's orchestration patterns:
+
+**Key Components:**
+- **Agent Role System** - Four specialized roles (Planner, Executor, Critic, Specialist) with role-specific capabilities
+- **Team Composition** - Automated team assembly based on task requirements and profession expertise
+- **Coordinated Workflows** - Multi-step workflows with agent delegation, result aggregation, and validation
+- **Team CPT Integration** - Persistent team configurations with orchestration modes (single/sequential/parallel/swarm)
+- **Profession-Based Discovery** - 200+ professions auto-assigned agent roles via intelligent seeding
+
+**Example Multi-Agent Workflow:**
+```php
+// 1. Compose research team (planner + executors + critic)
+$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+$team = $orchestrator->compose_team( array( 'task_type' => 'research' ) );
+
+// 2. Execute coordinated workflow
+// Planner decomposes task → Executors research subtasks → 
+// Communication service aggregates → Critic validates quality
+$result = $orchestrator->execute_team_workflow( $team, $task, $context );
+```
+
+**Documentation:**
+- See [Multi-Agent Orchestration](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical details
+- See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview  
+- See [DEEPSEEK-V4-USAGE-GUIDE.md](docs/DEEPSEEK-V4-USAGE-GUIDE.md) for practical examples
+
+### Why This Architecture Is Novel: Overcoming PHP's Limitations
 - Event loops and background workers
 
 **PHP/WordPress, by contrast, is fundamentally request-based:**

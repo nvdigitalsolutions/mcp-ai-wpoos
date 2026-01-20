@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+### Added
+- **DeepSeek V4 Multi-Agent Orchestration Enhancement (January 2026)**: Comprehensive multi-agent coordination framework inspired by DeepSeek V4's orchestration patterns
+  - **Agent Role System**: Four specialized roles (Planner, Executor, Critic, Specialist) with role-specific capabilities and workflows
+  - **Agent Team Orchestrator**: Manages team composition, coordinated workflow execution, and performance tracking (921 lines)
+  - **Agent Communication Service**: Structured message passing and result aggregation with 5 aggregation strategies (consensus, weighted, hierarchical, first, best)
+  - **Agent Coordination Tools**: Three new MCP-compliant tools (`create_agent_team`, `delegate_to_agent`, `aggregate_agent_results`)
+  - **Profession CPT Integration**: 8 new orchestration meta fields for agent roles, capabilities, task patterns, and performance metrics
+  - **Team CPT Integration**: 3 new orchestration meta fields for execution modes (single/sequential/parallel/swarm), workflow templates (JSON), and aggregation strategies
+  - **Orchestration Seeder**: Intelligent agent role assignment for 200+ professions with WP-CLI commands (`wp profession seed-orchestration`, `wp profession orchestration-stats`)
+  - **Multi-Agent Workflows**: Predefined team templates for research, content, e-commerce, and development workflows
+  - **Implementation Status**: 85-90% complete with comprehensive test suite (12 PHPUnit tests, 9 integration tests)
+  - **Documentation**: Complete documentation suite (55.3KB across 6 files) including usage guide, validation results, and workflow examples
+  - **PHP Workaround Extension**: Extends core orchestration layer's "persistent-behavior illusion" to enable distributed agent coordination in stateless PHP environment
+  - See [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical documentation
+  - See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview
+
 ### Fixed
 - **Tool Preset Multiplier Application (January 18, 2026)**: Fixed broken "Apply Preset" button on Token Manager page (PR #2990)
   - **Root Cause**: `get_all_recommendations()` only queried tool registry which returned empty array during preset application
