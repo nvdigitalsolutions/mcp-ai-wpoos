@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-base-zip-activation',
-        'version' => 'dev-copilot/fix-base-zip-activation',
-        'reference' => '59fb5492f32b3bcc2dd2c1791a41ba5d87887cad',
+        'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
+        'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
+        'reference' => '93026e1c642e6e5b07554ead5b30896c4cb6d7ee',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-base-zip-activation',
-            'version' => 'dev-copilot/fix-base-zip-activation',
-            'reference' => '59fb5492f32b3bcc2dd2c1791a41ba5d87887cad',
+            'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
+            'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
+            'reference' => '93026e1c642e6e5b07554ead5b30896c4cb6d7ee',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
