@@ -274,11 +274,17 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 
 					case 'number':
-						// CRITICAL: Skip empty number fields to prevent overwriting existing values.
-						// This happens when a field from another tab/subtab is included in POST but not meant to be saved.
-						// Empty strings would overwrite actual values, causing them to appear as defaults when rendered.
+						// Handle empty strings differently based on field definition:
+						// 1. If field explicitly allows empty string (e.g., filter fields with default=''),
+						//    preserve the empty string for "use auto-detection" functionality
+						// 2. Otherwise, skip empty values to prevent overwriting existing settings
 						if ( '' === $value ) {
-							// Skip adding to sanitized array - preserve existing value.
+							// Check if this field explicitly allows empty strings by checking if default is ''
+							if ( isset( $fields[ $key ]['default'] ) && '' === $fields[ $key ]['default'] ) {
+								// Field intentionally uses empty string (e.g., filter fields for auto-detection)
+								$sanitized[ $key ] = '';
+							}
+							// Otherwise skip - don't overwrite existing value with empty string
 							break;
 						}
 						$sanitized[ $key ] = absint( $value );
