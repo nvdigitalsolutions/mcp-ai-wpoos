@@ -3,6 +3,8 @@
  * Abstract base class for settings sections.
  *
  * @package WP_MCP_AI
+ *
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Abstract class, naming is intentional.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -89,17 +91,21 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		/**
 		 * Sanitize input for this section.
 		 *
-		 * @param array $input Raw input from form.
+		 * @param array  $input Raw input from form.
+		 * @param string $active_subtab Optional. Explicit subtab to process (for sections with subtabs).
+		 * @param bool   $is_active_tab Optional. Whether this section's tab is the active tab being saved.
 		 * @return array Sanitized input.
 		 */
-		public function sanitize( $input ) {
+		public function sanitize( $input, $active_subtab = null, $is_active_tab = false ) {
 			// Check if this section has subtabs by looking for get_subtab_groups method.
 			if ( method_exists( $this, 'get_subtab_groups' ) ) {
-				return $this->sanitize_with_subtabs( $input );
+				return $this->sanitize_with_subtabs( $input, $active_subtab );
 			}
 
-			// Default sanitization for sections without subtabs.
-			return $this->sanitize_fields( $input, $this->get_fields() );
+			// P0 FIX #2: Default sanitization for sections without subtabs.
+			// Only treat as form submission if this section's tab is active to prevent
+			// checkbox clearing on non-active tabs.
+			return $this->sanitize_fields( $input, $this->get_fields(), $is_active_tab );
 		}
 
 		/**
@@ -108,11 +114,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 		 * Only processes fields from the active sub-tab to prevent clearing
 		 * settings from inactive sub-tabs when saving.
 		 *
-		 * @param array $input Raw input from form.
+		 * @param array  $input Raw input from form.
+		 * @param string $explicit_subtab Optional. Explicit subtab to process (passed from dashboard).
 		 * @return array Sanitized input for active sub-tab only.
 		 */
-		protected function sanitize_with_subtabs( $input ) {
-			$active_subtab = $this->get_active_subtab();
+		protected function sanitize_with_subtabs( $input, $explicit_subtab = null ) {
+			// P0 FIX #1: Use explicit subtab if provided, otherwise detect from POST/GET.
+			if ( null !== $explicit_subtab ) {
+				$active_subtab = $explicit_subtab;
+			} else {
+				$active_subtab = $this->get_active_subtab();
+			}
+
 			$subtab_groups = $this->get_subtab_groups();
 
 			// Get fields that belong to the active sub-tab.
@@ -133,9 +146,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Check if we're actually processing a form submission for this subtab.
 			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
 			$subtab_field_name = 'subtab_' . $this->get_id();
-			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
@@ -235,6 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							}
 						}
 						// Use non-strict comparison to handle string/int type juggling.
+						// phpcs:ignore WordPress.PHP.StrictInArray.FoundNonStrictFalse -- Intentional for type juggling.
 						if ( in_array( $typed_value, $options, false ) ) {
 							$sanitized[ $key ] = $typed_value;
 						}
@@ -247,6 +261,93 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			}
 
 			return $sanitized;
+		}
+
+		/**
+		 * Check if a field is a sensitive field that should be protected.
+		 *
+		 * @param string $key Field key to check.
+		 * @return bool True if sensitive, false otherwise.
+		 */
+		protected function is_sensitive_field( $key ) {
+			// List of sensitive field names.
+			$sensitive_fields = array(
+				'openai_api_key',
+				'openai_organization_id',
+				'anthropic_api_key',
+				'gemini_api_key',
+				'huggingface_api_key',
+				'huggingface_endpoint_url',
+				'huggingface_datasets_api_token',
+				'ollama_endpoint_url',
+				'lm_studio_endpoint_url',
+				'cloudflare_account_id',
+				'cloudflare_api_token',
+				'cloudflare_zone_id',
+				'brave_search_api_key',
+				'mubert_api_key',
+				'google_maps_api_key',
+				'auth0_domain',
+				'auth0_client_id',
+				'auth0_client_secret',
+				'auth0_management_client_id',
+				'auth0_management_client_secret',
+				'oauth_google_client_id',
+				'oauth_google_client_secret',
+				'gmail_client_id',
+				'gmail_client_secret',
+				'google_drive_client_id',
+				'google_drive_client_secret',
+				'github_client_id',
+				'github_client_secret',
+				'cloudways_api_key',
+				'cloudways_api_email',
+				'cloudways_server_id',
+				'cloudways_app_id',
+				'crawl4ai_api_key',
+				'removebg_api_key',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'mailjet_client_id',
+				'mailjet_client_secret',
+				'ita_tariff_api_key',
+				'google_analytics_credentials',
+				'google_analytics_credentials_json',
+				'mesh_inbound_api_key',
+				'quickbooks_api_key',
+				'quickbooks_client_id',
+				'quickbooks_client_secret',
+				'meta_app_id',
+				'meta_business_account_id',
+				'tiktok_client_secret',
+			);
+
+			// Check exact match first.
+			if ( in_array( $key, $sensitive_fields, true ) ) {
+				return true;
+			}
+
+			// Check pattern match for sensitive field names.
+			$sensitive_patterns = array(
+				'/_api_key$/',
+				'/_api_secret$/',
+				'/_api_token$/',
+				'/_client_id$/',
+				'/_client_secret$/',
+				'/_access_token$/',
+				'/_refresh_token$/',
+				'/_private_key$/',
+				'/_credentials$/',
+				'/_credentials_json$/',
+			);
+
+			foreach ( $sensitive_patterns as $pattern ) {
+				if ( preg_match( $pattern, $key ) ) {
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		/**
@@ -266,10 +367,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
 
+			// Check if this is a sensitive field that should be protected.
+			$is_sensitive = $this->is_sensitive_field( $key );
+
 			?>
 			<tr>
 				<th scope="row">
 					<label for="<?php echo esc_attr( $key ); ?>">
+						<?php if ( $is_sensitive ) : ?>
+							<span class="dashicons dashicons-lock" style="color: #d63638; font-size: 16px; vertical-align: middle;" title="<?php esc_attr_e( 'Sensitive field - protected from accidental clearing', 'mcp-ai-wpoos' ); ?>"></span>
+						<?php endif; ?>
 						<?php echo esc_html( $label ); ?>
 						<?php if ( $required ) : ?>
 							<span class="required">*</span>
@@ -294,8 +401,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								id="<?php echo esc_attr( $key ); ?>"
 								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 								value="<?php echo esc_attr( $value ); ?>"
-								class="regular-text"
+								class="regular-text<?php echo esc_attr( $is_sensitive ? ' wp-mcp-ai-sensitive-field' : '' ); ?>"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( $is_sensitive && ! empty( $value ) ) : ?>
+									data-original-value="<?php echo esc_attr( $value ); ?>"
+								<?php endif; ?>
 								<?php if ( ! empty( $autocomplete ) ) : ?>
 									autocomplete="<?php echo esc_attr( $autocomplete ); ?>"
 								<?php endif; ?>
@@ -311,8 +421,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								id="<?php echo esc_attr( $key ); ?>"
 								name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 								value="<?php echo esc_attr( $value ); ?>"
-								class="regular-text"
+								class="regular-text<?php echo esc_attr( $is_sensitive ? ' wp-mcp-ai-sensitive-field' : '' ); ?>"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
+								<?php if ( $is_sensitive && ! empty( $value ) ) : ?>
+									data-original-value="<?php echo esc_attr( $value ); ?>"
+								<?php endif; ?>
 								autocomplete="<?php echo esc_attr( ! empty( $autocomplete ) ? $autocomplete : 'new-password' ); ?>"
 								<?php echo esc_attr( $required ? 'required' : '' ); ?>
 							/>

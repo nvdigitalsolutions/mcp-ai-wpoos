@@ -447,7 +447,7 @@
 		},
 
 		/**
-		 * Handle form submission with loading state.
+		 * Handle form submission with loading state and validation.
 		 *
 		 * @param {Event} e Submit event.
 		 */
@@ -455,7 +455,7 @@
 			const $form = $(e.target);
 			const $submit = $form.find('input[type="submit"]');
 			
-			// Get form data for logging.
+			// Get form data for logging and validation.
 			const formData = new FormData($form[0]);
 			const activeTab = formData.get('active_tab');
 			const settingsData = {};
@@ -468,6 +468,28 @@
 					settingsData[fieldName] = value;
 					fieldCount++;
 				}
+			}
+			
+			// VALIDATION: Check for sensitive fields being cleared.
+			const clearingWarnings = this.validateSensitiveFields($form, settingsData);
+			if (clearingWarnings.length > 0) {
+				e.preventDefault();
+				
+				// Build warning message.
+				let warningMessage = 'Warning: You are about to clear the following sensitive field(s):\n\n';
+				clearingWarnings.forEach(function(warning) {
+					warningMessage += '• ' + warning + '\n';
+				});
+				warningMessage += '\nThis may cause integrations to stop working. Are you sure you want to continue?';
+				
+				// Show confirmation dialog.
+				if (!confirm(warningMessage)) {
+					console.log('[NV oOS Settings] Form submission cancelled by user');
+					return false;
+				}
+				
+				// User confirmed - allow submission.
+				console.log('[NV oOS Settings] User confirmed clearing sensitive fields');
 			}
 			
 			// Log form submission details to console.
@@ -495,6 +517,144 @@
 			// Original text will be restored on page reload after redirect.
 			// Note: This is a standard POST submission, not AJAX.
 			// The page will reload after the server processes and redirects.
+		},
+
+		/**
+		 * Validate sensitive fields to prevent accidental clearing.
+		 *
+		 * Checks if any sensitive fields (API keys, credentials, tokens) are being
+		 * cleared and returns warnings for user confirmation.
+		 *
+		 * @param {jQuery} $form The form being submitted.
+		 * @param {Object} settingsData The settings data being submitted.
+		 * @return {Array} Array of warning messages for fields being cleared.
+		 */
+		validateSensitiveFields: function($form, settingsData) {
+			const warnings = [];
+			
+			// List of sensitive field patterns to check.
+			const sensitivePatterns = [
+				{pattern: /_api_key$/, label: 'API Key'},
+				{pattern: /_api_secret$/, label: 'API Secret'},
+				{pattern: /_api_token$/, label: 'API Token'},
+				{pattern: /_client_id$/, label: 'Client ID'},
+				{pattern: /_client_secret$/, label: 'Client Secret'},
+				{pattern: /_access_token$/, label: 'Access Token'},
+				{pattern: /_refresh_token$/, label: 'Refresh Token'},
+				{pattern: /_private_key$/, label: 'Private Key'},
+				{pattern: /_credentials$/, label: 'Credentials'},
+				{pattern: /_credentials_json$/, label: 'Credentials JSON'},
+			];
+			
+			// Specific sensitive fields to check (comprehensive list).
+			const sensitiveFields = [
+				'openai_api_key',
+				'openai_organization_id',
+				'anthropic_api_key',
+				'gemini_api_key',
+				'huggingface_api_key',
+				'huggingface_endpoint_url',
+				'huggingface_datasets_api_token',
+				'ollama_endpoint_url',
+				'lm_studio_endpoint_url',
+				'cloudflare_account_id',
+				'cloudflare_api_token',
+				'cloudflare_zone_id',
+				'brave_search_api_key',
+				'mubert_api_key',
+				'google_maps_api_key',
+				'auth0_domain',
+				'auth0_client_id',
+				'auth0_client_secret',
+				'auth0_management_client_id',
+				'auth0_management_client_secret',
+				'oauth_google_client_id',
+				'oauth_google_client_secret',
+				'gmail_client_id',
+				'gmail_client_secret',
+				'google_drive_client_id',
+				'google_drive_client_secret',
+				'github_client_id',
+				'github_client_secret',
+				'cloudways_api_key',
+				'cloudways_api_email',
+				'cloudways_server_id',
+				'cloudways_app_id',
+				'crawl4ai_api_key',
+				'removebg_api_key',
+				'mailjet_api_key',
+				'mailjet_api_secret',
+				'mailjet_client_id',
+				'mailjet_client_secret',
+				'ita_tariff_api_key',
+				'google_analytics_credentials',
+				'google_analytics_credentials_json',
+				'mesh_inbound_api_key',
+				'quickbooks_api_key',
+				'quickbooks_client_id',
+				'quickbooks_client_secret',
+				'meta_app_id',
+				'meta_business_account_id',
+				'tiktok_client_secret',
+			];
+			
+			// Check each sensitive field.
+			sensitiveFields.forEach(function(fieldName) {
+				// Check if field exists in the form.
+				const $field = $form.find('[name="wp_mcp_ai_settings[' + fieldName + ']"]');
+				
+				if ($field.length > 0) {
+					// Get current value in form.
+					const currentValue = $field.val();
+					
+					// Get original value from data attribute (if exists).
+					const originalValue = $field.data('original-value') || $field.attr('placeholder') || '';
+					
+					// If field is being cleared (was not empty, now empty).
+					if (originalValue && !currentValue) {
+						// Create a friendly label for the field.
+						const friendlyName = fieldName
+							.replace(/_/g, ' ')
+							.replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+						
+						warnings.push(friendlyName);
+					}
+				}
+			});
+			
+			// Also check for any field matching sensitive patterns.
+			for (const fieldName in settingsData) {
+				// Skip if already checked in explicit list.
+				if (sensitiveFields.indexOf(fieldName) !== -1) {
+					continue;
+				}
+				
+				// Check if field matches any sensitive pattern.
+				for (let i = 0; i < sensitivePatterns.length; i++) {
+					const patternObj = sensitivePatterns[i];
+					if (patternObj.pattern.test(fieldName)) {
+						// Get the field element.
+						const $field = $form.find('[name="wp_mcp_ai_settings[' + fieldName + ']"]');
+						
+						if ($field.length > 0) {
+							const currentValue = $field.val();
+							const originalValue = $field.data('original-value') || $field.attr('placeholder') || '';
+							
+							// If field is being cleared.
+							if (originalValue && !currentValue) {
+								const friendlyName = fieldName
+									.replace(/_/g, ' ')
+									.replace(/\b\w/g, function(l) { return l.toUpperCase(); });
+								
+								warnings.push(friendlyName + ' (' + patternObj.label + ')');
+							}
+						}
+						break; // Don't check other patterns for this field.
+					}
+				}
+			}
+			
+			return warnings;
 		},
 
 		/**

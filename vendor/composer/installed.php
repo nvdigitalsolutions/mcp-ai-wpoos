@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-again',
-        'version' => 'dev-copilot/rebuild-all-zips-again',
-        'reference' => '5711139a01db519ecd3e9126c1b8c37c9b078da0',
+        'pretty_version' => 'dev-copilot/fix-protected-keys-issue',
+        'version' => 'dev-copilot/fix-protected-keys-issue',
+        'reference' => '831271466d944bc8914209ec962e3cc2c50ff68d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-again',
-            'version' => 'dev-copilot/rebuild-all-zips-again',
-            'reference' => '5711139a01db519ecd3e9126c1b8c37c9b078da0',
+            'pretty_version' => 'dev-copilot/fix-protected-keys-issue',
+            'version' => 'dev-copilot/fix-protected-keys-issue',
+            'reference' => '831271466d944bc8914209ec962e3cc2c50ff68d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
