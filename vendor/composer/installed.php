@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-provider-keys-clearing',
-        'version' => 'dev-copilot/fix-provider-keys-clearing',
-        'reference' => 'cb7fe13ba5d3d7be792e9d92532ed081617fbbed',
+        'pretty_version' => 'dev-copilot/optimize-composer-autoloader',
+        'version' => 'dev-copilot/optimize-composer-autoloader',
+        'reference' => 'c9baac62100f2c34d66797a4568c7442e1a1ea32',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-provider-keys-clearing',
-            'version' => 'dev-copilot/fix-provider-keys-clearing',
-            'reference' => 'cb7fe13ba5d3d7be792e9d92532ed081617fbbed',
+            'pretty_version' => 'dev-copilot/optimize-composer-autoloader',
+            'version' => 'dev-copilot/optimize-composer-autoloader',
+            'reference' => 'c9baac62100f2c34d66797a4568c7442e1a1ea32',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
