@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
         'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-        'reference' => '93026e1c642e6e5b07554ead5b30896c4cb6d7ee',
+        'reference' => '697b492de22915924dee0a9e7f1aba39d38921bd',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
             'version' => 'dev-copilot/fix-plugin-activation-error-one-more-time',
-            'reference' => '93026e1c642e6e5b07554ead5b30896c4cb6d7ee',
+            'reference' => '697b492de22915924dee0a9e7f1aba39d38921bd',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
