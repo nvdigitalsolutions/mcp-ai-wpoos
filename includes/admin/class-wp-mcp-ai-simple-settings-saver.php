@@ -5,7 +5,7 @@
  * Provides a streamlined, optimized approach to saving settings
  * with better performance and less complexity than the full
  * section-based sanitization system.
- * 
+ *
  * This can be used as an alternative to the modular section system
  * when performance is critical or when dealing with simple flat
  * settings structures.
@@ -33,7 +33,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 
 		/**
 		 * Initialize field type definitions.
-		 * 
+		 *
 		 * This method should be called once during plugin initialization
 		 * to register field types for automatic sanitization.
 		 */
@@ -182,7 +182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 			// Process each posted field.
 			foreach ( $posted_data as $key => $value ) {
 				$field_type = isset( self::$field_types[ $key ] ) ? self::$field_types[ $key ] : 'text';
-				
+
 				$sanitized[ $key ] = self::sanitize_field( $value, $field_type, $key, $existing );
 			}
 
@@ -217,6 +217,17 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 		 * @return mixed Sanitized value.
 		 */
 		private static function sanitize_field( $value, $type, $key, $existing ) {
+			// Handle array values - prevent "Array to string conversion" errors.
+			if ( is_array( $value ) ) {
+				// If the field type is specifically 'array', sanitize as array.
+				if ( 'array' === $type ) {
+					return array_map( 'sanitize_text_field', $value );
+				}
+				// For non-array field types that receive arrays, serialize or convert to JSON.
+				// This preserves the data rather than causing a fatal error.
+				return wp_json_encode( $value );
+			}
+
 			switch ( $type ) {
 				case 'checkbox':
 					return ! empty( $value );
@@ -245,7 +256,9 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 					return sanitize_textarea_field( $value );
 
 				case 'array':
-					return is_array( $value ) ? array_map( 'sanitize_text_field', $value ) : array();
+					// This case is handled above for actual arrays.
+					// If we get here with non-array value, return empty array.
+					return array();
 
 				case 'text':
 				default:
@@ -277,7 +290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 		 */
 		public static function batch_update( $updates ) {
 			$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-			
+
 			foreach ( $updates as $key => $value ) {
 				$type = self::get_field_type( $key );
 				$existing[ $key ] = self::sanitize_field( $value, $type, $key, $existing );
