@@ -1373,6 +1373,231 @@ Seeder version: 1.0.0
 - `includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php` (430 lines)
 - `includes/professions/class-wp-mcp-ai-profession-orchestration-cli.php` (142 lines)
 
+#### 6.5 Team CPT Integration
+
+**Added:** January 2026 (v1.9.0+)
+
+The Team Custom Post Type has been enhanced with three new orchestration meta fields that enable persistent multi-agent team configurations with predefined workflows and execution modes.
+
+**New Meta Fields:**
+
+| Meta Field | Type | Purpose | Options |
+|------------|------|---------|---------|
+| `_wp_mcp_ai_team_orchestration_mode` | string | Execution pattern for team members | `single`, `sequential`, `parallel`, `swarm` |
+| `_wp_mcp_ai_team_workflow_template` | JSON | Workflow steps, role assignments, dependencies | Custom JSON structure |
+| `_wp_mcp_ai_team_result_aggregation` | string | Result combination strategy | `consensus`, `weighted`, `hierarchical`, `first`, `best` |
+
+**Orchestration Modes Explained:**
+
+1. **Single** - One designated agent handles the entire task
+   - Use case: Simple tasks where one profession has all needed expertise
+   - Example: Content Writer creates a blog post independently
+   
+2. **Sequential** - Agents execute in order, chaining outputs (A→B→C→D)
+   - Use case: Pipeline workflows where each step builds on previous
+   - Example: Researcher → Writer → Editor → SEO Optimizer
+   
+3. **Parallel** - Agents execute simultaneously on same task
+   - Use case: Multiple perspectives needed, time-critical tasks
+   - Example: Multiple designers create logo variants concurrently
+   
+4. **Swarm** - Redundant agents for consensus/validation
+   - Use case: High-stakes decisions requiring agreement
+   - Example: 3 QA Engineers test same feature, results must agree
+
+**Result Aggregation Strategies:**
+
+1. **Consensus** - Majority agreement from all agents (democratic)
+   ```php
+   // Example: 3 agents vote on best approach, majority wins
+   // Agent A: Option 1, Agent B: Option 1, Agent C: Option 2 → Result: Option 1
+   ```
+
+2. **Weighted** - Agents weighted by confidence scores
+   ```php
+   // Example: Senior expert's opinion weighted higher than junior
+   // Senior (confidence: 0.9): Option A
+   // Junior (confidence: 0.6): Option B
+   // Result: Option A (higher weighted score)
+   ```
+
+3. **Hierarchical** - Priority order based on role (planner > specialist > executor)
+   ```php
+   // Example: Planner's strategy overrides executor's tactical suggestion
+   // Role hierarchy: Planner > Specialist > Critic > Executor
+   ```
+
+4. **First** - Use first successful result (speed priority)
+   ```php
+   // Example: First agent to complete task successfully wins
+   // Useful for time-critical or redundant verification tasks
+   ```
+
+5. **Best** - Highest confidence score wins (quality priority)
+   ```php
+   // Example: Agent with highest confidence in their result
+   // Agent A (confidence: 0.85), Agent B (confidence: 0.92) → Result: Agent B
+   ```
+
+**Workflow Template Structure:**
+
+```json
+{
+  "workflow_name": "research_pipeline",
+  "description": "Comprehensive research workflow with validation",
+  "steps": [
+    {
+      "step_id": "1",
+      "step_name": "planning",
+      "agent_role": "planner",
+      "action": "decompose_research_task",
+      "output_format": "research_plan"
+    },
+    {
+      "step_id": "2",
+      "step_name": "data_collection",
+      "agent_role": "executor",
+      "action": "gather_research_data",
+      "depends_on": ["1"],
+      "input_from": "1.research_plan"
+    },
+    {
+      "step_id": "3",
+      "step_name": "analysis",
+      "agent_role": "executor",
+      "action": "analyze_findings",
+      "depends_on": ["2"],
+      "tools": ["deep_research", "web_search"]
+    },
+    {
+      "step_id": "4",
+      "step_name": "validation",
+      "agent_role": "critic",
+      "action": "validate_research_quality",
+      "depends_on": ["3"],
+      "validation_criteria": ["completeness", "accuracy", "citations"]
+    }
+  ],
+  "fallback_strategy": "retry_with_different_agent",
+  "max_retries": 2
+}
+```
+
+**Team CPT Constants:**
+
+```php
+// Class: WP_MCP_AI_Team_CPT
+
+const POST_TYPE = 'mcp_ai_team';
+
+// Orchestration Meta Keys
+const META_ORCHESTRATION_MODE = '_wp_mcp_ai_team_orchestration_mode';
+const META_WORKFLOW_TEMPLATE = '_wp_mcp_ai_team_workflow_template';
+const META_RESULT_AGGREGATION_STRATEGY = '_wp_mcp_ai_team_result_aggregation';
+
+// Additional Team Meta
+const META_TEAM_MEMBERS = '_wp_mcp_ai_team_members';  // Array of profession IDs
+const META_DRIVER_ASSISTANT = '_wp_mcp_ai_team_driver_assistant';  // Orchestrator assistant
+```
+
+**Admin UI Integration:**
+
+The Team editor includes a dedicated "Multi-Agent Orchestration" meta box:
+
+- **Visual dropdown** for orchestration mode selection
+- **JSON editor** for workflow template definition with syntax validation
+- **Strategy selector** for result aggregation
+- **Helpful tooltips** explaining each option
+- **Validation** ensures JSON workflow templates are well-formed
+
+**Example Team Configuration:**
+
+```php
+// Creating a research team with sequential orchestration
+$team_id = wp_insert_post( array(
+    'post_type'   => 'mcp_ai_team',
+    'post_title'  => 'Research Team Alpha',
+    'post_status' => 'publish',
+) );
+
+// Configure orchestration
+update_post_meta( $team_id, '_wp_mcp_ai_team_orchestration_mode', 'sequential' );
+update_post_meta( $team_id, '_wp_mcp_ai_team_result_aggregation', 'hierarchical' );
+
+// Define workflow
+$workflow = array(
+    'workflow_name' => 'research_to_publication',
+    'steps'         => array(
+        array(
+            'step_id'    => '1',
+            'agent_role' => 'planner',
+            'action'     => 'create_research_plan',
+        ),
+        array(
+            'step_id'    => '2',
+            'agent_role' => 'executor',
+            'action'     => 'execute_research',
+            'depends_on' => array( '1' ),
+        ),
+        array(
+            'step_id'    => '3',
+            'agent_role' => 'critic',
+            'action'     => 'review_research',
+            'depends_on' => array( '2' ),
+        ),
+    ),
+);
+update_post_meta( $team_id, '_wp_mcp_ai_team_workflow_template', wp_json_encode( $workflow ) );
+
+// Add team members (profession IDs with assigned roles)
+update_post_meta( $team_id, '_wp_mcp_ai_team_members', array( 123, 456, 789 ) );
+```
+
+**Integration with Agent Team Orchestrator:**
+
+The Team CPT orchestration settings work seamlessly with the Agent Team Orchestrator service:
+
+```php
+// Orchestrator reads Team CPT configuration
+$team_orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+
+// Load team configuration from CPT
+$team_post_id = 42;
+$orchestration_mode = get_post_meta( $team_post_id, '_wp_mcp_ai_team_orchestration_mode', true );
+$workflow_template = get_post_meta( $team_post_id, '_wp_mcp_ai_team_workflow_template', true );
+$aggregation = get_post_meta( $team_post_id, '_wp_mcp_ai_team_result_aggregation', true );
+
+// Execute team with stored configuration
+$result = $team_orchestrator->execute_team_workflow(
+    array(
+        'team_id'           => $team_post_id,
+        'workflow'          => json_decode( $workflow_template, true )['steps'],
+        'orchestration_mode' => $orchestration_mode,
+        'aggregation_strategy' => $aggregation,
+    ),
+    $task,
+    $context
+);
+```
+
+**Benefits of Team CPT Integration:**
+
+1. **Persistent Team Configurations** - Save and reuse successful team workflows
+2. **Template Library** - Build library of proven workflow templates
+3. **Visual Management** - Configure complex orchestration through WordPress admin UI
+4. **Version Control** - Team configurations tracked via post revisions
+5. **Reusability** - Same team configuration deployed across multiple tasks
+6. **Governance** - Team approvals and reviews through WordPress editorial workflow
+
+**Files:**
+- `includes/teams/class-wp-mcp-ai-team-cpt.php` - Team CPT with orchestration meta boxes
+- `includes/repositories/class-wp-mcp-ai-team-repository.php` - Team data access layer
+- `includes/rest/class-wp-mcp-ai-rest-teams-controller.php` - REST API for teams
+
+**Related Documentation:**
+- See README.md [Professional & Team Layers](#professional--team-layers) for Team CPT overview
+- See DEEPSEEK-V4-USAGE-GUIDE.md for practical multi-agent workflow examples
+
 ### Example: Multi-Agent Research Workflow
 
 ```php
