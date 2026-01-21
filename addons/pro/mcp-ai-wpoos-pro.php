@@ -703,6 +703,43 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools                  = array_merge( $pro_tools, $multilingual_toolkit_tools );
 		}
 
+		// Add Financial Planner Toolkit tools if enabled (Phase 2.5 - New Pro Toolkits).
+		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
+			$financial_planner_toolkit_tools = array(
+				// Retirement Planning tools.
+				'WP_MCP_AI_Tool_Retirement_Calculator'       => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-retirement-calculator.php',
+				'WP_MCP_AI_Tool_IRA_Roth_Comparison'         => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-ira-roth-comparison.php',
+				'WP_MCP_AI_Tool_Withdrawal_Strategy_Planner' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-withdrawal-strategy-planner.php',
+				'WP_MCP_AI_Tool_Social_Security_Optimizer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-social-security-optimizer.php',
+				'WP_MCP_AI_Tool_Pension_Analyzer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-pension-analyzer.php',
+				// Budget & Expense Tracking tools.
+				'WP_MCP_AI_Tool_Budget_Planner'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-budget-planner.php',
+				'WP_MCP_AI_Tool_Expense_Tracker'             => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-expense-tracker.php',
+				'WP_MCP_AI_Tool_Net_Worth_Calculator'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php',
+				'WP_MCP_AI_Tool_Cash_Flow_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php',
+				'WP_MCP_AI_Tool_Bank_Account_Sync'           => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-bank-account-sync.php',
+				// Investment & Portfolio tools.
+				'WP_MCP_AI_Tool_Portfolio_Visualizer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-visualizer.php',
+				'WP_MCP_AI_Tool_Asset_Allocation_Planner'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-asset-allocation-planner.php',
+				'WP_MCP_AI_Tool_Investment_Return_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-investment-return-calculator.php',
+				'WP_MCP_AI_Tool_Rebalancing_Analyzer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-rebalancing-analyzer.php',
+				'WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-loss-harvesting-tracker.php',
+				// Debt & Loan Management tools.
+				'WP_MCP_AI_Tool_Debt_Payoff_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-debt-payoff-calculator.php',
+				'WP_MCP_AI_Tool_Mortgage_Calculator'         => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-mortgage-calculator.php',
+				'WP_MCP_AI_Tool_Credit_Score_Tracker'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-credit-score-tracker.php',
+				// Goal Planning & Savings tools.
+				'WP_MCP_AI_Tool_Savings_Goal_Planner'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-savings-goal-planner.php',
+				'WP_MCP_AI_Tool_Emergency_Fund_Calculator'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-emergency-fund-calculator.php',
+				// Financial Literacy tools.
+				'WP_MCP_AI_Tool_Financial_Health_Score'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-health-score.php',
+				'WP_MCP_AI_Tool_Tax_Estimator'               => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-estimator.php',
+				'WP_MCP_AI_Tool_College_Savings_Calculator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-college-savings-calculator.php',
+				'WP_MCP_AI_Tool_Insurance_Needs_Analyzer'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-insurance-needs-analyzer.php',
+			);
+			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
+		}
+
 		// Add Video Production Toolkit tools if enabled (Phase 6 - New Pro Toolkits).
 		if ( ! empty( $settings['enable_video_production_toolkit'] ) ) {
 			$video_production_toolkit_tools = array(
