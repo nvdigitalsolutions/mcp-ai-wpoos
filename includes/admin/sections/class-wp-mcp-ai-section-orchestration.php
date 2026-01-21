@@ -1173,13 +1173,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-dashboard"></span>
 			<?php esc_html_e( 'Overview', 'mcp-ai-wpoos' ); ?>
 </a>
-<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'settings' === $active_view ? 'active' : ''; ?>">
-<span class="dashicons dashicons-admin-settings"></span>
-			<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
-</a>
 <a href="<?php echo esc_url( $this->get_view_url( 'presets' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'presets' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-admin-generic"></span>
 			<?php esc_html_e( 'Presets', 'mcp-ai-wpoos' ); ?>
+</a>
+<a href="<?php echo esc_url( $this->get_view_url( 'settings' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'settings' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-admin-settings"></span>
+			<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
 </a>
 <a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'thresholds' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-performance"></span>
