@@ -244,27 +244,25 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		$statuses = $include_refunds ? array( 'wc-completed', 'wc-processing', 'wc-refunded' ) : array( 'wc-completed', 'wc-processing' );
 
-		// Sanitize status values for SQL.
-		$sanitized_statuses  = array_map( 'esc_sql', $statuses );
-		$status_placeholders = implode( "','", $sanitized_statuses );
-
-		$results = array();
+		// Prepare placeholders for IN clause.
+		$placeholders        = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
+		$results             = array();
 
 		// Revenue.
 		if ( in_array( 'revenue', $metrics, true ) ) {
 			$revenue = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 					"SELECT SUM(pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . $status_placeholders . "')
+					AND p.post_status IN ($placeholders)
 					AND pm.meta_key = '_order_total'
 					AND p.post_date >= %s
 					AND p.post_date <= %s",
-					$start_date . ' 00:00:00',
-					$end_date . ' 23:59:59'
+					// phpcs:enable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					array_merge( $statuses, array( $start_date . ' 00:00:00', $end_date . ' 23:59:59' ) )
 				)
 			);
 			$results['revenue'] = wc_format_decimal( $revenue ? $revenue : 0, 2 );
@@ -274,15 +272,15 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( in_array( 'orders', $metrics, true ) ) {
 			$orders_count = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 					"SELECT COUNT(DISTINCT p.ID) 
 					FROM {$wpdb->posts} p
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . $status_placeholders . "')
+					AND p.post_status IN ($placeholders)
 					AND p.post_date >= %s
 					AND p.post_date <= %s",
-					$start_date . ' 00:00:00',
-					$end_date . ' 23:59:59'
+					// phpcs:enable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					array_merge( $statuses, array( $start_date . ' 00:00:00', $end_date . ' 23:59:59' ) )
 				)
 			);
 			$results['orders'] = absint( $orders_count ? $orders_count : 0 );
@@ -292,18 +290,18 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( in_array( 'customers', $metrics, true ) ) {
 			$customers_count = $wpdb->get_var(
 				$wpdb->prepare(
-					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
+					// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 					"SELECT COUNT(DISTINCT pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . $status_placeholders . "')
+					AND p.post_status IN ($placeholders)
 					AND pm.meta_key = '_customer_user'
 					AND pm.meta_value > 0
 					AND p.post_date >= %s
 					AND p.post_date <= %s",
-					$start_date . ' 00:00:00',
-					$end_date . ' 23:59:59'
+					// phpcs:enable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+					array_merge( $statuses, array( $start_date . ' 00:00:00', $end_date . ' 23:59:59' ) )
 				)
 			);
 			$results['customers'] = absint( $customers_count ? $customers_count : 0 );
@@ -330,25 +328,24 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		$statuses = $include_refunds ? array( 'wc-completed', 'wc-processing', 'wc-refunded' ) : array( 'wc-completed', 'wc-processing' );
 
-		// Sanitize status values for SQL.
-		$sanitized_statuses  = array_map( 'esc_sql', $statuses );
-		$status_placeholders = implode( "','", $sanitized_statuses );
+		// Prepare placeholders for IN clause.
+		$placeholders = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
 
 		$daily_revenue = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
+				// phpcs:disable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 				"SELECT DATE(p.post_date) as date, SUM(pm.meta_value) as revenue, COUNT(DISTINCT p.ID) as orders
 				FROM {$wpdb->posts} p
 				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 				WHERE p.post_type = 'shop_order'
-				AND p.post_status IN ('" . $status_placeholders . "')
+				AND p.post_status IN ($placeholders)
 				AND pm.meta_key = '_order_total'
 				AND p.post_date >= %s
 				AND p.post_date <= %s
 				GROUP BY DATE(p.post_date)
 				ORDER BY date ASC",
-				$start_date . ' 00:00:00',
-				$end_date . ' 23:59:59'
+				// phpcs:enable WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				array_merge( $statuses, array( $start_date . ' 00:00:00', $end_date . ' 23:59:59' ) )
 			)
 		);
 
@@ -376,39 +373,43 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 	protected function get_top_products( $start_date, $end_date, $category_ids, $limit ) {
 		global $wpdb;
 
-		$category_filter = '';
+		// Prepare query parts.
+		$query = "SELECT 
+				oi.order_item_id,
+				oim_product.meta_value as product_id,
+				oim_qty.meta_value as quantity,
+				oim_total.meta_value as total,
+				p.post_title as product_name
+			FROM {$wpdb->prefix}woocommerce_order_items oi
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_product ON oi.order_item_id = oim_product.order_item_id AND oim_product.meta_key = '_product_id'
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_qty ON oi.order_item_id = oim_qty.order_item_id AND oim_qty.meta_key = '_qty'
+			INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_total ON oi.order_item_id = oim_total.order_item_id AND oim_total.meta_key = '_line_total'
+			INNER JOIN {$wpdb->posts} o ON oi.order_id = o.ID
+			INNER JOIN {$wpdb->posts} p ON oim_product.meta_value = p.ID
+			WHERE oi.order_item_type = 'line_item'
+			AND o.post_type = 'shop_order'
+			AND o.post_status IN ('wc-completed', 'wc-processing')
+			AND o.post_date >= %s
+			AND o.post_date <= %s";
+
+		$params = array( $start_date . ' 00:00:00', $end_date . ' 23:59:59' );
+
 		if ( ! empty( $category_ids ) ) {
-			$sanitized_categories = array_map( 'absint', $category_ids );
-			$category_filter      = ' AND tr.term_taxonomy_id IN (' . implode( ',', $sanitized_categories ) . ')';
+			$category_placeholders = implode( ', ', array_fill( 0, count( $category_ids ), '%d' ) );
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$query  .= " AND tr.term_taxonomy_id IN ($category_placeholders)";
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$params  = array_merge( $params, $category_ids );
 		}
+
+		$query  .= ' GROUP BY oim_product.meta_value ORDER BY SUM(oim_total.meta_value) DESC LIMIT %d';
+		$params[] = $limit;
 
 		$top_products = $wpdb->get_results(
 			$wpdb->prepare(
-				// phpcs:ignore WordPress.DB.PreparedSQL -- $category_filter is pre-sanitized with absint()
-				"SELECT 
-					oi.order_item_id,
-					oim_product.meta_value as product_id,
-					oim_qty.meta_value as quantity,
-					oim_total.meta_value as total,
-					p.post_title as product_name
-				FROM {$wpdb->prefix}woocommerce_order_items oi
-				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_product ON oi.order_item_id = oim_product.order_item_id AND oim_product.meta_key = '_product_id'
-				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_qty ON oi.order_item_id = oim_qty.order_item_id AND oim_qty.meta_key = '_qty'
-				INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta oim_total ON oi.order_item_id = oim_total.order_item_id AND oim_total.meta_key = '_line_total'
-				INNER JOIN {$wpdb->posts} o ON oi.order_id = o.ID
-				INNER JOIN {$wpdb->posts} p ON oim_product.meta_value = p.ID
-				WHERE oi.order_item_type = 'line_item'
-				AND o.post_type = 'shop_order'
-				AND o.post_status IN ('wc-completed', 'wc-processing')
-				AND o.post_date >= %s
-				AND o.post_date <= %s
-				" . $category_filter . '
-				GROUP BY oim_product.meta_value
-				ORDER BY SUM(oim_total.meta_value) DESC
-				LIMIT %d',
-				$start_date . ' 00:00:00',
-				$end_date . ' 23:59:59',
-				$limit
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$query,
+				$params
 			)
 		);
 

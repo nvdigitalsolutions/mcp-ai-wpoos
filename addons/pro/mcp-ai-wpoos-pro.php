@@ -200,7 +200,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Remote Connection Manager: Enables REST API connections to remote WordPress/WooCommerce sites.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-remote-connection.php';
 		// ERP Connector: Provides interface for ERP integrations (EZuite ERP, custom ERPs).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-erp-connector.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/interface-wp-mcp-ai-erp-connector.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-erp-ezuite.php';
 
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
