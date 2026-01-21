@@ -224,6 +224,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude 'addons/pro' \
         --exclude 'assets/examples' \
         --exclude 'assets/js/vendor/neplex-vectorizer' \
+        --exclude 'assets/csv-templates' \
+        --exclude 'examples' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
         --exclude 'vendor/*/Tests' \
@@ -426,6 +428,20 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'tests' \
             --exclude '*.zip' \
             --exclude 'assets/examples'
+        
+        # Copy examples and CSV templates from root to Pro (excluded from base)
+        if [ -d "examples" ]; then
+            rsync -av --quiet examples/ "build/${PRO_SLUG}/examples/" \
+                --exclude '.git'
+            echo "✓ Copied examples/ to Pro addon"
+        fi
+        
+        if [ -d "assets/csv-templates" ]; then
+            mkdir -p "build/${PRO_SLUG}/assets"
+            rsync -av --quiet assets/csv-templates/ "build/${PRO_SLUG}/assets/csv-templates/" \
+                --exclude '.git'
+            echo "✓ Copied assets/csv-templates/ to Pro addon"
+        fi
         
         # Add plugin header to mcp-ai-wpoos-pro.php for standalone Pro addon distribution
         # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
