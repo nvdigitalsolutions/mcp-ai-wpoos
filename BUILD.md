@@ -66,7 +66,7 @@ The repository is maintained in a **production-ready state** with only productio
 **Before committing changes to `vendor/`:**
 ```bash
 # Always run with --no-dev to keep the repository production-ready
-composer install --no-dev --prefer-dist --optimize-autoloader
+composer install --no-dev --prefer-dist --classmap-authoritative
 ```
 
 #### Production Dependencies
