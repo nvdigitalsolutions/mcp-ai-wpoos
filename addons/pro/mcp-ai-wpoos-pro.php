@@ -660,6 +660,72 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools                  = array_merge( $pro_tools, $social_media_toolkit_tools );
 		}
 
+		// Add Advanced Analytics Toolkit tools if enabled (Phase 4 - New Pro Toolkits).
+		if ( ! empty( $settings['enable_advanced_analytics_toolkit'] ) ) {
+			$analytics_toolkit_tools = array(
+				// Data Collection & Processing tools.
+				'WP_MCP_AI_Tool_Collect_Custom_Metrics'       => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-collect-custom-metrics.php',
+				'WP_MCP_AI_Tool_Data_Warehouse_Sync'          => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-data-warehouse-sync.php',
+				'WP_MCP_AI_Tool_Real_Time_Event_Tracking'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-real-time-event-tracking.php',
+				// Analytics & Reporting tools.
+				'WP_MCP_AI_Tool_Generate_Executive_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-generate-executive-dashboard.php',
+				'WP_MCP_AI_Tool_Cohort_Analysis'              => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-cohort-analysis.php',
+				'WP_MCP_AI_Tool_Funnel_Analysis'              => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-funnel-analysis.php',
+				'WP_MCP_AI_Tool_Attribution_Modeling'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-attribution-modeling.php',
+				// Predictive Analytics tools.
+				'WP_MCP_AI_Tool_Revenue_Forecast'             => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-revenue-forecast.php',
+				'WP_MCP_AI_Tool_Churn_Prediction'             => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-churn-prediction.php',
+				'WP_MCP_AI_Tool_Customer_Segmentation_ML'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-customer-segmentation-ml.php',
+				// Export & Integration tools.
+				'WP_MCP_AI_Tool_Export_Analytics_API'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-export-analytics-api.php',
+				'WP_MCP_AI_Tool_Create_Custom_Report'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-create-custom-report.php',
+			);
+			$pro_tools               = array_merge( $pro_tools, $analytics_toolkit_tools );
+		}
+
+		// Add Multi-language Content Toolkit tools if enabled (Phase 5 - New Pro Toolkits).
+		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
+			$multilingual_toolkit_tools = array(
+				// Translation Management tools.
+				'WP_MCP_AI_Tool_Auto_Translate_Content'       => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-auto-translate-content.php',
+				'WP_MCP_AI_Tool_Translate_WooCommerce_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translate-woocommerce-products.php',
+				'WP_MCP_AI_Tool_Translation_Memory_Search'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-memory-search.php',
+				'WP_MCP_AI_Tool_Export_Import_Translations'   => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-export-import-translations.php',
+				// Localization tools.
+				'WP_MCP_AI_Tool_Detect_Content_Language'      => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-detect-content-language.php',
+				'WP_MCP_AI_Tool_Localize_Dates_Currencies'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-localize-dates-currencies.php',
+				'WP_MCP_AI_Tool_RTL_Content_Optimization'     => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-rtl-content-optimization.php',
+				// Quality Assurance tools.
+				'WP_MCP_AI_Tool_Translation_Quality_Check'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-quality-check.php',
+				'WP_MCP_AI_Tool_Find_Untranslated_Strings'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-find-untranslated-strings.php',
+				'WP_MCP_AI_Tool_Multilingual_SEO_Audit'       => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-multilingual-seo-audit.php',
+			);
+			$pro_tools                  = array_merge( $pro_tools, $multilingual_toolkit_tools );
+		}
+
+		// Add Video Production Toolkit tools if enabled (Phase 6 - New Pro Toolkits).
+		if ( ! empty( $settings['enable_video_production_toolkit'] ) ) {
+			$video_production_toolkit_tools = array(
+				// Video Creation tools.
+				'WP_MCP_AI_Tool_Create_Video_From_Images'  => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-create-video-from-images.php',
+				'WP_MCP_AI_Tool_Add_Watermark_To_Video'    => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-add-watermark-to-video.php',
+				'WP_MCP_AI_Tool_Generate_Video_Captions'   => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-generate-video-captions.php',
+				'WP_MCP_AI_Tool_Merge_Videos'              => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-merge-videos.php',
+				// Video Editing tools.
+				'WP_MCP_AI_Tool_Trim_Video'                => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-trim-video.php',
+				'WP_MCP_AI_Tool_Resize_Video_Resolution'   => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-resize-video-resolution.php',
+				'WP_MCP_AI_Tool_Adjust_Video_Speed'        => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-adjust-video-speed.php',
+				// Video Optimization tools.
+				'WP_MCP_AI_Tool_Compress_Video'            => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-compress-video.php',
+				'WP_MCP_AI_Tool_Convert_Video_Format'      => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-convert-video-format.php',
+				'WP_MCP_AI_Tool_Optimize_For_Platform'     => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-optimize-for-platform.php',
+				// Video Analysis tools.
+				'WP_MCP_AI_Tool_Extract_Video_Metadata'    => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-extract-video-metadata.php',
+				'WP_MCP_AI_Tool_Generate_Video_Thumbnails' => WP_MCP_AI_PRO_PATH . 'includes/tools/video-production/class-wp-mcp-ai-tool-generate-video-thumbnails.php',
+			);
+			$pro_tools                      = array_merge( $pro_tools, $video_production_toolkit_tools );
+		}
+
 		// Add Document Generation Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			$document_generation_tools = array(
