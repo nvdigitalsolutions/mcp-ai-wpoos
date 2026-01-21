@@ -602,7 +602,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Import_Products_CSV'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
 				'WP_MCP_AI_Tool_Export_Products_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
 				// Order Management tools.
-				'WP_MCP_AI_Tool_Generate_Invoice_PDF'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+				'WP_MCP_AI_Tool_Generate_Invoice_PDF'          => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+				'WP_MCP_AI_Tool_Bulk_Order_Status_Update'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-order-status-update.php',
+				'WP_MCP_AI_Tool_Get_Order_Analytics'           => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
+				// Customer Management tools.
+				'WP_MCP_AI_Tool_Segment_Customers'             => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-segment-customers.php',
+				// Marketing & Sales tools.
+				'WP_MCP_AI_Tool_Create_Discount_Campaign'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-discount-campaign.php',
 			);
 			$pro_tools                   = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
