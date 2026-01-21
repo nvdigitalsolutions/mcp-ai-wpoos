@@ -1922,6 +1922,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Settings fields: enable/disable toggles, cron retention, and async execution settings.
 			$settings_fields = array(
+				'configuration_presets',       // Configuration presets selector.
+				'orchestration_preset',        // Hidden field for active preset.
 				'enable_budget_management',
 				'enable_predictive_optimization',
 				'enable_capability_gating',
