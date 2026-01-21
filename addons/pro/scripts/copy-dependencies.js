@@ -168,7 +168,8 @@ const dependencies = [
 	{
 		name: 'stripe',
 		dirs: [
-			{ src: 'lib', dest: 'stripe/lib' },
+			{ src: 'cjs', dest: 'stripe/cjs' },
+			{ src: 'esm', dest: 'stripe/esm' },
 		],
 		files: [
 			{ src: 'package.json', dest: 'stripe/package.json' },
@@ -268,22 +269,21 @@ const dependencies = [
 		name: 'franc',
 		files: [
 			{ src: 'index.js', dest: 'franc/index.js' },
-			{ src: 'data', dest: 'franc/data', isDir: true },
 			{ src: 'package.json', dest: 'franc/package.json' },
 		],
 	},
 	{
 		name: 'google-translate-api-x',
 		files: [
-			{ src: 'dist', dest: 'google-translate-api-x/dist', isDir: true },
+			{ src: 'index.cjs', dest: 'google-translate-api-x/index.cjs' },
+			{ src: 'lib', dest: 'google-translate-api-x/lib', isDir: true },
 			{ src: 'package.json', dest: 'google-translate-api-x/package.json' },
 		],
 	},
 	{
 		name: 'iso-639-1',
 		files: [
-			{ src: 'index.js', dest: 'iso-639-1/index.js' },
-			{ src: 'data', dest: 'iso-639-1/data', isDir: true },
+			{ src: 'build/index.js', dest: 'iso-639-1/index.js' },
 			{ src: 'package.json', dest: 'iso-639-1/package.json' },
 		],
 	},
@@ -320,7 +320,6 @@ const dependencies = [
 		name: 'subtitle',
 		files: [
 			{ src: 'index.js', dest: 'subtitle/index.js' },
-			{ src: 'lib', dest: 'subtitle/lib', isDir: true },
 			{ src: 'package.json', dest: 'subtitle/package.json' },
 		],
 	},

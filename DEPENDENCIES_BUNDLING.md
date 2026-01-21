@@ -45,18 +45,38 @@ Located in `addons/pro/package.json`:
 ```json
 {
   "dependencies": {
-    "@turf/turf": "^7.3.2",        // Geospatial analysis
-    "@types/pdfkit": "^0.17.4",    // TypeScript types
-    "chart.js": "^4.4.7",          // Charts (also in base)
-    "docx": "^9.5.1",              // Word document generation
-    "exceljs": "^4.4.0",           // Excel generation
-    "fluent-ffmpeg": "^2.1.3",     // Video processing
-    "ics": "^3.8.1",               // Calendar export
-    "katex": "^0.16.11",           // Math rendering
-    "mjml": "^4.18.0",             // Email templates
-    "pdfkit": "^0.17.2",           // PDF generation
-    "prettier": "^3.4.2",          // Code formatting
-    "sharp": "^0.33.5"             // Image processing
+    "@turf/turf": "^7.3.2",                       // Geospatial analysis
+    "@types/pdfkit": "^0.17.4",                   // TypeScript types
+    "@woocommerce/woocommerce-rest-api": "^1.0.1", // E-commerce API
+    "axios": "^1.6.5",                            // HTTP client
+    "chart.js": "^4.4.7",                         // Charts (also in base)
+    "currency.js": "^2.0.4",                      // Currency formatting
+    "d3": "^7.8.5",                               // Data visualization
+    "docx": "^9.5.1",                             // Word document generation
+    "exceljs": "^4.4.0",                          // Excel generation
+    "facebook-nodejs-business-sdk": "^24.0.1",    // Facebook API
+    "fast-csv": "^5.0.0",                         // CSV processing
+    "ffmpeg-static": "^5.2.0",                    // Video processing
+    "ffprobe-static": "^3.1.0",                   // Video metadata
+    "fluent-ffmpeg": "^2.1.3",                    // Video processing wrapper
+    "franc": "^6.1.0",                            // Language detection
+    "gif-encoder": "^0.7.2",                      // GIF creation
+    "google-translate-api-x": "^10.7.0",          // Translation
+    "i18next": "^23.7.0",                         // i18n framework
+    "ics": "^3.8.1",                              // Calendar export
+    "iso-639-1": "^3.1.0",                        // Language codes
+    "katex": "^0.16.11",                          // Math rendering
+    "linkedin-api-client": "^0.3.0",              // LinkedIn API
+    "mathjs": "^12.3.0",                          // Math library
+    "mjml": "^4.18.0",                            // Email templates
+    "pdfkit": "^0.17.2",                          // PDF generation
+    "prettier": "^3.4.2",                         // Code formatting
+    "regression": "^2.0.1",                       // Statistical regression
+    "sharp": "^0.33.5",                           // Image processing
+    "stripe": "^14.0.0",                          // Payment processing
+    "subtitle": "^3.0.0",                         // Subtitle files
+    "twitter-api-v2": "^1.15.2",                  // Twitter API
+    "video-stitch": "^1.7.1"                      // Video stitching
   }
 }
 ```
@@ -85,6 +105,9 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
+All 27 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+
+**Core Toolkits:**
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | @turf/turf | 53.2 KB | dist/ (cjs & esm) |
@@ -94,8 +117,48 @@ node scripts/copy-dependencies.js
 | prettier | 99.3 KB | standalone.js, parsers |
 | mjml | 1.8 KB | lib/ |
 | fluent-ffmpeg | 111.4 KB | index.js, lib/ |
+| ffmpeg-static | 2.4 KB | index.js |
+| ffprobe-static | 1016 B | index.js |
 
-**Total**: 3.4 MB
+**E-commerce Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| @woocommerce/woocommerce-rest-api | 2.1 KB | dist/index.js |
+| stripe | 2.9 KB | lib/ |
+| currency.js | 5.4 KB | dist/currency.min.js |
+
+**Social Media Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| twitter-api-v2 | 979.6 KB | dist/ |
+| axios | 1.8 MB | dist/, index.js |
+| facebook-nodejs-business-sdk | 27.4 MB | dist/ |
+| linkedin-api-client | 145.3 KB | dist/ |
+
+**Analytics Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| d3 | 848.6 KB | dist/ |
+| mathjs | 8.9 MB | lib/ |
+| regression | 8.3 KB | dist/regression.min.js |
+| fast-csv | 4.7 KB | build/ |
+
+**Multilingual Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| i18next | 404.9 KB | dist/ |
+| franc | 9.8 KB | index.js, data/ |
+| google-translate-api-x | 1.6 KB | dist/ |
+| iso-639-1 | 869 B | index.js, data/ |
+
+**Video Production Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| gif-encoder | 42.3 KB | lib/ |
+| video-stitch | 803 B | dist/index.js |
+| subtitle | 1.2 KB | index.js, lib/ |
+
+**Total**: ~43.9 MB (27 packages)
 
 #### Special Cases
 
