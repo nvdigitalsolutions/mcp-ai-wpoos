@@ -124,7 +124,7 @@ All 27 Pro addon packages are automatically copied from `node_modules` to `asset
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | @woocommerce/woocommerce-rest-api | 2.1 KB | dist/index.js |
-| stripe | 2.9 KB | lib/ |
+| stripe | 422.0 KB | cjs/, esm/ |
 | currency.js | 5.4 KB | dist/currency.min.js |
 
 **Social Media Toolkit:**
@@ -147,18 +147,18 @@ All 27 Pro addon packages are automatically copied from `node_modules` to `asset
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | i18next | 404.9 KB | dist/ |
-| franc | 9.8 KB | index.js, data/ |
-| google-translate-api-x | 1.6 KB | dist/ |
-| iso-639-1 | 869 B | index.js, data/ |
+| franc | 9.8 KB | index.js |
+| google-translate-api-x | 23.3 KB | index.cjs, lib/ |
+| iso-639-1 | 10.0 KB | build/index.js |
 
 **Video Production Toolkit:**
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | gif-encoder | 42.3 KB | lib/ |
 | video-stitch | 803 B | dist/index.js |
-| subtitle | 1.2 KB | index.js, lib/ |
+| subtitle | 1.2 KB | index.js |
 
-**Total**: ~43.9 MB (27 packages)
+**Total**: ~44.3 MB (27 packages)
 
 #### Special Cases
 

@@ -109,6 +109,14 @@ const dependencies = [
 		],
 	},
 	{
+		name: 'chart.js',
+		files: [
+			{ src: 'dist/chart.umd.js', dest: 'chart.js/chart.umd.js' },
+			{ src: 'dist/chart.umd.min.js', dest: 'chart.js/chart.umd.min.js' },
+			{ src: 'package.json', dest: 'chart.js/package.json' },
+		],
+	},
+	{
 		name: 'ics',
 		files: [
 			{ src: 'dist/index.js', dest: 'ics/index.js' },
