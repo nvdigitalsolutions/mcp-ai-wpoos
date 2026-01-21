@@ -1177,6 +1177,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 <span class="dashicons dashicons-admin-settings"></span>
 			<?php esc_html_e( 'Settings', 'mcp-ai-wpoos' ); ?>
 </a>
+<a href="<?php echo esc_url( $this->get_view_url( 'presets' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'presets' === $active_view ? 'active' : ''; ?>">
+<span class="dashicons dashicons-admin-generic"></span>
+			<?php esc_html_e( 'Presets', 'mcp-ai-wpoos' ); ?>
+</a>
 <a href="<?php echo esc_url( $this->get_view_url( 'thresholds' ) ); ?>" class="wp-mcp-ai-orchestration__nav-item <?php echo 'thresholds' === $active_view ? 'active' : ''; ?>">
 <span class="dashicons dashicons-performance"></span>
 			<?php esc_html_e( 'Thresholds', 'mcp-ai-wpoos' ); ?>
@@ -1230,6 +1234,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			switch ( $active_view ) {
 				case 'settings':
 					$this->render_settings_view();
+					break;
+				case 'presets':
+					$this->render_presets_view();
 					break;
 				case 'thresholds':
 					$this->render_thresholds_view();
@@ -1349,19 +1356,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					</div>
 				</div>
-
-				<!-- Configuration Presets Section -->
-				<?php
-				$fields = $this->get_fields();
-				if ( isset( $fields['configuration_presets'] ) ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in get_presets_content method.
-					echo $fields['configuration_presets']['content'];
-				}
-				if ( isset( $fields['orchestration_preset'] ) ) {
-					// Render hidden field for preset tracking.
-					echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'auto' ) ) . '" />';
-				}
-				?>
 
 				<!-- Executive Metrics Grid -->
 				<div class="executive-metrics-grid">
@@ -1974,6 +1968,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				}
 			}
 			echo '</table>';
+		}
+
+		/**
+		 * Render presets view.
+		 */
+		private function render_presets_view() {
+			$fields = $this->get_fields();
+
+			echo '<div class="wp-mcp-ai-presets-view">';
+			echo '<h3>' . esc_html__( 'Orchestration Configuration Presets', 'mcp-ai-wpoos' ) . '</h3>';
+			echo '<p class="description">' . esc_html__( 'Choose a preset configuration optimized for your expected usage pattern. Presets automatically configure context window limits, health monitoring thresholds, budget allocation, and predictive settings across all AI providers.', 'mcp-ai-wpoos' ) . '</p>';
+
+			// Render presets selector.
+			if ( isset( $fields['configuration_presets'] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in get_presets_content method.
+				echo $fields['configuration_presets']['content'];
+			}
+
+			// Render hidden field for preset tracking.
+			if ( isset( $fields['orchestration_preset'] ) ) {
+				$current_preset = WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'auto' );
+				echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( $current_preset ) . '" />';
+			}
+
+			echo '</div>';
 		}
 
 		/**
