@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Preset Settings Preview - Visual Test</title>
+	<style>
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+			padding: 20px;
+			background: #f0f0f1;
+			max-width: 1200px;
+			margin: 0 auto;
+		}
+
+		h1 {
+			color: #1d2327;
+			margin-bottom: 10px;
+		}
+
+		.description {
+			color: #646970;
+			margin-bottom: 30px;
+		}
+
+		/* Preset Grid */
+		.wp-mcp-ai-presets-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+			gap: 16px;
+			margin: 20px 0;
+		}
+
+		/* Preset Card Styles (from settings-dashboard.css) */
+		.preset-card {
+			background: #fff;
+			border: 2px solid #dcdcde;
+			border-radius: 6px;
+			padding: 12px;
+			transition: all 0.15s ease;
+			cursor: pointer;
+			position: relative;
+		}
+
+		.preset-card:hover {
+			border-color: #2271b1;
+			box-shadow: 0 2px 6px rgba(34, 113, 177, 0.12);
+			transform: translateY(-1px);
+		}
+
+		.preset-card.active {
+			border-color: #00a32a;
+			border-width: 3px;
+			background: linear-gradient(135deg, #f0f9f1 0%, #f6f9f7 100%);
+			box-shadow: 0 3px 10px rgba(0, 163, 42, 0.15);
+			padding: 11px;
+		}
+
+		.preset-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 8px;
+			gap: 8px;
+		}
+
+		.preset-header h4 {
+			margin: 0;
+			font-size: 14px;
+			font-weight: 600;
+			color: #1d2327;
+			line-height: 1.4;
+		}
+
+		.preset-card.active .preset-header h4 {
+			color: #00a32a;
+			font-weight: 700;
+		}
+
+		.preset-badge {
+			display: inline-block;
+			padding: 2px 6px;
+			font-size: 9px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.3px;
+			border-radius: 3px;
+			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		.preset-badge.recommended {
+			background: #2271b1;
+			color: #fff;
+		}
+
+		.preset-description {
+			margin: 8px 0;
+			font-size: 12px;
+			color: #646970;
+			line-height: 1.5;
+		}
+
+		/* NEW: Settings Preview Styles */
+		.preset-settings-preview {
+			margin: 12px 0;
+			padding: 10px;
+			background: #f8f9fa;
+			border: 1px solid #e5e5e5;
+			border-radius: 4px;
+		}
+
+		.preset-setting-item {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			margin: 6px 0;
+			font-size: 12px;
+			line-height: 1.4;
+		}
+
+		.preset-setting-item:first-child {
+			margin-top: 0;
+		}
+
+		.preset-setting-item:last-child {
+			margin-bottom: 0;
+		}
+
+		.preset-setting-icon {
+			color: #2271b1;
+			font-size: 14px;
+			width: 14px;
+			height: 14px;
+			flex-shrink: 0;
+		}
+
+		.preset-setting-label {
+			color: #646970;
+			font-weight: 500;
+			flex-shrink: 0;
+		}
+
+		.preset-setting-value {
+			color: #1d2327;
+			font-weight: 600;
+			margin-left: auto;
+			text-align: right;
+		}
+
+		.preset-card.active .preset-settings-preview {
+			background: #ffffff;
+			border-color: #00a32a;
+		}
+
+		.preset-card.active .preset-setting-icon {
+			color: #00a32a;
+		}
+
+		.preset-card.active .preset-setting-value {
+			color: #00a32a;
+		}
+
+		.preset-status {
+			margin-top: 8px;
+			padding: 8px;
+			background: linear-gradient(135deg, #00a32a 0%, #00d932 100%);
+			color: #fff;
+			text-align: center;
+			border-radius: 4px;
+			font-weight: 700;
+			font-size: 13px;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			box-shadow: 0 2px 4px rgba(0, 163, 42, 0.2);
+		}
+
+		button.apply-preset {
+			width: 100%;
+			margin-top: 8px;
+			padding: 8px 12px;
+			font-size: 13px;
+			background: #2271b1;
+			color: white;
+			border: none;
+			border-radius: 3px;
+			cursor: pointer;
+			transition: background 0.2s;
+		}
+
+		button.apply-preset:hover {
+			background: #135e96;
+		}
+
+		/* Dashicons simulation */
+		.dashicons::before {
+			font-family: dashicons;
+			display: inline-block;
+			font-size: inherit;
+			line-height: 1;
+		}
+
+		.dashicons-chart-bar::before { content: '📊'; }
+		.dashicons-admin-tools::before { content: '⚙️'; }
+		.dashicons-warning::before { content: '⚠️'; }
+
+		.comparison {
+			margin-top: 40px;
+			padding: 20px;
+			background: white;
+			border-radius: 6px;
+		}
+
+		.comparison h2 {
+			color: #1d2327;
+			border-bottom: 2px solid #2271b1;
+			padding-bottom: 10px;
+			margin-bottom: 20px;
+		}
+
+		.comparison-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+
+		.comparison-item h3 {
+			color: #646970;
+			font-size: 14px;
+			margin-bottom: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Preset Settings Preview - Visual Test</h1>
+	<p class="description">This shows how preset cards now display key settings (token limits, thresholds) directly on each card.</p>
+
+	<div class="comparison">
+		<h2>Before & After Comparison</h2>
+		<div class="comparison-grid">
+			<div class="comparison-item">
+				<h3>❌ Before (No Settings Preview)</h3>
+				<div class="wp-mcp-ai-presets-grid">
+					<div class="preset-card">
+						<div class="preset-header">
+							<h4>Balanced</h4>
+							<span class="preset-badge recommended">RECOMMENDED</span>
+						</div>
+						<p class="preset-description">
+							Modern balanced settings for production sites with moderate traffic.
+						</p>
+						<button type="button" class="apply-preset">Apply</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="comparison-item">
+				<h3>✅ After (With Settings Preview)</h3>
+				<div class="wp-mcp-ai-presets-grid">
+					<div class="preset-card">
+						<div class="preset-header">
+							<h4>Balanced</h4>
+							<span class="preset-badge recommended">RECOMMENDED</span>
+						</div>
+						<p class="preset-description">
+							Modern balanced settings for production sites with moderate traffic.
+						</p>
+						<div class="preset-settings-preview">
+							<div class="preset-setting-item">
+								<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+								<span class="preset-setting-label">Context Window:</span>
+								<span class="preset-setting-value">32,000 tokens</span>
+							</div>
+							<div class="preset-setting-item">
+								<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+								<span class="preset-setting-label">Per-Call Limit:</span>
+								<span class="preset-setting-value">10,000 tokens</span>
+							</div>
+							<div class="preset-setting-item">
+								<span class="preset-setting-icon dashicons dashicons-warning"></span>
+								<span class="preset-setting-label">Memory Threshold:</span>
+								<span class="preset-setting-value">85%</span>
+							</div>
+						</div>
+						<button type="button" class="apply-preset">Apply</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<h2 style="margin-top: 40px;">All Presets with Settings Preview</h2>
+	<div class="wp-mcp-ai-presets-grid">
+		<!-- Auto Preset (Active) -->
+		<div class="preset-card active">
+			<div class="preset-header">
+				<h4>Auto</h4>
+				<span class="preset-badge recommended">RECOMMENDED</span>
+			</div>
+			<p class="preset-description">
+				Auto-detected: Balanced configuration based on your server capabilities.
+			</p>
+			<div class="preset-settings-preview">
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+					<span class="preset-setting-label">Context Window:</span>
+					<span class="preset-setting-value">32,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+					<span class="preset-setting-label">Per-Call Limit:</span>
+					<span class="preset-setting-value">10,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-warning"></span>
+					<span class="preset-setting-label">Memory Threshold:</span>
+					<span class="preset-setting-value">85%</span>
+				</div>
+			</div>
+			<div class="preset-status">Active</div>
+		</div>
+
+		<!-- Balanced Preset -->
+		<div class="preset-card">
+			<div class="preset-header">
+				<h4>Balanced</h4>
+			</div>
+			<p class="preset-description">
+				Modern balanced settings for production sites with moderate traffic.
+			</p>
+			<div class="preset-settings-preview">
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+					<span class="preset-setting-label">Context Window:</span>
+					<span class="preset-setting-value">32,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+					<span class="preset-setting-label">Per-Call Limit:</span>
+					<span class="preset-setting-value">10,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-warning"></span>
+					<span class="preset-setting-label">Memory Threshold:</span>
+					<span class="preset-setting-value">85%</span>
+				</div>
+			</div>
+			<button type="button" class="apply-preset">Apply</button>
+		</div>
+
+		<!-- Conservative Preset -->
+		<div class="preset-card">
+			<div class="preset-header">
+				<h4>Conservative</h4>
+			</div>
+			<p class="preset-description">
+				Lightweight limits for resource-constrained environments or shared hosting.
+			</p>
+			<div class="preset-settings-preview">
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+					<span class="preset-setting-label">Context Window:</span>
+					<span class="preset-setting-value">16,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+					<span class="preset-setting-label">Per-Call Limit:</span>
+					<span class="preset-setting-value">5,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-warning"></span>
+					<span class="preset-setting-label">Memory Threshold:</span>
+					<span class="preset-setting-value">75%</span>
+				</div>
+			</div>
+			<button type="button" class="apply-preset">Apply</button>
+		</div>
+
+		<!-- Performance Preset -->
+		<div class="preset-card">
+			<div class="preset-header">
+				<h4>Performance</h4>
+			</div>
+			<p class="preset-description">
+				High-performance settings for dedicated servers with ample resources.
+			</p>
+			<div class="preset-settings-preview">
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+					<span class="preset-setting-label">Context Window:</span>
+					<span class="preset-setting-value">64,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+					<span class="preset-setting-label">Per-Call Limit:</span>
+					<span class="preset-setting-value">25,000 tokens</span>
+				</div>
+				<div class="preset-setting-item">
+					<span class="preset-setting-icon dashicons dashicons-warning"></span>
+					<span class="preset-setting-label">Memory Threshold:</span>
+					<span class="preset-setting-value">90%</span>
+				</div>
+			</div>
+			<button type="button" class="apply-preset">Apply</button>
+		</div>
+
+		<!-- Custom Preset (No Settings) -->
+		<div class="preset-card">
+			<div class="preset-header">
+				<h4>Custom</h4>
+			</div>
+			<p class="preset-description">
+				Your current customized settings.
+			</p>
+			<!-- No settings preview for custom preset -->
+			<button type="button" class="apply-preset">Apply</button>
+		</div>
+	</div>
+
+	<div style="margin-top: 40px; padding: 20px; background: #e7f5ff; border-left: 4px solid #2271b1; border-radius: 4px;">
+		<h3 style="margin-top: 0; color: #0c5aa7;">✨ Key Improvements</h3>
+		<ul style="color: #1d2327; line-height: 1.8;">
+			<li><strong>Token Visibility:</strong> Users can now see the exact token limits (e.g., 16,000, 32,000, 64,000) before applying a preset</li>
+			<li><strong>Per-Call Limits:</strong> Displays the per-call token limit to understand request constraints</li>
+			<li><strong>Memory Thresholds:</strong> Shows the memory critical threshold percentage for each preset</li>
+			<li><strong>Visual Indicators:</strong> Uses dashicons to make settings quickly scannable</li>
+			<li><strong>Active State:</strong> Active preset highlights settings with green accent color</li>
+		</ul>
+	</div>
+</body>
+</html>

@@ -172,6 +172,45 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 								<p class="preset-description">
 									<?php echo esc_html( isset( $preset_config['description'] ) ? $preset_config['description'] : '' ); ?>
 								</p>
+								<?php
+								// Display key settings for this preset.
+								if ( ! empty( $preset_config['settings'] ) ) :
+									$settings = $preset_config['settings'];
+									?>
+									<div class="preset-settings-preview">
+										<?php if ( isset( $settings['high_tier_max_tokens'] ) ) : ?>
+											<div class="preset-setting-item">
+												<span class="preset-setting-icon dashicons dashicons-chart-bar"></span>
+												<span class="preset-setting-label"><?php esc_html_e( 'Context Window:', 'mcp-ai-wpoos' ); ?></span>
+												<span class="preset-setting-value">
+													<?php
+													/* translators: %s: formatted token count */
+													printf( esc_html__( '%s tokens', 'mcp-ai-wpoos' ), esc_html( number_format( $settings['high_tier_max_tokens'] ) ) );
+													?>
+												</span>
+											</div>
+										<?php endif; ?>
+										<?php if ( isset( $settings['per_call_token_limit'] ) ) : ?>
+											<div class="preset-setting-item">
+												<span class="preset-setting-icon dashicons dashicons-admin-tools"></span>
+												<span class="preset-setting-label"><?php esc_html_e( 'Per-Call Limit:', 'mcp-ai-wpoos' ); ?></span>
+												<span class="preset-setting-value">
+													<?php
+													/* translators: %s: formatted token count */
+													printf( esc_html__( '%s tokens', 'mcp-ai-wpoos' ), esc_html( number_format( $settings['per_call_token_limit'] ) ) );
+													?>
+												</span>
+											</div>
+										<?php endif; ?>
+										<?php if ( isset( $settings['memory_critical_threshold'] ) ) : ?>
+											<div class="preset-setting-item">
+												<span class="preset-setting-icon dashicons dashicons-warning"></span>
+												<span class="preset-setting-label"><?php esc_html_e( 'Memory Threshold:', 'mcp-ai-wpoos' ); ?></span>
+												<span class="preset-setting-value"><?php echo esc_html( $settings['memory_critical_threshold'] ); ?>%</span>
+											</div>
+										<?php endif; ?>
+									</div>
+								<?php endif; ?>
 								<?php if ( $is_active ) : ?>
 									<div class="preset-status"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
 								<?php else : ?>

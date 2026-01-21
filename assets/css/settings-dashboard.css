@@ -875,6 +875,65 @@
 	line-height: 1.5;
 }
 
+.preset-settings-preview {
+	margin: 12px 0;
+	padding: 10px;
+	background: #f8f9fa;
+	border: 1px solid #e5e5e5;
+	border-radius: 4px;
+}
+
+.preset-setting-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 6px 0;
+	font-size: 12px;
+	line-height: 1.4;
+}
+
+.preset-setting-item:first-child {
+	margin-top: 0;
+}
+
+.preset-setting-item:last-child {
+	margin-bottom: 0;
+}
+
+.preset-setting-icon {
+	color: #2271b1;
+	font-size: 14px;
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+}
+
+.preset-setting-label {
+	color: #646970;
+	font-weight: 500;
+	flex-shrink: 0;
+}
+
+.preset-setting-value {
+	color: #1d2327;
+	font-weight: 600;
+	margin-left: auto;
+	text-align: right;
+}
+
+.preset-card.active .preset-settings-preview {
+	background: #ffffff;
+	border-color: #00a32a;
+}
+
+.preset-card.active .preset-setting-icon {
+	color: #00a32a;
+}
+
+.preset-card.active .preset-setting-value {
+	color: #00a32a;
+}
+
 .preset-status {
 	margin-top: 8px;
 	padding: 8px;
