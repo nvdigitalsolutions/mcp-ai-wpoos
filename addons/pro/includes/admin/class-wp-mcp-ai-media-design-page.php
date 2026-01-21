@@ -35,6 +35,7 @@ class WP_MCP_AI_Media_Design_Page {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
+		add_action( 'admin_head', array( __CLASS__, 'admin_head_styles' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_media_from_design', array( __CLASS__, 'handle_create_from_design' ) );
 	}
 
@@ -106,6 +107,32 @@ class WP_MCP_AI_Media_Design_Page {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Output inline styles for admin menu highlighting.
+	 */
+	public static function admin_head_styles() {
+		$screen = get_current_screen();
+		
+		// Only output on our design page.
+		if ( ! $screen || 'media_page_' . self::PAGE_SLUG !== $screen->id ) {
+			return;
+		}
+
+		?>
+		<style>
+			/* Ensure proper admin menu highlighting for Media > Design & Add */
+			#adminmenu #menu-media .wp-submenu li.current a,
+			#adminmenu #menu-media .wp-submenu li.current {
+				color: #fff;
+			}
+			/* Fix for design page layout */
+			.wp-mcp-ai-research-page .wrap {
+				margin: 0;
+			}
+		</style>
+		<?php
 	}
 
 	/**
