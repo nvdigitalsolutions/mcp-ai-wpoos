@@ -1224,9 +1224,16 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get limits, multipliers, and model preferences from request.
-			$limits            = isset( $_POST['limits'] ) ? (array) wp_unslash( $_POST['limits'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$multipliers       = isset( $_POST['multipliers'] ) ? (array) wp_unslash( $_POST['multipliers'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$model_preferences = isset( $_POST['model_preferences'] ) ? (array) wp_unslash( $_POST['model_preferences'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitization handled by setter methods.
+			$limits            = isset( $_POST['limits'] ) ? wp_unslash( $_POST['limits'] ) : array();
+			$multipliers       = isset( $_POST['multipliers'] ) ? wp_unslash( $_POST['multipliers'] ) : array();
+			$model_preferences = isset( $_POST['model_preferences'] ) ? wp_unslash( $_POST['model_preferences'] ) : array();
+			// phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( ! is_array( $limits ) || ! is_array( $multipliers ) || ! is_array( $model_preferences ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid data format.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
 
 			if ( empty( $limits ) && empty( $multipliers ) && empty( $model_preferences ) ) {
 				wp_send_json_error( array( 'message' => __( 'No limits, multipliers, or model preferences provided.', 'mcp-ai-wpoos' ) ) );
@@ -1236,6 +1243,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			$changed_count = 0;
 
 			// Check if any limits have actually changed.
+			// Note: We sanitize here only for comparison, not for saving.
+			// The setter methods will do final sanitization.
 			foreach ( $limits as $tool_slug => $limit ) {
 				$tool_slug     = sanitize_key( $tool_slug );
 				$limit         = absint( $limit );
@@ -1281,40 +1290,26 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Sanitize and save each limit.
+			// Save each limit.
+			// Note: Setter methods handle sanitization, so we pass unsanitized data directly.
 			$saved_count = 0;
 			foreach ( $limits as $tool_slug => $limit ) {
-				$tool_slug = sanitize_key( $tool_slug );
-				$limit     = absint( $limit );
-
-				if ( '' !== $tool_slug ) {
-					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_limit( $tool_slug, $limit ) ) {
-						++$saved_count;
-					}
+				if ( WP_MCP_AI_Tool_Token_Limits::set_tool_limit( $tool_slug, $limit ) ) {
+					++$saved_count;
 				}
 			}
 
 			// Save each multiplier.
 			foreach ( $multipliers as $tool_slug => $multiplier ) {
-				$tool_slug  = sanitize_key( $tool_slug );
-				$multiplier = (float) $multiplier;
-
-				if ( '' !== $tool_slug && $multiplier >= 0.1 && $multiplier <= 10 ) {
-					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier ) ) {
-						++$saved_count;
-					}
+				if ( WP_MCP_AI_Tool_Token_Limits::set_tool_multiplier( $tool_slug, $multiplier ) ) {
+					++$saved_count;
 				}
 			}
 
 			// Save each model preference.
 			foreach ( $model_preferences as $tool_slug => $model ) {
-				$tool_slug = sanitize_key( $tool_slug );
-				$model     = sanitize_text_field( $model );
-
-				if ( '' !== $tool_slug ) {
-					if ( WP_MCP_AI_Tool_Token_Limits::set_tool_model_preference( $tool_slug, $model ) ) {
-						++$saved_count;
-					}
+				if ( WP_MCP_AI_Tool_Token_Limits::set_tool_model_preference( $tool_slug, $model ) ) {
+					++$saved_count;
 				}
 			}
 
@@ -1347,7 +1342,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get preset ID.
-			$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( $_POST['preset_id'] ) : '';
+			$preset_id = isset( $_POST['preset_id'] ) ? sanitize_key( wp_unslash( $_POST['preset_id'] ) ) : '';
 
 			if ( empty( $preset_id ) ) {
 				wp_send_json_error( array( 'message' => __( 'Missing preset ID.', 'mcp-ai-wpoos' ) ) );
@@ -1395,10 +1390,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			// Get filters from request.
 			$filters = array();
 			if ( isset( $_POST['tier'] ) && '' !== $_POST['tier'] ) {
-				$filters['tier'] = sanitize_key( $_POST['tier'] );
+				$filters['tier'] = sanitize_key( wp_unslash( $_POST['tier'] ) );
 			}
 			if ( isset( $_POST['tool'] ) && '' !== $_POST['tool'] ) {
-				$filters['tool'] = sanitize_key( $_POST['tool'] );
+				$filters['tool'] = sanitize_key( wp_unslash( $_POST['tool'] ) );
 			}
 
 			// Generate CSV content.
@@ -1447,7 +1442,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get tier from request.
-			$tier = isset( $_POST['tier'] ) ? sanitize_key( $_POST['tier'] ) : '';
+			$tier = isset( $_POST['tier'] ) ? sanitize_key( wp_unslash( $_POST['tier'] ) ) : '';
 
 			if ( empty( $tier ) ) {
 				wp_send_json_error( array( 'message' => __( 'No tier specified.', 'mcp-ai-wpoos' ) ) );
@@ -1545,7 +1540,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get preset from request.
-			$preset = isset( $_POST['preset'] ) ? sanitize_key( $_POST['preset'] ) : 'balanced';
+			$preset = isset( $_POST['preset'] ) ? sanitize_key( wp_unslash( $_POST['preset'] ) ) : 'balanced';
 
 			// Apply preset.
 			$results = WP_MCP_AI_Tool_Recommendations::apply_preset( $preset );
@@ -1784,8 +1779,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get chart ID and period.
-			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( $_POST['chart_id'] ) : '';
-			$period   = isset( $_POST['period'] ) ? absint( $_POST['period'] ) : 7;
+			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( wp_unslash( $_POST['chart_id'] ) ) : '';
+			$period   = isset( $_POST['period'] ) ? absint( wp_unslash( $_POST['period'] ) ) : 7;
 
 			// Validate chart ID.
 			$valid_charts = array(
@@ -1850,7 +1845,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			}
 
 			// Get chart ID.
-			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( $_POST['chart_id'] ) : '';
+			$chart_id = isset( $_POST['chart_id'] ) ? sanitize_key( wp_unslash( $_POST['chart_id'] ) ) : '';
 
 			// Validate chart ID.
 			$valid_charts = array(
