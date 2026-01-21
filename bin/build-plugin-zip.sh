@@ -153,8 +153,8 @@ echo ""
 
 # Step 2: Install production Composer dependencies
 echo "Step 2: Installing production PHP dependencies..."
-composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --quiet
-echo "✅ Production dependencies installed"
+composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
+echo "✅ Production dependencies installed (with optimized classmap autoloader)"
 echo ""
 
 # Clean build directory
