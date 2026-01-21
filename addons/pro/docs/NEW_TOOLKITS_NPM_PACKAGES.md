@@ -183,31 +183,44 @@ This will install all dependencies and trigger the `postinstall` script to copy 
 ✅ **GOOD NEWS**: All NPM packages are compatible with Node.js 18!
 
 ### Supported Node.js Versions
-- **Node.js 18**: ✅ Fully supported (all 32 packages compatible)
-- **Node.js 20**: ✅ Recommended (still in LTS until April 2026)
+- **Node.js 18**: ✅ Minimum supported (all 32 packages compatible, EOL April 30, 2025)
+- **Node.js 20**: ✅ **Preferred** (LTS until April 2026, recommended for development)
 - **Node.js 22**: ✅ Future-proof (LTS until 2027)
 
-### Why Node.js 18 Works
+### Why Node.js 20 is Preferred
 
-All 32 NPM packages (12 existing + 20 new) have been verified to work with Node.js 18:
+While Node.js 18 is fully supported and all packages work correctly:
+- **Security**: Node.js 20 receives active security updates
+- **Performance**: Better performance and optimization
+- **Stability**: Production-grade LTS release
+- **Future-ready**: Longer support timeline
 
-**Existing Packages (Already Verified)**:
+**Recommendation**: Use Node.js 20 for development. Node.js 18 is maintained for backward compatibility.
+
+### Package Compatibility with Node.js 18+
+
+All 32 NPM packages (12 existing + 20 new) have been verified to work with Node.js 18+:
+
+**Existing Packages**:
 - ✅ pdfkit, docx, exceljs - Document generation
 - ✅ chart.js, @turf/turf - Visualization & geospatial
 - ✅ sharp, fluent-ffmpeg - Image/video processing
 - ✅ katex, mjml, prettier - Rendering & formatting
 - ✅ ics - Calendar export
 
-**New Packages (Verified Compatible)**:
+**New Packages**:
 - ✅ stripe, @woocommerce/woocommerce-rest-api - E-commerce
 - ✅ axios, twitter-api-v2, facebook-nodejs-business-sdk - Social Media
 - ✅ d3, mathjs, regression, fast-csv - Analytics
 - ✅ i18next, franc, iso-639-1 - Multilingual
 - ✅ ffmpeg-static, ffprobe-static - Video production
 
-### Node.js 18 EOL Notice
+### Development Recommendations
 
-⚠️ **Important**: While Node.js 18 reached End-of-Life (EOL) on April 30, 2025, it still works perfectly for this plugin. However:
+⚠️ **For Development**: Use Node.js 20+ (preferred) for:
+- Active security patches and updates
+- Better performance and optimization
+- Longer LTS support timeline
 
 - **For Development**: Use Node.js 20 or 22 for security patches
 - **For Pre-packaged Distribution**: Node.js 18 is fine (dependencies are bundled)
@@ -236,22 +249,26 @@ The plugin will be distributed **pre-built** with all NPM packages already bundl
 ## Dependencies Check
 
 Before Phase 2 implementation, verify:
-- [ ] Node.js 20+ installed (Node.js 22 LTS recommended)
-- [ ] npm 9+ installed (bundled with Node.js 20+)
+- [ ] Node.js 18+ installed (**Node.js 20+ preferred**)
+- [ ] npm 9+ installed (bundled with Node.js 18+)
 - [ ] Sufficient disk space (~500MB for node_modules)
 - [ ] Network access to npm registry
 
 ### Check Your Node.js Version
 
 ```bash
-node --version  # Should show v20.x.x or v22.x.x
+node --version  # Should show v18.x.x minimum (v20.x.x or v22.x.x preferred)
 npm --version   # Should show 9.x.x or higher
 ```
 
-### Upgrade Node.js (if needed)
+### Install/Upgrade Node.js
 
 ```bash
 # Using nvm (recommended)
+nvm install 20  # Preferred version
+nvm use 20
+
+# Or install Node.js 22 LTS for longest support
 nvm install 22
 nvm use 22
 

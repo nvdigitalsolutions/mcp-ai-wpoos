@@ -52,63 +52,63 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attachment_id'    => array(
+				'attachment_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of the image to optimize', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'operation'        => array(
+				'operation'       => array(
 					'type'        => 'string',
 					'enum'        => array( 'optimize', 'resize', 'convert', 'enhance' ),
 					'description' => __( 'Operation: optimize (compress), resize (dimensions), convert (format), enhance (sharpen/blur)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'optimize',
 				),
-				'width'            => array(
+				'width'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Target width in pixels (for resize operation)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 10000,
 				),
-				'height'           => array(
+				'height'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Target height in pixels (for resize operation)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 10000,
 				),
-				'format'           => array(
+				'format'          => array(
 					'type'        => 'string',
 					'enum'        => array( 'webp', 'avif', 'jpeg', 'png' ),
 					'description' => __( 'Target format for conversion. WebP and AVIF offer superior compression.', 'mcp-ai-wpoos-pro' ),
 				),
-				'quality'          => array(
+				'quality'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Output quality (1-100). Default: 80 for lossy, 100 for lossless.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 80,
 				),
-				'sharpen'          => array(
+				'sharpen'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Apply sharpening filter (for enhance operation)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'blur'             => array(
+				'blur'            => array(
 					'type'        => 'number',
 					'description' => __( 'Blur sigma value (0.3-1000). Higher = more blur (for enhance operation)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0.3,
 					'maximum'     => 1000,
 				),
-				'rotate'           => array(
+				'rotate'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Rotation angle in degrees (0, 90, 180, 270)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 0, 90, 180, 270 ),
 				),
-				'maintain_aspect'  => array(
+				'maintain_aspect' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Maintain aspect ratio when resizing', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'upload_result'    => array(
+				'upload_result'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Upload optimized image to media library as new attachment', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Optimize_Image_Sharp implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function check_sharp_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/lib/index.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/sharp/lib/index.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/sharp/lib/index.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {

@@ -108,65 +108,65 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'name'                => array(
+				'name'              => array(
 					'type'        => 'string',
 					'description' => __( 'Product name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'type'                => array(
+				'type'              => array(
 					'type'        => 'string',
 					'description' => __( 'Product type: simple, variable, grouped, external', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'simple', 'variable', 'grouped', 'external' ),
 					'default'     => 'simple',
 				),
-				'status'              => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'Product status: publish, draft, private', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'publish', 'draft', 'private' ),
 					'default'     => 'draft',
 				),
-				'description'         => array(
+				'description'       => array(
 					'type'        => 'string',
 					'description' => __( 'Full product description (supports HTML)', 'mcp-ai-wpoos-pro' ),
 				),
-				'short_description'   => array(
+				'short_description' => array(
 					'type'        => 'string',
 					'description' => __( 'Short product description', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'sku'                 => array(
+				'sku'               => array(
 					'type'        => 'string',
 					'description' => __( 'Product SKU/reference code', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'regular_price'       => array(
+				'regular_price'     => array(
 					'type'        => 'number',
 					'description' => __( 'Regular price (numeric value)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'sale_price'          => array(
+				'sale_price'        => array(
 					'type'        => 'number',
 					'description' => __( 'Sale price (numeric value, must be less than regular price)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'manage_stock'        => array(
+				'manage_stock'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to manage stock for this product', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'stock_quantity'      => array(
+				'stock_quantity'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity (required if manage_stock is true)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'stock_status'        => array(
+				'stock_status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Stock status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 					'default'     => 'instock',
 				),
-				'categories'          => array(
+				'categories'        => array(
 					'type'        => 'array',
 					'description' => __( 'Array of category names or IDs', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -176,14 +176,14 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 						),
 					),
 				),
-				'tags'                => array(
+				'tags'              => array(
 					'type'        => 'array',
 					'description' => __( 'Array of tag names', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'images'              => array(
+				'images'            => array(
 					'type'        => 'array',
 					'description' => __( 'Array of image URLs or attachment IDs. First image becomes featured image.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -193,7 +193,7 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 						),
 					),
 				),
-				'attributes'          => array(
+				'attributes'        => array(
 					'type'        => 'array',
 					'description' => __( 'Product attributes for variable products', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -204,43 +204,58 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 								'type'  => 'array',
 								'items' => array( 'type' => 'string' ),
 							),
-							'visible'   => array( 'type' => 'boolean', 'default' => true ),
-							'variation' => array( 'type' => 'boolean', 'default' => false ),
+							'visible'   => array(
+								'type'    => 'boolean',
+								'default' => true,
+							),
+							'variation' => array(
+								'type'    => 'boolean',
+								'default' => false,
+							),
 						),
 						'required'   => array( 'name', 'options' ),
 					),
 				),
-				'weight'              => array(
+				'weight'            => array(
 					'type'        => 'number',
 					'description' => __( 'Product weight', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'dimensions'          => array(
+				'dimensions'        => array(
 					'type'        => 'object',
 					'description' => __( 'Product dimensions', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'length' => array( 'type' => 'number', 'minimum' => 0 ),
-						'width'  => array( 'type' => 'number', 'minimum' => 0 ),
-						'height' => array( 'type' => 'number', 'minimum' => 0 ),
+						'length' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'width'  => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'height' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
 					),
 				),
-				'downloadable'        => array(
+				'downloadable'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the product is downloadable', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'virtual'             => array(
+				'virtual'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether the product is virtual (no shipping)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'tax_status'          => array(
+				'tax_status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Tax status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'taxable', 'shipping', 'none' ),
 					'default'     => 'taxable',
 				),
-				'featured'            => array(
+				'featured'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to mark product as featured', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -321,14 +336,14 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 			'success'    => true,
 			'product_id' => $product_id,
 			'product'    => array(
-				'id'          => $product->get_id(),
-				'name'        => $product->get_name(),
-				'type'        => $product->get_type(),
-				'status'      => $product->get_status(),
-				'sku'         => $product->get_sku(),
-				'price'       => $product->get_price(),
-				'permalink'   => $product->get_permalink(),
-				'edit_url'    => admin_url( 'post.php?post=' . $product_id . '&action=edit' ),
+				'id'        => $product->get_id(),
+				'name'      => $product->get_name(),
+				'type'      => $product->get_type(),
+				'status'    => $product->get_status(),
+				'sku'       => $product->get_sku(),
+				'price'     => $product->get_price(),
+				'permalink' => $product->get_permalink(),
+				'edit_url'  => admin_url( 'post.php?post=' . $product_id . '&action=edit' ),
 			),
 			'message'    => sprintf(
 				/* translators: %s: Product name */
@@ -375,7 +390,7 @@ class WP_MCP_AI_Tool_Create_Product_Advanced implements WP_MCP_AI_Tool_Interface
 		$data['attributes'] = isset( $arguments['attributes'] ) ? (array) $arguments['attributes'] : array();
 
 		// Physical properties.
-		$data['weight'] = isset( $arguments['weight'] ) ? floatval( $arguments['weight'] ) : 0;
+		$data['weight']     = isset( $arguments['weight'] ) ? floatval( $arguments['weight'] ) : 0;
 		$data['dimensions'] = isset( $arguments['dimensions'] ) ? (array) $arguments['dimensions'] : array();
 
 		// Product properties.

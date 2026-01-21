@@ -52,51 +52,51 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'code'            => array(
+				'code'           => array(
 					'type'        => 'string',
 					'description' => __( 'Code content to format', 'mcp-ai-wpoos-pro' ),
 				),
-				'language'        => array(
+				'language'       => array(
 					'type'        => 'string',
 					'enum'        => array( 'javascript', 'typescript', 'css', 'html', 'php', 'json', 'yaml', 'markdown' ),
 					'description' => __( 'Programming language of the code', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'javascript',
 				),
-				'tab_width'       => array(
+				'tab_width'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of spaces per indentation level (default: 2 for JS, 4 for PHP)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 8,
 				),
-				'use_tabs'        => array(
+				'use_tabs'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use tabs instead of spaces for indentation', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'single_quote'    => array(
+				'single_quote'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use single quotes instead of double quotes', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'print_width'     => array(
+				'print_width'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum line length before wrapping (default: 80)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 40,
 					'maximum'     => 200,
 					'default'     => 80,
 				),
-				'trailing_comma'  => array(
+				'trailing_comma' => array(
 					'type'        => 'string',
 					'enum'        => array( 'none', 'es5', 'all' ),
 					'description' => __( 'Add trailing commas: none, es5 (objects/arrays), or all', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'es5',
 				),
-				'check_syntax'    => array(
+				'check_syntax'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Validate code syntax before formatting', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'snippet_id'      => array(
+				'snippet_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional WPCode snippet ID to format (updates the snippet)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Get language and determine parser.
-		$language = isset( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : 'javascript';
+		$language   = isset( $arguments['language'] ) ? sanitize_text_field( $arguments['language'] ) : 'javascript';
 		$parser_map = array(
 			'javascript' => 'babel',
 			'typescript' => 'typescript',
@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 			'yaml'       => 'yaml',
 			'markdown'   => 'markdown',
 		);
-		$parser = isset( $parser_map[ $language ] ) ? $parser_map[ $language ] : 'babel';
+		$parser     = isset( $parser_map[ $language ] ) ? $parser_map[ $language ] : 'babel';
 
 		// Check syntax if requested.
 		$check_syntax = isset( $arguments['check_syntax'] ) ? (bool) $arguments['check_syntax'] : true;
@@ -217,12 +217,12 @@ class WP_MCP_AI_Tool_Format_Code_Prettier implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$result = array(
-			'success'        => true,
-			'message'        => __( 'Code formatted successfully with Prettier.', 'mcp-ai-wpoos-pro' ),
-			'formatted_code' => $formatted_code,
-			'language'       => $language,
-			'original_lines' => substr_count( $code, "\n" ) + 1,
-			'formatted_lines'=> substr_count( $formatted_code, "\n" ) + 1,
+			'success'         => true,
+			'message'         => __( 'Code formatted successfully with Prettier.', 'mcp-ai-wpoos-pro' ),
+			'formatted_code'  => $formatted_code,
+			'language'        => $language,
+			'original_lines'  => substr_count( $code, "\n" ) + 1,
+			'formatted_lines' => substr_count( $formatted_code, "\n" ) + 1,
 		);
 
 		// Update WPCode snippet if snippet_id provided.

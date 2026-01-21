@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/optimize-composer-autoloader-again',
-        'version' => 'dev-copilot/optimize-composer-autoloader-again',
-        'reference' => '01b15c1dbd6512a4bb6f3de00c2140c4b5dcf7a8',
+        'pretty_version' => 'dev-copilot/start-next-phase-toolkits',
+        'version' => 'dev-copilot/start-next-phase-toolkits',
+        'reference' => '4e9f0d41862fd35d23f40295e8477e5b5cb69e9b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/optimize-composer-autoloader-again',
-            'version' => 'dev-copilot/optimize-composer-autoloader-again',
-            'reference' => '01b15c1dbd6512a4bb6f3de00c2140c4b5dcf7a8',
+            'pretty_version' => 'dev-copilot/start-next-phase-toolkits',
+            'version' => 'dev-copilot/start-next-phase-toolkits',
+            'reference' => '4e9f0d41862fd35d23f40295e8477e5b5cb69e9b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

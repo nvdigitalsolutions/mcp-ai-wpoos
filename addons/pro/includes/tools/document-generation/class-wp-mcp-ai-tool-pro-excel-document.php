@@ -57,33 +57,33 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'operation'    => array(
+				'operation'   => array(
 					'type'        => 'string',
 					'enum'        => array( 'generate', 'table', 'multi_sheet', 'chart' ),
 					'description' => __( 'Operation to perform: "generate" (create spreadsheet from description), "table" (create data table), "multi_sheet" (multiple worksheets), "chart" (add charts and visualizations).', 'mcp-ai-wpoos' ),
 				),
-				'description'  => array(
+				'description' => array(
 					'type'        => 'string',
 					'description' => __( 'Natural language description of the Excel spreadsheet you want to create.', 'mcp-ai-wpoos' ),
 				),
-				'data'         => array(
+				'data'        => array(
 					'type'        => 'array',
 					'description' => __( 'Array of data rows for table generation. Each row is an array of cell values.', 'mcp-ai-wpoos' ),
 				),
-				'headers'      => array(
+				'headers'     => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Column headers for the data table.', 'mcp-ai-wpoos' ),
 				),
-				'title'        => array(
+				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Spreadsheet title (appears in document properties and optionally as worksheet name).', 'mcp-ai-wpoos' ),
 				),
-				'author'       => array(
+				'author'      => array(
 					'type'        => 'string',
 					'description' => __( 'Document author (appears in document properties).', 'mcp-ai-wpoos' ),
 				),
-				'sheets'       => array(
+				'sheets'      => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type'       => 'object',
@@ -94,17 +94,17 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 					),
 					'description' => __( 'Array of worksheet definitions with names and data (for multi_sheet operation).', 'mcp-ai-wpoos' ),
 				),
-				'formatting'   => array(
+				'formatting'  => array(
 					'type'        => 'object',
 					'properties'  => array(
-						'header_bg'    => array( 'type' => 'string' ),
-						'header_font'  => array( 'type' => 'string' ),
-						'auto_filter'  => array( 'type' => 'boolean' ),
+						'header_bg'     => array( 'type' => 'string' ),
+						'header_font'   => array( 'type' => 'string' ),
+						'auto_filter'   => array( 'type' => 'boolean' ),
 						'freeze_header' => array( 'type' => 'boolean' ),
 					),
 					'description' => __( 'Formatting options for the spreadsheet (colors, auto-filter, freeze panes).', 'mcp-ai-wpoos' ),
 				),
-				'formulas'     => array(
+				'formulas'    => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type'       => 'object',
@@ -115,11 +115,11 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 					),
 					'description' => __( 'Array of formulas to add to specific cells (e.g., {"cell": "D2", "formula": "=SUM(B2:C2)"}).', 'mcp-ai-wpoos' ),
 				),
-				'model'        => array(
+				'model'       => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for content generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
 				),
-				'upload'       => array(
+				'upload'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to upload the generated spreadsheet to WordPress media library. Default: true.', 'mcp-ai-wpoos' ),
 					'default'     => true,
@@ -609,7 +609,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	protected function get_excel_generation_script_path() {
 		// Use bundled script that includes all dependencies.
 		$script_path = WP_MCP_AI_PRO_PATH . 'bin/generate-excel.bundle.js';
-		
+
 		if ( ! file_exists( $script_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_script_not_found',
@@ -620,7 +620,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 				)
 			);
 		}
-		
+
 		return $script_path;
 	}
 

@@ -189,13 +189,13 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 
 		// Build ICS generation parameters.
 		$ics_params = array(
-			'events'    => $events,
-			'prodId'    => array(
+			'events'   => $events,
+			'prodId'   => array(
 				'company' => get_bloginfo( 'name' ),
 				'product' => 'Open Operator System',
 			),
-			'calName'   => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
-			'timezone'  => isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string(),
+			'calName'  => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
+			'timezone' => isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string(),
 		);
 
 		// Generate ICS file.
@@ -242,7 +242,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function check_ics_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/ics/index.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/ics/index.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/ics/dist/index.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
@@ -272,12 +272,14 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 
 		// Collect tasks as events.
 		if ( $include_tasks ) {
-			$tasks_query = new WP_Query( array(
-				'post_type'      => 'task',
-				'post_parent'    => $project_id,
-				'posts_per_page' => -1,
-				'post_status'    => 'any',
-			) );
+			$tasks_query = new WP_Query(
+				array(
+					'post_type'      => 'task',
+					'post_parent'    => $project_id,
+					'posts_per_page' => -1,
+					'post_status'    => 'any',
+				)
+			);
 
 			foreach ( $tasks_query->posts as $task ) {
 				$due_date = get_post_meta( $task->ID, '_task_due_date', true );
@@ -295,12 +297,14 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 
 		// Collect project events.
 		if ( $include_events ) {
-			$events_query = new WP_Query( array(
-				'post_type'      => 'event',
-				'post_parent'    => $project_id,
-				'posts_per_page' => -1,
-				'post_status'    => 'publish',
-			) );
+			$events_query = new WP_Query(
+				array(
+					'post_type'      => 'event',
+					'post_parent'    => $project_id,
+					'posts_per_page' => -1,
+					'post_status'    => 'publish',
+				)
+			);
 
 			foreach ( $events_query->posts as $event ) {
 				$event_date = get_post_meta( $event->ID, '_event_date', true );

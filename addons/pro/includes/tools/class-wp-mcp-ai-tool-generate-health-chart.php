@@ -52,36 +52,36 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'member_id'        => array(
+				'member_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID to generate chart for', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'chart_type'       => array(
+				'chart_type'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'line', 'bar', 'pie', 'radar', 'doughnut' ),
 					'description' => __( 'Type of chart to generate', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'line',
 				),
-				'metric_type'      => array(
+				'metric_type'          => array(
 					'type'        => 'string',
 					'enum'        => array( 'vitals', 'medication', 'checkups', 'allergies', 'custom' ),
 					'description' => __( 'Type of health metric to visualize', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'vitals',
 				),
-				'specific_metric'  => array(
+				'specific_metric'      => array(
 					'type'        => 'string',
 					'enum'        => array( 'blood_pressure', 'heart_rate', 'temperature', 'weight', 'bmi', 'glucose' ),
 					'description' => __( 'Specific vital metric (for vitals metric_type)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_range_days'  => array(
+				'date_range_days'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of days to include in chart (default: 30)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 365,
 					'default'     => 30,
 				),
-				'anonymize_data'   => array(
+				'anonymize_data'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Remove personally identifiable information from chart', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -91,25 +91,25 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Show normal reference ranges on chart (for vitals)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'chart_title'      => array(
+				'chart_title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Custom chart title. If not provided, auto-generated.', 'mcp-ai-wpoos-pro' ),
 				),
-				'width'            => array(
+				'width'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Chart width in pixels (default: 600)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 100,
 					'maximum'     => 2000,
 					'default'     => 600,
 				),
-				'height'           => array(
+				'height'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Chart height in pixels (default: 400)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 100,
 					'maximum'     => 2000,
 					'default'     => 400,
 				),
-				'return_format'    => array(
+				'return_format'        => array(
 					'type'        => 'string',
 					'enum'        => array( 'html', 'config', 'image' ),
 					'description' => __( 'Return format: html (chart HTML), config (Chart.js config JSON), or image (PNG)', 'mcp-ai-wpoos-pro' ),
@@ -254,7 +254,7 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function check_chartjs_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/chart.js/chart.umd.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/chart.js/chart.umd.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/chart.js/dist/chart.umd.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
@@ -275,7 +275,7 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 	private function collect_health_data( $member_id, $metric_type, $arguments ) {
 		$date_range = isset( $arguments['date_range_days'] ) ? absint( $arguments['date_range_days'] ) : 30;
 		$data       = array(
-			'labels' => array(),
+			'labels'   => array(),
 			'datasets' => array(),
 		);
 
@@ -283,7 +283,7 @@ class WP_MCP_AI_Tool_Generate_Health_Chart implements WP_MCP_AI_Tool_Interface, 
 		switch ( $metric_type ) {
 			case 'vitals':
 				$specific_metric = isset( $arguments['specific_metric'] ) ? sanitize_text_field( $arguments['specific_metric'] ) : 'blood_pressure';
-				$data = $this->get_vitals_data( $member_id, $specific_metric, $date_range );
+				$data            = $this->get_vitals_data( $member_id, $specific_metric, $date_range );
 				break;
 
 			case 'medication':

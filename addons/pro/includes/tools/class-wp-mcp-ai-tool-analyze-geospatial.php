@@ -52,17 +52,17 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'operation'      => array(
+				'operation'          => array(
 					'type'        => 'string',
 					'enum'        => array( 'distance', 'buffer', 'within', 'area', 'nearest', 'bearing' ),
 					'description' => __( 'Geospatial operation: distance (between points), buffer (radius), within (point in polygon), area (polygon area), nearest (closest point), bearing (direction)', 'mcp-ai-wpoos-pro' ),
 				),
-				'place_id'       => array(
+				'place_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Primary place ID for analysis', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'coordinates'    => array(
+				'coordinates'        => array(
 					'type'        => 'object',
 					'properties'  => array(
 						'latitude'  => array(
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 					),
 					'description' => __( 'Geographic coordinates (alternative to place_id)', 'mcp-ai-wpoos-pro' ),
 				),
-				'target_place_id' => array(
+				'target_place_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Target place ID (for distance and bearing operations)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -99,28 +99,28 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 					),
 					'description' => __( 'Target coordinates (alternative to target_place_id)', 'mcp-ai-wpoos-pro' ),
 				),
-				'radius'         => array(
+				'radius'             => array(
 					'type'        => 'number',
 					'description' => __( 'Radius in specified units (for buffer and within operations)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'units'          => array(
+				'units'              => array(
 					'type'        => 'string',
 					'enum'        => array( 'miles', 'kilometers', 'meters', 'feet' ),
 					'description' => __( 'Distance unit for measurements', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'miles',
 				),
-				'find_places'    => array(
+				'find_places'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Find places within buffer/radius (for buffer and within operations)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'place_types'    => array(
+				'place_types'        => array(
 					'type'        => 'array',
 					'items'       => array( 'type' => 'string' ),
 					'description' => __( 'Filter places by type (e.g., restaurant, hospital, school)', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'          => array(
+				'limit'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of places to return (for find_places)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -254,7 +254,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function check_turf_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/turf/dist/esm/index.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/turf/dist/esm/index.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/@turf/turf/dist/esm/index.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {
@@ -335,10 +335,10 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'distance'      => $result['distance'],
-			'units'         => $units,
-			'source'        => $source,
-			'target'        => $target,
+			'distance' => $result['distance'],
+			'units'    => $units,
+			'source'   => $source,
+			'target'   => $target,
 		);
 	}
 
@@ -432,7 +432,7 @@ class WP_MCP_AI_Tool_Analyze_Geospatial implements WP_MCP_AI_Tool_Interface, WP_
 		// Sort by distance and get nearest.
 		usort(
 			$places,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $a['distance'] <=> $b['distance'];
 			}
 		);
