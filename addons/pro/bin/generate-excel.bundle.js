@@ -4082,9 +4082,9 @@ var require_process_nextick_args = __commonJS({
   }
 });
 
-// addons/pro/node_modules/isarray/index.js
+// addons/pro/node_modules/jszip/node_modules/isarray/index.js
 var require_isarray = __commonJS({
-  "addons/pro/node_modules/isarray/index.js"(exports2, module2) {
+  "addons/pro/node_modules/jszip/node_modules/isarray/index.js"(exports2, module2) {
     var toString = {}.toString;
     module2.exports = Array.isArray || function(arr) {
       return toString.call(arr) == "[object Array]";
@@ -37321,6 +37321,16 @@ var require_graceful_fs = __commonJS({
   }
 });
 
+// addons/pro/node_modules/lazystream/node_modules/isarray/index.js
+var require_isarray2 = __commonJS({
+  "addons/pro/node_modules/lazystream/node_modules/isarray/index.js"(exports2, module2) {
+    var toString = {}.toString;
+    module2.exports = Array.isArray || function(arr) {
+      return toString.call(arr) == "[object Array]";
+    };
+  }
+});
+
 // addons/pro/node_modules/lazystream/node_modules/readable-stream/lib/internal/streams/stream.js
 var require_stream3 = __commonJS({
   "addons/pro/node_modules/lazystream/node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
@@ -38293,7 +38303,7 @@ var require_stream_readable3 = __commonJS({
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Readable;
-    var isArray = require_isarray();
+    var isArray = require_isarray2();
     var Duplex;
     Readable.ReadableState = ReadableState;
     var EE = require("events").EventEmitter;
@@ -39375,6 +39385,16 @@ var require_lodash9 = __commonJS({
   }
 });
 
+// addons/pro/node_modules/archiver-utils/node_modules/isarray/index.js
+var require_isarray3 = __commonJS({
+  "addons/pro/node_modules/archiver-utils/node_modules/isarray/index.js"(exports2, module2) {
+    var toString = {}.toString;
+    module2.exports = Array.isArray || function(arr) {
+      return toString.call(arr) == "[object Array]";
+    };
+  }
+});
+
 // addons/pro/node_modules/archiver-utils/node_modules/readable-stream/lib/internal/streams/stream.js
 var require_stream4 = __commonJS({
   "addons/pro/node_modules/archiver-utils/node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
@@ -40347,7 +40367,7 @@ var require_stream_readable4 = __commonJS({
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Readable;
-    var isArray = require_isarray();
+    var isArray = require_isarray3();
     var Duplex;
     Readable.ReadableState = ReadableState;
     var EE = require("events").EventEmitter;
@@ -55462,6 +55482,16 @@ var require_Buffer = __commonJS({
   }
 });
 
+// addons/pro/node_modules/unzipper/node_modules/isarray/index.js
+var require_isarray4 = __commonJS({
+  "addons/pro/node_modules/unzipper/node_modules/isarray/index.js"(exports2, module2) {
+    var toString = {}.toString;
+    module2.exports = Array.isArray || function(arr) {
+      return toString.call(arr) == "[object Array]";
+    };
+  }
+});
+
 // addons/pro/node_modules/unzipper/node_modules/readable-stream/lib/internal/streams/stream.js
 var require_stream5 = __commonJS({
   "addons/pro/node_modules/unzipper/node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
@@ -56434,7 +56464,7 @@ var require_stream_readable5 = __commonJS({
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Readable;
-    var isArray = require_isarray();
+    var isArray = require_isarray4();
     var Duplex;
     Readable.ReadableState = ReadableState;
     var EE = require("events").EventEmitter;
@@ -57661,6 +57691,16 @@ var require_parse = __commonJS({
   }
 });
 
+// addons/pro/node_modules/duplexer2/node_modules/isarray/index.js
+var require_isarray5 = __commonJS({
+  "addons/pro/node_modules/duplexer2/node_modules/isarray/index.js"(exports2, module2) {
+    var toString = {}.toString;
+    module2.exports = Array.isArray || function(arr) {
+      return toString.call(arr) == "[object Array]";
+    };
+  }
+});
+
 // addons/pro/node_modules/duplexer2/node_modules/readable-stream/lib/internal/streams/stream.js
 var require_stream6 = __commonJS({
   "addons/pro/node_modules/duplexer2/node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
@@ -58633,7 +58673,7 @@ var require_stream_readable6 = __commonJS({
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Readable;
-    var isArray = require_isarray();
+    var isArray = require_isarray5();
     var Duplex;
     Readable.ReadableState = ReadableState;
     var EE = require("events").EventEmitter;
