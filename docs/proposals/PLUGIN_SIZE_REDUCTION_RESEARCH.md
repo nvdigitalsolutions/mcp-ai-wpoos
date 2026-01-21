@@ -4,11 +4,36 @@
 **Current Base ZIP Size**: 11 MB (1,990 files)  
 **Goal**: Research options to reduce base plugin ZIP size for faster downloads and WordPress.org distribution
 
+## Implementation Plan (Approved)
+
+### Phase 1: Exclude Vectorizer Library ⭐ PRIORITY
+
+**Action**: Remove `assets/js/vendor/neplex-vectorizer` from base build
+
+**Impact**: 
+- **Size Reduction**: -2.5 MB compressed (9.1 MB → 3.5 MB in assets/js/vendor)
+- **Risk**: Low - only affects single `vectorize_image` tool (rarely used)
+- **User Impact**: Minimal - tool will prompt for download on first use
+
+**Implementation**:
+1. Update `bin/build-plugin-zip.sh` to exclude vectorizer from base ZIP
+2. Add download-on-demand logic for `vectorize_image` tool
+3. Create settings UI for optional extensions
+4. Test graceful fallback when vectorizer not installed
+
+**Benefits**:
+✅ Immediate 2.5 MB reduction (23% of current size)  
+✅ Users only download what they need  
+✅ No breaking changes for existing users  
+✅ Simple implementation with clear user communication  
+
+---
+
 ## Executive Summary
 
 The base plugin ZIP is currently 11MB. Analysis shows significant opportunities for size reduction through:
-1. **Optional downloads for knowledge base content** (7.6MB reduction potential)
-2. **Lazy loading vendor libraries** (9.1MB reduction potential for JS vendor)
+1. **Exclude vectorizer library** (2.5MB immediate reduction) ⭐ **APPROVED FOR IMPLEMENTATION**
+2. **Optional downloads for knowledge base content** (1-5MB reduction potential)
 3. **Removing unminified source files** (1-2MB reduction)
 4. **Optimizing vendor dependencies** (1-2MB reduction)
 
