@@ -127,10 +127,11 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 		}
 
 		// Check if vectorizer library is installed.
-		if ( ! WP_MCP_AI_Optional_Components::is_vectorizer_installed() ) {
+		$vectorizer_path = WP_MCP_AI_PATH . 'assets/js/vendor/neplex-vectorizer';
+		if ( ! file_exists( $vectorizer_path ) || ! is_dir( $vectorizer_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_vectorizer_not_installed',
-				__( 'Vectorizer library is not installed. It will be automatically downloaded in the background. Please try again in a few minutes, or contact your administrator to manually install it.', 'mcp-ai-wpoos' )
+				__( 'Vectorizer library is not installed. Please run "npm install" to install it.', 'mcp-ai-wpoos' )
 			);
 		}
 
