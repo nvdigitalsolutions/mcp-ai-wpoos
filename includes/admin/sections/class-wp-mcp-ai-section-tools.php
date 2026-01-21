@@ -522,6 +522,64 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered Cloudways hosting management for servers and applications. Provides 58+ tools for server management, application deployment, monitoring, security, backups, and performance optimization. Includes server operations, database management, SSL certificate management, and deployment automation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// ========================================================================
+				// PRO TOOLKITS - New Professional Toolkits (Phases 2-6)
+				// ========================================================================
+
+				// E-commerce Toolkit.
+				'enable_ecommerce_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable E-commerce Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced WooCommerce and e-commerce tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 20 AI-powered e-commerce tools for product management, order processing, inventory tracking, customer segmentation, and sales analytics. Requires WooCommerce. Supports mesh network for multi-store inventory sync. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Social Media Management Toolkit.
+				'enable_social_media_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Social Media Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable social media management and content tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 15 AI-powered social media tools for content calendar management, multi-platform posting, analytics, hashtag tracking, competitor analysis, and automated responses. Supports mesh network for cross-site posting. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Advanced Analytics Toolkit.
+				'enable_analytics_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Analytics Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced analytics and reporting tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12 AI-powered analytics tools for revenue forecasting, customer segmentation, churn prediction, custom reports, and data warehouse integrations (BigQuery, Snowflake, Redshift). Supports mesh network for aggregated reporting. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Multilingual Content Toolkit.
+				'enable_multilingual_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Multilingual Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable multilingual content management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 10 AI-powered multilingual tools for content translation, language detection, RTL optimization, translation memory, quality checks, and WooCommerce product translation. Supports mesh network for shared translation memory. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Video Production Toolkit.
+				'enable_video_production_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Video Production Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable video editing and production tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12 AI-powered video tools for editing, compression, format conversion, watermarking, thumbnail generation, captions, and platform optimization. Requires FFmpeg on server. Supports mesh network for distributed rendering. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Financial Planner Toolkit.
+				'enable_financial_planner_toolkit'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable financial planning and analysis tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 24 AI-powered financial tools for retirement planning, budget management, investment analysis, debt calculation, goal planning, and tax estimation. Includes Plaid API integration for bank account sync. EDUCATIONAL USE ONLY - Not financial advice. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -590,7 +648,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -727,6 +785,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function render_subtab_footer( $subtab ) {
 			switch ( $subtab ) {
+				case 'features':
+					$this->render_features_footer();
+					break;
 				case 'external_tools':
 					$this->render_external_tools_footer();
 					break;
@@ -743,6 +804,148 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$this->render_site_creator_footer();
 					break;
 			}
+		}
+
+		/**
+		 * Render features footer with toolkit limit counter.
+		 */
+		private function render_features_footer() {
+			// Count currently enabled pro toolkits.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			$toolkit_options = array(
+				'enable_ecommerce_toolkit',
+				'enable_social_media_toolkit',
+				'enable_analytics_toolkit',
+				'enable_multilingual_toolkit',
+				'enable_video_production_toolkit',
+				'enable_financial_planner_toolkit',
+			);
+
+			$enabled_count = 0;
+			foreach ( $toolkit_options as $option ) {
+				if ( ! empty( $settings[ $option ] ) ) {
+					$enabled_count++;
+				}
+			}
+
+			$max_toolkits   = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', 6 );
+			$limit_reached  = $enabled_count >= $max_toolkits;
+			$counter_class  = '';
+			$counter_status = '';
+
+			if ( $enabled_count >= $max_toolkits ) {
+				$counter_class  = 'toolkit-limit-maximum';
+				$counter_status = __( 'Maximum', 'mcp-ai-wpoos' );
+			} elseif ( $enabled_count >= ( $max_toolkits - 1 ) ) {
+				$counter_class  = 'toolkit-limit-warning';
+				$counter_status = __( 'Near Maximum', 'mcp-ai-wpoos' );
+			} else {
+				$counter_class  = 'toolkit-limit-good';
+				$counter_status = __( 'Good', 'mcp-ai-wpoos' );
+			}
+
+			?>
+			<tr class="toolkit-limit-info">
+				<th scope="row"></th>
+				<td>
+					<div class="toolkit-limit-counter-container" style="padding: 15px; background: #f0f0f1; border: 1px solid #c3c4c7; border-radius: 4px; margin-top: 20px;">
+						<h3 style="margin-top: 0;">
+							<span class="dashicons dashicons-chart-bar"></span>
+							<?php esc_html_e( 'Pro Toolkit Activation Status', 'mcp-ai-wpoos' ); ?>
+						</h3>
+						<p style="font-size: 18px; margin: 10px 0;">
+							<strong class="toolkit-limit-counter <?php echo esc_attr( $counter_class ); ?>">
+								<span class="current-count"><?php echo esc_html( $enabled_count ); ?></span> 
+								<?php
+								printf(
+									/* translators: %d: Maximum number of toolkits */
+									esc_html__( 'of %d pro toolkits enabled', 'mcp-ai-wpoos' ),
+									esc_html( $max_toolkits )
+								);
+								?>
+							</strong>
+							<span class="toolkit-status-badge" style="margin-left: 10px; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
+								<?php echo esc_html( $counter_status ); ?>
+							</span>
+						</p>
+						<p class="description">
+							<?php
+							printf(
+								/* translators: %d: Maximum number of toolkits */
+								esc_html__( 'You can enable up to %d pro toolkits simultaneously to maintain optimal performance. Disable a toolkit before enabling another if the limit is reached.', 'mcp-ai-wpoos' ),
+								esc_html( $max_toolkits )
+							);
+							?>
+						</p>
+						<p class="toolkit-limit-notice" style="display: none; color: #b32d2e; font-weight: bold; margin-top: 10px;">
+							<span class="dashicons dashicons-warning" style="color: #b32d2e;"></span>
+							<?php esc_html_e( 'Maximum toolkit limit reached. Disable another toolkit to enable this one.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+
+					<style>
+						.toolkit-limit-good { color: #00a32a; }
+						.toolkit-limit-warning { color: #dba617; }
+						.toolkit-limit-maximum { color: #b32d2e; }
+						.toolkit-status-badge { background: #f0f0f1; color: #2c3338; display: inline-block; }
+						.toolkit-limit-good + .toolkit-status-badge { background: #d4edda; color: #155724; }
+						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
+						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
+						tr.pro-toolkit-row input[type="checkbox"]:disabled + label { opacity: 0.5; cursor: not-allowed; }
+					</style>
+
+					<script>
+					jQuery(document).ready(function($) {
+						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
+						var toolkitCheckboxes = $(
+							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_analytics_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_multilingual_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_video_production_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_financial_planner_toolkit]"]'
+						);
+
+						function updateToolkitLimit() {
+							var checked = toolkitCheckboxes.filter(':checked').length;
+							var counter = $('.toolkit-limit-counter .current-count');
+							var statusBadge = $('.toolkit-status-badge');
+							var notice = $('.toolkit-limit-notice');
+
+							counter.text(checked);
+
+							// Update colors and status
+							$('.toolkit-limit-counter').removeClass('toolkit-limit-good toolkit-limit-warning toolkit-limit-maximum');
+							if (checked >= maxToolkits) {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-maximum');
+								statusBadge.text(<?php echo wp_json_encode( __( 'Maximum', 'mcp-ai-wpoos' ) ); ?>);
+							} else if (checked >= (maxToolkits - 1)) {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-warning');
+								statusBadge.text(<?php echo wp_json_encode( __( 'Near Maximum', 'mcp-ai-wpoos' ) ); ?>);
+							} else {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-good');
+								statusBadge.text(<?php echo wp_json_encode( __( 'Good', 'mcp-ai-wpoos' ) ); ?>);
+							}
+
+							// Disable unchecked checkboxes if limit reached
+							if (checked >= maxToolkits) {
+								toolkitCheckboxes.filter(':not(:checked)').prop('disabled', true).closest('tr').addClass('pro-toolkit-row');
+								notice.show();
+							} else {
+								toolkitCheckboxes.prop('disabled', false).closest('tr').removeClass('pro-toolkit-row');
+								notice.hide();
+							}
+						}
+
+						// Run on page load and checkbox change
+						toolkitCheckboxes.on('change', updateToolkitLimit);
+						updateToolkitLimit();
+					});
+					</script>
+				</td>
+			</tr>
+			<?php
 		}
 
 		/**
