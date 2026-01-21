@@ -65,7 +65,7 @@ class WP_MCP_AI_Optional_Components {
 	 */
 	private static function get_download_base_url() {
 		// Use dev-working location if explicitly enabled.
-		if ( defined( 'WP_MCP_AI_DEV_COMPONENTS' ) && WP_MCP_AI_DEV_COMPONENTS ) {
+		if ( defined( 'WP_MCP_AI_DEV_COMPONENTS' ) && true === WP_MCP_AI_DEV_COMPONENTS ) {
 			return self::DEV_WORKING_BASE;
 		}
 

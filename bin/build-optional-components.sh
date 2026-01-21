@@ -83,7 +83,7 @@ zip -r -q "$ROOT_DIR/$OUTPUT_DIR/knowledge-base.zip" profession-playbooks/
 cd "$ROOT_DIR"
 
 KB_SIZE=$(du -h "$OUTPUT_DIR/knowledge-base.zip" | cut -f1)
-PROFESSION_COUNT=$(ls -1 "$KB_SOURCE/professions/"*.txt 2>/dev/null | wc -l)
+PROFESSION_COUNT=$(ls -1 "$KB_SOURCE"/professions/*.txt 2>/dev/null | wc -l)
 echo "✅ knowledge-base.zip created ($KB_SIZE, $PROFESSION_COUNT professions)"
 echo ""
 

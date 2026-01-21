@@ -83,8 +83,13 @@ For development testing:
 # Build the ZIPs
 ./bin/build-optional-components.sh
 
-# Commit to dev-working branch
+# Verify you're on the correct branch
+git branch --show-current
+
+# Switch to dev-working branch if needed
 git checkout dev-working
+
+# Add and commit the ZIPs
 git add build/optional-components/*.zip
 git commit -m "Update optional component ZIPs"
 git push origin dev-working
@@ -181,7 +186,7 @@ jQuery.post(ajaxurl, {
 
 1. **Check constant**: Verify `WP_MCP_AI_DEV_COMPONENTS` in `wp-config.php`
 2. **Clear cache**: Clear any WordPress object cache
-3. **Check version**: Ensure `WP_MCP_AI_VERSION` matches expected value
+3. **Check version**: Ensure `WP_MCP_AI_VERSION` matches expected value (only relevant for GitHub releases)
 4. **Debug URL**: Add this to see actual URL:
    ```php
    error_log( 'Download URL: ' . $download_url );
@@ -191,7 +196,7 @@ jQuery.post(ajaxurl, {
 
 1. **Dev-working branch**: Ensure ZIPs are committed to `build/optional-components/`
 2. **GitHub release**: Ensure ZIPs are uploaded as release assets
-3. **Version mismatch**: Ensure version in code matches release tag
+3. **Version mismatch**: For GitHub releases only, ensure version in code matches release tag. Dev-working URLs don't use version tags.
 4. **File names**: Must be exactly `neplex-vectorizer.zip` and `knowledge-base.zip`
 
 ## Best Practices
