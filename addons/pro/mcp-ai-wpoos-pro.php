@@ -194,6 +194,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// This enables Node.js microservice integration for Prettier, MJML, and fluent-ffmpeg.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/npm-integration-filters.php';
 
+		// Load utility classes for enhanced features (Phase 2 enhancements - Jan 2026).
+		// Product Type Helper: Handles all WooCommerce product types (simple, variable, grouped, external, subscription, bundle, etc.).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-product-type-helper.php';
+		// Remote Connection Manager: Enables REST API connections to remote WordPress/WooCommerce sites.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-remote-connection.php';
+		// ERP Connector: Provides interface for ERP integrations (EZuite ERP, custom ERPs).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-erp-connector.php';
+
 		// Load Pro tool interfaces (extend Core interfaces).
 		// Pro tools can implement additional interfaces for advanced features.
 
