@@ -634,6 +634,32 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
+		// Add Social Media Toolkit tools if enabled (Phase 3 - New Pro Toolkits).
+		if ( ! empty( $settings['enable_social_media_toolkit'] ) ) {
+			$social_media_toolkit_tools = array(
+				// Content Publishing tools.
+				'WP_MCP_AI_Tool_Post_To_Multiple_Platforms' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-post-to-multiple-platforms.php',
+				'WP_MCP_AI_Tool_Schedule_Social_Post'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-schedule-social-post.php',
+				'WP_MCP_AI_Tool_Bulk_Schedule_Posts'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-bulk-schedule-posts.php',
+				'WP_MCP_AI_Tool_Auto_Optimize_Images'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-optimize-images.php',
+				'WP_MCP_AI_Tool_Create_Social_Video'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-social-video.php',
+				// Engagement Management tools.
+				'WP_MCP_AI_Tool_Monitor_Mentions_Replies' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-monitor-mentions-replies.php',
+				'WP_MCP_AI_Tool_Auto_Respond_Messages'    => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-respond-messages.php',
+				'WP_MCP_AI_Tool_Moderate_Comments'        => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-moderate-comments.php',
+				// Analytics & Insights tools.
+				'WP_MCP_AI_Tool_Get_Cross_Platform_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-get-cross-platform-analytics.php',
+				'WP_MCP_AI_Tool_Track_Hashtag_Performance' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-track-hashtag-performance.php',
+				'WP_MCP_AI_Tool_Competitor_Analysis'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-competitor-analysis.php',
+				'WP_MCP_AI_Tool_Influencer_Identification' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-influencer-identification.php',
+				// Content Management tools.
+				'WP_MCP_AI_Tool_Create_Content_Calendar'  => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-content-calendar.php',
+				'WP_MCP_AI_Tool_Generate_Post_Ideas'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-generate-post-ideas.php',
+				'WP_MCP_AI_Tool_Social_Listening_Trends'  => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-social-listening-trends.php',
+			);
+			$pro_tools                  = array_merge( $pro_tools, $social_media_toolkit_tools );
+		}
+
 		// Add Document Generation Toolkit tools if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			$document_generation_tools = array(
