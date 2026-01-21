@@ -125,6 +125,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_health_wellness_management'   => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
 				'enable_places_management'            => __( 'Places Management', 'mcp-ai-wpoos' ),
 				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_ecommerce_toolkit'            => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+				'enable_social_media_toolkit'         => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_analytics_toolkit'            => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+				'enable_multilingual_toolkit'         => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+				'enable_video_production_toolkit'     => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'            => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'              => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                 => __( 'Site Creator', 'mcp-ai-wpoos' ),
@@ -372,6 +377,107 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'ecommerce_toolkit' => array(
+					'name'        => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_ecommerce_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
+					'tools_count' => 8,
+					'tools'       => array(
+						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
+						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
+						__( 'process_payment tool', 'mcp-ai-wpoos' ),
+						__( 'manage_orders tool', 'mcp-ai-wpoos' ),
+						__( 'calculate_pricing tool', 'mcp-ai-wpoos' ),
+						__( 'manage_customers tool', 'mcp-ai-wpoos' ),
+						__( 'track_shipments tool', 'mcp-ai-wpoos' ),
+						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'social_media_toolkit' => array(
+					'name'        => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_social_media_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'twitter-api-v2', 'axios', 'facebook-nodejs-business-sdk', 'linkedin-api-client' ),
+					'tools_count' => 12,
+					'tools'       => array(
+						__( 'post_to_twitter tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_facebook tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_linkedin tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_instagram tool', 'mcp-ai-wpoos' ),
+						__( 'schedule_social_post tool', 'mcp-ai-wpoos' ),
+						__( 'analyze_engagement tool', 'mcp-ai-wpoos' ),
+						__( 'manage_social_campaigns tool', 'mcp-ai-wpoos' ),
+						__( 'cross_post_content tool', 'mcp-ai-wpoos' ),
+						__( 'track_mentions tool', 'mcp-ai-wpoos' ),
+						__( 'generate_hashtags tool', 'mcp-ai-wpoos' ),
+						__( 'schedule_thread tool', 'mcp-ai-wpoos' ),
+						__( 'monitor_trends tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'analytics_toolkit' => array(
+					'name'        => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_analytics_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'd3', 'mathjs', 'regression', 'fast-csv' ),
+					'tools_count' => 10,
+					'tools'       => array(
+						__( 'create_dashboard tool', 'mcp-ai-wpoos' ),
+						__( 'visualize_data tool', 'mcp-ai-wpoos' ),
+						__( 'perform_regression_analysis tool', 'mcp-ai-wpoos' ),
+						__( 'calculate_statistics tool', 'mcp-ai-wpoos' ),
+						__( 'generate_predictions tool', 'mcp-ai-wpoos' ),
+						__( 'export_csv tool', 'mcp-ai-wpoos' ),
+						__( 'import_csv tool', 'mcp-ai-wpoos' ),
+						__( 'create_charts tool', 'mcp-ai-wpoos' ),
+						__( 'analyze_trends tool', 'mcp-ai-wpoos' ),
+						__( 'generate_insights tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'multilingual_toolkit' => array(
+					'name'        => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_multilingual_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'i18next', 'franc', 'google-translate-api-x', 'iso-639-1' ),
+					'tools_count' => 6,
+					'tools'       => array(
+						__( 'translate_content tool', 'mcp-ai-wpoos' ),
+						__( 'detect_language tool', 'mcp-ai-wpoos' ),
+						__( 'manage_translations tool', 'mcp-ai-wpoos' ),
+						__( 'localize_content tool', 'mcp-ai-wpoos' ),
+						__( 'validate_language_codes tool', 'mcp-ai-wpoos' ),
+						__( 'batch_translate tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'video_production_toolkit' => array(
+					'name'        => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_video_production_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate', 'exec' ),
+					'npm_packages' => array( 'ffmpeg-static', 'ffprobe-static', 'gif-encoder', 'video-stitch', 'subtitle' ),
+					'tools_count' => 10,
+					'tools'       => array(
+						__( 'create_video tool', 'mcp-ai-wpoos' ),
+						__( 'edit_video tool', 'mcp-ai-wpoos' ),
+						__( 'convert_video tool', 'mcp-ai-wpoos' ),
+						__( 'compress_video tool', 'mcp-ai-wpoos' ),
+						__( 'add_subtitles tool', 'mcp-ai-wpoos' ),
+						__( 'generate_gif tool', 'mcp-ai-wpoos' ),
+						__( 'stitch_videos tool', 'mcp-ai-wpoos' ),
+						__( 'extract_audio tool', 'mcp-ai-wpoos' ),
+						__( 'add_watermark tool', 'mcp-ai-wpoos' ),
+						__( 'trim_video tool', 'mcp-ai-wpoos' ),
+					),
+				),
 			);
 
 			// Check PHP function availability for each toolkit.
@@ -602,20 +708,76 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		/**
 		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
-		 * Checks for packages in vendor directories, bundled into built JavaScript files,
-		 * bundled into local scripts, or in node_modules (both base and Pro addon locations).
+		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
+		 * This ensures production deployments with vendor files are detected before dev fallbacks.
 		 *
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
 		 */
 		private static function check_package_installed( $package ) {
-			// Check for vendor copies (chart.js, vectorizer).
+			// Check for base vendor copies (chart.js, vectorizer).
 			if ( 'chart.js' === $package ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' );
 			}
 			if ( '@neplex/vectorizer' === $package ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/neplex-vectorizer/' );
 			}
+
+			// ===================================================================
+			// PRIORITY 1: Check Pro addon packages in vendor directory FIRST
+			// This is the production deployment - check BEFORE dev fallbacks
+			// ===================================================================
+			$pro_vendor_packages = array(
+				// Original packages (Phase 1).
+				'@turf/turf'                        => 'turf/dist/esm/index.js',
+				'@types/pdfkit'                     => false, // TypeScript types only, no runtime file.
+				'fluent-ffmpeg'                     => 'fluent-ffmpeg/index.js',
+				'ics'                               => 'ics/index.js',
+				'katex'                             => 'katex/dist/katex.min.js',
+				'mjml'                              => 'mjml/lib/index.js',
+				'prettier'                          => 'prettier/standalone.js',
+				'sharp'                             => 'sharp/lib/index.js',
+				// E-commerce Toolkit packages (Phase 2).
+				'@woocommerce/woocommerce-rest-api' => 'woocommerce-rest-api/index.js',
+				'stripe'                            => 'stripe/lib/stripe.js',
+				'currency.js'                       => 'currency.js/currency.min.js',
+				// Social Media Toolkit packages (Phase 2).
+				'twitter-api-v2'                    => 'twitter-api-v2/dist/index.js',
+				'axios'                             => 'axios/dist/axios.js',
+				'facebook-nodejs-business-sdk'      => 'facebook-nodejs-business-sdk/dist/index.js',
+				'linkedin-api-client'               => 'linkedin-api-client/dist/index.js',
+				// Analytics Toolkit packages (Phase 2).
+				'd3'                                => 'd3/dist/d3.min.js',
+				'mathjs'                            => 'mathjs/lib/index.js',
+				'regression'                        => 'regression/regression.min.js',
+				'fast-csv'                          => 'fast-csv/build/index.js',
+				// Multilingual Toolkit packages (Phase 2).
+				'i18next'                           => 'i18next/dist/i18next.js',
+				'franc'                             => 'franc/index.js',
+				'google-translate-api-x'            => 'google-translate-api-x/dist/index.js',
+				'iso-639-1'                         => 'iso-639-1/index.js',
+				// Video Production Toolkit packages (Phase 2).
+				'ffmpeg-static'                     => 'ffmpeg-static/index.js',
+				'ffprobe-static'                    => 'ffprobe-static/index.js',
+				'gif-encoder'                       => 'gif-encoder/lib/index.js',
+				'video-stitch'                      => 'video-stitch/index.js',
+				'subtitle'                          => 'subtitle/index.js',
+			);
+			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// @types packages don't have runtime files.
+				if ( false === $pro_vendor_packages[ $package ] ) {
+					return true; // TypeScript type definitions are always available.
+				}
+				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
+				if ( file_exists( $vendor_path ) ) {
+					return true;
+				}
+			}
+
+			// ===================================================================
+			// PRIORITY 2: Check for packages bundled into built files
+			// These are also production assets (chat-bundle, document bundles)
+			// ===================================================================
 
 			// Check for packages bundled into chat-bundle.min.js via esbuild.
 			$bundled_packages = array(
@@ -641,27 +803,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check for Pro addon packages in vendor directory.
-			$pro_vendor_packages = array(
-				'@turf/turf'     => 'turf/dist/esm/index.js',
-				'@types/pdfkit'  => false, // TypeScript types only, no runtime file.
-				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
-				'ics'            => 'ics/index.js',
-				'katex'          => 'katex/dist/katex.min.js',
-				'mjml'           => 'mjml/lib/index.js',
-				'prettier'       => 'prettier/standalone.js',
-				'sharp'          => 'sharp/lib/index.js',
-			);
-			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				// @types packages don't have runtime files.
-				if ( false === $pro_vendor_packages[ $package ] ) {
-					return true; // TypeScript type definitions are always available.
-				}
-				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
-				if ( file_exists( $vendor_path ) ) {
-					return true;
-				}
-			}
+			// ===================================================================
+			// PRIORITY 3: Fallback to node_modules (DEVELOPMENT ONLY)
+			// Only check these if vendor files are not found
+			// ===================================================================
 
 			// Fallback: Check Pro node_modules (for development).
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
