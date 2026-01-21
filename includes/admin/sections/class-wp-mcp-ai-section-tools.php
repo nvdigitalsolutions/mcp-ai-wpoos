@@ -580,6 +580,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 24 AI-powered financial tools for retirement planning, budget management, investment analysis, debt calculation, goal planning, and tax estimation. Includes Plaid API integration for bank account sync. EDUCATIONAL USE ONLY - Not financial advice. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Calendar Booking Toolkit (Phase 2.6).
+				'enable_calendar_booking_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable appointment scheduling and booking tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12-15 AI-powered booking tools for appointment scheduling, calendar sync (Google/Outlook/iCloud), staff management, service offerings, availability management, and payment processing. Supports mesh network for multi-location availability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// DJ Management Toolkit (Phase 2.7).
+				'enable_dj_management_toolkit'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DJ Management Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DJ business management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 15-18 AI-powered DJ management tools for event booking, equipment inventory, playlist creation, contract generation, payment tracking, and music API integrations (Spotify, Apple Music, YouTube). Includes DocuSign/HelloSign for contracts. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Image Production Toolkit (Phase 2.8).
+				'enable_image_production_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Image Production Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI image generation and editing tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12-15 AI-powered image tools for AI generation (DALL-E 3, Stable Diffusion), upscaling, editing, format conversion, compression, and watermarking. Supports mesh network for GPU-accelerated processing. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// AI Tool Builder Toolkit (Phase 2.9).
+				'enable_ai_tool_builder_toolkit'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable meta-toolkit for building custom tools with AI (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 10 AI-powered meta-tools for building new tools: scaffolding, code generation, parameter schema design, test generation, documentation, and quality assurance. Uses OpenAI Codex for intelligent tool creation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -648,7 +684,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -814,13 +850,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			$toolkit_options = array(
-				'enable_ecommerce_toolkit',
-				'enable_social_media_toolkit',
-				'enable_analytics_toolkit',
-				'enable_multilingual_toolkit',
-				'enable_video_production_toolkit',
-				'enable_financial_planner_toolkit',
-			);
+			'enable_media_toolkit',
+			'enable_ecommerce_toolkit',
+			'enable_social_media_toolkit',
+			'enable_analytics_toolkit',
+			'enable_multilingual_toolkit',
+			'enable_video_production_toolkit',
+			'enable_financial_planner_toolkit',
+			'enable_calendar_booking_toolkit',
+			'enable_dj_management_toolkit',
+			'enable_image_production_toolkit',
+			'enable_ai_tool_builder_toolkit',
+		);
 
 			$enabled_count = 0;
 			foreach ( $toolkit_options as $option ) {
@@ -829,7 +870,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				}
 			}
 
-			$max_toolkits   = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', 6 );
+			$max_toolkits   = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', 5 );
 			$limit_reached  = $enabled_count >= $max_toolkits;
 			$counter_class  = '';
 			$counter_status = '';
@@ -899,12 +940,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					jQuery(document).ready(function($) {
 						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
 						var toolkitCheckboxes = $(
+							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_analytics_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_multilingual_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_video_production_toolkit]"],' +
-							'input[name="wp_mcp_ai_settings[enable_financial_planner_toolkit]"]'
+							'input[name="wp_mcp_ai_settings[enable_financial_planner_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_calendar_booking_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_dj_management_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"]'
 						);
 
 						function updateToolkitLimit() {
