@@ -607,6 +607,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Get_Order_Analytics'           => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
 				// Customer Management tools.
 				'WP_MCP_AI_Tool_Segment_Customers'             => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-segment-customers.php',
+				'WP_MCP_AI_Tool_Customer_Lifetime_Value'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-customer-lifetime-value.php',
+				'WP_MCP_AI_Tool_Export_Customer_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-customer-data.php',
 				// Marketing & Sales tools.
 				'WP_MCP_AI_Tool_Create_Discount_Campaign'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-discount-campaign.php',
 			);

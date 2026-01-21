@@ -20,8 +20,8 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 ### Customer Management (3 tools)
 - [x] segment_customers - Create customer segments
-- [ ] customer_lifetime_value - Calculate CLV
-- [ ] export_customer_data - GDPR-compliant export
+- [x] customer_lifetime_value - Calculate CLV
+- [x] export_customer_data - GDPR-compliant export
 
 ### Inventory & Stock (3 tools)
 - [ ] track_inventory_movement - Track stock movements
@@ -37,7 +37,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 2 (Tools)**: 🔄 In Progress (9/20 tools complete - 45%)
+**Phase 2 (Tools)**: 🔄 In Progress (11/20 tools complete - 55%)
 
 ## Dependencies
 
