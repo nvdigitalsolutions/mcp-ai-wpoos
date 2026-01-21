@@ -742,17 +742,17 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'stripe'                            => 'stripe/cjs/stripe.core.js',
 				'currency.js'                       => 'currency.js/currency.min.js',
 				// Social Media Toolkit packages (Phase 2).
-				'twitter-api-v2'                    => 'twitter-api-v2/dist/index.js',
+				'twitter-api-v2'                    => 'twitter-api-v2/dist/cjs/index.js',
 				'axios'                             => 'axios/dist/axios.js',
 				'facebook-nodejs-business-sdk'      => 'facebook-nodejs-business-sdk/dist/cjs.js',
 				'linkedin-api-client'               => 'linkedin-api-client/dist/lib/auth.js',
 				// Analytics Toolkit packages (Phase 2).
 				'd3'                                => 'd3/dist/d3.min.js',
-				'mathjs'                            => 'mathjs/lib/index.js',
+				'mathjs'                            => 'mathjs/lib/cjs/index.js',
 				'regression'                        => 'regression/regression.min.js',
 				'fast-csv'                          => 'fast-csv/build/src/index.js',
 				// Multilingual Toolkit packages (Phase 2).
-				'i18next'                           => 'i18next/dist/i18next.js',
+				'i18next'                           => 'i18next/dist/cjs/i18next.js',
 				'franc'                             => 'franc/index.js',
 				'google-translate-api-x'            => 'google-translate-api-x/index.cjs',
 				'iso-639-1'                         => 'iso-639-1/index.js',
@@ -761,7 +761,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'ffprobe-static'                    => 'ffprobe-static/index.js',
 				'gif-encoder'                       => 'gif-encoder/lib/GIFEncoder.js',
 				'video-stitch'                      => 'video-stitch/index.js',
-				'subtitle'                          => 'subtitle/index.js',
+				'subtitle'                          => 'subtitle/dist/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
