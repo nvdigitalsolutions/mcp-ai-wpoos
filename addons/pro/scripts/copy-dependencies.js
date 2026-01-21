@@ -169,7 +169,8 @@ const dependencies = [
 	{
 		name: '@woocommerce/woocommerce-rest-api',
 		files: [
-			{ src: 'dist/index.js', dest: 'woocommerce-rest-api/index.js' },
+			{ src: 'index.js', dest: 'woocommerce-rest-api/index.js' },
+			{ src: 'index.mjs', dest: 'woocommerce-rest-api/index.mjs' },
 			{ src: 'package.json', dest: 'woocommerce-rest-api/package.json' },
 		],
 	},
@@ -320,14 +321,17 @@ const dependencies = [
 	{
 		name: 'video-stitch',
 		files: [
-			{ src: 'dist/index.js', dest: 'video-stitch/index.js' },
+			{ src: 'index.js', dest: 'video-stitch/index.js' },
+			{ src: 'lib', dest: 'video-stitch/lib', isDir: true },
 			{ src: 'package.json', dest: 'video-stitch/package.json' },
 		],
 	},
 	{
 		name: 'subtitle',
+		dirs: [
+			{ src: 'dist', dest: 'subtitle/dist' },
+		],
 		files: [
-			{ src: 'index.js', dest: 'subtitle/index.js' },
 			{ src: 'package.json', dest: 'subtitle/package.json' },
 		],
 	},
