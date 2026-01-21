@@ -60,8 +60,8 @@ class WP_MCP_AI_Page_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		// For the built-in 'page' post type, WordPress uses 'page_page_{slug}' format.
-		if ( 'page_page_' . self::PAGE_SLUG !== $hook ) {
+		// For the built-in 'page' post type, WordPress uses 'pages_page_{slug}' format (note the 's').
+		if ( 'pages_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
@@ -117,7 +117,7 @@ class WP_MCP_AI_Page_Research_Page {
 		$screen = get_current_screen();
 		
 		// Only output on our research page.
-		if ( ! $screen || 'page_page_' . self::PAGE_SLUG !== $screen->id ) {
+		if ( ! $screen || 'pages_page_' . self::PAGE_SLUG !== $screen->id ) {
 			return;
 		}
 
