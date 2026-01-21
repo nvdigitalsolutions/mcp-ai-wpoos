@@ -1350,6 +1350,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					</div>
 				</div>
 
+				<!-- Configuration Presets Section -->
+				<?php
+				$fields = $this->get_fields();
+				if ( isset( $fields['configuration_presets'] ) ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in get_presets_content method.
+					echo $fields['configuration_presets']['content'];
+				}
+				if ( isset( $fields['orchestration_preset'] ) ) {
+					// Render hidden field for preset tracking.
+					echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( WP_MCP_AI_Settings_Registry::get_setting( 'orchestration_preset', 'auto' ) ) . '" />';
+				}
+				?>
+
 				<!-- Executive Metrics Grid -->
 				<div class="executive-metrics-grid">
 					<div class="executive-metric-card">
@@ -1922,8 +1935,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Settings fields: enable/disable toggles, cron retention, and async execution settings.
 			$settings_fields = array(
-				'configuration_presets',       // Configuration presets selector.
-				'orchestration_preset',        // Hidden field for active preset.
 				'enable_budget_management',
 				'enable_predictive_optimization',
 				'enable_capability_gating',
