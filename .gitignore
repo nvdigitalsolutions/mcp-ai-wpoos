@@ -85,6 +85,12 @@ composer.phar
 # The chat-bundle.js source file uses ES6 imports that browsers cannot execute directly.
 !assets/js/chat-bundle.min.js
 !assets/js/chat-bundle.min.js.map
+
+# Keep vendor production files (pre-built from npm packages)
+!addons/pro/assets/vendor/**/*.min.js
+!addons/pro/assets/vendor/**/*.min.css
+!addons/pro/assets/vendor/**/*.js
+!addons/pro/assets/vendor/**/*.css
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html

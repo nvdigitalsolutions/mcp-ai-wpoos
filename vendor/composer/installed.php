@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/ensure-pro-setting-bundle-check',
-        'version' => 'dev-copilot/ensure-pro-setting-bundle-check',
-        'reference' => 'c9174913a45b2918db7ca16d5049b490e3f89ec3',
+        'pretty_version' => 'dev-copilot/fix-npm-package-errors',
+        'version' => 'dev-copilot/fix-npm-package-errors',
+        'reference' => '41b311a049a2b25b8d4db557ef5ad518452bf6b7',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/ensure-pro-setting-bundle-check',
-            'version' => 'dev-copilot/ensure-pro-setting-bundle-check',
-            'reference' => 'c9174913a45b2918db7ca16d5049b490e3f89ec3',
+            'pretty_version' => 'dev-copilot/fix-npm-package-errors',
+            'version' => 'dev-copilot/fix-npm-package-errors',
+            'reference' => '41b311a049a2b25b8d4db557ef5ad518452bf6b7',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
