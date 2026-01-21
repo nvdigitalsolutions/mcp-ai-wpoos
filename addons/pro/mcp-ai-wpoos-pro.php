@@ -307,6 +307,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/video-production-toolkit-init.php';
 		}
 
+		// Load Financial Planner Toolkit if enabled (Pro feature - Phase 2.5).
+		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/financial-planner-toolkit-init.php';
+		}
+
+		// Load Calendar Booking Toolkit if enabled (Pro feature - Phase 2.6).
+		if ( ! empty( $settings['enable_calendar_booking_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking-toolkit-init.php';
+		}
+
+		// Load DJ Management Toolkit if enabled (Pro feature - Phase 2.7).
+		if ( ! empty( $settings['enable_dj_management_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/dj-management-toolkit-init.php';
+		}
+
+		// Load Image Production Toolkit if enabled (Pro feature - Phase 2.8).
+		if ( ! empty( $settings['enable_image_production_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/image-production-toolkit-init.php';
+		}
+
+		// Load AI Tool Builder Toolkit if enabled (Pro feature - Phase 2.9).
+		if ( ! empty( $settings['enable_ai_tool_builder_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
+		}
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
