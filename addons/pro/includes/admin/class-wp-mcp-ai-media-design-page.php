@@ -127,10 +127,6 @@ class WP_MCP_AI_Media_Design_Page {
 			#adminmenu #menu-media .wp-submenu li.current {
 				color: #fff;
 			}
-			/* Fix for design page layout */
-			.wp-mcp-ai-research-page .wrap {
-				margin: 0;
-			}
 		</style>
 		<?php
 	}

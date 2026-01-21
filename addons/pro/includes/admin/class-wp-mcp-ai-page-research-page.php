@@ -128,10 +128,6 @@ class WP_MCP_AI_Page_Research_Page {
 			#adminmenu #menu-pages .wp-submenu li.current {
 				color: #fff;
 			}
-			/* Fix for research page layout */
-			.wp-mcp-ai-research-page .wrap {
-				margin: 0;
-			}
 		</style>
 		<?php
 	}
