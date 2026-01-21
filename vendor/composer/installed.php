@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-missing-npm-dependencies-again',
-        'version' => 'dev-copilot/fix-missing-npm-dependencies-again',
-        'reference' => 'ac7a120a32f2754d48ea20b7d875fd78cbe2865c',
+        'pretty_version' => 'dev-copilot/research-plugin-sizes',
+        'version' => 'dev-copilot/research-plugin-sizes',
+        'reference' => 'a6a768414caf4c5bde6a7bbc0de8ffc056147d0d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-missing-npm-dependencies-again',
-            'version' => 'dev-copilot/fix-missing-npm-dependencies-again',
-            'reference' => 'ac7a120a32f2754d48ea20b7d875fd78cbe2865c',
+            'pretty_version' => 'dev-copilot/research-plugin-sizes',
+            'version' => 'dev-copilot/research-plugin-sizes',
+            'reference' => 'a6a768414caf4c5bde6a7bbc0de8ffc056147d0d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
