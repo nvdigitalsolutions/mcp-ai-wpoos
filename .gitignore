@@ -26,6 +26,7 @@ composer.phar
 # Ignore ZIP files everywhere except in build directory
 *.zip
 !/build/*.zip
+!/build/optional-components/*.zip
 
 # Ignore all vendor by default
 /vendor/*

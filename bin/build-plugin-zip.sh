@@ -153,8 +153,8 @@ echo ""
 
 # Step 2: Install production Composer dependencies
 echo "Step 2: Installing production PHP dependencies..."
-composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction --quiet
-echo "✅ Production dependencies installed"
+composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction --quiet
+echo "✅ Production dependencies installed (with optimized classmap autoloader)"
 echo ""
 
 # Clean build directory
@@ -223,6 +223,8 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.distignore' \
         --exclude 'addons/pro' \
         --exclude 'assets/examples' \
+        --exclude 'assets/csv-templates' \
+        --exclude 'examples' \
         --exclude '*.map' \
         --exclude 'vendor/*/Test' \
         --exclude 'vendor/*/Tests' \
@@ -349,6 +351,54 @@ if [ "$BUILD_BASE" = true ]; then
         echo "✓ Added plugin header to mcp-ai-wpoos-base.php for base version"
     fi
     
+    # Reduce knowledge base size by keeping only 20 most common professions
+    echo "Step 3a.1: Reducing knowledge base size (keeping top 20 professions)..."
+    PLAYBOOKS_DIR="build/${BASE_SLUG}/includes/knowledge-base/profession-playbooks/professions"
+    if [ -d "$PLAYBOOKS_DIR" ]; then
+        # Keep these 20 most common professions
+        KEEP_PROFESSIONS=(
+            "business_consultant.txt"
+            "content_writer.txt"
+            "marketing_consultant.txt"
+            "web_developer.txt"
+            "graphic_designer.txt"
+            "data_analyst.txt"
+            "project_manager.txt"
+            "social_media_manager.txt"
+            "seo_specialist.txt"
+            "customer_support.txt"
+            "software_engineer.txt"
+            "sales_manager.txt"
+            "accountant.txt"
+            "virtual_assistant.txt"
+            "copywriter.txt"
+            "ux_designer.txt"
+            "product_manager.txt"
+            "photographer.txt"
+            "video_editor.txt"
+            "translator.txt"
+        )
+        
+        # Remove all profession playbooks except the ones we want to keep
+        cd "$PLAYBOOKS_DIR"
+        for file in *.txt; do
+            KEEP=false
+            for keep_file in "${KEEP_PROFESSIONS[@]}"; do
+                if [ "$file" = "$keep_file" ]; then
+                    KEEP=true
+                    break
+                fi
+            done
+            if [ "$KEEP" = false ]; then
+                rm -f "$file"
+            fi
+        done
+        cd "$ROOT_DIR"
+        
+        KEPT_COUNT=$(ls -1 "$PLAYBOOKS_DIR"/*.txt 2>/dev/null | wc -l)
+        echo "✓ Kept ${KEPT_COUNT} most common profession playbooks (others will download on-demand)"
+    fi
+    
     # Create ZIP
     cd build
     zip -r -q "${BASE_SLUG}-${VERSION}.zip" "${BASE_SLUG}/" -x "*.DS_Store" -x "*__MACOSX*"
@@ -377,6 +427,20 @@ if [ "$BUILD_PRO" = true ]; then
             --exclude 'tests' \
             --exclude '*.zip' \
             --exclude 'assets/examples'
+        
+        # Copy examples and CSV templates from root to Pro (excluded from base)
+        if [ -d "examples" ]; then
+            rsync -av --quiet examples/ "build/${PRO_SLUG}/examples/" \
+                --exclude '.git'
+            echo "✓ Copied examples/ to Pro addon"
+        fi
+        
+        if [ -d "assets/csv-templates" ]; then
+            mkdir -p "build/${PRO_SLUG}/assets"
+            rsync -av --quiet assets/csv-templates/ "build/${PRO_SLUG}/assets/csv-templates/" \
+                --exclude '.git'
+            echo "✓ Copied assets/csv-templates/ to Pro addon"
+        fi
         
         # Add plugin header to mcp-ai-wpoos-pro.php for standalone Pro addon distribution
         # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
