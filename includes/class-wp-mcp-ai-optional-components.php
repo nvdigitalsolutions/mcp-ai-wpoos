@@ -2,8 +2,11 @@
 /**
  * Optional Components Manager
  *
- * Handles downloading and managing optional components like vectorizer and knowledge base
+ * Handles downloading and managing optional components like knowledge base
  * that are excluded from the base plugin ZIP to reduce size.
+ *
+ * Note: As of current version, neplex-vectorizer is now bundled with the base plugin.
+ * Only the knowledge base (profession playbooks) remains as an optional download.
  *
  * @package WP_MCP_AI
  */
@@ -28,6 +31,12 @@ class WP_MCP_AI_Optional_Components {
 	const GITHUB_RELEASE_BASE = 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/releases/download';
 
 	/**
+	 * Dev-working URL for downloading components during development.
+	 * This URL is used when WP_MCP_AI_DEV_COMPONENTS is defined.
+	 */
+	const DEV_WORKING_BASE = 'https://raw.githubusercontent.com/nvdigitalsolutions/mcp-ai-wpoos/dev-working/build/optional-components';
+
+	/**
 	 * Transient key for download in progress.
 	 */
 	const DOWNLOAD_IN_PROGRESS = 'wp_mcp_ai_downloading_components';
@@ -47,6 +56,24 @@ class WP_MCP_AI_Optional_Components {
 
 		// Background download via action scheduler or cron.
 		add_action( 'wp_mcp_ai_download_optional_components', array( __CLASS__, 'background_download' ) );
+	}
+
+	/**
+	 * Get the base URL for downloading components.
+	 *
+	 * Returns dev-working URL if WP_MCP_AI_DEV_COMPONENTS is defined,
+	 * otherwise returns the GitHub release URL.
+	 *
+	 * @return string Base URL for component downloads.
+	 */
+	private static function get_download_base_url() {
+		// Use dev-working location if explicitly enabled.
+		if ( defined( 'WP_MCP_AI_DEV_COMPONENTS' ) && true === WP_MCP_AI_DEV_COMPONENTS ) {
+			return self::DEV_WORKING_BASE;
+		}
+
+		// Default to GitHub releases.
+		return self::GITHUB_RELEASE_BASE . '/v' . WP_MCP_AI_VERSION;
 	}
 
 	/**
@@ -123,7 +150,8 @@ class WP_MCP_AI_Optional_Components {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function download_vectorizer() {
-		$download_url   = self::GITHUB_RELEASE_BASE . '/v' . WP_MCP_AI_VERSION . '/neplex-vectorizer.zip';
+		$base_url       = self::get_download_base_url();
+		$download_url   = $base_url . '/neplex-vectorizer.zip';
 		$target_dir     = WP_MCP_AI_PATH . 'assets/js/vendor/';
 		$temp_file      = download_url( $download_url );
 
@@ -151,7 +179,8 @@ class WP_MCP_AI_Optional_Components {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function download_knowledge_base() {
-		$download_url = self::GITHUB_RELEASE_BASE . '/v' . WP_MCP_AI_VERSION . '/knowledge-base.zip';
+		$base_url     = self::get_download_base_url();
+		$download_url = $base_url . '/knowledge-base.zip';
 		$target_dir   = WP_MCP_AI_PATH . 'includes/knowledge-base/';
 		$temp_file    = download_url( $download_url );
 
