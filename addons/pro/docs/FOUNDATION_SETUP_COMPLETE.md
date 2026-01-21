@@ -68,19 +68,15 @@ Updated **NEW_TOOLKITS_README.md**:
 
 ---
 
-## Node.js Version Requirements ⚠️
+## Node.js Version Requirements
 
-**CRITICAL UPDATE**: 
+All 20 new NPM packages are compatible with Node.js 18+:
 
-- ❌ **Node.js 18**: Reached End-of-Life (EOL) April 30, 2025 - **NOT SUPPORTED**
-- ✅ **Node.js 20**: Minimum supported version
-- ✅ **Node.js 22**: Recommended for new projects (LTS until 2027)
+- ✅ **Node.js 18**: Minimum supported version (EOL April 30, 2025)
+- ✅ **Node.js 20**: **Preferred** (LTS until April 2026, recommended for development)
+- ✅ **Node.js 22**: Future-proof (LTS until 2027)
 
-All 20 new NPM packages require Node.js 20+ for:
-- Security patches and updates
-- Binary prebuild compatibility (ffmpeg-static, sharp)
-- Modern ECMAScript features
-- Active package maintenance
+**Recommendation**: Use Node.js 20+ for development to receive ongoing security updates. Node.js 18 is supported for compatibility but is past EOL.
 
 See `docs/NEW_TOOLKITS_NPM_PACKAGES.md` for detailed compatibility matrix.
 
@@ -233,7 +229,7 @@ The foundation can be tested by:
 
 Before beginning Phase 2 (E-commerce Toolkit):
 
-- [ ] Verify Node.js 20+ or Node.js 22 LTS is installed
+- [ ] Verify Node.js 18+ installed (**Node.js 20+ preferred**)
 - [ ] Verify npm 9+ is installed
 - [ ] Review E-commerce toolkit specification in `docs/PRO_TOOLKITS_IMPLEMENTATION_PLAN.md`
 - [ ] Ensure WooCommerce test environment is available
