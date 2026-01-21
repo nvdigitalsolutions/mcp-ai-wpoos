@@ -3239,6 +3239,166 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			<!-- Styling -->
 			<style>
+				/* Enhanced Orchestration Styles */
+				.wp-mcp-ai-orchestration-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: flex-start;
+					margin-bottom: 20px;
+					padding: 20px;
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+				}
+				
+				.wp-mcp-ai-health-indicator {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					padding: 10px 15px;
+					border-radius: 4px;
+					background: #f8f9fa;
+					border-left: 4px solid #4CAF50;
+					font-size: 13px;
+				}
+				
+				.wp-mcp-ai-health-indicator.wp-mcp-ai-health-warning {
+					border-left-color: #FF9800;
+				}
+				
+				.wp-mcp-ai-health-indicator.wp-mcp-ai-health-critical {
+					border-left-color: #F44336;
+				}
+				
+				.wp-mcp-ai-health-indicator .dashicons {
+					font-size: 20px;
+				}
+				
+				.wp-mcp-ai-health-indicator.wp-mcp-ai-health-good .dashicons {
+					color: #4CAF50;
+				}
+				
+				.wp-mcp-ai-health-indicator.wp-mcp-ai-health-warning .dashicons {
+					color: #FF9800;
+				}
+				
+				.wp-mcp-ai-health-indicator.wp-mcp-ai-health-critical .dashicons {
+					color: #F44336;
+				}
+				
+				.wp-mcp-ai-health-label {
+					font-weight: 600;
+					color: #666;
+				}
+				
+				.wp-mcp-ai-health-value {
+					font-weight: bold;
+					color: #1d2327;
+				}
+				
+				.wp-mcp-ai-orchestration-metrics-grid {
+					display: grid;
+					grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+					gap: 20px;
+					margin: 20px 0;
+				}
+				
+				.wp-mcp-ai-metric-card {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					display: flex;
+					gap: 15px;
+					align-items: flex-start;
+					transition: all 0.2s;
+				}
+				
+				.wp-mcp-ai-metric-card:hover {
+					box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+					transform: translateY(-2px);
+				}
+				
+				.wp-mcp-ai-metric-icon {
+					font-size: 40px;
+					color: #2271b1;
+					line-height: 1;
+				}
+				
+				.wp-mcp-ai-metric-icon .dashicons {
+					width: 40px;
+					height: 40px;
+					font-size: 40px;
+				}
+				
+				.wp-mcp-ai-metric-content {
+					flex: 1;
+				}
+				
+				.wp-mcp-ai-metric-label {
+					font-size: 13px;
+					color: #666;
+					margin-bottom: 5px;
+					font-weight: 500;
+				}
+				
+				.wp-mcp-ai-metric-value {
+					font-size: 32px;
+					font-weight: bold;
+					color: #1d2327;
+					line-height: 1;
+					margin-bottom: 5px;
+				}
+				
+				.wp-mcp-ai-metric-subtitle,
+				.metric-subtitle {
+					font-size: 12px;
+					color: #999;
+				}
+				
+				.wp-mcp-ai-metric-subtitle.status-good,
+				.metric-subtitle.status-good {
+					color: #4CAF50;
+					font-weight: 600;
+				}
+				
+				.wp-mcp-ai-metric-subtitle.status-warning,
+				.metric-subtitle.status-warning {
+					color: #FF9800;
+					font-weight: 600;
+				}
+				
+				.wp-mcp-ai-metric-subtitle.status-critical,
+				.metric-subtitle.status-critical {
+					color: #F44336;
+					font-weight: 600;
+				}
+				
+				.orchestration-charts-section {
+					background: #fff;
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 20px;
+					margin: 20px 0;
+					box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+				}
+				
+				.orchestration-charts-section h4 {
+					display: flex;
+					align-items: center;
+					gap: 8px;
+					margin: 0 0 15px 0;
+					color: #1d2327;
+					font-size: 16px;
+					font-weight: 600;
+				}
+				
+				.orchestration-charts-section h4 .dashicons {
+					color: #2271b1;
+				}
+				
+				/* Professions Specific Styles */
 				.professions-stats {
 					background: #f8f9fa;
 					padding: 15px 20px;
