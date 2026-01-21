@@ -2,8 +2,11 @@
 /**
  * Optional Components Manager
  *
- * Handles downloading and managing optional components like vectorizer and knowledge base
+ * Handles downloading and managing optional components like knowledge base
  * that are excluded from the base plugin ZIP to reduce size.
+ *
+ * Note: As of current version, neplex-vectorizer is now bundled with the base plugin.
+ * Only the knowledge base (profession playbooks) remains as an optional download.
  *
  * @package WP_MCP_AI
  */

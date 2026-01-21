@@ -223,7 +223,6 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.distignore' \
         --exclude 'addons/pro' \
         --exclude 'assets/examples' \
-        --exclude 'assets/js/vendor/neplex-vectorizer' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
         --exclude '*.map' \
