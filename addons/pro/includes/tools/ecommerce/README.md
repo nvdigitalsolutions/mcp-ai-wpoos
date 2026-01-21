@@ -6,8 +6,8 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 
 ### Product Management (5 tools)
 - [x] create_product_advanced - Create product with all WooCommerce meta
-- [ ] bulk_update_products - Update multiple products at once
-- [ ] import_products_csv - Import products from CSV/Excel
+- [x] bulk_update_products - Update multiple products at once
+- [x] import_products_csv - Import products from CSV/Excel
 - [ ] export_products_report - Export product catalog with analytics
 - [ ] sync_product_inventory - Sync inventory across warehouses
 
@@ -37,7 +37,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 2 (Tools)**: 🔄 In Progress (1/20 tools complete)
+**Phase 2 (Tools)**: 🔄 In Progress (3/20 tools complete)
 
 ## Dependencies
 
