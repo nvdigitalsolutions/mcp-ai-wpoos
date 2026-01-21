@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface
 		// Sort by total CLV.
 		usort(
 			$clv_data,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $b['total_clv'] <=> $a['total_clv'];
 			}
 		);
@@ -319,10 +319,10 @@ class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface
 		// Get customer orders.
 		$orders = wc_get_orders(
 			array(
-				'limit'        => -1,
+				'limit'         => -1,
 				'billing_email' => $email,
-				'date_created' => '>=' . $date_from,
-				'status'       => array( 'completed', 'processing' ),
+				'date_created'  => '>=' . $date_from,
+				'status'        => array( 'completed', 'processing' ),
 			)
 		);
 
@@ -336,12 +336,12 @@ class WP_MCP_AI_Tool_Customer_Lifetime_Value implements WP_MCP_AI_Tool_Interface
 		$total_clv = $historical_clv + $predictive_clv;
 
 		return array(
-			'historical_clv' => wc_format_decimal( $historical_clv, 2 ),
-			'predictive_clv' => wc_format_decimal( $predictive_clv, 2 ),
-			'total_clv'      => wc_format_decimal( $total_clv, 2 ),
-			'order_count'    => count( $orders ),
+			'historical_clv'  => wc_format_decimal( $historical_clv, 2 ),
+			'predictive_clv'  => wc_format_decimal( $predictive_clv, 2 ),
+			'total_clv'       => wc_format_decimal( $total_clv, 2 ),
+			'order_count'     => count( $orders ),
 			'avg_order_value' => count( $orders ) > 0 ? wc_format_decimal( $historical_clv / count( $orders ), 2 ) : 0,
-			'churn_risk'     => $this->assess_churn_risk( $orders ),
+			'churn_risk'      => $this->assess_churn_risk( $orders ),
 		);
 	}
 

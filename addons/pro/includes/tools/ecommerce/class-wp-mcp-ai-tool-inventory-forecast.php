@@ -106,18 +106,18 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'forecast_type' => array(
+				'forecast_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Type of forecast to generate', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'demand', 'reorder_points', 'stockout_risk', 'all' ),
 					'default'     => 'all',
 				),
-				'product_id'    => array(
+				'product_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID for forecast', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'product_ids'   => array(
+				'product_ids'          => array(
 					'type'        => 'array',
 					'description' => __( 'Product IDs for bulk forecast', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
@@ -136,19 +136,19 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 					'minimum'     => 7,
 					'maximum'     => 180,
 				),
-				'lead_time_days' => array(
+				'lead_time_days'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Supplier lead time in days', 'mcp-ai-wpoos-pro' ),
 					'default'     => 14,
 					'minimum'     => 1,
 				),
-				'safety_stock_days' => array(
+				'safety_stock_days'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Safety stock buffer in days', 'mcp-ai-wpoos-pro' ),
 					'default'     => 7,
 					'minimum'     => 0,
 				),
-				'category_ids'  => array(
+				'category_ids'         => array(
 					'type'        => 'array',
 					'description' => __( 'Filter by category IDs', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
@@ -227,11 +227,11 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'        => true,
-			'forecast_type'  => $forecast_type,
+			'success'           => true,
+			'forecast_type'     => $forecast_type,
 			'products_analyzed' => count( $forecasts ),
-			'forecasts'      => $forecasts,
-			'message'        => sprintf(
+			'forecasts'         => $forecasts,
+			'message'           => sprintf(
 				/* translators: %d: Number of products */
 				__( 'Generated forecasts for %d products.', 'mcp-ai-wpoos-pro' ),
 				count( $forecasts )
@@ -298,19 +298,19 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 		$sales_history = $this->get_sales_history( $product_id, $analysis_period );
 
 		// Calculate metrics.
-		$current_stock     = $product->get_stock_quantity();
-		$avg_daily_sales   = $this->calculate_average_daily_sales( $sales_history );
-		$sales_velocity    = $this->calculate_sales_velocity( $sales_history );
+		$current_stock   = $product->get_stock_quantity();
+		$avg_daily_sales = $this->calculate_average_daily_sales( $sales_history );
+		$sales_velocity  = $this->calculate_sales_velocity( $sales_history );
 
 		$forecast = array(
-			'product_id'   => $product_id,
-			'product_name' => $product->get_name(),
+			'product_id'    => $product_id,
+			'product_name'  => $product->get_name(),
 			'current_stock' => $current_stock,
-			'analysis'     => array(
-				'period_days'       => $analysis_period,
-				'total_sold'        => array_sum( array_column( $sales_history, 'quantity' ) ),
-				'avg_daily_sales'   => $avg_daily_sales,
-				'sales_velocity'    => $sales_velocity,
+			'analysis'      => array(
+				'period_days'     => $analysis_period,
+				'total_sold'      => array_sum( array_column( $sales_history, 'quantity' ) ),
+				'avg_daily_sales' => $avg_daily_sales,
+				'sales_velocity'  => $sales_velocity,
 			),
 		);
 
@@ -412,7 +412,7 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 		$first_avg  = $this->calculate_average_daily_sales( $first_half );
 		$second_avg = $this->calculate_average_daily_sales( $second_half );
 
-		if ( $first_avg === 0.0 ) {
+		if ( 0.0 === $first_avg ) {
 			return $second_avg > 0 ? 'increasing' : 'stable';
 		}
 
@@ -468,12 +468,12 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 		$reorder_point    = $lead_time_demand + $safety_stock;
 
 		return array(
-			'reorder_point'       => round( $reorder_point, 0 ),
-			'lead_time_demand'    => round( $lead_time_demand, 0 ),
-			'safety_stock'        => round( $safety_stock, 0 ),
-			'lead_time_days'      => $lead_time,
-			'safety_stock_days'   => $safety_stock_days,
-			'recommendation'      => sprintf(
+			'reorder_point'     => round( $reorder_point, 0 ),
+			'lead_time_demand'  => round( $lead_time_demand, 0 ),
+			'safety_stock'      => round( $safety_stock, 0 ),
+			'lead_time_days'    => $lead_time,
+			'safety_stock_days' => $safety_stock_days,
+			'recommendation'    => sprintf(
 				/* translators: %d: Reorder point quantity */
 				__( 'Reorder when stock reaches %d units', 'mcp-ai-wpoos-pro' ),
 				round( $reorder_point, 0 )
@@ -490,7 +490,7 @@ class WP_MCP_AI_Tool_Inventory_Forecast implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return array Risk assessment.
 	 */
 	protected function assess_stockout_risk( $current_stock, $avg_daily_sales, $lead_time ) {
-		if ( $avg_daily_sales === 0.0 ) {
+		if ( 0.0 === $avg_daily_sales ) {
 			return array(
 				'risk_level'     => 'low',
 				'days_of_stock'  => 999,

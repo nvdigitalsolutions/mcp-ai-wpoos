@@ -107,26 +107,26 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'date_from'      => array(
+				'date_from'         => array(
 					'type'        => 'string',
 					'description' => __( 'Start date (Y-m-d format, default: 30 days ago)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'        => array(
+				'date_to'           => array(
 					'type'        => 'string',
 					'description' => __( 'End date (Y-m-d format, default: today)', 'mcp-ai-wpoos-pro' ),
 				),
-				'group_by'       => array(
+				'group_by'          => array(
 					'type'        => 'string',
 					'description' => __( 'Group results by time period', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'day', 'week', 'month' ),
 					'default'     => 'day',
 				),
-				'include_trends' => array(
+				'include_trends'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include order trends over time', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_products' => array(
+				'include_products'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include top selling products', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Include customer analytics', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'top_count'      => array(
+				'top_count'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of top items to include', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
@@ -267,7 +267,7 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 			if ( ! isset( $status_counts[ $status ] ) ) {
 				$status_counts[ $status ] = 0;
 			}
-			$status_counts[ $status ]++;
+			++$status_counts[ $status ];
 
 			// Count payment methods.
 			$payment_method = $order->get_payment_method_title();
@@ -275,17 +275,17 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 				if ( ! isset( $payment_methods[ $payment_method ] ) ) {
 					$payment_methods[ $payment_method ] = 0;
 				}
-				$payment_methods[ $payment_method ]++;
+				++$payment_methods[ $payment_method ];
 			}
 		}
 
 		return array(
-			'total_orders'     => $total_orders,
-			'total_revenue'    => wc_format_decimal( $total_revenue, 2 ),
+			'total_orders'        => $total_orders,
+			'total_revenue'       => wc_format_decimal( $total_revenue, 2 ),
 			'average_order_value' => wc_format_decimal( $total_revenue / max( $total_orders, 1 ), 2 ),
-			'currency'         => get_woocommerce_currency(),
+			'currency'            => get_woocommerce_currency(),
 			'status_distribution' => $status_counts,
-			'payment_methods'  => $payment_methods,
+			'payment_methods'     => $payment_methods,
 		);
 	}
 
@@ -318,13 +318,13 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 
 			if ( ! isset( $trends[ $period_key ] ) ) {
 				$trends[ $period_key ] = array(
-					'period'       => $period_key,
-					'order_count'  => 0,
-					'revenue'      => 0,
+					'period'      => $period_key,
+					'order_count' => 0,
+					'revenue'     => 0,
 				);
 			}
 
-			$trends[ $period_key ]['order_count']++;
+			++$trends[ $period_key ]['order_count'];
 			$trends[ $period_key ]['revenue'] += $order->get_total();
 		}
 
@@ -385,23 +385,23 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 
 				if ( ! isset( $product_sales[ $product_id ] ) ) {
 					$product_sales[ $product_id ] = array(
-						'product_id'   => $product_id,
-						'name'         => $product->get_name(),
-						'sku'          => $product->get_sku(),
+						'product_id'    => $product_id,
+						'name'          => $product->get_name(),
+						'sku'           => $product->get_sku(),
 						'quantity_sold' => 0,
-						'revenue'      => 0,
+						'revenue'       => 0,
 					);
 				}
 
 				$product_sales[ $product_id ]['quantity_sold'] += $item->get_quantity();
-				$product_sales[ $product_id ]['revenue'] += $item->get_total();
+				$product_sales[ $product_id ]['revenue']       += $item->get_total();
 			}
 		}
 
 		// Sort by revenue.
 		uasort(
 			$product_sales,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $b['revenue'] <=> $a['revenue'];
 			}
 		);
@@ -424,8 +424,8 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 	 * @return array Customer analytics.
 	 */
 	protected function get_customer_analytics( $order_ids, $top_count ) {
-		$customer_data = array();
-		$new_customers = 0;
+		$customer_data       = array();
+		$new_customers       = 0;
 		$returning_customers = 0;
 
 		foreach ( $order_ids as $order_id ) {
@@ -435,7 +435,7 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 				continue;
 			}
 
-			$customer_id = $order->get_customer_id();
+			$customer_id    = $order->get_customer_id();
 			$customer_email = $order->get_billing_email();
 
 			// Use email as key if no customer ID.
@@ -443,32 +443,32 @@ class WP_MCP_AI_Tool_Get_Order_Analytics implements WP_MCP_AI_Tool_Interface, WP
 
 			if ( ! isset( $customer_data[ $customer_key ] ) ) {
 				$customer_data[ $customer_key ] = array(
-					'customer_id'    => $customer_id,
-					'name'           => $order->get_formatted_billing_full_name(),
-					'email'          => $customer_email,
-					'order_count'    => 0,
-					'total_spent'    => 0,
+					'customer_id'      => $customer_id,
+					'name'             => $order->get_formatted_billing_full_name(),
+					'email'            => $customer_email,
+					'order_count'      => 0,
+					'total_spent'      => 0,
 					'first_order_date' => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d' ) : '',
 				);
 			}
 
-			$customer_data[ $customer_key ]['order_count']++;
+			++$customer_data[ $customer_key ]['order_count'];
 			$customer_data[ $customer_key ]['total_spent'] += $order->get_total();
 		}
 
 		// Count new vs returning.
 		foreach ( $customer_data as $customer ) {
-			if ( $customer['order_count'] === 1 ) {
-				$new_customers++;
+			if ( 1 === $customer['order_count'] ) {
+				++$new_customers;
 			} else {
-				$returning_customers++;
+				++$returning_customers;
 			}
 		}
 
 		// Sort by total spent.
 		uasort(
 			$customer_data,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $b['total_spent'] <=> $a['total_spent'];
 			}
 		);

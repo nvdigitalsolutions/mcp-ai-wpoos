@@ -107,33 +107,51 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'order_id'     => array(
+				'order_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'WooCommerce order ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'branding'     => array(
+				'branding'         => array(
 					'type'        => 'object',
 					'description' => __( 'Company branding information', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'company_name'   => array( 'type' => 'string', 'description' => 'Company name' ),
-						'company_address' => array( 'type' => 'string', 'description' => 'Company address' ),
-						'company_email'  => array( 'type' => 'string', 'description' => 'Company email' ),
-						'company_phone'  => array( 'type' => 'string', 'description' => 'Company phone' ),
-						'logo_url'       => array( 'type' => 'string', 'description' => 'Company logo URL' ),
-						'website'        => array( 'type' => 'string', 'description' => 'Company website' ),
+						'company_name'    => array(
+							'type'        => 'string',
+							'description' => 'Company name',
+						),
+						'company_address' => array(
+							'type'        => 'string',
+							'description' => 'Company address',
+						),
+						'company_email'   => array(
+							'type'        => 'string',
+							'description' => 'Company email',
+						),
+						'company_phone'   => array(
+							'type'        => 'string',
+							'description' => 'Company phone',
+						),
+						'logo_url'        => array(
+							'type'        => 'string',
+							'description' => 'Company logo URL',
+						),
+						'website'         => array(
+							'type'        => 'string',
+							'description' => 'Company website',
+						),
 					),
 				),
-				'invoice_number' => array(
+				'invoice_number'   => array(
 					'type'        => 'string',
 					'description' => __( 'Custom invoice number (default: INV-{order_id})', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_items' => array(
+				'include_items'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include order line items', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_tax'  => array(
+				'include_tax'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include tax breakdown', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -143,15 +161,15 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Include shipping information', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'notes'        => array(
+				'notes'            => array(
 					'type'        => 'string',
 					'description' => __( 'Custom notes to include in the invoice', 'mcp-ai-wpoos-pro' ),
 				),
-				'terms'        => array(
+				'terms'            => array(
 					'type'        => 'string',
 					'description' => __( 'Payment terms and conditions', 'mcp-ai-wpoos-pro' ),
 				),
-				'upload'       => array(
+				'upload'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Upload PDF to WordPress media library', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -234,9 +252,9 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Upload to media library if requested.
-		$upload         = isset( $arguments['upload'] ) ? (bool) $arguments['upload'] : true;
-		$attachment_id  = 0;
-		$file_url       = '';
+		$upload        = isset( $arguments['upload'] ) ? (bool) $arguments['upload'] : true;
+		$attachment_id = 0;
+		$file_url      = '';
 
 		if ( $upload ) {
 			$upload_result = $this->upload_to_media_library( $pdf_path, $order_id );
@@ -338,11 +356,11 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'invoice_number'  => $invoice_number,
-			'order_id'        => $order->get_id(),
-			'order_number'    => $order->get_order_number(),
-			'order_date'      => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
-			'company'         => array(
+			'invoice_number' => $invoice_number,
+			'order_id'       => $order->get_id(),
+			'order_number'   => $order->get_order_number(),
+			'order_date'     => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
+			'company'        => array(
 				'name'    => $company_name,
 				'address' => $company_address,
 				'email'   => $company_email,
@@ -350,29 +368,29 @@ class WP_MCP_AI_Tool_Generate_Invoice_PDF implements WP_MCP_AI_Tool_Interface, W
 				'logo'    => $logo_url,
 				'website' => $website,
 			),
-			'customer'        => array(
-				'name'            => $order->get_formatted_billing_full_name(),
-				'email'           => $order->get_billing_email(),
-				'phone'           => $order->get_billing_phone(),
-				'billing_address' => $order->get_formatted_billing_address(),
+			'customer'       => array(
+				'name'             => $order->get_formatted_billing_full_name(),
+				'email'            => $order->get_billing_email(),
+				'phone'            => $order->get_billing_phone(),
+				'billing_address'  => $order->get_formatted_billing_address(),
 				'shipping_address' => $order->get_formatted_shipping_address(),
 			),
-			'items'           => $line_items,
-			'shipping'        => $shipping,
-			'taxes'           => $taxes,
-			'totals'          => array(
-				'subtotal'      => wc_format_decimal( $order->get_subtotal(), 2 ),
+			'items'          => $line_items,
+			'shipping'       => $shipping,
+			'taxes'          => $taxes,
+			'totals'         => array(
+				'subtotal'       => wc_format_decimal( $order->get_subtotal(), 2 ),
 				'shipping_total' => wc_format_decimal( $order->get_shipping_total(), 2 ),
-				'tax_total'     => wc_format_decimal( $order->get_total_tax(), 2 ),
-				'total'         => wc_format_decimal( $order->get_total(), 2 ),
-				'currency'      => $order->get_currency(),
+				'tax_total'      => wc_format_decimal( $order->get_total_tax(), 2 ),
+				'total'          => wc_format_decimal( $order->get_total(), 2 ),
+				'currency'       => $order->get_currency(),
 			),
-			'payment'         => array(
+			'payment'        => array(
 				'method' => $order->get_payment_method_title(),
 				'status' => $order->get_status(),
 			),
-			'notes'           => isset( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
-			'terms'           => isset( $arguments['terms'] ) ? sanitize_textarea_field( $arguments['terms'] ) : '',
+			'notes'          => isset( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
+			'terms'          => isset( $arguments['terms'] ) ? sanitize_textarea_field( $arguments['terms'] ) : '',
 		);
 	}
 

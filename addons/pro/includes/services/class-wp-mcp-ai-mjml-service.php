@@ -113,19 +113,19 @@ class WP_MCP_AI_MJML_Service {
 		}
 
 		$defaults = array(
-			'title'           => '',
-			'preview_text'    => '',
-			'font_family'     => 'Arial, sans-serif',
-			'background_color'=> '#f4f4f4',
-			'container_width' => '600px',
+			'title'            => '',
+			'preview_text'     => '',
+			'font_family'      => 'Arial, sans-serif',
+			'background_color' => '#f4f4f4',
+			'container_width'  => '600px',
 		);
 
 		$options = wp_parse_args( $options, $defaults );
 
 		// Build MJML structure.
-		$mjml = '<mjml>';
+		$mjml  = '<mjml>';
 		$mjml .= '<mj-head>';
-		
+
 		if ( ! empty( $options['title'] ) ) {
 			$mjml .= '<mj-title>' . esc_html( $options['title'] ) . '</mj-title>';
 		}
@@ -140,7 +140,7 @@ class WP_MCP_AI_MJML_Service {
 		$mjml .= '<mj-container background-color="#ffffff" width="' . esc_attr( $options['container_width'] ) . '" />';
 		$mjml .= '</mj-attributes>';
 		$mjml .= '</mj-head>';
-		
+
 		$mjml .= '<mj-body>';
 		$mjml .= '<mj-section>';
 		$mjml .= '<mj-column>';

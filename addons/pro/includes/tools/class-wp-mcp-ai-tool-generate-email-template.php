@@ -70,7 +70,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 					'type'        => 'array',
 					'description' => __( 'Array of email components (header, text, button, image, etc.)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
-						'type' => 'object',
+						'type'       => 'object',
 						'properties' => array(
 							'type'       => array( 'type' => 'string' ),
 							'content'    => array( 'type' => 'string' ),
@@ -82,19 +82,19 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 					'type'        => 'object',
 					'description' => __( 'Branding options (logo, colors, fonts)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'logo_url'           => array( 'type' => 'string' ),
-						'primary_color'      => array( 'type' => 'string' ),
-						'secondary_color'    => array( 'type' => 'string' ),
-						'font_family'        => array( 'type' => 'string' ),
-						'company_name'       => array( 'type' => 'string' ),
-						'company_address'    => array( 'type' => 'string' ),
+						'logo_url'        => array( 'type' => 'string' ),
+						'primary_color'   => array( 'type' => 'string' ),
+						'secondary_color' => array( 'type' => 'string' ),
+						'font_family'     => array( 'type' => 'string' ),
+						'company_name'    => array( 'type' => 'string' ),
+						'company_address' => array( 'type' => 'string' ),
 					),
 				),
 				'footer_links'    => array(
 					'type'        => 'array',
 					'description' => __( 'Footer links (unsubscribe, privacy policy, etc.)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
-						'type' => 'object',
+						'type'       => 'object',
 						'properties' => array(
 							'text' => array( 'type' => 'string' ),
 							'url'  => array( 'type' => 'string' ),
@@ -273,7 +273,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	private function add_branding_to_mjml( $mjml, $branding ) {
 		// Insert logo header before first section.
 		if ( isset( $branding['logo_url'] ) && ! empty( $branding['logo_url'] ) ) {
-			$logo_section = '<mj-section background-color="#ffffff" padding="20px 0">';
+			$logo_section  = '<mj-section background-color="#ffffff" padding="20px 0">';
 			$logo_section .= '<mj-column>';
 			$logo_section .= '<mj-image src="' . esc_url( $branding['logo_url'] ) . '" alt="' . esc_attr( isset( $branding['company_name'] ) ? $branding['company_name'] : 'Logo' ) . '" width="150px" align="center" />';
 			$logo_section .= '</mj-column>';
@@ -294,7 +294,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	 * @return string Modified MJML markup.
 	 */
 	private function add_footer_to_mjml( $mjml, $footer_links, $branding ) {
-		$footer = '<mj-section background-color="#333333" padding="20px">';
+		$footer  = '<mj-section background-color="#333333" padding="20px">';
 		$footer .= '<mj-column>';
 
 		// Company info.
@@ -309,7 +309,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 
 		// Footer links.
 		if ( ! empty( $footer_links ) ) {
-			$footer .= '<mj-text color="#ffffff" align="center" font-size="12px">';
+			$footer    .= '<mj-text color="#ffffff" align="center" font-size="12px">';
 			$link_texts = array();
 			foreach ( $footer_links as $link ) {
 				if ( isset( $link['text'] ) && isset( $link['url'] ) ) {

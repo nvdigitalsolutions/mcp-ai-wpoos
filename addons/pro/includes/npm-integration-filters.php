@@ -276,10 +276,10 @@ function wp_mcp_ai_fluent_ffmpeg_transcode_video_handler( $result, $params ) {
 	}
 
 	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/ffmpeg-service.js';
-	
+
 	// Transcoding can take a long time, set appropriate timeout based on file size.
 	$timeout = 300; // 5 minutes default.
-	
+
 	/**
 	 * Filter the timeout for video transcoding.
 	 *
@@ -353,8 +353,8 @@ function wp_mcp_ai_auto_register_npm_filters() {
 	 * Auto-registration can be controlled via constant or filter.
 	 * Default is enabled if Node.js is available.
 	 */
-	$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' ) 
-		? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS 
+	$auto_register = defined( 'WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS' )
+		? WP_MCP_AI_AUTO_REGISTER_NPM_FILTERS
 		: true;
 
 	/**
@@ -384,13 +384,13 @@ add_action( 'init', 'wp_mcp_ai_auto_register_npm_filters', 20 );
  */
 function wp_mcp_ai_check_vendor_packages() {
 	$packages = array(
-		'prettier'       => 'assets/vendor/prettier/standalone.js',
-		'mjml'           => 'assets/vendor/mjml/lib/index.js',
-		'fluent-ffmpeg'  => 'assets/vendor/fluent-ffmpeg/index.js',
-		'sharp'          => 'assets/vendor/sharp/lib/index.js',
-		'katex'          => 'assets/vendor/katex/dist/katex.min.js',
-		'ics'            => 'assets/vendor/ics/index.js',
-		'turf'           => 'assets/vendor/turf/dist/cjs/index.cjs',
+		'prettier'      => 'assets/vendor/prettier/standalone.js',
+		'mjml'          => 'assets/vendor/mjml/lib/index.js',
+		'fluent-ffmpeg' => 'assets/vendor/fluent-ffmpeg/index.js',
+		'sharp'         => 'assets/vendor/sharp/lib/index.js',
+		'katex'         => 'assets/vendor/katex/dist/katex.min.js',
+		'ics'           => 'assets/vendor/ics/index.js',
+		'turf'          => 'assets/vendor/turf/dist/cjs/index.cjs',
 	);
 
 	$missing = array();
@@ -398,7 +398,7 @@ function wp_mcp_ai_check_vendor_packages() {
 		$full_path = WP_MCP_AI_PRO_PATH . $path;
 		// Also check for alternate paths that might exist.
 		$alt_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $name;
-		
+
 		if ( ! file_exists( $full_path ) && ! is_dir( $alt_path ) ) {
 			$missing[] = $name;
 		}
@@ -420,7 +420,7 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 	}
 
 	// Check if any Pro NPM tools are enabled.
-	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	$settings             = get_option( 'wp_mcp_ai_settings', array() );
 	$npm_features_enabled = false;
 
 	// List of settings that require NPM packages.
@@ -446,7 +446,7 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 
 	// Check if vendor packages are available.
 	$package_check = wp_mcp_ai_check_vendor_packages();
-	
+
 	// Check if Node.js is available.
 	$nodejs_available = wp_mcp_ai_is_nodejs_available();
 
@@ -469,10 +469,10 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 				);
 				?>
 			</p>
-			<?php if ( ! empty( $package_check['missing'] ) ) : ?>
+				<?php if ( ! empty( $package_check['missing'] ) ) : ?>
 			<p>
 				<strong><?php esc_html_e( 'Missing packages:', 'mcp-ai-wpoos-pro' ); ?></strong>
-				<?php echo esc_html( implode( ', ', $package_check['missing'] ) ); ?>
+					<?php echo esc_html( implode( ', ', $package_check['missing'] ) ); ?>
 			</p>
 			<?php endif; ?>
 			<?php endif; ?>

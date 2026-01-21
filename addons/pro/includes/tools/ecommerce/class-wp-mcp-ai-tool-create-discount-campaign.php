@@ -107,76 +107,76 @@ class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'code'                   => array(
+				'code'                        => array(
 					'type'        => 'string',
 					'description' => __( 'Coupon code (required, will be uppercase)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 3,
 					'maxLength'   => 50,
 				),
-				'description'            => array(
+				'description'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Internal description of the campaign', 'mcp-ai-wpoos-pro' ),
 				),
-				'discount_type'          => array(
+				'discount_type'               => array(
 					'type'        => 'string',
 					'description' => __( 'Type of discount', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'percent', 'fixed_cart', 'fixed_product' ),
 					'default'     => 'percent',
 				),
-				'amount'                 => array(
+				'amount'                      => array(
 					'type'        => 'number',
 					'description' => __( 'Discount amount (percentage or fixed)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'expiry_date'            => array(
+				'expiry_date'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Expiration date (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'minimum_amount'         => array(
+				'minimum_amount'              => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum spend requirement', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'maximum_amount'         => array(
+				'maximum_amount'              => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum spend limit', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'usage_limit'            => array(
+				'usage_limit'                 => array(
 					'type'        => 'integer',
 					'description' => __( 'Total usage limit for this coupon', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'usage_limit_per_user'   => array(
+				'usage_limit_per_user'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Usage limit per user', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'individual_use'         => array(
+				'individual_use'              => array(
 					'type'        => 'boolean',
 					'description' => __( 'Cannot be used with other coupons', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'free_shipping'          => array(
+				'free_shipping'               => array(
 					'type'        => 'boolean',
 					'description' => __( 'Grant free shipping', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'product_ids'            => array(
+				'product_ids'                 => array(
 					'type'        => 'array',
 					'description' => __( 'Product IDs this coupon applies to', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
 				),
-				'excluded_product_ids'   => array(
+				'excluded_product_ids'        => array(
 					'type'        => 'array',
 					'description' => __( 'Product IDs this coupon does not apply to', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
 				),
-				'product_categories'     => array(
+				'product_categories'          => array(
 					'type'        => 'array',
 					'description' => __( 'Category IDs or slugs this coupon applies to', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interfac
 						),
 					),
 				),
-				'email_restrictions'     => array(
+				'email_restrictions'          => array(
 					'type'        => 'array',
 					'description' => __( 'Email addresses this coupon is restricted to', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -320,23 +320,23 @@ class WP_MCP_AI_Tool_Create_Discount_Campaign implements WP_MCP_AI_Tool_Interfac
 	protected function sanitize_coupon_data( $arguments ) {
 		$data = array();
 
-		$data['description']       = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
-		$data['discount_type']     = isset( $arguments['discount_type'] ) ? sanitize_text_field( $arguments['discount_type'] ) : 'percent';
-		$data['amount']            = floatval( $arguments['amount'] );
-		$data['expiry_date']       = isset( $arguments['expiry_date'] ) ? sanitize_text_field( $arguments['expiry_date'] ) : '';
-		$data['minimum_amount']    = isset( $arguments['minimum_amount'] ) ? floatval( $arguments['minimum_amount'] ) : 0;
-		$data['maximum_amount']    = isset( $arguments['maximum_amount'] ) ? floatval( $arguments['maximum_amount'] ) : 0;
-		$data['usage_limit']       = isset( $arguments['usage_limit'] ) ? absint( $arguments['usage_limit'] ) : 0;
+		$data['description']          = isset( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
+		$data['discount_type']        = isset( $arguments['discount_type'] ) ? sanitize_text_field( $arguments['discount_type'] ) : 'percent';
+		$data['amount']               = floatval( $arguments['amount'] );
+		$data['expiry_date']          = isset( $arguments['expiry_date'] ) ? sanitize_text_field( $arguments['expiry_date'] ) : '';
+		$data['minimum_amount']       = isset( $arguments['minimum_amount'] ) ? floatval( $arguments['minimum_amount'] ) : 0;
+		$data['maximum_amount']       = isset( $arguments['maximum_amount'] ) ? floatval( $arguments['maximum_amount'] ) : 0;
+		$data['usage_limit']          = isset( $arguments['usage_limit'] ) ? absint( $arguments['usage_limit'] ) : 0;
 		$data['usage_limit_per_user'] = isset( $arguments['usage_limit_per_user'] ) ? absint( $arguments['usage_limit_per_user'] ) : 0;
-		$data['individual_use']    = isset( $arguments['individual_use'] ) ? (bool) $arguments['individual_use'] : false;
-		$data['free_shipping']     = isset( $arguments['free_shipping'] ) ? (bool) $arguments['free_shipping'] : false;
+		$data['individual_use']       = isset( $arguments['individual_use'] ) ? (bool) $arguments['individual_use'] : false;
+		$data['free_shipping']        = isset( $arguments['free_shipping'] ) ? (bool) $arguments['free_shipping'] : false;
 
 		// Product restrictions.
-		$data['product_ids']         = isset( $arguments['product_ids'] ) ? array_map( 'absint', (array) $arguments['product_ids'] ) : array();
+		$data['product_ids']          = isset( $arguments['product_ids'] ) ? array_map( 'absint', (array) $arguments['product_ids'] ) : array();
 		$data['excluded_product_ids'] = isset( $arguments['excluded_product_ids'] ) ? array_map( 'absint', (array) $arguments['excluded_product_ids'] ) : array();
 
 		// Category restrictions.
-		$data['product_categories'] = isset( $arguments['product_categories'] ) ? $this->process_category_ids( $arguments['product_categories'] ) : array();
+		$data['product_categories']          = isset( $arguments['product_categories'] ) ? $this->process_category_ids( $arguments['product_categories'] ) : array();
 		$data['excluded_product_categories'] = isset( $arguments['excluded_product_categories'] ) ? $this->process_category_ids( $arguments['excluded_product_categories'] ) : array();
 
 		// Email restrictions.

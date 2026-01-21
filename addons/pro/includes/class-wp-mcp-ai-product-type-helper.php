@@ -29,15 +29,15 @@ class WP_MCP_AI_Product_Type_Helper {
 	 */
 	public static function get_supported_types() {
 		return array(
-			'simple'      => __( 'Simple Product', 'mcp-ai-wpoos-pro' ),
-			'variable'    => __( 'Variable Product', 'mcp-ai-wpoos-pro' ),
-			'grouped'     => __( 'Grouped Product', 'mcp-ai-wpoos-pro' ),
-			'external'    => __( 'External/Affiliate Product', 'mcp-ai-wpoos-pro' ),
-			'subscription' => __( 'Subscription Product', 'mcp-ai-wpoos-pro' ),
+			'simple'                => __( 'Simple Product', 'mcp-ai-wpoos-pro' ),
+			'variable'              => __( 'Variable Product', 'mcp-ai-wpoos-pro' ),
+			'grouped'               => __( 'Grouped Product', 'mcp-ai-wpoos-pro' ),
+			'external'              => __( 'External/Affiliate Product', 'mcp-ai-wpoos-pro' ),
+			'subscription'          => __( 'Subscription Product', 'mcp-ai-wpoos-pro' ),
 			'variable-subscription' => __( 'Variable Subscription', 'mcp-ai-wpoos-pro' ),
-			'bundle'      => __( 'Product Bundle', 'mcp-ai-wpoos-pro' ),
-			'composite'   => __( 'Composite Product', 'mcp-ai-wpoos-pro' ),
-			'booking'     => __( 'Booking Product', 'mcp-ai-wpoos-pro' ),
+			'bundle'                => __( 'Product Bundle', 'mcp-ai-wpoos-pro' ),
+			'composite'             => __( 'Composite Product', 'mcp-ai-wpoos-pro' ),
+			'booking'               => __( 'Booking Product', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -162,12 +162,12 @@ class WP_MCP_AI_Product_Type_Helper {
 		}
 
 		return array(
-			'period'         => $product->get_meta( '_subscription_period', true ),
+			'period'          => $product->get_meta( '_subscription_period', true ),
 			'period_interval' => $product->get_meta( '_subscription_period_interval', true ),
-			'length'         => $product->get_meta( '_subscription_length', true ),
-			'trial_length'   => $product->get_meta( '_subscription_trial_length', true ),
-			'trial_period'   => $product->get_meta( '_subscription_trial_period', true ),
-			'sign_up_fee'    => $product->get_meta( '_subscription_sign_up_fee', true ),
+			'length'          => $product->get_meta( '_subscription_length', true ),
+			'trial_length'    => $product->get_meta( '_subscription_trial_length', true ),
+			'trial_period'    => $product->get_meta( '_subscription_trial_period', true ),
+			'sign_up_fee'     => $product->get_meta( '_subscription_sign_up_fee', true ),
 		);
 	}
 
@@ -306,12 +306,12 @@ class WP_MCP_AI_Product_Type_Helper {
 		$type = $product->get_type();
 
 		$features_by_type = array(
-			'simple'      => array( 'price', 'stock', 'categories', 'tags', 'images', 'downloads' ),
-			'variable'    => array( 'price', 'stock', 'categories', 'tags', 'images', 'variations', 'attributes' ),
-			'grouped'     => array( 'price', 'categories', 'tags', 'images', 'children' ),
-			'external'    => array( 'price', 'categories', 'tags', 'images', 'external_url' ),
+			'simple'       => array( 'price', 'stock', 'categories', 'tags', 'images', 'downloads' ),
+			'variable'     => array( 'price', 'stock', 'categories', 'tags', 'images', 'variations', 'attributes' ),
+			'grouped'      => array( 'price', 'categories', 'tags', 'images', 'children' ),
+			'external'     => array( 'price', 'categories', 'tags', 'images', 'external_url' ),
 			'subscription' => array( 'price', 'stock', 'categories', 'tags', 'images', 'recurring', 'trial' ),
-			'bundle'      => array( 'price', 'stock', 'categories', 'tags', 'images', 'bundled_items' ),
+			'bundle'       => array( 'price', 'stock', 'categories', 'tags', 'images', 'bundled_items' ),
 		);
 
 		if ( ! isset( $features_by_type[ $type ] ) ) {

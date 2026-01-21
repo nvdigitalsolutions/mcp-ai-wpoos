@@ -106,27 +106,27 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'start_date'   => array(
+				'start_date'         => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for analytics (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 					'default'     => gmdate( 'Y-m-d', strtotime( '-30 days' ) ),
 				),
-				'end_date'     => array(
+				'end_date'           => array(
 					'type'        => 'string',
 					'description' => __( 'End date for analytics (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 					'default'     => gmdate( 'Y-m-d' ),
 				),
-				'category_ids' => array(
+				'category_ids'       => array(
 					'type'        => 'array',
 					'description' => __( 'Filter by product category IDs', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'include_refunds' => array(
+				'include_refunds'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include refunded orders in analytics', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'metrics'      => array(
+				'metrics'            => array(
 					'type'        => 'array',
 					'description' => __( 'Specific metrics to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -194,15 +194,15 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		// Build the dashboard data.
 		$dashboard = array(
-			'period'   => array(
+			'period'       => array(
 				'start_date' => $start_date,
 				'end_date'   => $end_date,
 				'days'       => $this->calculate_days_between( $start_date, $end_date ),
 			),
-			'metrics'  => $this->get_metrics( $start_date, $end_date, $include_refunds, $metrics ),
-			'trends'   => $this->get_revenue_trends( $start_date, $end_date, $include_refunds ),
+			'metrics'      => $this->get_metrics( $start_date, $end_date, $include_refunds, $metrics ),
+			'trends'       => $this->get_revenue_trends( $start_date, $end_date, $include_refunds ),
 			'top_products' => $this->get_top_products( $start_date, $end_date, $category_ids, $top_products_limit ),
-			'customers' => $this->get_customer_metrics( $start_date, $end_date ),
+			'customers'    => $this->get_customer_metrics( $start_date, $end_date ),
 		);
 
 		return array(
@@ -244,17 +244,22 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		$statuses = $include_refunds ? array( 'wc-completed', 'wc-processing', 'wc-refunded' ) : array( 'wc-completed', 'wc-processing' );
 
+		// Sanitize status values for SQL.
+		$sanitized_statuses  = array_map( 'esc_sql', $statuses );
+		$status_placeholders = implode( "','", $sanitized_statuses );
+
 		$results = array();
 
 		// Revenue.
 		if ( in_array( 'revenue', $metrics, true ) ) {
 			$revenue = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
 					"SELECT SUM(pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . implode( "','", array_map( 'esc_sql', $statuses ) ) . "')
+					AND p.post_status IN ('" . $status_placeholders . "')
 					AND pm.meta_key = '_order_total'
 					AND p.post_date >= %s
 					AND p.post_date <= %s",
@@ -262,35 +267,37 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 					$end_date . ' 23:59:59'
 				)
 			);
-			$results['revenue'] = wc_format_decimal( $revenue ?: 0, 2 );
+			$results['revenue'] = wc_format_decimal( $revenue ? $revenue : 0, 2 );
 		}
 
 		// Orders count.
 		if ( in_array( 'orders', $metrics, true ) ) {
 			$orders_count = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
 					"SELECT COUNT(DISTINCT p.ID) 
 					FROM {$wpdb->posts} p
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . implode( "','", array_map( 'esc_sql', $statuses ) ) . "')
+					AND p.post_status IN ('" . $status_placeholders . "')
 					AND p.post_date >= %s
 					AND p.post_date <= %s",
 					$start_date . ' 00:00:00',
 					$end_date . ' 23:59:59'
 				)
 			);
-			$results['orders'] = absint( $orders_count ?: 0 );
+			$results['orders'] = absint( $orders_count ? $orders_count : 0 );
 		}
 
 		// Customers.
 		if ( in_array( 'customers', $metrics, true ) ) {
 			$customers_count = $wpdb->get_var(
 				$wpdb->prepare(
+					// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
 					"SELECT COUNT(DISTINCT pm.meta_value) 
 					FROM {$wpdb->posts} p
 					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 					WHERE p.post_type = 'shop_order'
-					AND p.post_status IN ('" . implode( "','", array_map( 'esc_sql', $statuses ) ) . "')
+					AND p.post_status IN ('" . $status_placeholders . "')
 					AND pm.meta_key = '_customer_user'
 					AND pm.meta_value > 0
 					AND p.post_date >= %s
@@ -299,7 +306,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 					$end_date . ' 23:59:59'
 				)
 			);
-			$results['customers'] = absint( $customers_count ?: 0 );
+			$results['customers'] = absint( $customers_count ? $customers_count : 0 );
 		}
 
 		// Average order value.
@@ -323,13 +330,18 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		$statuses = $include_refunds ? array( 'wc-completed', 'wc-processing', 'wc-refunded' ) : array( 'wc-completed', 'wc-processing' );
 
+		// Sanitize status values for SQL.
+		$sanitized_statuses  = array_map( 'esc_sql', $statuses );
+		$status_placeholders = implode( "','", $sanitized_statuses );
+
 		$daily_revenue = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL -- $status_placeholders is pre-sanitized with esc_sql()
 				"SELECT DATE(p.post_date) as date, SUM(pm.meta_value) as revenue, COUNT(DISTINCT p.ID) as orders
 				FROM {$wpdb->posts} p
 				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 				WHERE p.post_type = 'shop_order'
-				AND p.post_status IN ('" . implode( "','", array_map( 'esc_sql', $statuses ) ) . "')
+				AND p.post_status IN ('" . $status_placeholders . "')
 				AND pm.meta_key = '_order_total'
 				AND p.post_date >= %s
 				AND p.post_date <= %s
@@ -366,11 +378,13 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 
 		$category_filter = '';
 		if ( ! empty( $category_ids ) ) {
-			$category_filter = " AND tr.term_taxonomy_id IN (" . implode( ',', array_map( 'absint', $category_ids ) ) . ")";
+			$sanitized_categories = array_map( 'absint', $category_ids );
+			$category_filter      = ' AND tr.term_taxonomy_id IN (' . implode( ',', $sanitized_categories ) . ')';
 		}
 
 		$top_products = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL -- $category_filter is pre-sanitized with absint()
 				"SELECT 
 					oi.order_item_id,
 					oim_product.meta_value as product_id,
@@ -388,10 +402,10 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 				AND o.post_status IN ('wc-completed', 'wc-processing')
 				AND o.post_date >= %s
 				AND o.post_date <= %s
-				" . $category_filter . "
+				" . $category_filter . '
 				GROUP BY oim_product.meta_value
 				ORDER BY SUM(oim_total.meta_value) DESC
-				LIMIT %d",
+				LIMIT %d',
 				$start_date . ' 00:00:00',
 				$end_date . ' 23:59:59',
 				$limit
@@ -447,7 +461,7 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		);
 
 		return array(
-			'new_customers' => absint( $new_customers ?: 0 ),
+			'new_customers' => absint( $new_customers ? $new_customers : 0 ),
 		);
 	}
 }

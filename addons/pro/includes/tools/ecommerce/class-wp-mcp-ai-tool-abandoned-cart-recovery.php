@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'            => array(
+				'action'                    => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'identify', 'send_recovery', 'get_analytics' ),
@@ -119,38 +119,38 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 					'minimum'     => 1,
 					'maximum'     => 72,
 				),
-				'min_cart_value'    => array(
+				'min_cart_value'            => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum cart value to trigger recovery', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 					'minimum'     => 0,
 				),
-				'send_email'        => array(
+				'send_email'                => array(
 					'type'        => 'boolean',
 					'description' => __( 'Send recovery email to identified carts', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'email_template'    => array(
+				'email_template'            => array(
 					'type'        => 'string',
 					'description' => __( 'Email template to use for recovery', 'mcp-ai-wpoos-pro' ),
 				),
-				'offer_discount'    => array(
+				'offer_discount'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include discount coupon in recovery email', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'discount_amount'   => array(
+				'discount_amount'           => array(
 					'type'        => 'number',
 					'description' => __( 'Discount percentage or amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'discount_type'     => array(
+				'discount_type'             => array(
 					'type'        => 'string',
 					'description' => __( 'Type of discount', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'percent', 'fixed' ),
 					'default'     => 'percent',
 				),
-				'analytics_days'    => array(
+				'analytics_days'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Days to analyze for analytics action', 'mcp-ai-wpoos-pro' ),
 					'default'     => 30,
@@ -266,7 +266,7 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 					continue;
 				}
 
-				$item_total = $product->get_price() * $cart_item['quantity'];
+				$item_total  = $product->get_price() * $cart_item['quantity'];
 				$cart_total += $item_total;
 
 				$items[] = array(
@@ -295,13 +295,13 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success'          => true,
-			'action'           => 'identify',
-			'total_found'      => count( $abandoned_carts ),
-			'threshold_hours'  => $threshold_hours,
-			'min_cart_value'   => $min_cart_value,
-			'abandoned_carts'  => $abandoned_carts,
-			'message'          => sprintf(
+			'success'         => true,
+			'action'          => 'identify',
+			'total_found'     => count( $abandoned_carts ),
+			'threshold_hours' => $threshold_hours,
+			'min_cart_value'  => $min_cart_value,
+			'abandoned_carts' => $abandoned_carts,
+			'message'         => sprintf(
 				/* translators: %d: Number of abandoned carts */
 				__( 'Found %d abandoned carts matching criteria.', 'mcp-ai-wpoos-pro' ),
 				count( $abandoned_carts )
@@ -322,14 +322,14 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 			return $carts_data;
 		}
 
-		$send_email      = isset( $arguments['send_email'] ) && $arguments['send_email'];
-		$offer_discount  = isset( $arguments['offer_discount'] ) && $arguments['offer_discount'];
-		$sent_count      = 0;
-		$failed_count    = 0;
+		$send_email     = isset( $arguments['send_email'] ) && $arguments['send_email'];
+		$offer_discount = isset( $arguments['offer_discount'] ) && $arguments['offer_discount'];
+		$sent_count     = 0;
+		$failed_count   = 0;
 
 		foreach ( $carts_data['abandoned_carts'] as $cart ) {
 			if ( empty( $cart['customer_email'] ) ) {
-				$failed_count++;
+				++$failed_count;
 				continue;
 			}
 
@@ -340,20 +340,20 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 				$sent = wp_mail( $cart['customer_email'], $subject, $message, array( 'Content-Type: text/html; charset=UTF-8' ) );
 
 				if ( $sent ) {
-					$sent_count++;
+					++$sent_count;
 				} else {
-					$failed_count++;
+					++$failed_count;
 				}
 			}
 		}
 
 		return array(
-			'success'        => true,
-			'action'         => 'send_recovery',
-			'emails_sent'    => $sent_count,
-			'emails_failed'  => $failed_count,
-			'total_carts'    => count( $carts_data['abandoned_carts'] ),
-			'message'        => sprintf(
+			'success'       => true,
+			'action'        => 'send_recovery',
+			'emails_sent'   => $sent_count,
+			'emails_failed' => $failed_count,
+			'total_carts'   => count( $carts_data['abandoned_carts'] ),
+			'message'       => sprintf(
 				/* translators: %d: Number of emails sent */
 				__( 'Sent %d recovery emails successfully.', 'mcp-ai-wpoos-pro' ),
 				$sent_count
@@ -423,12 +423,12 @@ class WP_MCP_AI_Tool_Abandoned_Cart_Recovery implements WP_MCP_AI_Tool_Interface
 		$abandoned = $this->identify_abandoned_carts( $arguments );
 
 		return array(
-			'success'                => true,
-			'action'                 => 'get_analytics',
-			'period_days'            => $days,
-			'current_abandoned'      => $abandoned['total_found'],
-			'total_value_at_risk'    => $this->calculate_total_value( $abandoned['abandoned_carts'] ),
-			'message'                => sprintf(
+			'success'             => true,
+			'action'              => 'get_analytics',
+			'period_days'         => $days,
+			'current_abandoned'   => $abandoned['total_found'],
+			'total_value_at_risk' => $this->calculate_total_value( $abandoned['abandoned_carts'] ),
+			'message'             => sprintf(
 				/* translators: %d: Number of days */
 				__( 'Analytics for last %d days.', 'mcp-ai-wpoos-pro' ),
 				$days

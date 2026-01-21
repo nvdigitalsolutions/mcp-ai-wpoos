@@ -46,15 +46,15 @@ class WP_MCP_AI_Remote_Connection {
 		$this->config = wp_parse_args(
 			$config,
 			array(
-				'url'          => '',
-				'auth_type'    => 'app_password',
-				'username'     => '',
-				'password'     => '',
-				'token'        => '',
-				'verify_ssl'   => true,
-				'timeout'      => 30,
-				'retry_count'  => 3,
-				'retry_delay'  => 1,
+				'url'         => '',
+				'auth_type'   => 'app_password',
+				'username'    => '',
+				'password'    => '',
+				'token'       => '',
+				'verify_ssl'  => true,
+				'timeout'     => 30,
+				'retry_count' => 3,
+				'retry_delay' => 1,
 			)
 		);
 	}
@@ -73,7 +73,7 @@ class WP_MCP_AI_Remote_Connection {
 		}
 
 		// Validate HTTPS for security.
-		if ( ! $this->config['verify_ssl'] && 'https' !== parse_url( $this->config['url'], PHP_URL_SCHEME ) ) {
+		if ( ! $this->config['verify_ssl'] && 'https' !== wp_parse_url( $this->config['url'], PHP_URL_SCHEME ) ) {
 			return new WP_Error(
 				'insecure_connection',
 				__( 'Remote connections must use HTTPS for security.', 'mcp-ai-wpoos-pro' )
@@ -143,7 +143,7 @@ class WP_MCP_AI_Remote_Connection {
 
 				// Rate limited - retry with backoff.
 				if ( 429 === $status_code ) {
-					$attempt++;
+					++$attempt;
 					if ( $attempt < $retry_count ) {
 						sleep( $retry_delay * $attempt ); // Exponential backoff.
 						continue;
@@ -164,7 +164,7 @@ class WP_MCP_AI_Remote_Connection {
 				);
 			}
 
-			$attempt++;
+			++$attempt;
 			if ( $attempt < $retry_count ) {
 				sleep( $retry_delay );
 			}

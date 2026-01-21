@@ -106,21 +106,21 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'customer_id' => array(
+				'customer_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Customer ID to export (required if no email)', 'mcp-ai-wpoos-pro' ),
 				),
-				'email'       => array(
+				'email'             => array(
 					'type'        => 'string',
 					'description' => __( 'Customer email to export (required if no customer_id)', 'mcp-ai-wpoos-pro' ),
 				),
-				'format'      => array(
+				'format'            => array(
 					'type'        => 'string',
 					'description' => __( 'Export format', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'json', 'csv' ),
 					'default'     => 'json',
 				),
-				'include_orders' => array(
+				'include_orders'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include order history', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -130,12 +130,12 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Include billing and shipping addresses', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_notes' => array(
+				'include_notes'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include customer notes', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'upload'      => array(
+				'upload'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'Upload file to WordPress media library', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -228,27 +228,27 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 			$upload_result = $this->upload_to_media_library( $file_path, $customer->get_email(), $format );
 
 			if ( is_wp_error( $upload_result ) ) {
-				@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				wp_delete_file( $file_path );
 				return $upload_result;
 			}
 
 			$attachment_id = $upload_result['attachment_id'];
 			$file_url      = $upload_result['url'];
 
-			@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_delete_file( $file_path );
 		} else {
 			$file_url = $file_path;
 		}
 
 		return array(
-			'success'       => true,
-			'customer_id'   => $customer->get_id(),
+			'success'        => true,
+			'customer_id'    => $customer->get_id(),
 			'customer_email' => $customer->get_email(),
-			'format'        => $format,
-			'file_path'     => $upload ? '' : $file_path,
-			'file_url'      => $file_url,
-			'attachment_id' => $attachment_id,
-			'message'       => sprintf(
+			'format'         => $format,
+			'file_path'      => $upload ? '' : $file_path,
+			'file_url'       => $file_url,
+			'attachment_id'  => $attachment_id,
+			'message'        => sprintf(
 				/* translators: %s: Customer email */
 				__( 'Customer data for %s exported successfully.', 'mcp-ai-wpoos-pro' ),
 				$customer->get_email()
@@ -278,7 +278,7 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 
 		// Add addresses if requested.
 		if ( isset( $arguments['include_addresses'] ) && $arguments['include_addresses'] ) {
-			$data['billing_address']  = array(
+			$data['billing_address'] = array(
 				'first_name' => $customer->get_billing_first_name(),
 				'last_name'  => $customer->get_billing_last_name(),
 				'company'    => $customer->get_billing_company(),
@@ -338,12 +338,12 @@ class WP_MCP_AI_Tool_Export_Customer_Data implements WP_MCP_AI_Tool_Interface, W
 
 		foreach ( $orders as $order ) {
 			$orders_data[] = array(
-				'order_id'     => $order->get_id(),
-				'order_number' => $order->get_order_number(),
-				'status'       => $order->get_status(),
-				'date_created' => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
-				'total'        => $order->get_total(),
-				'currency'     => $order->get_currency(),
+				'order_id'       => $order->get_id(),
+				'order_number'   => $order->get_order_number(),
+				'status'         => $order->get_status(),
+				'date_created'   => $order->get_date_created() ? $order->get_date_created()->date( 'Y-m-d H:i:s' ) : '',
+				'total'          => $order->get_total(),
+				'currency'       => $order->get_currency(),
 				'payment_method' => $order->get_payment_method_title(),
 			);
 		}

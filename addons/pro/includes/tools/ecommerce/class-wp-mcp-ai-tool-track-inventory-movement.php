@@ -106,57 +106,57 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'       => array(
+				'action'        => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'log', 'get_history', 'get_report', 'get_summary' ),
 					'default'     => 'get_history',
 				),
-				'product_id'   => array(
+				'product_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to track', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'movement'     => array(
+				'movement'      => array(
 					'type'        => 'object',
 					'description' => __( 'Movement data to log', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'product_id'     => array(
+						'product_id'    => array(
 							'type'        => 'integer',
 							'description' => __( 'Product ID', 'mcp-ai-wpoos-pro' ),
 						),
-						'quantity'       => array(
+						'quantity'      => array(
 							'type'        => 'integer',
 							'description' => __( 'Quantity moved (positive for increase, negative for decrease)', 'mcp-ai-wpoos-pro' ),
 						),
-						'movement_type'  => array(
+						'movement_type' => array(
 							'type'        => 'string',
 							'description' => __( 'Type of movement', 'mcp-ai-wpoos-pro' ),
 							'enum'        => array( 'sale', 'return', 'restock', 'adjustment', 'transfer', 'damage', 'loss' ),
 						),
-						'from_location'  => array(
+						'from_location' => array(
 							'type'        => 'string',
 							'description' => __( 'Source location', 'mcp-ai-wpoos-pro' ),
 						),
-						'to_location'    => array(
+						'to_location'   => array(
 							'type'        => 'string',
 							'description' => __( 'Destination location', 'mcp-ai-wpoos-pro' ),
 						),
-						'reference_id'   => array(
+						'reference_id'  => array(
 							'type'        => 'integer',
 							'description' => __( 'Reference ID (e.g., order ID)', 'mcp-ai-wpoos-pro' ),
 						),
-						'notes'          => array(
+						'notes'         => array(
 							'type'        => 'string',
 							'description' => __( 'Additional notes', 'mcp-ai-wpoos-pro' ),
 						),
 					),
 				),
-				'start_date'   => array(
+				'start_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for history (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'end_date'     => array(
+				'end_date'      => array(
 					'type'        => 'string',
 					'description' => __( 'End date for history (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -165,11 +165,11 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Filter by movement type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'sale', 'return', 'restock', 'adjustment', 'transfer', 'damage', 'loss' ),
 				),
-				'location'     => array(
+				'location'      => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by location', 'mcp-ai-wpoos-pro' ),
 				),
-				'limit'        => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of records to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
@@ -280,18 +280,18 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 
 		// Log the movement.
 		$movement_data = array(
-			'product_id'     => $product_id,
-			'product_name'   => $product->get_name(),
-			'old_stock'      => $old_stock,
-			'new_stock'      => $new_stock,
-			'quantity'       => $quantity,
-			'movement_type'  => $movement_type,
-			'from_location'  => isset( $movement['from_location'] ) ? sanitize_text_field( $movement['from_location'] ) : '',
-			'to_location'    => isset( $movement['to_location'] ) ? sanitize_text_field( $movement['to_location'] ) : '',
-			'reference_id'   => isset( $movement['reference_id'] ) ? absint( $movement['reference_id'] ) : 0,
-			'notes'          => isset( $movement['notes'] ) ? sanitize_textarea_field( $movement['notes'] ) : '',
-			'user_id'        => get_current_user_id(),
-			'timestamp'      => current_time( 'mysql' ),
+			'product_id'    => $product_id,
+			'product_name'  => $product->get_name(),
+			'old_stock'     => $old_stock,
+			'new_stock'     => $new_stock,
+			'quantity'      => $quantity,
+			'movement_type' => $movement_type,
+			'from_location' => isset( $movement['from_location'] ) ? sanitize_text_field( $movement['from_location'] ) : '',
+			'to_location'   => isset( $movement['to_location'] ) ? sanitize_text_field( $movement['to_location'] ) : '',
+			'reference_id'  => isset( $movement['reference_id'] ) ? absint( $movement['reference_id'] ) : 0,
+			'notes'         => isset( $movement['notes'] ) ? sanitize_textarea_field( $movement['notes'] ) : '',
+			'user_id'       => get_current_user_id(),
+			'timestamp'     => current_time( 'mysql' ),
 		);
 
 		// Store movement log.
@@ -302,10 +302,10 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 		$product->save();
 
 		return array(
-			'success'       => true,
-			'action'        => 'log',
-			'movement'      => $movement_data,
-			'message'       => sprintf(
+			'success'  => true,
+			'action'   => 'log',
+			'movement' => $movement_data,
+			'message'  => sprintf(
 				/* translators: 1: Quantity, 2: Product name */
 				__( 'Logged movement of %1$d for %2$s.', 'mcp-ai-wpoos-pro' ),
 				$quantity,
@@ -339,8 +339,8 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 		update_option( $log_option, $movements );
 
 		// Also store in product meta.
-		$product_id       = $movement_data['product_id'];
-		$product_log      = get_post_meta( $product_id, '_inventory_movement_log', true );
+		$product_id  = $movement_data['product_id'];
+		$product_log = get_post_meta( $product_id, '_inventory_movement_log', true );
 		if ( ! is_array( $product_log ) ) {
 			$product_log = array();
 		}
@@ -469,7 +469,7 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 					'quantity' => 0,
 				);
 			}
-			$by_type[ $type ]['count']++;
+			++$by_type[ $type ]['count'];
 			$by_type[ $type ]['quantity'] += $quantity;
 
 			// Track in/out.
@@ -497,9 +497,9 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'success'     => true,
-			'action'      => 'get_report',
-			'report'      => array(
+			'success' => true,
+			'action'  => 'get_report',
+			'report'  => array(
 				'total_movements' => count( $movements ),
 				'total_in'        => $total_in,
 				'total_out'       => $total_out,
@@ -507,7 +507,7 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 				'by_type'         => $by_type,
 				'by_location'     => $by_location,
 			),
-			'message'     => __( 'Movement report generated.', 'mcp-ai-wpoos-pro' ),
+			'message' => __( 'Movement report generated.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -542,7 +542,7 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Get last 30 days of movements.
-		$thirty_days_ago = strtotime( '-30 days' );
+		$thirty_days_ago  = strtotime( '-30 days' );
 		$recent_movements = array_filter(
 			$movements,
 			function ( $movement ) use ( $thirty_days_ago ) {
@@ -572,11 +572,11 @@ class WP_MCP_AI_Tool_Track_Inventory_Movement implements WP_MCP_AI_Tool_Interfac
 				'current_stock' => $product->get_stock_quantity(),
 			),
 			'summary' => array(
-				'period_days'     => 30,
-				'total_movements' => $total_movements,
-				'total_in'        => $total_in,
-				'total_out'       => $total_out,
-				'net_change'      => $total_in - $total_out,
+				'period_days'          => 30,
+				'total_movements'      => $total_movements,
+				'total_in'             => $total_in,
+				'total_out'            => $total_out,
+				'net_change'           => $total_in - $total_out,
 				'average_daily_change' => $total_movements > 0 ? round( ( $total_in - $total_out ) / 30, 2 ) : 0,
 			),
 			'message' => __( 'Movement summary generated.', 'mcp-ai-wpoos-pro' ),

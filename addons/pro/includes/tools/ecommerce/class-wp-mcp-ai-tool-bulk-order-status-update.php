@@ -117,11 +117,27 @@ class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'object',
 					'description' => __( 'Filter criteria to select orders (alternative to order_ids)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'status'     => array( 'type' => 'string', 'description' => 'Current order status to filter by' ),
-						'date_from'  => array( 'type' => 'string', 'description' => 'Start date (Y-m-d format)' ),
-						'date_to'    => array( 'type' => 'string', 'description' => 'End date (Y-m-d format)' ),
-						'customer_id' => array( 'type' => 'integer', 'description' => 'Filter by customer ID' ),
-						'limit'      => array( 'type' => 'integer', 'description' => 'Maximum orders to update', 'default' => 100 ),
+						'status'      => array(
+							'type'        => 'string',
+							'description' => 'Current order status to filter by',
+						),
+						'date_from'   => array(
+							'type'        => 'string',
+							'description' => 'Start date (Y-m-d format)',
+						),
+						'date_to'     => array(
+							'type'        => 'string',
+							'description' => 'End date (Y-m-d format)',
+						),
+						'customer_id' => array(
+							'type'        => 'integer',
+							'description' => 'Filter by customer ID',
+						),
+						'limit'       => array(
+							'type'        => 'integer',
+							'description' => 'Maximum orders to update',
+							'default'     => 100,
+						),
 					),
 				),
 				'new_status'        => array(
@@ -224,26 +240,26 @@ class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interfac
 
 		// Apply updates.
 		$results = array(
-			'success'       => true,
-			'dry_run'       => $dry_run,
-			'total_found'   => count( $order_ids ),
-			'updated'       => 0,
-			'failed'        => 0,
+			'success'        => true,
+			'dry_run'        => $dry_run,
+			'total_found'    => count( $order_ids ),
+			'updated'        => 0,
+			'failed'         => 0,
 			'updated_orders' => array(),
-			'errors'        => array(),
+			'errors'         => array(),
 		);
 
 		foreach ( $order_ids as $order_id ) {
 			$result = $this->update_single_order( $order_id, $new_status, $send_notification, $note, $note_type, $dry_run );
 
 			if ( is_wp_error( $result ) ) {
-				$results['failed']++;
+				++$results['failed'];
 				$results['errors'][] = array(
 					'order_id' => $order_id,
 					'error'    => $result->get_error_message(),
 				);
 			} else {
-				$results['updated']++;
+				++$results['updated'];
 				$results['updated_orders'][] = $result;
 			}
 		}
@@ -370,12 +386,12 @@ class WP_MCP_AI_Tool_Bulk_Order_Status_Update implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'order_id'   => $order_id,
+			'order_id'     => $order_id,
 			'order_number' => $order->get_order_number(),
-			'old_status' => $old_status,
-			'new_status' => $new_status,
-			'changed'    => true,
-			'customer'   => array(
+			'old_status'   => $old_status,
+			'new_status'   => $new_status,
+			'changed'      => true,
+			'customer'     => array(
 				'name'  => $order->get_formatted_billing_full_name(),
 				'email' => $order->get_billing_email(),
 			),

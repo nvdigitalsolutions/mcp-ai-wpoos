@@ -106,40 +106,40 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'recommendation_type' => array(
+				'recommendation_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Type of recommendations to generate', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'product_based', 'customer_based', 'cart_based', 'frequently_bought' ),
 					'default'     => 'product_based',
 				),
-				'product_id'   => array(
+				'product_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID for product-based recommendations', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'customer_id'  => array(
+				'customer_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Customer ID for customer-based recommendations', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'cart_items'   => array(
+				'cart_items'           => array(
 					'type'        => 'array',
 					'description' => __( 'Cart items for cart-based recommendations', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'limit'        => array(
+				'limit'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of recommendations', 'mcp-ai-wpoos-pro' ),
 					'default'     => 5,
 					'minimum'     => 1,
 					'maximum'     => 20,
 				),
-				'min_price'    => array(
+				'min_price'            => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum product price filter', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'max_price'    => array(
+				'max_price'            => array(
 					'type'        => 'number',
 					'description' => __( 'Maximum product price filter', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -285,16 +285,16 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 		$recommendations = array_slice( $recommendations, 0, $limit );
 
 		return array(
-			'success'         => true,
+			'success'             => true,
 			'recommendation_type' => 'product_based',
-			'base_product'    => array(
+			'base_product'        => array(
 				'id'    => $product->get_id(),
 				'name'  => $product->get_name(),
 				'price' => $product->get_price(),
 			),
-			'recommendations' => $recommendations,
-			'count'           => count( $recommendations ),
-			'message'         => sprintf(
+			'recommendations'     => $recommendations,
+			'count'               => count( $recommendations ),
+			'message'             => sprintf(
 				/* translators: %d: Number of recommendations */
 				__( 'Generated %d product recommendations.', 'mcp-ai-wpoos-pro' ),
 				count( $recommendations )
@@ -345,7 +345,7 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 					if ( ! isset( $category_counts[ $cat_id ] ) ) {
 						$category_counts[ $cat_id ] = 0;
 					}
-					$category_counts[ $cat_id ]++;
+					++$category_counts[ $cat_id ];
 				}
 			}
 		}
@@ -507,8 +507,8 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 		foreach ( $frequently_bought as $row ) {
 			$rec_product = wc_get_product( absint( $row->product_id ) );
 			if ( $rec_product && $this->filter_product( $rec_product, $arguments ) ) {
-				$rec                = $this->format_recommendation( $rec_product, 'frequently_bought' );
-				$rec['buy_count']   = absint( $row->frequency );
+				$rec               = $this->format_recommendation( $rec_product, 'frequently_bought' );
+				$rec['buy_count']  = absint( $row->frequency );
 				$recommendations[] = $rec;
 
 				if ( count( $recommendations ) >= $limit ) {
@@ -570,16 +570,16 @@ class WP_MCP_AI_Tool_Upsell_Recommendations implements WP_MCP_AI_Tool_Interface,
 	 */
 	protected function format_recommendation( $product, $type ) {
 		return array(
-			'product_id'   => $product->get_id(),
-			'product_name' => $product->get_name(),
-			'price'        => $product->get_price(),
+			'product_id'    => $product->get_id(),
+			'product_name'  => $product->get_name(),
+			'price'         => $product->get_price(),
 			'regular_price' => $product->get_regular_price(),
-			'sale_price'   => $product->get_sale_price(),
-			'on_sale'      => $product->is_on_sale(),
-			'stock_status' => $product->get_stock_status(),
-			'image_url'    => wp_get_attachment_url( $product->get_image_id() ),
-			'permalink'    => $product->get_permalink(),
-			'type'         => $type,
+			'sale_price'    => $product->get_sale_price(),
+			'on_sale'       => $product->is_on_sale(),
+			'stock_status'  => $product->get_stock_status(),
+			'image_url'     => wp_get_attachment_url( $product->get_image_id() ),
+			'permalink'     => $product->get_permalink(),
+			'type'          => $type,
 		);
 	}
 }

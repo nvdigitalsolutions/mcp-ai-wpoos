@@ -135,14 +135,14 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 	 * @var array
 	 */
 	protected $field_mapping = array(
-		'sku'              => 'product_code',
-		'name'             => 'product_name',
-		'quantity'         => 'available_quantity',
-		'warehouse'        => 'location_code',
-		'reorder_point'    => 'min_quantity',
-		'supplier'         => 'vendor_id',
-		'cost_price'       => 'unit_cost',
-		'last_updated'     => 'last_sync_date',
+		'sku'           => 'product_code',
+		'name'          => 'product_name',
+		'quantity'      => 'available_quantity',
+		'warehouse'     => 'location_code',
+		'reorder_point' => 'min_quantity',
+		'supplier'      => 'vendor_id',
+		'cost_price'    => 'unit_cost',
+		'last_updated'  => 'last_sync_date',
 	);
 
 	/**
@@ -155,12 +155,12 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 		$this->config = wp_parse_args(
 			$config,
 			array(
-				'api_url'      => '',
-				'api_key'      => '',
-				'api_secret'   => '',
-				'company_id'   => '',
-				'verify_ssl'   => true,
-				'timeout'      => 30,
+				'api_url'    => '',
+				'api_key'    => '',
+				'api_secret' => '',
+				'company_id' => '',
+				'verify_ssl' => true,
+				'timeout'    => 30,
 			)
 		);
 
@@ -391,7 +391,7 @@ class WP_MCP_AI_ERP_EZuite implements WP_MCP_AI_ERP_Connector_Interface {
 			if ( is_wp_error( $result ) ) {
 				$errors[] = $result->get_error_message();
 			} else {
-				$synced_count++;
+				++$synced_count;
 			}
 		}
 

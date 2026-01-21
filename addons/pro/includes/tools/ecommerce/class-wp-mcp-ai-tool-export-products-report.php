@@ -130,11 +130,28 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 					'type'        => 'object',
 					'description' => __( 'Filter criteria to select products', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'category'     => array( 'type' => 'string', 'description' => 'Filter by category slug' ),
-						'status'       => array( 'type' => 'string', 'description' => 'Filter by status: publish, draft, private' ),
-						'stock_status' => array( 'type' => 'string', 'description' => 'Filter by stock status: instock, outofstock, onbackorder' ),
-						'limit'        => array( 'type' => 'integer', 'description' => 'Maximum number of products to export', 'default' => 1000 ),
-						'offset'       => array( 'type' => 'integer', 'description' => 'Offset for pagination', 'default' => 0 ),
+						'category'     => array(
+							'type'        => 'string',
+							'description' => 'Filter by category slug',
+						),
+						'status'       => array(
+							'type'        => 'string',
+							'description' => 'Filter by status: publish, draft, private',
+						),
+						'stock_status' => array(
+							'type'        => 'string',
+							'description' => 'Filter by stock status: instock, outofstock, onbackorder',
+						),
+						'limit'        => array(
+							'type'        => 'integer',
+							'description' => 'Maximum number of products to export',
+							'default'     => 1000,
+						),
+						'offset'       => array(
+							'type'        => 'integer',
+							'description' => 'Offset for pagination',
+							'default'     => 0,
+						),
 					),
 				),
 				'upload'            => array(
@@ -230,7 +247,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 
 			if ( is_wp_error( $upload_result ) ) {
 				// Clean up temp file.
-				@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+				wp_delete_file( $file_path );
 				return $upload_result;
 			}
 
@@ -238,20 +255,20 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 			$file_url      = $upload_result['url'];
 
 			// Clean up temp file after upload.
-			@unlink( $file_path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+			wp_delete_file( $file_path );
 		} else {
 			$file_url = $file_path;
 		}
 
 		return array(
-			'success'       => true,
-			'file_path'     => $upload ? '' : $file_path,
-			'file_url'      => $file_url,
-			'attachment_id' => $attachment_id,
-			'format'        => $format,
+			'success'        => true,
+			'file_path'      => $upload ? '' : $file_path,
+			'file_url'       => $file_url,
+			'attachment_id'  => $attachment_id,
+			'format'         => $format,
 			'total_products' => count( $products ),
-			'filename'      => basename( $file_url ),
-			'message'       => sprintf(
+			'filename'       => basename( $file_url ),
+			'message'        => sprintf(
 				/* translators: 1: Number of products, 2: Format */
 				__( 'Exported %1$d products to %2$s format successfully.', 'mcp-ai-wpoos-pro' ),
 				count( $products ),
@@ -498,7 +515,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 		$sheet_data = array(
 			'name'    => 'Products',
 			'columns' => array_map(
-				function( $header ) {
+				function ( $header ) {
 					return array(
 						'header' => $header,
 						'key'    => sanitize_title( $header ),
@@ -514,7 +531,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 		foreach ( $data['rows'] as $row ) {
 			$row_data = array();
 			foreach ( $data['headers'] as $index => $header ) {
-				$key = sanitize_title( $header );
+				$key              = sanitize_title( $header );
 				$row_data[ $key ] = isset( $row[ $index ] ) ? $row[ $index ] : '';
 			}
 			$sheet_data['data'][] = $row_data;
@@ -539,7 +556,7 @@ class WP_MCP_AI_Tool_Export_Products_Report implements WP_MCP_AI_Tool_Interface,
 			escapeshellarg( $input_data )
 		);
 
-		$output = array();
+		$output     = array();
 		$return_var = 0;
 		exec( $command, $output, $return_var ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec
 

@@ -676,7 +676,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	protected function get_word_generation_script_path() {
 		// Use bundled script that includes all dependencies.
 		$script_path = WP_MCP_AI_PRO_PATH . 'bin/generate-word.bundle.js';
-		
+
 		if ( ! file_exists( $script_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_script_not_found',
@@ -687,7 +687,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				)
 			);
 		}
-		
+
 		return $script_path;
 	}
 
@@ -848,7 +848,7 @@ JAVASCRIPT;
 		$prompt .= "- Format for readability (paragraphs, lists, emphasis)\n";
 		$prompt .= "- Maintain professional tone\n";
 		$prompt .= "- Consider document purpose and audience\n\n";
-		$prompt .= "Provide content that is ready to be rendered in a Word document.";
+		$prompt .= 'Provide content that is ready to be rendered in a Word document.';
 
 		return $prompt;
 	}
@@ -868,7 +868,7 @@ JAVASCRIPT;
 		}
 
 		$prompt .= "Description: {$description}\n\n";
-		$prompt .= "Provide well-structured, professional content ready for Word document rendering.";
+		$prompt .= 'Provide well-structured, professional content ready for Word document rendering.';
 
 		return $prompt;
 	}
@@ -911,7 +911,7 @@ JAVASCRIPT;
 		);
 
 		$prompt  = "You are an expert in creating professional {$template} documents.\n\n";
-		$prompt .= "Task: " . ( $templates[ $template ] ?? 'Create professional document content' ) . "\n\n";
+		$prompt .= 'Task: ' . ( $templates[ $template ] ?? 'Create professional document content' ) . "\n\n";
 		$prompt .= "Follow standard formatting conventions for {$template} documents.";
 
 		return $prompt;

@@ -605,32 +605,32 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_ecommerce_toolkit'] ) ) {
 			$ecommerce_toolkit_tools = array(
 				// Product Management tools.
-				'WP_MCP_AI_Tool_Create_Product_Advanced'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php',
-				'WP_MCP_AI_Tool_Bulk_Update_Products'          => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-update-products.php',
-				'WP_MCP_AI_Tool_Import_Products_CSV'           => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
-				'WP_MCP_AI_Tool_Export_Products_Report'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
-				'WP_MCP_AI_Tool_Sync_Product_Inventory'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
+				'WP_MCP_AI_Tool_Create_Product_Advanced'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-product-advanced.php',
+				'WP_MCP_AI_Tool_Bulk_Update_Products'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-update-products.php',
+				'WP_MCP_AI_Tool_Import_Products_CSV'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-import-products-csv.php',
+				'WP_MCP_AI_Tool_Export_Products_Report'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-products-report.php',
+				'WP_MCP_AI_Tool_Sync_Product_Inventory'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sync-product-inventory.php',
 				// Order Management tools.
-				'WP_MCP_AI_Tool_Generate_Invoice_PDF'          => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
-				'WP_MCP_AI_Tool_Bulk_Order_Status_Update'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-order-status-update.php',
-				'WP_MCP_AI_Tool_Get_Order_Analytics'           => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
-				'WP_MCP_AI_Tool_Process_Order_Workflow'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-process-order-workflow.php',
-				'WP_MCP_AI_Tool_Refund_Order_Advanced'         => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-refund-order-advanced.php',
+				'WP_MCP_AI_Tool_Generate_Invoice_PDF'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-generate-invoice-pdf.php',
+				'WP_MCP_AI_Tool_Bulk_Order_Status_Update' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-bulk-order-status-update.php',
+				'WP_MCP_AI_Tool_Get_Order_Analytics'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-get-order-analytics.php',
+				'WP_MCP_AI_Tool_Process_Order_Workflow'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-process-order-workflow.php',
+				'WP_MCP_AI_Tool_Refund_Order_Advanced'    => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-refund-order-advanced.php',
 				// Customer Management tools.
-				'WP_MCP_AI_Tool_Segment_Customers'             => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-segment-customers.php',
-				'WP_MCP_AI_Tool_Customer_Lifetime_Value'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-customer-lifetime-value.php',
-				'WP_MCP_AI_Tool_Export_Customer_Data'          => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-customer-data.php',
+				'WP_MCP_AI_Tool_Segment_Customers'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-segment-customers.php',
+				'WP_MCP_AI_Tool_Customer_Lifetime_Value'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-customer-lifetime-value.php',
+				'WP_MCP_AI_Tool_Export_Customer_Data'     => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-export-customer-data.php',
 				// Inventory & Stock tools.
-				'WP_MCP_AI_Tool_Track_Inventory_Movement'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-track-inventory-movement.php',
-				'WP_MCP_AI_Tool_Low_Stock_Alert_Automation'    => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-low-stock-alert-automation.php',
-				'WP_MCP_AI_Tool_Inventory_Forecast'            => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-inventory-forecast.php',
+				'WP_MCP_AI_Tool_Track_Inventory_Movement' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-track-inventory-movement.php',
+				'WP_MCP_AI_Tool_Low_Stock_Alert_Automation' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-low-stock-alert-automation.php',
+				'WP_MCP_AI_Tool_Inventory_Forecast'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-inventory-forecast.php',
 				// Marketing & Sales tools.
-				'WP_MCP_AI_Tool_Create_Discount_Campaign'      => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-discount-campaign.php',
-				'WP_MCP_AI_Tool_Abandoned_Cart_Recovery'       => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-abandoned-cart-recovery.php',
-				'WP_MCP_AI_Tool_Upsell_Recommendations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-upsell-recommendations.php',
-				'WP_MCP_AI_Tool_Sales_Performance_Dashboard'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sales-performance-dashboard.php',
+				'WP_MCP_AI_Tool_Create_Discount_Campaign' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-create-discount-campaign.php',
+				'WP_MCP_AI_Tool_Abandoned_Cart_Recovery'  => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-abandoned-cart-recovery.php',
+				'WP_MCP_AI_Tool_Upsell_Recommendations'   => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-upsell-recommendations.php',
+				'WP_MCP_AI_Tool_Sales_Performance_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/ecommerce/class-wp-mcp-ai-tool-sales-performance-dashboard.php',
 			);
-			$pro_tools                   = array_merge( $pro_tools, $ecommerce_toolkit_tools );
+			$pro_tools               = array_merge( $pro_tools, $ecommerce_toolkit_tools );
 		}
 
 		// Add Document Generation Toolkit tools if enabled.

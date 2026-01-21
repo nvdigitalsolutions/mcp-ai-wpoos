@@ -106,28 +106,28 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'workflow_action' => array(
+				'workflow_action'    => array(
 					'type'        => 'string',
 					'description' => __( 'Workflow action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'process', 'validate', 'auto_complete', 'batch_process' ),
 					'default'     => 'process',
 				),
-				'order_id'        => array(
+				'order_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Order ID to process', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'order_ids'       => array(
+				'order_ids'          => array(
 					'type'        => 'array',
 					'description' => __( 'Order IDs for batch processing', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'target_status'   => array(
+				'target_status'      => array(
 					'type'        => 'string',
 					'description' => __( 'Target order status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
-				'workflow_steps'  => array(
+				'workflow_steps'     => array(
 					'type'        => 'array',
 					'description' => __( 'Custom workflow steps to execute', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -140,11 +140,11 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'Send email notifications for status changes', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'add_note'        => array(
+				'add_note'           => array(
 					'type'        => 'string',
 					'description' => __( 'Add note to order', 'mcp-ai-wpoos-pro' ),
 				),
-				'validation_rules' => array(
+				'validation_rules'   => array(
 					'type'        => 'array',
 					'description' => __( 'Validation rules to check', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -240,17 +240,17 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$target_status       = isset( $arguments['target_status'] ) ? sanitize_text_field( $arguments['target_status'] ) : '';
-		$workflow_steps      = isset( $arguments['workflow_steps'] ) && is_array( $arguments['workflow_steps'] ) ? $arguments['workflow_steps'] : array();
-		$send_notifications  = isset( $arguments['send_notifications'] ) ? (bool) $arguments['send_notifications'] : true;
-		$add_note            = isset( $arguments['add_note'] ) ? sanitize_text_field( $arguments['add_note'] ) : '';
+		$target_status      = isset( $arguments['target_status'] ) ? sanitize_text_field( $arguments['target_status'] ) : '';
+		$workflow_steps     = isset( $arguments['workflow_steps'] ) && is_array( $arguments['workflow_steps'] ) ? $arguments['workflow_steps'] : array();
+		$send_notifications = isset( $arguments['send_notifications'] ) ? (bool) $arguments['send_notifications'] : true;
+		$add_note           = isset( $arguments['add_note'] ) ? sanitize_text_field( $arguments['add_note'] ) : '';
 
 		$old_status    = $order->get_status();
 		$steps_results = array();
 
 		// Execute workflow steps.
 		foreach ( $workflow_steps as $step ) {
-			$step_result = $this->execute_workflow_step( $order, $step );
+			$step_result            = $this->execute_workflow_step( $order, $step );
 			$steps_results[ $step ] = $step_result;
 
 			if ( is_wp_error( $step_result ) ) {
@@ -269,14 +269,14 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'        => true,
+			'success'         => true,
 			'workflow_action' => 'process',
-			'order_id'       => $order_id,
-			'old_status'     => $old_status,
-			'new_status'     => $order->get_status(),
-			'steps_executed' => $workflow_steps,
-			'steps_results'  => $steps_results,
-			'message'        => sprintf(
+			'order_id'        => $order_id,
+			'old_status'      => $old_status,
+			'new_status'      => $order->get_status(),
+			'steps_executed'  => $workflow_steps,
+			'steps_results'   => $steps_results,
+			'message'         => sprintf(
 				/* translators: %d: Order ID */
 				__( 'Order #%d workflow processed successfully.', 'mcp-ai-wpoos-pro' ),
 				$order_id
@@ -302,13 +302,13 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 				);
 
 			case 'check_stock':
-				$stock_available = true;
+				$stock_available    = true;
 				$out_of_stock_items = array();
 
 				foreach ( $order->get_items() as $item ) {
 					$product = $item->get_product();
 					if ( $product && ! $product->is_in_stock() ) {
-						$stock_available = false;
+						$stock_available      = false;
 						$out_of_stock_items[] = $product->get_name();
 					}
 				}
@@ -342,7 +342,10 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 				);
 
 			default:
-				return array( 'step' => $step, 'status' => 'unknown' );
+				return array(
+					'step'   => $step,
+					'status' => 'unknown',
+				);
 		}
 	}
 
@@ -376,7 +379,7 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 		$is_valid           = true;
 
 		foreach ( $validation_rules as $rule ) {
-			$result = $this->validate_rule( $order, $rule );
+			$result                      = $this->validate_rule( $order, $rule );
 			$validation_results[ $rule ] = $result;
 
 			if ( ! $result['valid'] ) {
@@ -466,29 +469,29 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 			)
 		);
 
-		$completed_count = 0;
-		$skipped_count   = 0;
+		$completed_count  = 0;
+		$skipped_count    = 0;
 		$completed_orders = array();
 
 		foreach ( $orders as $order ) {
 			// Check if order can be auto-completed.
 			if ( $this->can_auto_complete( $order ) ) {
 				$order->update_status( 'completed' );
-				$completed_count++;
+				++$completed_count;
 				$completed_orders[] = $order->get_id();
 			} else {
-				$skipped_count++;
+				++$skipped_count;
 			}
 		}
 
 		return array(
-			'success'           => true,
-			'workflow_action'   => 'auto_complete',
-			'orders_processed'  => count( $orders ),
-			'completed'         => $completed_count,
-			'skipped'           => $skipped_count,
-			'completed_orders'  => $completed_orders,
-			'message'           => sprintf(
+			'success'          => true,
+			'workflow_action'  => 'auto_complete',
+			'orders_processed' => count( $orders ),
+			'completed'        => $completed_count,
+			'skipped'          => $skipped_count,
+			'completed_orders' => $completed_orders,
+			'message'          => sprintf(
 				/* translators: %d: Number of orders */
 				__( 'Auto-completed %d orders.', 'mcp-ai-wpoos-pro' ),
 				$completed_count
@@ -550,14 +553,14 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 			);
 
 			if ( is_wp_error( $result ) ) {
-				$failed_count++;
+				++$failed_count;
 				$results[] = array(
 					'order_id' => $order_id,
 					'success'  => false,
 					'error'    => $result->get_error_message(),
 				);
 			} else {
-				$processed_count++;
+				++$processed_count;
 				$results[] = array(
 					'order_id' => $order_id,
 					'success'  => true,
@@ -566,13 +569,13 @@ class WP_MCP_AI_Tool_Process_Order_Workflow implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'          => true,
-			'workflow_action'  => 'batch_process',
-			'total_orders'     => count( $order_ids ),
-			'processed'        => $processed_count,
-			'failed'           => $failed_count,
-			'results'          => $results,
-			'message'          => sprintf(
+			'success'         => true,
+			'workflow_action' => 'batch_process',
+			'total_orders'    => count( $order_ids ),
+			'processed'       => $processed_count,
+			'failed'          => $failed_count,
+			'results'         => $results,
+			'message'         => sprintf(
 				/* translators: 1: Processed count, 2: Total count */
 				__( 'Batch processing completed: %1$d of %2$d orders processed.', 'mcp-ai-wpoos-pro' ),
 				$processed_count,

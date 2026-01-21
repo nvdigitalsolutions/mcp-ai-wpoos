@@ -106,23 +106,23 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'sync_type'      => array(
+				'sync_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Type of synchronization', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'single', 'bulk', 'reconcile' ),
 					'default'     => 'single',
 				),
-				'product_id'     => array(
+				'product_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID for single sync', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'product_ids'    => array(
+				'product_ids'         => array(
 					'type'        => 'array',
 					'description' => __( 'Product IDs for bulk sync', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'inventory_data' => array(
+				'inventory_data'      => array(
 					'type'        => 'array',
 					'description' => __( 'Inventory data to sync', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -144,7 +144,7 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 						),
 					),
 				),
-				'reconcile_method' => array(
+				'reconcile_method'    => array(
 					'type'        => 'string',
 					'description' => __( 'Reconciliation method', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'sum', 'max', 'average', 'override' ),
@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 					'description' => __( 'Update stock status based on quantity', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'log_changes'    => array(
+				'log_changes'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Log inventory changes for audit', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -245,9 +245,9 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$inventory_data       = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
-		$update_stock_status  = isset( $arguments['update_stock_status'] ) ? (bool) $arguments['update_stock_status'] : true;
-		$log_changes          = isset( $arguments['log_changes'] ) ? (bool) $arguments['log_changes'] : true;
+		$inventory_data      = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
+		$update_stock_status = isset( $arguments['update_stock_status'] ) ? (bool) $arguments['update_stock_status'] : true;
+		$log_changes         = isset( $arguments['log_changes'] ) ? (bool) $arguments['log_changes'] : true;
 
 		if ( empty( $inventory_data ) ) {
 			return new WP_Error(
@@ -282,13 +282,13 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'     => true,
-			'sync_type'   => 'single',
-			'product_id'  => $product_id,
-			'old_stock'   => $old_stock,
-			'new_stock'   => $new_stock,
-			'locations'   => count( $inventory_data ),
-			'message'     => sprintf(
+			'success'    => true,
+			'sync_type'  => 'single',
+			'product_id' => $product_id,
+			'old_stock'  => $old_stock,
+			'new_stock'  => $new_stock,
+			'locations'  => count( $inventory_data ),
+			'message'    => sprintf(
 				/* translators: 1: Product ID, 2: Old stock, 3: New stock */
 				__( 'Product #%1$d inventory synced: %2$d → %3$d.', 'mcp-ai-wpoos-pro' ),
 				$product_id,
@@ -340,9 +340,9 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 			);
 
 			if ( is_wp_error( $result ) ) {
-				$failed_count++;
+				++$failed_count;
 			} else {
-				$synced_count++;
+				++$synced_count;
 				$synced_details[] = array(
 					'product_id' => $product_id,
 					'old_stock'  => $result['old_stock'],
@@ -374,8 +374,8 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 	 * @return array Result.
 	 */
 	protected function reconcile_inventory( $arguments ) {
-		$inventory_data     = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
-		$reconcile_method   = isset( $arguments['reconcile_method'] ) ? sanitize_text_field( $arguments['reconcile_method'] ) : 'sum';
+		$inventory_data   = isset( $arguments['inventory_data'] ) && is_array( $arguments['inventory_data'] ) ? $arguments['inventory_data'] : array();
+		$reconcile_method = isset( $arguments['reconcile_method'] ) ? sanitize_text_field( $arguments['reconcile_method'] ) : 'sum';
 
 		if ( empty( $inventory_data ) ) {
 			return new WP_Error(
@@ -439,12 +439,12 @@ class WP_MCP_AI_Tool_Sync_Product_Inventory implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'           => true,
-			'sync_type'         => 'reconcile',
-			'reconcile_method'  => $reconcile_method,
+			'success'             => true,
+			'sync_type'           => 'reconcile',
+			'reconcile_method'    => $reconcile_method,
 			'products_reconciled' => count( $reconciled ),
-			'details'           => $reconciled,
-			'message'           => sprintf(
+			'details'             => $reconciled,
+			'message'             => sprintf(
 				/* translators: %d: Number of products */
 				__( 'Inventory reconciled for %d products.', 'mcp-ai-wpoos-pro' ),
 				count( $reconciled )

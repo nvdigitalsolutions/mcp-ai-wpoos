@@ -52,36 +52,36 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'latex'            => array(
+				'latex'          => array(
 					'type'        => 'string',
 					'description' => __( 'LaTeX math expression to render (e.g., "x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}")', 'mcp-ai-wpoos-pro' ),
 				),
-				'display_mode'     => array(
+				'display_mode'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use display mode (centered, larger). False for inline mode.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'throw_on_error'   => array(
+				'throw_on_error' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Throw error on invalid LaTeX. If false, displays error message in output.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'output_format'    => array(
+				'output_format'  => array(
 					'type'        => 'string',
 					'enum'        => array( 'html', 'mathml', 'html_and_mathml' ),
 					'description' => __( 'Output format: html (default), mathml, or html_and_mathml', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'html',
 				),
-				'macros'           => array(
+				'macros'         => array(
 					'type'        => 'object',
 					'description' => __( 'Custom LaTeX macros as key-value pairs (e.g., {"\\RR": "\\mathbb{R}"})', 'mcp-ai-wpoos-pro' ),
 				),
-				'quiz_id'          => array(
+				'quiz_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional quiz ID to associate this equation with', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'save_rendered'    => array(
+				'save_rendered'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Cache the rendered HTML for reuse', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -152,11 +152,11 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 			$cached_result = wp_cache_get( $cache_key, 'mcp_ai_katex' );
 			if ( $cached_result !== false ) {
 				return array(
-					'success'      => true,
-					'latex'        => $latex,
-					'html'         => $cached_result['html'],
-					'cached'       => true,
-					'render_time'  => 0,
+					'success'     => true,
+					'latex'       => $latex,
+					'html'        => $cached_result['html'],
+					'cached'      => true,
+					'render_time' => 0,
 				);
 			}
 		}
@@ -172,10 +172,10 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 
 		// Build rendering parameters.
 		$render_params = array(
-			'latex'          => $latex,
-			'displayMode'    => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
-			'throwOnError'   => isset( $arguments['throw_on_error'] ) ? (bool) $arguments['throw_on_error'] : false,
-			'output'         => isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'html',
+			'latex'        => $latex,
+			'displayMode'  => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
+			'throwOnError' => isset( $arguments['throw_on_error'] ) ? (bool) $arguments['throw_on_error'] : false,
+			'output'       => isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'html',
 		);
 
 		// Add custom macros if provided.
@@ -225,7 +225,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function check_katex_availability() {
 		// Check if package exists in vendor directory (production) or node_modules (development).
-		$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/dist/katex.min.js';
+		$vendor_path       = WP_MCP_AI_PRO_PATH . 'assets/vendor/katex/dist/katex.min.js';
 		$node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/katex/katex.js';
 
 		if ( ! file_exists( $vendor_path ) && ! file_exists( $node_modules_path ) ) {

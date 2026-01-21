@@ -106,13 +106,13 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'            => array(
+				'action'               => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'check', 'send_alerts', 'get_report' ),
 					'default'     => 'check',
 				),
-				'threshold'         => array(
+				'threshold'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Stock quantity threshold for alerts', 'mcp-ai-wpoos-pro' ),
 					'default'     => 5,
@@ -123,17 +123,17 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 					'description' => __( 'Include out of stock products', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'category_ids'      => array(
+				'category_ids'         => array(
 					'type'        => 'array',
 					'description' => __( 'Filter by specific category IDs', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'send_email'        => array(
+				'send_email'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Send email notifications', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'email_recipients'  => array(
+				'email_recipients'     => array(
 					'type'        => 'array',
 					'description' => __( 'Email addresses to notify', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -206,9 +206,9 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 	 * @return array Result.
 	 */
 	protected function check_low_stock( $arguments ) {
-		$threshold             = isset( $arguments['threshold'] ) ? absint( $arguments['threshold'] ) : 5;
-		$include_out_of_stock  = isset( $arguments['include_out_of_stock'] ) ? (bool) $arguments['include_out_of_stock'] : true;
-		$category_ids          = isset( $arguments['category_ids'] ) && is_array( $arguments['category_ids'] ) ? array_map( 'absint', $arguments['category_ids'] ) : array();
+		$threshold            = isset( $arguments['threshold'] ) ? absint( $arguments['threshold'] ) : 5;
+		$include_out_of_stock = isset( $arguments['include_out_of_stock'] ) ? (bool) $arguments['include_out_of_stock'] : true;
+		$category_ids         = isset( $arguments['category_ids'] ) && is_array( $arguments['category_ids'] ) ? array_map( 'absint', $arguments['category_ids'] ) : array();
 
 		$query_args = array(
 			'post_type'      => 'product',
@@ -288,12 +288,12 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 		);
 
 		return array(
-			'success'           => true,
-			'action'            => 'check',
-			'threshold'         => $threshold,
-			'products_found'    => count( $low_stock_products ),
+			'success'            => true,
+			'action'             => 'check',
+			'threshold'          => $threshold,
+			'products_found'     => count( $low_stock_products ),
 			'low_stock_products' => $low_stock_products,
-			'message'           => sprintf(
+			'message'            => sprintf(
 				/* translators: 1: Number of products, 2: Threshold */
 				__( 'Found %1$d products with stock at or below threshold of %2$d.', 'mcp-ai-wpoos-pro' ),
 				count( $low_stock_products ),
@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 			foreach ( $email_recipients as $recipient ) {
 				$sent = wp_mail( sanitize_email( $recipient ), $subject, $message, array( 'Content-Type: text/html; charset=UTF-8' ) );
 				if ( $sent ) {
-					$emails_sent++;
+					++$emails_sent;
 				}
 			}
 		}
@@ -425,30 +425,30 @@ class WP_MCP_AI_Tool_Low_Stock_Alert_Automation implements WP_MCP_AI_Tool_Interf
 		foreach ( $stock_data['low_stock_products'] as $product ) {
 			$qty = $product['stock_quantity'];
 			if ( 0 === $qty ) {
-				$out_of_stock++;
+				++$out_of_stock;
 			} elseif ( $qty <= 2 ) {
-				$critical++;
+				++$critical;
 			} elseif ( $qty <= 5 ) {
-				$low++;
+				++$low;
 			} else {
-				$warning++;
+				++$warning;
 			}
 		}
 
 		return array(
-			'success'  => true,
-			'action'   => 'get_report',
-			'report'   => array(
-				'threshold'            => $stock_data['threshold'],
-				'total_flagged'        => $stock_data['products_found'],
-				'out_of_stock'         => $out_of_stock,
-				'critical_stock'       => $critical,
-				'low_stock'            => $low,
-				'warning_stock'        => $warning,
-				'products'             => $stock_data['low_stock_products'],
-				'generated_at'         => current_time( 'mysql' ),
+			'success' => true,
+			'action'  => 'get_report',
+			'report'  => array(
+				'threshold'      => $stock_data['threshold'],
+				'total_flagged'  => $stock_data['products_found'],
+				'out_of_stock'   => $out_of_stock,
+				'critical_stock' => $critical,
+				'low_stock'      => $low,
+				'warning_stock'  => $warning,
+				'products'       => $stock_data['low_stock_products'],
+				'generated_at'   => current_time( 'mysql' ),
 			),
-			'message'  => __( 'Stock report generated successfully.', 'mcp-ai-wpoos-pro' ),
+			'message' => __( 'Stock report generated successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

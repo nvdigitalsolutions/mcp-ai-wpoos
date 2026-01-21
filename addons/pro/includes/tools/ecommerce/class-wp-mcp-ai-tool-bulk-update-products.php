@@ -107,66 +107,106 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'product_ids'     => array(
+				'product_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of product IDs to update (required if no filter)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'integer',
 					),
 				),
-				'filter'          => array(
+				'filter'      => array(
 					'type'        => 'object',
 					'description' => __( 'Filter criteria to select products (alternative to product_ids)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'category' => array( 'type' => 'string', 'description' => 'Filter by category slug' ),
-						'status'   => array( 'type' => 'string', 'description' => 'Filter by status: publish, draft, private' ),
-						'stock_status' => array( 'type' => 'string', 'description' => 'Filter by stock status: instock, outofstock, onbackorder' ),
-						'limit'    => array( 'type' => 'integer', 'description' => 'Maximum number of products to update', 'default' => 100 ),
+						'category'     => array(
+							'type'        => 'string',
+							'description' => 'Filter by category slug',
+						),
+						'status'       => array(
+							'type'        => 'string',
+							'description' => 'Filter by status: publish, draft, private',
+						),
+						'stock_status' => array(
+							'type'        => 'string',
+							'description' => 'Filter by stock status: instock, outofstock, onbackorder',
+						),
+						'limit'        => array(
+							'type'        => 'integer',
+							'description' => 'Maximum number of products to update',
+							'default'     => 100,
+						),
 					),
 				),
-				'updates'         => array(
+				'updates'     => array(
 					'type'        => 'object',
 					'description' => __( 'Updates to apply to selected products (at least one required)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'regular_price'    => array( 'type' => 'number', 'description' => 'New regular price' ),
-						'sale_price'       => array( 'type' => 'number', 'description' => 'New sale price' ),
-						'price_adjustment' => array(
+						'regular_price'     => array(
+							'type'        => 'number',
+							'description' => 'New regular price',
+						),
+						'sale_price'        => array(
+							'type'        => 'number',
+							'description' => 'New sale price',
+						),
+						'price_adjustment'  => array(
 							'type'        => 'object',
 							'description' => 'Adjust price by percentage or amount',
 							'properties'  => array(
-								'type'   => array( 'type' => 'string', 'enum' => array( 'percentage', 'fixed' ) ),
+								'type'   => array(
+									'type' => 'string',
+									'enum' => array( 'percentage', 'fixed' ),
+								),
 								'value'  => array( 'type' => 'number' ),
-								'action' => array( 'type' => 'string', 'enum' => array( 'increase', 'decrease' ) ),
+								'action' => array(
+									'type' => 'string',
+									'enum' => array( 'increase', 'decrease' ),
+								),
 							),
 						),
-						'stock_quantity'   => array( 'type' => 'integer', 'description' => 'New stock quantity' ),
-						'stock_status'     => array( 'type' => 'string', 'enum' => array( 'instock', 'outofstock', 'onbackorder' ) ),
-						'manage_stock'     => array( 'type' => 'boolean', 'description' => 'Enable/disable stock management' ),
-						'status'           => array( 'type' => 'string', 'enum' => array( 'publish', 'draft', 'private' ) ),
-						'featured'         => array( 'type' => 'boolean', 'description' => 'Mark as featured' ),
-						'add_categories'   => array(
-							'type'  => 'array',
-							'items' => array( 'oneOf' => array( array( 'type' => 'string' ), array( 'type' => 'integer' ) ) ),
+						'stock_quantity'    => array(
+							'type'        => 'integer',
+							'description' => 'New stock quantity',
+						),
+						'stock_status'      => array(
+							'type' => 'string',
+							'enum' => array( 'instock', 'outofstock', 'onbackorder' ),
+						),
+						'manage_stock'      => array(
+							'type'        => 'boolean',
+							'description' => 'Enable/disable stock management',
+						),
+						'status'            => array(
+							'type' => 'string',
+							'enum' => array( 'publish', 'draft', 'private' ),
+						),
+						'featured'          => array(
+							'type'        => 'boolean',
+							'description' => 'Mark as featured',
+						),
+						'add_categories'    => array(
+							'type'        => 'array',
+							'items'       => array( 'oneOf' => array( array( 'type' => 'string' ), array( 'type' => 'integer' ) ) ),
 							'description' => 'Categories to add',
 						),
 						'remove_categories' => array(
-							'type'  => 'array',
-							'items' => array( 'oneOf' => array( array( 'type' => 'string' ), array( 'type' => 'integer' ) ) ),
+							'type'        => 'array',
+							'items'       => array( 'oneOf' => array( array( 'type' => 'string' ), array( 'type' => 'integer' ) ) ),
 							'description' => 'Categories to remove',
 						),
-						'add_tags'         => array(
-							'type'  => 'array',
-							'items' => array( 'type' => 'string' ),
+						'add_tags'          => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
 							'description' => 'Tags to add',
 						),
-						'remove_tags'      => array(
-							'type'  => 'array',
-							'items' => array( 'type' => 'string' ),
+						'remove_tags'       => array(
+							'type'        => 'array',
+							'items'       => array( 'type' => 'string' ),
 							'description' => 'Tags to remove',
 						),
 					),
 				),
-				'dry_run'         => array(
+				'dry_run'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Preview changes without applying them', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -242,26 +282,26 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 
 		// Apply updates.
 		$results = array(
-			'success'       => true,
-			'dry_run'       => $dry_run,
-			'total_found'   => count( $product_ids ),
-			'updated'       => 0,
-			'failed'        => 0,
+			'success'          => true,
+			'dry_run'          => $dry_run,
+			'total_found'      => count( $product_ids ),
+			'updated'          => 0,
+			'failed'           => 0,
 			'updated_products' => array(),
-			'errors'        => array(),
+			'errors'           => array(),
 		);
 
 		foreach ( $product_ids as $product_id ) {
 			$result = $this->update_single_product( $product_id, $updates, $dry_run );
 
 			if ( is_wp_error( $result ) ) {
-				$results['failed']++;
+				++$results['failed'];
 				$results['errors'][] = array(
 					'product_id' => $product_id,
 					'error'      => $result->get_error_message(),
 				);
 			} else {
-				$results['updated']++;
+				++$results['updated'];
 				$results['updated_products'][] = $result;
 			}
 		}
@@ -382,7 +422,7 @@ class WP_MCP_AI_Tool_Bulk_Update_Products implements WP_MCP_AI_Tool_Interface, W
 
 		// Apply price adjustment.
 		if ( ! empty( $updates['price_adjustment'] ) ) {
-			$adjustment = $updates['price_adjustment'];
+			$adjustment    = $updates['price_adjustment'];
 			$current_price = $product->get_regular_price();
 
 			if ( $current_price > 0 ) {

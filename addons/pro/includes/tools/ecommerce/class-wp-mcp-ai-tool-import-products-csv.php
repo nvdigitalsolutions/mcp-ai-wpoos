@@ -245,7 +245,8 @@ class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		// Process rows (skip header).
-		for ( $i = 1; $i < count( $rows ); $i++ ) {
+		$row_count = count( $rows );
+		for ( $i = 1; $i < $row_count; $i++ ) {
 			$row_data     = $this->map_row_data( $rows[ $i ], $mapping );
 			$product_data = $this->sanitize_product_data( $row_data, $skip_images );
 
@@ -259,31 +260,31 @@ class WP_MCP_AI_Tool_Import_Products_CSV implements WP_MCP_AI_Tool_Interface, WP
 				// Update existing product.
 				$result = $this->update_product( $existing_product_id, $product_data, $current_user_id );
 				if ( is_wp_error( $result ) ) {
-					$results['failed']++;
+					++$results['failed'];
 					$results['errors'][] = array(
 						'row'   => $i + 1,
 						'sku'   => $product_data['sku'],
 						'error' => $result->get_error_message(),
 					);
 				} else {
-					$results['updated']++;
+					++$results['updated'];
 					$results['products'][] = $result;
 				}
 			} elseif ( $existing_product_id ) {
 				// Product exists but update_existing is false.
-				$results['skipped']++;
+				++$results['skipped'];
 			} else {
 				// Create new product.
 				$result = $this->create_product( $product_data, $current_user_id );
 				if ( is_wp_error( $result ) ) {
-					$results['failed']++;
+					++$results['failed'];
 					$results['errors'][] = array(
 						'row'   => $i + 1,
 						'sku'   => $product_data['sku'],
 						'error' => $result->get_error_message(),
 					);
 				} else {
-					$results['created']++;
+					++$results['created'];
 					$results['products'][] = $result;
 				}
 			}

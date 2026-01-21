@@ -106,33 +106,33 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'order_id'         => array(
+				'order_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Order ID to refund', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'refund_type'      => array(
+				'refund_type'       => array(
 					'type'        => 'string',
 					'description' => __( 'Type of refund', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'full', 'partial' ),
 					'default'     => 'full',
 				),
-				'refund_amount'    => array(
+				'refund_amount'     => array(
 					'type'        => 'number',
 					'description' => __( 'Refund amount (required for partial refunds)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'line_items'       => array(
+				'line_items'        => array(
 					'type'        => 'array',
 					'description' => __( 'Line items to refund with quantities (for partial refunds)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'item_id' => array(
+							'item_id'      => array(
 								'type'        => 'integer',
 								'description' => __( 'Order item ID', 'mcp-ai-wpoos-pro' ),
 							),
-							'qty'     => array(
+							'qty'          => array(
 								'type'        => 'integer',
 								'description' => __( 'Quantity to refund', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 1,
@@ -144,12 +144,12 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'reason'           => array(
+				'reason'            => array(
 					'type'        => 'string',
 					'description' => __( 'Reason for refund', 'mcp-ai-wpoos-pro' ),
 					'default'     => '',
 				),
-				'restock_items'    => array(
+				'restock_items'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Restore inventory for refunded items', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -222,10 +222,10 @@ class WP_MCP_AI_Tool_Refund_Order_Advanced implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		$refund_type        = isset( $arguments['refund_type'] ) ? sanitize_text_field( $arguments['refund_type'] ) : 'full';
-		$reason             = isset( $arguments['reason'] ) ? sanitize_text_field( $arguments['reason'] ) : '';
-		$restock_items      = isset( $arguments['restock_items'] ) ? (bool) $arguments['restock_items'] : true;
-		$send_notification  = isset( $arguments['send_notification'] ) ? (bool) $arguments['send_notification'] : true;
+		$refund_type       = isset( $arguments['refund_type'] ) ? sanitize_text_field( $arguments['refund_type'] ) : 'full';
+		$reason            = isset( $arguments['reason'] ) ? sanitize_text_field( $arguments['reason'] ) : '';
+		$restock_items     = isset( $arguments['restock_items'] ) ? (bool) $arguments['restock_items'] : true;
+		$send_notification = isset( $arguments['send_notification'] ) ? (bool) $arguments['send_notification'] : true;
 
 		// Process refund based on type.
 		if ( 'full' === $refund_type ) {

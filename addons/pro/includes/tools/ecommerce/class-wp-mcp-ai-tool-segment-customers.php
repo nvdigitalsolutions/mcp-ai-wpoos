@@ -116,9 +116,21 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'object',
 					'description' => __( 'RFM segmentation criteria (for rfm type)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'recency_days'   => array( 'type' => 'integer', 'default' => 30, 'description' => 'Days for recent purchase' ),
-						'frequency_min'  => array( 'type' => 'integer', 'default' => 2, 'description' => 'Minimum orders for frequent' ),
-						'monetary_min'   => array( 'type' => 'number', 'default' => 100, 'description' => 'Minimum spend for high value' ),
+						'recency_days'  => array(
+							'type'        => 'integer',
+							'default'     => 30,
+							'description' => 'Days for recent purchase',
+						),
+						'frequency_min' => array(
+							'type'        => 'integer',
+							'default'     => 2,
+							'description' => 'Minimum orders for frequent',
+						),
+						'monetary_min'  => array(
+							'type'        => 'number',
+							'default'     => 100,
+							'description' => 'Minimum spend for high value',
+						),
 					),
 				),
 				'value_tiers'       => array(
@@ -127,9 +139,9 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'    => array( 'type' => 'string' ),
-							'min'     => array( 'type' => 'number' ),
-							'max'     => array( 'type' => 'number' ),
+							'name' => array( 'type' => 'string' ),
+							'min'  => array( 'type' => 'number' ),
+							'max'  => array( 'type' => 'number' ),
 						),
 					),
 				),
@@ -147,12 +159,12 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 					'type'        => 'object',
 					'description' => __( 'Custom segmentation criteria', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'min_orders'     => array( 'type' => 'integer' ),
-						'max_orders'     => array( 'type' => 'integer' ),
-						'min_spent'      => array( 'type' => 'number' ),
-						'max_spent'      => array( 'type' => 'number' ),
-						'date_from'      => array( 'type' => 'string' ),
-						'date_to'        => array( 'type' => 'string' ),
+						'min_orders' => array( 'type' => 'integer' ),
+						'max_orders' => array( 'type' => 'integer' ),
+						'min_spent'  => array( 'type' => 'number' ),
+						'max_spent'  => array( 'type' => 'number' ),
+						'date_from'  => array( 'type' => 'string' ),
+						'date_to'    => array( 'type' => 'string' ),
 					),
 				),
 				'limit'             => array(
@@ -213,8 +225,8 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 
 		if ( empty( $customer_data ) ) {
 			return array(
-				'success' => true,
-				'message' => __( 'No customers found with orders.', 'mcp-ai-wpoos-pro' ),
+				'success'  => true,
+				'message'  => __( 'No customers found with orders.', 'mcp-ai-wpoos-pro' ),
 				'segments' => array(),
 			);
 		}
@@ -285,14 +297,14 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 
 		foreach ( $customer_orders as $customer ) {
 			$customers[ $customer->billing_email ] = array(
-				'user_id'         => absint( $customer->user_id ),
-				'email'           => $customer->billing_email,
-				'name'            => trim( $customer->billing_first_name . ' ' . $customer->billing_last_name ),
-				'country'         => $customer->billing_country,
-				'state'           => $customer->billing_state,
-				'order_count'     => absint( $customer->order_count ),
-				'total_spent'     => floatval( $customer->total_spent ),
-				'last_order_date' => $customer->last_order_date,
+				'user_id'          => absint( $customer->user_id ),
+				'email'            => $customer->billing_email,
+				'name'             => trim( $customer->billing_first_name . ' ' . $customer->billing_last_name ),
+				'country'          => $customer->billing_country,
+				'state'            => $customer->billing_state,
+				'order_count'      => absint( $customer->order_count ),
+				'total_spent'      => floatval( $customer->total_spent ),
+				'last_order_date'  => $customer->last_order_date,
 				'first_order_date' => $customer->first_order_date,
 				'days_since_last'  => $this->days_between( $customer->last_order_date, gmdate( 'Y-m-d H:i:s' ) ),
 			);
@@ -311,21 +323,36 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	protected function segment_by_rfm( $customers, $arguments ) {
 		$rfm_config = isset( $arguments['rfm_segments'] ) && is_array( $arguments['rfm_segments'] ) ? $arguments['rfm_segments'] : array();
 
-		$recency_threshold = isset( $rfm_config['recency_days'] ) ? absint( $rfm_config['recency_days'] ) : 30;
+		$recency_threshold   = isset( $rfm_config['recency_days'] ) ? absint( $rfm_config['recency_days'] ) : 30;
 		$frequency_threshold = isset( $rfm_config['frequency_min'] ) ? absint( $rfm_config['frequency_min'] ) : 2;
-		$monetary_threshold = isset( $rfm_config['monetary_min'] ) ? floatval( $rfm_config['monetary_min'] ) : 100;
+		$monetary_threshold  = isset( $rfm_config['monetary_min'] ) ? floatval( $rfm_config['monetary_min'] ) : 100;
 
 		$segments = array(
-			'champions'        => array( 'customers' => array(), 'criteria' => 'Recent, Frequent, High Value' ),
-			'loyal'            => array( 'customers' => array(), 'criteria' => 'Frequent, High Value' ),
-			'potential'        => array( 'customers' => array(), 'criteria' => 'Recent, Medium Value' ),
-			'at_risk'          => array( 'customers' => array(), 'criteria' => 'Not Recent, Previously Frequent' ),
-			'hibernating'      => array( 'customers' => array(), 'criteria' => 'Not Recent, Low Activity' ),
+			'champions'   => array(
+				'customers' => array(),
+				'criteria'  => 'Recent, Frequent, High Value',
+			),
+			'loyal'       => array(
+				'customers' => array(),
+				'criteria'  => 'Frequent, High Value',
+			),
+			'potential'   => array(
+				'customers' => array(),
+				'criteria'  => 'Recent, Medium Value',
+			),
+			'at_risk'     => array(
+				'customers' => array(),
+				'criteria'  => 'Not Recent, Previously Frequent',
+			),
+			'hibernating' => array(
+				'customers' => array(),
+				'criteria'  => 'Not Recent, Low Activity',
+			),
 		);
 
 		foreach ( $customers as $customer ) {
-			$is_recent = $customer['days_since_last'] <= $recency_threshold;
-			$is_frequent = $customer['order_count'] >= $frequency_threshold;
+			$is_recent     = $customer['days_since_last'] <= $recency_threshold;
+			$is_frequent   = $customer['order_count'] >= $frequency_threshold;
 			$is_high_value = $customer['total_spent'] >= $monetary_threshold;
 
 			if ( $is_recent && $is_frequent && $is_high_value ) {
@@ -344,7 +371,7 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		// Add counts and remove empty segments.
 		foreach ( $segments as $key => &$segment ) {
 			$segment['count'] = count( $segment['customers'] );
-			if ( $segment['count'] === 0 ) {
+			if ( 0 === $segment['count'] ) {
 				unset( $segments[ $key ] );
 			}
 		}
@@ -361,15 +388,27 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function segment_by_value( $customers, $arguments ) {
 		$tiers = isset( $arguments['value_tiers'] ) && is_array( $arguments['value_tiers'] ) ? $arguments['value_tiers'] : array(
-			array( 'name' => 'High Value', 'min' => 500, 'max' => PHP_FLOAT_MAX ),
-			array( 'name' => 'Medium Value', 'min' => 100, 'max' => 500 ),
-			array( 'name' => 'Low Value', 'min' => 0, 'max' => 100 ),
+			array(
+				'name' => 'High Value',
+				'min'  => 500,
+				'max'  => PHP_FLOAT_MAX,
+			),
+			array(
+				'name' => 'Medium Value',
+				'min'  => 100,
+				'max'  => 500,
+			),
+			array(
+				'name' => 'Low Value',
+				'min'  => 0,
+				'max'  => 100,
+			),
 		);
 
 		$segments = array();
 
 		foreach ( $tiers as $tier ) {
-			$tier_name = sanitize_text_field( $tier['name'] );
+			$tier_name              = sanitize_text_field( $tier['name'] );
 			$segments[ $tier_name ] = array(
 				'customers' => array(),
 				'min'       => floatval( $tier['min'] ),
@@ -403,7 +442,7 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array Segments.
 	 */
 	protected function segment_by_geography( $customers, $arguments ) {
-		$field = isset( $arguments['geographic_field'] ) ? sanitize_text_field( $arguments['geographic_field'] ) : 'country';
+		$field    = isset( $arguments['geographic_field'] ) ? sanitize_text_field( $arguments['geographic_field'] ) : 'country';
 		$segments = array();
 
 		foreach ( $customers as $customer ) {
@@ -432,7 +471,7 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 
 		uasort(
 			$segments,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return $b['count'] <=> $a['count'];
 			}
 		);
@@ -451,8 +490,14 @@ class WP_MCP_AI_Tool_Segment_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		$category = isset( $arguments['product_category'] ) ? sanitize_text_field( $arguments['product_category'] ) : '';
 
 		$segments = array(
-			'interested'     => array( 'customers' => array(), 'criteria' => 'Purchased from category' ),
-			'not_interested' => array( 'customers' => array(), 'criteria' => 'Not purchased from category' ),
+			'interested'     => array(
+				'customers' => array(),
+				'criteria'  => 'Purchased from category',
+			),
+			'not_interested' => array(
+				'customers' => array(),
+				'criteria'  => 'Not purchased from category',
+			),
 		);
 
 		// Note: This would require querying order items to check category purchases.
