@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-orchestral-presets-display',
-        'version' => 'dev-copilot/fix-orchestral-presets-display',
-        'reference' => '66ea9ea7c3a7a5273862ee718d33f2dcdba3c36b',
+        'pretty_version' => 'dev-copilot/update-pro-toolkit-next-steps',
+        'version' => 'dev-copilot/update-pro-toolkit-next-steps',
+        'reference' => '2465a8a75ecbaa1099838a65b31a3e74a728f97b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-orchestral-presets-display',
-            'version' => 'dev-copilot/fix-orchestral-presets-display',
-            'reference' => '66ea9ea7c3a7a5273862ee718d33f2dcdba3c36b',
+            'pretty_version' => 'dev-copilot/update-pro-toolkit-next-steps',
+            'version' => 'dev-copilot/update-pro-toolkit-next-steps',
+            'reference' => '2465a8a75ecbaa1099838a65b31a3e74a728f97b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

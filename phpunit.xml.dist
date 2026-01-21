@@ -6,6 +6,7 @@
     <testsuites>
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
+            <exclude>tests/manual-test-*.php</exclude>
         </testsuite>
     </testsuites>
 </phpunit>
