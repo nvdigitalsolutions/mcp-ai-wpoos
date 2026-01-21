@@ -8,12 +8,12 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 - [x] create_product_advanced - Create product with all WooCommerce meta
 - [x] bulk_update_products - Update multiple products at once
 - [x] import_products_csv - Import products from CSV/Excel
-- [ ] export_products_report - Export product catalog with analytics
+- [x] export_products_report - Export product catalog with analytics
 - [ ] sync_product_inventory - Sync inventory across warehouses
 
 ### Order Management (5 tools)
 - [ ] process_order_workflow - Advanced order processing
-- [ ] generate_invoice_pdf - Create professional invoices
+- [x] generate_invoice_pdf - Create professional invoices
 - [ ] bulk_order_status_update - Update multiple orders status
 - [ ] refund_order_advanced - Process refunds with inventory restoration
 - [ ] get_order_analytics - Detailed order analytics
@@ -37,7 +37,7 @@ This directory contains all tools for the E-commerce Pro Toolkit.
 ## Implementation Status
 
 **Phase 1 (Foundation)**: ✅ Directory created  
-**Phase 2 (Tools)**: 🔄 In Progress (3/20 tools complete)
+**Phase 2 (Tools)**: 🔄 In Progress (5/20 tools complete)
 
 ## Dependencies
 
