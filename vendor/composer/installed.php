@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/research-plugin-sizes',
+        'version' => 'dev-copilot/research-plugin-sizes',
+        'reference' => 'a6a768414caf4c5bde6a7bbc0de8ffc056147d0d',
         'pretty_version' => 'dev-copilot/move-examples-to-pro-plugin',
         'version' => 'dev-copilot/move-examples-to-pro-plugin',
         'reference' => '421dcb3932666b8cd7d476ad2e2126167080bd8a',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/research-plugin-sizes',
+            'version' => 'dev-copilot/research-plugin-sizes',
+            'reference' => 'a6a768414caf4c5bde6a7bbc0de8ffc056147d0d',
             'pretty_version' => 'dev-copilot/move-examples-to-pro-plugin',
             'version' => 'dev-copilot/move-examples-to-pro-plugin',
             'reference' => '421dcb3932666b8cd7d476ad2e2126167080bd8a',

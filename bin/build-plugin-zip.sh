@@ -223,6 +223,7 @@ if [ "$BUILD_BASE" = true ]; then
         --exclude '.distignore' \
         --exclude 'addons/pro' \
         --exclude 'assets/examples' \
+        --exclude 'assets/js/vendor/neplex-vectorizer' \
         --exclude 'assets/csv-templates' \
         --exclude 'examples' \
         --exclude '*.map' \
@@ -349,6 +350,54 @@ if [ "$BUILD_BASE" = true ]; then
  * This plugin is licensed under the GNU General Public License v3 or later.\
  */' "build/${BASE_SLUG}/mcp-ai-wpoos-base.php"
         echo "✓ Added plugin header to mcp-ai-wpoos-base.php for base version"
+    fi
+    
+    # Reduce knowledge base size by keeping only 20 most common professions
+    echo "Step 3a.1: Reducing knowledge base size (keeping top 20 professions)..."
+    PLAYBOOKS_DIR="build/${BASE_SLUG}/includes/knowledge-base/profession-playbooks/professions"
+    if [ -d "$PLAYBOOKS_DIR" ]; then
+        # Keep these 20 most common professions
+        KEEP_PROFESSIONS=(
+            "business_consultant.txt"
+            "content_writer.txt"
+            "marketing_consultant.txt"
+            "web_developer.txt"
+            "graphic_designer.txt"
+            "data_analyst.txt"
+            "project_manager.txt"
+            "social_media_manager.txt"
+            "seo_specialist.txt"
+            "customer_support.txt"
+            "software_engineer.txt"
+            "sales_manager.txt"
+            "accountant.txt"
+            "virtual_assistant.txt"
+            "copywriter.txt"
+            "ux_designer.txt"
+            "product_manager.txt"
+            "photographer.txt"
+            "video_editor.txt"
+            "translator.txt"
+        )
+        
+        # Remove all profession playbooks except the ones we want to keep
+        cd "$PLAYBOOKS_DIR"
+        for file in *.txt; do
+            KEEP=false
+            for keep_file in "${KEEP_PROFESSIONS[@]}"; do
+                if [ "$file" = "$keep_file" ]; then
+                    KEEP=true
+                    break
+                fi
+            done
+            if [ "$KEEP" = false ]; then
+                rm -f "$file"
+            fi
+        done
+        cd "$ROOT_DIR"
+        
+        KEPT_COUNT=$(ls -1 "$PLAYBOOKS_DIR"/*.txt 2>/dev/null | wc -l)
+        echo "✓ Kept ${KEPT_COUNT} most common profession playbooks (others will download on-demand)"
     fi
     
     # Create ZIP
