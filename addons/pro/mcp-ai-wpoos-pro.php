@@ -424,6 +424,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Create_Task_Plan'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-task-plan.php',
 			'WP_MCP_AI_Pro_Tool_Update_Task_Plan'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-update-task-plan.php',
 			'WP_MCP_AI_Pro_Tool_Get_Task_Plan'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php',
+			// Autonomous Orchestration tools (Ralph pattern - Phase 1).
+			'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php',
+			'WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-detect-completion-indicators.php',
+			'WP_MCP_AI_Pro_Tool_Check_Exit_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-check-exit-conditions.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Loop_Health'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-loop-health.php',
+			'WP_MCP_AI_Pro_Tool_Get_Session_Status'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-session-status.php',
+			'WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-calculate-orchestration-capacity.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Product Actualization tool.
