@@ -836,6 +836,30 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
+			// Check for research packages bundled into research-bundle.min.js.
+			$research_bundled_packages = array(
+				'cheerio',
+				'turndown',
+			);
+			if ( in_array( $package, $research_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$research_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/research-bundle.min.js';
+				if ( file_exists( $research_bundle_path ) ) {
+					return true;
+				}
+			}
+
+			// Check for orchestration packages bundled into orchestration-bundle.min.js.
+			$orchestration_bundled_packages = array(
+				'p-queue',
+				'opossum', // Circuit breaker (not in package.json but used in orchestration).
+			);
+			if ( in_array( $package, $orchestration_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$orchestration_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/orchestration-bundle.min.js';
+				if ( file_exists( $orchestration_bundle_path ) ) {
+					return true;
+				}
+			}
+
 			// ===================================================================
 			// PRIORITY 3: Fallback to node_modules (DEVELOPMENT ONLY)
 			// Only check these if vendor files are not found
