@@ -851,6 +851,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			$toolkit_options = array(
 			'enable_media_toolkit',
+			'enable_document_generation_toolkit',
+			'enable_project_management',
+			'enable_places_management',
+			'enable_ai_cpt_management',
+			'enable_eca_management',
+			'enable_health_wellness_management',
+			'enable_cloudways_toolkit',
 			'enable_ecommerce_toolkit',
 			'enable_social_media_toolkit',
 			'enable_analytics_toolkit',
@@ -941,6 +948,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
 						var toolkitCheckboxes = $(
 							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_document_generation_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_project_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_places_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ai_cpt_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_eca_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_health_wellness_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_cloudways_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_analytics_toolkit]"],' +
