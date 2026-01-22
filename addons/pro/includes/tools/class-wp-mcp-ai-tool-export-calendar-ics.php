@@ -217,6 +217,12 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( $download_file && isset( $result['content'] ) ) {
 			$file_info = $this->save_ics_file( $result['content'], $project_id );
 
+			// Calculate file size safely.
+			$file_size = 0;
+			if ( isset( $file_info['path'] ) && file_exists( $file_info['path'] ) ) {
+				$file_size = filesize( $file_info['path'] );
+			}
+
 			$response = array(
 				'success'      => true,
 				'message'      => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
@@ -227,7 +233,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				'file_url'     => isset( $file_info['url'] ) ? $file_info['url'] : null,
 				'file_path'    => isset( $file_info['path'] ) ? $file_info['path'] : null,
 				'filename'     => isset( $file_info['filename'] ) ? $file_info['filename'] : null,
-				'file_size'    => isset( $file_info['path'] ) ? filesize( $file_info['path'] ) : 0,
+				'file_size'    => $file_size,
 				'mime_type'    => 'text/calendar',
 			);
 
