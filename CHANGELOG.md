@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Documentation
+- **Documentation Consolidation (January 22, 2026)**: Organized and consolidated root-level documentation
+  - **Menu Fixes**: Consolidated 6 menu-related documents into single comprehensive guide at `docs/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`
+    - Removed: `MENU_FIX_SUMMARY.md`, `MENU_REORGANIZATION_SUMMARY.md`, `MENU_STRUCTURE_VISUAL.md`, `REMOTE_SITES_MENU_FIX.md`, `REMOTE_SITES_MENU_FIX_VISUAL.md`, `PR_SUMMARY.md` (temporary)
+    - Consolidated: All menu structure fixes, Remote Sites reorganization, visual diagrams, and testing guidelines
+  - **Feature Documentation**: Moved `TOOLKIT_MEMORY_TRACKING.md` to `docs/features/` for better organization
+  - **Result**: Cleaner root directory; all related documentation in appropriate docs/ subdirectories; no information lost
+
 ### Changed
 - **Pro Toolkit Memory-Based Tracking System (January 22, 2026)**: Replaced hard toolkit count limit with transparent memory-based tracking
   - **Previous**: Hard limit of 5 pro toolkits; checkboxes disabled when limit reached; artificial restriction
@@ -12,7 +20,7 @@
   - **JavaScript**: Real-time memory calculation; dynamic counter updates; no checkbox disabling
   - **Benefits**: Transparency for resource planning; flexibility without artificial limits; informed decision-making
   - **Files Changed**: `includes/admin/sections/class-wp-mcp-ai-section-tools.php` (152 lines changed), `tests/test-section-tools.php` (70 lines added)
-  - **Documentation**: Complete implementation guide in [TOOLKIT_MEMORY_TRACKING.md](TOOLKIT_MEMORY_TRACKING.md)
+  - **Documentation**: Complete implementation guide in [TOOLKIT_MEMORY_TRACKING.md](docs/features/TOOLKIT_MEMORY_TRACKING.md)
 
 ### Added
 - **DeepSeek V4 Multi-Agent Orchestration Enhancement (January 2026)**: Comprehensive multi-agent coordination framework inspired by DeepSeek V4's orchestration patterns
