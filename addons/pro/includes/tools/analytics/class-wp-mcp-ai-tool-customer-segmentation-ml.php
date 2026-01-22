@@ -59,43 +59,71 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return __( 'Customer segmentation ML tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'customer_segmentation_ml';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return __( 'ML Customer Segmentation', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return __( 'ML-based customer segmentation using clustering algorithms. Identifies distinct customer groups based on RFM analysis, purchase behavior, and engagement patterns.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'num_segments'   => array(
+				'num_segments'  => array(
 					'type'        => 'integer',
 					'description' => 'Number of customer segments to create',
 					'minimum'     => 2,
 					'maximum'     => 10,
 					'default'     => 5,
 				),
-				'method'         => array(
+				'method'        => array(
 					'type'        => 'string',
 					'description' => 'Segmentation method: rfm, behavioral, hybrid',
 					'enum'        => array( 'rfm', 'behavioral', 'hybrid' ),
 					'default'     => 'rfm',
 				),
-				'min_orders'     => array(
+				'min_orders'    => array(
 					'type'        => 'integer',
 					'description' => 'Minimum orders for customer inclusion',
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 2,
 				),
-				'lookback_days'  => array(
+				'lookback_days' => array(
 					'type'        => 'integer',
 					'description' => 'Days of data to analyze',
 					'minimum'     => 30,
@@ -107,10 +135,24 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+	/**
+	 * Get the required capability.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Required capability.
+	 */
 	public function get_required_capability() {
 		return 'manage_options';
 	}
 
+	/**
+	 * Get capability flags.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Capability flags.
+	 */
 	public function get_capability_flags() {
 		return array(
 			'analytics'  => true,
@@ -119,6 +161,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Segmentation results or error.
+	 */
 	public function execute( $arguments, $context ) {
 		$num_segments  = isset( $arguments['num_segments'] ) ? absint( $arguments['num_segments'] ) : 5;
 		$method        = ! empty( $arguments['method'] ) ? sanitize_text_field( $arguments['method'] ) : 'rfm';
@@ -146,16 +197,16 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		$segment_profiles = $this->profile_segments( $segments, $customers );
 
 		return array(
-			'success'  => true,
-			'segments' => $segment_profiles,
-			'summary'  => array(
-				'total_customers'  => count( $customers ),
-				'num_segments'     => $num_segments,
-				'method'           => $method,
-				'lookback_days'    => $lookback_days,
+			'success'      => true,
+			'segments'     => $segment_profiles,
+			'summary'      => array(
+				'total_customers' => count( $customers ),
+				'num_segments'    => $num_segments,
+				'method'          => $method,
+				'lookback_days'   => $lookback_days,
 			),
 			'generated_at' => current_time( 'mysql' ),
-			'message'  => sprintf(
+			'message'      => sprintf(
 				/* translators: 1: segment count, 2: customer count */
 				__( 'Created %1$d customer segments from %2$d customers.', 'mcp-ai-wpoos-pro' ),
 				$num_segments,
@@ -167,7 +218,7 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 	private function collect_customer_data( $lookback_days, $min_orders ) {
 		global $wpdb;
 
-		$cutoff_date = date( 'Y-m-d', strtotime( "-{$lookback_days} days" ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$lookback_days} days" ) );
 
 		$query = "
 			SELECT 
@@ -204,10 +255,10 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 			if ( 'rfm' === $method ) {
 				$features[ $customer['user_id'] ] = array( $recency, $frequency, $monetary );
 			} elseif ( 'behavioral' === $method ) {
-				$avg_days_between = ( strtotime( $customer['last_order_date'] ) - strtotime( $customer['first_order_date'] ) ) / DAY_IN_SECONDS / max( 1, $frequency - 1 );
+				$avg_days_between                 = ( strtotime( $customer['last_order_date'] ) - strtotime( $customer['first_order_date'] ) ) / DAY_IN_SECONDS / max( 1, $frequency - 1 );
 				$features[ $customer['user_id'] ] = array( $recency, $frequency, $avg_days_between, $monetary );
 			} else {
-				$avg_order_value = floatval( $customer['avg_order_value'] );
+				$avg_order_value                  = floatval( $customer['avg_order_value'] );
 				$features[ $customer['user_id'] ] = array( $recency, $frequency, $monetary, $avg_order_value );
 			}
 		}
@@ -257,7 +308,7 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 			$centroids[] = $data[ $idx ];
 		}
 
-		$assignments = array();
+		$assignments    = array();
 		$max_iterations = 100;
 
 		// K-means algorithm.
@@ -266,13 +317,13 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 
 			// Assign points to nearest centroid.
 			foreach ( $data as $idx => $point ) {
-				$min_distance = PHP_FLOAT_MAX;
+				$min_distance    = PHP_FLOAT_MAX;
 				$nearest_cluster = 0;
 
 				foreach ( $centroids as $cluster_id => $centroid ) {
 					$distance = $this->euclidean_distance( $point, $centroid );
 					if ( $distance < $min_distance ) {
-						$min_distance = $distance;
+						$min_distance    = $distance;
 						$nearest_cluster = $cluster_id;
 					}
 				}
@@ -309,8 +360,9 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 	}
 
 	private function euclidean_distance( $point1, $point2 ) {
-		$sum = 0;
-		for ( $i = 0; $i < count( $point1 ); $i++ ) {
+		$sum        = 0;
+		$point_size = count( $point1 );
+		for ( $i = 0; $i < $point_size; $i++ ) {
 			$sum += pow( $point1[ $i ] - $point2[ $i ], 2 );
 		}
 		return sqrt( $sum );
@@ -318,7 +370,7 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 
 	private function calculate_centroid( $points ) {
 		$num_features = count( $points[0] );
-		$centroid = array_fill( 0, $num_features, 0 );
+		$centroid     = array_fill( 0, $num_features, 0 );
 
 		foreach ( $points as $point ) {
 			for ( $i = 0; $i < $num_features; $i++ ) {
@@ -340,41 +392,41 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 			$customer_map[ $customer['user_id'] ] = $customer;
 		}
 
-		$profiles = array();
+		$profiles      = array();
 		$segment_stats = array();
 
 		// Group by segment.
 		foreach ( $segments as $user_id => $segment_id ) {
 			if ( ! isset( $segment_stats[ $segment_id ] ) ) {
 				$segment_stats[ $segment_id ] = array(
-					'customers' => array(),
-					'total_spent' => 0,
+					'customers'    => array(),
+					'total_spent'  => 0,
 					'total_orders' => 0,
 				);
 			}
 
-			$customer = $customer_map[ $user_id ];
-			$segment_stats[ $segment_id ]['customers'][] = $user_id;
-			$segment_stats[ $segment_id ]['total_spent'] += floatval( $customer['total_spent'] );
+			$customer                                      = $customer_map[ $user_id ];
+			$segment_stats[ $segment_id ]['customers'][]   = $user_id;
+			$segment_stats[ $segment_id ]['total_spent']  += floatval( $customer['total_spent'] );
 			$segment_stats[ $segment_id ]['total_orders'] += intval( $customer['order_count'] );
 		}
 
 		// Create profiles.
 		foreach ( $segment_stats as $segment_id => $stats ) {
-			$count = count( $stats['customers'] );
-			$avg_spent = $count > 0 ? $stats['total_spent'] / $count : 0;
+			$count      = count( $stats['customers'] );
+			$avg_spent  = $count > 0 ? $stats['total_spent'] / $count : 0;
 			$avg_orders = $count > 0 ? $stats['total_orders'] / $count : 0;
 
 			$label = $this->generate_segment_label( $avg_spent, $avg_orders );
 
 			$profiles[] = array(
-				'segment_id'    => $segment_id,
-				'label'         => $label,
+				'segment_id'     => $segment_id,
+				'label'          => $label,
 				'customer_count' => $count,
-				'avg_spent'     => round( $avg_spent, 2 ),
-				'avg_orders'    => round( $avg_orders, 2 ),
-				'total_value'   => round( $stats['total_spent'], 2 ),
-				'percentage'    => round( ( $count / count( $customers ) ) * 100, 2 ),
+				'avg_spent'      => round( $avg_spent, 2 ),
+				'avg_orders'     => round( $avg_orders, 2 ),
+				'total_value'    => round( $stats['total_spent'], 2 ),
+				'percentage'     => round( ( $count / count( $customers ) ) * 100, 2 ),
 			);
 		}
 

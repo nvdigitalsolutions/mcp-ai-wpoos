@@ -64,7 +64,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool slug.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool slug.
 	 */
 	public function get_slug() {
 		return 'revenue_forecast';
@@ -73,7 +75,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool name.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool name.
 	 */
 	public function get_name() {
 		return __( 'Revenue Forecast', 'mcp-ai-wpoos-pro' );
@@ -82,7 +86,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool description.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool description.
 	 */
 	public function get_description() {
 		return __( 'Predict future revenue based on historical trends using time series analysis. Supports linear regression, moving averages, seasonal decomposition, and confidence intervals.', 'mcp-ai-wpoos-pro' );
@@ -91,7 +97,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool parameters schema.
 	 *
-	 * @return array
+	 * @since 1.1.0
+	 *
+	 * @return array Parameters schema.
 	 */
 	public function get_parameters_schema() {
 		return array(
@@ -144,7 +152,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get required capability.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Required capability.
 	 */
 	public function get_required_capability() {
 		return 'manage_options';
@@ -153,7 +163,9 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get capability flags.
 	 *
-	 * @return array
+	 * @since 1.1.0
+	 *
+	 * @return array Capability flags.
 	 */
 	public function get_capability_flags() {
 		return array(
@@ -165,6 +177,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Execute the tool.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
@@ -226,18 +240,18 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Prepare response.
 		return array(
-			'success'        => true,
-			'forecast'       => $forecast,
-			'historical'     => array(
+			'success'      => true,
+			'forecast'     => $forecast,
+			'historical'   => array(
 				'data_points' => count( $historical_data ),
 				'period'      => $forecast_period,
 				'days'        => $historical_days,
 			),
-			'method'         => $method,
-			'confidence'     => $confidence_level,
-			'source'         => $source,
-			'generated_at'   => current_time( 'mysql' ),
-			'message'        => sprintf(
+			'method'       => $method,
+			'confidence'   => $confidence_level,
+			'source'       => $source,
+			'generated_at' => current_time( 'mysql' ),
+			'message'      => sprintf(
 				/* translators: 1: forecast period, 2: periods ahead */
 				__( 'Generated %1$s forecast for next %2$d periods.', 'mcp-ai-wpoos-pro' ),
 				$forecast_period,
@@ -249,6 +263,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Collect historical revenue data.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param int    $days   Number of days to collect.
 	 * @param string $period Aggregation period.
 	 * @param string $source Revenue source.
@@ -257,7 +273,7 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function collect_historical_revenue( $days, $period, $source ) {
 		global $wpdb;
 
-		$start_date = date( 'Y-m-d', strtotime( "-{$days} days" ) );
+		$start_date = gmdate( 'Y-m-d', strtotime( "-{$days} days" ) );
 		$end_date   = current_time( 'Y-m-d' );
 
 		// Determine date grouping format.
@@ -292,7 +308,7 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 			)";
 		}
 
-		$query .= " GROUP BY period ORDER BY period ASC";
+		$query .= ' GROUP BY period ORDER BY period ASC';
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date ), ARRAY_A );
@@ -306,6 +322,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Get SQL date format for period.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param string $period Period type.
 	 * @return string SQL date format.
@@ -324,6 +342,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Generate forecast using specified method.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array  $historical_data Historical data points.
 	 * @param int    $periods_ahead   Periods to forecast.
@@ -348,6 +368,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Linear regression forecast.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param array $data           Historical data.
 	 * @param int   $periods_ahead  Periods to forecast.
 	 * @param float $confidence     Confidence level.
@@ -355,7 +377,7 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function forecast_linear_regression( $data, $periods_ahead, $confidence ) {
 		$n = count( $data );
-		
+
 		// Extract revenue values.
 		$revenues = array_column( $data, 'revenue' );
 		$x_values = range( 1, $n );
@@ -366,7 +388,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 		$sum_xy = 0;
 		$sum_x2 = 0;
 
-		for ( $i = 0; $i < $n; $i++ ) {
+		$n_count = $n;
+		for ( $i = 0; $i < $n_count; $i++ ) {
 			$sum_xy += $x_values[ $i ] * $revenues[ $i ];
 			$sum_x2 += $x_values[ $i ] * $x_values[ $i ];
 		}
@@ -376,9 +399,10 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Calculate standard error.
 		$residuals = array();
-		for ( $i = 0; $i < $n; $i++ ) {
-			$predicted     = $slope * $x_values[ $i ] + $intercept;
-			$residuals[]   = $revenues[ $i ] - $predicted;
+		$n_count   = $n;
+		for ( $i = 0; $i < $n_count; $i++ ) {
+			$predicted   = $slope * $x_values[ $i ] + $intercept;
+			$residuals[] = $revenues[ $i ] - $predicted;
 		}
 
 		$std_error = sqrt( array_sum( array_map( fn( $r ) => $r * $r, $residuals ) ) / ( $n - 2 ) );
@@ -394,11 +418,11 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 			$margin_of_error = $z_score * $std_error * sqrt( 1 + 1 / $n + pow( $x - array_sum( $x_values ) / $n, 2 ) / $sum_x2 );
 
 			$forecasts[] = array(
-				'period'       => $i,
-				'predicted'    => round( max( 0, $predicted ), 2 ),
-				'lower_bound'  => round( max( 0, $predicted - $margin_of_error ), 2 ),
-				'upper_bound'  => round( $predicted + $margin_of_error, 2 ),
-				'confidence'   => $confidence,
+				'period'      => $i,
+				'predicted'   => round( max( 0, $predicted ), 2 ),
+				'lower_bound' => round( max( 0, $predicted - $margin_of_error ), 2 ),
+				'upper_bound' => round( $predicted + $margin_of_error, 2 ),
+				'confidence'  => $confidence,
 			);
 		}
 
@@ -407,6 +431,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Moving average forecast.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $data           Historical data.
 	 * @param int   $periods_ahead  Periods to forecast.
@@ -434,11 +460,11 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 			$margin_of_error = $z_score * $std_dev;
 
 			$forecasts[] = array(
-				'period'       => $i,
-				'predicted'    => round( max( 0, $average ), 2 ),
-				'lower_bound'  => round( max( 0, $average - $margin_of_error ), 2 ),
-				'upper_bound'  => round( $average + $margin_of_error, 2 ),
-				'confidence'   => $confidence,
+				'period'      => $i,
+				'predicted'   => round( max( 0, $average ), 2 ),
+				'lower_bound' => round( max( 0, $average - $margin_of_error ), 2 ),
+				'upper_bound' => round( $average + $margin_of_error, 2 ),
+				'confidence'  => $confidence,
 			);
 		}
 
@@ -447,6 +473,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Seasonal forecast with trend decomposition.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $data           Historical data.
 	 * @param int   $periods_ahead  Periods to forecast.
@@ -461,11 +489,12 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 		$seasonal_period = min( 12, $n );
 
 		// Calculate trend (moving average).
-		$trend = array();
-		for ( $i = 0; $i < $n; $i++ ) {
-			$start = max( 0, $i - floor( $seasonal_period / 2 ) );
-			$end   = min( $n, $i + ceil( $seasonal_period / 2 ) );
-			$window = array_slice( $revenues, $start, $end - $start );
+		$trend   = array();
+		$n_count = $n;
+		for ( $i = 0; $i < $n_count; $i++ ) {
+			$start   = max( 0, $i - floor( $seasonal_period / 2 ) );
+			$end     = min( $n, $i + ceil( $seasonal_period / 2 ) );
+			$window  = array_slice( $revenues, $start, $end - $start );
 			$trend[] = array_sum( $window ) / count( $window );
 		}
 
@@ -473,7 +502,7 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 		$seasonal_indices = array();
 		for ( $i = 0; $i < $seasonal_period; $i++ ) {
 			$season_values = array();
-			for ( $j = $i; $j < $n; $j += $seasonal_period ) {
+			for ( $j = $i; $j < $n_count; $j += $seasonal_period ) {
 				if ( isset( $trend[ $j ] ) && $trend[ $j ] > 0 ) {
 					$season_values[] = $revenues[ $j ] / $trend[ $j ];
 				}
@@ -486,16 +515,16 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 		$trend_slope       = ( end( $last_trend_values ) - reset( $last_trend_values ) ) / count( $last_trend_values );
 
 		// Generate forecasts.
-		$last_trend  = end( $trend );
-		$z_score     = $this->get_z_score( $confidence );
-		$std_dev     = $this->calculate_std_dev( $revenues );
+		$last_trend = end( $trend );
+		$z_score    = $this->get_z_score( $confidence );
+		$std_dev    = $this->calculate_std_dev( $revenues );
 
 		$forecasts = array();
 		for ( $i = 1; $i <= $periods_ahead; $i++ ) {
-			$predicted_trend    = $last_trend + ( $trend_slope * $i );
-			$seasonal_index     = $seasonal_indices[ ( $n + $i - 1 ) % $seasonal_period ];
-			$predicted          = $predicted_trend * $seasonal_index;
-			$margin_of_error    = $z_score * $std_dev;
+			$predicted_trend = $last_trend + ( $trend_slope * $i );
+			$seasonal_index  = $seasonal_indices[ ( $n + $i - 1 ) % $seasonal_period ];
+			$predicted       = $predicted_trend * $seasonal_index;
+			$margin_of_error = $z_score * $std_dev;
 
 			$forecasts[] = array(
 				'period'       => $i,
@@ -513,6 +542,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get Z-score for confidence level.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param float $confidence Confidence level (0-1).
 	 * @return float Z-score.
 	 */
@@ -525,13 +556,13 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		// Find closest match.
-		$closest = 0.95;
+		$closest  = 0.95;
 		$min_diff = abs( $confidence - $closest );
 
 		foreach ( array_keys( $z_scores ) as $level ) {
 			$diff = abs( $confidence - $level );
 			if ( $diff < $min_diff ) {
-				$closest = $level;
+				$closest  = $level;
 				$min_diff = $diff;
 			}
 		}
@@ -541,6 +572,8 @@ class WP_MCP_AI_Tool_Revenue_Forecast implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Calculate standard deviation.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $values Array of values.
 	 * @return float Standard deviation.

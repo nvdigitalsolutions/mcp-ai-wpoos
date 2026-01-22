@@ -95,31 +95,31 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'       => array(
+				'action'      => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'connect', 'sync', 'list_accounts', 'get_transactions', 'disconnect' ),
 					'default'     => 'list_accounts',
 				),
-				'plaid_token'  => array(
+				'plaid_token' => array(
 					'type'        => 'string',
 					'description' => __( 'Plaid access token (required for connect action)', 'mcp-ai-wpoos-pro' ),
 				),
-				'account_id'   => array(
+				'account_id'  => array(
 					'type'        => 'string',
 					'description' => __( 'Account ID for specific operations', 'mcp-ai-wpoos-pro' ),
 				),
-				'start_date'   => array(
+				'start_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for transaction sync (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date',
 				),
-				'end_date'     => array(
+				'end_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'End date for transaction sync (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date',
 				),
-				'institution'  => array(
+				'institution' => array(
 					'type'        => 'string',
 					'description' => __( 'Financial institution name', 'mcp-ai-wpoos-pro' ),
 				),
@@ -204,13 +204,13 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 			$accounts = array();
 		}
 
-		$account_id = uniqid( 'acc_' );
+		$account_id              = uniqid( 'acc_' );
 		$accounts[ $account_id ] = array(
-			'id'          => $account_id,
-			'token'       => $plaid_token,
-			'institution' => $institution,
+			'id'           => $account_id,
+			'token'        => $plaid_token,
+			'institution'  => $institution,
 			'connected_at' => current_time( 'mysql' ),
-			'last_sync'   => null,
+			'last_sync'    => null,
 		);
 
 		update_user_meta( $user_id, 'wp_mcp_ai_connected_accounts', $accounts );
@@ -221,7 +221,7 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 			'message'    => sprintf(
 				/* translators: %s: Institution name */
 				__( 'Successfully connected to %s. Initial sync will begin shortly.', 'mcp-ai-wpoos-pro' ),
-				$institution ?: __( 'bank', 'mcp-ai-wpoos-pro' )
+				$institution ? $institution : __( 'bank', 'mcp-ai-wpoos-pro' )
 			),
 		);
 	}
@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function sync_transactions( $arguments, $user_id ) {
 		$account_id = isset( $arguments['account_id'] ) ? sanitize_text_field( $arguments['account_id'] ) : '';
-		$start_date = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : date( 'Y-m-d', strtotime( '-30 days' ) );
+		$start_date = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
 		$end_date   = isset( $arguments['end_date'] ) ? sanitize_text_field( $arguments['end_date'] ) : current_time( 'Y-m-d' );
 
 		$accounts = get_user_meta( $user_id, 'wp_mcp_ai_connected_accounts', true );
@@ -247,12 +247,12 @@ class WP_MCP_AI_Tool_Bank_Account_Sync implements WP_MCP_AI_Tool_Interface, WP_M
 		update_user_meta( $user_id, 'wp_mcp_ai_connected_accounts', $accounts );
 
 		return array(
-			'success'          => true,
-			'synced_count'     => 0,
-			'start_date'       => $start_date,
-			'end_date'         => $end_date,
-			'message'          => __( 'Transaction sync completed. In production, this would fetch real transactions from Plaid API.', 'mcp-ai-wpoos-pro' ),
-			'disclaimer'       => __( 'Plaid integration requires API credentials and production environment. This is a mock response for development.', 'mcp-ai-wpoos-pro' ),
+			'success'      => true,
+			'synced_count' => 0,
+			'start_date'   => $start_date,
+			'end_date'     => $end_date,
+			'message'      => __( 'Transaction sync completed. In production, this would fetch real transactions from Plaid API.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'   => __( 'Plaid integration requires API credentials and production environment. This is a mock response for development.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

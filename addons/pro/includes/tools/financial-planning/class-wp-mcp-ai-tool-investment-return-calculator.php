@@ -95,12 +95,12 @@ class WP_MCP_AI_Tool_Investment_Return_Calculator implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'initial_investment'  => array(
+				'initial_investment'     => array(
 					'type'        => 'number',
 					'description' => __( 'Initial investment amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'regular_contribution' => array(
+				'regular_contribution'   => array(
 					'type'        => 'number',
 					'description' => __( 'Regular contribution amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -112,32 +112,32 @@ class WP_MCP_AI_Tool_Investment_Return_Calculator implements WP_MCP_AI_Tool_Inte
 					'enum'        => array( 'monthly', 'quarterly', 'annually' ),
 					'default'     => 'monthly',
 				),
-				'annual_return_rate'  => array(
+				'annual_return_rate'     => array(
 					'type'        => 'number',
 					'description' => __( 'Expected annual return rate (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => -100,
 					'maximum'     => 100,
 				),
-				'years'               => array(
+				'years'                  => array(
 					'type'        => 'integer',
 					'description' => __( 'Investment time period in years', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'compounding_frequency' => array(
+				'compounding_frequency'  => array(
 					'type'        => 'string',
 					'description' => __( 'How often returns compound', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'daily', 'monthly', 'quarterly', 'annually' ),
 					'default'     => 'monthly',
 				),
-				'annual_fee_rate'     => array(
+				'annual_fee_rate'        => array(
 					'type'        => 'number',
 					'description' => __( 'Annual fee rate (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 10,
 					'default'     => 0,
 				),
-				'inflation_rate'      => array(
+				'inflation_rate'         => array(
 					'type'        => 'number',
 					'description' => __( 'Expected annual inflation rate (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -185,14 +185,14 @@ class WP_MCP_AI_Tool_Investment_Return_Calculator implements WP_MCP_AI_Tool_Inte
 			);
 		}
 
-		$initial_investment      = isset( $arguments['initial_investment'] ) ? floatval( $arguments['initial_investment'] ) : 0;
-		$regular_contribution    = isset( $arguments['regular_contribution'] ) ? floatval( $arguments['regular_contribution'] ) : 0;
-		$contribution_frequency  = isset( $arguments['contribution_frequency'] ) ? sanitize_text_field( $arguments['contribution_frequency'] ) : 'monthly';
-		$annual_return_rate      = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 0;
-		$years                   = isset( $arguments['years'] ) ? absint( $arguments['years'] ) : 0;
-		$compounding_frequency   = isset( $arguments['compounding_frequency'] ) ? sanitize_text_field( $arguments['compounding_frequency'] ) : 'monthly';
-		$annual_fee_rate         = isset( $arguments['annual_fee_rate'] ) ? floatval( $arguments['annual_fee_rate'] ) : 0;
-		$inflation_rate          = isset( $arguments['inflation_rate'] ) ? floatval( $arguments['inflation_rate'] ) : 3;
+		$initial_investment     = isset( $arguments['initial_investment'] ) ? floatval( $arguments['initial_investment'] ) : 0;
+		$regular_contribution   = isset( $arguments['regular_contribution'] ) ? floatval( $arguments['regular_contribution'] ) : 0;
+		$contribution_frequency = isset( $arguments['contribution_frequency'] ) ? sanitize_text_field( $arguments['contribution_frequency'] ) : 'monthly';
+		$annual_return_rate     = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 0;
+		$years                  = isset( $arguments['years'] ) ? absint( $arguments['years'] ) : 0;
+		$compounding_frequency  = isset( $arguments['compounding_frequency'] ) ? sanitize_text_field( $arguments['compounding_frequency'] ) : 'monthly';
+		$annual_fee_rate        = isset( $arguments['annual_fee_rate'] ) ? floatval( $arguments['annual_fee_rate'] ) : 0;
+		$inflation_rate         = isset( $arguments['inflation_rate'] ) ? floatval( $arguments['inflation_rate'] ) : 3;
 
 		if ( $years < 1 ) {
 			return new WP_Error( 'invalid_years', __( 'Years must be at least 1.', 'mcp-ai-wpoos-pro' ) );
@@ -211,23 +211,23 @@ class WP_MCP_AI_Tool_Investment_Return_Calculator implements WP_MCP_AI_Tool_Inte
 			'annually'  => 1,
 		);
 
-		$n = isset( $frequency_periods[ $compounding_frequency ] ) ? $frequency_periods[ $compounding_frequency ] : 12;
+		$n                      = isset( $frequency_periods[ $compounding_frequency ] ) ? $frequency_periods[ $compounding_frequency ] : 12;
 		$contributions_per_year = isset( $contribution_periods[ $contribution_frequency ] ) ? $contribution_periods[ $contribution_frequency ] : 12;
 
-		$net_return_rate = $annual_return_rate - $annual_fee_rate;
-		$r = $net_return_rate / 100;
+		$net_return_rate   = $annual_return_rate - $annual_fee_rate;
+		$r                 = $net_return_rate / 100;
 		$inflation_decimal = $inflation_rate / 100;
 
-		$balance = $initial_investment;
+		$balance             = $initial_investment;
 		$total_contributions = $initial_investment;
-		$year_by_year = array();
+		$year_by_year        = array();
 
 		for ( $year = 1; $year <= $years; $year++ ) {
 			$contributions_this_year = $regular_contribution * $contributions_per_year;
-			$total_contributions += $contributions_this_year;
+			$total_contributions    += $contributions_this_year;
 
 			for ( $period = 0; $period < $n; $period++ ) {
-				$balance = $balance * ( 1 + ( $r / $n ) );
+				$balance                          = $balance * ( 1 + ( $r / $n ) );
 				$contribution_periods_in_compound = $contributions_per_year / $n;
 				if ( $contribution_periods_in_compound >= 1 && $period % ( $n / $contributions_per_year ) === 0 ) {
 					$balance += $regular_contribution;
@@ -237,19 +237,19 @@ class WP_MCP_AI_Tool_Investment_Return_Calculator implements WP_MCP_AI_Tool_Inte
 			$real_value = $balance / pow( 1 + $inflation_decimal, $year );
 
 			$year_by_year[] = array(
-				'year'         => $year,
-				'balance'      => round( $balance, 2 ),
+				'year'          => $year,
+				'balance'       => round( $balance, 2 ),
 				'contributions' => round( $total_contributions, 2 ),
-				'gains'        => round( $balance - $total_contributions, 2 ),
-				'real_value'   => round( $real_value, 2 ),
+				'gains'         => round( $balance - $total_contributions, 2 ),
+				'real_value'    => round( $real_value, 2 ),
 			);
 		}
 
-		$final_balance = $balance;
-		$total_gains = $final_balance - $total_contributions;
+		$final_balance    = $balance;
+		$total_gains      = $final_balance - $total_contributions;
 		$total_return_pct = $total_contributions > 0 ? ( $total_gains / $total_contributions ) * 100 : 0;
 		$real_final_value = $final_balance / pow( 1 + $inflation_decimal, $years );
-		$real_gains = $real_final_value - $total_contributions;
+		$real_gains       = $real_final_value - $total_contributions;
 
 		return array(
 			'success'                => true,

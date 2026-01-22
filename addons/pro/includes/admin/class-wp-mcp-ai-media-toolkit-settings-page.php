@@ -141,18 +141,18 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_design_ai'              => __( 'Generate Design (AI)', 'mcp-ai-wpoos-pro' ),
-			'browse_template_library'         => __( 'Browse Template Library', 'mcp-ai-wpoos-pro' ),
-			'apply_template'                  => __( 'Apply Template', 'mcp-ai-wpoos-pro' ),
-			'create_media_collection'         => __( 'Create Media Collection', 'mcp-ai-wpoos-pro' ),
-			'add_to_collection'               => __( 'Add to Collection', 'mcp-ai-wpoos-pro' ),
-			'bulk_tag_media'                  => __( 'Bulk Tag Media', 'mcp-ai-wpoos-pro' ),
-			'bulk_resize_media'               => __( 'Bulk Resize Media', 'mcp-ai-wpoos-pro' ),
-			'bulk_compress_media'             => __( 'Bulk Compress Media', 'mcp-ai-wpoos-pro' ),
-			'sync_media_to_remote'            => __( 'Sync Media to Remote', 'mcp-ai-wpoos-pro' ),
-			'import_media_from_url'           => __( 'Import Media from URL', 'mcp-ai-wpoos-pro' ),
-			'generate_media_report'           => __( 'Generate Media Report', 'mcp-ai-wpoos-pro' ),
-			'find_unused_media'               => __( 'Find Unused Media', 'mcp-ai-wpoos-pro' ),
+			'generate_design_ai'      => __( 'Generate Design (AI)', 'mcp-ai-wpoos-pro' ),
+			'browse_template_library' => __( 'Browse Template Library', 'mcp-ai-wpoos-pro' ),
+			'apply_template'          => __( 'Apply Template', 'mcp-ai-wpoos-pro' ),
+			'create_media_collection' => __( 'Create Media Collection', 'mcp-ai-wpoos-pro' ),
+			'add_to_collection'       => __( 'Add to Collection', 'mcp-ai-wpoos-pro' ),
+			'bulk_tag_media'          => __( 'Bulk Tag Media', 'mcp-ai-wpoos-pro' ),
+			'bulk_resize_media'       => __( 'Bulk Resize Media', 'mcp-ai-wpoos-pro' ),
+			'bulk_compress_media'     => __( 'Bulk Compress Media', 'mcp-ai-wpoos-pro' ),
+			'sync_media_to_remote'    => __( 'Sync Media to Remote', 'mcp-ai-wpoos-pro' ),
+			'import_media_from_url'   => __( 'Import Media from URL', 'mcp-ai-wpoos-pro' ),
+			'generate_media_report'   => __( 'Generate Media Report', 'mcp-ai-wpoos-pro' ),
+			'find_unused_media'       => __( 'Find Unused Media', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

@@ -130,16 +130,16 @@ class WP_MCP_AI_AI_Tool_Builder_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 	 */
 	protected function get_tools_list() {
 		return array(
-			'scaffold_new_tool'               => __( 'Scaffold New Tool', 'mcp-ai-wpoos-pro' ),
-			'generate_parameter_schema'       => __( 'Generate Parameter Schema', 'mcp-ai-wpoos-pro' ),
-			'generate_tool_tests'             => __( 'Generate Tool Tests', 'mcp-ai-wpoos-pro' ),
-			'generate_tool_documentation'     => __( 'Generate Tool Documentation', 'mcp-ai-wpoos-pro' ),
-			'validate_tool_code'              => __( 'Validate Tool Code', 'mcp-ai-wpoos-pro' ),
-			'review_tool_code'                => __( 'Review Tool Code', 'mcp-ai-wpoos-pro' ),
-			'optimize_tool_performance'       => __( 'Optimize Tool Performance', 'mcp-ai-wpoos-pro' ),
-			'package_tool_for_distribution'   => __( 'Package Tool for Distribution', 'mcp-ai-wpoos-pro' ),
-			'import_external_tool'            => __( 'Import External Tool', 'mcp-ai-wpoos-pro' ),
-			'list_custom_tools'               => __( 'List Custom Tools', 'mcp-ai-wpoos-pro' ),
+			'scaffold_new_tool'             => __( 'Scaffold New Tool', 'mcp-ai-wpoos-pro' ),
+			'generate_parameter_schema'     => __( 'Generate Parameter Schema', 'mcp-ai-wpoos-pro' ),
+			'generate_tool_tests'           => __( 'Generate Tool Tests', 'mcp-ai-wpoos-pro' ),
+			'generate_tool_documentation'   => __( 'Generate Tool Documentation', 'mcp-ai-wpoos-pro' ),
+			'validate_tool_code'            => __( 'Validate Tool Code', 'mcp-ai-wpoos-pro' ),
+			'review_tool_code'              => __( 'Review Tool Code', 'mcp-ai-wpoos-pro' ),
+			'optimize_tool_performance'     => __( 'Optimize Tool Performance', 'mcp-ai-wpoos-pro' ),
+			'package_tool_for_distribution' => __( 'Package Tool for Distribution', 'mcp-ai-wpoos-pro' ),
+			'import_external_tool'          => __( 'Import External Tool', 'mcp-ai-wpoos-pro' ),
+			'list_custom_tools'             => __( 'List Custom Tools', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

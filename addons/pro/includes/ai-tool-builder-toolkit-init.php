@@ -28,13 +28,15 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Tools will be implemented in Phase 2.9.
-	// Planned location: addons/pro/includes/tools/ai-tool-builder/
+	// Planned location: addons/pro/includes/tools/ai-tool-builder/.
 }
 
 /**
  * Enqueue AI tool builder toolkit admin styles.
  *
- * @param string $hook Current admin page hook.
+ * @since 1.1.0
+ *
+ * @param string $hook Current admin page hook (unused).
  */
 function wp_mcp_ai_enqueue_ai_tool_builder_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled.

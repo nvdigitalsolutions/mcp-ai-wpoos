@@ -95,23 +95,23 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'age'               => array(
+				'age'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 18,
 					'maximum'     => 100,
 				),
-				'risk_tolerance'    => array(
+				'risk_tolerance'     => array(
 					'type'        => 'string',
 					'description' => __( 'Risk tolerance level', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'conservative', 'moderate', 'aggressive' ),
 				),
-				'investment_goal'   => array(
+				'investment_goal'    => array(
 					'type'        => 'string',
 					'description' => __( 'Primary investment goal', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'retirement', 'wealth_building', 'income', 'preservation' ),
 				),
-				'time_horizon'      => array(
+				'time_horizon'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Investment time horizon in years', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -121,11 +121,31 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 					'type'        => 'object',
 					'description' => __( 'Current asset allocation percentages', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'stocks'       => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'bonds'        => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'real_estate'  => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'commodities'  => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'cash'         => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
+						'stocks'      => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'bonds'       => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'real_estate' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'commodities' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'cash'        => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
 					),
 				),
 			),
@@ -169,10 +189,10 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$age              = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
-		$risk_tolerance   = isset( $arguments['risk_tolerance'] ) ? sanitize_text_field( $arguments['risk_tolerance'] ) : 'moderate';
-		$investment_goal  = isset( $arguments['investment_goal'] ) ? sanitize_text_field( $arguments['investment_goal'] ) : 'retirement';
-		$time_horizon     = isset( $arguments['time_horizon'] ) ? absint( $arguments['time_horizon'] ) : 0;
+		$age                = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
+		$risk_tolerance     = isset( $arguments['risk_tolerance'] ) ? sanitize_text_field( $arguments['risk_tolerance'] ) : 'moderate';
+		$investment_goal    = isset( $arguments['investment_goal'] ) ? sanitize_text_field( $arguments['investment_goal'] ) : 'retirement';
+		$time_horizon       = isset( $arguments['time_horizon'] ) ? absint( $arguments['time_horizon'] ) : 0;
 		$current_allocation = isset( $arguments['current_allocation'] ) && is_array( $arguments['current_allocation'] ) ? $arguments['current_allocation'] : array();
 
 		if ( $age < 18 || $age > 100 ) {
@@ -190,33 +210,33 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 			'moderate'     => 0,
 			'aggressive'   => 20,
 		);
-		$risk_adjustment = isset( $risk_adjustments[ $risk_tolerance ] ) ? $risk_adjustments[ $risk_tolerance ] : 0;
+		$risk_adjustment  = isset( $risk_adjustments[ $risk_tolerance ] ) ? $risk_adjustments[ $risk_tolerance ] : 0;
 
 		$adjusted_stock_allocation = max( 20, min( 90, $base_stock_allocation + $risk_adjustment ) );
-		$bond_allocation = 100 - $adjusted_stock_allocation;
+		$bond_allocation           = 100 - $adjusted_stock_allocation;
 
 		$recommended_allocation = array(
-			'stocks' => round( $adjusted_stock_allocation * 0.85, 1 ),
-			'bonds'  => round( $bond_allocation, 1 ),
+			'stocks'      => round( $adjusted_stock_allocation * 0.85, 1 ),
+			'bonds'       => round( $bond_allocation, 1 ),
 			'real_estate' => round( $adjusted_stock_allocation * 0.10, 1 ),
 			'commodities' => round( $adjusted_stock_allocation * 0.03, 1 ),
-			'cash'   => round( $adjusted_stock_allocation * 0.02, 1 ),
+			'cash'        => round( $adjusted_stock_allocation * 0.02, 1 ),
 		);
 
 		$total = array_sum( $recommended_allocation );
-		if ( $total !== 100.0 ) {
-			$diff = 100.0 - $total;
+		if ( 100.0 !== $total ) {
+			$diff                             = 100.0 - $total;
 			$recommended_allocation['stocks'] = round( $recommended_allocation['stocks'] + $diff, 1 );
 		}
 
 		$rebalancing_needed = false;
-		$adjustments = array();
+		$adjustments        = array();
 		if ( ! empty( $current_allocation ) ) {
 			foreach ( $recommended_allocation as $asset => $target_pct ) {
 				$current_pct = isset( $current_allocation[ $asset ] ) ? floatval( $current_allocation[ $asset ] ) : 0;
-				$diff = $target_pct - $current_pct;
+				$diff        = $target_pct - $current_pct;
 				if ( abs( $diff ) > 5 ) {
-					$rebalancing_needed = true;
+					$rebalancing_needed    = true;
 					$adjustments[ $asset ] = round( $diff, 1 );
 				}
 			}
@@ -229,9 +249,9 @@ class WP_MCP_AI_Tool_Asset_Allocation_Planner implements WP_MCP_AI_Tool_Interfac
 			$strategy_notes[] = __( 'Long time horizon: Can tolerate more volatility for higher potential returns.', 'mcp-ai-wpoos-pro' );
 		}
 
-		if ( $risk_tolerance === 'conservative' ) {
+		if ( 'conservative' === $risk_tolerance ) {
 			$strategy_notes[] = __( 'Conservative profile: Prioritize stability and income over growth.', 'mcp-ai-wpoos-pro' );
-		} elseif ( $risk_tolerance === 'aggressive' ) {
+		} elseif ( 'aggressive' === $risk_tolerance ) {
 			$strategy_notes[] = __( 'Aggressive profile: Higher allocation to equities for growth potential.', 'mcp-ai-wpoos-pro' );
 		}
 

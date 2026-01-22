@@ -95,51 +95,51 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'monthly_income'         => array(
+				'monthly_income'              => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly gross income', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'monthly_expenses'       => array(
+				'monthly_expenses'            => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly expenses', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'emergency_fund'         => array(
+				'emergency_fund'              => array(
 					'type'        => 'number',
 					'description' => __( 'Emergency fund balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'total_debt'             => array(
+				'total_debt'                  => array(
 					'type'        => 'number',
 					'description' => __( 'Total debt balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'retirement_savings'     => array(
+				'retirement_savings'          => array(
 					'type'        => 'number',
 					'description' => __( 'Retirement account balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'credit_score'           => array(
+				'credit_score'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Credit score', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 300,
 					'maximum'     => 850,
 				),
-				'has_budget'             => array(
+				'has_budget'                  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Maintains a budget', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'has_life_insurance'     => array(
+				'has_life_insurance'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Has life insurance', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'has_health_insurance'   => array(
+				'has_health_insurance'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Has health insurance', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 					'maximum'     => 100,
 					'default'     => 0,
 				),
-				'age'                    => array(
+				'age'                         => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 18,
@@ -198,17 +198,17 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$monthly_income       = isset( $arguments['monthly_income'] ) ? floatval( $arguments['monthly_income'] ) : 0;
-		$monthly_expenses     = isset( $arguments['monthly_expenses'] ) ? floatval( $arguments['monthly_expenses'] ) : 0;
-		$emergency_fund       = isset( $arguments['emergency_fund'] ) ? floatval( $arguments['emergency_fund'] ) : 0;
-		$total_debt           = isset( $arguments['total_debt'] ) ? floatval( $arguments['total_debt'] ) : 0;
-		$retirement_savings   = isset( $arguments['retirement_savings'] ) ? floatval( $arguments['retirement_savings'] ) : 0;
-		$credit_score         = isset( $arguments['credit_score'] ) ? absint( $arguments['credit_score'] ) : 0;
-		$has_budget           = isset( $arguments['has_budget'] ) ? (bool) $arguments['has_budget'] : false;
-		$has_life_insurance   = isset( $arguments['has_life_insurance'] ) ? (bool) $arguments['has_life_insurance'] : false;
-		$has_health_insurance = isset( $arguments['has_health_insurance'] ) ? (bool) $arguments['has_health_insurance'] : false;
+		$monthly_income          = isset( $arguments['monthly_income'] ) ? floatval( $arguments['monthly_income'] ) : 0;
+		$monthly_expenses        = isset( $arguments['monthly_expenses'] ) ? floatval( $arguments['monthly_expenses'] ) : 0;
+		$emergency_fund          = isset( $arguments['emergency_fund'] ) ? floatval( $arguments['emergency_fund'] ) : 0;
+		$total_debt              = isset( $arguments['total_debt'] ) ? floatval( $arguments['total_debt'] ) : 0;
+		$retirement_savings      = isset( $arguments['retirement_savings'] ) ? floatval( $arguments['retirement_savings'] ) : 0;
+		$credit_score            = isset( $arguments['credit_score'] ) ? absint( $arguments['credit_score'] ) : 0;
+		$has_budget              = isset( $arguments['has_budget'] ) ? (bool) $arguments['has_budget'] : false;
+		$has_life_insurance      = isset( $arguments['has_life_insurance'] ) ? (bool) $arguments['has_life_insurance'] : false;
+		$has_health_insurance    = isset( $arguments['has_health_insurance'] ) ? (bool) $arguments['has_health_insurance'] : false;
 		$retirement_contribution = isset( $arguments['retirement_contribution_pct'] ) ? floatval( $arguments['retirement_contribution_pct'] ) : 0;
-		$age                  = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
+		$age                     = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
 
 		if ( $monthly_income <= 0 ) {
 			return new WP_Error( 'invalid_income', __( 'Monthly income must be greater than zero.', 'mcp-ai-wpoos-pro' ) );
@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			$category_scores['savings'] = 10;
 		} else {
 			$category_scores['savings'] = 5;
-			$recommendations[] = __( 'Increase savings rate to at least 20% of income.', 'mcp-ai-wpoos-pro' );
+			$recommendations[]          = __( 'Increase savings rate to at least 20% of income.', 'mcp-ai-wpoos-pro' );
 		}
 
 		$months_emergency = $monthly_expenses > 0 ? $emergency_fund / $monthly_expenses : 0;
@@ -238,11 +238,11 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			$category_scores['emergency_fund'] = 10;
 		} else {
 			$category_scores['emergency_fund'] = 0;
-			$recommendations[] = __( 'Build emergency fund to cover 3-6 months of expenses.', 'mcp-ai-wpoos-pro' );
+			$recommendations[]                 = __( 'Build emergency fund to cover 3-6 months of expenses.', 'mcp-ai-wpoos-pro' );
 		}
 
 		$debt_to_income = $monthly_income > 0 ? ( $total_debt / ( $monthly_income * 12 ) ) * 100 : 0;
-		if ( $total_debt === 0.0 ) {
+		if ( 0.0 === $total_debt ) {
 			$category_scores['debt'] = 20;
 		} elseif ( $debt_to_income <= 30 ) {
 			$category_scores['debt'] = 15;
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			$category_scores['debt'] = 10;
 		} else {
 			$category_scores['debt'] = 5;
-			$recommendations[] = __( 'Reduce debt-to-income ratio below 30%.', 'mcp-ai-wpoos-pro' );
+			$recommendations[]       = __( 'Reduce debt-to-income ratio below 30%.', 'mcp-ai-wpoos-pro' );
 		}
 
 		if ( $credit_score >= 740 ) {
@@ -261,7 +261,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			$category_scores['credit'] = 5;
 		} else {
 			$category_scores['credit'] = 0;
-			$recommendations[] = __( 'Improve credit score through on-time payments and lower utilization.', 'mcp-ai-wpoos-pro' );
+			$recommendations[]         = __( 'Improve credit score through on-time payments and lower utilization.', 'mcp-ai-wpoos-pro' );
 		}
 
 		if ( $retirement_contribution >= 15 ) {
@@ -272,7 +272,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 			$category_scores['retirement'] = 5;
 		} else {
 			$category_scores['retirement'] = 0;
-			$recommendations[] = __( 'Increase retirement contributions to at least 15% of income.', 'mcp-ai-wpoos-pro' );
+			$recommendations[]             = __( 'Increase retirement contributions to at least 15% of income.', 'mcp-ai-wpoos-pro' );
 		}
 
 		$category_scores['budget'] = $has_budget ? 5 : 0;
@@ -292,7 +292,7 @@ class WP_MCP_AI_Tool_Financial_Health_Score implements WP_MCP_AI_Tool_Interface,
 		$category_scores['insurance'] = $insurance_score;
 
 		$total_score = array_sum( $category_scores );
-		$rating = $this->get_health_rating( $total_score );
+		$rating      = $this->get_health_rating( $total_score );
 
 		return array(
 			'success'          => true,

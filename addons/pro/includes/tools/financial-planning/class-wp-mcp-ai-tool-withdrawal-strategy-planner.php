@@ -254,10 +254,10 @@ class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Inter
 		}
 
 		// Run projection.
-		$years             = $life_expectancy - $retirement_age;
-		$balance           = $portfolio_balance;
-		$withdrawal_amount = $initial_withdrawal;
-		$projections       = array();
+		$years                   = $life_expectancy - $retirement_age;
+		$balance                 = $portfolio_balance;
+		$withdrawal_amount       = $initial_withdrawal;
+		$projections             = array();
 		$portfolio_depleted_year = null;
 
 		for ( $year = 1; $year <= $years; $year++ ) {
@@ -309,23 +309,23 @@ class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Inter
 		}
 
 		// Calculate sustainability.
-		$is_sustainable     = is_null( $portfolio_depleted_year );
-		$years_sustained    = $is_sustainable ? $years : ( $portfolio_depleted_year - $retirement_age );
-		$final_balance      = $is_sustainable ? $balance : 0;
-		$total_withdrawn    = array_sum( array_column( $projections, 'withdrawal_amount' ) );
+		$is_sustainable  = is_null( $portfolio_depleted_year );
+		$years_sustained = $is_sustainable ? $years : ( $portfolio_depleted_year - $retirement_age );
+		$final_balance   = $is_sustainable ? $balance : 0;
+		$total_withdrawn = array_sum( array_column( $projections, 'withdrawal_amount' ) );
 
 		return array(
-			'success'                   => true,
-			'withdrawal_strategy'       => $withdrawal_strategy,
-			'initial_withdrawal'        => round( $initial_withdrawal, 2 ),
-			'portfolio_balance'         => $portfolio_balance,
-			'is_sustainable'            => $is_sustainable,
-			'years_sustained'           => $years_sustained,
-			'portfolio_depleted_year'   => $portfolio_depleted_year,
-			'final_balance'             => round( $final_balance, 2 ),
-			'total_withdrawn'           => round( $total_withdrawn, 2 ),
-			'projections'               => $projections,
-			'parameters'                => array(
+			'success'                        => true,
+			'withdrawal_strategy'            => $withdrawal_strategy,
+			'initial_withdrawal'             => round( $initial_withdrawal, 2 ),
+			'portfolio_balance'              => $portfolio_balance,
+			'is_sustainable'                 => $is_sustainable,
+			'years_sustained'                => $years_sustained,
+			'portfolio_depleted_year'        => $portfolio_depleted_year,
+			'final_balance'                  => round( $final_balance, 2 ),
+			'total_withdrawn'                => round( $total_withdrawn, 2 ),
+			'projections'                    => $projections,
+			'parameters'                     => array(
 				'retirement_age'       => $retirement_age,
 				'life_expectancy'      => $life_expectancy,
 				'expected_return_rate' => $expected_return_rate,
@@ -337,8 +337,8 @@ class WP_MCP_AI_Tool_Withdrawal_Strategy_Planner implements WP_MCP_AI_Tool_Inter
 				'2. Traditional IRA/401k (ordinary income)',
 				'3. Roth IRA (tax-free, preserve longest)',
 			),
-			'disclaimer'                => __( 'EDUCATIONAL ONLY: This projection uses simplified assumptions. Actual returns vary significantly. Consult a licensed financial advisor for personalized retirement planning.', 'mcp-ai-wpoos-pro' ),
-			'message'                   => $is_sustainable
+			'disclaimer'                     => __( 'EDUCATIONAL ONLY: This projection uses simplified assumptions. Actual returns vary significantly. Consult a licensed financial advisor for personalized retirement planning.', 'mcp-ai-wpoos-pro' ),
+			'message'                        => $is_sustainable
 				? sprintf(
 					/* translators: 1: Final balance, 2: Years sustained */
 					__( 'Portfolio is sustainable! Final balance: $%1$s after %2$d years.', 'mcp-ai-wpoos-pro' ),

@@ -95,51 +95,51 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'              => array(
+				'action'             => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'log_score', 'get_history', 'analyze', 'get_recommendations' ),
 					'default'     => 'get_history',
 				),
-				'score'               => array(
+				'score'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Credit score value', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 300,
 					'maximum'     => 850,
 				),
-				'bureau'              => array(
+				'bureau'             => array(
 					'type'        => 'string',
 					'description' => __( 'Credit bureau', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'equifax', 'experian', 'transunion', 'fico', 'vantagescore' ),
 					'default'     => 'fico',
 				),
-				'date'                => array(
+				'date'               => array(
 					'type'        => 'string',
 					'description' => __( 'Score date (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date',
 				),
-				'credit_utilization'  => array(
+				'credit_utilization' => array(
 					'type'        => 'number',
 					'description' => __( 'Credit utilization percentage', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'payment_history'     => array(
+				'payment_history'    => array(
 					'type'        => 'string',
 					'description' => __( 'Payment history status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'excellent', 'good', 'fair', 'poor' ),
 				),
-				'derogatory_marks'    => array(
+				'derogatory_marks'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of derogatory marks', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'total_accounts'      => array(
+				'total_accounts'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Total number of credit accounts', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'hard_inquiries'      => array(
+				'hard_inquiries'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of hard inquiries in last 2 years', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -210,9 +210,9 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Result.
 	 */
 	protected function log_score( $arguments, $user_id ) {
-		$score   = isset( $arguments['score'] ) ? absint( $arguments['score'] ) : 0;
-		$bureau  = isset( $arguments['bureau'] ) ? sanitize_text_field( $arguments['bureau'] ) : 'fico';
-		$date    = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
+		$score  = isset( $arguments['score'] ) ? absint( $arguments['score'] ) : 0;
+		$bureau = isset( $arguments['bureau'] ) ? sanitize_text_field( $arguments['bureau'] ) : 'fico';
+		$date   = isset( $arguments['date'] ) ? sanitize_text_field( $arguments['date'] ) : current_time( 'Y-m-d' );
 
 		if ( $score < 300 || $score > 850 ) {
 			return new WP_Error( 'invalid_score', __( 'Credit score must be between 300 and 850.', 'mcp-ai-wpoos-pro' ) );
@@ -223,7 +223,7 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 			$history = array();
 		}
 
-		$entry_id = uniqid( 'score_' );
+		$entry_id             = uniqid( 'score_' );
 		$history[ $entry_id ] = array(
 			'id'                 => $entry_id,
 			'score'              => $score,
@@ -278,16 +278,19 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
-		usort( $filtered, function( $a, $b ) {
-			return strcmp( $b['date'], $a['date'] );
-		});
+		usort(
+			$filtered,
+			function ( $a, $b ) {
+				return strcmp( $b['date'], $a['date'] );
+			}
+		);
 
 		$trend = null;
 		if ( count( $filtered ) >= 2 ) {
-			$latest = $filtered[0]['score'];
+			$latest   = $filtered[0]['score'];
 			$previous = $filtered[1]['score'];
-			$change = $latest - $previous;
-			$trend = array(
+			$change   = $latest - $previous;
+			$trend    = array(
 				'direction' => $change > 0 ? 'up' : ( $change < 0 ? 'down' : 'stable' ),
 				'change'    => $change,
 			);
@@ -314,14 +317,14 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Analysis.
 	 */
 	protected function analyze_score( $arguments, $user_id ) {
-		$score   = isset( $arguments['score'] ) ? absint( $arguments['score'] ) : 0;
+		$score       = isset( $arguments['score'] ) ? absint( $arguments['score'] ) : 0;
 		$utilization = isset( $arguments['credit_utilization'] ) ? floatval( $arguments['credit_utilization'] ) : 0;
 
 		if ( $score < 300 || $score > 850 ) {
 			return new WP_Error( 'invalid_score', __( 'Credit score must be between 300 and 850.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$rating = $this->get_score_rating( $score );
+		$rating  = $this->get_score_rating( $score );
 		$factors = array();
 
 		if ( $utilization > 30 ) {
@@ -360,7 +363,7 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Recommendations.
 	 */
 	protected function get_recommendations( $arguments, $user_id ) {
-		$utilization = isset( $arguments['credit_utilization'] ) ? floatval( $arguments['credit_utilization'] ) : 0;
+		$utilization     = isset( $arguments['credit_utilization'] ) ? floatval( $arguments['credit_utilization'] ) : 0;
 		$payment_history = isset( $arguments['payment_history'] ) ? sanitize_text_field( $arguments['payment_history'] ) : 'good';
 
 		$recommendations = array();
@@ -369,7 +372,7 @@ class WP_MCP_AI_Tool_Credit_Score_Tracker implements WP_MCP_AI_Tool_Interface, W
 			$recommendations[] = __( 'Reduce credit utilization below 30% to improve score. Aim for under 10% for best results.', 'mcp-ai-wpoos-pro' );
 		}
 
-		if ( $payment_history !== 'excellent' ) {
+		if ( 'excellent' !== $payment_history ) {
 			$recommendations[] = __( 'Always pay bills on time. Set up automatic payments to ensure no missed payments.', 'mcp-ai-wpoos-pro' );
 		}
 

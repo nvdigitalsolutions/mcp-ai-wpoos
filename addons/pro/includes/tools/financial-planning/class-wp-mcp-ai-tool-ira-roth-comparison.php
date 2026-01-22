@@ -95,44 +95,44 @@ class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'annual_contribution'   => array(
+				'annual_contribution' => array(
 					'type'        => 'number',
 					'description' => __( 'Annual IRA contribution amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 10000,
 				),
-				'years_to_retirement'   => array(
+				'years_to_retirement' => array(
 					'type'        => 'integer',
 					'description' => __( 'Years until retirement', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'current_tax_rate'      => array(
+				'current_tax_rate'    => array(
 					'type'        => 'number',
 					'description' => __( 'Current marginal tax rate (as percentage, e.g., 24 for 24%)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 50,
 				),
-				'retirement_tax_rate'   => array(
+				'retirement_tax_rate' => array(
 					'type'        => 'number',
 					'description' => __( 'Expected tax rate in retirement (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 50,
 				),
-				'annual_return_rate'    => array(
+				'annual_return_rate'  => array(
 					'type'        => 'number',
 					'description' => __( 'Expected annual return rate (as percentage, e.g., 7 for 7%)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 20,
 					'default'     => 7,
 				),
-				'current_age'           => array(
+				'current_age'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 18,
 					'maximum'     => 80,
 				),
-				'income_level'          => array(
+				'income_level'        => array(
 					'type'        => 'number',
 					'description' => __( 'Current annual income', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -180,12 +180,12 @@ class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Validate and sanitize inputs.
-		$annual_contribution  = isset( $arguments['annual_contribution'] ) ? floatval( $arguments['annual_contribution'] ) : 0;
-		$years_to_retirement  = isset( $arguments['years_to_retirement'] ) ? absint( $arguments['years_to_retirement'] ) : 0;
-		$current_tax_rate     = isset( $arguments['current_tax_rate'] ) ? floatval( $arguments['current_tax_rate'] ) : 0;
-		$retirement_tax_rate  = isset( $arguments['retirement_tax_rate'] ) ? floatval( $arguments['retirement_tax_rate'] ) : 0;
-		$annual_return_rate   = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 7;
-		$current_age          = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
+		$annual_contribution = isset( $arguments['annual_contribution'] ) ? floatval( $arguments['annual_contribution'] ) : 0;
+		$years_to_retirement = isset( $arguments['years_to_retirement'] ) ? absint( $arguments['years_to_retirement'] ) : 0;
+		$current_tax_rate    = isset( $arguments['current_tax_rate'] ) ? floatval( $arguments['current_tax_rate'] ) : 0;
+		$retirement_tax_rate = isset( $arguments['retirement_tax_rate'] ) ? floatval( $arguments['retirement_tax_rate'] ) : 0;
+		$annual_return_rate  = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 7;
+		$current_age         = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
 
 		if ( $annual_contribution <= 0 ) {
 			return new WP_Error(
@@ -227,9 +227,9 @@ class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP
 		$roth_after_tax = $roth_future_value;
 
 		// Comparison.
-		$difference         = $roth_after_tax - $traditional_after_tax;
-		$better_option      = $difference > 0 ? 'roth' : 'traditional';
-		$percentage_better  = $traditional_after_tax > 0 ? abs( $difference ) / $traditional_after_tax * 100 : 0;
+		$difference        = $roth_after_tax - $traditional_after_tax;
+		$better_option     = $difference > 0 ? 'roth' : 'traditional';
+		$percentage_better = $traditional_after_tax > 0 ? abs( $difference ) / $traditional_after_tax * 100 : 0;
 
 		// Break-even tax rate.
 		$breakeven_retirement_rate = $current_tax_rate;
@@ -245,37 +245,37 @@ class WP_MCP_AI_Tool_IRA_Roth_Comparison implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'                     => true,
-			'traditional_ira'             => array(
+			'success'         => true,
+			'traditional_ira' => array(
 				'annual_contribution'   => $annual_contribution,
 				'upfront_tax_savings'   => round( $traditional_tax_savings, 2 ),
 				'future_value'          => round( $traditional_future_value, 2 ),
 				'after_tax_value'       => round( $traditional_after_tax, 2 ),
 				'taxes_paid_retirement' => round( $traditional_future_value - $traditional_after_tax, 2 ),
 			),
-			'roth_ira'                    => array(
-				'annual_contribution'      => $annual_contribution,
-				'after_tax_contribution'   => round( $roth_after_tax_contribution, 2 ),
-				'upfront_tax_paid'         => round( $annual_contribution - $roth_after_tax_contribution, 2 ),
-				'future_value'             => round( $roth_future_value, 2 ),
-				'after_tax_value'          => round( $roth_after_tax, 2 ),
-				'taxes_paid_retirement'    => 0,
+			'roth_ira'        => array(
+				'annual_contribution'    => $annual_contribution,
+				'after_tax_contribution' => round( $roth_after_tax_contribution, 2 ),
+				'upfront_tax_paid'       => round( $annual_contribution - $roth_after_tax_contribution, 2 ),
+				'future_value'           => round( $roth_future_value, 2 ),
+				'after_tax_value'        => round( $roth_after_tax, 2 ),
+				'taxes_paid_retirement'  => 0,
 			),
-			'comparison'                  => array(
-				'better_option'         => $better_option,
-				'difference'            => round( abs( $difference ), 2 ),
-				'percentage_better'     => round( $percentage_better, 2 ),
-				'breakeven_tax_rate'    => round( $breakeven_retirement_rate, 2 ),
+			'comparison'      => array(
+				'better_option'      => $better_option,
+				'difference'         => round( abs( $difference ), 2 ),
+				'percentage_better'  => round( $percentage_better, 2 ),
+				'breakeven_tax_rate' => round( $breakeven_retirement_rate, 2 ),
 			),
-			'parameters'                  => array(
-				'years_to_retirement'   => $years_to_retirement,
-				'current_tax_rate'      => $current_tax_rate,
-				'retirement_tax_rate'   => $retirement_tax_rate,
-				'annual_return_rate'    => $annual_return_rate,
+			'parameters'      => array(
+				'years_to_retirement' => $years_to_retirement,
+				'current_tax_rate'    => $current_tax_rate,
+				'retirement_tax_rate' => $retirement_tax_rate,
+				'annual_return_rate'  => $annual_return_rate,
 			),
-			'recommendation'              => $recommendation,
-			'disclaimer'                  => __( 'This is an educational comparison only. Actual results vary based on individual circumstances, future tax law changes, and investment performance. Consult a licensed financial advisor and tax professional for personalized advice.', 'mcp-ai-wpoos-pro' ),
-			'message'                     => sprintf(
+			'recommendation'  => $recommendation,
+			'disclaimer'      => __( 'This is an educational comparison only. Actual results vary based on individual circumstances, future tax law changes, and investment performance. Consult a licensed financial advisor and tax professional for personalized advice.', 'mcp-ai-wpoos-pro' ),
+			'message'         => sprintf(
 				/* translators: 1: Better option, 2: Difference amount, 3: Percentage */
 				__( '%1$s IRA is better by $%2$s (%3$s%%) based on your tax rates.', 'mcp-ai-wpoos-pro' ),
 				ucfirst( $better_option ),

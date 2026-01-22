@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'debts'           => array(
+				'debts'         => array(
 					'type'        => 'array',
 					'description' => __( 'List of debts to pay off', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -124,13 +124,13 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 						),
 					),
 				),
-				'extra_payment'   => array(
+				'extra_payment' => array(
 					'type'        => 'number',
 					'description' => __( 'Extra monthly payment to apply', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'strategy'        => array(
+				'strategy'      => array(
 					'type'        => 'string',
 					'description' => __( 'Payoff strategy', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'avalanche', 'snowball', 'compare' ),
@@ -187,20 +187,20 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 
 		$result = array( 'success' => true );
 
-		if ( $strategy === 'compare' ) {
+		if ( 'compare' === $strategy ) {
 			$avalanche = $this->calculate_payoff( $debts, $extra_payment, 'avalanche' );
 			$snowball  = $this->calculate_payoff( $debts, $extra_payment, 'snowball' );
 
 			$result['avalanche'] = $avalanche;
 			$result['snowball']  = $snowball;
-			
+
 			$interest_savings = $snowball['total_interest'] - $avalanche['total_interest'];
-			$time_savings = $snowball['months_to_payoff'] - $avalanche['months_to_payoff'];
+			$time_savings     = $snowball['months_to_payoff'] - $avalanche['months_to_payoff'];
 
 			$result['comparison'] = array(
-				'interest_savings' => round( $interest_savings, 2 ),
+				'interest_savings'    => round( $interest_savings, 2 ),
 				'time_savings_months' => $time_savings,
-				'recommended' => $interest_savings > 100 ? 'avalanche' : 'snowball',
+				'recommended'         => $interest_savings > 100 ? 'avalanche' : 'snowball',
 			);
 
 			$result['message'] = sprintf(
@@ -210,7 +210,7 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 				$time_savings
 			);
 		} else {
-			$result = array_merge( $result, $this->calculate_payoff( $debts, $extra_payment, $strategy ) );
+			$result            = array_merge( $result, $this->calculate_payoff( $debts, $extra_payment, $strategy ) );
 			$result['message'] = sprintf(
 				/* translators: 1: Months, 2: Total interest */
 				__( 'Payoff complete in %1$d months with $%2$s total interest.', 'mcp-ai-wpoos-pro' ),
@@ -241,40 +241,46 @@ class WP_MCP_AI_Tool_Debt_Payoff_Calculator implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		if ( $strategy === 'avalanche' ) {
-			usort( $debts_working, function( $a, $b ) {
-				return $b['interest_rate'] <=> $a['interest_rate'];
-			});
+		if ( 'avalanche' === $strategy ) {
+			usort(
+				$debts_working,
+				function ( $a, $b ) {
+					return $b['interest_rate'] <=> $a['interest_rate'];
+				}
+			);
 		} else {
-			usort( $debts_working, function( $a, $b ) {
-				return $a['balance'] <=> $b['balance'];
-			});
+			usort(
+				$debts_working,
+				function ( $a, $b ) {
+					return $a['balance'] <=> $b['balance'];
+				}
+			);
 		}
 
 		$total_interest = 0;
-		$months = 0;
-		$schedule = array();
+		$months         = 0;
+		$schedule       = array();
 
 		while ( ! empty( $debts_working ) ) {
-			$months++;
-			$total_minimum = array_sum( array_column( $debts_working, 'minimum_payment' ) );
+			++$months;
+			$total_minimum   = array_sum( array_column( $debts_working, 'minimum_payment' ) );
 			$available_extra = $extra_payment;
 
 			foreach ( $debts_working as $key => &$debt ) {
-				$monthly_rate = ( $debt['interest_rate'] / 100 ) / 12;
+				$monthly_rate    = ( $debt['interest_rate'] / 100 ) / 12;
 				$interest_charge = $debt['balance'] * $monthly_rate;
 				$total_interest += $interest_charge;
 
 				$payment = $debt['minimum_payment'];
-				if ( $key === 0 ) {
-					$payment += $available_extra;
+				if ( 0 === $key ) {
+					$payment        += $available_extra;
 					$available_extra = 0;
 				}
 
-				$principal = $payment - $interest_charge;
+				$principal       = $payment - $interest_charge;
 				$debt['balance'] = max( 0, $debt['balance'] - $principal );
 
-				if ( $debt['balance'] === 0.0 ) {
+				if ( 0.0 === $debt['balance'] ) {
 					$schedule[] = array(
 						'month' => $months,
 						'debt'  => $debt['name'],

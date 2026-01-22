@@ -95,32 +95,32 @@ class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'holdings' => array(
+				'holdings'           => array(
 					'type'        => 'array',
 					'description' => __( 'Portfolio holdings with cost basis', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'ticker'         => array(
+							'ticker'        => array(
 								'type'        => 'string',
 								'description' => __( 'Stock ticker symbol', 'mcp-ai-wpoos-pro' ),
 							),
-							'shares'         => array(
+							'shares'        => array(
 								'type'        => 'number',
 								'description' => __( 'Number of shares', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'cost_basis'     => array(
+							'cost_basis'    => array(
 								'type'        => 'number',
 								'description' => __( 'Cost basis per share', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'current_price'  => array(
+							'current_price' => array(
 								'type'        => 'number',
 								'description' => __( 'Current price per share', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'purchase_date'  => array(
+							'purchase_date' => array(
 								'type'        => 'string',
 								'description' => __( 'Purchase date (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 								'format'      => 'date',
@@ -197,9 +197,9 @@ class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Inter
 			return new WP_Error( 'empty_holdings', __( 'Holdings are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$opportunities = array();
+		$opportunities          = array();
 		$total_harvestable_loss = 0;
-		$wash_sale_warnings = array();
+		$wash_sale_warnings     = array();
 
 		foreach ( $holdings as $holding ) {
 			$ticker        = isset( $holding['ticker'] ) ? sanitize_text_field( $holding['ticker'] ) : '';
@@ -208,21 +208,21 @@ class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Inter
 			$current_price = isset( $holding['current_price'] ) ? floatval( $holding['current_price'] ) : 0;
 			$purchase_date = isset( $holding['purchase_date'] ) ? sanitize_text_field( $holding['purchase_date'] ) : '';
 
-			$total_cost    = $shares * $cost_basis;
-			$market_value  = $shares * $current_price;
+			$total_cost      = $shares * $cost_basis;
+			$market_value    = $shares * $current_price;
 			$unrealized_loss = $total_cost - $market_value;
 
 			if ( $unrealized_loss > $minimum_loss ) {
 				$days_held = 0;
 				if ( ! empty( $purchase_date ) ) {
 					$purchase_timestamp = strtotime( $purchase_date );
-					$today_timestamp = current_time( 'timestamp' );
-					$days_held = floor( ( $today_timestamp - $purchase_timestamp ) / DAY_IN_SECONDS );
+					$today_timestamp    = current_time( 'timestamp' );
+					$days_held          = floor( ( $today_timestamp - $purchase_timestamp ) / DAY_IN_SECONDS );
 				}
 
 				$wash_sale_risk = false;
 				if ( $days_held < 30 ) {
-					$wash_sale_risk = true;
+					$wash_sale_risk       = true;
 					$wash_sale_warnings[] = sprintf(
 						/* translators: 1: Ticker, 2: Days held */
 						__( '%1$s: Held for only %2$d days. Wait %3$d more days to avoid wash sale.', 'mcp-ai-wpoos-pro' ),
@@ -249,13 +249,16 @@ class WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker implements WP_MCP_AI_Tool_Inter
 			}
 		}
 
-		usort( $opportunities, function( $a, $b ) {
-			return $b['unrealized_loss'] <=> $a['unrealized_loss'];
-		});
+		usort(
+			$opportunities,
+			function ( $a, $b ) {
+				return $b['unrealized_loss'] <=> $a['unrealized_loss'];
+			}
+		);
 
 		$potential_tax_savings = ( $total_harvestable_loss * $capital_gains_rate ) / 100;
-		$offsettable_gains = min( $realized_gains, $total_harvestable_loss );
-		$actual_tax_savings = ( $offsettable_gains * $capital_gains_rate ) / 100;
+		$offsettable_gains     = min( $realized_gains, $total_harvestable_loss );
+		$actual_tax_savings    = ( $offsettable_gains * $capital_gains_rate ) / 100;
 
 		$recommendations = array();
 		if ( ! empty( $opportunities ) ) {

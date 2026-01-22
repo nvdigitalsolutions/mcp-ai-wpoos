@@ -28,13 +28,15 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Tools will be implemented in Phase 2.7.
-	// Planned location: addons/pro/includes/tools/dj-management/
+	// Planned location: addons/pro/includes/tools/dj-management/.
 }
 
 /**
  * Enqueue DJ management toolkit admin styles.
  *
- * @param string $hook Current admin page hook.
+ * @since 1.1.0
+ *
+ * @param string $hook Current admin page hook (unused).
  */
 function wp_mcp_ai_enqueue_dj_management_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled.

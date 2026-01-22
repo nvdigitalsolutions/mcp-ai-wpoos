@@ -264,8 +264,9 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 
 		// Calculate break-even ages.
 		$breakeven_analysis = array();
-		if ( count( $scenarios ) >= 2 ) {
-			for ( $i = 0; $i < count( $scenarios ) - 1; $i++ ) {
+		$scenarios_count    = count( $scenarios );
+		if ( $scenarios_count >= 2 ) {
+			for ( $i = 0; $i < $scenarios_count - 1; $i++ ) {
 				$early_scenario = $scenarios[ $i ];
 				$late_scenario  = $scenarios[ $i + 1 ];
 
@@ -278,8 +279,8 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 					$breakeven_age    = $late_scenario['claiming_age'] + ( $breakeven_months / 12 );
 
 					$breakeven_analysis[] = array(
-						'compare_ages'    => sprintf( '%d vs %d', $early_scenario['claiming_age'], $late_scenario['claiming_age'] ),
-						'breakeven_age'   => round( $breakeven_age, 1 ),
+						'compare_ages'     => sprintf( '%d vs %d', $early_scenario['claiming_age'], $late_scenario['claiming_age'] ),
+						'breakeven_age'    => round( $breakeven_age, 1 ),
 						'breakeven_months' => $breakeven_months,
 					);
 				}
@@ -288,9 +289,9 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 
 		// Recommendation.
 		$recommendation = '';
-		if ( $best_age === 62 ) {
+		if ( 62 === $best_age ) {
 			$recommendation = __( 'Consider claiming at 62 if you need immediate income or have shorter life expectancy.', 'mcp-ai-wpoos-pro' );
-		} elseif ( $best_age === 70 ) {
+		} elseif ( 70 === $best_age ) {
 			$recommendation = __( 'Delay claiming until 70 for maximum lifetime benefits if you can afford to wait.', 'mcp-ai-wpoos-pro' );
 		} else {
 			$recommendation = sprintf(
@@ -301,23 +302,23 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'success'                  => true,
-			'full_retirement_age'      => $full_retirement_age,
-			'monthly_benefit_at_fra'   => $monthly_benefit_at_fra,
-			'life_expectancy'          => $life_expectancy,
-			'scenarios'                => $scenarios,
-			'best_claiming_age'        => $best_age,
-			'best_lifetime_value'      => round( $best_lifetime_value, 2 ),
-			'breakeven_analysis'       => $breakeven_analysis,
-			'recommendation'           => $recommendation,
-			'key_considerations'       => array(
+			'success'                => true,
+			'full_retirement_age'    => $full_retirement_age,
+			'monthly_benefit_at_fra' => $monthly_benefit_at_fra,
+			'life_expectancy'        => $life_expectancy,
+			'scenarios'              => $scenarios,
+			'best_claiming_age'      => $best_age,
+			'best_lifetime_value'    => round( $best_lifetime_value, 2 ),
+			'breakeven_analysis'     => $breakeven_analysis,
+			'recommendation'         => $recommendation,
+			'key_considerations'     => array(
 				__( 'Health and life expectancy are critical factors', 'mcp-ai-wpoos-pro' ),
 				__( 'Consider your need for current income vs. longevity protection', 'mcp-ai-wpoos-pro' ),
 				__( 'Delaying increases survivor benefits for your spouse', 'mcp-ai-wpoos-pro' ),
 				__( 'Working while collecting before FRA reduces benefits temporarily', 'mcp-ai-wpoos-pro' ),
 			),
-			'disclaimer'               => __( 'This is an educational estimate based on current Social Security rules. Actual benefits depend on your earnings history and may change due to future legislation. Consult the Social Security Administration and a financial advisor for personalized guidance.', 'mcp-ai-wpoos-pro' ),
-			'message'                  => sprintf(
+			'disclaimer'             => __( 'This is an educational estimate based on current Social Security rules. Actual benefits depend on your earnings history and may change due to future legislation. Consult the Social Security Administration and a financial advisor for personalized guidance.', 'mcp-ai-wpoos-pro' ),
+			'message'                => sprintf(
 				/* translators: 1: Best age, 2: Lifetime value */
 				__( 'Optimal claiming age: %1$d with lifetime present value of $%2$s.', 'mcp-ai-wpoos-pro' ),
 				$best_age,
@@ -343,7 +344,7 @@ class WP_MCP_AI_Tool_Social_Security_Optimizer implements WP_MCP_AI_Tool_Interfa
 			$reduction    = 0;
 
 			// First 36 months: 5/9 of 1% per month.
-			$first_36 = min( 36, $months_early );
+			$first_36   = min( 36, $months_early );
 			$reduction += $first_36 * ( 5.0 / 9.0 / 100 );
 
 			// Additional months: 5/12 of 1% per month.

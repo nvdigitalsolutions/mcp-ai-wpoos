@@ -133,21 +133,21 @@ class WP_MCP_AI_Social_Media_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	 */
 	protected function get_tools_list() {
 		return array(
-			'schedule_social_post'           => __( 'Schedule Social Post', 'mcp-ai-wpoos-pro' ),
-			'bulk_schedule_posts'            => __( 'Bulk Schedule Posts', 'mcp-ai-wpoos-pro' ),
-			'post_to_multiple_platforms'     => __( 'Post to Multiple Platforms', 'mcp-ai-wpoos-pro' ),
-			'create_content_calendar'        => __( 'Create Content Calendar', 'mcp-ai-wpoos-pro' ),
-			'get_cross_platform_analytics'   => __( 'Get Cross-Platform Analytics', 'mcp-ai-wpoos-pro' ),
-			'track_hashtag_performance'      => __( 'Track Hashtag Performance', 'mcp-ai-wpoos-pro' ),
-			'generate_post_ideas'            => __( 'Generate Post Ideas', 'mcp-ai-wpoos-pro' ),
-			'create_social_video'            => __( 'Create Social Video', 'mcp-ai-wpoos-pro' ),
-			'auto_optimize_images'           => __( 'Auto-Optimize Images', 'mcp-ai-wpoos-pro' ),
-			'monitor_mentions_replies'       => __( 'Monitor Mentions & Replies', 'mcp-ai-wpoos-pro' ),
-			'moderate_comments'              => __( 'Moderate Comments', 'mcp-ai-wpoos-pro' ),
-			'auto_respond_messages'          => __( 'Auto-Respond to Messages', 'mcp-ai-wpoos-pro' ),
-			'competitor_analysis'            => __( 'Competitor Analysis', 'mcp-ai-wpoos-pro' ),
-			'influencer_identification'      => __( 'Influencer Identification', 'mcp-ai-wpoos-pro' ),
-			'social_listening_trends'        => __( 'Social Listening & Trends', 'mcp-ai-wpoos-pro' ),
+			'schedule_social_post'         => __( 'Schedule Social Post', 'mcp-ai-wpoos-pro' ),
+			'bulk_schedule_posts'          => __( 'Bulk Schedule Posts', 'mcp-ai-wpoos-pro' ),
+			'post_to_multiple_platforms'   => __( 'Post to Multiple Platforms', 'mcp-ai-wpoos-pro' ),
+			'create_content_calendar'      => __( 'Create Content Calendar', 'mcp-ai-wpoos-pro' ),
+			'get_cross_platform_analytics' => __( 'Get Cross-Platform Analytics', 'mcp-ai-wpoos-pro' ),
+			'track_hashtag_performance'    => __( 'Track Hashtag Performance', 'mcp-ai-wpoos-pro' ),
+			'generate_post_ideas'          => __( 'Generate Post Ideas', 'mcp-ai-wpoos-pro' ),
+			'create_social_video'          => __( 'Create Social Video', 'mcp-ai-wpoos-pro' ),
+			'auto_optimize_images'         => __( 'Auto-Optimize Images', 'mcp-ai-wpoos-pro' ),
+			'monitor_mentions_replies'     => __( 'Monitor Mentions & Replies', 'mcp-ai-wpoos-pro' ),
+			'moderate_comments'            => __( 'Moderate Comments', 'mcp-ai-wpoos-pro' ),
+			'auto_respond_messages'        => __( 'Auto-Respond to Messages', 'mcp-ai-wpoos-pro' ),
+			'competitor_analysis'          => __( 'Competitor Analysis', 'mcp-ai-wpoos-pro' ),
+			'influencer_identification'    => __( 'Influencer Identification', 'mcp-ai-wpoos-pro' ),
+			'social_listening_trends'      => __( 'Social Listening & Trends', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

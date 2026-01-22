@@ -28,13 +28,15 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Tools will be implemented in Phase 2.6.
-	// Planned location: addons/pro/includes/tools/calendar-booking/
+	// Planned location: addons/pro/includes/tools/calendar-booking/.
 }
 
 /**
  * Enqueue calendar booking toolkit admin styles.
  *
- * @param string $hook Current admin page hook.
+ * @since 1.1.0
+ *
+ * @param string $hook Current admin page hook (unused).
  */
 function wp_mcp_ai_enqueue_calendar_booking_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled.

@@ -127,18 +127,18 @@ class WP_MCP_AI_Analytics_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base 
 	 */
 	protected function get_tools_list() {
 		return array(
-			'revenue_forecast'             => __( 'Revenue Forecast', 'mcp-ai-wpoos-pro' ),
-			'churn_prediction'             => __( 'Churn Prediction', 'mcp-ai-wpoos-pro' ),
-			'customer_segmentation_ml'     => __( 'Customer Segmentation (ML)', 'mcp-ai-wpoos-pro' ),
-			'cohort_analysis'              => __( 'Cohort Analysis', 'mcp-ai-wpoos-pro' ),
-			'create_custom_report'         => __( 'Create Custom Report', 'mcp-ai-wpoos-pro' ),
-			'automate_reporting'           => __( 'Automate Reporting', 'mcp-ai-wpoos-pro' ),
-			'export_analytics_api'         => __( 'Export Analytics API', 'mcp-ai-wpoos-pro' ),
-			'kpi_dashboard'                => __( 'KPI Dashboard', 'mcp-ai-wpoos-pro' ),
-			'anomaly_detection'            => __( 'Anomaly Detection', 'mcp-ai-wpoos-pro' ),
-			'goal_tracking'                => __( 'Goal Tracking', 'mcp-ai-wpoos-pro' ),
-			'user_behavior_analysis'       => __( 'User Behavior Analysis', 'mcp-ai-wpoos-pro' ),
-			'attribution_modeling'         => __( 'Attribution Modeling', 'mcp-ai-wpoos-pro' ),
+			'revenue_forecast'         => __( 'Revenue Forecast', 'mcp-ai-wpoos-pro' ),
+			'churn_prediction'         => __( 'Churn Prediction', 'mcp-ai-wpoos-pro' ),
+			'customer_segmentation_ml' => __( 'Customer Segmentation (ML)', 'mcp-ai-wpoos-pro' ),
+			'cohort_analysis'          => __( 'Cohort Analysis', 'mcp-ai-wpoos-pro' ),
+			'create_custom_report'     => __( 'Create Custom Report', 'mcp-ai-wpoos-pro' ),
+			'automate_reporting'       => __( 'Automate Reporting', 'mcp-ai-wpoos-pro' ),
+			'export_analytics_api'     => __( 'Export Analytics API', 'mcp-ai-wpoos-pro' ),
+			'kpi_dashboard'            => __( 'KPI Dashboard', 'mcp-ai-wpoos-pro' ),
+			'anomaly_detection'        => __( 'Anomaly Detection', 'mcp-ai-wpoos-pro' ),
+			'goal_tracking'            => __( 'Goal Tracking', 'mcp-ai-wpoos-pro' ),
+			'user_behavior_analysis'   => __( 'User Behavior Analysis', 'mcp-ai-wpoos-pro' ),
+			'attribution_modeling'     => __( 'Attribution Modeling', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

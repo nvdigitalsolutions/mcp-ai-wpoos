@@ -95,32 +95,32 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'            => array(
+				'action'               => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'create', 'update', 'list', 'delete', 'calculate' ),
 					'default'     => 'list',
 				),
-				'goal_id'           => array(
+				'goal_id'              => array(
 					'type'        => 'string',
 					'description' => __( 'Goal ID for update/delete actions', 'mcp-ai-wpoos-pro' ),
 				),
-				'goal_name'         => array(
+				'goal_name'            => array(
 					'type'        => 'string',
 					'description' => __( 'Goal name (e.g., "Emergency Fund", "Vacation")', 'mcp-ai-wpoos-pro' ),
 				),
-				'target_amount'     => array(
+				'target_amount'        => array(
 					'type'        => 'number',
 					'description' => __( 'Target savings amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'current_amount'    => array(
+				'current_amount'       => array(
 					'type'        => 'number',
 					'description' => __( 'Current saved amount', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'target_date'       => array(
+				'target_date'          => array(
 					'type'        => 'string',
 					'description' => __( 'Target completion date (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date',
@@ -130,13 +130,13 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Planned monthly contribution', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'priority'          => array(
+				'priority'             => array(
 					'type'        => 'string',
 					'description' => __( 'Goal priority', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'high', 'medium', 'low' ),
 					'default'     => 'medium',
 				),
-				'category'          => array(
+				'category'             => array(
 					'type'        => 'string',
 					'description' => __( 'Goal category', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'emergency_fund', 'down_payment', 'vacation', 'education', 'retirement', 'other' ),
@@ -231,15 +231,15 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 			$goals = array();
 		}
 
-		$goal_id = uniqid( 'goal_' );
+		$goal_id   = uniqid( 'goal_' );
 		$remaining = $target_amount - $current_amount;
-		$progress = $target_amount > 0 ? ( $current_amount / $target_amount ) * 100 : 0;
+		$progress  = $target_amount > 0 ? ( $current_amount / $target_amount ) * 100 : 0;
 
 		$months_remaining = 0;
 		$required_monthly = 0;
 		if ( ! empty( $target_date ) ) {
 			$target_timestamp = strtotime( $target_date );
-			$today_timestamp = current_time( 'timestamp' );
+			$today_timestamp  = current_time( 'timestamp' );
 			$months_remaining = max( 1, ceil( ( $target_timestamp - $today_timestamp ) / ( 30 * DAY_IN_SECONDS ) ) );
 			$required_monthly = $remaining / $months_remaining;
 		}
@@ -294,10 +294,10 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'not_found', __( 'Goal not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( $current_amount !== null ) {
+		if ( null !== $current_amount ) {
 			$goals[ $goal_id ]['current_amount'] = $current_amount;
-			$goals[ $goal_id ]['remaining'] = $goals[ $goal_id ]['target_amount'] - $current_amount;
-			$goals[ $goal_id ]['progress_pct'] = round( ( $current_amount / $goals[ $goal_id ]['target_amount'] ) * 100, 1 );
+			$goals[ $goal_id ]['remaining']      = $goals[ $goal_id ]['target_amount'] - $current_amount;
+			$goals[ $goal_id ]['progress_pct']   = round( ( $current_amount / $goals[ $goal_id ]['target_amount'] ) * 100, 1 );
 		}
 
 		update_user_meta( $user_id, 'wp_mcp_ai_savings_goals', $goals );
@@ -321,8 +321,8 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 			$goals = array();
 		}
 
-		$total_target = array_sum( array_column( $goals, 'target_amount' ) );
-		$total_saved = array_sum( array_column( $goals, 'current_amount' ) );
+		$total_target     = array_sum( array_column( $goals, 'target_amount' ) );
+		$total_saved      = array_sum( array_column( $goals, 'current_amount' ) );
 		$overall_progress = $total_target > 0 ? ( $total_saved / $total_target ) * 100 : 0;
 
 		return array(
@@ -375,9 +375,9 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Calculation results.
 	 */
 	protected function calculate_goal( $arguments ) {
-		$target_amount  = isset( $arguments['target_amount'] ) ? floatval( $arguments['target_amount'] ) : 0;
-		$current_amount = isset( $arguments['current_amount'] ) ? floatval( $arguments['current_amount'] ) : 0;
-		$target_date    = isset( $arguments['target_date'] ) ? sanitize_text_field( $arguments['target_date'] ) : '';
+		$target_amount        = isset( $arguments['target_amount'] ) ? floatval( $arguments['target_amount'] ) : 0;
+		$current_amount       = isset( $arguments['current_amount'] ) ? floatval( $arguments['current_amount'] ) : 0;
+		$target_date          = isset( $arguments['target_date'] ) ? sanitize_text_field( $arguments['target_date'] ) : '';
 		$monthly_contribution = isset( $arguments['monthly_contribution'] ) ? floatval( $arguments['monthly_contribution'] ) : 0;
 
 		$remaining = $target_amount - $current_amount;
@@ -385,7 +385,7 @@ class WP_MCP_AI_Tool_Savings_Goal_Planner implements WP_MCP_AI_Tool_Interface, W
 		$months_remaining = 0;
 		if ( ! empty( $target_date ) ) {
 			$target_timestamp = strtotime( $target_date );
-			$today_timestamp = current_time( 'timestamp' );
+			$today_timestamp  = current_time( 'timestamp' );
 			$months_remaining = max( 1, ceil( ( $target_timestamp - $today_timestamp ) / ( 30 * DAY_IN_SECONDS ) ) );
 		}
 

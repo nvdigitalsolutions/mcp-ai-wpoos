@@ -133,18 +133,18 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 	 */
 	protected function get_tools_list() {
 		return array(
-			'edit_video'                     => __( 'Edit Video', 'mcp-ai-wpoos-pro' ),
-			'trim_video'                     => __( 'Trim Video', 'mcp-ai-wpoos-pro' ),
-			'merge_videos'                   => __( 'Merge Videos', 'mcp-ai-wpoos-pro' ),
-			'generate_video_transcription'   => __( 'Generate Video Transcription', 'mcp-ai-wpoos-pro' ),
-			'add_subtitles_to_video'         => __( 'Add Subtitles to Video', 'mcp-ai-wpoos-pro' ),
-			'generate_voice_over'            => __( 'Generate Voice-Over', 'mcp-ai-wpoos-pro' ),
-			'compress_video'                 => __( 'Compress Video', 'mcp-ai-wpoos-pro' ),
-			'convert_video_format'           => __( 'Convert Video Format', 'mcp-ai-wpoos-pro' ),
-			'generate_video_thumbnail'       => __( 'Generate Video Thumbnail', 'mcp-ai-wpoos-pro' ),
-			'create_highlight_reel'          => __( 'Create Highlight Reel', 'mcp-ai-wpoos-pro' ),
-			'share_video_preview'            => __( 'Share Video Preview', 'mcp-ai-wpoos-pro' ),
-			'distribute_video'               => __( 'Distribute Video', 'mcp-ai-wpoos-pro' ),
+			'edit_video'                   => __( 'Edit Video', 'mcp-ai-wpoos-pro' ),
+			'trim_video'                   => __( 'Trim Video', 'mcp-ai-wpoos-pro' ),
+			'merge_videos'                 => __( 'Merge Videos', 'mcp-ai-wpoos-pro' ),
+			'generate_video_transcription' => __( 'Generate Video Transcription', 'mcp-ai-wpoos-pro' ),
+			'add_subtitles_to_video'       => __( 'Add Subtitles to Video', 'mcp-ai-wpoos-pro' ),
+			'generate_voice_over'          => __( 'Generate Voice-Over', 'mcp-ai-wpoos-pro' ),
+			'compress_video'               => __( 'Compress Video', 'mcp-ai-wpoos-pro' ),
+			'convert_video_format'         => __( 'Convert Video Format', 'mcp-ai-wpoos-pro' ),
+			'generate_video_thumbnail'     => __( 'Generate Video Thumbnail', 'mcp-ai-wpoos-pro' ),
+			'create_highlight_reel'        => __( 'Create Highlight Reel', 'mcp-ai-wpoos-pro' ),
+			'share_video_preview'          => __( 'Share Video Preview', 'mcp-ai-wpoos-pro' ),
+			'distribute_video'             => __( 'Distribute Video', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

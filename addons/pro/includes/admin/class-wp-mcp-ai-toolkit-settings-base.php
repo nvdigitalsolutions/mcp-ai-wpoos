@@ -363,7 +363,12 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 			<p><?php esc_html_e( 'To enable this toolkit:', 'mcp-ai-wpoos-pro' ); ?></p>
 			<ol>
 				<li><?php esc_html_e( 'Go to Settings → NV oOS → Tools & Features', 'mcp-ai-wpoos-pro' ); ?></li>
-				<li><?php echo sprintf( esc_html__( 'Check the "%s" option', 'mcp-ai-wpoos-pro' ), esc_html( $this->toolkit_name ) ); ?></li>
+				<li>
+					<?php
+					/* translators: %s: Toolkit name */
+					printf( esc_html__( 'Check the "%s" option', 'mcp-ai-wpoos-pro' ), esc_html( $this->toolkit_name ) );
+					?>
+				</li>
 				<li><?php esc_html_e( 'Save the settings', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ol>
 			<p>
@@ -396,7 +401,13 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 		<div class="toolkit-card">
 			<h2><?php esc_html_e( 'Quick Start Guide', 'mcp-ai-wpoos-pro' ); ?></h2>
 			<ol>
-				<li><strong><?php esc_html_e( 'Enable the Toolkit:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo sprintf( esc_html__( 'Go to Settings → NV oOS → Tools & Features and enable the %s', 'mcp-ai-wpoos-pro' ), esc_html( $this->toolkit_name ) ); ?></li>
+				<li>
+					<strong><?php esc_html_e( 'Enable the Toolkit:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php
+					/* translators: %s: Toolkit name */
+					printf( esc_html__( 'Go to Settings → NV oOS → Tools & Features and enable the %s', 'mcp-ai-wpoos-pro' ), esc_html( $this->toolkit_name ) );
+					?>
+				</li>
 				<li><strong><?php esc_html_e( 'Configure Settings:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Add any required API keys or credentials in the Configuration tab', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><strong><?php esc_html_e( 'Use with Assistants:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The toolkit tools will be automatically available to your AI assistants', 'mcp-ai-wpoos-pro' ); ?></li>
 			</ol>

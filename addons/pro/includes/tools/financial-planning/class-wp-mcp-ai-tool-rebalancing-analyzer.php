@@ -95,26 +95,61 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'current_allocation' => array(
+				'current_allocation'  => array(
 					'type'        => 'object',
 					'description' => __( 'Current portfolio allocation by asset class', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'stocks'       => array( 'type' => 'number', 'minimum' => 0 ),
-						'bonds'        => array( 'type' => 'number', 'minimum' => 0 ),
-						'real_estate'  => array( 'type' => 'number', 'minimum' => 0 ),
-						'commodities'  => array( 'type' => 'number', 'minimum' => 0 ),
-						'cash'         => array( 'type' => 'number', 'minimum' => 0 ),
+						'stocks'      => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'bonds'       => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'real_estate' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'commodities' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
+						'cash'        => array(
+							'type'    => 'number',
+							'minimum' => 0,
+						),
 					),
 				),
-				'target_allocation'  => array(
+				'target_allocation'   => array(
 					'type'        => 'object',
 					'description' => __( 'Target portfolio allocation percentages', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'stocks'       => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'bonds'        => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'real_estate'  => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'commodities'  => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
-						'cash'         => array( 'type' => 'number', 'minimum' => 0, 'maximum' => 100 ),
+						'stocks'      => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'bonds'       => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'real_estate' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'commodities' => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
+						'cash'        => array(
+							'type'    => 'number',
+							'minimum' => 0,
+							'maximum' => 100,
+						),
 					),
 				),
 				'rebalance_threshold' => array(
@@ -124,12 +159,12 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 					'maximum'     => 20,
 					'default'     => 5,
 				),
-				'portfolio_value'    => array(
+				'portfolio_value'     => array(
 					'type'        => 'number',
 					'description' => __( 'Total portfolio value', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'account_type'       => array(
+				'account_type'        => array(
 					'type'        => 'string',
 					'description' => __( 'Account type for tax considerations', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'taxable', 'tax_deferred', 'tax_free' ),
@@ -176,11 +211,11 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$current_allocation   = isset( $arguments['current_allocation'] ) && is_array( $arguments['current_allocation'] ) ? $arguments['current_allocation'] : array();
-		$target_allocation    = isset( $arguments['target_allocation'] ) && is_array( $arguments['target_allocation'] ) ? $arguments['target_allocation'] : array();
-		$rebalance_threshold  = isset( $arguments['rebalance_threshold'] ) ? floatval( $arguments['rebalance_threshold'] ) : 5;
-		$portfolio_value      = isset( $arguments['portfolio_value'] ) ? floatval( $arguments['portfolio_value'] ) : 0;
-		$account_type         = isset( $arguments['account_type'] ) ? sanitize_text_field( $arguments['account_type'] ) : 'taxable';
+		$current_allocation  = isset( $arguments['current_allocation'] ) && is_array( $arguments['current_allocation'] ) ? $arguments['current_allocation'] : array();
+		$target_allocation   = isset( $arguments['target_allocation'] ) && is_array( $arguments['target_allocation'] ) ? $arguments['target_allocation'] : array();
+		$rebalance_threshold = isset( $arguments['rebalance_threshold'] ) ? floatval( $arguments['rebalance_threshold'] ) : 5;
+		$portfolio_value     = isset( $arguments['portfolio_value'] ) ? floatval( $arguments['portfolio_value'] ) : 0;
+		$account_type        = isset( $arguments['account_type'] ) ? sanitize_text_field( $arguments['account_type'] ) : 'taxable';
 
 		if ( empty( $current_allocation ) || empty( $target_allocation ) ) {
 			return new WP_Error( 'missing_allocation', __( 'Both current and target allocations are required.', 'mcp-ai-wpoos-pro' ) );
@@ -201,31 +236,31 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 			$current_percentages[ $asset ] = $total_current_value > 0 ? ( $value / $total_current_value ) * 100 : 0;
 		}
 
-		$drift_analysis = array();
+		$drift_analysis    = array();
 		$needs_rebalancing = false;
-		$trades = array();
+		$trades            = array();
 
 		foreach ( $target_allocation as $asset => $target_pct ) {
 			$current_pct = isset( $current_percentages[ $asset ] ) ? $current_percentages[ $asset ] : 0;
-			$drift = $current_pct - $target_pct;
-			$drift_abs = abs( $drift );
+			$drift       = $current_pct - $target_pct;
+			$drift_abs   = abs( $drift );
 
-			$target_value = ( $target_pct / 100 ) * $portfolio_value;
+			$target_value  = ( $target_pct / 100 ) * $portfolio_value;
 			$current_value = isset( $current_allocation[ $asset ] ) ? $current_allocation[ $asset ] : 0;
-			$trade_amount = $target_value - $current_value;
+			$trade_amount  = $target_value - $current_value;
 
 			$drift_analysis[ $asset ] = array(
-				'current_pct'  => round( $current_pct, 2 ),
-				'target_pct'   => round( $target_pct, 2 ),
-				'drift'        => round( $drift, 2 ),
-				'drift_abs'    => round( $drift_abs, 2 ),
+				'current_pct'   => round( $current_pct, 2 ),
+				'target_pct'    => round( $target_pct, 2 ),
+				'drift'         => round( $drift, 2 ),
+				'drift_abs'     => round( $drift_abs, 2 ),
 				'current_value' => round( $current_value, 2 ),
-				'target_value' => round( $target_value, 2 ),
+				'target_value'  => round( $target_value, 2 ),
 			);
 
 			if ( $drift_abs > $rebalance_threshold ) {
 				$needs_rebalancing = true;
-				$trades[ $asset ] = array(
+				$trades[ $asset ]  = array(
 					'action' => $trade_amount > 0 ? 'buy' : 'sell',
 					'amount' => round( abs( $trade_amount ), 2 ),
 				);
@@ -235,8 +270,8 @@ class WP_MCP_AI_Tool_Rebalancing_Analyzer implements WP_MCP_AI_Tool_Interface, W
 		$recommendations = array();
 		if ( $needs_rebalancing ) {
 			$recommendations[] = __( 'Portfolio has drifted beyond threshold. Consider rebalancing.', 'mcp-ai-wpoos-pro' );
-			
-			if ( $account_type === 'taxable' ) {
+
+			if ( 'taxable' === $account_type ) {
 				$recommendations[] = __( 'Taxable account: Consider tax-loss harvesting opportunities and long-term capital gains rates.', 'mcp-ai-wpoos-pro' );
 			} else {
 				$recommendations[] = __( 'Tax-advantaged account: Rebalancing can be done without tax consequences.', 'mcp-ai-wpoos-pro' );

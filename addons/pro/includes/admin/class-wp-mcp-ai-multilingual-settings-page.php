@@ -134,16 +134,16 @@ class WP_MCP_AI_Multilingual_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Ba
 	 */
 	protected function get_tools_list() {
 		return array(
-			'translate_content_ai'           => __( 'Translate Content (AI)', 'mcp-ai-wpoos-pro' ),
-			'bulk_translate_posts'           => __( 'Bulk Translate Posts', 'mcp-ai-wpoos-pro' ),
-			'detect_content_language'        => __( 'Detect Content Language', 'mcp-ai-wpoos-pro' ),
-			'manage_translation_memory'      => __( 'Manage Translation Memory', 'mcp-ai-wpoos-pro' ),
-			'sync_language_versions'         => __( 'Sync Language Versions', 'mcp-ai-wpoos-pro' ),
-			'validate_translations'          => __( 'Validate Translations', 'mcp-ai-wpoos-pro' ),
-			'export_translation_package'     => __( 'Export Translation Package', 'mcp-ai-wpoos-pro' ),
-			'glossary_management'            => __( 'Glossary Management', 'mcp-ai-wpoos-pro' ),
-			'wpml_integration'               => __( 'WPML Integration', 'mcp-ai-wpoos-pro' ),
-			'localization_checker'           => __( 'Localization Checker', 'mcp-ai-wpoos-pro' ),
+			'translate_content_ai'       => __( 'Translate Content (AI)', 'mcp-ai-wpoos-pro' ),
+			'bulk_translate_posts'       => __( 'Bulk Translate Posts', 'mcp-ai-wpoos-pro' ),
+			'detect_content_language'    => __( 'Detect Content Language', 'mcp-ai-wpoos-pro' ),
+			'manage_translation_memory'  => __( 'Manage Translation Memory', 'mcp-ai-wpoos-pro' ),
+			'sync_language_versions'     => __( 'Sync Language Versions', 'mcp-ai-wpoos-pro' ),
+			'validate_translations'      => __( 'Validate Translations', 'mcp-ai-wpoos-pro' ),
+			'export_translation_package' => __( 'Export Translation Package', 'mcp-ai-wpoos-pro' ),
+			'glossary_management'        => __( 'Glossary Management', 'mcp-ai-wpoos-pro' ),
+			'wpml_integration'           => __( 'WPML Integration', 'mcp-ai-wpoos-pro' ),
+			'localization_checker'       => __( 'Localization Checker', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

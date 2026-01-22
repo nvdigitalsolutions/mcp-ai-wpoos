@@ -95,17 +95,17 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'holdings' => array(
+				'holdings'  => array(
 					'type'        => 'array',
 					'description' => __( 'Portfolio holdings with ticker, shares, and current price', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'ticker'       => array(
+							'ticker'        => array(
 								'type'        => 'string',
 								'description' => __( 'Stock ticker symbol', 'mcp-ai-wpoos-pro' ),
 							),
-							'shares'       => array(
+							'shares'        => array(
 								'type'        => 'number',
 								'description' => __( 'Number of shares owned', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
@@ -115,17 +115,17 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 								'description' => __( 'Current price per share', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'cost_basis'   => array(
+							'cost_basis'    => array(
 								'type'        => 'number',
 								'description' => __( 'Original purchase price per share', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'asset_class'  => array(
+							'asset_class'   => array(
 								'type'        => 'string',
 								'description' => __( 'Asset class', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'stocks', 'bonds', 'real_estate', 'commodities', 'cash', 'crypto', 'other' ),
 							),
-							'sector'       => array(
+							'sector'        => array(
 								'type'        => 'string',
 								'description' => __( 'Industry sector', 'mcp-ai-wpoos-pro' ),
 							),
@@ -186,10 +186,10 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 			return new WP_Error( 'empty_portfolio', __( 'Portfolio holdings are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$portfolio_value = 0;
-		$total_cost_basis = 0;
-		$by_asset_class = array();
-		$by_sector = array();
+		$portfolio_value   = 0;
+		$total_cost_basis  = 0;
+		$by_asset_class    = array();
+		$by_sector         = array();
 		$analyzed_holdings = array();
 
 		foreach ( $holdings as $holding ) {
@@ -200,12 +200,12 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 			$asset_class   = isset( $holding['asset_class'] ) ? sanitize_text_field( $holding['asset_class'] ) : 'stocks';
 			$sector        = isset( $holding['sector'] ) ? sanitize_text_field( $holding['sector'] ) : 'Unknown';
 
-			$market_value = $shares * $current_price;
-			$cost_value   = $shares * $cost_basis;
-			$gain_loss    = $market_value - $cost_value;
+			$market_value  = $shares * $current_price;
+			$cost_value    = $shares * $cost_basis;
+			$gain_loss     = $market_value - $cost_value;
 			$gain_loss_pct = $cost_value > 0 ? ( $gain_loss / $cost_value ) * 100 : 0;
 
-			$portfolio_value += $market_value;
+			$portfolio_value  += $market_value;
 			$total_cost_basis += $cost_value;
 
 			if ( ! isset( $by_asset_class[ $asset_class ] ) ) {
@@ -231,7 +231,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$total_gain_loss = $portfolio_value - $total_cost_basis;
+		$total_gain_loss  = $portfolio_value - $total_cost_basis;
 		$total_return_pct = $total_cost_basis > 0 ? ( $total_gain_loss / $total_cost_basis ) * 100 : 0;
 
 		$allocation = array();
@@ -251,17 +251,17 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'success'           => true,
-			'portfolio_value'   => round( $portfolio_value, 2 ),
-			'total_cost_basis'  => round( $total_cost_basis, 2 ),
-			'total_gain_loss'   => round( $total_gain_loss, 2 ),
-			'total_return_pct'  => round( $total_return_pct, 2 ),
-			'allocation'        => $allocation,
-			'sector_breakdown'  => $sector_breakdown,
-			'holdings'          => $analyzed_holdings,
-			'view_type'         => $view_type,
-			'disclaimer'        => __( 'EDUCATIONAL ONLY. This visualization is for informational purposes only and does not constitute investment advice. Past performance does not guarantee future results. Consult a licensed financial advisor.', 'mcp-ai-wpoos-pro' ),
-			'message'           => sprintf(
+			'success'          => true,
+			'portfolio_value'  => round( $portfolio_value, 2 ),
+			'total_cost_basis' => round( $total_cost_basis, 2 ),
+			'total_gain_loss'  => round( $total_gain_loss, 2 ),
+			'total_return_pct' => round( $total_return_pct, 2 ),
+			'allocation'       => $allocation,
+			'sector_breakdown' => $sector_breakdown,
+			'holdings'         => $analyzed_holdings,
+			'view_type'        => $view_type,
+			'disclaimer'       => __( 'EDUCATIONAL ONLY. This visualization is for informational purposes only and does not constitute investment advice. Past performance does not guarantee future results. Consult a licensed financial advisor.', 'mcp-ai-wpoos-pro' ),
+			'message'          => sprintf(
 				/* translators: 1: Portfolio value, 2: Return percentage */
 				__( 'Portfolio value: $%1$s with %2$s%% total return.', 'mcp-ai-wpoos-pro' ),
 				number_format( $portfolio_value, 2 ),

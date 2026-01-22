@@ -95,30 +95,30 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'lump_sum_offer'            => array(
+				'lump_sum_offer'             => array(
 					'type'        => 'number',
 					'description' => __( 'Lump sum payout offer', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'monthly_annuity'           => array(
+				'monthly_annuity'            => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly annuity payment', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'current_age'               => array(
+				'current_age'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 50,
 					'maximum'     => 80,
 				),
-				'life_expectancy'           => array(
+				'life_expectancy'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Expected life expectancy', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 60,
 					'maximum'     => 110,
 					'default'     => 85,
 				),
-				'discount_rate'             => array(
+				'discount_rate'              => array(
 					'type'        => 'number',
 					'description' => __( 'Discount rate for present value (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -132,19 +132,19 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 					'maximum'     => 20,
 					'default'     => 6,
 				),
-				'annuity_type'              => array(
+				'annuity_type'               => array(
 					'type'        => 'string',
 					'description' => __( 'Type of annuity', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'single_life', 'joint_survivor_100', 'joint_survivor_50' ),
 					'default'     => 'single_life',
 				),
-				'spouse_age'                => array(
+				'spouse_age'                 => array(
 					'type'        => 'integer',
 					'description' => __( 'Spouse age (for joint annuities)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 40,
 					'maximum'     => 90,
 				),
-				'cola_adjustment'           => array(
+				'cola_adjustment'            => array(
 					'type'        => 'number',
 					'description' => __( 'Annual cost of living adjustment (COLA) on annuity (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -194,13 +194,13 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Validate and sanitize inputs.
-		$lump_sum_offer            = isset( $arguments['lump_sum_offer'] ) ? floatval( $arguments['lump_sum_offer'] ) : 0;
-		$monthly_annuity           = isset( $arguments['monthly_annuity'] ) ? floatval( $arguments['monthly_annuity'] ) : 0;
-		$current_age               = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
-		$life_expectancy           = isset( $arguments['life_expectancy'] ) ? absint( $arguments['life_expectancy'] ) : 85;
-		$discount_rate             = isset( $arguments['discount_rate'] ) ? floatval( $arguments['discount_rate'] ) : 4;
+		$lump_sum_offer             = isset( $arguments['lump_sum_offer'] ) ? floatval( $arguments['lump_sum_offer'] ) : 0;
+		$monthly_annuity            = isset( $arguments['monthly_annuity'] ) ? floatval( $arguments['monthly_annuity'] ) : 0;
+		$current_age                = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
+		$life_expectancy            = isset( $arguments['life_expectancy'] ) ? absint( $arguments['life_expectancy'] ) : 85;
+		$discount_rate              = isset( $arguments['discount_rate'] ) ? floatval( $arguments['discount_rate'] ) : 4;
 		$expected_investment_return = isset( $arguments['expected_investment_return'] ) ? floatval( $arguments['expected_investment_return'] ) : 6;
-		$cola_adjustment           = isset( $arguments['cola_adjustment'] ) ? floatval( $arguments['cola_adjustment'] ) : 0;
+		$cola_adjustment            = isset( $arguments['cola_adjustment'] ) ? floatval( $arguments['cola_adjustment'] ) : 0;
 
 		if ( $lump_sum_offer <= 0 || $monthly_annuity <= 0 ) {
 			return new WP_Error(
@@ -222,20 +222,20 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 		$cola_decimal     = $cola_adjustment / 100;
 
 		// Calculate present value of annuity.
-		$years_receiving     = $life_expectancy - $current_age;
-		$months_receiving    = $years_receiving * 12;
-		$annuity_present_value = 0;
+		$years_receiving        = $life_expectancy - $current_age;
+		$months_receiving       = $years_receiving * 12;
+		$annuity_present_value  = 0;
 		$annuity_total_received = 0;
-		$monthly_payment     = $monthly_annuity;
+		$monthly_payment        = $monthly_annuity;
 
 		for ( $month = 1; $month <= $months_receiving; $month++ ) {
 			// Apply COLA adjustment annually.
-			if ( $month > 1 && $month % 12 === 1 && $cola_decimal > 0 ) {
+			if ( $month > 1 && 1 === $month % 12 && $cola_decimal > 0 ) {
 				$monthly_payment *= ( 1 + $cola_decimal );
 			}
 
-			$years_from_now     = $month / 12;
-			$annuity_present_value += $monthly_payment / pow( 1 + $discount_decimal, $years_from_now );
+			$years_from_now          = $month / 12;
+			$annuity_present_value  += $monthly_payment / pow( 1 + $discount_decimal, $years_from_now );
 			$annuity_total_received += $monthly_payment;
 		}
 
@@ -243,7 +243,7 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 		$lump_sum_future_value = $lump_sum_offer * pow( 1 + $return_decimal, $years_receiving );
 
 		// Calculate break-even age.
-		$breakeven_months = 0;
+		$breakeven_months   = 0;
 		$cumulative_annuity = 0;
 		for ( $month = 1; $month <= $months_receiving; $month++ ) {
 			$cumulative_annuity += $monthly_annuity;
@@ -277,13 +277,13 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'success'                   => true,
-			'lump_sum_analysis'         => array(
+			'success'           => true,
+			'lump_sum_analysis' => array(
 				'offered_amount'    => $lump_sum_offer,
 				'future_value'      => round( $lump_sum_future_value, 2 ),
 				'investment_return' => $expected_investment_return,
 			),
-			'annuity_analysis'          => array(
+			'annuity_analysis'  => array(
 				'monthly_payment'       => $monthly_annuity,
 				'annual_payment'        => round( $monthly_annuity * 12, 2 ),
 				'total_received'        => round( $annuity_total_received, 2 ),
@@ -291,33 +291,33 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 				'implied_interest_rate' => round( $implied_rate, 2 ),
 				'cola_adjustment'       => $cola_adjustment,
 			),
-			'comparison'                => array(
-				'value_difference'     => round( abs( $annuity_present_value - $lump_sum_offer ), 2 ),
+			'comparison'        => array(
+				'value_difference'      => round( abs( $annuity_present_value - $lump_sum_offer ), 2 ),
 				'percentage_difference' => round( abs( $annuity_present_value - $lump_sum_offer ) / $lump_sum_offer * 100, 2 ),
-				'breakeven_age'        => round( $breakeven_age, 1 ),
-				'breakeven_years'      => round( $breakeven_months / 12, 1 ),
+				'breakeven_age'         => round( $breakeven_age, 1 ),
+				'breakeven_years'       => round( $breakeven_months / 12, 1 ),
 			),
-			'recommendation'            => array(
+			'recommendation'    => array(
 				'better_option' => $better_option,
 				'reason'        => $reason,
 			),
-			'considerations'            => array(
+			'considerations'    => array(
 				__( 'Health and life expectancy', 'mcp-ai-wpoos-pro' ),
 				__( 'Need for guaranteed income vs. investment flexibility', 'mcp-ai-wpoos-pro' ),
 				__( 'Spouse/beneficiary needs', 'mcp-ai-wpoos-pro' ),
 				__( 'Other retirement income sources', 'mcp-ai-wpoos-pro' ),
 				__( 'Investment experience and risk tolerance', 'mcp-ai-wpoos-pro' ),
 			),
-			'parameters'                => array(
-				'current_age'      => $current_age,
-				'life_expectancy'  => $life_expectancy,
-				'discount_rate'    => $discount_rate,
+			'parameters'        => array(
+				'current_age'     => $current_age,
+				'life_expectancy' => $life_expectancy,
+				'discount_rate'   => $discount_rate,
 			),
-			'disclaimer'                => __( 'This is an educational analysis only. Pension decisions are irrevocable and complex. Consult a licensed financial advisor and consider tax implications before making a decision.', 'mcp-ai-wpoos-pro' ),
-			'message'                   => sprintf(
+			'disclaimer'        => __( 'This is an educational analysis only. Pension decisions are irrevocable and complex. Consult a licensed financial advisor and consider tax implications before making a decision.', 'mcp-ai-wpoos-pro' ),
+			'message'           => sprintf(
 				/* translators: 1: Better option, 2: Value difference */
 				__( 'Recommendation: Choose %1$s (difference of $%2$s in present value).', 'mcp-ai-wpoos-pro' ),
-				$better_option === 'lump_sum' ? __( 'lump sum', 'mcp-ai-wpoos-pro' ) : __( 'annuity', 'mcp-ai-wpoos-pro' ),
+				'lump_sum' === $better_option ? __( 'lump sum', 'mcp-ai-wpoos-pro' ) : __( 'annuity', 'mcp-ai-wpoos-pro' ),
 				number_format( abs( $annuity_present_value - $lump_sum_offer ), 2 )
 			),
 		);
@@ -335,13 +335,13 @@ class WP_MCP_AI_Tool_Pension_Analyzer implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function calculate_implied_rate( $lump_sum, $monthly_payment, $months ) {
 		// Use iterative method to find rate.
-		$low  = 0;
-		$high = 0.20; // 20% annual rate.
+		$low       = 0;
+		$high      = 0.20; // 20% annual rate.
 		$tolerance = 0.0001;
 
 		for ( $i = 0; $i < 100; $i++ ) {
-			$mid      = ( $low + $high ) / 2;
-			$pv       = 0;
+			$mid          = ( $low + $high ) / 2;
+			$pv           = 0;
 			$monthly_rate = $mid / 12;
 
 			for ( $month = 1; $month <= $months; $month++ ) {

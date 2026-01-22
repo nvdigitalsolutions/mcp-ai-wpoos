@@ -20,6 +20,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 
+	/**
+	 * Check if this tool is available.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return bool True if analytics toolkit is enabled.
+	 */
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
@@ -29,6 +36,13 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return ! empty( $settings['enable_analytics_toolkit'] );
 	}
 
+	/**
+	 * Get the reason why this tool is unavailable.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Reason message.
+	 */
 	public static function get_unavailable_reason() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		if ( empty( $settings['enable_analytics_toolkit'] ) ) {
@@ -37,43 +51,71 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return __( 'Export analytics API tool is not available.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool slug.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool slug.
+	 */
 	public function get_slug() {
 		return 'export_analytics_api';
 	}
 
+	/**
+	 * Get the tool name.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool name.
+	 */
 	public function get_name() {
 		return __( 'Export Analytics API', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the tool description.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Tool description.
+	 */
 	public function get_description() {
 		return __( 'Export analytics data via REST API in JSON, CSV, or XML format with filtering and pagination.', 'mcp-ai-wpoos-pro' );
 	}
 
+	/**
+	 * Get the parameters schema.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Parameters schema.
+	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'data_type'   => array(
+				'data_type'  => array(
 					'type'        => 'string',
 					'description' => 'Type of analytics: sales, customers, products, traffic',
 					'enum'        => array( 'sales', 'customers', 'products', 'traffic' ),
 					'default'     => 'sales',
 				),
-				'format'      => array(
+				'format'     => array(
 					'type'        => 'string',
 					'description' => 'Export format: json, csv, xml',
 					'enum'        => array( 'json', 'csv', 'xml' ),
 					'default'     => 'json',
 				),
-				'start_date'  => array(
+				'start_date' => array(
 					'type'        => 'string',
 					'description' => 'Start date (YYYY-MM-DD)',
 				),
-				'end_date'    => array(
+				'end_date'   => array(
 					'type'        => 'string',
 					'description' => 'End date (YYYY-MM-DD)',
 				),
-				'limit'       => array(
+				'limit'      => array(
 					'type'        => 'integer',
 					'description' => 'Maximum records to export',
 					'minimum'     => 1,
@@ -85,22 +127,45 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Get the required capability.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return string Required capability.
+	 */
 	public function get_required_capability() {
 		return 'manage_options';
 	}
 
+	/**
+	 * Get capability flags.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Capability flags.
+	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'  => true,
-			'export'     => true,
-			'read_only'  => true,
+			'analytics' => true,
+			'export'    => true,
+			'read_only' => true,
 		);
 	}
 
+	/**
+	 * Execute the tool.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Export data or error.
+	 */
 	public function execute( $arguments, $context ) {
 		$data_type  = sanitize_text_field( $arguments['data_type'] );
 		$format     = ! empty( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'json';
-		$start_date = ! empty( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : date( 'Y-m-d', strtotime( '-30 days' ) );
+		$start_date = ! empty( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
 		$end_date   = ! empty( $arguments['end_date'] ) ? sanitize_text_field( $arguments['end_date'] ) : current_time( 'Y-m-d' );
 		$limit      = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 1000;
 
@@ -121,12 +186,12 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 			'success'     => true,
 			'data'        => $formatted_data,
 			'metadata'    => array(
-				'data_type'   => $data_type,
-				'format'      => $format,
-				'start_date'  => $start_date,
-				'end_date'    => $end_date,
+				'data_type'    => $data_type,
+				'format'       => $format,
+				'start_date'   => $start_date,
+				'end_date'     => $end_date,
 				'record_count' => is_array( $data ) ? count( $data ) : 0,
-				'api_url'     => $api_url,
+				'api_url'      => $api_url,
 			),
 			'exported_at' => current_time( 'mysql' ),
 			'message'     => __( 'Analytics data exported successfully.', 'mcp-ai-wpoos-pro' ),
@@ -222,11 +287,11 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 			}
 
 			$data[] = array(
-				'product_id'    => $product->ID,
-				'name'          => $product->post_title,
-				'sku'           => $product_obj->get_sku(),
-				'price'         => $product_obj->get_price(),
-				'stock_status'  => $product_obj->get_stock_status(),
+				'product_id'     => $product->ID,
+				'name'           => $product->post_title,
+				'sku'            => $product_obj->get_sku(),
+				'price'          => $product_obj->get_price(),
+				'stock_status'   => $product_obj->get_stock_status(),
 				'stock_quantity' => $product_obj->get_stock_quantity(),
 			);
 		}
@@ -238,11 +303,11 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		// Placeholder for traffic data - would integrate with analytics plugin.
 		return array(
 			array(
-				'date'       => $start_date,
-				'pageviews'  => 0,
-				'visits'     => 0,
+				'date'        => $start_date,
+				'pageviews'   => 0,
+				'visits'      => 0,
 				'bounce_rate' => 0,
-				'note'       => 'Traffic data requires Google Analytics or similar integration',
+				'note'        => 'Traffic data requires Google Analytics or similar integration',
 			),
 		);
 	}
@@ -265,7 +330,7 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$output = fopen( 'php://temp', 'r+' );
-		
+
 		// Headers.
 		fputcsv( $output, array_keys( $data[0] ) );
 

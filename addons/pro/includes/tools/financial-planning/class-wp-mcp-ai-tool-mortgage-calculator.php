@@ -200,13 +200,13 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$loan_amount      = isset( $arguments['loan_amount'] ) ? floatval( $arguments['loan_amount'] ) : 0;
-		$interest_rate    = isset( $arguments['interest_rate'] ) ? floatval( $arguments['interest_rate'] ) : 0;
-		$loan_term_years  = isset( $arguments['loan_term_years'] ) ? absint( $arguments['loan_term_years'] ) : 30;
-		$down_payment     = isset( $arguments['down_payment'] ) ? floatval( $arguments['down_payment'] ) : 0;
-		$property_tax     = isset( $arguments['property_tax'] ) ? floatval( $arguments['property_tax'] ) : 0;
-		$home_insurance   = isset( $arguments['home_insurance'] ) ? floatval( $arguments['home_insurance'] ) : 0;
-		$pmi              = isset( $arguments['pmi'] ) ? floatval( $arguments['pmi'] ) : 0;
+		$loan_amount        = isset( $arguments['loan_amount'] ) ? floatval( $arguments['loan_amount'] ) : 0;
+		$interest_rate      = isset( $arguments['interest_rate'] ) ? floatval( $arguments['interest_rate'] ) : 0;
+		$loan_term_years    = isset( $arguments['loan_term_years'] ) ? absint( $arguments['loan_term_years'] ) : 30;
+		$down_payment       = isset( $arguments['down_payment'] ) ? floatval( $arguments['down_payment'] ) : 0;
+		$property_tax       = isset( $arguments['property_tax'] ) ? floatval( $arguments['property_tax'] ) : 0;
+		$home_insurance     = isset( $arguments['home_insurance'] ) ? floatval( $arguments['home_insurance'] ) : 0;
+		$pmi                = isset( $arguments['pmi'] ) ? floatval( $arguments['pmi'] ) : 0;
 		$refinance_analysis = isset( $arguments['refinance_analysis'] ) ? (bool) $arguments['refinance_analysis'] : false;
 
 		if ( $loan_amount <= 0 ) {
@@ -222,11 +222,11 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 			$monthly_payment = $loan_amount / $num_payments;
 		}
 
-		$monthly_property_tax = $property_tax / 12;
-		$monthly_insurance = $home_insurance / 12;
+		$monthly_property_tax  = $property_tax / 12;
+		$monthly_insurance     = $home_insurance / 12;
 		$total_monthly_payment = $monthly_payment + $monthly_property_tax + $monthly_insurance + $pmi;
 
-		$total_paid = $monthly_payment * $num_payments;
+		$total_paid     = $monthly_payment * $num_payments;
 		$total_interest = $total_paid - $loan_amount;
 
 		$result = array(
@@ -251,9 +251,9 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		if ( $refinance_analysis ) {
-			$current_balance    = isset( $arguments['current_balance'] ) ? floatval( $arguments['current_balance'] ) : $loan_amount;
-			$new_interest_rate  = isset( $arguments['new_interest_rate'] ) ? floatval( $arguments['new_interest_rate'] ) : $interest_rate;
-			$closing_costs      = isset( $arguments['closing_costs'] ) ? floatval( $arguments['closing_costs'] ) : 0;
+			$current_balance   = isset( $arguments['current_balance'] ) ? floatval( $arguments['current_balance'] ) : $loan_amount;
+			$new_interest_rate = isset( $arguments['new_interest_rate'] ) ? floatval( $arguments['new_interest_rate'] ) : $interest_rate;
+			$closing_costs     = isset( $arguments['closing_costs'] ) ? floatval( $arguments['closing_costs'] ) : 0;
 
 			$new_monthly_rate = ( $new_interest_rate / 100 ) / 12;
 			if ( $new_monthly_rate > 0 ) {
@@ -262,7 +262,7 @@ class WP_MCP_AI_Tool_Mortgage_Calculator implements WP_MCP_AI_Tool_Interface, WP
 				$new_monthly_payment = $current_balance / $num_payments;
 			}
 
-			$monthly_savings = $monthly_payment - $new_monthly_payment;
+			$monthly_savings   = $monthly_payment - $new_monthly_payment;
 			$break_even_months = $monthly_savings > 0 ? ceil( $closing_costs / $monthly_savings ) : 0;
 
 			$result['refinance'] = array(

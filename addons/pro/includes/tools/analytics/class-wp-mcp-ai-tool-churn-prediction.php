@@ -64,7 +64,9 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool slug.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool slug.
 	 */
 	public function get_slug() {
 		return 'churn_prediction';
@@ -73,7 +75,9 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool name.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool name.
 	 */
 	public function get_name() {
 		return __( 'Predict Customer Churn', 'mcp-ai-wpoos-pro' );
@@ -82,7 +86,9 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool description.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Tool description.
 	 */
 	public function get_description() {
 		return __( 'Identify customers at risk of churning using behavioral analysis and RFM scoring. Provides risk scores, intervention recommendations, and customer retention strategies.', 'mcp-ai-wpoos-pro' );
@@ -91,33 +97,35 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get the tool parameters schema.
 	 *
-	 * @return array
+	 * @since 1.1.0
+	 *
+	 * @return array Parameters schema.
 	 */
 	public function get_parameters_schema() {
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'min_risk_score'   => array(
+				'min_risk_score'          => array(
 					'type'        => 'integer',
 					'description' => 'Minimum churn risk score to include (0-100)',
 					'minimum'     => 0,
 					'maximum'     => 100,
 					'default'     => 50,
 				),
-				'lookback_days'    => array(
+				'lookback_days'           => array(
 					'type'        => 'integer',
 					'description' => 'Days to analyze for behavior patterns',
 					'minimum'     => 30,
 					'maximum'     => 365,
 					'default'     => 90,
 				),
-				'customer_type'    => array(
+				'customer_type'           => array(
 					'type'        => 'string',
 					'description' => 'Type of customers: all, high_value, regular, new',
 					'enum'        => array( 'all', 'high_value', 'regular', 'new' ),
 					'default'     => 'all',
 				),
-				'limit'            => array(
+				'limit'                   => array(
 					'type'        => 'integer',
 					'description' => 'Maximum number of at-risk customers to return',
 					'minimum'     => 1,
@@ -137,7 +145,9 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get required capability.
 	 *
-	 * @return string
+	 * @since 1.1.0
+	 *
+	 * @return string Required capability.
 	 */
 	public function get_required_capability() {
 		return 'manage_options';
@@ -146,7 +156,9 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get capability flags.
 	 *
-	 * @return array
+	 * @since 1.1.0
+	 *
+	 * @return array Capability flags.
 	 */
 	public function get_capability_flags() {
 		return array(
@@ -159,16 +171,18 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Execute the tool.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 * @return array|WP_Error Tool result or error.
 	 */
 	public function execute( $arguments, $context ) {
 		// Parse arguments.
-		$min_risk_score   = isset( $arguments['min_risk_score'] ) ? absint( $arguments['min_risk_score'] ) : 50;
-		$lookback_days    = isset( $arguments['lookback_days'] ) ? absint( $arguments['lookback_days'] ) : 90;
-		$customer_type    = ! empty( $arguments['customer_type'] ) ? sanitize_text_field( $arguments['customer_type'] ) : 'all';
-		$limit            = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
+		$min_risk_score          = isset( $arguments['min_risk_score'] ) ? absint( $arguments['min_risk_score'] ) : 50;
+		$lookback_days           = isset( $arguments['lookback_days'] ) ? absint( $arguments['lookback_days'] ) : 90;
+		$customer_type           = ! empty( $arguments['customer_type'] ) ? sanitize_text_field( $arguments['customer_type'] ) : 'all';
+		$limit                   = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
 		$include_recommendations = ! isset( $arguments['include_recommendations'] ) || $arguments['include_recommendations'];
 
 		// Validate parameters.
@@ -250,6 +264,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get customers with activity data.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param int    $lookback_days Days to look back.
 	 * @param string $customer_type Customer type filter.
 	 * @return array|WP_Error Customer data or error.
@@ -257,7 +273,7 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	private function get_customers_with_activity( $lookback_days, $customer_type ) {
 		global $wpdb;
 
-		$cutoff_date = date( 'Y-m-d', strtotime( "-{$lookback_days} days" ) );
+		$cutoff_date = gmdate( 'Y-m-d', strtotime( "-{$lookback_days} days" ) );
 
 		// Get customers with orders.
 		$query = "
@@ -281,13 +297,13 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Add customer type filter.
 		if ( 'high_value' === $customer_type ) {
-			$query .= " AND CAST(pm.meta_value AS DECIMAL(10,2)) > 500";
+			$query .= ' AND CAST(pm.meta_value AS DECIMAL(10,2)) > 500';
 		} elseif ( 'new' === $customer_type ) {
-			$new_customer_date = date( 'Y-m-d', strtotime( '-6 months' ) );
-			$query .= $wpdb->prepare( " AND p.post_date >= %s", $new_customer_date );
+			$new_customer_date = gmdate( 'Y-m-d', strtotime( '-6 months' ) );
+			$query            .= $wpdb->prepare( ' AND p.post_date >= %s', $new_customer_date );
 		}
 
-		$query .= " GROUP BY user_id HAVING total_orders >= 2 ORDER BY last_order_date DESC";
+		$query .= ' GROUP BY user_id HAVING total_orders >= 2 ORDER BY last_order_date DESC';
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$results = $wpdb->get_results( $wpdb->prepare( $query, $cutoff_date ), ARRAY_A );
@@ -302,6 +318,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Calculate churn risk score (0-100).
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param array $customer      Customer data.
 	 * @param int   $lookback_days Days analyzed.
 	 * @return int Risk score.
@@ -312,14 +330,14 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Recency factor (0-40 points).
 		$days_since_order = ( time() - strtotime( $customer['last_order_date'] ) ) / DAY_IN_SECONDS;
 		$recency_score    = min( 40, ( $days_since_order / $lookback_days ) * 40 );
-		$score += $recency_score;
+		$score           += $recency_score;
 
 		// Frequency decline factor (0-30 points).
 		$customer_lifetime_days = ( time() - strtotime( $customer['first_order_date'] ) ) / DAY_IN_SECONDS;
 		$expected_frequency     = max( 1, ( $customer['total_orders'] / $customer_lifetime_days ) * $lookback_days );
 		$actual_frequency       = intval( $customer['recent_orders'] );
 		$frequency_decline      = max( 0, min( 30, ( ( $expected_frequency - $actual_frequency ) / $expected_frequency ) * 30 ) );
-		$score += $frequency_decline;
+		$score                 += $frequency_decline;
 
 		// Engagement decline factor (0-20 points).
 		if ( $customer['recent_orders'] == 0 ) {
@@ -342,6 +360,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Get risk level label.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param int $score Risk score.
 	 * @return string Risk level.
 	 */
@@ -359,6 +379,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Identify specific risk factors.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $customer      Customer data.
 	 * @param int   $lookback_days Days analyzed.
@@ -395,6 +417,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * Generate intervention recommendations.
+	 *
+	 * @since 1.1.0
 	 *
 	 * @param array $customer Customer data.
 	 * @return array Recommendations.
@@ -457,6 +481,8 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 	 * Calculate summary statistics.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param array $at_risk_customers At-risk customers.
 	 * @param int   $total_customers   Total customers analyzed.
 	 * @return array Summary data.
@@ -472,7 +498,7 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 		$total_risk_value = 0;
 
 		foreach ( $at_risk_customers as $customer ) {
-			$risk_levels[ $customer['risk_level'] ]++;
+			++$risk_levels[ $customer['risk_level'] ];
 			$total_risk_value += floatval( $customer['total_spent'] );
 		}
 
@@ -481,11 +507,11 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 			: 0;
 
 		return array(
-			'total_at_risk'      => count( $at_risk_customers ),
-			'total_analyzed'     => $total_customers,
-			'churn_rate'         => $total_customers > 0 ? round( ( count( $at_risk_customers ) / $total_customers ) * 100, 2 ) : 0,
-			'risk_levels'        => $risk_levels,
-			'avg_risk_score'     => round( $avg_risk_score, 2 ),
+			'total_at_risk'             => count( $at_risk_customers ),
+			'total_analyzed'            => $total_customers,
+			'churn_rate'                => $total_customers > 0 ? round( ( count( $at_risk_customers ) / $total_customers ) * 100, 2 ) : 0,
+			'risk_levels'               => $risk_levels,
+			'avg_risk_score'            => round( $avg_risk_score, 2 ),
 			'potential_revenue_at_risk' => round( $total_risk_value, 2 ),
 		);
 	}

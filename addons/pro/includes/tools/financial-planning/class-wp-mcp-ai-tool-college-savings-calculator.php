@@ -95,45 +95,45 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'child_age'             => array(
+				'child_age'              => array(
 					'type'        => 'integer',
 					'description' => __( 'Child\'s current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 17,
 				),
-				'college_start_age'     => array(
+				'college_start_age'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Age child will start college', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 17,
 					'maximum'     => 25,
 					'default'     => 18,
 				),
-				'school_type'           => array(
+				'school_type'            => array(
 					'type'        => 'string',
 					'description' => __( 'Type of school', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'public_in_state', 'public_out_of_state', 'private', 'community_college' ),
 					'default'     => 'public_in_state',
 				),
-				'years_of_college'      => array(
+				'years_of_college'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of college years to fund', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 6,
 					'default'     => 4,
 				),
-				'current_savings'       => array(
+				'current_savings'        => array(
 					'type'        => 'number',
 					'description' => __( 'Current 529 plan balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'monthly_contribution'  => array(
+				'monthly_contribution'   => array(
 					'type'        => 'number',
 					'description' => __( 'Current monthly contribution', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'expected_return_rate'  => array(
+				'expected_return_rate'   => array(
 					'type'        => 'number',
 					'description' => __( 'Expected annual investment return (as percentage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -147,7 +147,7 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 					'maximum'     => 15,
 					'default'     => 5,
 				),
-				'coverage_percentage'   => array(
+				'coverage_percentage'    => array(
 					'type'        => 'number',
 					'description' => __( 'Percentage of costs to cover (e.g., 100 for full, 50 for half)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -214,10 +214,10 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 		}
 
 		$annual_costs_2024 = array(
-			'public_in_state'      => 27940,
-			'public_out_of_state'  => 45240,
-			'private'              => 60420,
-			'community_college'    => 14000,
+			'public_in_state'     => 27940,
+			'public_out_of_state' => 45240,
+			'private'             => 60420,
+			'community_college'   => 14000,
 		);
 
 		$current_annual_cost = isset( $annual_costs_2024[ $school_type ] ) ? $annual_costs_2024[ $school_type ] : 27940;
@@ -226,14 +226,14 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 		$future_annual_cost = $current_annual_cost * pow( 1 + ( $tuition_inflation / 100 ), $years_until_college );
 		$total_college_cost = 0;
 		for ( $year = 0; $year < $years_of_college; $year++ ) {
-			$cost_this_year = $current_annual_cost * pow( 1 + ( $tuition_inflation / 100 ), $years_until_college + $year );
+			$cost_this_year      = $current_annual_cost * pow( 1 + ( $tuition_inflation / 100 ), $years_until_college + $year );
 			$total_college_cost += $cost_this_year;
 		}
 
 		$target_savings = ( $total_college_cost * $coverage_percentage ) / 100;
 
-		$return_decimal = $expected_return / 100;
-		$monthly_return = $return_decimal / 12;
+		$return_decimal       = $expected_return / 100;
+		$monthly_return       = $return_decimal / 12;
 		$months_until_college = $years_until_college * 12;
 
 		$future_value_current = $current_savings * pow( 1 + $return_decimal, $years_until_college );
@@ -244,7 +244,7 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 		}
 
 		$projected_savings = $future_value_current + $future_value_contributions;
-		$shortfall = $target_savings - $projected_savings;
+		$shortfall         = $target_savings - $projected_savings;
 
 		$additional_monthly_needed = 0;
 		if ( $shortfall > 0 && $months_until_college > 0 && $monthly_return > 0 ) {
@@ -254,22 +254,22 @@ class WP_MCP_AI_Tool_College_Savings_Calculator implements WP_MCP_AI_Tool_Interf
 		$funding_percentage = $target_savings > 0 ? ( $projected_savings / $target_savings ) * 100 : 0;
 
 		return array(
-			'success'                    => true,
-			'child_age'                  => $child_age,
-			'years_until_college'        => $years_until_college,
-			'school_type'                => $school_type,
-			'current_annual_cost'        => round( $current_annual_cost, 2 ),
-			'future_annual_cost'         => round( $future_annual_cost, 2 ),
-			'total_college_cost'         => round( $total_college_cost, 2 ),
-			'target_savings'             => round( $target_savings, 2 ),
-			'current_savings'            => $current_savings,
-			'projected_savings'          => round( $projected_savings, 2 ),
-			'funding_percentage'         => round( $funding_percentage, 1 ),
-			'shortfall'                  => round( max( 0, $shortfall ), 2 ),
-			'monthly_contribution'       => $monthly_contribution,
-			'additional_monthly_needed'  => round( max( 0, $additional_monthly_needed ), 2 ),
-			'recommended_monthly'        => round( $monthly_contribution + max( 0, $additional_monthly_needed ), 2 ),
-			'message'                    => sprintf(
+			'success'                   => true,
+			'child_age'                 => $child_age,
+			'years_until_college'       => $years_until_college,
+			'school_type'               => $school_type,
+			'current_annual_cost'       => round( $current_annual_cost, 2 ),
+			'future_annual_cost'        => round( $future_annual_cost, 2 ),
+			'total_college_cost'        => round( $total_college_cost, 2 ),
+			'target_savings'            => round( $target_savings, 2 ),
+			'current_savings'           => $current_savings,
+			'projected_savings'         => round( $projected_savings, 2 ),
+			'funding_percentage'        => round( $funding_percentage, 1 ),
+			'shortfall'                 => round( max( 0, $shortfall ), 2 ),
+			'monthly_contribution'      => $monthly_contribution,
+			'additional_monthly_needed' => round( max( 0, $additional_monthly_needed ), 2 ),
+			'recommended_monthly'       => round( $monthly_contribution + max( 0, $additional_monthly_needed ), 2 ),
+			'message'                   => sprintf(
 				/* translators: 1: Target savings, 2: Total cost */
 				__( 'Target savings: $%1$s to cover %3$s%% of estimated $%2$s total cost.', 'mcp-ai-wpoos-pro' ),
 				number_format( $target_savings, 2 ),

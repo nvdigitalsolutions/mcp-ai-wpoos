@@ -127,18 +127,18 @@ class WP_MCP_AI_Calendar_Booking_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_appointment'              => __( 'Create Appointment', 'mcp-ai-wpoos-pro' ),
-			'update_appointment'              => __( 'Update Appointment', 'mcp-ai-wpoos-pro' ),
-			'cancel_appointment'              => __( 'Cancel Appointment', 'mcp-ai-wpoos-pro' ),
-			'check_availability'              => __( 'Check Availability', 'mcp-ai-wpoos-pro' ),
-			'set_availability_schedule'       => __( 'Set Availability Schedule', 'mcp-ai-wpoos-pro' ),
-			'block_time_slot'                 => __( 'Block Time Slot', 'mcp-ai-wpoos-pro' ),
-			'sync_google_calendar'            => __( 'Sync Google Calendar', 'mcp-ai-wpoos-pro' ),
-			'sync_outlook_calendar'           => __( 'Sync Outlook Calendar', 'mcp-ai-wpoos-pro' ),
-			'send_booking_reminder'           => __( 'Send Booking Reminder', 'mcp-ai-wpoos-pro' ),
-			'manage_resources'                => __( 'Manage Resources', 'mcp-ai-wpoos-pro' ),
-			'generate_booking_report'         => __( 'Generate Booking Report', 'mcp-ai-wpoos-pro' ),
-			'export_calendar_ical'            => __( 'Export Calendar (iCal)', 'mcp-ai-wpoos-pro' ),
+			'create_appointment'        => __( 'Create Appointment', 'mcp-ai-wpoos-pro' ),
+			'update_appointment'        => __( 'Update Appointment', 'mcp-ai-wpoos-pro' ),
+			'cancel_appointment'        => __( 'Cancel Appointment', 'mcp-ai-wpoos-pro' ),
+			'check_availability'        => __( 'Check Availability', 'mcp-ai-wpoos-pro' ),
+			'set_availability_schedule' => __( 'Set Availability Schedule', 'mcp-ai-wpoos-pro' ),
+			'block_time_slot'           => __( 'Block Time Slot', 'mcp-ai-wpoos-pro' ),
+			'sync_google_calendar'      => __( 'Sync Google Calendar', 'mcp-ai-wpoos-pro' ),
+			'sync_outlook_calendar'     => __( 'Sync Outlook Calendar', 'mcp-ai-wpoos-pro' ),
+			'send_booking_reminder'     => __( 'Send Booking Reminder', 'mcp-ai-wpoos-pro' ),
+			'manage_resources'          => __( 'Manage Resources', 'mcp-ai-wpoos-pro' ),
+			'generate_booking_report'   => __( 'Generate Booking Report', 'mcp-ai-wpoos-pro' ),
+			'export_calendar_ical'      => __( 'Export Calendar (iCal)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

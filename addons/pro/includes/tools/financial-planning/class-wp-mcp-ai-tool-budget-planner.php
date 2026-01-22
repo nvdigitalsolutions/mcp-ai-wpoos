@@ -95,54 +95,54 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'           => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'create', 'update', 'track', 'suggest' ),
 					'default'     => 'create',
 				),
-				'monthly_income'   => array(
+				'monthly_income' => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly after-tax income', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'categories'       => array(
+				'categories'     => array(
 					'type'        => 'array',
 					'description' => __( 'Budget categories with allocations', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'name'     => array(
+							'name'   => array(
 								'type'        => 'string',
 								'description' => __( 'Category name', 'mcp-ai-wpoos-pro' ),
 							),
-							'amount'   => array(
+							'amount' => array(
 								'type'        => 'number',
 								'description' => __( 'Budgeted amount', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 							),
-							'type'     => array(
+							'type'   => array(
 								'type'        => 'string',
 								'description' => __( 'Category type', 'mcp-ai-wpoos-pro' ),
 								'enum'        => array( 'needs', 'wants', 'savings' ),
 								'default'     => 'needs',
 							),
-							'spent'    => array(
+							'spent'  => array(
 								'type'        => 'number',
 								'description' => __( 'Amount spent (for tracking)', 'mcp-ai-wpoos-pro' ),
 								'minimum'     => 0,
 								'default'     => 0,
 							),
 						),
-						'required' => array( 'name', 'amount' ),
+						'required'   => array( 'name', 'amount' ),
 					),
 				),
-				'use_50_30_20'     => array(
+				'use_50_30_20'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use 50/30/20 rule for suggestions', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'savings_goal'     => array(
+				'savings_goal'   => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly savings goal', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -303,7 +303,7 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			// Custom suggestion based on savings goal.
 			$remaining = $monthly_income;
 			if ( $savings_goal > 0 ) {
-				$remaining -= $savings_goal;
+				$remaining             -= $savings_goal;
 				$suggested_categories[] = array(
 					'name'   => __( 'Savings/Investments', 'mcp-ai-wpoos-pro' ),
 					'amount' => round( $savings_goal, 2 ),
@@ -347,13 +347,13 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$total_suggested = array_sum( array_column( $suggested_categories, 'amount' ) );
 
 		return array(
-			'success'               => true,
-			'monthly_income'        => $monthly_income,
-			'suggested_categories'  => $suggested_categories,
-			'total_budgeted'        => round( $total_suggested, 2 ),
-			'remaining'             => round( $monthly_income - $total_suggested, 2 ),
-			'rule_used'             => $use_50_30_20 ? '50/30/20' : 'custom',
-			'message'               => __( 'Budget suggestion created based on your income and preferences.', 'mcp-ai-wpoos-pro' ),
+			'success'              => true,
+			'monthly_income'       => $monthly_income,
+			'suggested_categories' => $suggested_categories,
+			'total_budgeted'       => round( $total_suggested, 2 ),
+			'remaining'            => round( $monthly_income - $total_suggested, 2 ),
+			'rule_used'            => $use_50_30_20 ? '50/30/20' : 'custom',
+			'message'              => __( 'Budget suggestion created based on your income and preferences.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -371,10 +371,10 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$under_budget   = array();
 
 		foreach ( $categories as &$category ) {
-			$category['name']   = sanitize_text_field( $category['name'] );
-			$category['amount'] = floatval( $category['amount'] );
-			$category['spent']  = isset( $category['spent'] ) ? floatval( $category['spent'] ) : 0;
-			$category['variance'] = $category['spent'] - $category['amount'];
+			$category['name']            = sanitize_text_field( $category['name'] );
+			$category['amount']          = floatval( $category['amount'] );
+			$category['spent']           = isset( $category['spent'] ) ? floatval( $category['spent'] ) : 0;
+			$category['variance']        = $category['spent'] - $category['amount'];
 			$category['percentage_used'] = $category['amount'] > 0 ? round( $category['spent'] / $category['amount'] * 100, 2 ) : 0;
 
 			$total_budgeted += $category['amount'];
@@ -455,12 +455,12 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$savings_percentage = $monthly_income > 0 ? round( $savings_total / $monthly_income * 100, 2 ) : 0;
 
 		return array(
-			'success'            => true,
-			'monthly_income'     => $monthly_income,
-			'total_budgeted'     => round( $total_budgeted, 2 ),
-			'remaining'          => round( $remaining, 2 ),
-			'categories'         => $categories,
-			'breakdown'          => array(
+			'success'        => true,
+			'monthly_income' => $monthly_income,
+			'total_budgeted' => round( $total_budgeted, 2 ),
+			'remaining'      => round( $remaining, 2 ),
+			'categories'     => $categories,
+			'breakdown'      => array(
 				'needs'   => array(
 					'amount'     => round( $needs_total, 2 ),
 					'percentage' => $needs_percentage,
@@ -474,8 +474,8 @@ class WP_MCP_AI_Tool_Budget_Planner implements WP_MCP_AI_Tool_Interface, WP_MCP_
 					'percentage' => $savings_percentage,
 				),
 			),
-			'is_balanced'        => abs( $remaining ) < 0.01,
-			'message'            => abs( $remaining ) < 0.01
+			'is_balanced'    => abs( $remaining ) < 0.01,
+			'message'        => abs( $remaining ) < 0.01
 				? __( 'Budget created successfully with all income allocated.', 'mcp-ai-wpoos-pro' )
 				: sprintf(
 					/* translators: %s: Remaining amount */

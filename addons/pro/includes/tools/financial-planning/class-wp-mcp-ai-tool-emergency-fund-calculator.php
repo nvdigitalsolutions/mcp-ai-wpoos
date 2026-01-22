@@ -95,24 +95,24 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'monthly_expenses'    => array(
+				'monthly_expenses'         => array(
 					'type'        => 'number',
 					'description' => __( 'Average monthly expenses', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'current_emergency_fund' => array(
+				'current_emergency_fund'   => array(
 					'type'        => 'number',
 					'description' => __( 'Current emergency fund balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'employment_type'     => array(
+				'employment_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Employment situation', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'stable', 'contractor', 'self_employed', 'single_income', 'dual_income' ),
 					'default'     => 'stable',
 				),
-				'dependents'          => array(
+				'dependents'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of dependents', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 					'description' => __( 'Has disability insurance', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'industry_stability'  => array(
+				'industry_stability'       => array(
 					'type'        => 'string',
 					'description' => __( 'Industry stability', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'stable', 'volatile', 'uncertain' ),
@@ -183,34 +183,34 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 
 		$base_months = 3;
 
-		if ( $employment_type === 'self_employed' || $employment_type === 'contractor' ) {
+		if ( 'self_employed' === $employment_type || 'contractor' === $employment_type ) {
 			$base_months += 2;
-		} elseif ( $employment_type === 'single_income' ) {
-			$base_months += 1;
+		} elseif ( 'single_income' === $employment_type ) {
+			++$base_months;
 		}
 
 		if ( $dependents > 0 ) {
-			$base_months += 1;
+			++$base_months;
 		}
 
 		if ( ! $has_disability_insurance ) {
-			$base_months += 1;
+			++$base_months;
 		}
 
-		if ( $industry_stability === 'volatile' ) {
-			$base_months += 1;
-		} elseif ( $industry_stability === 'uncertain' ) {
+		if ( 'volatile' === $industry_stability ) {
+			++$base_months;
+		} elseif ( 'uncertain' === $industry_stability ) {
 			$base_months += 2;
 		}
 
 		$recommended_months = min( 12, max( 3, $base_months ) );
-		$minimum_fund = $monthly_expenses * 3;
-		$recommended_fund = $monthly_expenses * $recommended_months;
-		$optimal_fund = $monthly_expenses * 6;
+		$minimum_fund       = $monthly_expenses * 3;
+		$recommended_fund   = $monthly_expenses * $recommended_months;
+		$optimal_fund       = $monthly_expenses * 6;
 
-		$gap = $recommended_fund - $current_emergency_fund;
+		$gap            = $recommended_fund - $current_emergency_fund;
 		$months_covered = $monthly_expenses > 0 ? $current_emergency_fund / $monthly_expenses : 0;
-		$progress_pct = $recommended_fund > 0 ? ( $current_emergency_fund / $recommended_fund ) * 100 : 0;
+		$progress_pct   = $recommended_fund > 0 ? ( $current_emergency_fund / $recommended_fund ) * 100 : 0;
 
 		$status = 'needs_building';
 		if ( $current_emergency_fund >= $recommended_fund ) {
@@ -220,10 +220,10 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$recommendations = array();
-		if ( $status === 'needs_building' ) {
+		if ( 'needs_building' === $status ) {
 			$recommendations[] = __( 'Start building your emergency fund immediately. Aim for at least 3 months of expenses.', 'mcp-ai-wpoos-pro' );
 			$recommendations[] = __( 'Set up automatic transfers to a dedicated savings account.', 'mcp-ai-wpoos-pro' );
-		} elseif ( $status === 'partially_funded' ) {
+		} elseif ( 'partially_funded' === $status ) {
 			$recommendations[] = sprintf(
 				/* translators: %d: Recommended months */
 				__( 'Continue building toward %d months of expenses for optimal protection.', 'mcp-ai-wpoos-pro' ),
@@ -237,19 +237,19 @@ class WP_MCP_AI_Tool_Emergency_Fund_Calculator implements WP_MCP_AI_Tool_Interfa
 		$recommendations[] = __( 'Review and adjust your emergency fund annually or after major life changes.', 'mcp-ai-wpoos-pro' );
 
 		return array(
-			'success'                  => true,
-			'monthly_expenses'         => $monthly_expenses,
-			'current_emergency_fund'   => $current_emergency_fund,
-			'minimum_fund'             => round( $minimum_fund, 2 ),
-			'recommended_fund'         => round( $recommended_fund, 2 ),
-			'optimal_fund'             => round( $optimal_fund, 2 ),
-			'recommended_months'       => $recommended_months,
-			'months_covered'           => round( $months_covered, 1 ),
-			'gap'                      => round( max( 0, $gap ), 2 ),
-			'progress_pct'             => round( $progress_pct, 1 ),
-			'status'                   => $status,
-			'recommendations'          => $recommendations,
-			'message'                  => sprintf(
+			'success'                => true,
+			'monthly_expenses'       => $monthly_expenses,
+			'current_emergency_fund' => $current_emergency_fund,
+			'minimum_fund'           => round( $minimum_fund, 2 ),
+			'recommended_fund'       => round( $recommended_fund, 2 ),
+			'optimal_fund'           => round( $optimal_fund, 2 ),
+			'recommended_months'     => $recommended_months,
+			'months_covered'         => round( $months_covered, 1 ),
+			'gap'                    => round( max( 0, $gap ), 2 ),
+			'progress_pct'           => round( $progress_pct, 1 ),
+			'status'                 => $status,
+			'recommendations'        => $recommendations,
+			'message'                => sprintf(
 				/* translators: 1: Recommended fund amount, 2: Months */
 				__( 'Build an emergency fund of $%1$s (%2$d months of expenses).', 'mcp-ai-wpoos-pro' ),
 				number_format( $recommended_fund, 2 ),

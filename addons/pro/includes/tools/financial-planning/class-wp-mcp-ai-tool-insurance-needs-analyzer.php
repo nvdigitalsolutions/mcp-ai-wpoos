@@ -95,61 +95,61 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'analysis_type'         => array(
+				'analysis_type'                => array(
 					'type'        => 'string',
 					'description' => __( 'Type of insurance analysis', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'life', 'disability', 'both' ),
 					'default'     => 'both',
 				),
-				'annual_income'         => array(
+				'annual_income'                => array(
 					'type'        => 'number',
 					'description' => __( 'Annual gross income', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'age'                   => array(
+				'age'                          => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 18,
 					'maximum'     => 80,
 				),
-				'dependents'            => array(
+				'dependents'                   => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of dependents', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'total_debt'            => array(
+				'total_debt'                   => array(
 					'type'        => 'number',
 					'description' => __( 'Total debt (excluding mortgage)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'mortgage_balance'      => array(
+				'mortgage_balance'             => array(
 					'type'        => 'number',
 					'description' => __( 'Remaining mortgage balance', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'education_costs'       => array(
+				'education_costs'              => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated future education costs for children', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'funeral_costs'         => array(
+				'funeral_costs'                => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated funeral/final expenses', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'default'     => 15000,
 				),
-				'years_income_replacement' => array(
+				'years_income_replacement'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Years of income to replace', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 30,
 					'default'     => 10,
 				),
-				'current_life_insurance' => array(
+				'current_life_insurance'       => array(
 					'type'        => 'number',
 					'description' => __( 'Current life insurance coverage', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -161,12 +161,12 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 					'minimum'     => 0,
 					'default'     => 0,
 				),
-				'has_spouse'            => array(
+				'has_spouse'                   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Has spouse/partner', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'spouse_income'         => array(
+				'spouse_income'                => array(
 					'type'        => 'number',
 					'description' => __( 'Spouse annual income', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -213,19 +213,19 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$analysis_type               = isset( $arguments['analysis_type'] ) ? sanitize_text_field( $arguments['analysis_type'] ) : 'both';
-		$annual_income               = isset( $arguments['annual_income'] ) ? floatval( $arguments['annual_income'] ) : 0;
-		$age                         = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
-		$dependents                  = isset( $arguments['dependents'] ) ? absint( $arguments['dependents'] ) : 0;
-		$total_debt                  = isset( $arguments['total_debt'] ) ? floatval( $arguments['total_debt'] ) : 0;
-		$mortgage_balance            = isset( $arguments['mortgage_balance'] ) ? floatval( $arguments['mortgage_balance'] ) : 0;
-		$education_costs             = isset( $arguments['education_costs'] ) ? floatval( $arguments['education_costs'] ) : 0;
-		$funeral_costs               = isset( $arguments['funeral_costs'] ) ? floatval( $arguments['funeral_costs'] ) : 15000;
-		$years_income_replacement    = isset( $arguments['years_income_replacement'] ) ? absint( $arguments['years_income_replacement'] ) : 10;
-		$current_life_insurance      = isset( $arguments['current_life_insurance'] ) ? floatval( $arguments['current_life_insurance'] ) : 0;
+		$analysis_type                = isset( $arguments['analysis_type'] ) ? sanitize_text_field( $arguments['analysis_type'] ) : 'both';
+		$annual_income                = isset( $arguments['annual_income'] ) ? floatval( $arguments['annual_income'] ) : 0;
+		$age                          = isset( $arguments['age'] ) ? absint( $arguments['age'] ) : 0;
+		$dependents                   = isset( $arguments['dependents'] ) ? absint( $arguments['dependents'] ) : 0;
+		$total_debt                   = isset( $arguments['total_debt'] ) ? floatval( $arguments['total_debt'] ) : 0;
+		$mortgage_balance             = isset( $arguments['mortgage_balance'] ) ? floatval( $arguments['mortgage_balance'] ) : 0;
+		$education_costs              = isset( $arguments['education_costs'] ) ? floatval( $arguments['education_costs'] ) : 0;
+		$funeral_costs                = isset( $arguments['funeral_costs'] ) ? floatval( $arguments['funeral_costs'] ) : 15000;
+		$years_income_replacement     = isset( $arguments['years_income_replacement'] ) ? absint( $arguments['years_income_replacement'] ) : 10;
+		$current_life_insurance       = isset( $arguments['current_life_insurance'] ) ? floatval( $arguments['current_life_insurance'] ) : 0;
 		$current_disability_insurance = isset( $arguments['current_disability_insurance'] ) ? floatval( $arguments['current_disability_insurance'] ) : 0;
-		$has_spouse                  = isset( $arguments['has_spouse'] ) ? (bool) $arguments['has_spouse'] : false;
-		$spouse_income               = isset( $arguments['spouse_income'] ) ? floatval( $arguments['spouse_income'] ) : 0;
+		$has_spouse                   = isset( $arguments['has_spouse'] ) ? (bool) $arguments['has_spouse'] : false;
+		$spouse_income                = isset( $arguments['spouse_income'] ) ? floatval( $arguments['spouse_income'] ) : 0;
 
 		if ( $annual_income <= 0 ) {
 			return new WP_Error( 'invalid_income', __( 'Annual income must be greater than zero.', 'mcp-ai-wpoos-pro' ) );
@@ -233,23 +233,23 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 
 		$result = array( 'success' => true );
 
-		if ( $analysis_type === 'life' || $analysis_type === 'both' ) {
-			$debt_component = $total_debt;
-			$income_component = $annual_income * $years_income_replacement;
-			$mortgage_component = $mortgage_balance;
+		if ( 'life' === $analysis_type || 'both' === $analysis_type ) {
+			$debt_component      = $total_debt;
+			$income_component    = $annual_income * $years_income_replacement;
+			$mortgage_component  = $mortgage_balance;
 			$education_component = $education_costs;
 
 			$recommended_life_coverage = $debt_component + $income_component + $mortgage_component + $education_component + $funeral_costs;
 
-			$life_insurance_gap = max( 0, $recommended_life_coverage - $current_life_insurance );
+			$life_insurance_gap       = max( 0, $recommended_life_coverage - $current_life_insurance );
 			$life_coverage_percentage = $recommended_life_coverage > 0 ? ( $current_life_insurance / $recommended_life_coverage ) * 100 : 0;
 
 			$result['life_insurance'] = array(
-				'recommended_coverage'    => round( $recommended_life_coverage, 2 ),
-				'current_coverage'        => $current_life_insurance,
-				'coverage_gap'            => round( $life_insurance_gap, 2 ),
-				'coverage_percentage'     => round( $life_coverage_percentage, 1 ),
-				'breakdown'               => array(
+				'recommended_coverage' => round( $recommended_life_coverage, 2 ),
+				'current_coverage'     => $current_life_insurance,
+				'coverage_gap'         => round( $life_insurance_gap, 2 ),
+				'coverage_percentage'  => round( $life_coverage_percentage, 1 ),
+				'breakdown'            => array(
 					'debt'      => round( $debt_component, 2 ),
 					'income'    => round( $income_component, 2 ),
 					'mortgage'  => round( $mortgage_component, 2 ),
@@ -259,9 +259,9 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		if ( $analysis_type === 'disability' || $analysis_type === 'both' ) {
-			$recommended_monthly_benefit = ( $annual_income * 0.60 ) / 12;
-			$disability_gap = max( 0, $recommended_monthly_benefit - $current_disability_insurance );
+		if ( 'disability' === $analysis_type || 'both' === $analysis_type ) {
+			$recommended_monthly_benefit    = ( $annual_income * 0.60 ) / 12;
+			$disability_gap                 = max( 0, $recommended_monthly_benefit - $current_disability_insurance );
 			$disability_coverage_percentage = $recommended_monthly_benefit > 0 ? ( $current_disability_insurance / $recommended_monthly_benefit ) * 100 : 0;
 
 			$result['disability_insurance'] = array(
@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Insurance_Needs_Analyzer implements WP_MCP_AI_Tool_Interfac
 		$recommendations[] = __( 'Consider term life insurance for affordable coverage during working years.', 'mcp-ai-wpoos-pro' );
 
 		$result['recommendations'] = $recommendations;
-		$result['disclaimer'] = __( 'This analysis provides general guidance only and does not constitute insurance advice. Insurance needs are highly individual. Consult with a licensed insurance professional for personalized recommendations.', 'mcp-ai-wpoos-pro' );
+		$result['disclaimer']      = __( 'This analysis provides general guidance only and does not constitute insurance advice. Insurance needs are highly individual. Consult with a licensed insurance professional for personalized recommendations.', 'mcp-ai-wpoos-pro' );
 
 		$message_parts = array();
 		if ( isset( $result['life_insurance'] ) ) {

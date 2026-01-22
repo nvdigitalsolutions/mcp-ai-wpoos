@@ -26,13 +26,15 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/financial-planning/
+	// Tools are located in: addons/pro/includes/tools/financial-planning/.
 }
 
 /**
  * Enqueue financial planner toolkit admin styles.
  *
- * @param string $hook Current admin page hook.
+ * @since 1.1.0
+ *
+ * @param string $hook Current admin page hook (unused).
  */
 function wp_mcp_ai_enqueue_financial_planner_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled.

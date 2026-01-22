@@ -136,18 +136,18 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_image_ai'               => __( 'Generate Image (AI)', 'mcp-ai-wpoos-pro' ),
-			'edit_image_ai'                   => __( 'Edit Image (AI)', 'mcp-ai-wpoos-pro' ),
-			'remove_background'               => __( 'Remove Background', 'mcp-ai-wpoos-pro' ),
-			'upscale_image'                   => __( 'Upscale Image', 'mcp-ai-wpoos-pro' ),
-			'enhance_image_quality'           => __( 'Enhance Image Quality', 'mcp-ai-wpoos-pro' ),
-			'apply_style_transfer'            => __( 'Apply Style Transfer', 'mcp-ai-wpoos-pro' ),
-			'batch_process_images'            => __( 'Batch Process Images', 'mcp-ai-wpoos-pro' ),
-			'convert_image_format'            => __( 'Convert Image Format', 'mcp-ai-wpoos-pro' ),
-			'optimize_for_web'                => __( 'Optimize for Web', 'mcp-ai-wpoos-pro' ),
-			'add_watermark'                   => __( 'Add Watermark', 'mcp-ai-wpoos-pro' ),
-			'crop_and_resize'                 => __( 'Crop and Resize', 'mcp-ai-wpoos-pro' ),
-			'generate_variations'             => __( 'Generate Variations', 'mcp-ai-wpoos-pro' ),
+			'generate_image_ai'     => __( 'Generate Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'edit_image_ai'         => __( 'Edit Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'remove_background'     => __( 'Remove Background', 'mcp-ai-wpoos-pro' ),
+			'upscale_image'         => __( 'Upscale Image', 'mcp-ai-wpoos-pro' ),
+			'enhance_image_quality' => __( 'Enhance Image Quality', 'mcp-ai-wpoos-pro' ),
+			'apply_style_transfer'  => __( 'Apply Style Transfer', 'mcp-ai-wpoos-pro' ),
+			'batch_process_images'  => __( 'Batch Process Images', 'mcp-ai-wpoos-pro' ),
+			'convert_image_format'  => __( 'Convert Image Format', 'mcp-ai-wpoos-pro' ),
+			'optimize_for_web'      => __( 'Optimize for Web', 'mcp-ai-wpoos-pro' ),
+			'add_watermark'         => __( 'Add Watermark', 'mcp-ai-wpoos-pro' ),
+			'crop_and_resize'       => __( 'Crop and Resize', 'mcp-ai-wpoos-pro' ),
+			'generate_variations'   => __( 'Generate Variations', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

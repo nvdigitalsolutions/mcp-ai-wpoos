@@ -97,48 +97,48 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'current_age'            => array(
+				'current_age'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Current age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 18,
 					'maximum'     => 80,
 				),
-				'retirement_age'         => array(
+				'retirement_age'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Planned retirement age', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 50,
 					'maximum'     => 80,
 				),
-				'current_savings'        => array(
+				'current_savings'         => array(
 					'type'        => 'number',
 					'description' => __( 'Current retirement savings', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'monthly_contribution'   => array(
+				'monthly_contribution'    => array(
 					'type'        => 'number',
 					'description' => __( 'Monthly contribution to retirement savings', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'annual_return_rate'     => array(
+				'annual_return_rate'      => array(
 					'type'        => 'number',
 					'description' => __( 'Expected annual return rate (as percentage, e.g., 7 for 7%)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 20,
 					'default'     => 7,
 				),
-				'inflation_rate'         => array(
+				'inflation_rate'          => array(
 					'type'        => 'number',
 					'description' => __( 'Expected inflation rate (as percentage, e.g., 3 for 3%)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 10,
 					'default'     => 3,
 				),
-				'desired_annual_income'  => array(
+				'desired_annual_income'   => array(
 					'type'        => 'number',
 					'description' => __( 'Desired annual retirement income (in today\'s dollars)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'life_expectancy'        => array(
+				'life_expectancy'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Expected life expectancy', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 60,
@@ -150,7 +150,7 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Include social security in calculations', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'social_security_amount' => array(
+				'social_security_amount'  => array(
 					'type'        => 'number',
 					'description' => __( 'Estimated annual social security benefits', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -200,16 +200,16 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Validate and sanitize inputs.
-		$current_age            = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
-		$retirement_age         = isset( $arguments['retirement_age'] ) ? absint( $arguments['retirement_age'] ) : 0;
-		$current_savings        = isset( $arguments['current_savings'] ) ? floatval( $arguments['current_savings'] ) : 0;
-		$monthly_contribution   = isset( $arguments['monthly_contribution'] ) ? floatval( $arguments['monthly_contribution'] ) : 0;
-		$annual_return_rate     = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 7;
-		$inflation_rate         = isset( $arguments['inflation_rate'] ) ? floatval( $arguments['inflation_rate'] ) : 3;
-		$desired_annual_income  = isset( $arguments['desired_annual_income'] ) ? floatval( $arguments['desired_annual_income'] ) : 0;
-		$life_expectancy        = isset( $arguments['life_expectancy'] ) ? absint( $arguments['life_expectancy'] ) : 85;
+		$current_age             = isset( $arguments['current_age'] ) ? absint( $arguments['current_age'] ) : 0;
+		$retirement_age          = isset( $arguments['retirement_age'] ) ? absint( $arguments['retirement_age'] ) : 0;
+		$current_savings         = isset( $arguments['current_savings'] ) ? floatval( $arguments['current_savings'] ) : 0;
+		$monthly_contribution    = isset( $arguments['monthly_contribution'] ) ? floatval( $arguments['monthly_contribution'] ) : 0;
+		$annual_return_rate      = isset( $arguments['annual_return_rate'] ) ? floatval( $arguments['annual_return_rate'] ) : 7;
+		$inflation_rate          = isset( $arguments['inflation_rate'] ) ? floatval( $arguments['inflation_rate'] ) : 3;
+		$desired_annual_income   = isset( $arguments['desired_annual_income'] ) ? floatval( $arguments['desired_annual_income'] ) : 0;
+		$life_expectancy         = isset( $arguments['life_expectancy'] ) ? absint( $arguments['life_expectancy'] ) : 85;
 		$include_social_security = isset( $arguments['include_social_security'] ) ? (bool) $arguments['include_social_security'] : false;
-		$social_security_amount = isset( $arguments['social_security_amount'] ) ? floatval( $arguments['social_security_amount'] ) : 0;
+		$social_security_amount  = isset( $arguments['social_security_amount'] ) ? floatval( $arguments['social_security_amount'] ) : 0;
 
 		// Validate inputs.
 		if ( $current_age < 18 || $current_age > 80 ) {
@@ -246,7 +246,7 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 		$future_value_current_savings = $current_savings * pow( 1 + $annual_return_decimal, $years_to_retirement );
 
 		// Calculate future value of monthly contributions.
-		$months_to_retirement = $years_to_retirement * 12;
+		$months_to_retirement       = $years_to_retirement * 12;
 		$future_value_contributions = 0;
 		if ( $monthly_contribution > 0 && $monthly_return > 0 ) {
 			$future_value_contributions = $monthly_contribution * ( ( pow( 1 + $monthly_return, $months_to_retirement ) - 1 ) / $monthly_return );
@@ -284,7 +284,7 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 		$projections = array();
 		$balance     = $current_savings;
 		for ( $year = 1; $year <= $years_to_retirement; $year++ ) {
-			$balance = ( $balance + ( $monthly_contribution * 12 ) ) * ( 1 + $annual_return_decimal );
+			$balance       = ( $balance + ( $monthly_contribution * 12 ) ) * ( 1 + $annual_return_decimal );
 			$projections[] = array(
 				'year'    => $current_age + $year,
 				'age'     => $current_age + $year,
@@ -293,26 +293,26 @@ class WP_MCP_AI_Tool_Retirement_Calculator implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return array(
-			'success'                      => true,
-			'current_age'                  => $current_age,
-			'retirement_age'               => $retirement_age,
-			'years_to_retirement'          => $years_to_retirement,
-			'retirement_years'             => $retirement_years,
-			'current_savings'              => $current_savings,
-			'monthly_contribution'         => $monthly_contribution,
-			'total_at_retirement'          => round( $total_at_retirement, 2 ),
-			'required_nest_egg'            => round( $required_nest_egg, 2 ),
-			'shortfall'                    => round( $shortfall, 2 ),
-			'surplus'                      => round( -$shortfall, 2 ),
-			'is_on_track'                  => $shortfall <= 0,
-			'additional_monthly_needed'    => round( max( 0, $additional_monthly_needed ), 2 ),
-			'inflation_adjusted_income'    => round( $inflation_adjusted_income, 2 ),
-			'desired_annual_income'        => $desired_annual_income,
-			'annual_return_rate'           => $annual_return_rate,
-			'inflation_rate'               => $inflation_rate,
-			'projections'                  => $projections,
-			'disclaimer'                   => __( 'This is an educational calculation only. Actual investment returns vary. Consult a licensed financial advisor for personalized advice.', 'mcp-ai-wpoos-pro' ),
-			'message'                      => $shortfall <= 0
+			'success'                   => true,
+			'current_age'               => $current_age,
+			'retirement_age'            => $retirement_age,
+			'years_to_retirement'       => $years_to_retirement,
+			'retirement_years'          => $retirement_years,
+			'current_savings'           => $current_savings,
+			'monthly_contribution'      => $monthly_contribution,
+			'total_at_retirement'       => round( $total_at_retirement, 2 ),
+			'required_nest_egg'         => round( $required_nest_egg, 2 ),
+			'shortfall'                 => round( $shortfall, 2 ),
+			'surplus'                   => round( -$shortfall, 2 ),
+			'is_on_track'               => $shortfall <= 0,
+			'additional_monthly_needed' => round( max( 0, $additional_monthly_needed ), 2 ),
+			'inflation_adjusted_income' => round( $inflation_adjusted_income, 2 ),
+			'desired_annual_income'     => $desired_annual_income,
+			'annual_return_rate'        => $annual_return_rate,
+			'inflation_rate'            => $inflation_rate,
+			'projections'               => $projections,
+			'disclaimer'                => __( 'This is an educational calculation only. Actual investment returns vary. Consult a licensed financial advisor for personalized advice.', 'mcp-ai-wpoos-pro' ),
+			'message'                   => $shortfall <= 0
 				? sprintf(
 					/* translators: %s: Surplus amount */
 					__( 'You are on track! Projected surplus of $%s at retirement.', 'mcp-ai-wpoos-pro' ),
