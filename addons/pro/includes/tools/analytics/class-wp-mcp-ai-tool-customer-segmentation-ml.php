@@ -215,6 +215,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+	/**
+	 * Collect customer data for segmentation.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param int $lookback_days Number of days to look back.
+	 * @param int $min_orders    Minimum number of orders required.
+	 * @return array Customer data.
+	 */
 	private function collect_customer_data( $lookback_days, $min_orders ) {
 		global $wpdb;
 
@@ -244,6 +253,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $wpdb->get_results( $wpdb->prepare( $query, $cutoff_date, $min_orders ), ARRAY_A );
 	}
 
+	/**
+	 * Calculate features for clustering.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $customers Customer data.
+	 * @param string $method    Segmentation method.
+	 * @return array Features for each customer.
+	 */
 	private function calculate_features( $customers, $method ) {
 		$features = array();
 
@@ -267,6 +285,14 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $this->normalize_features( $features );
 	}
 
+	/**
+	 * Normalize features for clustering.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $features Feature vectors.
+	 * @return array Normalized features.
+	 */
 	private function normalize_features( $features ) {
 		if ( empty( $features ) ) {
 			return array();
@@ -289,6 +315,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $normalized;
 	}
 
+	/**
+	 * Perform K-means clustering.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $features Feature vectors.
+	 * @param int   $k        Number of clusters.
+	 * @return array Cluster assignments.
+	 */
 	private function perform_clustering( $features, $k ) {
 		if ( empty( $features ) || $k < 2 ) {
 			return array();
@@ -359,6 +394,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $assignments;
 	}
 
+	/**
+	 * Calculate Euclidean distance between two points.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $point1 First point.
+	 * @param array $point2 Second point.
+	 * @return float Distance.
+	 */
 	private function euclidean_distance( $point1, $point2 ) {
 		$sum        = 0;
 		$point_size = count( $point1 );
@@ -368,6 +412,14 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return sqrt( $sum );
 	}
 
+	/**
+	 * Calculate centroid of a cluster.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $points Points in the cluster.
+	 * @return array Centroid coordinates.
+	 */
 	private function calculate_centroid( $points ) {
 		$num_features = count( $points[0] );
 		$centroid     = array_fill( 0, $num_features, 0 );
@@ -386,6 +438,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $centroid;
 	}
 
+	/**
+	 * Profile customer segments.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $segments  Segment assignments.
+	 * @param array $customers Customer data.
+	 * @return array Segment profiles.
+	 */
 	private function profile_segments( $segments, $customers ) {
 		$customer_map = array();
 		foreach ( $customers as $customer ) {
@@ -436,6 +497,15 @@ class WP_MCP_AI_Tool_Customer_Segmentation_ML implements WP_MCP_AI_Tool_Interfac
 		return $profiles;
 	}
 
+	/**
+	 * Generate human-readable segment label.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param float $avg_spent  Average spend per customer.
+	 * @param float $avg_orders Average orders per customer.
+	 * @return string Segment label.
+	 */
 	private function generate_segment_label( $avg_spent, $avg_orders ) {
 		if ( $avg_spent > 500 && $avg_orders > 5 ) {
 			return 'VIP Champions';

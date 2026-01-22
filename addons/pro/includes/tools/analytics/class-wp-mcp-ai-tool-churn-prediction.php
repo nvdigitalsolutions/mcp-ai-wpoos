@@ -340,15 +340,15 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 		$score                 += $frequency_decline;
 
 		// Engagement decline factor (0-20 points).
-		if ( $customer['recent_orders'] == 0 ) {
+		if ( 0 === $customer['recent_orders'] ) {
 			$score += 20;
-		} elseif ( $customer['recent_orders'] == 1 && $customer['total_orders'] > 5 ) {
+		} elseif ( 1 === $customer['recent_orders'] && $customer['total_orders'] > 5 ) {
 			$score += 10;
 		}
 
 		// Value decline factor (0-10 points).
 		$avg_order_value = $customer['total_spent'] / $customer['total_orders'];
-		if ( $avg_order_value > 100 && $customer['recent_orders'] == 0 ) {
+		if ( $avg_order_value > 100 && 0 === $customer['recent_orders'] ) {
 			$score += 10;
 		} elseif ( $avg_order_value > 50 && $customer['recent_orders'] <= 1 ) {
 			$score += 5;
@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 			$factors[] = 'inactive_for_extended_period';
 		}
 
-		if ( $customer['recent_orders'] == 0 ) {
+		if ( 0 === $customer['recent_orders'] ) {
 			$factors[] = 'no_recent_purchases';
 		}
 
@@ -404,7 +404,7 @@ class WP_MCP_AI_Tool_Churn_Prediction implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		$avg_order_value = $customer['total_spent'] / $customer['total_orders'];
-		if ( $avg_order_value > 100 && $customer['recent_orders'] == 0 ) {
+		if ( $avg_order_value > 100 && 0 === $customer['recent_orders'] ) {
 			$factors[] = 'high_value_customer_at_risk';
 		}
 

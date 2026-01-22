@@ -198,6 +198,17 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Collect analytics data based on type.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $data_type  Data type to collect.
+	 * @param string $start_date Start date.
+	 * @param string $end_date   End date.
+	 * @param int    $limit      Maximum records.
+	 * @return array|WP_Error Analytics data or error.
+	 */
 	private function collect_analytics_data( $data_type, $start_date, $end_date, $limit ) {
 		switch ( $data_type ) {
 			case 'sales':
@@ -213,6 +224,16 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		}
 	}
 
+	/**
+	 * Get sales data from database.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $start_date Start date.
+	 * @param string $end_date   End date.
+	 * @param int    $limit      Maximum records.
+	 * @return array Sales data.
+	 */
 	private function get_sales_data( $start_date, $end_date, $limit ) {
 		global $wpdb;
 
@@ -235,6 +256,16 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date, $limit ), ARRAY_A );
 	}
 
+	/**
+	 * Get customer data from database.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $start_date Start date.
+	 * @param string $end_date   End date.
+	 * @param int    $limit      Maximum records.
+	 * @return array Customer data.
+	 */
 	private function get_customers_data( $start_date, $end_date, $limit ) {
 		global $wpdb;
 
@@ -262,6 +293,16 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return $wpdb->get_results( $wpdb->prepare( $query, $start_date, $end_date, $limit ), ARRAY_A );
 	}
 
+	/**
+	 * Get product data from database.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $start_date Start date.
+	 * @param string $end_date   End date.
+	 * @param int    $limit      Maximum records.
+	 * @return array Product data.
+	 */
 	private function get_products_data( $start_date, $end_date, $limit ) {
 		$args = array(
 			'post_type'      => 'product',
@@ -299,6 +340,16 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return $data;
 	}
 
+	/**
+	 * Get traffic data placeholder.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $start_date Start date.
+	 * @param string $end_date   End date.
+	 * @param int    $limit      Maximum records.
+	 * @return array Traffic data placeholder.
+	 */
 	private function get_traffic_data( $start_date, $end_date, $limit ) {
 		// Placeholder for traffic data - would integrate with analytics plugin.
 		return array(
@@ -312,6 +363,15 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Format data based on export format.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $data   Data to format.
+	 * @param string $format Export format (json, csv, xml).
+	 * @return mixed Formatted data.
+	 */
 	private function format_data( $data, $format ) {
 		switch ( $format ) {
 			case 'csv':
@@ -324,6 +384,14 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		}
 	}
 
+	/**
+	 * Convert data to CSV format.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $data Data array.
+	 * @return string CSV formatted data.
+	 */
 	private function convert_to_csv( $data ) {
 		if ( empty( $data ) ) {
 			return '';
@@ -346,6 +414,14 @@ class WP_MCP_AI_Tool_Export_Analytics_API implements WP_MCP_AI_Tool_Interface, W
 		return $csv;
 	}
 
+	/**
+	 * Convert data to XML format.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array $data Data array.
+	 * @return string XML formatted data.
+	 */
 	private function convert_to_xml( $data ) {
 		$xml = new SimpleXMLElement( '<analytics/>' );
 

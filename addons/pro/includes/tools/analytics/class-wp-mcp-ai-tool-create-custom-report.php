@@ -238,6 +238,15 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Get template configuration with metrics and charts.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $template       Template name.
+	 * @param array  $custom_metrics Custom metrics array.
+	 * @return array Template configuration.
+	 */
 	private function get_template_config( $template, $custom_metrics = array() ) {
 		$templates = array(
 			'executive'  => array(
@@ -265,6 +274,15 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 		return isset( $templates[ $template ] ) ? $templates[ $template ] : $templates['executive'];
 	}
 
+	/**
+	 * Collect report data based on configuration.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param array  $config Report configuration.
+	 * @param string $period Reporting period.
+	 * @return array Report data.
+	 */
 	private function collect_report_data( $config, $period ) {
 		$data = array();
 
@@ -278,6 +296,14 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 		return $data;
 	}
 
+	/**
+	 * Get date ranges based on period.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $period Period type (daily, weekly, monthly, quarterly).
+	 * @return array Start and end dates.
+	 */
 	private function get_date_ranges( $period ) {
 		$end_date = current_time( 'Y-m-d' );
 
@@ -303,6 +329,15 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 		);
 	}
 
+	/**
+	 * Get data for specific metric.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $metric      Metric name.
+	 * @param array  $date_ranges Date ranges array.
+	 * @return array Metric data.
+	 */
 	private function get_metric_data( $metric, $date_ranges ) {
 		global $wpdb;
 
@@ -372,12 +407,30 @@ class WP_MCP_AI_Tool_Create_Custom_Report implements WP_MCP_AI_Tool_Interface, W
 		return array( 'value' => $result ? floatval( $result ) : 0 );
 	}
 
+	/**
+	 * Save report to database.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $report_id Report ID.
+	 * @param array  $report    Report data.
+	 * @return void
+	 */
 	private function save_report( $report_id, $report ) {
 		$reports               = get_option( 'wp_mcp_ai_custom_reports', array() );
 		$reports[ $report_id ] = $report;
 		update_option( 'wp_mcp_ai_custom_reports', $reports );
 	}
 
+	/**
+	 * Schedule report for automatic delivery.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $report_id Report ID.
+	 * @param string $schedule  Schedule frequency.
+	 * @return void
+	 */
 	private function schedule_report( $report_id, $schedule ) {
 		$intervals = array(
 			'daily'   => DAY_IN_SECONDS,
