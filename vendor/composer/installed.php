@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/optimize-plugin-packaging',
-        'version' => 'dev-copilot/optimize-plugin-packaging',
-        'reference' => 'b051629127c402db3e374f3a4cd990f61ab9c315',
+        'pretty_version' => 'dev-copilot/update-document-toolkits',
+        'version' => 'dev-copilot/update-document-toolkits',
+        'reference' => '44d8222b0edea4b53ad6d43a05d75c44940cdf7c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/optimize-plugin-packaging',
-            'version' => 'dev-copilot/optimize-plugin-packaging',
-            'reference' => 'b051629127c402db3e374f3a4cd990f61ab9c315',
+            'pretty_version' => 'dev-copilot/update-document-toolkits',
+            'version' => 'dev-copilot/update-document-toolkits',
+            'reference' => '44d8222b0edea4b53ad6d43a05d75c44940cdf7c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
