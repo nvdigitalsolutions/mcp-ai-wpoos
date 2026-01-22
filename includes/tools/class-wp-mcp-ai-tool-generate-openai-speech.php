@@ -415,6 +415,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		 */
 		$result = apply_filters( 'wp_mcp_ai_generate_openai_speech_result', $result, $arguments, $context );
 
+		// Add rendered audio HTML to the response for display in chat UI.
+		$result = $this->add_audio_html_to_response( $result );
+
 		return $result;
 	}
 
