@@ -852,59 +852,67 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
-		 * Render features footer with toolkit limit counter.
+		 * Get estimated memory requirements (in MB) for each pro toolkit.
+		 *
+		 * @return array Associative array of toolkit_key => memory_in_mb.
+		 */
+		private function get_toolkit_memory_requirements() {
+			return array(
+				'enable_quiz_system'                   => 32,   // 7 tools, database operations.
+				'enable_media_toolkit'                 => 48,   // Template management, image processing.
+				'enable_document_generation_toolkit'   => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
+				'enable_project_management'            => 64,   // 13 tools, complex data structures.
+				'enable_places_management'             => 56,   // 6+ tools, Google Maps API, geocoding.
+				'enable_ai_cpt_management'             => 24,   // Metabox integration, lightweight.
+				'enable_eca_management'                => 40,   // 5+ tools, iSAMS integration.
+				'enable_health_wellness_management'    => 128,  // 30+ tools, secure health data storage.
+				'enable_cloudways_toolkit'             => 192,  // 58+ tools, extensive server management.
+				'enable_ecommerce_toolkit'             => 80,   // 20 tools, WooCommerce integration.
+				'enable_social_media_toolkit'          => 64,   // 15 tools, multi-platform APIs.
+				'enable_analytics_toolkit'             => 96,   // 12 tools, data warehouse integrations.
+				'enable_multilingual_toolkit'          => 72,   // 10 tools, translation memory.
+				'enable_video_production_toolkit'      => 256,  // 12 tools, FFmpeg, video processing.
+				'enable_financial_planner_toolkit'     => 80,   // 24 tools, Plaid API integration.
+				'enable_calendar_booking_toolkit'      => 64,   // 12-15 tools, calendar sync.
+				'enable_dj_management_toolkit'         => 72,   // 15-18 tools, music APIs, contracts.
+				'enable_image_production_toolkit'      => 192,  // 12-15 tools, AI generation, GPU processing.
+				'enable_ai_tool_builder_toolkit'       => 48,   // 10 meta-tools, code generation.
+				'enable_architectural_design_toolkit'  => 160,  // 16 tools, 3D modeling, rendering.
+			);
+		}
+
+		/**
+		 * Render features footer with toolkit memory usage counter.
 		 */
 		private function render_features_footer() {
-			// Count currently enabled pro toolkits.
+			// Count currently enabled pro toolkits and calculate memory usage.
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-			$toolkit_options = array(
-				'enable_quiz_system',
-				'enable_media_toolkit',
-				'enable_document_generation_toolkit',
-				'enable_project_management',
-				'enable_places_management',
-				'enable_ai_cpt_management',
-				'enable_eca_management',
-				'enable_health_wellness_management',
-				'enable_cloudways_toolkit',
-				'enable_ecommerce_toolkit',
-				'enable_social_media_toolkit',
-				'enable_analytics_toolkit',
-				'enable_multilingual_toolkit',
-				'enable_video_production_toolkit',
-				'enable_financial_planner_toolkit',
-				'enable_calendar_booking_toolkit',
-				'enable_dj_management_toolkit',
-				'enable_image_production_toolkit',
-				'enable_ai_tool_builder_toolkit',
-				'enable_architectural_design_toolkit',
-			);
+			$toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
 
-			$enabled_count = 0;
-			foreach ( $toolkit_options as $option ) {
+			$enabled_count    = 0;
+			$total_memory_mb  = 0;
+
+			foreach ( $toolkit_memory_requirements as $option => $memory_mb ) {
 				if ( ! empty( $settings[ $option ] ) ) {
 					$enabled_count++;
+					$total_memory_mb += $memory_mb;
 				}
 			}
 
-			// Check environment type - disable limit in development/local environments.
-		$environment_type = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
-		$default_limit    = ( 'local' === $environment_type || 'development' === $environment_type ) ? 999 : 5;
-		$max_toolkits     = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', $default_limit );
-		$limit_reached    = $enabled_count >= $max_toolkits;
+			// Memory thresholds for status indicators (no hard limit).
 			$counter_class  = '';
 			$counter_status = '';
 
-			if ( $enabled_count >= $max_toolkits ) {
+			if ( $total_memory_mb >= 800 ) {
 				$counter_class  = 'toolkit-limit-maximum';
-				$counter_status = __( 'Maximum', 'mcp-ai-wpoos' );
-			} elseif ( $enabled_count >= ( $max_toolkits - 1 ) ) {
+				$counter_status = __( 'High Usage', 'mcp-ai-wpoos' );
+			} elseif ( $total_memory_mb >= 500 ) {
 				$counter_class  = 'toolkit-limit-warning';
-				$counter_status = __( 'Near Maximum', 'mcp-ai-wpoos' );
+				$counter_status = __( 'Moderate Usage', 'mcp-ai-wpoos' );
 			} else {
 				$counter_class  = 'toolkit-limit-good';
-				$counter_status = __( 'Good', 'mcp-ai-wpoos' );
+				$counter_status = __( 'Low Usage', 'mcp-ai-wpoos' );
 			}
 
 			?>
@@ -914,18 +922,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					<div class="toolkit-limit-counter-container" style="padding: 15px; background: #f0f0f1; border: 1px solid #c3c4c7; border-radius: 4px; margin-top: 20px;">
 						<h3 style="margin-top: 0;">
 							<span class="dashicons dashicons-chart-bar"></span>
-							<?php esc_html_e( 'Pro Toolkit Activation Status', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Pro Toolkit Memory Usage', 'mcp-ai-wpoos' ); ?>
 						</h3>
 						<p style="font-size: 18px; margin: 10px 0;">
 							<strong class="toolkit-limit-counter <?php echo esc_attr( $counter_class ); ?>">
-								<span class="current-count"><?php echo esc_html( $enabled_count ); ?></span> 
+								<span class="current-count"><?php echo esc_html( $total_memory_mb ); ?></span> 
 								<?php
-								printf(
-									/* translators: %d: Maximum number of toolkits */
-									esc_html__( 'of %d pro toolkits enabled', 'mcp-ai-wpoos' ),
-									esc_html( $max_toolkits )
-								);
+								esc_html_e( 'MB estimated memory usage', 'mcp-ai-wpoos' );
 								?>
+								<span style="font-size: 14px; color: #646970; margin-left: 10px;">
+									<?php
+									printf(
+										/* translators: %d: Number of enabled toolkits */
+										esc_html__( '(%d toolkits enabled)', 'mcp-ai-wpoos' ),
+										esc_html( $enabled_count )
+									);
+									?>
+								</span>
 							</strong>
 							<span class="toolkit-status-badge" style="margin-left: 10px; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
 								<?php echo esc_html( $counter_status ); ?>
@@ -933,16 +946,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</p>
 						<p class="description">
 							<?php
-							printf(
-								/* translators: %d: Maximum number of toolkits */
-								esc_html__( 'You can enable up to %d pro toolkits simultaneously to maintain optimal performance. Disable a toolkit before enabling another if the limit is reached.', 'mcp-ai-wpoos' ),
-								esc_html( $max_toolkits )
-							);
+							esc_html_e( 'This shows the estimated memory usage for all enabled pro toolkits. Memory requirements vary by toolkit complexity and tool count. You can enable as many toolkits as needed for your use case.', 'mcp-ai-wpoos' );
 							?>
-						</p>
-						<p class="toolkit-limit-notice" style="display: none; color: #b32d2e; font-weight: bold; margin-top: 10px;">
-							<span class="dashicons dashicons-warning" style="color: #b32d2e;"></span>
-							<?php esc_html_e( 'Maximum toolkit limit reached. Disable another toolkit to enable this one.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					</div>
 
@@ -954,12 +959,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						.toolkit-limit-good + .toolkit-status-badge { background: #d4edda; color: #155724; }
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
 						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
-						tr.pro-toolkit-row input[type="checkbox"]:disabled + label { opacity: 0.5; cursor: not-allowed; }
 					</style>
 
 					<script>
 					jQuery(document).ready(function($) {
-						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
+						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ); ?>;
 						var toolkitCheckboxes = $(
 							'input[name="wp_mcp_ai_settings[enable_quiz_system]"],' +
 							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
@@ -983,40 +987,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
 						);
 
-						function updateToolkitLimit() {
-							var checked = toolkitCheckboxes.filter(':checked').length;
+						function updateToolkitMemory() {
+							var totalMemory = 0;
 							var counter = $('.toolkit-limit-counter .current-count');
 							var statusBadge = $('.toolkit-status-badge');
-							var notice = $('.toolkit-limit-notice');
 
-							counter.text(checked);
+							// Calculate total memory from checked toolkits
+							toolkitCheckboxes.filter(':checked').each(function() {
+								var inputName = $(this).attr('name');
+								// Extract option name from "wp_mcp_ai_settings[option_name]"
+								var optionName = inputName.match(/\[([^\]]+)\]/)[1];
+								if (toolkitMemory[optionName]) {
+									totalMemory += toolkitMemory[optionName];
+								}
+							});
 
-							// Update colors and status
+							// Display memory in MB
+							counter.text(totalMemory);
+
+							// Update colors and status based on memory thresholds
 							$('.toolkit-limit-counter').removeClass('toolkit-limit-good toolkit-limit-warning toolkit-limit-maximum');
-							if (checked >= maxToolkits) {
+							if (totalMemory >= 800) {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-maximum');
-								statusBadge.text(<?php echo wp_json_encode( __( 'Maximum', 'mcp-ai-wpoos' ) ); ?>);
-							} else if (checked >= (maxToolkits - 1)) {
+								statusBadge.text(<?php echo wp_json_encode( __( 'High Usage', 'mcp-ai-wpoos' ) ); ?>);
+							} else if (totalMemory >= 500) {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-warning');
-								statusBadge.text(<?php echo wp_json_encode( __( 'Near Maximum', 'mcp-ai-wpoos' ) ); ?>);
+								statusBadge.text(<?php echo wp_json_encode( __( 'Moderate Usage', 'mcp-ai-wpoos' ) ); ?>);
 							} else {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-good');
-								statusBadge.text(<?php echo wp_json_encode( __( 'Good', 'mcp-ai-wpoos' ) ); ?>);
-							}
-
-							// Disable unchecked checkboxes if limit reached
-							if (checked >= maxToolkits) {
-								toolkitCheckboxes.filter(':not(:checked)').prop('disabled', true).closest('tr').addClass('pro-toolkit-row');
-								notice.show();
-							} else {
-								toolkitCheckboxes.prop('disabled', false).closest('tr').removeClass('pro-toolkit-row');
-								notice.hide();
+								statusBadge.text(<?php echo wp_json_encode( __( 'Low Usage', 'mcp-ai-wpoos' ) ); ?>);
 							}
 						}
 
 						// Run on page load and checkbox change
-						toolkitCheckboxes.on('change', updateToolkitLimit);
-						updateToolkitLimit();
+						toolkitCheckboxes.on('change', updateToolkitMemory);
+						updateToolkitMemory();
 					});
 					</script>
 				</td>

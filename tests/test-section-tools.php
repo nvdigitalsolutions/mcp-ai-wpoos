@@ -502,17 +502,9 @@ class Test_Section_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that toolkit limit is higher in development/local environments.
+	 * Test that toolkit memory usage is displayed correctly.
 	 */
-	public function test_toolkit_limit_development_environment() {
-		// Mock wp_get_environment_type to return 'local'.
-		add_filter(
-			'wp_get_environment_type',
-			function () {
-				return 'local';
-			}
-		);
-
+	public function test_toolkit_memory_usage_displayed() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Set up the query string to simulate features subtab.
@@ -526,65 +518,56 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		// Clear $_GET.
 		unset( $_GET['subtab'] );
 
-		// In development/local environment, the limit should be 999.
-		$this->assertStringContainsString( 'of 999 pro toolkits enabled', $output, 'Should show 999 toolkit limit in local environment' );
+		// Should show memory usage instead of count.
+		$this->assertStringContainsString( 'MB estimated memory usage', $output, 'Should show MB memory usage' );
+		$this->assertStringContainsString( 'Pro Toolkit Memory Usage', $output, 'Should have memory usage heading' );
+		$this->assertStringContainsString( 'toolkits enabled', $output, 'Should show count of toolkits' );
 	}
 
 	/**
-	 * Test that toolkit limit defaults to 5 in production environment.
+	 * Test that toolkit memory requirements are defined for all toolkits.
 	 */
-	public function test_toolkit_limit_production_environment() {
-		// Mock wp_get_environment_type to return 'production'.
-		add_filter(
-			'wp_get_environment_type',
-			function () {
-				return 'production';
-			}
-		);
-
+	public function test_toolkit_memory_requirements_defined() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
-		// Set up the query string to simulate features subtab.
-		$_GET['subtab'] = 'features';
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_toolkit_memory_requirements' );
+		$method->setAccessible( true );
 
-		// Capture output.
-		ob_start();
-		$section->render();
-		$output = ob_get_clean();
+		$memory_requirements = $method->invoke( $section );
 
-		// Clear $_GET.
-		unset( $_GET['subtab'] );
+		$this->assertIsArray( $memory_requirements, 'Memory requirements should be an array' );
+		$this->assertNotEmpty( $memory_requirements, 'Memory requirements should not be empty' );
 
-		// In production environment, the limit should be 5.
-		$this->assertStringContainsString( 'of 5 pro toolkits enabled', $output, 'Should show 5 toolkit limit in production environment' );
-	}
-
-	/**
-	 * Test that toolkit limit filter still works and can override the default.
-	 */
-	public function test_toolkit_limit_filter_override() {
-		// Add filter to override the limit to 10.
-		add_filter(
-			'wp_mcp_ai_max_active_pro_toolkits',
-			function ( $limit ) {
-				return 10;
-			}
+		// Check that all 20 toolkits have memory requirements defined.
+		$expected_toolkits = array(
+			'enable_quiz_system',
+			'enable_media_toolkit',
+			'enable_document_generation_toolkit',
+			'enable_project_management',
+			'enable_places_management',
+			'enable_ai_cpt_management',
+			'enable_eca_management',
+			'enable_health_wellness_management',
+			'enable_cloudways_toolkit',
+			'enable_ecommerce_toolkit',
+			'enable_social_media_toolkit',
+			'enable_analytics_toolkit',
+			'enable_multilingual_toolkit',
+			'enable_video_production_toolkit',
+			'enable_financial_planner_toolkit',
+			'enable_calendar_booking_toolkit',
+			'enable_dj_management_toolkit',
+			'enable_image_production_toolkit',
+			'enable_ai_tool_builder_toolkit',
+			'enable_architectural_design_toolkit',
 		);
 
-		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
-
-		// Set up the query string to simulate features subtab.
-		$_GET['subtab'] = 'features';
-
-		// Capture output.
-		ob_start();
-		$section->render();
-		$output = ob_get_clean();
-
-		// Clear $_GET.
-		unset( $_GET['subtab'] );
-
-		// The filter should override the default, so it should show 10.
-		$this->assertStringContainsString( 'of 10 pro toolkits enabled', $output, 'Should show 10 toolkit limit when filter overrides' );
+		foreach ( $expected_toolkits as $toolkit ) {
+			$this->assertArrayHasKey( $toolkit, $memory_requirements, "Memory requirement should be defined for {$toolkit}" );
+			$this->assertIsInt( $memory_requirements[ $toolkit ], "Memory requirement for {$toolkit} should be an integer" );
+			$this->assertGreaterThan( 0, $memory_requirements[ $toolkit ], "Memory requirement for {$toolkit} should be positive" );
+		}
 	}
 }
