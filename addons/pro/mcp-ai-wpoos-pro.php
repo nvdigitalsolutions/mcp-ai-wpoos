@@ -332,6 +332,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
 		}
 
+		// Load Architectural Design Toolkit if enabled (Pro feature - Phase 2.10).
+		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
+		}
+
 		// ========================================================================
 		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
 		// ========================================================================

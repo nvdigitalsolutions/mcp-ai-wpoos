@@ -57,13 +57,8 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 		<div class="toolkit-overview">
 			<h2><?php esc_html_e( 'Image Production Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
-			<div class="notice notice-info">
-				<p><strong><?php esc_html_e( 'Coming Soon - Phase 2.8', 'mcp-ai-wpoos-pro' ); ?></strong></p>
-				<p><?php esc_html_e( 'This toolkit is planned for implementation in Phase 2.8. Tools and features are subject to change.', 'mcp-ai-wpoos-pro' ); ?></p>
-			</div>
-			
 			<div class="toolkit-description">
-				<p><?php esc_html_e( 'AI-powered image creation and editing toolkit with 12-15 tools for generating, enhancing, and optimizing images.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'AI-powered image creation and editing toolkit with 15 professional tools for generating, enhancing, and optimizing images.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
 
 			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -87,15 +82,11 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 		<div class="toolkit-configuration">
 			<h2><?php esc_html_e( 'Image Production Toolkit Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
-			<div class="notice notice-warning">
-				<p><?php esc_html_e( 'Configuration options will be available when this toolkit is implemented in Phase 2.8.', 'mcp-ai-wpoos-pro' ); ?></p>
-			</div>
-			
 			<table class="form-table">
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Image Generator', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_image_generator" class="regular-text" disabled>
+						<select name="default_image_generator" class="regular-text">
 							<option value="dalle">DALL-E</option>
 							<option value="midjourney">Midjourney</option>
 							<option value="stable_diffusion">Stable Diffusion</option>
@@ -106,7 +97,7 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Default Output Format', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<select name="default_output_format" class="regular-text" disabled>
+						<select name="default_output_format" class="regular-text">
 							<option value="jpg">JPEG</option>
 							<option value="png">PNG</option>
 							<option value="webp">WebP</option>
@@ -117,9 +108,9 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 				<tr>
 					<th scope="row"><?php esc_html_e( 'Max Image Dimensions', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
-						<input type="number" name="max_image_width" value="2048" min="100" class="small-text" disabled />
+						<input type="number" name="max_image_width" value="2048" min="100" class="small-text" />
 						<span>×</span>
-						<input type="number" name="max_image_height" value="2048" min="100" class="small-text" disabled />
+						<input type="number" name="max_image_height" value="2048" min="100" class="small-text" />
 						<span>px</span>
 						<p class="description"><?php esc_html_e( 'Maximum dimensions for generated images', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
@@ -136,18 +127,21 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_image_ai'     => __( 'Generate Image (AI)', 'mcp-ai-wpoos-pro' ),
-			'edit_image_ai'         => __( 'Edit Image (AI)', 'mcp-ai-wpoos-pro' ),
-			'remove_background'     => __( 'Remove Background', 'mcp-ai-wpoos-pro' ),
-			'upscale_image'         => __( 'Upscale Image', 'mcp-ai-wpoos-pro' ),
-			'enhance_image_quality' => __( 'Enhance Image Quality', 'mcp-ai-wpoos-pro' ),
-			'apply_style_transfer'  => __( 'Apply Style Transfer', 'mcp-ai-wpoos-pro' ),
-			'batch_process_images'  => __( 'Batch Process Images', 'mcp-ai-wpoos-pro' ),
-			'convert_image_format'  => __( 'Convert Image Format', 'mcp-ai-wpoos-pro' ),
-			'optimize_for_web'      => __( 'Optimize for Web', 'mcp-ai-wpoos-pro' ),
-			'add_watermark'         => __( 'Add Watermark', 'mcp-ai-wpoos-pro' ),
-			'crop_and_resize'       => __( 'Crop and Resize', 'mcp-ai-wpoos-pro' ),
-			'generate_variations'   => __( 'Generate Variations', 'mcp-ai-wpoos-pro' ),
+			'generate_image_ai'              => __( 'Generate Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'generate_image_variations'      => __( 'Generate Image Variations', 'mcp-ai-wpoos-pro' ),
+			'image_inpainting'               => __( 'Image Inpainting', 'mcp-ai-wpoos-pro' ),
+			'text_to_image_prompt_optimizer' => __( 'Text to Image Prompt Optimizer', 'mcp-ai-wpoos-pro' ),
+			'remove_image_background'        => __( 'Remove Image Background', 'mcp-ai-wpoos-pro' ),
+			'upscale_image_ai'               => __( 'Upscale Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'enhance_image_quality'          => __( 'Enhance Image Quality', 'mcp-ai-wpoos-pro' ),
+			'apply_artistic_style'           => __( 'Apply Artistic Style', 'mcp-ai-wpoos-pro' ),
+			'colorize_image'                 => __( 'Colorize Image', 'mcp-ai-wpoos-pro' ),
+			'compress_image'                 => __( 'Compress Image', 'mcp-ai-wpoos-pro' ),
+			'convert_image_format'           => __( 'Convert Image Format', 'mcp-ai-wpoos-pro' ),
+			'resize_image_smart'             => __( 'Resize Image (Smart)', 'mcp-ai-wpoos-pro' ),
+			'batch_process_images'           => __( 'Batch Process Images', 'mcp-ai-wpoos-pro' ),
+			'generate_responsive_images'     => __( 'Generate Responsive Images', 'mcp-ai-wpoos-pro' ),
+			'optimize_for_web'               => __( 'Optimize for Web', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

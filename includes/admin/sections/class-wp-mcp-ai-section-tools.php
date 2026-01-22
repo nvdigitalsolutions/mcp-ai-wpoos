@@ -616,6 +616,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 10 AI-powered meta-tools for building new tools: scaffolding, code generation, parameter schema design, test generation, documentation, and quality assurance. Uses OpenAI Codex for intelligent tool creation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Architectural Design Toolkit (Phase 2.10).
+				'enable_architectural_design_toolkit' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 16 professional architectural tools: AI floor plan generation, space optimization, 3D modeling, photorealistic rendering, construction blueprints, code compliance checking, sustainability analysis, and cost estimation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -684,7 +693,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architectural_design_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -850,18 +859,27 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			$toolkit_options = array(
-			'enable_media_toolkit',
-			'enable_ecommerce_toolkit',
-			'enable_social_media_toolkit',
-			'enable_analytics_toolkit',
-			'enable_multilingual_toolkit',
-			'enable_video_production_toolkit',
-			'enable_financial_planner_toolkit',
-			'enable_calendar_booking_toolkit',
-			'enable_dj_management_toolkit',
-			'enable_image_production_toolkit',
-			'enable_ai_tool_builder_toolkit',
-		);
+				'enable_quiz_system',
+				'enable_media_toolkit',
+				'enable_document_generation_toolkit',
+				'enable_project_management',
+				'enable_places_management',
+				'enable_ai_cpt_management',
+				'enable_eca_management',
+				'enable_health_wellness_management',
+				'enable_cloudways_toolkit',
+				'enable_ecommerce_toolkit',
+				'enable_social_media_toolkit',
+				'enable_analytics_toolkit',
+				'enable_multilingual_toolkit',
+				'enable_video_production_toolkit',
+				'enable_financial_planner_toolkit',
+				'enable_calendar_booking_toolkit',
+				'enable_dj_management_toolkit',
+				'enable_image_production_toolkit',
+				'enable_ai_tool_builder_toolkit',
+				'enable_architectural_design_toolkit',
+			);
 
 			$enabled_count = 0;
 			foreach ( $toolkit_options as $option ) {
@@ -940,7 +958,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					jQuery(document).ready(function($) {
 						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
 						var toolkitCheckboxes = $(
+							'input[name="wp_mcp_ai_settings[enable_quiz_system]"],' +
 							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_document_generation_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_project_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_places_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ai_cpt_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_eca_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_health_wellness_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_cloudways_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_analytics_toolkit]"],' +
@@ -950,7 +976,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_calendar_booking_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_dj_management_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
-							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"]'
+							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
 						);
 
 						function updateToolkitLimit() {
