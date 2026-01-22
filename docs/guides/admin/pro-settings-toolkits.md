@@ -1099,5 +1099,5 @@ Toolkits that create custom post types:
 ---
 
 **Version**: 2.0.0  
-**Last Updated**: 2026-01-22  
+**Last Updated**: 2025-01-22  
 **Applies to**: NV oOS Pro v1.1.0+
