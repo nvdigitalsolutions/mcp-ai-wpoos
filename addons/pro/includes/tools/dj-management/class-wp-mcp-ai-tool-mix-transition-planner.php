@@ -123,9 +123,9 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 		$mix_duration     = ! empty( $arguments['mix_duration'] ) ? absint( $arguments['mix_duration'] ) : 16;
 
 		// Analyze BPM compatibility.
-		$bpm_diff = abs( $track_a['bpm'] - $track_b['bpm'] );
+		$bpm_diff  = abs( $track_a['bpm'] - $track_b['bpm'] );
 		$bpm_ratio = $track_a['bpm'] > 0 ? $track_b['bpm'] / $track_a['bpm'] : 0;
-		
+
 		$bpm_compatibility = $this->get_bpm_compatibility( $bpm_diff );
 
 		// Analyze key compatibility.
@@ -150,10 +150,10 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 			'track_a'         => $track_a,
 			'track_b'         => $track_b,
 			'compatibility'   => array(
-				'bpm_difference'     => round( $bpm_diff, 1 ),
-				'bpm_ratio'          => round( $bpm_ratio, 3 ),
-				'bpm_compatibility'  => $bpm_compatibility,
-				'key_compatibility'  => $key_compatibility,
+				'bpm_difference'    => round( $bpm_diff, 1 ),
+				'bpm_ratio'         => round( $bpm_ratio, 3 ),
+				'bpm_compatibility' => $bpm_compatibility,
+				'key_compatibility' => $key_compatibility,
 			),
 			'transition_plan' => array(
 				'style'            => $transition_style,
@@ -303,60 +303,60 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 		switch ( $style ) {
 			case 'smooth':
 				$points[] = array(
-					'time'        => 0,
-					'action'      => __( 'Start bringing in Track B at low volume', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 0,
+					'time'       => 0,
+					'action'     => __( 'Start bringing in Track B at low volume', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 0,
 				);
 				$points[] = array(
-					'time'        => $duration / 4,
-					'action'      => __( 'Begin bassline swap', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 25,
+					'time'       => $duration / 4,
+					'action'     => __( 'Begin bassline swap', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 25,
 				);
 				$points[] = array(
-					'time'        => $duration / 2,
-					'action'      => __( 'Both tracks at equal volume', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 50,
+					'time'       => $duration / 2,
+					'action'     => __( 'Both tracks at equal volume', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 50,
 				);
 				$points[] = array(
-					'time'        => ( $duration * 3 ) / 4,
-					'action'      => __( 'Begin fading out Track A', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 75,
+					'time'       => ( $duration * 3 ) / 4,
+					'action'     => __( 'Begin fading out Track A', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 75,
 				);
 				$points[] = array(
-					'time'        => $duration,
-					'action'      => __( 'Complete transition to Track B', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 100,
+					'time'       => $duration,
+					'action'     => __( 'Complete transition to Track B', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 100,
 				);
 				break;
 
 			case 'quick':
 				$points[] = array(
-					'time'        => 0,
-					'action'      => __( 'Cue Track B', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 0,
+					'time'       => 0,
+					'action'     => __( 'Cue Track B', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 0,
 				);
 				$points[] = array(
-					'time'        => $duration / 2,
-					'action'      => __( 'Quick crossfade', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 50,
+					'time'       => $duration / 2,
+					'action'     => __( 'Quick crossfade', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 50,
 				);
 				$points[] = array(
-					'time'        => $duration,
-					'action'      => __( 'Track B fully in', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 100,
+					'time'       => $duration,
+					'action'     => __( 'Track B fully in', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 100,
 				);
 				break;
 
 			default:
 				$points[] = array(
-					'time'        => 0,
-					'action'      => __( 'Start transition', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 0,
+					'time'       => 0,
+					'action'     => __( 'Start transition', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 0,
 				);
 				$points[] = array(
-					'time'        => $duration,
-					'action'      => __( 'Complete transition', 'mcp-ai-wpoos-pro' ),
-					'percentage'  => 100,
+					'time'       => $duration,
+					'action'     => __( 'Complete transition', 'mcp-ai-wpoos-pro' ),
+					'percentage' => 100,
 				);
 				break;
 		}

@@ -10,7 +10,7 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+	exit;
 }
 
 require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-research-add-base.php';
@@ -20,229 +20,229 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-research-add-b
  */
 class WP_MCP_AI_Financial_Planner_Research_Add extends WP_MCP_AI_Research_Add_Base {
 
-/**
- * Constructor.
- */
-public function __construct() {
-parent::__construct( 'financial_planner' );
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		parent::__construct( 'financial_planner' );
 
-// Register field schemas.
-add_filter( 'wp_mcp_ai_toolkit_cpt_field_schema', array( $this, 'filter_cpt_field_schema' ), 10, 3 );
-add_filter( 'wp_mcp_ai_toolkit_cct_field_schema', array( $this, 'filter_cct_field_schema' ), 10, 3 );
-}
+		// Register field schemas.
+		add_filter( 'wp_mcp_ai_toolkit_cpt_field_schema', array( $this, 'filter_cpt_field_schema' ), 10, 3 );
+		add_filter( 'wp_mcp_ai_toolkit_cct_field_schema', array( $this, 'filter_cct_field_schema' ), 10, 3 );
+	}
 
-/**
- * Get entity types for financial planner toolkit.
- *
- * @return array Entity types.
- */
-protected function get_entity_types() {
-return array(
-'budget_categories' => __( 'Budget Categories', 'mcp-ai-wpoos-pro' ),
-'goal_templates'    => __( 'Goal Templates', 'mcp-ai-wpoos-pro' ),
-);
-}
+	/**
+	 * Get entity types for financial planner toolkit.
+	 *
+	 * @return array Entity types.
+	 */
+	protected function get_entity_types() {
+		return array(
+			'budget_categories' => __( 'Budget Categories', 'mcp-ai-wpoos-pro' ),
+			'goal_templates'    => __( 'Goal Templates', 'mcp-ai-wpoos-pro' ),
+		);
+	}
 
-/**
- * Filter CPT field schema.
- *
- * @param array  $schema       Field schema.
- * @param string $toolkit_slug Toolkit slug.
- * @param string $entity_type  Entity type.
- * @return array Filtered schema.
- */
-public function filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type ) {
-if ( 'financial_planner' !== $toolkit_slug ) {
-return $schema;
-}
+	/**
+	 * Filter CPT field schema.
+	 *
+	 * @param array  $schema       Field schema.
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @param string $entity_type  Entity type.
+	 * @return array Filtered schema.
+	 */
+	public function filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type ) {
+		if ( 'financial_planner' !== $toolkit_slug ) {
+			return $schema;
+		}
 
-switch ( $entity_type ) {
-case 'budget_categories':
-return $this->get_budget_categories_schema();
-case 'goal_templates':
-return $this->get_goal_templates_schema();
-}
+		switch ( $entity_type ) {
+			case 'budget_categories':
+				return $this->get_budget_categories_schema();
+			case 'goal_templates':
+				return $this->get_goal_templates_schema();
+		}
 
-return $schema;
-}
+		return $schema;
+	}
 
-/**
- * Filter CCT field schema.
- *
- * @param array  $schema       Field schema.
- * @param string $toolkit_slug Toolkit slug.
- * @param string $entity_type  Entity type.
- * @return array Filtered schema.
- */
-public function filter_cct_field_schema( $schema, $toolkit_slug, $entity_type ) {
-return $this->filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type );
-}
+	/**
+	 * Filter CCT field schema.
+	 *
+	 * @param array  $schema       Field schema.
+	 * @param string $toolkit_slug Toolkit slug.
+	 * @param string $entity_type  Entity type.
+	 * @return array Filtered schema.
+	 */
+	public function filter_cct_field_schema( $schema, $toolkit_slug, $entity_type ) {
+		return $this->filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type );
+	}
 
-/**
- * Get budget categories field schema.
- *
- * @return array Field definitions.
- */
-private function get_budget_categories_schema() {
-return array(
-'category_name'        => array(
-'title'       => __( 'Category Name', 'mcp-ai-wpoos-pro' ),
-'type'        => 'text',
-'width'       => '100%',
-'is_required' => true,
-),
-'category_type'        => array(
-'title'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
-'type'        => 'select',
-'width'       => '50%',
-'is_required' => true,
-),
-'amount'               => array(
-'title' => __( 'Amount', 'mcp-ai-wpoos-pro' ),
-'type'  => 'number',
-'width' => '50%',
-),
-'frequency'            => array(
-'title' => __( 'Frequency', 'mcp-ai-wpoos-pro' ),
-'type'  => 'select',
-'width' => '50%',
-),
-'description'          => array(
-'title' => __( 'Description', 'mcp-ai-wpoos-pro' ),
-'type'  => 'textarea',
-'width' => '100%',
-),
-'is_fixed'             => array(
-'title' => __( 'Fixed Expense', 'mcp-ai-wpoos-pro' ),
-'type'  => 'checkbox',
-'width' => '50%',
-),
-'notes'                => array(
-'title' => __( 'Notes', 'mcp-ai-wpoos-pro' ),
-'type'  => 'textarea',
-'width' => '100%',
-),
-'created_by_assistant' => array(
-'title' => __( 'Created by Assistant', 'mcp-ai-wpoos-pro' ),
-'type'  => 'text',
-'width' => '50%',
-),
-);
-}
+	/**
+	 * Get budget categories field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function get_budget_categories_schema() {
+		return array(
+			'category_name'        => array(
+				'title'       => __( 'Category Name', 'mcp-ai-wpoos-pro' ),
+				'type'        => 'text',
+				'width'       => '100%',
+				'is_required' => true,
+			),
+			'category_type'        => array(
+				'title'       => __( 'Type', 'mcp-ai-wpoos-pro' ),
+				'type'        => 'select',
+				'width'       => '50%',
+				'is_required' => true,
+			),
+			'amount'               => array(
+				'title' => __( 'Amount', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'frequency'            => array(
+				'title' => __( 'Frequency', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'description'          => array(
+				'title' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'is_fixed'             => array(
+				'title' => __( 'Fixed Expense', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'checkbox',
+				'width' => '50%',
+			),
+			'notes'                => array(
+				'title' => __( 'Notes', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'created_by_assistant' => array(
+				'title' => __( 'Created by Assistant', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+		);
+	}
 
-/**
- * Get goal templates field schema.
- *
- * @return array Field definitions.
- */
-private function get_goal_templates_schema() {
-return array(
-'goal_name'            => array(
-'title'       => __( 'Goal Name', 'mcp-ai-wpoos-pro' ),
-'type'        => 'text',
-'width'       => '100%',
-'is_required' => true,
-),
-'goal_type'            => array(
-'title' => __( 'Goal Type', 'mcp-ai-wpoos-pro' ),
-'type'  => 'select',
-'width' => '50%',
-),
-'target_amount'        => array(
-'title' => __( 'Target Amount', 'mcp-ai-wpoos-pro' ),
-'type'  => 'number',
-'width' => '50%',
-),
-'deadline'             => array(
-'title' => __( 'Deadline', 'mcp-ai-wpoos-pro' ),
-'type'  => 'text',
-'width' => '50%',
-),
-'strategy'             => array(
-'title' => __( 'Strategy', 'mcp-ai-wpoos-pro' ),
-'type'  => 'textarea',
-'width' => '100%',
-),
-'priority'             => array(
-'title' => __( 'Priority', 'mcp-ai-wpoos-pro' ),
-'type'  => 'select',
-'width' => '50%',
-),
-'notes'                => array(
-'title' => __( 'Notes', 'mcp-ai-wpoos-pro' ),
-'type'  => 'textarea',
-'width' => '100%',
-),
-'created_by_assistant' => array(
-'title' => __( 'Created by Assistant', 'mcp-ai-wpoos-pro' ),
-'type'  => 'text',
-'width' => '50%',
-),
-);
-}
+	/**
+	 * Get goal templates field schema.
+	 *
+	 * @return array Field definitions.
+	 */
+	private function get_goal_templates_schema() {
+		return array(
+			'goal_name'            => array(
+				'title'       => __( 'Goal Name', 'mcp-ai-wpoos-pro' ),
+				'type'        => 'text',
+				'width'       => '100%',
+				'is_required' => true,
+			),
+			'goal_type'            => array(
+				'title' => __( 'Goal Type', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'target_amount'        => array(
+				'title' => __( 'Target Amount', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'number',
+				'width' => '50%',
+			),
+			'deadline'             => array(
+				'title' => __( 'Deadline', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+			'strategy'             => array(
+				'title' => __( 'Strategy', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'priority'             => array(
+				'title' => __( 'Priority', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'select',
+				'width' => '50%',
+			),
+			'notes'                => array(
+				'title' => __( 'Notes', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'textarea',
+				'width' => '100%',
+			),
+			'created_by_assistant' => array(
+				'title' => __( 'Created by Assistant', 'mcp-ai-wpoos-pro' ),
+				'type'  => 'text',
+				'width' => '50%',
+			),
+		);
+	}
 
-/**
- * Render form fields for current entity.
- *
- * @param array $item Optional. Item data for edit form.
- */
-protected function render_form_fields( $item = array() ) {
-$store  = $this->get_current_data_store();
-$schema = $store ? $store->get_field_schema() : array();
+	/**
+	 * Render form fields for current entity.
+	 *
+	 * @param array $item Optional. Item data for edit form.
+	 */
+	protected function render_form_fields( $item = array() ) {
+		$store  = $this->get_current_data_store();
+		$schema = $store ? $store->get_field_schema() : array();
 
-if ( empty( $schema ) ) {
-parent::render_form_fields( $item );
-return;
-}
+		if ( empty( $schema ) ) {
+			parent::render_form_fields( $item );
+			return;
+		}
 
-?>
+		?>
 <table class="form-table">
-<?php foreach ( $schema as $field_name => $field_def ) : ?>
+		<?php foreach ( $schema as $field_name => $field_def ) : ?>
 <tr>
 <th scope="row">
 <label for="item_<?php echo esc_attr( $field_name ); ?>">
-<?php echo esc_html( $field_def['title'] ); ?>
-<?php if ( ! empty( $field_def['is_required'] ) ) : ?>
+			<?php echo esc_html( $field_def['title'] ); ?>
+			<?php if ( ! empty( $field_def['is_required'] ) ) : ?>
 <span class="required">*</span>
 <?php endif; ?>
 </label>
 </th>
 <td>
-<?php $this->render_field_input( $field_name, $field_def, $item ); ?>
+			<?php $this->render_field_input( $field_name, $field_def, $item ); ?>
 </td>
 </tr>
 <?php endforeach; ?>
 </table>
-<?php
-}
+		<?php
+	}
 
-/**
- * Render field input based on type.
- *
- * @param string $field_name Field name.
- * @param array  $field_def  Field definition.
- * @param array  $item       Item data.
- */
-private function render_field_input( $field_name, $field_def, $item = array() ) {
-$value    = isset( $item[ $field_name ] ) ? $item[ $field_name ] : '';
-$type     = isset( $field_def['type'] ) ? $field_def['type'] : 'text';
-$required = ! empty( $field_def['is_required'] ) ? 'required' : '';
+	/**
+	 * Render field input based on type.
+	 *
+	 * @param string $field_name Field name.
+	 * @param array  $field_def  Field definition.
+	 * @param array  $item       Item data.
+	 */
+	private function render_field_input( $field_name, $field_def, $item = array() ) {
+		$value    = isset( $item[ $field_name ] ) ? $item[ $field_name ] : '';
+		$type     = isset( $field_def['type'] ) ? $field_def['type'] : 'text';
+		$required = ! empty( $field_def['is_required'] ) ? 'required' : '';
 
-switch ( $type ) {
-case 'textarea':
-?>
+		switch ( $type ) {
+			case 'textarea':
+				?>
 <textarea 
 id="item_<?php echo esc_attr( $field_name ); ?>"
 name="item_data[<?php echo esc_attr( $field_name ); ?>]"
 rows="5"
 class="large-text"
-<?php echo esc_attr( $required ); ?>
+				<?php echo esc_attr( $required ); ?>
 ><?php echo esc_textarea( $value ); ?></textarea>
-<?php
-break;
+				<?php
+				break;
 
-case 'number':
-?>
+			case 'number':
+				?>
 <input 
 type="number"
 id="item_<?php echo esc_attr( $field_name ); ?>"
@@ -250,141 +250,154 @@ name="item_data[<?php echo esc_attr( $field_name ); ?>]"
 value="<?php echo esc_attr( $value ); ?>"
 class="regular-text"
 step="0.01"
-<?php echo esc_attr( $required ); ?>
+				<?php echo esc_attr( $required ); ?>
 >
-<?php
-break;
+				<?php
+				break;
 
-case 'checkbox':
-?>
+			case 'checkbox':
+				?>
 <label>
 <input 
 type="checkbox"
 id="item_<?php echo esc_attr( $field_name ); ?>"
 name="item_data[<?php echo esc_attr( $field_name ); ?>]"
 value="1"
-<?php checked( $value, 1 ); ?>
+				<?php checked( $value, 1 ); ?>
 >
-<?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Yes', 'mcp-ai-wpoos-pro' ); ?>
 </label>
-<?php
-break;
+				<?php
+				break;
 
-case 'select':
-$options = array();
-if ( 'category_type' === $field_name ) {
-$options = array(
-''         => __( 'Select Type', 'mcp-ai-wpoos-pro' ),
-'income'   => __( 'Income', 'mcp-ai-wpoos-pro' ),
-'expense'  => __( 'Expense', 'mcp-ai-wpoos-pro' ),
-'savings'  => __( 'Savings', 'mcp-ai-wpoos-pro' ),
-'debt'     => __( 'Debt', 'mcp-ai-wpoos-pro' ),
-);
-} elseif ( 'frequency' === $field_name ) {
-$options = array(
-''          => __( 'Select Frequency', 'mcp-ai-wpoos-pro' ),
-'daily'     => __( 'Daily', 'mcp-ai-wpoos-pro' ),
-'weekly'    => __( 'Weekly', 'mcp-ai-wpoos-pro' ),
-'biweekly'  => __( 'Bi-weekly', 'mcp-ai-wpoos-pro' ),
-'monthly'   => __( 'Monthly', 'mcp-ai-wpoos-pro' ),
-'quarterly' => __( 'Quarterly', 'mcp-ai-wpoos-pro' ),
-'yearly'    => __( 'Yearly', 'mcp-ai-wpoos-pro' ),
-);
-} elseif ( 'goal_type' === $field_name ) {
-$options = array(
-''            => __( 'Select Goal Type', 'mcp-ai-wpoos-pro' ),
-'retirement'  => __( 'Retirement', 'mcp-ai-wpoos-pro' ),
-'emergency'   => __( 'Emergency Fund', 'mcp-ai-wpoos-pro' ),
-'home'        => __( 'Home Purchase', 'mcp-ai-wpoos-pro' ),
-'education'   => __( 'Education', 'mcp-ai-wpoos-pro' ),
-'debt'        => __( 'Debt Payoff', 'mcp-ai-wpoos-pro' ),
-'investment'  => __( 'Investment', 'mcp-ai-wpoos-pro' ),
-'other'       => __( 'Other', 'mcp-ai-wpoos-pro' ),
-);
-} elseif ( 'priority' === $field_name ) {
-$options = array(
-''       => __( 'Select Priority', 'mcp-ai-wpoos-pro' ),
-'high'   => __( 'High', 'mcp-ai-wpoos-pro' ),
-'medium' => __( 'Medium', 'mcp-ai-wpoos-pro' ),
-'low'    => __( 'Low', 'mcp-ai-wpoos-pro' ),
-);
-}
+			case 'select':
+				$options = array();
+				if ( 'category_type' === $field_name ) {
+					$options = array(
+						''        => __( 'Select Type', 'mcp-ai-wpoos-pro' ),
+						'income'  => __( 'Income', 'mcp-ai-wpoos-pro' ),
+						'expense' => __( 'Expense', 'mcp-ai-wpoos-pro' ),
+						'savings' => __( 'Savings', 'mcp-ai-wpoos-pro' ),
+						'debt'    => __( 'Debt', 'mcp-ai-wpoos-pro' ),
+					);
+				} elseif ( 'frequency' === $field_name ) {
+					$options = array(
+						''          => __( 'Select Frequency', 'mcp-ai-wpoos-pro' ),
+						'daily'     => __( 'Daily', 'mcp-ai-wpoos-pro' ),
+						'weekly'    => __( 'Weekly', 'mcp-ai-wpoos-pro' ),
+						'biweekly'  => __( 'Bi-weekly', 'mcp-ai-wpoos-pro' ),
+						'monthly'   => __( 'Monthly', 'mcp-ai-wpoos-pro' ),
+						'quarterly' => __( 'Quarterly', 'mcp-ai-wpoos-pro' ),
+						'yearly'    => __( 'Yearly', 'mcp-ai-wpoos-pro' ),
+					);
+				} elseif ( 'goal_type' === $field_name ) {
+					$options = array(
+						''           => __( 'Select Goal Type', 'mcp-ai-wpoos-pro' ),
+						'retirement' => __( 'Retirement', 'mcp-ai-wpoos-pro' ),
+						'emergency'  => __( 'Emergency Fund', 'mcp-ai-wpoos-pro' ),
+						'home'       => __( 'Home Purchase', 'mcp-ai-wpoos-pro' ),
+						'education'  => __( 'Education', 'mcp-ai-wpoos-pro' ),
+						'debt'       => __( 'Debt Payoff', 'mcp-ai-wpoos-pro' ),
+						'investment' => __( 'Investment', 'mcp-ai-wpoos-pro' ),
+						'other'      => __( 'Other', 'mcp-ai-wpoos-pro' ),
+					);
+				} elseif ( 'priority' === $field_name ) {
+					$options = array(
+						''       => __( 'Select Priority', 'mcp-ai-wpoos-pro' ),
+						'high'   => __( 'High', 'mcp-ai-wpoos-pro' ),
+						'medium' => __( 'Medium', 'mcp-ai-wpoos-pro' ),
+						'low'    => __( 'Low', 'mcp-ai-wpoos-pro' ),
+					);
+				}
 
-?>
+				?>
 <select 
 id="item_<?php echo esc_attr( $field_name ); ?>"
 name="item_data[<?php echo esc_attr( $field_name ); ?>]"
 class="regular-text"
-<?php echo esc_attr( $required ); ?>
+				<?php echo esc_attr( $required ); ?>
 >
-<?php foreach ( $options as $opt_value => $opt_label ) : ?>
+				<?php foreach ( $options as $opt_value => $opt_label ) : ?>
 <option value="<?php echo esc_attr( $opt_value ); ?>" <?php selected( $value, $opt_value ); ?>>
-<?php echo esc_html( $opt_label ); ?>
+					<?php echo esc_html( $opt_label ); ?>
 </option>
 <?php endforeach; ?>
 </select>
-<?php
-break;
+				<?php
+				break;
 
-default: // text
-?>
+			default: // text.
+				?>
 <input 
 type="text"
 id="item_<?php echo esc_attr( $field_name ); ?>"
 name="item_data[<?php echo esc_attr( $field_name ); ?>]"
 value="<?php echo esc_attr( $value ); ?>"
 class="regular-text"
-<?php echo esc_attr( $required ); ?>
+				<?php echo esc_attr( $required ); ?>
 >
-<?php
-break;
-}
-}
+				<?php
+				break;
+		}
+	}
 
-/**
- * Render table headers for current entity.
- */
-protected function render_table_headers() {
-switch ( $this->current_entity ) {
-case 'budget_categories':
-?>
+	/**
+	 * Render table headers for current entity.
+	 */
+	protected function render_table_headers() {
+		switch ( $this->current_entity ) {
+			case 'budget_categories':
+				?>
 <th><?php esc_html_e( 'ID', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Category Name', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Amount', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Frequency', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
-<?php
-break;
+				<?php
+				break;
 
-case 'goal_templates':
-?>
+			case 'goal_templates':
+				?>
 <th><?php esc_html_e( 'ID', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Goal Name', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Target Amount', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Priority', 'mcp-ai-wpoos-pro' ); ?></th>
 <th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
-<?php
-break;
+				<?php
+				break;
 
-default:
-parent::render_table_headers();
-}
-}
+			default:
+				parent::render_table_headers();
+		}
+	}
 
-/**
- * Render table row for current entity.
- *
- * @param array $item Item data.
- */
-protected function render_table_row( $item ) {
-$edit_url   = add_query_arg( array( 'action' => 'edit', 'id' => $item['id'] ) );
-$delete_url = wp_nonce_url( add_query_arg( array( 'action' => 'delete', 'id' => $item['id'] ) ), 'delete_item_' . $item['id'] );
+	/**
+	 * Render table row for current entity.
+	 *
+	 * @param array $item Item data.
+	 */
+	protected function render_table_row( $item ) {
+		$edit_url   = add_query_arg(
+			array(
+				'action' => 'edit',
+				'id'     => $item['id'],
+			)
+		);
+		$delete_url = wp_nonce_url(
+			add_query_arg(
+				array(
+					'action' => 'delete',
+					'id'     => $item['id'],
+				)
+			),
+			'delete_item_' . $item['id']
+		);
 
-switch ( $this->current_entity ) {
-case 'budget_categories':
-?>
+		switch ( $this->current_entity ) {
+			case 'budget_categories':
+				?>
 <td><?php echo esc_html( $item['id'] ); ?></td>
 <td><?php echo esc_html( $item['category_name'] ?? __( '(No name)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 <td><?php echo esc_html( ucfirst( $item['category_type'] ?? '-' ) ); ?></td>
@@ -394,11 +407,11 @@ case 'budget_categories':
 <a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></a>
 <a href="<?php echo esc_url( $delete_url ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure?', 'mcp-ai-wpoos-pro' ); ?>');"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></a>
 </td>
-<?php
-break;
+				<?php
+				break;
 
-case 'goal_templates':
-?>
+			case 'goal_templates':
+				?>
 <td><?php echo esc_html( $item['id'] ); ?></td>
 <td><?php echo esc_html( $item['goal_name'] ?? __( '(No name)', 'mcp-ai-wpoos-pro' ) ); ?></td>
 <td><?php echo esc_html( ucfirst( $item['goal_type'] ?? '-' ) ); ?></td>
@@ -408,11 +421,11 @@ case 'goal_templates':
 <a href="<?php echo esc_url( $edit_url ); ?>"><?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?></a>
 <a href="<?php echo esc_url( $delete_url ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure?', 'mcp-ai-wpoos-pro' ); ?>');"><?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?></a>
 </td>
-<?php
-break;
+				<?php
+				break;
 
-default:
-parent::render_table_row( $item );
-}
-}
+			default:
+				parent::render_table_row( $item );
+		}
+	}
 }

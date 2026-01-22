@@ -45,54 +45,54 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'            => array(
+				'name'           => array(
 					'type'        => 'string',
 					'description' => __( 'Equipment name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'type'            => array(
+				'type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Equipment type (e.g., Mixer, Turntable, Speaker, Controller, Lighting) (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'mixer', 'turntable', 'speaker', 'controller', 'lighting', 'microphone', 'headphones', 'cable', 'other' ),
 				),
-				'brand'           => array(
+				'brand'          => array(
 					'type'        => 'string',
 					'description' => __( 'Brand/manufacturer (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'model'           => array(
+				'model'          => array(
 					'type'        => 'string',
 					'description' => __( 'Model number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'serial_number'   => array(
+				'serial_number'  => array(
 					'type'        => 'string',
 					'description' => __( 'Serial number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'purchase_date'   => array(
+				'purchase_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Purchase date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'purchase_price'  => array(
+				'purchase_price' => array(
 					'type'        => 'number',
 					'description' => __( 'Purchase price (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'status'          => array(
+				'status'         => array(
 					'type'        => 'string',
 					'description' => __( 'Current status (optional, defaults to "available")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'available', 'in_use', 'maintenance', 'retired' ),
 					'default'     => 'available',
 				),
-				'location'        => array(
+				'location'       => array(
 					'type'        => 'string',
 					'description' => __( 'Storage location (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'notes'           => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,

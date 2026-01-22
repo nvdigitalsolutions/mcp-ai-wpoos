@@ -50,15 +50,15 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_file'         => array(
+				'tool_file' => array(
 					'type'        => 'string',
 					'description' => __( 'Path to tool file to check', 'mcp-ai-wpoos-pro' ),
 				),
-				'code'              => array(
+				'code'      => array(
 					'type'        => 'string',
 					'description' => __( 'Tool code to check (alternative to file_path)', 'mcp-ai-wpoos-pro' ),
 				),
-				'standards'         => array(
+				'standards' => array(
 					'type'        => 'array',
 					'description' => __( 'Coding standards to check', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -67,17 +67,17 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 					),
 					'default'     => array( 'wpcs', 'phpdoc', 'naming' ),
 				),
-				'use_phpcs'         => array(
+				'use_phpcs' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Run PHPCS if available', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'auto_fix'          => array(
+				'auto_fix'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Attempt to auto-fix issues (requires file_path)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'severity'          => array(
+				'severity'  => array(
 					'type'        => 'string',
 					'enum'        => array( 'error', 'warning', 'all' ),
 					'description' => __( 'Minimum severity to report', 'mcp-ai-wpoos-pro' ),
@@ -106,14 +106,14 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get code to check.
-		$code = '';
+		$code      = '';
 		$file_path = '';
 
 		if ( ! empty( $arguments['code'] ) ) {
 			$code = $arguments['code'];
 		} elseif ( ! empty( $arguments['tool_file'] ) ) {
 			$file_path = sanitize_text_field( $arguments['tool_file'] );
-			
+
 			if ( ! file_exists( $file_path ) ) {
 				return array(
 					'success' => false,
@@ -166,12 +166,12 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		$filtered_issues = $this->filter_by_severity( $compliance_issues, $severity );
 
 		// Auto-fix if requested.
-		$fixed = false;
+		$fixed      = false;
 		$fixed_code = null;
 		if ( $auto_fix && ! empty( $file_path ) ) {
 			$fix_result = $this->auto_fix_issues( $code, $filtered_issues, $file_path );
 			if ( ! is_wp_error( $fix_result ) ) {
-				$fixed = true;
+				$fixed      = true;
 				$fixed_code = $fix_result;
 			}
 		}
@@ -221,10 +221,10 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 			);
 
 			$output = shell_exec( $command );
-			
+
 			if ( ! empty( $output ) ) {
 				$result = json_decode( $output, true );
-				
+
 				if ( isset( $result['files'] ) ) {
 					foreach ( $result['files'] as $file => $data ) {
 						if ( isset( $data['messages'] ) ) {
@@ -310,9 +310,9 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		preg_match_all( '/public function (\w+)\(/', $code, $matches, PREG_OFFSET_CAPTURE );
 		if ( ! empty( $matches[0] ) ) {
 			foreach ( $matches[0] as $match ) {
-				$pos = $match[1];
+				$pos    = $match[1];
 				$before = substr( $code, max( 0, $pos - 200 ), 200 );
-				
+
 				if ( strpos( $before, '/**' ) === false ) {
 					$issues[] = array(
 						'type'     => 'phpdoc',
@@ -343,7 +343,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		// Check class name follows convention.
 		if ( preg_match( '/class\s+(\w+)/', $code, $matches ) ) {
 			$class_name = $matches[1];
-			
+
 			if ( strpos( $class_name, 'WP_MCP_AI_Tool_' ) !== 0 ) {
 				$issues[] = array(
 					'type'     => 'naming',
@@ -469,12 +469,15 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 			return $issues;
 		}
 
-		return array_filter( $issues, function( $issue ) use ( $severity ) {
-			if ( 'error' === $severity ) {
-				return 'error' === $issue['severity'];
+		return array_filter(
+			$issues,
+			function ( $issue ) use ( $severity ) {
+				if ( 'error' === $severity ) {
+					return 'error' === $issue['severity'];
+				}
+				return true; // Warning includes both errors and warnings.
 			}
-			return true; // Warning includes both errors and warnings.
-		} );
+		);
 	}
 
 	/**
@@ -488,7 +491,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 	private function auto_fix_issues( $code, $issues, $file_path ) {
 		// Use PHPCBF if available.
 		$phpcbf_path = str_replace( 'phpcs', 'phpcbf', $this->find_phpcs() );
-		
+
 		if ( $phpcbf_path && file_exists( $phpcbf_path ) ) {
 			$command = sprintf(
 				'%s --standard=WordPress %s 2>&1',
@@ -497,7 +500,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 			);
 
 			shell_exec( $command );
-			
+
 			return file_get_contents( $file_path );
 		}
 
@@ -511,7 +514,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 	 * @return int Compliance score (0-100).
 	 */
 	private function calculate_compliance_score( $issues ) {
-		$score = 100;
+		$score     = 100;
 		$penalties = array(
 			'error'   => 10,
 			'warning' => 3,
@@ -535,9 +538,14 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 	 * @return int Count.
 	 */
 	private function count_by_severity( $issues, $severity ) {
-		return count( array_filter( $issues, function( $issue ) use ( $severity ) {
-			return $issue['severity'] === $severity;
-		} ) );
+		return count(
+			array_filter(
+				$issues,
+				function ( $issue ) use ( $severity ) {
+					return $issue['severity'] === $severity;
+				}
+			)
+		);
 	}
 
 	/**

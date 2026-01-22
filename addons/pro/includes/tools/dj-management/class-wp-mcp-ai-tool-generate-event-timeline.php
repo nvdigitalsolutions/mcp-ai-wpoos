@@ -45,26 +45,26 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'booking_id'       => array(
+				'booking_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID to generate timeline for (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'event_date'       => array(
+				'event_date'         => array(
 					'type'        => 'string',
 					'description' => __( 'Event date in ISO 8601 format (YYYY-MM-DD) (required if no booking_id)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'start_time'       => array(
+				'start_time'         => array(
 					'type'        => 'string',
 					'description' => __( 'Event start time in 24-hour format (HH:MM) (required if no booking_id)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'end_time'         => array(
+				'end_time'           => array(
 					'type'        => 'string',
 					'description' => __( 'Event end time in 24-hour format (HH:MM) (required if no booking_id)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'setup_duration'   => array(
+				'setup_duration'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Setup duration in minutes (optional, defaults to 60)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 15,
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 					'maximum'     => 120,
 					'default'     => 30,
 				),
-				'event_type'       => array(
+				'event_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Event type for timeline customization (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wedding', 'corporate', 'birthday', 'club', 'private_party', 'festival', 'other' ),
@@ -92,11 +92,11 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments, array $context = array() ) {
-		$event_date    = '';
-		$start_time    = '';
-		$end_time      = '';
-		$event_type    = ! empty( $arguments['event_type'] ) ? sanitize_text_field( $arguments['event_type'] ) : 'other';
-		$booking_id    = ! empty( $arguments['booking_id'] ) ? absint( $arguments['booking_id'] ) : 0;
+		$event_date = '';
+		$start_time = '';
+		$end_time   = '';
+		$event_type = ! empty( $arguments['event_type'] ) ? sanitize_text_field( $arguments['event_type'] ) : 'other';
+		$booking_id = ! empty( $arguments['booking_id'] ) ? absint( $arguments['booking_id'] ) : 0;
 
 		// Get details from booking if provided.
 		if ( $booking_id ) {
@@ -136,17 +136,17 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 		// Calculate setup time.
 		$setup_time = date( 'H:i', strtotime( $start_time ) - ( $setup_duration * 60 ) );
 		$timeline[] = array(
-			'time'        => $setup_time,
-			'activity'    => __( 'Arrive at venue', 'mcp-ai-wpoos-pro' ),
-			'duration'    => 0,
-			'type'        => 'arrival',
+			'time'     => $setup_time,
+			'activity' => __( 'Arrive at venue', 'mcp-ai-wpoos-pro' ),
+			'duration' => 0,
+			'type'     => 'arrival',
 		);
 
 		$timeline[] = array(
-			'time'        => $setup_time,
-			'activity'    => __( 'Equipment setup and sound check', 'mcp-ai-wpoos-pro' ),
-			'duration'    => $setup_duration,
-			'type'        => 'setup',
+			'time'     => $setup_time,
+			'activity' => __( 'Equipment setup and sound check', 'mcp-ai-wpoos-pro' ),
+			'duration' => $setup_duration,
+			'type'     => 'setup',
 		);
 
 		// Add event-specific timeline items.
@@ -154,19 +154,19 @@ class WP_MCP_AI_Tool_Generate_Event_Timeline implements WP_MCP_AI_Tool_Interface
 
 		// Calculate breakdown time.
 		$breakdown_time = $end_time;
-		$timeline[] = array(
-			'time'        => $breakdown_time,
-			'activity'    => __( 'Equipment breakdown and packing', 'mcp-ai-wpoos-pro' ),
-			'duration'    => $breakdown_duration,
-			'type'        => 'breakdown',
+		$timeline[]     = array(
+			'time'     => $breakdown_time,
+			'activity' => __( 'Equipment breakdown and packing', 'mcp-ai-wpoos-pro' ),
+			'duration' => $breakdown_duration,
+			'type'     => 'breakdown',
 		);
 
 		$departure_time = date( 'H:i', strtotime( $end_time ) + ( $breakdown_duration * 60 ) );
-		$timeline[] = array(
-			'time'        => $departure_time,
-			'activity'    => __( 'Departure', 'mcp-ai-wpoos-pro' ),
-			'duration'    => 0,
-			'type'        => 'departure',
+		$timeline[]     = array(
+			'time'     => $departure_time,
+			'activity' => __( 'Departure', 'mcp-ai-wpoos-pro' ),
+			'duration' => 0,
+			'type'     => 'departure',
 		);
 
 		// Store timeline if booking ID provided.

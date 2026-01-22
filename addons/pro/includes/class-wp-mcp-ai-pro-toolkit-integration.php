@@ -277,33 +277,33 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 
 		// Enqueue CSS (placeholder - will be created in future phase).
 		// wp_enqueue_style(
-		// 	'wp-mcp-ai-pro-toolkit-widgets',
-		// 	WP_MCP_AI_PRO_URL . 'assets/css/toolkit-widgets.css',
-		// 	array(),
-		// 	WP_MCP_AI_PRO_VERSION
+		// 'wp-mcp-ai-pro-toolkit-widgets',
+		// WP_MCP_AI_PRO_URL . 'assets/css/toolkit-widgets.css',
+		// array(),
+		// WP_MCP_AI_PRO_VERSION
 		// );
 
 		// Enqueue JavaScript (placeholder - will be created in future phase).
 		// wp_enqueue_script(
-		// 	'wp-mcp-ai-pro-toolkit-widgets',
-		// 	WP_MCP_AI_PRO_URL . 'assets/js/toolkit-widgets.min.js',
-		// 	array( 'jquery' ),
-		// 	WP_MCP_AI_PRO_VERSION,
-		// 	true
+		// 'wp-mcp-ai-pro-toolkit-widgets',
+		// WP_MCP_AI_PRO_URL . 'assets/js/toolkit-widgets.min.js',
+		// array( 'jquery' ),
+		// WP_MCP_AI_PRO_VERSION,
+		// true
 		// );
 
 		// Localize script with data.
 		// wp_localize_script(
-		// 	'wp-mcp-ai-pro-toolkit-widgets',
-		// 	'mcpAiToolkits',
-		// 	array(
-		// 		'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-		// 		'nonce'   => wp_create_nonce( 'mcp_ai_toolkit_nonce' ),
-		// 		'i18n'    => array(
-		// 			'loading' => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
-		// 			'error'   => __( 'An error occurred', 'mcp-ai-wpoos-pro' ),
-		// 		),
-		// 	)
+		// 'wp-mcp-ai-pro-toolkit-widgets',
+		// 'mcpAiToolkits',
+		// array(
+		// 'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+		// 'nonce'   => wp_create_nonce( 'mcp_ai_toolkit_nonce' ),
+		// 'i18n'    => array(
+		// 'loading' => __( 'Loading..', 'mcp-ai-wpoos-pro' ),
+		// 'error'   => __( 'An error occurred', 'mcp-ai-wpoos-pro' ),
+		// ),
+		// )
 		// );
 	}
 }

@@ -45,71 +45,71 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'booking_id'       => array(
+				'booking_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'event_name'       => array(
+				'event_name'     => array(
 					'type'        => 'string',
 					'description' => __( 'Event name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'event_date'       => array(
+				'event_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Event date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'start_time'       => array(
+				'start_time'     => array(
 					'type'        => 'string',
 					'description' => __( 'Event start time in 24-hour format (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'end_time'         => array(
+				'end_time'       => array(
 					'type'        => 'string',
 					'description' => __( 'Event end time in 24-hour format (HH:MM) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'venue_name'       => array(
+				'venue_name'     => array(
 					'type'        => 'string',
 					'description' => __( 'Venue name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'venue_address'    => array(
+				'venue_address'  => array(
 					'type'        => 'string',
 					'description' => __( 'Venue address (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'client_phone'     => array(
+				'client_phone'   => array(
 					'type'        => 'string',
 					'description' => __( 'Client phone number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 20,
 				),
-				'guest_count'      => array(
+				'guest_count'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Expected number of guests (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'package'          => array(
+				'package'        => array(
 					'type'        => 'string',
 					'description' => __( 'Service package (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'basic', 'standard', 'premium', 'custom' ),
 				),
-				'total_price'      => array(
+				'total_price'    => array(
 					'type'        => 'number',
 					'description' => __( 'Total price (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'deposit'          => array(
+				'deposit'        => array(
 					'type'        => 'number',
 					'description' => __( 'Deposit amount (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'booking_status'   => array(
+				'booking_status' => array(
 					'type'        => 'string',
 					'description' => __( 'Booking status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'confirmed', 'completed', 'cancelled' ),
 				),
-				'notes'            => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
@@ -147,18 +147,29 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 		// Update post content if notes provided.
 		if ( isset( $arguments['notes'] ) ) {
 			$notes = sanitize_textarea_field( $arguments['notes'] );
-			wp_update_post( array(
-				'ID'           => $booking_id,
-				'post_content' => $notes,
-			) );
+			wp_update_post(
+				array(
+					'ID'           => $booking_id,
+					'post_content' => $notes,
+				)
+			);
 			$updated_fields[] = 'notes';
 		}
 
 		// Update metadata fields.
 		$meta_fields = array(
-			'event_name', 'event_date', 'start_time', 'end_time', 'venue_name',
-			'venue_address', 'client_phone', 'guest_count', 'package',
-			'total_price', 'deposit', 'booking_status',
+			'event_name',
+			'event_date',
+			'start_time',
+			'end_time',
+			'venue_name',
+			'venue_address',
+			'client_phone',
+			'guest_count',
+			'package',
+			'total_price',
+			'deposit',
+			'booking_status',
 		);
 
 		foreach ( $meta_fields as $field ) {
@@ -186,12 +197,12 @@ class WP_MCP_AI_Tool_Update_Event_Details implements WP_MCP_AI_Tool_Interface, W
 
 		// Get current booking data.
 		$booking_data = array(
-			'id'            => $booking_id,
-			'event_name'    => get_post_meta( $booking_id, '_event_name', true ),
-			'event_date'    => get_post_meta( $booking_id, '_event_date', true ),
-			'start_time'    => get_post_meta( $booking_id, '_start_time', true ),
-			'venue_name'    => get_post_meta( $booking_id, '_venue_name', true ),
-			'client_name'   => get_post_meta( $booking_id, '_client_name', true ),
+			'id'             => $booking_id,
+			'event_name'     => get_post_meta( $booking_id, '_event_name', true ),
+			'event_date'     => get_post_meta( $booking_id, '_event_date', true ),
+			'start_time'     => get_post_meta( $booking_id, '_start_time', true ),
+			'venue_name'     => get_post_meta( $booking_id, '_venue_name', true ),
+			'client_name'    => get_post_meta( $booking_id, '_client_name', true ),
 			'booking_status' => get_post_meta( $booking_id, '_booking_status', true ),
 		);
 

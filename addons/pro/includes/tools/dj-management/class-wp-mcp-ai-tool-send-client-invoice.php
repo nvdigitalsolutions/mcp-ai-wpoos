@@ -45,21 +45,21 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'booking_id'       => array(
+				'booking_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID to generate invoice for (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'invoice_number'   => array(
+				'invoice_number' => array(
 					'type'        => 'string',
 					'description' => __( 'Invoice number (optional, auto-generated if not provided)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'due_date'         => array(
+				'due_date'       => array(
 					'type'        => 'string',
 					'description' => __( 'Payment due date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'custom_message'   => array(
+				'custom_message' => array(
 					'type'        => 'string',
 					'description' => __( 'Custom message to include in invoice (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
@@ -91,13 +91,13 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Get booking details.
-		$event_name    = get_post_meta( $booking_id, '_event_name', true );
-		$event_date    = get_post_meta( $booking_id, '_event_date', true );
-		$client_name   = get_post_meta( $booking_id, '_client_name', true );
-		$client_email  = get_post_meta( $booking_id, '_client_email', true );
-		$total_price   = floatval( get_post_meta( $booking_id, '_total_price', true ) );
-		$deposit       = floatval( get_post_meta( $booking_id, '_deposit', true ) );
-		$total_paid    = floatval( get_post_meta( $booking_id, '_total_paid', true ) );
+		$event_name   = get_post_meta( $booking_id, '_event_name', true );
+		$event_date   = get_post_meta( $booking_id, '_event_date', true );
+		$client_name  = get_post_meta( $booking_id, '_client_name', true );
+		$client_email = get_post_meta( $booking_id, '_client_email', true );
+		$total_price  = floatval( get_post_meta( $booking_id, '_total_price', true ) );
+		$deposit      = floatval( get_post_meta( $booking_id, '_deposit', true ) );
+		$total_paid   = floatval( get_post_meta( $booking_id, '_total_paid', true ) );
 
 		$invoice_number = ! empty( $arguments['invoice_number'] ) ? sanitize_text_field( $arguments['invoice_number'] ) : 'INV-' . $booking_id . '-' . date( 'Ymd' );
 		$due_date       = ! empty( $arguments['due_date'] ) ? sanitize_text_field( $arguments['due_date'] ) : '';
@@ -163,11 +163,11 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 	 * @return string Invoice content.
 	 */
 	private function build_invoice( $invoice_number, $client_name, $event_name, $event_date, $total_price, $deposit, $total_paid, $balance, $due_date, $custom_message ) {
-		$invoice = "INVOICE\n\n";
-		$invoice .= "Invoice Number: " . $invoice_number . "\n";
-		$invoice .= "Invoice Date: " . current_time( 'F j, Y' ) . "\n";
+		$invoice  = "INVOICE\n\n";
+		$invoice .= 'Invoice Number: ' . $invoice_number . "\n";
+		$invoice .= 'Invoice Date: ' . current_time( 'F j, Y' ) . "\n";
 		if ( $due_date ) {
-			$invoice .= "Due Date: " . date( 'F j, Y', strtotime( $due_date ) ) . "\n";
+			$invoice .= 'Due Date: ' . date( 'F j, Y', strtotime( $due_date ) ) . "\n";
 		}
 		$invoice .= "\n";
 
@@ -175,21 +175,21 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 		$invoice .= $client_name . "\n\n";
 
 		$invoice .= "Event Details:\n";
-		$invoice .= "Event: " . $event_name . "\n";
-		$invoice .= "Date: " . date( 'F j, Y', strtotime( $event_date ) ) . "\n\n";
+		$invoice .= 'Event: ' . $event_name . "\n";
+		$invoice .= 'Date: ' . date( 'F j, Y', strtotime( $event_date ) ) . "\n\n";
 
 		$invoice .= "SERVICES\n";
 		$invoice .= str_repeat( '-', 50 ) . "\n";
-		$invoice .= "DJ Services" . str_repeat( ' ', 30 ) . "$" . number_format( $total_price, 2 ) . "\n";
+		$invoice .= 'DJ Services' . str_repeat( ' ', 30 ) . '$' . number_format( $total_price, 2 ) . "\n";
 		$invoice .= str_repeat( '-', 50 ) . "\n";
-		$invoice .= "Subtotal:" . str_repeat( ' ', 30 ) . "$" . number_format( $total_price, 2 ) . "\n";
-		$invoice .= "Total:" . str_repeat( ' ', 33 ) . "$" . number_format( $total_price, 2 ) . "\n\n";
+		$invoice .= 'Subtotal:' . str_repeat( ' ', 30 ) . '$' . number_format( $total_price, 2 ) . "\n";
+		$invoice .= 'Total:' . str_repeat( ' ', 33 ) . '$' . number_format( $total_price, 2 ) . "\n\n";
 
 		if ( $total_paid > 0 ) {
-			$invoice .= "Payments Received:" . str_repeat( ' ', 21 ) . "-$" . number_format( $total_paid, 2 ) . "\n";
+			$invoice .= 'Payments Received:' . str_repeat( ' ', 21 ) . '-$' . number_format( $total_paid, 2 ) . "\n";
 		}
 
-		$invoice .= "BALANCE DUE:" . str_repeat( ' ', 26 ) . "$" . number_format( $balance, 2 ) . "\n\n";
+		$invoice .= 'BALANCE DUE:' . str_repeat( ' ', 26 ) . '$' . number_format( $balance, 2 ) . "\n\n";
 
 		if ( $custom_message ) {
 			$invoice .= $custom_message . "\n\n";

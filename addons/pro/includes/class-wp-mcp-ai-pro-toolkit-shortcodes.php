@@ -45,8 +45,8 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 	 * Register assets for toolkit widgets.
 	 */
 	public function register_assets() {
-		$script_path   = WP_MCP_AI_PRO_URL . 'assets/js/toolkit-widgets.min.js';
-		$style_path    = WP_MCP_AI_PRO_URL . 'assets/css/toolkit-widgets.css';
+		$script_path    = WP_MCP_AI_PRO_URL . 'assets/js/toolkit-widgets.min.js';
+		$style_path     = WP_MCP_AI_PRO_URL . 'assets/css/toolkit-widgets.css';
 		$script_version = WP_MCP_AI_PRO_VERSION;
 		$style_version  = WP_MCP_AI_PRO_VERSION;
 
@@ -72,10 +72,10 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 			self::SCRIPT_HANDLE,
 			'wpMcpAiToolkitWidgets',
 			array(
-				'restUrl'   => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
-				'nonce'     => wp_create_nonce( 'wp_rest' ),
-				'ajaxUrl'   => admin_url( 'admin-ajax.php' ),
-				'i18n'      => array(
+				'restUrl' => esc_url_raw( rest_url( 'mcp-ai-pro/v1' ) ),
+				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'i18n'    => array(
 					'loading'     => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
 					'noResults'   => __( 'No results found.', 'mcp-ai-wpoos-pro' ),
 					'error'       => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
@@ -912,7 +912,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 			$image = isset( $product['image_url'] ) ? $product['image_url'] : '';
 
 			echo '<div class="mcp-ai-product">';
-			
+
 			if ( $image ) {
 				echo '<div class="mcp-ai-product-image">';
 				echo '<img src="' . esc_url( $image ) . '" alt="' . esc_attr( $name ) . '" />';
@@ -984,10 +984,10 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		echo '<div class="mcp-ai-social-calendar">';
 
 		foreach ( $posts as $post ) {
-			$title     = isset( $post['post_title'] ) ? $post['post_title'] : '';
-			$platform  = isset( $post['platform'] ) ? $post['platform'] : '';
-			$date      = isset( $post['scheduled_date'] ) ? $post['scheduled_date'] : '';
-			$status    = isset( $post['status'] ) ? $post['status'] : '';
+			$title    = isset( $post['post_title'] ) ? $post['post_title'] : '';
+			$platform = isset( $post['platform'] ) ? $post['platform'] : '';
+			$date     = isset( $post['scheduled_date'] ) ? $post['scheduled_date'] : '';
+			$status   = isset( $post['status'] ) ? $post['status'] : '';
 
 			echo '<div class="mcp-ai-calendar-post mcp-ai-status-' . esc_attr( sanitize_html_class( $status ) ) . '">';
 			echo '<div class="mcp-ai-calendar-post-header">';
@@ -1379,7 +1379,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 						foreach ( $translations as $lang => $trans ) {
 							$trans_items[] = esc_html( strtoupper( $lang ) . ': ' . $trans );
 						}
-						echo implode( ', ', $trans_items );
+						echo esc_html( implode( ', ', $trans_items ) );
 						echo '</div>';
 					}
 				}
@@ -1404,12 +1404,12 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		echo '<div class="mcp-ai-tool-templates mcp-ai-display-' . esc_attr( $display ) . ' mcp-ai-columns-' . esc_attr( $columns ) . '">';
 
 		foreach ( $templates as $template ) {
-			$tool_name         = isset( $template['tool_name'] ) ? $template['tool_name'] : '';
-			$tool_slug         = isset( $template['tool_slug'] ) ? $template['tool_slug'] : '';
-			$description       = isset( $template['description'] ) ? $template['description'] : '';
-			$category          = isset( $template['category'] ) ? $template['category'] : '';
-			$required_cap      = isset( $template['required_capability'] ) ? $template['required_capability'] : '';
-			$code_template     = isset( $template['code_template'] ) ? $template['code_template'] : '';
+			$tool_name     = isset( $template['tool_name'] ) ? $template['tool_name'] : '';
+			$tool_slug     = isset( $template['tool_slug'] ) ? $template['tool_slug'] : '';
+			$description   = isset( $template['description'] ) ? $template['description'] : '';
+			$category      = isset( $template['category'] ) ? $template['category'] : '';
+			$required_cap  = isset( $template['required_capability'] ) ? $template['required_capability'] : '';
+			$code_template = isset( $template['code_template'] ) ? $template['code_template'] : '';
 
 			echo '<div class="mcp-ai-tool-template">';
 			echo '<h4 class="mcp-ai-tool-template-name">' . esc_html( $tool_name ) . '</h4>';
@@ -1682,7 +1682,7 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		echo '<div class="mcp-ai-media-collections mcp-ai-display-' . esc_attr( $display ) . '" data-columns="' . esc_attr( $columns ) . '">';
 
 		foreach ( $collections as $collection ) {
-			$collection_id = $collection->ID;
+			$collection_id  = $collection->ID;
 			$collection_url = get_permalink( $collection_id );
 			$edit_url       = get_edit_post_link( $collection_id );
 			$thumbnail_id   = get_post_thumbnail_id( $collection_id );

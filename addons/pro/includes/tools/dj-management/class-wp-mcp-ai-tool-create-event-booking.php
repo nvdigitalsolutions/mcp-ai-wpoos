@@ -45,79 +45,79 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'event_name'       => array(
+				'event_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Event name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'event_type'       => array(
+				'event_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Event type (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wedding', 'corporate', 'birthday', 'club', 'private_party', 'festival', 'other' ),
 				),
-				'event_date'       => array(
+				'event_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Event date in ISO 8601 format (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'start_time'       => array(
+				'start_time'    => array(
 					'type'        => 'string',
 					'description' => __( 'Event start time in 24-hour format (HH:MM) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'end_time'         => array(
+				'end_time'      => array(
 					'type'        => 'string',
 					'description' => __( 'Event end time in 24-hour format (HH:MM) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^([01]\d|2[0-3]):([0-5]\d)$',
 				),
-				'venue_name'       => array(
+				'venue_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Venue name (required)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'venue_address'    => array(
+				'venue_address' => array(
 					'type'        => 'string',
 					'description' => __( 'Venue address (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'client_name'      => array(
+				'client_name'   => array(
 					'type'        => 'string',
 					'description' => __( 'Client name (required)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'client_email'     => array(
+				'client_email'  => array(
 					'type'        => 'string',
 					'description' => __( 'Client email (required)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'email',
 					'maxLength'   => 100,
 				),
-				'client_phone'     => array(
+				'client_phone'  => array(
 					'type'        => 'string',
 					'description' => __( 'Client phone number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 20,
 				),
-				'guest_count'      => array(
+				'guest_count'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Expected number of guests (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'package'          => array(
+				'package'       => array(
 					'type'        => 'string',
 					'description' => __( 'Service package (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'basic', 'standard', 'premium', 'custom' ),
 				),
-				'total_price'      => array(
+				'total_price'   => array(
 					'type'        => 'number',
 					'description' => __( 'Total price (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'deposit'          => array(
+				'deposit'       => array(
 					'type'        => 'number',
 					'description' => __( 'Deposit amount (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'notes'            => array(
+				'notes'         => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
@@ -223,17 +223,17 @@ class WP_MCP_AI_Tool_Create_Event_Booking implements WP_MCP_AI_Tool_Interface, W
 				$event_name
 			),
 			'booking'    => array(
-				'id'            => $booking_id,
-				'event_name'    => $event_name,
-				'event_type'    => $event_type,
-				'event_date'    => $event_date,
-				'start_time'    => $start_time,
-				'end_time'      => $end_time,
-				'venue_name'    => $venue_name,
-				'client_name'   => $client_name,
-				'client_email'  => $client_email,
-				'total_price'   => $total_price,
-				'status'        => 'pending',
+				'id'           => $booking_id,
+				'event_name'   => $event_name,
+				'event_type'   => $event_type,
+				'event_date'   => $event_date,
+				'start_time'   => $start_time,
+				'end_time'     => $end_time,
+				'venue_name'   => $venue_name,
+				'client_name'  => $client_name,
+				'client_email' => $client_email,
+				'total_price'  => $total_price,
+				'status'       => 'pending',
 			),
 		);
 	}

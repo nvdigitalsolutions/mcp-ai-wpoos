@@ -45,33 +45,33 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'track_id'         => array(
+				'track_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Track ID to analyze (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'bpm'              => array(
+				'bpm'            => array(
 					'type'        => 'number',
 					'description' => __( 'Beats per minute (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 300,
 				),
-				'key'              => array(
+				'key'            => array(
 					'type'        => 'string',
 					'description' => __( 'Musical key in Camelot or standard notation (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10,
 				),
-				'energy_level'     => array(
+				'energy_level'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Energy level 1-10 (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 				),
-				'time_signature'   => array(
+				'time_signature' => array(
 					'type'        => 'string',
 					'description' => __( 'Time signature (optional, defaults to "4/4")', 'mcp-ai-wpoos-pro' ),
 					'default'     => '4/4',
 				),
-				'detected_by'      => array(
+				'detected_by'    => array(
 					'type'        => 'string',
 					'description' => __( 'Detection method (manual, software, AI) (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'manual', 'software', 'ai' ),
@@ -138,22 +138,22 @@ class WP_MCP_AI_Tool_Analyze_Track_BPM implements WP_MCP_AI_Tool_Interface, WP_M
 		$track_title = get_the_title( $track_id );
 
 		return array(
-			'success'         => true,
-			'message'         => sprintf(
+			'success'  => true,
+			'message'  => sprintf(
 				/* translators: 1: track title, 2: BPM */
 				__( 'BPM analysis completed for "%1$s". BPM: %2$s', 'mcp-ai-wpoos-pro' ),
 				$track_title,
 				$bpm
 			),
-			'track_id'        => $track_id,
-			'analysis'        => array(
-				'bpm'              => $bpm,
-				'key'              => $key,
-				'energy_level'     => $energy_level,
-				'time_signature'   => $time_signature,
-				'tempo_category'   => $tempo_category,
-				'detected_by'      => $detected_by,
-				'compatible_keys'  => $compatible_keys,
+			'track_id' => $track_id,
+			'analysis' => array(
+				'bpm'             => $bpm,
+				'key'             => $key,
+				'energy_level'    => $energy_level,
+				'time_signature'  => $time_signature,
+				'tempo_category'  => $tempo_category,
+				'detected_by'     => $detected_by,
+				'compatible_keys' => $compatible_keys,
 			),
 		);
 	}

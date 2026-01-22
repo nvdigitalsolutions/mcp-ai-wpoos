@@ -50,30 +50,30 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'description'     => array(
+				'description'    => array(
 					'type'        => 'string',
 					'description' => __( 'Natural language description of the tool and what parameters it needs', 'mcp-ai-wpoos-pro' ),
 				),
-				'example_usage'   => array(
+				'example_usage'  => array(
 					'type'        => 'string',
 					'description' => __( 'Optional example of how the tool would be called (helps infer parameters)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_common'  => array(
+				'include_common' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include common parameters like limit, offset, format (default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'model'           => array(
+				'model'          => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for generation (default: assistant context model)', 'mcp-ai-wpoos-pro' ),
 				),
-				'output_format'   => array(
+				'output_format'  => array(
 					'type'        => 'string',
 					'enum'        => array( 'php_array', 'json', 'markdown' ),
 					'description' => __( 'Output format for the generated schema', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'php_array',
 				),
-				'strict_types'    => array(
+				'strict_types'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use strict type definitions (no union types or flexible schemas)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -109,11 +109,11 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$description     = sanitize_textarea_field( $arguments['description'] );
-		$example_usage   = isset( $arguments['example_usage'] ) ? sanitize_textarea_field( $arguments['example_usage'] ) : '';
-		$include_common  = isset( $arguments['include_common'] ) ? (bool) $arguments['include_common'] : false;
-		$output_format   = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'php_array';
-		$strict_types    = isset( $arguments['strict_types'] ) ? (bool) $arguments['strict_types'] : true;
+		$description    = sanitize_textarea_field( $arguments['description'] );
+		$example_usage  = isset( $arguments['example_usage'] ) ? sanitize_textarea_field( $arguments['example_usage'] ) : '';
+		$include_common = isset( $arguments['include_common'] ) ? (bool) $arguments['include_common'] : false;
+		$output_format  = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'php_array';
+		$strict_types   = isset( $arguments['strict_types'] ) ? (bool) $arguments['strict_types'] : true;
 
 		// Build AI prompt for parameter generation.
 		$prompt = $this->build_parameter_generation_prompt( $description, $example_usage, $include_common, $strict_types );
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	 * @return string Prompt for AI.
 	 */
 	private function build_parameter_generation_prompt( $description, $example_usage, $include_common, $strict_types ) {
-		$prompt = "Generate a JSON schema parameter definition for a WordPress AI tool with the following description:\n\n";
+		$prompt  = "Generate a JSON schema parameter definition for a WordPress AI tool with the following description:\n\n";
 		$prompt .= $description . "\n\n";
 
 		if ( ! empty( $example_usage ) ) {
@@ -202,7 +202,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 		$prompt .= '  "properties": { ... },';
 		$prompt .= '  "required": [ ... ]';
 		$prompt .= "}\n\n";
-		$prompt .= "Only output the JSON schema, no additional text.";
+		$prompt .= 'Only output the JSON schema, no additional text.';
 
 		return $prompt;
 	}
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	private function get_ai_service( $arguments, $context ) {
 		// Get model from arguments or context.
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		
+
 		if ( empty( $model ) && isset( $context['assistant_model'] ) ) {
 			$model = $context['assistant_model'];
 		}
@@ -303,7 +303,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	 * @return string PHP array code.
 	 */
 	private function format_as_php_array( $parameters ) {
-		$code = "array(\n";
+		$code  = "array(\n";
 		$code .= "\t'type'       => 'object',\n";
 		$code .= "\t'properties' => array(\n";
 
@@ -324,12 +324,12 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 		}
 
 		$code .= "\t),\n";
-		
+
 		if ( isset( $parameters['required'] ) && is_array( $parameters['required'] ) ) {
 			$code .= "\t'required'   => array( '" . implode( "', '", $parameters['required'] ) . "' ),\n";
 		}
 
-		$code .= ")";
+		$code .= ')';
 
 		return $code;
 	}
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 	 * @return string Markdown formatted text.
 	 */
 	private function format_as_markdown( $parameters ) {
-		$md = "## Parameters\n\n";
+		$md  = "## Parameters\n\n";
 		$md .= "| Parameter | Type | Required | Description |\n";
 		$md .= "|-----------|------|----------|-------------|\n";
 
@@ -349,7 +349,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 
 		if ( isset( $parameters['properties'] ) ) {
 			foreach ( $parameters['properties'] as $name => $config ) {
-				$type = isset( $config['type'] ) ? $config['type'] : 'string';
+				$type        = isset( $config['type'] ) ? $config['type'] : 'string';
 				$is_required = in_array( $name, $required, true ) ? 'Yes' : 'No';
 				$description = isset( $config['description'] ) ? $config['description'] : '';
 

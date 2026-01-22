@@ -185,13 +185,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		$test_count = substr_count( $test_code, 'public function test_' );
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'Test suite generated successfully.', 'mcp-ai-wpoos-pro' ),
-			'test_file'    => $output_path,
-			'test_count'   => $test_count,
-			'test_types'   => $test_types,
-			'file_size'    => $bytes_written,
-			'next_steps'   => array(
+			'success'    => true,
+			'message'    => __( 'Test suite generated successfully.', 'mcp-ai-wpoos-pro' ),
+			'test_file'  => $output_path,
+			'test_count' => $test_count,
+			'test_types' => $test_types,
+			'file_size'  => $bytes_written,
+			'next_steps' => array(
 				'1' => __( 'Run: vendor/bin/phpunit ' . $output_path, 'mcp-ai-wpoos-pro' ),
 				'2' => __( 'Review test coverage', 'mcp-ai-wpoos-pro' ),
 				'3' => __( 'Add tool-specific assertions', 'mcp-ai-wpoos-pro' ),
@@ -208,9 +208,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function analyze_tool( $tool_class, $tool_code ) {
 		$analysis = array(
-			'class_name' => $tool_class,
-			'methods'    => array(),
-			'parameters' => array(),
+			'class_name'   => $tool_class,
+			'methods'      => array(),
+			'parameters'   => array(),
 			'dependencies' => array(),
 		);
 
@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 		$prompt .= "2. Test methods with assertions\n";
 		$prompt .= "3. Helper methods if needed\n";
 		$prompt .= "4. PHPDoc blocks\n\n";
-		$prompt .= "Output only PHP code.";
+		$prompt .= 'Output only PHP code.';
 
 		return $prompt;
 	}
@@ -307,7 +307,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Tests implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function get_ai_service( $arguments, $context ) {
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		
+
 		if ( empty( $model ) && isset( $context['assistant_model'] ) ) {
 			$model = $context['assistant_model'];
 		}

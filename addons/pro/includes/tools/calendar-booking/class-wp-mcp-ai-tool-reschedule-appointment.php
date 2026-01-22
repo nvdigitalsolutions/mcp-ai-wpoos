@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 
 		// Sanitize new times.
 		$new_start_time = sanitize_text_field( $arguments['new_start_time'] );
-		
+
 		// Calculate new end time.
 		if ( ! empty( $arguments['new_end_time'] ) ) {
 			$new_end_time = sanitize_text_field( $arguments['new_end_time'] );
@@ -267,7 +267,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 		if ( ! empty( $arguments['send_notification'] ) ) {
 			$client_email = get_post_meta( $appointment_id, '_client_email', true );
 			$client_name  = get_post_meta( $appointment_id, '_client_name', true );
-			
+
 			if ( $client_email ) {
 				$notification_sent = $this->send_reschedule_email(
 					$appointment_id,
@@ -379,14 +379,14 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function log_reschedule( $appointment_id, $user_id, $old_start, $old_end, $new_start, $new_end, $reason ) {
 		$log_entry = array(
-			'action'        => 'rescheduled',
-			'timestamp'     => current_time( 'mysql' ),
-			'user_id'       => $user_id,
-			'old_start'     => $old_start,
-			'old_end'       => $old_end,
-			'new_start'     => $new_start,
-			'new_end'       => $new_end,
-			'reason'        => $reason,
+			'action'    => 'rescheduled',
+			'timestamp' => current_time( 'mysql' ),
+			'user_id'   => $user_id,
+			'old_start' => $old_start,
+			'old_end'   => $old_end,
+			'new_start' => $new_start,
+			'new_end'   => $new_end,
+			'reason'    => $reason,
 		);
 
 		$activity_log = get_post_meta( $appointment_id, '_activity_log', true );
@@ -434,7 +434,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$message .= __( "Thank you for your understanding!", 'mcp-ai-wpoos-pro' );
+		$message .= __( 'Thank you for your understanding!', 'mcp-ai-wpoos-pro' );
 
 		return wp_mail( $email, $subject, $message );
 	}

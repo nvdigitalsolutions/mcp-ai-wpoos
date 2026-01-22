@@ -45,31 +45,31 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'booking_id'       => array(
+				'booking_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID to track payment for (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'payment_amount'   => array(
+				'payment_amount' => array(
 					'type'        => 'number',
 					'description' => __( 'Payment amount (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'payment_method'   => array(
+				'payment_method' => array(
 					'type'        => 'string',
 					'description' => __( 'Payment method (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cash', 'check', 'credit_card', 'bank_transfer', 'paypal', 'other' ),
 				),
-				'payment_date'     => array(
+				'payment_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Payment date in ISO 8601 format (YYYY-MM-DD) (optional, defaults to today)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'payment_type'     => array(
+				'payment_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Payment type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'deposit', 'partial', 'final', 'full' ),
 				),
-				'notes'            => array(
+				'notes'          => array(
 					'type'        => 'string',
 					'description' => __( 'Payment notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
@@ -114,11 +114,11 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 
 		// Add new payment.
 		$payment_record = array(
-			'amount'  => $payment_amount,
-			'method'  => $payment_method,
-			'date'    => $payment_date,
-			'type'    => $payment_type,
-			'notes'   => $notes,
+			'amount'      => $payment_amount,
+			'method'      => $payment_method,
+			'date'        => $payment_date,
+			'type'        => $payment_type,
+			'notes'       => $notes,
 			'recorded_at' => current_time( 'mysql' ),
 		);
 
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		$total_price = floatval( get_post_meta( $booking_id, '_total_price', true ) );
-		$balance = $total_price - $total_paid;
+		$balance     = $total_price - $total_paid;
 
 		// Update payment status.
 		if ( $balance <= 0 ) {
@@ -147,9 +147,9 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 		update_post_meta( $booking_id, '_balance', $balance );
 
 		return array(
-			'success'        => true,
-			'message'        => __( 'Payment recorded successfully.', 'mcp-ai-wpoos-pro' ),
-			'payment'        => $payment_record,
+			'success'         => true,
+			'message'         => __( 'Payment recorded successfully.', 'mcp-ai-wpoos-pro' ),
+			'payment'         => $payment_record,
 			'payment_summary' => array(
 				'total_price' => $total_price,
 				'total_paid'  => $total_paid,

@@ -97,31 +97,31 @@ class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'appointment_id'     => array(
+				'appointment_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Appointment ID to cancel (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'reason'             => array(
+				'reason'            => array(
 					'type'        => 'string',
 					'description' => __( 'Reason for cancellation', 'mcp-ai-wpoos-pro' ),
 				),
-				'cancelled_by'       => array(
+				'cancelled_by'      => array(
 					'type'        => 'string',
 					'description' => __( 'Who initiated the cancellation (client, staff, system)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'client', 'staff', 'system' ),
 					'default'     => 'staff',
 				),
-				'send_notification'  => array(
+				'send_notification' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Send cancellation notification to client', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'offer_reschedule'   => array(
+				'offer_reschedule'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include reschedule link in notification', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'process_refund'     => array(
+				'process_refund'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically process refund if applicable', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -334,11 +334,11 @@ class WP_MCP_AI_Tool_Cancel_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function log_cancellation( $appointment_id, $user_id, $reason, $cancelled_by ) {
 		$log_entry = array(
-			'action'        => 'cancelled',
-			'timestamp'     => current_time( 'mysql' ),
-			'user_id'       => $user_id,
-			'cancelled_by'  => $cancelled_by,
-			'reason'        => $reason,
+			'action'       => 'cancelled',
+			'timestamp'    => current_time( 'mysql' ),
+			'user_id'      => $user_id,
+			'cancelled_by' => $cancelled_by,
+			'reason'       => $reason,
 		);
 
 		$activity_log = get_post_meta( $appointment_id, '_activity_log', true );

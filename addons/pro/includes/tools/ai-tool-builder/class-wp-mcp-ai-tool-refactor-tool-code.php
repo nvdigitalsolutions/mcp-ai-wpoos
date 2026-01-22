@@ -105,14 +105,14 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get code from argument or file.
-		$code = '';
+		$code      = '';
 		$file_path = '';
 
 		if ( ! empty( $arguments['code'] ) ) {
 			$code = $arguments['code'];
 		} elseif ( ! empty( $arguments['file_path'] ) ) {
 			$file_path = sanitize_text_field( $arguments['file_path'] );
-			
+
 			if ( ! file_exists( $file_path ) ) {
 				return array(
 					'success' => false,
@@ -130,8 +130,8 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
-		$refactor_goals        = isset( $arguments['refactor_goals'] ) ? array_map( 'sanitize_text_field', (array) $arguments['refactor_goals'] ) : array( 'readability', 'standards' );
-		$apply_changes         = isset( $arguments['apply_changes'] ) ? (bool) $arguments['apply_changes'] : false;
+		$refactor_goals         = isset( $arguments['refactor_goals'] ) ? array_map( 'sanitize_text_field', (array) $arguments['refactor_goals'] ) : array( 'readability', 'standards' );
+		$apply_changes          = isset( $arguments['apply_changes'] ) ? (bool) $arguments['apply_changes'] : false;
 		$preserve_functionality = isset( $arguments['preserve_functionality'] ) ? (bool) $arguments['preserve_functionality'] : true;
 
 		// Build refactoring prompt.
@@ -171,19 +171,19 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$result = array(
-			'success'           => true,
-			'message'           => __( 'Code refactoring completed.', 'mcp-ai-wpoos-pro' ),
-			'original_lines'    => substr_count( $code, "\n" ) + 1,
-			'refactored_lines'  => substr_count( $refactored['code'], "\n" ) + 1,
-			'refactored_code'   => $refactored['code'],
-			'improvements'      => $refactored['improvements'],
-			'changes_applied'   => false,
+			'success'          => true,
+			'message'          => __( 'Code refactoring completed.', 'mcp-ai-wpoos-pro' ),
+			'original_lines'   => substr_count( $code, "\n" ) + 1,
+			'refactored_lines' => substr_count( $refactored['code'], "\n" ) + 1,
+			'refactored_code'  => $refactored['code'],
+			'improvements'     => $refactored['improvements'],
+			'changes_applied'  => false,
 		);
 
 		// Apply changes if requested and file path provided.
 		if ( $apply_changes && ! empty( $file_path ) ) {
 			$backup_path = $file_path . '.backup-' . time();
-			
+
 			// Create backup.
 			copy( $file_path, $backup_path );
 
@@ -192,8 +192,8 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 
 			if ( false !== $bytes_written ) {
 				$result['changes_applied'] = true;
-				$result['backup_path'] = $backup_path;
-				$result['message'] = __( 'Code refactored and changes applied successfully.', 'mcp-ai-wpoos-pro' );
+				$result['backup_path']     = $backup_path;
+				$result['message']         = __( 'Code refactored and changes applied successfully.', 'mcp-ai-wpoos-pro' );
 			} else {
 				$result['warning'] = __( 'Failed to write changes to file.', 'mcp-ai-wpoos-pro' );
 			}
@@ -211,7 +211,7 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string AI prompt.
 	 */
 	private function build_refactoring_prompt( $code, $refactor_goals, $preserve_functionality ) {
-		$prompt = "Refactor the following WordPress AI tool code:\n\n```php\n{$code}\n```\n\n";
+		$prompt  = "Refactor the following WordPress AI tool code:\n\n```php\n{$code}\n```\n\n";
 		$prompt .= "Refactoring Goals:\n";
 
 		foreach ( $refactor_goals as $goal ) {
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function get_ai_service( $arguments, $context ) {
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		
+
 		if ( empty( $model ) && isset( $context['assistant_model'] ) ) {
 			$model = $context['assistant_model'];
 		}
@@ -291,13 +291,13 @@ class WP_MCP_AI_Tool_Refactor_Tool_Code implements WP_MCP_AI_Tool_Interface, WP_
 		$code = trim( $matches[1] );
 
 		// Extract improvements list.
-		$improvements = array();
-		$lines = explode( "\n", $response );
+		$improvements    = array();
+		$lines           = explode( "\n", $response );
 		$in_improvements = false;
 
 		foreach ( $lines as $line ) {
 			$trimmed = trim( $line );
-			
+
 			if ( strpos( $trimmed, 'improvements' ) !== false || strpos( $trimmed, 'changes' ) !== false ) {
 				$in_improvements = true;
 				continue;

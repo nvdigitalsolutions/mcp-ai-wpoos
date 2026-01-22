@@ -45,19 +45,19 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'status'            => array(
+				'status'              => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by equipment status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'available', 'in_use', 'maintenance', 'retired' ),
 					'default'     => 'all',
 				),
-				'type'              => array(
+				'type'                => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by equipment type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'mixer', 'turntable', 'speaker', 'controller', 'lighting', 'microphone', 'headphones', 'cable', 'other' ),
 					'default'     => 'all',
 				),
-				'include_values'    => array(
+				'include_values'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include purchase values in report (optional, defaults to true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -134,38 +134,38 @@ class WP_MCP_AI_Tool_Equipment_Inventory_Report implements WP_MCP_AI_Tool_Interf
 				);
 
 				if ( $include_values ) {
-					$purchase_price = floatval( get_post_meta( $equipment_id, '_purchase_price', true ) );
+					$purchase_price         = floatval( get_post_meta( $equipment_id, '_purchase_price', true ) );
 					$item['purchase_price'] = $purchase_price;
 					$item['purchase_date']  = get_post_meta( $equipment_id, '_purchase_date', true );
-					$total_value += $purchase_price;
+					$total_value           += $purchase_price;
 				}
 
 				if ( $include_maintenance ) {
-					$item['last_maintenance']  = get_post_meta( $equipment_id, '_last_maintenance_date', true );
-					$item['next_maintenance']  = get_post_meta( $equipment_id, '_next_maintenance_date', true );
+					$item['last_maintenance'] = get_post_meta( $equipment_id, '_last_maintenance_date', true );
+					$item['next_maintenance'] = get_post_meta( $equipment_id, '_next_maintenance_date', true );
 				}
 
 				$equipment_items[] = $item;
 
 				// Count by status.
-				$item_status = $item['status'] ?: 'available';
+				$item_status                   = $item['status'] ?: 'available';
 				$status_counts[ $item_status ] = isset( $status_counts[ $item_status ] ) ? $status_counts[ $item_status ] + 1 : 1;
 
 				// Count by type.
-				$item_type = $item['type'] ?: 'other';
+				$item_type                 = $item['type'] ?: 'other';
 				$type_counts[ $item_type ] = isset( $type_counts[ $item_type ] ) ? $type_counts[ $item_type ] + 1 : 1;
 			}
 			wp_reset_postdata();
 		}
 
 		return array(
-			'success'        => true,
-			'total_items'    => count( $equipment_items ),
-			'total_value'    => $include_values ? $total_value : null,
-			'status_counts'  => $status_counts,
-			'type_counts'    => $type_counts,
-			'equipment'      => $equipment_items,
-			'report_date'    => current_time( 'Y-m-d H:i:s' ),
+			'success'       => true,
+			'total_items'   => count( $equipment_items ),
+			'total_value'   => $include_values ? $total_value : null,
+			'status_counts' => $status_counts,
+			'type_counts'   => $type_counts,
+			'equipment'     => $equipment_items,
+			'report_date'   => current_time( 'Y-m-d H:i:s' ),
 		);
 	}
 

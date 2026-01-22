@@ -671,23 +671,23 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$social_media_toolkit_tools = array(
 				// Content Publishing tools.
 				'WP_MCP_AI_Tool_Post_To_Multiple_Platforms' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-post-to-multiple-platforms.php',
-				'WP_MCP_AI_Tool_Schedule_Social_Post'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-schedule-social-post.php',
-				'WP_MCP_AI_Tool_Bulk_Schedule_Posts'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-bulk-schedule-posts.php',
-				'WP_MCP_AI_Tool_Auto_Optimize_Images'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-optimize-images.php',
-				'WP_MCP_AI_Tool_Create_Social_Video'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-social-video.php',
+				'WP_MCP_AI_Tool_Schedule_Social_Post'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-schedule-social-post.php',
+				'WP_MCP_AI_Tool_Bulk_Schedule_Posts'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-bulk-schedule-posts.php',
+				'WP_MCP_AI_Tool_Auto_Optimize_Images'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-optimize-images.php',
+				'WP_MCP_AI_Tool_Create_Social_Video'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-social-video.php',
 				// Engagement Management tools.
-				'WP_MCP_AI_Tool_Monitor_Mentions_Replies' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-monitor-mentions-replies.php',
-				'WP_MCP_AI_Tool_Auto_Respond_Messages'    => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-respond-messages.php',
-				'WP_MCP_AI_Tool_Moderate_Comments'        => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-moderate-comments.php',
+				'WP_MCP_AI_Tool_Monitor_Mentions_Replies'  => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-monitor-mentions-replies.php',
+				'WP_MCP_AI_Tool_Auto_Respond_Messages'     => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-auto-respond-messages.php',
+				'WP_MCP_AI_Tool_Moderate_Comments'         => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-moderate-comments.php',
 				// Analytics & Insights tools.
 				'WP_MCP_AI_Tool_Get_Cross_Platform_Analytics' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-get-cross-platform-analytics.php',
 				'WP_MCP_AI_Tool_Track_Hashtag_Performance' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-track-hashtag-performance.php',
-				'WP_MCP_AI_Tool_Competitor_Analysis'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-competitor-analysis.php',
+				'WP_MCP_AI_Tool_Competitor_Analysis'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-competitor-analysis.php',
 				'WP_MCP_AI_Tool_Influencer_Identification' => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-influencer-identification.php',
 				// Content Management tools.
-				'WP_MCP_AI_Tool_Create_Content_Calendar'  => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-content-calendar.php',
-				'WP_MCP_AI_Tool_Generate_Post_Ideas'      => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-generate-post-ideas.php',
-				'WP_MCP_AI_Tool_Social_Listening_Trends'  => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-social-listening-trends.php',
+				'WP_MCP_AI_Tool_Create_Content_Calendar'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-create-content-calendar.php',
+				'WP_MCP_AI_Tool_Generate_Post_Ideas'       => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-generate-post-ideas.php',
+				'WP_MCP_AI_Tool_Social_Listening_Trends'   => WP_MCP_AI_PRO_PATH . 'includes/tools/social-media/class-wp-mcp-ai-tool-social-listening-trends.php',
 			);
 			$pro_tools                  = array_merge( $pro_tools, $social_media_toolkit_tools );
 		}
@@ -696,21 +696,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_advanced_analytics_toolkit'] ) ) {
 			$analytics_toolkit_tools = array(
 				// Data Collection & Processing tools.
-				'WP_MCP_AI_Tool_Collect_Custom_Metrics'       => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-collect-custom-metrics.php',
-				'WP_MCP_AI_Tool_Data_Warehouse_Sync'          => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-data-warehouse-sync.php',
-				'WP_MCP_AI_Tool_Real_Time_Event_Tracking'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-real-time-event-tracking.php',
+				'WP_MCP_AI_Tool_Collect_Custom_Metrics'   => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-collect-custom-metrics.php',
+				'WP_MCP_AI_Tool_Data_Warehouse_Sync'      => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-data-warehouse-sync.php',
+				'WP_MCP_AI_Tool_Real_Time_Event_Tracking' => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-real-time-event-tracking.php',
 				// Analytics & Reporting tools.
 				'WP_MCP_AI_Tool_Generate_Executive_Dashboard' => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-generate-executive-dashboard.php',
-				'WP_MCP_AI_Tool_Cohort_Analysis'              => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-cohort-analysis.php',
-				'WP_MCP_AI_Tool_Funnel_Analysis'              => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-funnel-analysis.php',
-				'WP_MCP_AI_Tool_Attribution_Modeling'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-attribution-modeling.php',
+				'WP_MCP_AI_Tool_Cohort_Analysis'          => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-cohort-analysis.php',
+				'WP_MCP_AI_Tool_Funnel_Analysis'          => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-funnel-analysis.php',
+				'WP_MCP_AI_Tool_Attribution_Modeling'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-attribution-modeling.php',
 				// Predictive Analytics tools.
-				'WP_MCP_AI_Tool_Revenue_Forecast'             => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-revenue-forecast.php',
-				'WP_MCP_AI_Tool_Churn_Prediction'             => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-churn-prediction.php',
-				'WP_MCP_AI_Tool_Customer_Segmentation_ML'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-customer-segmentation-ml.php',
+				'WP_MCP_AI_Tool_Revenue_Forecast'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-revenue-forecast.php',
+				'WP_MCP_AI_Tool_Churn_Prediction'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-churn-prediction.php',
+				'WP_MCP_AI_Tool_Customer_Segmentation_ML' => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-customer-segmentation-ml.php',
 				// Export & Integration tools.
-				'WP_MCP_AI_Tool_Export_Analytics_API'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-export-analytics-api.php',
-				'WP_MCP_AI_Tool_Create_Custom_Report'         => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-create-custom-report.php',
+				'WP_MCP_AI_Tool_Export_Analytics_API'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-export-analytics-api.php',
+				'WP_MCP_AI_Tool_Create_Custom_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/analytics/class-wp-mcp-ai-tool-create-custom-report.php',
 			);
 			$pro_tools               = array_merge( $pro_tools, $analytics_toolkit_tools );
 		}
@@ -719,18 +719,18 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_multilingual_toolkit'] ) ) {
 			$multilingual_toolkit_tools = array(
 				// Translation Management tools.
-				'WP_MCP_AI_Tool_Auto_Translate_Content'       => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-auto-translate-content.php',
+				'WP_MCP_AI_Tool_Auto_Translate_Content'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-auto-translate-content.php',
 				'WP_MCP_AI_Tool_Translate_WooCommerce_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translate-woocommerce-products.php',
-				'WP_MCP_AI_Tool_Translation_Memory_Search'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-memory-search.php',
-				'WP_MCP_AI_Tool_Export_Import_Translations'   => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-export-import-translations.php',
+				'WP_MCP_AI_Tool_Translation_Memory_Search' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-memory-search.php',
+				'WP_MCP_AI_Tool_Export_Import_Translations' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-export-import-translations.php',
 				// Localization tools.
-				'WP_MCP_AI_Tool_Detect_Content_Language'      => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-detect-content-language.php',
-				'WP_MCP_AI_Tool_Localize_Dates_Currencies'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-localize-dates-currencies.php',
-				'WP_MCP_AI_Tool_RTL_Content_Optimization'     => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-rtl-content-optimization.php',
+				'WP_MCP_AI_Tool_Detect_Content_Language'   => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-detect-content-language.php',
+				'WP_MCP_AI_Tool_Localize_Dates_Currencies' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-localize-dates-currencies.php',
+				'WP_MCP_AI_Tool_RTL_Content_Optimization'  => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-rtl-content-optimization.php',
 				// Quality Assurance tools.
-				'WP_MCP_AI_Tool_Translation_Quality_Check'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-quality-check.php',
-				'WP_MCP_AI_Tool_Find_Untranslated_Strings'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-find-untranslated-strings.php',
-				'WP_MCP_AI_Tool_Multilingual_SEO_Audit'       => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-multilingual-seo-audit.php',
+				'WP_MCP_AI_Tool_Translation_Quality_Check' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-translation-quality-check.php',
+				'WP_MCP_AI_Tool_Find_Untranslated_Strings' => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-find-untranslated-strings.php',
+				'WP_MCP_AI_Tool_Multilingual_SEO_Audit'    => WP_MCP_AI_PRO_PATH . 'includes/tools/multilingual/class-wp-mcp-ai-tool-multilingual-seo-audit.php',
 			);
 			$pro_tools                  = array_merge( $pro_tools, $multilingual_toolkit_tools );
 		}
@@ -739,35 +739,35 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_financial_planner_toolkit'] ) ) {
 			$financial_planner_toolkit_tools = array(
 				// Retirement Planning tools.
-				'WP_MCP_AI_Tool_Retirement_Calculator'       => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-retirement-calculator.php',
-				'WP_MCP_AI_Tool_IRA_Roth_Comparison'         => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-ira-roth-comparison.php',
+				'WP_MCP_AI_Tool_Retirement_Calculator'     => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-retirement-calculator.php',
+				'WP_MCP_AI_Tool_IRA_Roth_Comparison'       => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-ira-roth-comparison.php',
 				'WP_MCP_AI_Tool_Withdrawal_Strategy_Planner' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-withdrawal-strategy-planner.php',
-				'WP_MCP_AI_Tool_Social_Security_Optimizer'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-social-security-optimizer.php',
-				'WP_MCP_AI_Tool_Pension_Analyzer'            => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-pension-analyzer.php',
+				'WP_MCP_AI_Tool_Social_Security_Optimizer' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-social-security-optimizer.php',
+				'WP_MCP_AI_Tool_Pension_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-pension-analyzer.php',
 				// Budget & Expense Tracking tools.
-				'WP_MCP_AI_Tool_Budget_Planner'              => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-budget-planner.php',
-				'WP_MCP_AI_Tool_Expense_Tracker'             => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-expense-tracker.php',
-				'WP_MCP_AI_Tool_Net_Worth_Calculator'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php',
-				'WP_MCP_AI_Tool_Cash_Flow_Analyzer'          => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php',
-				'WP_MCP_AI_Tool_Bank_Account_Sync'           => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-bank-account-sync.php',
+				'WP_MCP_AI_Tool_Budget_Planner'            => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-budget-planner.php',
+				'WP_MCP_AI_Tool_Expense_Tracker'           => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-expense-tracker.php',
+				'WP_MCP_AI_Tool_Net_Worth_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-net-worth-calculator.php',
+				'WP_MCP_AI_Tool_Cash_Flow_Analyzer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-cash-flow-analyzer.php',
+				'WP_MCP_AI_Tool_Bank_Account_Sync'         => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-bank-account-sync.php',
 				// Investment & Portfolio tools.
-				'WP_MCP_AI_Tool_Portfolio_Visualizer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-visualizer.php',
-				'WP_MCP_AI_Tool_Asset_Allocation_Planner'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-asset-allocation-planner.php',
+				'WP_MCP_AI_Tool_Portfolio_Visualizer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-portfolio-visualizer.php',
+				'WP_MCP_AI_Tool_Asset_Allocation_Planner'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-asset-allocation-planner.php',
 				'WP_MCP_AI_Tool_Investment_Return_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-investment-return-calculator.php',
-				'WP_MCP_AI_Tool_Rebalancing_Analyzer'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-rebalancing-analyzer.php',
+				'WP_MCP_AI_Tool_Rebalancing_Analyzer'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-rebalancing-analyzer.php',
 				'WP_MCP_AI_Tool_Tax_Loss_Harvesting_Tracker' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-loss-harvesting-tracker.php',
 				// Debt & Loan Management tools.
-				'WP_MCP_AI_Tool_Debt_Payoff_Calculator'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-debt-payoff-calculator.php',
-				'WP_MCP_AI_Tool_Mortgage_Calculator'         => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-mortgage-calculator.php',
-				'WP_MCP_AI_Tool_Credit_Score_Tracker'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-credit-score-tracker.php',
+				'WP_MCP_AI_Tool_Debt_Payoff_Calculator'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-debt-payoff-calculator.php',
+				'WP_MCP_AI_Tool_Mortgage_Calculator'       => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-mortgage-calculator.php',
+				'WP_MCP_AI_Tool_Credit_Score_Tracker'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-credit-score-tracker.php',
 				// Goal Planning & Savings tools.
-				'WP_MCP_AI_Tool_Savings_Goal_Planner'        => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-savings-goal-planner.php',
-				'WP_MCP_AI_Tool_Emergency_Fund_Calculator'   => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-emergency-fund-calculator.php',
+				'WP_MCP_AI_Tool_Savings_Goal_Planner'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-savings-goal-planner.php',
+				'WP_MCP_AI_Tool_Emergency_Fund_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-emergency-fund-calculator.php',
 				// Financial Literacy tools.
-				'WP_MCP_AI_Tool_Financial_Health_Score'      => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-health-score.php',
-				'WP_MCP_AI_Tool_Tax_Estimator'               => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-estimator.php',
-				'WP_MCP_AI_Tool_College_Savings_Calculator'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-college-savings-calculator.php',
-				'WP_MCP_AI_Tool_Insurance_Needs_Analyzer'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-insurance-needs-analyzer.php',
+				'WP_MCP_AI_Tool_Financial_Health_Score'    => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-financial-health-score.php',
+				'WP_MCP_AI_Tool_Tax_Estimator'             => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-tax-estimator.php',
+				'WP_MCP_AI_Tool_College_Savings_Calculator' => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-college-savings-calculator.php',
+				'WP_MCP_AI_Tool_Insurance_Needs_Analyzer'  => WP_MCP_AI_PRO_PATH . 'includes/tools/financial-planning/class-wp-mcp-ai-tool-insurance-needs-analyzer.php',
 			);
 			$pro_tools                       = array_merge( $pro_tools, $financial_planner_toolkit_tools );
 		}
