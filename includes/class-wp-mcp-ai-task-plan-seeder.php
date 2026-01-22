@@ -93,72 +93,27 @@ class WP_MCP_AI_Task_Plan_Seeder {
 	/**
 	 * Get example task plans.
 	 *
+	 * Note: These are simple examples. For more comprehensive templates with variable substitution,
+	 * use the Pro addon's seed_template_library tool which includes 14 templates covering all Pro toolkits.
+	 *
 	 * @return array Array of task plan data.
 	 */
 	private static function get_example_task_plans() {
 		return array(
-			// 1. E-commerce Store Launch (E-commerce Toolkit).
+			// 1. Simple project plan example.
 			array(
-				'plan_name'  => 'E-commerce Store Launch',
-				'goal'       => 'Launch a professional e-commerce store from scratch, covering platform setup, product listings, payment integration, and marketing preparation.',
-				'task_count' => 15,
-				'markdown'   => self::generate_ecommerce_launch_plan(),
+				'plan_name'  => 'Example: Website Redesign Project',
+				'goal'       => 'Redesign company website to improve user experience and modernize design.',
+				'task_count' => 8,
+				'markdown'   => self::generate_simple_project_plan(),
 			),
 
-			// 2. Social Media Campaign (Social Media Toolkit).
+			// 2. Content creation example.
 			array(
-				'plan_name'  => 'Social Media Marketing Campaign',
-				'goal'       => 'Execute a comprehensive social media marketing campaign across multiple platforms with scheduled content, engagement tracking, and analytics.',
-				'task_count' => 12,
-				'markdown'   => self::generate_social_media_campaign_plan(),
-			),
-
-			// 3. Financial Portfolio Analysis (Financial Planner Toolkit).
-			array(
-				'plan_name'  => 'Client Financial Portfolio Analysis',
-				'goal'       => 'Conduct a comprehensive financial portfolio analysis for a client, including risk assessment, retirement planning, and investment recommendations.',
-				'task_count' => 14,
-				'markdown'   => self::generate_financial_portfolio_plan(),
-			),
-
-			// 4. Website Analytics Audit (Analytics Toolkit).
-			array(
-				'plan_name'  => 'Website Analytics & Performance Audit',
-				'goal'       => 'Perform a complete analytics audit of website performance, user behavior, conversion funnels, and generate actionable insights for optimization.',
-				'task_count' => 11,
-				'markdown'   => self::generate_analytics_audit_plan(),
-			),
-
-			// 5. Video Content Production (Video Production Toolkit).
-			array(
-				'plan_name'  => 'Video Marketing Series Production',
-				'goal'       => 'Plan, produce, and distribute a professional video marketing series including scripting, filming, editing, optimization, and multi-platform publishing.',
-				'task_count' => 13,
-				'markdown'   => self::generate_video_production_plan(),
-			),
-
-			// 6. Multilingual Website Expansion (Multilingual Toolkit).
-			array(
-				'plan_name'  => 'Multilingual Website Expansion',
-				'goal'       => 'Expand website to support multiple languages with professional translation, localization, SEO optimization, and cultural adaptation.',
-				'task_count' => 10,
-				'markdown'   => self::generate_multilingual_expansion_plan(),
-			),
-
-			// 7. Content Marketing Strategy (Media Toolkit + Social Media).
-			array(
-				'plan_name'  => 'Content Marketing Strategy Launch',
-				'goal'       => 'Develop and execute a complete content marketing strategy including blog series, social media distribution, SEO optimization, and performance tracking.',
-				'task_count' => 14,
-				'markdown'   => self::generate_content_marketing_plan(),
-			),
-
-			// 8. Product Photography & Image Optimization (Image Production Toolkit).
-			array(
-				'plan_name'  => 'Product Photography & Image Optimization',
-				'goal'       => 'Create professional product photography workflow with batch processing, background removal, optimization, and consistent branding across all product images.',
-				'task_count' => 9,
-				'markdown'   => self::generate_image_optimization_plan(),
+				'plan_name'  => 'Example: Blog Content Series',
+				'goal'       => 'Create a 5-part blog series on industry best practices.',
+				'task_count' => 6,
+				'markdown'   => self::generate_simple_content_plan(),
 			),
 		);
 	}
