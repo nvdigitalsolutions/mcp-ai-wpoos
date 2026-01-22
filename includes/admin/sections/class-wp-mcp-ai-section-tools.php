@@ -850,6 +850,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			$toolkit_options = array(
+			'enable_quiz_system',
 			'enable_media_toolkit',
 			'enable_document_generation_toolkit',
 			'enable_project_management',
@@ -947,6 +948,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					jQuery(document).ready(function($) {
 						var maxToolkits = <?php echo intval( $max_toolkits ); ?>;
 						var toolkitCheckboxes = $(
+							'input[name="wp_mcp_ai_settings[enable_quiz_system]"],' +
 							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_document_generation_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_project_management]"],' +
