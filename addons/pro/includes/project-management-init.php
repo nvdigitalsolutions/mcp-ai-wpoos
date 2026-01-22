@@ -197,5 +197,34 @@ function wp_mcp_ai_register_project_management_post_types() {
 			'menu_icon'          => 'dashicons-calendar-alt',
 		)
 	);
+
+	// Register Task Plan CPT (for autonomous orchestration).
+	register_post_type(
+		'mcp_task_plan',
+		array(
+			'labels'             => array(
+				'name'               => __( 'Task Plans', 'mcp-ai-wpoos-pro' ),
+				'singular_name'      => __( 'Task Plan', 'mcp-ai-wpoos-pro' ),
+				'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
+				'add_new_item'       => __( 'Add New Task Plan', 'mcp-ai-wpoos-pro' ),
+				'edit_item'          => __( 'Edit Task Plan', 'mcp-ai-wpoos-pro' ),
+				'new_item'           => __( 'New Task Plan', 'mcp-ai-wpoos-pro' ),
+				'view_item'          => __( 'View Task Plan', 'mcp-ai-wpoos-pro' ),
+				'search_items'       => __( 'Search Task Plans', 'mcp-ai-wpoos-pro' ),
+				'not_found'          => __( 'No task plans found', 'mcp-ai-wpoos-pro' ),
+				'not_found_in_trash' => __( 'No task plans found in trash', 'mcp-ai-wpoos-pro' ),
+			),
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => 'edit.php?post_type=mcp_ai_project',
+			'show_in_rest'       => true,
+			'has_archive'        => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'supports'           => array( 'title', 'editor', 'author' ),
+			'menu_icon'          => 'dashicons-list-view',
+		)
+	);
 }
 add_action( 'init', 'wp_mcp_ai_register_project_management_post_types' );
