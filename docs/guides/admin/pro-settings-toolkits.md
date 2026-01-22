@@ -686,37 +686,40 @@ The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional t
 
 **Setting**: `enable_analytics_toolkit`  
 **Tools**: 5 professional tools  
-**Status**: Pro addon required (Pending implementation)
+**Status**: Pro addon required (✅ Implemented)
 
 **Features**:
+- Machine learning-based churn prediction
+- AI-powered customer segmentation
+- Revenue forecasting and projections
+- Custom report generation
+- Analytics data export via REST API
+
+**Tools Provided**:
+1. `churn_prediction` - Identify at-risk customers using behavioral analysis and predictive modeling
+2. `customer_segmentation_ml` - ML-based customer segmentation with clustering algorithms
+3. `revenue_forecast` - Predict future revenue using historical data and trends
+4. `create_custom_report` - Build custom analytics reports with flexible filtering
+5. `export_analytics_api` - Export analytics data via REST API for external integrations
+
+**Use Cases**:
+- Data-driven businesses
+- SaaS platforms with subscriber metrics
+- E-commerce analytics and forecasting
+- Marketing analytics and attribution
+- Business intelligence dashboards
+
+**Planned Expansion** (future releases):
 - Custom metrics collection
-- Data warehouse synchronization
+- Data warehouse synchronization  
 - Real-time event tracking
-- Churn prediction (ML-based)
-- Customer segmentation with machine learning
-
-**Tool Categories**:
-- **Data Collection**: Custom metrics, warehouse sync, real-time tracking (3 tools)
-- **Predictive Analytics**: Churn prediction, ML-based segmentation (2 tools)
-
-**Planned Features** (not yet implemented):
 - Executive dashboards
 - Cohort analysis
 - Funnel analysis
 - Attribution modeling
-- Revenue forecasting
-- Custom report builder
-- Analytics API export
-
-**Use Cases**:
-- Data-driven businesses
-- SaaS platforms
-- E-commerce analytics
-- Marketing analytics
-- Business intelligence
 
 **Requirements**:
-- NPM packages: d3, mathjs, regression, fast-csv
+- NPM packages: d3, mathjs, regression, fast-csv (for advanced features)
 - Optional: Google Analytics 4 API integration
 
 **Documentation**: See `addons/pro/includes/tools/analytics/README.md`
