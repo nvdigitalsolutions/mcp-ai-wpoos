@@ -1,0 +1,40 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/multilingual-translation-memory",
+	"title": "Translation Memory",
+	"category": "mcp-ai-toolkits",
+	"description": "Display translation memory from the Multilingual toolkit",
+	"keywords": ["multilingual", "translation", "memory", "language", "mcp"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"default": "list"
+		},
+		"source_language": {
+			"type": "string",
+			"default": ""
+		},
+		"target_language": {
+			"type": "string",
+			"default": ""
+		},
+		"quality_score_min": {
+			"type": "number",
+			"default": 0
+		},
+		"limit": {
+			"type": "number",
+			"default": 20
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}

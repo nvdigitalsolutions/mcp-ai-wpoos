@@ -225,6 +225,11 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 							$this->render_research_tab();
 						}
 						break;
+					case 'remote_sites':
+						if ( $this->has_remote_sites ) {
+							$this->render_remote_sites_tab();
+						}
+						break;
 					case 'help':
 						$this->render_help_tab();
 						break;
@@ -294,6 +299,10 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 
 		if ( $this->has_research ) {
 			$tabs['research'] = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( $this->has_remote_sites ) {
+			$tabs['remote_sites'] = __( 'Remote Sites', 'mcp-ai-wpoos-pro' );
 		}
 
 		?>
@@ -384,13 +393,177 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Render research & add tab.
 	 */
 	protected function render_research_tab() {
+		// Check if Research & Add is enabled.
+		$settings = get_option( $this->option_name, array() );
+		if ( empty( $settings['enable_research'] ) ) {
+			?>
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p><?php esc_html_e( 'Research & Add functionality allows you to use AI to create and manage data for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Enable Research & Add in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		// Load and render toolkit-specific Research & Add implementation.
+		$this->render_research_add_ui();
+	}
+
+	/**
+	 * Render Research & Add UI.
+	 * Child classes can override this to provide custom implementation.
+	 */
+	protected function render_research_add_ui() {
+		// Try to load toolkit-specific Research & Add class.
+		$class_name = 'WP_MCP_AI_' . ucwords( $this->toolkit_slug, '_' ) . '_Research_Add';
+		$class_file = WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-' . str_replace( '_', '-', $this->toolkit_slug ) . '-research-add.php';
+
+		if ( file_exists( $class_file ) ) {
+			require_once $class_file;
+			if ( class_exists( $class_name ) ) {
+				$research_add = new $class_name();
+				$research_add->render();
+				return;
+			}
+		}
+
+		// Fallback message if no implementation found.
 		?>
 		<div class="toolkit-card">
 			<h2><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<p><?php esc_html_e( 'Research & Add functionality allows you to use AI to create and manage data for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></p>
-			<p><?php esc_html_e( 'Enable Research & Add in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<p><?php esc_html_e( 'Research & Add implementation for this toolkit is coming soon.', 'mcp-ai-wpoos-pro' ); ?></p>
 		</div>
 		<?php
+	}
+
+/**
+ * Render remote sites tab.
+ */
+protected function render_remote_sites_tab() {
+// Check if Remote Sites is enabled.
+$settings = get_option( $this->option_name, array() );
+if ( empty( $settings['enable_remote_sites'] ) ) {
+?>
+<div class="toolkit-card">
+<h2><?php esc_html_e( 'Remote Sites Integration', 'mcp-ai-wpoos-pro' ); ?></h2>
+<p><?php esc_html_e( 'Remote Sites functionality allows this toolkit to query and interact with remote WordPress/WooCommerce sites in your mesh network.', 'mcp-ai-wpoos-pro' ); ?></p>
+<p><?php esc_html_e( 'Enable Remote Sites in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+</div>
+<?php
+return;
+}
+
+// Load Remote Site Manager.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+
+// Get all configured remote sites.
+$remote_sites = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+
+?>
+<div class="toolkit-card">
+<h2><?php esc_html_e( 'Remote Sites Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
+<p><?php esc_html_e( 'This toolkit can interact with the following remote sites. Configure remote sites in the main Remote Sites settings page.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+<?php if ( empty( $remote_sites ) ) : ?>
+<div class="notice notice-warning inline">
+<p>
+<?php
+echo wp_kses_post(
+sprintf(
+/* translators: %s: Link to remote sites settings */
+__( 'No remote sites configured. <a href="%s">Add remote sites</a> to enable cross-site functionality.', 'mcp-ai-wpoos-pro' ),
+admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' )
+)
+);
+?>
+</p>
+</div>
+<?php else : ?>
+<table class="wp-list-table widefat fixed striped">
+<thead>
+<tr>
+<th><?php esc_html_e( 'Site Name', 'mcp-ai-wpoos-pro' ); ?></th>
+<th><?php esc_html_e( 'URL', 'mcp-ai-wpoos-pro' ); ?></th>
+<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<?php foreach ( $remote_sites as $site_id => $site ) : ?>
+<tr>
+<td><strong><?php echo esc_html( $site['name'] ?? __( '(Unnamed Site)', 'mcp-ai-wpoos-pro' ) ); ?></strong></td>
+<td><code><?php echo esc_html( $site['url'] ?? '-' ); ?></code></td>
+<td><?php echo esc_html( ucfirst( $site['type'] ?? 'wordpress' ) ); ?></td>
+<td>
+<?php if ( ! empty( $site['enabled'] ) ) : ?>
+<span style="color: green;">●</span> <?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?>
+<?php else : ?>
+<span style="color: red;">●</span> <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?>
+<?php endif; ?>
+</td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+
+<p>
+<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>" class="button button-secondary">
+<?php esc_html_e( 'Manage Remote Sites', 'mcp-ai-wpoos-pro' ); ?>
+</a>
+</p>
+<?php endif; ?>
+</div>
+
+<?php
+// Render toolkit-specific remote sites functionality.
+$this->render_toolkit_remote_features();
+}
+
+/**
+ * Render toolkit-specific remote sites features.
+ * Child classes can override this to provide custom remote features.
+ */
+protected function render_toolkit_remote_features() {
+?>
+<div class="toolkit-card">
+<h2><?php esc_html_e( 'Remote Features', 'mcp-ai-wpoos-pro' ); ?></h2>
+<p><?php esc_html_e( 'This toolkit supports the following remote site capabilities:', 'mcp-ai-wpoos-pro' ); ?></p>
+
+<?php
+// Get toolkit-specific capabilities.
+$capabilities = $this->get_remote_capabilities();
+
+if ( ! empty( $capabilities ) ) :
+?>
+<ul style="list-style: disc; margin-left: 20px;">
+<?php foreach ( $capabilities as $capability ) : ?>
+<li><?php echo esc_html( $capability ); ?></li>
+<?php endforeach; ?>
+</ul>
+<?php else : ?>
+<p><em><?php esc_html_e( 'No specific remote capabilities configured for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></em></p>
+<?php endif; ?>
+</div>
+<?php
+}
+
+/**
+ * Get toolkit-specific remote capabilities.
+ * Child classes should override this to specify their capabilities.
+ *
+ * @return array Array of capability descriptions.
+ */
+protected function get_remote_capabilities() {
+		// Try to load from centralized capabilities loader.
+		$loader_file = WP_MCP_AI_PRO_PATH . 'includes/admin/remote-capabilities/class-wp-mcp-ai-remote-capabilities-loader.php';
+		
+		if ( file_exists( $loader_file ) ) {
+			require_once $loader_file;
+			return WP_MCP_AI_Remote_Capabilities_Loader::get_capabilities( $this->toolkit_slug );
+		}
+
+		return array();
 	}
 
 	/**

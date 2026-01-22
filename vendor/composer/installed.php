@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-pro-toolkit-next-steps',
-        'version' => 'dev-copilot/update-pro-toolkit-next-steps',
-        'reference' => 'e97a46b43a71ddbad46a615e0edf9ccb50842fcf',
+        'pretty_version' => 'dev-copilot/continue-pro-toolkit-creations',
+        'version' => 'dev-copilot/continue-pro-toolkit-creations',
+        'reference' => '7932d0d1abdb3d964ae1c5c296e550ede410ebb3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-pro-toolkit-next-steps',
-            'version' => 'dev-copilot/update-pro-toolkit-next-steps',
-            'reference' => 'e97a46b43a71ddbad46a615e0edf9ccb50842fcf',
+            'pretty_version' => 'dev-copilot/continue-pro-toolkit-creations',
+            'version' => 'dev-copilot/continue-pro-toolkit-creations',
+            'reference' => '7932d0d1abdb3d964ae1c5c296e550ede410ebb3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

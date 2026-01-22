@@ -25,7 +25,7 @@ class WP_MCP_AI_AI_Tool_Builder_Settings_Page extends WP_MCP_AI_Toolkit_Settings
 		$this->option_name      = 'wp_mcp_ai_ai_tool_builder_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-ai-tool-builder-toolkit-settings';
 		$this->has_research     = true;
-		$this->has_remote_sites = false;
+		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-admin-tools';
 
 		parent::__construct();
