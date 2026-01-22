@@ -269,6 +269,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Project Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
 
+		// Load Autonomous Sessions CCT (Ralph orchestration pattern - Pro feature).
+		if ( function_exists( 'jet_engine' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-autonomous-sessions-cct.php';
+		}
+
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 
