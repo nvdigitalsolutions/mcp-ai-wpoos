@@ -24,7 +24,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @since 1.0.0
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		// Priority 30 ensures this runs after Pro Dashboard menu registration (priority 25).
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 30 );
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
@@ -44,13 +45,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
-	 * Add admin menu page under NV oOS menu.
+	 * Add admin menu page under NV oOS Pro menu.
 	 *
 	 * @since 1.0.0
 	 */
 	public function add_admin_menu() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
+			'nvoos-pro-dashboard',
 			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
 			__( 'Remote Sites', 'wp-mcp-ai-pro' ),
 			'manage_options',
@@ -67,7 +68,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'nv-oos_page_wp-mcp-ai-remote-sites' !== $hook ) {
+		if ( 'nv-oos-pro_page_wp-mcp-ai-remote-sites' !== $hook ) {
 			return;
 		}
 
