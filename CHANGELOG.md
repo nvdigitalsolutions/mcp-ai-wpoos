@@ -19,6 +19,28 @@
   - See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview
 
 ### Fixed
+- **Token Manager Save Issue (January 21, 2026)**: Fixed tool settings not persisting despite success messages
+  - **Root Cause**: Triple-sanitization in AJAX handler causing data loss (array structure lost after multiple sanitization passes)
+  - **Solution**: Removed redundant sanitization in save loops; single sanitization point in setter methods
+  - **Impact**: All tool limits, multipliers, and model preferences now save correctly
+  - **Files Changed**: `includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php` (61 lines changed)
+  - **Testing**: Manual testing verified all settings persist across page reloads
+  - See [docs/fixes/token-manager-save-issue-fix-2026-01-21.md](docs/fixes/token-manager-save-issue-fix-2026-01-21.md)
+
+- **Provider Keys Clearing on Tab Navigation (January 20, 2026)**: Fixed API keys being cleared when navigating between admin tabs
+  - **Root Cause**: Double-sanitization via WordPress Settings API callback on `update_option()` clearing sensitive data
+  - **Solution**: Removed `sanitize_callback` from `register_setting()`; manual sanitization only in save handler
+  - **Impact**: Provider configurations persist across tab navigation; no data loss
+  - **Files Changed**: `includes/admin/class-wp-mcp-ai-admin-settings.php`
+  - See [docs/fixes/provider-keys-clearing-fix-2026-01-20.md](docs/fixes/provider-keys-clearing-fix-2026-01-20.md)
+
+- **Unified Team Transcript Recording (January 18, 2026)**: Fixed transcripts failing to save for unified team chats and individual member chats
+  - **Root Causes**: Missing pattern recognition for team member assistant IDs; endpoint validation only accepting integers
+  - **Solution**: Updated `extract_profession_id()` to recognize both `profession_XXX` and `team_XXX_member_YYY` patterns; changed REST endpoint to accept string assistant IDs
+  - **Impact**: Transcripts save correctly for all team chat types (unified_team_*, team_*_member_*)
+  - **Files Changed**: `includes/class-wp-mcp-ai-transcript-manager.php`, REST endpoint registration
+  - See [docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md](docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
+
 - **Tool Preset Multiplier Application (January 18, 2026)**: Fixed broken "Apply Preset" button on Token Manager page (PR #2990)
   - **Root Cause**: `get_all_recommendations()` only queried tool registry which returned empty array during preset application
   - **Solution**: Modified method to iterate through `$tool_categories` static property first (200+ tools), then check registry for dynamic tools
@@ -30,6 +52,29 @@
   - Zero security vulnerabilities introduced, maintains backward compatibility
   - Better code organization and maintainability
 
+- **HuggingFace Model Max Completion Tokens (January 17, 2026)**: Fixed Qwen3-Coder model failing with "max_completion_tokens limited to 8192" error
+  - **Root Cause**: Using old `max_tokens` parameter instead of OpenAI-compatible `max_completion_tokens`; Resource Manager could request up to 32,000 tokens
+  - **Solution**: Updated `WP_MCP_AI_Huggingface_Client::build_payload()` to use `max_completion_tokens`; added model-specific limits in `WP_MCP_AI_Model_Config`
+  - **Impact**: Qwen models now work correctly with proper token limits enforced
+  - **Files Changed**: `includes/class-wp-mcp-ai-huggingface-client.php`, `includes/class-wp-mcp-ai-model-config.php` (added 4 Qwen models with limits)
+  - **Tests**: 5 test cases added to verify the fix
+  - See [docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md](docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
+
+- **OAuth Redirect URI Mismatch (January 17, 2026)**: Fixed Gmail OAuth failing with `redirect_uri_mismatch` error
+  - **Root Cause**: Inconsistent URL construction in OAuth flow (direct query string concatenation vs. WordPress URL helpers)
+  - **Solution**: Standardized redirect URI generation using WordPress's `add_query_arg()` instead of direct concatenation
+  - **Impact**: OAuth flows now consistent across all WordPress installations (subdirectory, subdomain, custom ports)
+  - **Files Changed**: `includes/integrations/class-wp-mcp-ai-oauth-manager.php`, `includes/admin/sections/class-wp-mcp-ai-section-integrations.php`
+  - See [docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md](docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
+
+- **Model Dropdown in Base + Pro Mode (January 16, 2026)**: Fixed model dropdown failing when both base and pro plugins active
+  - **Root Cause**: Script localization lost when multiple metaboxes enqueued same script (two separate plugin instances)
+  - **Solution**: Created `WP_MCP_AI_Admin_Scripts` class for global script registration with consistent localization (priority 5 on `admin_enqueue_scripts`)
+  - **Impact**: Model dropdown works in all deployment modes (cloned repo, base+pro separate plugins, base only)
+  - **Files Changed**: NEW `includes/admin/class-wp-mcp-ai-admin-scripts.php` (91 lines), updated 3 metabox files
+  - **Code Improvement**: Simplified from 54 to 17 lines net reduction through centralization
+  - See [docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md](docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
+
 - **Audio Transcription MIME Type (January 11, 2026)**: Fixed transcription button creating video files instead of audio files
   - Added `getSupportedAudioMimeType()` helper function to check browser support
   - MediaRecorder now explicitly requests audio-only MIME types (audio/webm, audio/ogg, etc.)
@@ -39,6 +84,24 @@
   - OpenAI Whisper API accepts both audio and video files with audio tracks
 
 ### Added
+- **Pro Toolkit Infrastructure - Phase 3 Complete (January 15-22, 2026)**: Implemented comprehensive settings infrastructure for all 11 Pro toolkits
+  - **7 Active Toolkits**: E-commerce (20 tools), Social Media (15 tools), Analytics (12 tools), Multilingual (10 tools), Video Production (12 tools), Financial Planner (24 tools), Media (upgraded)
+  - **4 Planned Toolkits**: Calendar Booking (12-15 tools), DJ Management (15-18 tools), Image Production (12-15 tools), AI Tool Builder (10 tools)
+  - **Settings Features**: Overview tabs, configuration tabs, provider setup, research & add capabilities, remote sites support, WP-CLI integration
+  - **Multi-Agent Functionality**: Each toolkit can have dedicated AI assistant; up to 5 concurrent agents (one per active toolkit)
+  - **Specialization**: Domain-specific agents (product expert, content creator, translator, video editor, financial advisor)
+  - See [docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
+
+- **Social Media Analytics Tools (January 15-22, 2026)**: Added 4 new analytics tools to Social Media Toolkit
+  - **Get Cross-Platform Analytics** (`get_cross_platform_analytics`) - Unified metrics dashboard aggregating data from multiple platforms (623 lines)
+  - **Track Hashtag Performance** (`track_hashtag_performance`) - Hashtag analysis with reach, engagement, and trend data (586 lines)
+  - **Competitor Analysis** (`analyze_competitor_social`) - Track competitor metrics and compare performance (711 lines)
+  - **Influencer Identification** (`identify_influencers`) - Find brand influencers based on reach and engagement criteria (759 lines)
+  - All tools support Facebook, Instagram, Twitter, LinkedIn, and YouTube platforms
+  - Built-in caching for performance (12-hour default)
+  - Comprehensive error handling and validation
+  - See Social Media Toolkit settings page for configuration
+
 - **Cloudflare Image Generation Models (January 11, 2026)**: Added support for new Cloudflare Workers AI image generation models (PR #2785)
   - **Flux-2 Dev** (`@cf/black-forest-labs/flux-2-dev`) - Advanced image generation model
   - **Leonardo AI Models**: Lucid Origin (`@cf/leonardo/lucid-origin`) and Phoenix 1.0 (`@cf/leonardo/phoenix-1.0`)
@@ -62,6 +125,26 @@
   - Quizzes: 9 tools with JetEngine CCT integration
   - Places: 7 tools with Google Places API integration
   - See [PRO_CPT_OVERVIEW.md](docs/features/pro-cpt/PRO_CPT_OVERVIEW.md)
+
+### Documentation
+- **Code Review Documentation (January 18, 2026)**: Comprehensive review of January 11-18 changes
+  - Reviewed 5 major changes: Token Manager fix, Provider Keys fix, OAuth fix, HuggingFace fix, Model Dropdown fix
+  - All changes passed security and quality checks
+  - Status: Production ready
+  - See [docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md](docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
+
+- **Root Directory Reorganization (January 13, 2026)**: Cleaned up root directory by moving documentation files
+  - Moved 20+ markdown files to organized subdirectories
+  - Root now contains only 5 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, SECURITY.md, BUILD.md)
+  - Files organized into: `docs/fixes/`, `docs/implementation-history/2026/`, `docs/implementation-summaries/`
+  - Zero information loss during reorganization
+  - See [docs/implementation-history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md](docs/implementation-history/2026/ROOT_DIRECTORY_ORGANIZATION_2026-01-13.md)
+
+- **Fix Documentation (January 15-21, 2026)**: Created comprehensive documentation for all recent fixes
+  - 6 detailed fix documentation files created
+  - Each includes root cause analysis, solution details, testing verification
+  - Total documentation: ~12KB across fix documentation files
+  - All fixes cross-referenced in CHANGELOG.md
 
 ### Changed
 - **Pro Dashboard Modernization - January 6, 2026**: Refactored Pro Dashboard with industry-standard patterns (PR #2641)
@@ -199,10 +282,6 @@
 - Version number inconsistencies across documentation files (1.0.0 → 1.1.0)
 - Tool count discrepancies in README.md and other docs
 - Last updated dates in documentation index files (now December 24, 2025)
-
-## [Unreleased]
-
-### Added
 
 #### Gemini Geospatial API Integration (December 22, 2025)
 - **AI-Powered Location Queries**: Integrated Gemini Geospatial API for contextual, location-based queries with Google Maps grounding
