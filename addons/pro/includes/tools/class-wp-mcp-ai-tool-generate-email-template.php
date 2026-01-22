@@ -260,7 +260,8 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 			$result['mjml'] = $mjml;
 		}
 
-		return $result;
+		// Add email preview HTML to response.
+		return $this->add_email_html_to_response( $result );
 	}
 
 	/**

@@ -10,6 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load document response trait.
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+
 /**
  * Export project calendar events as ICS file.
  *
@@ -23,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -213,16 +217,22 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( $download_file && isset( $result['content'] ) ) {
 			$file_info = $this->save_ics_file( $result['content'], $project_id );
 
-			return array(
+			$response = array(
 				'success'      => true,
 				'message'      => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
+				'text'         => sprintf( __( 'Calendar exported: %d events from %s', 'mcp-ai-wpoos-pro' ), count( $events ), $project->post_title ),
 				'project_id'   => $project_id,
 				'project_name' => $project->post_title,
 				'event_count'  => count( $events ),
 				'file_url'     => isset( $file_info['url'] ) ? $file_info['url'] : null,
 				'file_path'    => isset( $file_info['path'] ) ? $file_info['path'] : null,
 				'filename'     => isset( $file_info['filename'] ) ? $file_info['filename'] : null,
+				'file_size'    => isset( $file_info['path'] ) ? filesize( $file_info['path'] ) : 0,
+				'mime_type'    => 'text/calendar',
 			);
+
+			// Add download button and metadata display.
+			return $this->add_document_html_to_response( $response );
 		}
 
 		return array(
