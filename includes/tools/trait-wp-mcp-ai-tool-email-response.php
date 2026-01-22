@@ -93,8 +93,9 @@ trait WP_MCP_AI_Tool_Email_Response {
 	 * @return string HTML preview markup.
 	 */
 	private function generate_email_preview_html( $html, $subject, $preview_text, $template_type ) {
-		// Use htmlspecialchars with ENT_QUOTES for srcdoc attribute
-		$html_escaped = htmlspecialchars( $html, ENT_QUOTES, 'UTF-8' );
+		// Use htmlspecialchars with ENT_QUOTES for srcdoc attribute.
+		// Double encoding for extra security in iframe context.
+		$html_escaped = htmlspecialchars( htmlspecialchars( $html, ENT_QUOTES, 'UTF-8' ), ENT_QUOTES, 'UTF-8' );
 
 		// Email metadata.
 		$metadata = array();
