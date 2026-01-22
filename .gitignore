@@ -87,6 +87,13 @@ composer.phar
 !assets/js/chat-bundle.min.js
 !assets/js/chat-bundle.min.js.map
 
+# Keep Pro addon bundles (orchestration and research) which are required for the plugin to work.
+# These bundle external npm dependencies (p-queue, cheerio, turndown) for browser use.
+!addons/pro/assets/js/orchestration-bundle.min.js
+!addons/pro/assets/js/orchestration-bundle.min.js.map
+!addons/pro/assets/js/research-bundle.min.js
+!addons/pro/assets/js/research-bundle.min.js.map
+
 # Keep vendor production files (pre-built from npm packages)
 !addons/pro/assets/vendor/**/*.min.js
 !addons/pro/assets/vendor/**/*.min.css

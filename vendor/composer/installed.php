@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-install',
-        'version' => 'dev-copilot/run-composer-install',
-        'reference' => '9dc61a47a5585af8bbe48fa315584fb626d215e6',
+        'pretty_version' => 'dev-copilot/fix-remote-site-pages-visibility',
+        'version' => 'dev-copilot/fix-remote-site-pages-visibility',
+        'reference' => '64d62ef95d14aec4d40d7209d79b1afc40cde909',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-install',
-            'version' => 'dev-copilot/run-composer-install',
-            'reference' => '9dc61a47a5585af8bbe48fa315584fb626d215e6',
+            'pretty_version' => 'dev-copilot/fix-remote-site-pages-visibility',
+            'version' => 'dev-copilot/fix-remote-site-pages-visibility',
+            'reference' => '64d62ef95d14aec4d40d7209d79b1afc40cde909',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

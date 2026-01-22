@@ -411,5 +411,4 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	}
 }
 
-// Initialize.
-new WP_MCP_AI_Orchestration_Dashboard();
+// Note: Class is instantiated in includes/orchestration-init.php on admin_init hook.
