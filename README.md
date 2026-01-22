@@ -258,7 +258,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ### Critical Fixes & Enhancements (January 15-22, 2026) ⭐ **LATEST**
 
-**6 Critical Fixes Implemented:**
+**7 Critical Fixes Implemented:**
 
 1. **Token Manager Save Issue (Jan 21)** - Fixed tool settings not persisting despite success messages
    - Root Cause: Triple-sanitization causing data loss
@@ -421,7 +421,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - **Google Maps Grounding** - Access to 250M+ places database for factual, context-aware responses
 - **New Tool:** `gemini_geospatial_query` - Location-based AI queries with map visualization tokens
 - **Reduced Hallucinations** - Factual grounding with real-time Google Maps data
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#gemini-geospatial-api-integration-december-22-2025)
+- [See CHANGELOG →](CHANGELOG.md#gemini-geospatial-api-integration-december-22-2025)
 
 ### 📦 OpenAI Batch API Integration (Dec 21, 2025)
 - **50% Cost Reduction** - Asynchronous bulk operations with dedicated quota and higher rate limits
@@ -429,14 +429,14 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - **4 New Tools** - Create, monitor, list, and auto-monitor batch jobs
 - **Automatic Monitoring** - WordPress cron integration with email notifications
 - **Use Cases** - Bulk content generation, mass embeddings, large-scale moderation, dataset processing
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#openai-batch-api-integration-december-21-2025)
+- [See CHANGELOG →](CHANGELOG.md#openai-batch-api-integration-december-21-2025)
 
 ### 🛡️ OpenAI Moderation API Integration (Dec 21, 2025)
 - **Content Safety & Compliance** - Automated moderation for text and images
 - **14 Violation Categories** - Sexual content, hate speech, harassment, self-harm, violence, illicit content
 - **New Tool:** `moderate_content` - Multimodal moderation with confidence scores
 - **Free API** - No token costs for moderation
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#openai-moderation-api-integration-december-21-2025)
+- [See CHANGELOG →](CHANGELOG.md#openai-moderation-api-integration-december-21-2025)
 
 ### 🎓 IGCSE Teams Implementation (Dec 2025)
 - **6 Specialized Teams** - Mathematics, Science, Humanities, Languages & Technology, Year-Level, Academic Support
