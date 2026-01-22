@@ -19,9 +19,12 @@ Located in root `package.json`:
     "@microsoft/fetch-event-source": "^2.0.1",  // SSE for streaming
     "@neplex/vectorizer": "^0.0.5",              // Vector embeddings
     "chart.js": "^4.4.7",                        // Charts in admin
+    "cheerio": "^1.0.0",                         // HTML parsing (Pro addon)
     "dompurify": "^3.3.0",                       // HTML sanitization
     "ky": "^1.14.0",                             // HTTP client
-    "marked": "^17.0.0"                          // Markdown parsing
+    "marked": "^17.0.0",                         // Markdown parsing
+    "p-queue": "^8.0.1",                         // Promise queue (Pro addon)
+    "turndown": "^7.2.0"                         // HTML to Markdown (Pro addon)
   }
 }
 ```
@@ -30,12 +33,14 @@ Located in root `package.json`:
 
 - **Bundled into `chat-bundle.min.js`**: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`
 - **Copied to `assets/js/vendor/`**: `chart.js`, `@neplex/vectorizer`
+- **Bundled for Pro addon use**: `cheerio`, `turndown`, `p-queue` (see Pro Addon Bundling below)
 
 Build commands:
 ```bash
 npm run build:js        # Bundles chat dependencies
 npm run install:chartjs # Copies chart.js
 npm run install:vectorizer # Copies vectorizer
+npm run build:js:pro    # Bundles Pro addon orchestration & research packages
 ```
 
 ## Pro Addon Dependencies
@@ -178,6 +183,18 @@ All 36 Pro addon packages are automatically copied from `node_modules` to `asset
 - Bundled into standalone scripts via esbuild
 - Located in `addons/pro/bin/`
 - `generate-pdf.bundle.js`, `generate-word.bundle.js`, `generate-excel.bundle.js`
+
+**Orchestration & Research (Browser Bundles)**:
+- **Orchestration Bundle** (`addons/pro/assets/js/orchestration-bundle.min.js`, 17KB):
+  - `p-queue`: Promise queue with concurrency control for rate limiting
+  - Custom browser-compatible circuit breaker (inspired by opossum pattern)
+  - Used by: Autonomous orchestration tools, task execution management
+- **Research Bundle** (`addons/pro/assets/js/research-bundle.min.js`, 360KB):
+  - `cheerio`: Fast HTML parsing and data extraction
+  - `turndown`: HTML to Markdown conversion
+  - Used by: Research compiler, web scraping tools, content aggregation
+- Built via: `esbuild.config.pro.js` using packages from root `node_modules/`
+- Build command: `npm run build:js:pro` (runs automatically on `npm install`)
 
 **Chart.js**:
 - Duplicated in base and Pro for different contexts
