@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-media-toolkit-settings',
-        'version' => 'dev-copilot/update-media-toolkit-settings',
-        'reference' => 'b39548fc727ff74acb8769290fc32e2e500e6863',
+        'pretty_version' => 'dev-copilot/optimize-plugin-packaging',
+        'version' => 'dev-copilot/optimize-plugin-packaging',
+        'reference' => 'b051629127c402db3e374f3a4cd990f61ab9c315',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-media-toolkit-settings',
-            'version' => 'dev-copilot/update-media-toolkit-settings',
-            'reference' => 'b39548fc727ff74acb8769290fc32e2e500e6863',
+            'pretty_version' => 'dev-copilot/optimize-plugin-packaging',
+            'version' => 'dev-copilot/optimize-plugin-packaging',
+            'reference' => 'b051629127c402db3e374f3a4cd990f61ab9c315',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
