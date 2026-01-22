@@ -64,6 +64,7 @@ add_action( 'wp_ajax_wp_mcp_ai_research_add_item', array( $this, 'ajax_add_item'
 add_action( 'wp_ajax_wp_mcp_ai_research_delete_item', array( $this, 'ajax_delete_item' ) );
 add_action( 'wp_ajax_wp_mcp_ai_research_get_item', array( $this, 'ajax_get_item' ) );
 add_action( 'wp_ajax_wp_mcp_ai_research_ai_generate', array( $this, 'ajax_ai_generate' ) );
+add_action( 'admin_init', array( $this, 'handle_form_submission' ) );
 }
 
 /**
@@ -561,5 +562,136 @@ wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'mcp-ai-
 
 // Implementation will be added when needed.
 wp_send_json_success( array( 'generated_data' => array() ) );
+}
+
+/**
+ * Handle form submission for add/update/delete operations.
+ */
+public function handle_form_submission() {
+// Check if this is a Research & Add form submission.
+if ( ! isset( $_POST['action'] ) || ! in_array( $_POST['action'], array( 'save', 'update' ), true ) ) {
+// Check for delete action in GET.
+if ( ! isset( $_GET['action'] ) || 'delete' !== $_GET['action'] ) {
+return;
+}
+}
+
+// Check if this is for our toolkit.
+$toolkit_slug = isset( $_POST['toolkit_slug'] ) ? sanitize_key( $_POST['toolkit_slug'] ) : '';
+if ( empty( $toolkit_slug ) && isset( $_GET['page'] ) ) {
+// Try to extract toolkit from page slug.
+$page_slug    = sanitize_key( $_GET['page'] );
+$toolkit_slug = $this->toolkit_slug;
+}
+
+if ( $toolkit_slug !== $this->toolkit_slug ) {
+return;
+}
+
+// Verify nonce for POST operations.
+if ( isset( $_POST['action'] ) ) {
+if ( 'save' === $_POST['action'] && ! wp_verify_nonce( $_POST['wp_mcp_ai_research_nonce'], 'wp_mcp_ai_research_add_item' ) ) {
+wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
+}
+
+if ( 'update' === $_POST['action'] && ! wp_verify_nonce( $_POST['wp_mcp_ai_research_nonce'], 'wp_mcp_ai_research_update_item' ) ) {
+wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
+}
+}
+
+// Check permissions.
+if ( ! current_user_can( 'manage_options' ) ) {
+wp_die( esc_html__( 'Insufficient permissions', 'mcp-ai-wpoos-pro' ) );
+}
+
+$entity_type = isset( $_POST['entity_type'] ) ? sanitize_key( $_POST['entity_type'] ) : ( isset( $_GET['entity'] ) ? sanitize_key( $_GET['entity'] ) : '' );
+if ( empty( $entity_type ) || ! isset( $this->data_stores[ $entity_type ] ) ) {
+return;
+}
+
+$store = $this->data_stores[ $entity_type ];
+
+// Handle save (create new item).
+if ( isset( $_POST['action'] ) && 'save' === $_POST['action'] ) {
+$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
+$result    = $store->create_item( $item_data );
+
+if ( is_wp_error( $result ) ) {
+wp_die( esc_html( $result->get_error_message() ) );
+}
+
+// Redirect back to list view with success message.
+$redirect_url = add_query_arg(
+array(
+'page'    => sanitize_key( $_GET['page'] ),
+'tab'     => 'research',
+'entity'  => $entity_type,
+'message' => 'created',
+),
+admin_url( 'admin.php' )
+);
+wp_safe_redirect( $redirect_url );
+exit;
+}
+
+// Handle update.
+if ( isset( $_POST['action'] ) && 'update' === $_POST['action'] ) {
+$item_id   = isset( $_POST['item_id'] ) ? absint( $_POST['item_id'] ) : 0;
+$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
+
+if ( ! $item_id ) {
+wp_die( esc_html__( 'Invalid item ID', 'mcp-ai-wpoos-pro' ) );
+}
+
+$result = $store->update_item( $item_id, $item_data );
+
+if ( is_wp_error( $result ) ) {
+wp_die( esc_html( $result->get_error_message() ) );
+}
+
+// Redirect back to list view with success message.
+$redirect_url = add_query_arg(
+array(
+'page'    => sanitize_key( $_GET['page'] ),
+'tab'     => 'research',
+'entity'  => $entity_type,
+'message' => 'updated',
+),
+admin_url( 'admin.php' )
+);
+wp_safe_redirect( $redirect_url );
+exit;
+}
+
+// Handle delete.
+if ( isset( $_GET['action'] ) && 'delete' === $_GET['action'] ) {
+$item_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
+
+if ( ! $item_id ) {
+wp_die( esc_html__( 'Invalid item ID', 'mcp-ai-wpoos-pro' ) );
+}
+
+// Verify nonce.
+check_admin_referer( 'delete_item_' . $item_id );
+
+$result = $store->delete_item( $item_id );
+
+if ( is_wp_error( $result ) ) {
+wp_die( esc_html( $result->get_error_message() ) );
+}
+
+// Redirect back to list view with success message.
+$redirect_url = add_query_arg(
+array(
+'page'    => sanitize_key( $_GET['page'] ),
+'tab'     => 'research',
+'entity'  => $entity_type,
+'message' => 'deleted',
+),
+admin_url( 'admin.php' )
+);
+wp_safe_redirect( $redirect_url );
+exit;
+}
 }
 }

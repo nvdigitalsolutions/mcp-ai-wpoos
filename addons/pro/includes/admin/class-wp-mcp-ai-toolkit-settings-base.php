@@ -384,11 +384,46 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 	 * Render research & add tab.
 	 */
 	protected function render_research_tab() {
+		// Check if Research & Add is enabled.
+		$settings = get_option( $this->option_name, array() );
+		if ( empty( $settings['enable_research'] ) ) {
+			?>
+			<div class="toolkit-card">
+				<h2><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p><?php esc_html_e( 'Research & Add functionality allows you to use AI to create and manage data for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<p><?php esc_html_e( 'Enable Research & Add in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+
+		// Load and render toolkit-specific Research & Add implementation.
+		$this->render_research_add_ui();
+	}
+
+	/**
+	 * Render Research & Add UI.
+	 * Child classes can override this to provide custom implementation.
+	 */
+	protected function render_research_add_ui() {
+		// Try to load toolkit-specific Research & Add class.
+		$class_name = 'WP_MCP_AI_' . ucwords( $this->toolkit_slug, '_' ) . '_Research_Add';
+		$class_file = WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-' . str_replace( '_', '-', $this->toolkit_slug ) . '-research-add.php';
+
+		if ( file_exists( $class_file ) ) {
+			require_once $class_file;
+			if ( class_exists( $class_name ) ) {
+				$research_add = new $class_name();
+				$research_add->render();
+				return;
+			}
+		}
+
+		// Fallback message if no implementation found.
 		?>
 		<div class="toolkit-card">
 			<h2><?php esc_html_e( 'Research & Add', 'mcp-ai-wpoos-pro' ); ?></h2>
-			<p><?php esc_html_e( 'Research & Add functionality allows you to use AI to create and manage data for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></p>
-			<p><?php esc_html_e( 'Enable Research & Add in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<p><?php esc_html_e( 'Research & Add implementation for this toolkit is coming soon.', 'mcp-ai-wpoos-pro' ); ?></p>
 		</div>
 		<?php
 	}
