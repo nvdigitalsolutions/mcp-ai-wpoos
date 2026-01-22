@@ -82,14 +82,14 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 	 */
 	protected function generate_chart_aria_label( $chart_type, $chart_title ) {
 		$type_labels = array(
-			'bar'       => __( 'Bar chart', 'mcp-ai-wpoos' ),
-			'line'      => __( 'Line chart', 'mcp-ai-wpoos' ),
-			'pie'       => __( 'Pie chart', 'mcp-ai-wpoos' ),
-			'doughnut'  => __( 'Doughnut chart', 'mcp-ai-wpoos' ),
-			'radar'     => __( 'Radar chart', 'mcp-ai-wpoos' ),
-			'polarArea' => __( 'Polar area chart', 'mcp-ai-wpoos' ),
-			'scatter'   => __( 'Scatter plot', 'mcp-ai-wpoos' ),
-			'bubble'    => __( 'Bubble chart', 'mcp-ai-wpoos' ),
+			'bar'       =>  __( 'Bar chart', 'mcp-ai-wpoos' ),
+			'line'      =>  __( 'Line chart', 'mcp-ai-wpoos' ),
+			'pie'       =>  __( 'Pie chart', 'mcp-ai-wpoos' ),
+			'doughnut'  =>  __( 'Doughnut chart', 'mcp-ai-wpoos' ),
+			'radar'     =>  __( 'Radar chart', 'mcp-ai-wpoos' ),
+			'polarArea' =>  __( 'Polar area chart', 'mcp-ai-wpoos' ),
+			'scatter'   =>  __( 'Scatter plot', 'mcp-ai-wpoos' ),
+			'bubble'    =>  __( 'Bubble chart', 'mcp-ai-wpoos' ),
 		);
 
 		$type_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );

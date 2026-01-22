@@ -60,65 +60,65 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$defaults = $this->get_configured_defaults();
 
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'prompt'          => array(
-					'type'        => 'string',
-					'description' => __( 'The text prompt describing the desired image.', 'mcp-ai-wpoos' ),
+			'type'                 =>  'object',
+			'properties'           =>  array(
+				'prompt'               =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'The text prompt describing the desired image.', 'mcp-ai-wpoos' ),
 				),
-				'model'           => array(
-					'type'        => 'string',
-					'description' => __( 'OpenAI image model to use.', 'mcp-ai-wpoos' ),
-					'default'     => $defaults['model'],
+				'model'                =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'OpenAI image model to use.', 'mcp-ai-wpoos' ),
+					'default'              =>  $defaults['model'],
 				),
-				'size'            => array(
-					'type'        => 'string',
-					'description' => __( 'Size of the generated image.', 'mcp-ai-wpoos' ),
-					'enum'        => array_values( self::get_allowed_sizes() ),
-					'default'     => $defaults['size'],
+				'size'                 =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Size of the generated image.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  array_values( self::get_allowed_sizes() ),
+					'default'              =>  $defaults['size'],
 				),
-				'quality'         => array(
-					'type'        => 'string',
-					'description' => __( 'Image quality setting.', 'mcp-ai-wpoos' ),
-					'enum'        => array_values( self::get_allowed_qualities() ),
-					'default'     => $defaults['quality'],
+				'quality'              =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Image quality setting.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  array_values( self::get_allowed_qualities() ),
+					'default'              =>  $defaults['quality'],
 				),
-				'style'           => array(
-					'type'        => 'string',
-					'description' => __( 'Style preset for DALL-E 3 models. "vivid" produces hyper-real and dramatic images. "natural" produces more natural, less hyper-real looking images.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'natural', 'vivid' ),
+				'style'                =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Style preset for DALL-E 3 models. "vivid" produces hyper-real and dramatic images. "natural" produces more natural, less hyper-real looking images.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  array( 'natural', 'vivid' ),
 				),
-				'response_format' => array(
-					'type'        => 'string',
-					'description' => __( 'Whether OpenAI should return base64 data or a hosted image URL.', 'mcp-ai-wpoos' ),
-					'enum'        => self::get_allowed_response_formats(),
-					'default'     => $defaults['response_format'],
+				'response_format'      =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Whether OpenAI should return base64 data or a hosted image URL.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  self::get_allowed_response_formats(),
+					'default'              =>  $defaults['response_format'],
 				),
-				'format'          => array(
-					'type'        => 'string',
-					'description' => __( 'Image format for the generated file. OpenAI currently only returns PNG images.', 'mcp-ai-wpoos' ),
-					'enum'        => array( self::DEFAULT_FORMAT ),
-					'default'     => self::DEFAULT_FORMAT,
+				'format'               =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Image format for the generated file. OpenAI currently only returns PNG images.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  array( self::DEFAULT_FORMAT ),
+					'default'              =>  self::DEFAULT_FORMAT,
 				),
-				'output_format'   => array(
-					'type'        => 'string',
-					'description' => __( 'Output format for the generated image. Use "svg" to vectorize the raster output. Default is raster format.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'default', 'svg' ),
-					'default'     => 'default',
+				'output_format'        =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Output format for the generated image. Use "svg" to vectorize the raster output. Default is raster format.', 'mcp-ai-wpoos' ),
+					'enum'                 =>  array( 'default', 'svg' ),
+					'default'              =>  'default',
 				),
-				'file_name'       => array(
-					'type'        => 'string',
-					'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
+				'file_name'            =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'         => array(
-					'type'        => 'integer',
-					'description' => __( 'Override the OpenAI request timeout in seconds.', 'mcp-ai-wpoos' ),
-					'minimum'     => 5,
-					'maximum'     => 300,
+				'timeout'              =>  array(
+					'type'                 =>  'integer',
+					'description'          =>  __( 'Override the OpenAI request timeout in seconds.', 'mcp-ai-wpoos' ),
+					'minimum'              =>  5,
+					'maximum'              =>  300,
 				),
 			),
-			'required'             => array( 'prompt' ),
-			'additionalProperties' => false,
+			'required'             =>  array( 'prompt' ),
+			'additionalProperties' =>  false,
 		);
 	}
 
@@ -128,16 +128,16 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'generate_openai_image', 'mcp-ai-wpoos' ),
-				'payload' => __( 'generate_openai_image', 'mcp-ai-wpoos' ),
+				'label'   =>  __( 'generate_openai_image', 'mcp-ai-wpoos' ),
+				'payload' =>  __( 'generate_openai_image', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Revise existing concept', 'mcp-ai-wpoos' ),
-				'payload' => __( 'Use the `generate_openai_image` tool to update an existing concept. Ask what should change, capture the current prompt for context, then propose an adjusted prompt reflecting the requested edits before running the tool.', 'mcp-ai-wpoos' ),
+				'label'   =>  __( 'Revise existing concept', 'mcp-ai-wpoos' ),
+				'payload' =>  __( 'Use the `generate_openai_image` tool to update an existing concept. Ask what should change, capture the current prompt for context, then propose an adjusted prompt reflecting the requested edits before running the tool.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Add product to lifestyle scene', 'mcp-ai-wpoos' ),
-				'payload' => __( 'Use the `generate_openai_image` tool to place the product in a lifestyle setting. Gather details about the environment, target audience, props, and camera angle, then assemble a detailed prompt that keeps the product as the hero of the scene.', 'mcp-ai-wpoos' ),
+				'label'   =>  __( 'Add product to lifestyle scene', 'mcp-ai-wpoos' ),
+				'payload' =>  __( 'Use the `generate_openai_image` tool to place the product in a lifestyle setting. Gather details about the environment, target audience, props, and camera angle, then assemble a detailed prompt that keeps the product as the hero of the scene.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -149,10 +149,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function get_configured_defaults() {
 		$defaults = array(
-			'model'           => self::DEFAULT_MODEL,
-			'size'            => self::DEFAULT_SIZE,
-			'quality'         => self::DEFAULT_QUALITY,
-			'response_format' => self::DEFAULT_RESPONSE_FORMAT,
+			'model'           =>  self::DEFAULT_MODEL,
+			'size'            =>  self::DEFAULT_SIZE,
+			'quality'         =>  self::DEFAULT_QUALITY,
+			'response_format' =>  self::DEFAULT_RESPONSE_FORMAT,
 		);
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -271,9 +271,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$options = array(
-			'model'   => $model,
-			'size'    => $size,
-			'quality' => $quality,
+			'model'   =>  $model,
+			'size'    =>  $size,
+			'quality' =>  $quality,
 		);
 
 		// Add style parameter if provided and model supports it (DALL-E 3 only).
@@ -326,8 +326,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 					'openai_svg_conversion_failed',
 					'Failed to convert OpenAI-generated image to SVG',
 					array(
-						'error'         => $svg_storage->get_error_message(),
-						'attachment_id' => $storage['attachment_id'],
+						'error'         =>  $svg_storage->get_error_message(),
+						'attachment_id' =>  $storage['attachment_id'],
 					)
 				);
 			} else {
@@ -362,23 +362,23 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$message = implode( ' ', $text_parts );
 
 		$result = array(
-			'attachment_id'   => $storage['attachment_id'],
-			'url'             => $storage['url'],
-			'file_path'       => $storage['file'],
-			'file_name'       => $storage['file_name'],
-			'mime_type'       => $storage['mime_type'],
-			'bytes'           => $storage['bytes'],
-			'format'          => isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT,
-			'size'            => $size,
-			'quality'         => $quality,
-			'model'           => $image['model'],
-			'provider'        => 'openai', // Track provider for accurate cost attribution.
-			'response_format' => $response_format,
-			'revised_prompt'  => isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
-			'prompt'          => $prompt,
-			'created'         => isset( $image['created'] ) ? $image['created'] : 0,
-			'text'            => $message, // Descriptive message for LLM context.
-			'message'         => $message, // Message for chat UI display.
+			'attachment_id'   =>  $storage['attachment_id'],
+			'url'             =>  $storage['url'],
+			'file_path'       =>  $storage['file'],
+			'file_name'       =>  $storage['file_name'],
+			'mime_type'       =>  $storage['mime_type'],
+			'bytes'           =>  $storage['bytes'],
+			'format'          =>  isset( $image['format'] ) ? $this->normalise_image_format( $image['format'] ) : self::DEFAULT_FORMAT,
+			'size'            =>  $size,
+			'quality'         =>  $quality,
+			'model'           =>  $image['model'],
+			'provider'        =>  'openai', // Track provider for accurate cost attribution.
+			'response_format' =>  $response_format,
+			'revised_prompt'  =>  isset( $image['revised_prompt'] ) ? $image['revised_prompt'] : '',
+			'prompt'          =>  $prompt,
+			'created'         =>  isset( $image['created'] ) ? $image['created'] : 0,
+			'text'            =>  $message, // Descriptive message for LLM context.
+			'message'         =>  $message, // Message for chat UI display.
 		);
 
 		// Add estimated usage metadata for UI display.
@@ -393,10 +393,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$cost_usd = $this->estimate_image_cost( $image['model'], $size, $quality );
 			if ( $cost_usd > 0 ) {
 				$result['cost'] = array(
-					'cost_usd'     => $cost_usd,
-					'is_estimated' => true,
-					'provider'     => 'openai',
-					'model'        => $image['model'],
+					'cost_usd'     =>  $cost_usd,
+					'is_estimated' =>  true,
+					'provider'     =>  'openai',
+					'model'        =>  $image['model'],
 				);
 			}
 		}
@@ -471,17 +471,17 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected static function get_allowed_formats() {
 		return array(
-			'png'  => array(
-				'extension' => 'png',
-				'mime_type' => 'image/png',
+			'png'       =>  array(
+				'extension' =>  'png',
+				'mime_type' =>  'image/png',
 			),
-			'jpeg' => array(
-				'extension' => 'jpg',
-				'mime_type' => 'image/jpeg',
+			'jpeg'      =>  array(
+				'extension' =>  'jpg',
+				'mime_type' =>  'image/jpeg',
 			),
-			'webp' => array(
-				'extension' => 'webp',
-				'mime_type' => 'image/webp',
+			'webp'      =>  array(
+				'extension' =>  'webp',
+				'mime_type' =>  'image/webp',
 			),
 		);
 	}
@@ -642,10 +642,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$title     = $this->generate_attachment_title( $prompt );
 
 		$attachment = array(
-			'post_mime_type' => $mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_mime_type' =>  $mime_type,
+			'post_title'     =>  $title,
+			'post_content'   =>  '',
+			'post_status'    =>  'inherit',
 		);
 
 		if ( $user_id ) {
@@ -674,8 +674,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Store OpenAI response metadata for reference.
 		$openai_meta = array(
-			'source'          => 'openai',
-			'original_prompt' => sanitize_textarea_field( $prompt ),
+			'source'          =>  'openai',
+			'original_prompt' =>  sanitize_textarea_field( $prompt ),
 		);
 
 		if ( ! empty( $image['model'] ) ) {
@@ -707,13 +707,13 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
-			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'mime_type'     => $mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
+			'attachment_id' =>  (int) $attachment_id,
+			'file'          =>  $file_path,
+			'file_name'     =>  wp_basename( $file_path ),
+			'url'           =>  $local_url,
+			'mime_type'     =>  $mime_type,
+			'bytes'         =>  $bytes ? (int) $bytes : 0,
+			'title'         =>  $title,
 		);
 	}
 
@@ -838,8 +838,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$mime_type = isset( $storage['mime_type'] ) ? $storage['mime_type'] : '';
 
 		$content = array(
-			'encoding' => 'base64',
-			'data'     => $encoded,
+			'encoding' =>  'base64',
+			'data'     =>  $encoded,
 		);
 
 		if ( '' !== $mime_type ) {
@@ -920,7 +920,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// This allows vision models to "see" the generated image in subsequent iterations.
 		if ( isset( $result['url'] ) && '' !== $result['url'] ) {
 			$sanitized['image_url'] = array(
-				'url' => $result['url'],
+				'url' =>  $result['url'],
 			);
 		}
 
@@ -957,45 +957,45 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_tool_rules() {
 		return array(
-			'model_requirements'    => array(
-				'providers' => array( 'openai' ),
-				'models'    => array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
-				'required'  => true,
+			'model_requirements'    =>  array(
+				'providers'             =>  array( 'openai' ),
+				'models'                =>  array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'dall-e-2' ),
+				'required'              =>  true,
 			),
-			'parameter_constraints' => array(
-				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'size', 'quality', 'style', 'response_format', 'file_name', 'timeout' ),
-				'max_prompt_length' => 4000,
-				'style_support'     => array(
-					'supported_models' => array( 'dall-e-3' ),
-					'note'             => 'The style parameter (natural or vivid) is only supported by DALL-E 3. Other models (gpt-image-1, gpt-image-1.5, dall-e-2) will silently ignore this parameter.',
+			'parameter_constraints' =>  array(
+				'required_fields'       =>  array( 'prompt' ),
+				'optional_fields'       =>  array( 'model', 'size', 'quality', 'style', 'response_format', 'file_name', 'timeout' ),
+				'max_prompt_length'     =>  4000,
+				'style_support'         =>  array(
+					'supported_models'      =>  array( 'dall-e-3' ),
+					'note'                  =>  'The style parameter (natural or vivid) is only supported by DALL-E 3. Other models (gpt-image-1, gpt-image-1.5, dall-e-2) will silently ignore this parameter.',
 				),
 			),
-			'rate_limits'           => array(
-				'requests_per_minute' => 5,
-				'requests_per_hour'   => 50,
-				'concurrent_requests' => 2,
+			'rate_limits'           =>  array(
+				'requests_per_minute'   =>  5,
+				'requests_per_hour'     =>  50,
+				'concurrent_requests'   =>  2,
 			),
-			'timeout_constraints'   => array(
-				'recommended_timeout' => 60,
-				'max_execution_time'  => 120,
+			'timeout_constraints'   =>  array(
+				'recommended_timeout'   =>  60,
+				'max_execution_time'    =>  120,
 			),
-			'response_constraints'  => array(
-				'max_size'           => 5242880, // 5MB typical image size.
-				'supports_streaming' => false,
+			'response_constraints'  =>  array(
+				'max_size'              =>  5242880, // 5MB typical image size.
+				'supports_streaming'    =>  false,
 			),
-			'dependencies'          => array(
-				'required_settings'   => array(
-					'api_key' => 'wp_mcp_ai_openai_api_key',
+			'dependencies'          =>  array(
+				'required_settings'     =>  array(
+					'api_key'               =>  'wp_mcp_ai_openai_api_key',
 				),
-				'required_extensions' => array( 'gd' ), // For image processing.
+				'required_extensions'   =>  array( 'gd' ), // For image processing.
 			),
-			'orchestration_hints'   => array(
-				'can_run_parallel' => true,
-				'requires_lock'    => false,
-				'cache_ttl'        => 0, // Don't cache - each generation unique.
-				'retry_strategy'   => 'exponential_backoff',
-				'max_retries'      => 3,
+			'orchestration_hints'   =>  array(
+				'can_run_parallel'      =>  true,
+				'requires_lock'         =>  false,
+				'cache_ttl'             =>  0, // Don't cache - each generation unique.
+				'retry_strategy'        =>  'exponential_backoff',
+				'max_retries'           =>  3,
 			),
 		);
 	}
@@ -1024,11 +1024,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		// Estimate output tokens based on image size.
 		// These are rough estimates based on OpenAI's image generation token consumption.
 		$output_tokens_map = array(
-			'1024x1024' => 2048,  // Standard square image.
-			'1024x1536' => 3072,  // Portrait format (2:3 ratio).
-			'1536x1024' => 3072,  // Landscape format (3:2 ratio).
-			'512x512'   => 512,   // DALL-E 2 size.
-			'256x256'   => 256,   // DALL-E 2 size.
+			'1024x1024' =>  2048,  // Standard square image.
+			'1024x1536' =>  3072,  // Portrait format (2:3 ratio).
+			'1536x1024' =>  3072,  // Landscape format (3:2 ratio).
+			'512x512'   =>  512,   // DALL-E 2 size.
+			'256x256'   =>  256,   // DALL-E 2 size.
 		);
 
 		$completion_tokens = isset( $output_tokens_map[ $size ] ) ? $output_tokens_map[ $size ] : 2048;
@@ -1040,10 +1040,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$total_tokens = $prompt_tokens + $completion_tokens;
 
 		return array(
-			'prompt_tokens'     => $prompt_tokens,
-			'completion_tokens' => $completion_tokens,
-			'total_tokens'      => $total_tokens,
-			'is_estimated'      => true, // Flag to indicate this is an estimate.
+			'prompt_tokens'     =>  $prompt_tokens,
+			'completion_tokens' =>  $completion_tokens,
+			'total_tokens'      =>  $total_tokens,
+			'is_estimated'      =>  true, // Flag to indicate this is an estimate.
 		);
 	}
 
@@ -1130,9 +1130,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		if ( 'dall-e-2' === $model ) {
 			// DALL-E 2 sizes: 1024x1024, 512x512, 256x256.
 			$size_costs = array(
-				'1024x1024' => 0.02,
-				'512x512'   => 0.018,
-				'256x256'   => 0.016,
+				'1024x1024' =>  0.02,
+				'512x512'   =>  0.018,
+				'256x256'   =>  0.016,
 			);
 
 			return isset( $size_costs[ $size ] ) ? $size_costs[ $size ] : 0.02;
@@ -1180,11 +1180,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Prepare vectorization options.
 		$vectorization_options = array(
-			'colorMode'      => 'color',
-			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
-			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
-			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
-			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+			'colorMode'      =>  'color',
+			'colorPrecision' =>  isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
+			'filterSpeckle'  =>  isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode'           =>  isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical'   =>  isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
 		// Execute vectorization script.
@@ -1199,8 +1199,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 			$script_path,
 			$script_args,
 			array(
-				'timeout'    => 60,
-				'parse_json' => true,
+				'timeout'    =>  60,
+				'parse_json' =>  true,
 			)
 		);
 
@@ -1279,10 +1279,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 
 		// Create attachment.
 		$attachment = array(
-			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'OpenAI SVG Image', 'mcp-ai-wpoos' ) ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_mime_type' =>  'image/svg+xml',
+			'post_title'     =>  sanitize_text_field( __( 'OpenAI SVG Image', 'mcp-ai-wpoos' ) ),
+			'post_content'   =>  '',
+			'post_status'    =>  'inherit',
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
@@ -1298,14 +1298,14 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image implements WP_MCP_AI_Tool_Interface, 
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
-			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'download_url'  => $local_url,
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => get_the_title( $attachment_id ),
+			'attachment_id' =>  (int) $attachment_id,
+			'file'          =>  $file_path,
+			'file_name'     =>  wp_basename( $file_path ),
+			'url'           =>  $local_url,
+			'download_url'  =>  $local_url,
+			'mime_type'     =>  'image/svg+xml',
+			'bytes'         =>  $bytes ? (int) $bytes : 0,
+			'title'         =>  get_the_title( $attachment_id ),
 		);
 	}
 }

@@ -52,37 +52,37 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'function'   => array(
-					'type'        => 'string',
-					'description' => __( 'Function to differentiate (e.g., "x^2 + 3x + 5" or "sin(x) * e^x")', 'mcp-ai-wpoos-pro' ),
+			'type'        =>  'object',
+			'properties'  =>  array(
+				'function'    =>  array(
+					'type'        =>  'string',
+					'description' =>  __( 'Function to differentiate (e.g., "x^2 + 3x + 5" or "sin(x) * e^x")', 'mcp-ai-wpoos-pro' ),
 				),
-				'variable'   => array(
-					'type'        => 'string',
-					'description' => __( 'Variable to differentiate with respect to (default: x)', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'x',
+				'variable'    =>  array(
+					'type'        =>  'string',
+					'description' =>  __( 'Variable to differentiate with respect to (default: x)', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  'x',
 				),
-				'order'      => array(
-					'type'        => 'integer',
-					'description' => __( 'Order of derivative (1 = first derivative, 2 = second derivative, etc.)', 'mcp-ai-wpoos-pro' ),
-					'default'     => 1,
-					'minimum'     => 1,
-					'maximum'     => 5,
+				'order'       =>  array(
+					'type'        =>  'integer',
+					'description' =>  __( 'Order of derivative (1 = first derivative, 2 = second derivative, etc.)', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  1,
+					'minimum'     =>  1,
+					'maximum'     =>  5,
 				),
-				'simplify'   => array(
-					'type'        => 'boolean',
-					'description' => __( 'Simplify the result', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+				'simplify'    =>  array(
+					'type'        =>  'boolean',
+					'description' =>  __( 'Simplify the result', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  true,
 				),
-				'format'     => array(
-					'type'        => 'string',
-					'enum'        => array( 'latex', 'text', 'both' ),
-					'description' => __( 'Output format', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'both',
+				'format'      =>  array(
+					'type'        =>  'string',
+					'enum'        =>  array( 'latex', 'text', 'both' ),
+					'description' =>  __( 'Output format', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  'both',
 				),
 			),
-			'required'   => array( 'function' ),
+			'required'    =>  array( 'function' ),
 		);
 	}
 
@@ -127,17 +127,17 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 			'wp_mcp_ai_mathjs_derivative',
 			false,
 			array(
-				'function' => $function,
-				'variable' => $variable,
-				'order'    => $order,
-				'simplify' => $simplify,
+				'function' =>  $function,
+				'variable' =>  $variable,
+				'order'    =>  $order,
+				'simplify' =>  $simplify,
 			)
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
 			return array(
-				'success' => false,
-				'error'   => __( 'Derivative calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'success' =>  false,
+				'error'   =>  __( 'Derivative calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -148,14 +148,14 @@ class WP_MCP_AI_Tool_Calculate_Derivative implements WP_MCP_AI_Tool_Interface, W
 		$latex    = "{$notation} ({$function}) = {$derivative}";
 
 		$result = array(
-			'success'    => true,
-			'message'    => sprintf( __( 'Derivative calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
-			'text'       => sprintf( 'd/d%s(%s) = %s', $variable, $function, $derivative ),
-			'function'   => $function,
-			'variable'   => $variable,
-			'order'      => $order,
-			'derivative' => $derivative,
-			'latex'      => $latex,
+			'success'    =>  true,
+			'message'    =>  sprintf( __( 'Derivative calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
+			'text'       =>  sprintf( 'd/d%s(%s) = %s', $variable, $function, $derivative ),
+			'function'   =>  $function,
+			'variable'   =>  $variable,
+			'order'      =>  $order,
+			'derivative' =>  $derivative,
+			'latex'      =>  $latex,
 		);
 
 		if ( 'latex' === $format || 'both' === $format ) {

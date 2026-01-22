@@ -28,9 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     public function execute( $arguments, $context ) {
  *         // Generate video and get attachment_id, url, etc.
  *         $result = array(
- *             'attachment_id' => $attachment_id,
- *             'url' => $url,
- *             'text' => 'Video generated successfully',
+ *             'attachment_id' =>  $attachment_id,
+ *             'url'           =>  $url,
+ *             'text'          =>  'Video generated successfully',
  *         );
  *
  *         // Add rendered video HTML to response

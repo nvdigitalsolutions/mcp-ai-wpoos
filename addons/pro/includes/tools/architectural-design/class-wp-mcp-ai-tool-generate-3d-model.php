@@ -49,46 +49,46 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'floor_plan'       => array(
-					'type'        => 'object',
-					'description' => __( 'Floor plan data to convert to 3D.', 'mcp-ai-wpoos-pro' ),
+			'type'                 =>  'object',
+			'properties'           =>  array(
+				'floor_plan'           =>  array(
+					'type'                 =>  'object',
+					'description'          =>  __( 'Floor plan data to convert to 3D.', 'mcp-ai-wpoos-pro' ),
 				),
-				'wall_height'      => array(
-					'type'        => 'number',
-					'description' => __( 'Wall height in feet or meters.', 'mcp-ai-wpoos-pro' ),
-					'default'     => 9,
+				'wall_height'          =>  array(
+					'type'                 =>  'number',
+					'description'          =>  __( 'Wall height in feet or meters.', 'mcp-ai-wpoos-pro' ),
+					'default'              =>  9,
 				),
-				'include_roof'     => array(
-					'type'        => 'boolean',
-					'description' => __( 'Include roof structure in model.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+				'include_roof'         =>  array(
+					'type'                 =>  'boolean',
+					'description'          =>  __( 'Include roof structure in model.', 'mcp-ai-wpoos-pro' ),
+					'default'              =>  true,
 				),
-				'roof_type'        => array(
-					'type'        => 'string',
-					'description' => __( 'Roof type: "flat", "gable", "hip", "mansard".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'flat', 'gable', 'hip', 'mansard' ),
-					'default'     => 'gable',
+				'roof_type'            =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Roof type: "flat", "gable", "hip", "mansard".', 'mcp-ai-wpoos-pro' ),
+					'enum'                 =>  array( 'flat', 'gable', 'hip', 'mansard' ),
+					'default'              =>  'gable',
 				),
-				'materials'        => array(
-					'type'        => 'object',
-					'description' => __( 'Material specifications for walls, floors, roof.', 'mcp-ai-wpoos-pro' ),
+				'materials'            =>  array(
+					'type'                 =>  'object',
+					'description'          =>  __( 'Material specifications for walls, floors, roof.', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_furniture' => array(
-					'type'        => 'boolean',
-					'description' => __( 'Include 3D furniture models.', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+				'include_furniture'    =>  array(
+					'type'                 =>  'boolean',
+					'description'          =>  __( 'Include 3D furniture models.', 'mcp-ai-wpoos-pro' ),
+					'default'              =>  false,
 				),
-				'output_format'    => array(
-					'type'        => 'string',
-					'description' => __( 'Output format: "obj", "fbx", "gltf", "stl".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'obj', 'fbx', 'gltf', 'stl' ),
-					'default'     => 'obj',
+				'output_format'        =>  array(
+					'type'                 =>  'string',
+					'description'          =>  __( 'Output format: "obj", "fbx", "gltf", "stl".', 'mcp-ai-wpoos-pro' ),
+					'enum'                 =>  array( 'obj', 'fbx', 'gltf', 'stl' ),
+					'default'              =>  'obj',
 				),
 			),
-			'required'             => array( 'floor_plan' ),
-			'additionalProperties' => false,
+			'required'             =>  array( 'floor_plan' ),
+			'additionalProperties' =>  false,
 		);
 	}
 
@@ -148,17 +148,17 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Return structured 3D model data.
 		$result = array(
-			'success'      => true,
-			'url'          => isset( $model_data['preview_url'] ) ? $model_data['preview_url'] : '',
-			'prompt'       => sprintf( '3D model with %s roof, %s wall height', $roof_type, $wall_height ),
-			'model'        => $model_data,
-			'format'       => $output_format,
-			'specifications' => array(
-				'wall_height'  => $wall_height,
-				'roof_type'    => $roof_type,
-				'has_furniture' => $include_furniture,
+			'success'        =>  true,
+			'url'            =>  isset( $model_data['preview_url'] ) ? $model_data['preview_url'] : '',
+			'prompt'         =>  sprintf( '3D model with %s roof, %s wall height', $roof_type, $wall_height ),
+			'model'          =>  $model_data,
+			'format'         =>  $output_format,
+			'specifications' =>  array(
+				'wall_height'    =>  $wall_height,
+				'roof_type'      =>  $roof_type,
+				'has_furniture'  =>  $include_furniture,
 			),
-			'text'         => __( 'Successfully generated 3D building model.', 'mcp-ai-wpoos-pro' ),
+			'text'           =>  __( 'Successfully generated 3D building model.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->add_image_html_to_response( $result );
@@ -178,22 +178,22 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function generate_3d_model( $floor_plan, $wall_height, $include_roof, $roof_type, $materials, $include_furniture, $output_format ) {
 		return array(
-			'format'   => $output_format,
-			'data'     => array(
-				'vertices'  => array(),
-				'faces'     => array(),
-				'materials' => array(),
-				'textures'  => array(),
+			'format'       =>  $output_format,
+			'data'         =>  array(
+				'vertices'     =>  array(),
+				'faces'        =>  array(),
+				'materials'    =>  array(),
+				'textures'     =>  array(),
 			),
-			'stats'    => array(
-				'vertex_count' => 0,
-				'face_count'   => 0,
-				'file_size'    => 0,
+			'stats'        =>  array(
+				'vertex_count' =>  0,
+				'face_count'   =>  0,
+				'file_size'    =>  0,
 			),
-			'metadata' => array(
-				'wall_height' => $wall_height,
-				'roof_type'   => $roof_type,
-				'generated_at' => current_time( 'mysql' ),
+			'metadata'     =>  array(
+				'wall_height'  =>  $wall_height,
+				'roof_type'    =>  $roof_type,
+				'generated_at' =>  current_time( 'mysql' ),
 			),
 		);
 	}

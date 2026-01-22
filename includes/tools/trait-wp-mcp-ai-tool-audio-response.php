@@ -28,9 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     public function execute( $arguments, $context ) {
  *         // Generate audio and get attachment_id, url, etc.
  *         $result = array(
- *             'attachment_id' => $attachment_id,
- *             'url' => $url,
- *             'text' => 'Audio generated successfully',
+ *             'attachment_id' =>  $attachment_id,
+ *             'url'           =>  $url,
+ *             'text'          =>  'Audio generated successfully',
  *         );
  *
  *         // Add rendered audio HTML to response

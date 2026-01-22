@@ -52,29 +52,29 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'expression' => array(
-					'type'        => 'string',
-					'description' => __( 'Expression to simplify (e.g., "2x + 3x - 5 + 2" or "(x + 2)(x - 3)")', 'mcp-ai-wpoos-pro' ),
+			'type'        =>  'object',
+			'properties'  =>  array(
+				'expression'  =>  array(
+					'type'        =>  'string',
+					'description' =>  __( 'Expression to simplify (e.g., "2x + 3x - 5 + 2" or "(x + 2)(x - 3)")', 'mcp-ai-wpoos-pro' ),
 				),
-				'rules'      => array(
-					'type'        => 'array',
-					'description' => __( 'Simplification rules to apply', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
-						'type' => 'string',
-						'enum' => array( 'default', 'all', 'collect', 'distribute' ),
+				'rules'       =>  array(
+					'type'        =>  'array',
+					'description' =>  __( 'Simplification rules to apply', 'mcp-ai-wpoos-pro' ),
+					'items'       =>  array(
+						'type'        =>  'string',
+						'enum'        =>  array( 'default', 'all', 'collect', 'distribute' ),
 					),
-					'default'     => array( 'default' ),
+					'default'     =>  array( 'default' ),
 				),
-				'format'     => array(
-					'type'        => 'string',
-					'enum'        => array( 'latex', 'text', 'both' ),
-					'description' => __( 'Output format', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'both',
+				'format'      =>  array(
+					'type'        =>  'string',
+					'enum'        =>  array( 'latex', 'text', 'both' ),
+					'description' =>  __( 'Output format', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  'both',
 				),
 			),
-			'required'   => array( 'expression' ),
+			'required'    =>  array( 'expression' ),
 		);
 	}
 
@@ -117,8 +117,8 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 			'wp_mcp_ai_mathjs_simplify',
 			false,
 			array(
-				'expression' => $expression,
-				'rules'      => $rules,
+				'expression' =>  $expression,
+				'rules'      =>  $rules,
 			)
 		);
 
@@ -130,12 +130,12 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$result = array(
-			'success'            => true,
-			'message'            => sprintf( __( 'Expression simplified: %s', 'mcp-ai-wpoos-pro' ), $expression ),
-			'text'               => sprintf( 'Simplified: %s', $simplified ),
-			'original_expression' => $expression,
-			'simplified'         => $simplified,
-			'latex'              => $simplified,
+			'success'             =>  true,
+			'message'             =>  sprintf( __( 'Expression simplified: %s', 'mcp-ai-wpoos-pro' ), $expression ),
+			'text'                =>  sprintf( 'Simplified: %s', $simplified ),
+			'original_expression' =>  $expression,
+			'simplified'          =>  $simplified,
+			'latex'               =>  $simplified,
 		);
 
 		if ( 'latex' === $format || 'both' === $format ) {

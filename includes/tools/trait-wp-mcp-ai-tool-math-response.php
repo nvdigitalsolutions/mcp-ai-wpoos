@@ -27,8 +27,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  *     public function execute( $arguments, $context ) {
  *         $result = array(
- *             'latex' => 'E = mc^2',
- *             'text' => 'Energy-mass equivalence formula',
+ *             'latex' =>  'E = mc^2',
+ *             'text'  =>  'Energy-mass equivalence formula',
  *         );
  *
  *         // Add rendered math HTML to response

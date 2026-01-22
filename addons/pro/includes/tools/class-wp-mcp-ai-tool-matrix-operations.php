@@ -52,37 +52,37 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
-			'properties' => array(
-				'operation'   => array(
-					'type'        => 'string',
-					'enum'        => array( 'add', 'subtract', 'multiply', 'transpose', 'inverse', 'determinant', 'eigenvalues', 'rank', 'trace' ),
-					'description' => __( 'Matrix operation to perform', 'mcp-ai-wpoos-pro' ),
+			'type'        =>  'object',
+			'properties'  =>  array(
+				'operation'   =>  array(
+					'type'        =>  'string',
+					'enum'        =>  array( 'add', 'subtract', 'multiply', 'transpose', 'inverse', 'determinant', 'eigenvalues', 'rank', 'trace' ),
+					'description' =>  __( 'Matrix operation to perform', 'mcp-ai-wpoos-pro' ),
 				),
-				'matrix_a'    => array(
-					'type'        => 'array',
-					'description' => __( 'First matrix (2D array, e.g., [[1,2],[3,4]])', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
-						'type'  => 'array',
-						'items' => array( 'type' => 'number' ),
+				'matrix_a'    =>  array(
+					'type'        =>  'array',
+					'description' =>  __( 'First matrix (2D array, e.g., [[1,2],[3,4]])', 'mcp-ai-wpoos-pro' ),
+					'items'       =>  array(
+						'type'        =>  'array',
+						'items'       =>  array( 'type' => 'number' ),
 					),
 				),
-				'matrix_b'    => array(
-					'type'        => 'array',
-					'description' => __( 'Second matrix for binary operations (add, subtract, multiply)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
-						'type'  => 'array',
-						'items' => array( 'type' => 'number' ),
+				'matrix_b'    =>  array(
+					'type'        =>  'array',
+					'description' =>  __( 'Second matrix for binary operations (add, subtract, multiply)', 'mcp-ai-wpoos-pro' ),
+					'items'       =>  array(
+						'type'        =>  'array',
+						'items'       =>  array( 'type' => 'number' ),
 					),
 				),
-				'format'      => array(
-					'type'        => 'string',
-					'enum'        => array( 'latex', 'text', 'both' ),
-					'description' => __( 'Output format', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'both',
+				'format'      =>  array(
+					'type'        =>  'string',
+					'enum'        =>  array( 'latex', 'text', 'both' ),
+					'description' =>  __( 'Output format', 'mcp-ai-wpoos-pro' ),
+					'default'     =>  'both',
 				),
 			),
-			'required'   => array( 'operation', 'matrix_a' ),
+			'required'    =>  array( 'operation', 'matrix_a' ),
 		);
 	}
 
@@ -125,8 +125,8 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		$binary_ops = array( 'add', 'subtract', 'multiply' );
 		if ( in_array( $operation, $binary_ops, true ) && null === $matrix_b ) {
 			return array(
-				'success' => false,
-				'error'   => sprintf( __( 'Operation "%s" requires matrix_b parameter.', 'mcp-ai-wpoos-pro' ), $operation ),
+				'success' =>  false,
+				'error'   =>  sprintf( __( 'Operation "%s" requires matrix_b parameter.', 'mcp-ai-wpoos-pro' ), $operation ),
 			);
 		}
 
@@ -135,16 +135,16 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 			'wp_mcp_ai_mathjs_matrix',
 			false,
 			array(
-				'operation' => $operation,
-				'matrix_a'  => $matrix_a,
-				'matrix_b'  => $matrix_b,
+				'operation' =>  $operation,
+				'matrix_a'  =>  $matrix_a,
+				'matrix_b'  =>  $matrix_b,
 			)
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
 			return array(
-				'success' => false,
-				'error'   => __( 'Matrix operations require math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'success' =>  false,
+				'error'   =>  __( 'Matrix operations require math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -155,15 +155,15 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		$latex_result = is_array( $result_matrix ) ? $this->matrix_to_latex( $result_matrix ) : (string) $result_matrix;
 
 		$operation_symbols = array(
-			'add'         => '+',
-			'subtract'    => '-',
-			'multiply'    => '\\times',
-			'transpose'   => '^T',
-			'inverse'     => '^{-1}',
-			'determinant' => '\\det',
-			'eigenvalues' => '\\lambda',
-			'rank'        => '\\text{rank}',
-			'trace'       => '\\text{tr}',
+			'add'         =>  '+',
+			'subtract'    =>  '-',
+			'multiply'    =>  '\\times',
+			'transpose'   =>  '^T',
+			'inverse'     =>  '^{-1}',
+			'determinant' =>  '\\det',
+			'eigenvalues' =>  '\\lambda',
+			'rank'        =>  '\\text{rank}',
+			'trace'       =>  '\\text{tr}',
 		);
 
 		$symbol = isset( $operation_symbols[ $operation ] ) ? $operation_symbols[ $operation ] : '';
@@ -178,13 +178,13 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		$result = array(
-			'success'   => true,
-			'message'   => sprintf( __( 'Matrix operation completed: %s', 'mcp-ai-wpoos-pro' ), $operation ),
-			'text'      => sprintf( 'Result: %s', json_encode( $result_matrix ) ),
-			'operation' => $operation,
-			'matrix_a'  => $matrix_a,
-			'result'    => $result_matrix,
-			'latex'     => $latex,
+			'success'   =>  true,
+			'message'   =>  sprintf( __( 'Matrix operation completed: %s', 'mcp-ai-wpoos-pro' ), $operation ),
+			'text'      =>  sprintf( 'Result: %s', json_encode( $result_matrix ) ),
+			'operation' =>  $operation,
+			'matrix_a'  =>  $matrix_a,
+			'result'    =>  $result_matrix,
+			'latex'     =>  $latex,
 		);
 
 		if ( $matrix_b ) {
