@@ -70,9 +70,31 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 		// Get blocks directory path.
 		$blocks_dir = dirname( __FILE__ ) . '/blocks/';
 
-		// Register E-commerce Products block (PoC).
-		if ( file_exists( $blocks_dir . 'ecommerce-products/block.json' ) ) {
-			register_block_type( $blocks_dir . 'ecommerce-products' );
+		// Register all blocks by scanning the blocks directory.
+		$block_dirs = array(
+			'ecommerce-products',
+			'ecommerce-search',
+			'ecommerce-orders',
+			'social-calendar',
+			'social-templates',
+			'calendar-booking',
+			'calendar-services',
+			'calendar-staff',
+			'dj-equipment',
+			'dj-packages',
+			'financial-budget',
+			'financial-goals',
+			'multilingual-translation-memory',
+			'multilingual-glossaries',
+			'ai-tool-builder-templates',
+			'ai-tool-builder-schemas',
+		);
+
+		foreach ( $block_dirs as $block_dir ) {
+			$block_path = $blocks_dir . $block_dir;
+			if ( file_exists( $block_path . '/block.json' ) ) {
+				register_block_type( $block_path );
+			}
 		}
 	}
 }
