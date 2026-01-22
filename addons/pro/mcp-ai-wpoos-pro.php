@@ -337,6 +337,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
 		}
 
+		// Load Document Generation Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';
+		}
+
+		// Load CRM Toolkit if enabled (Pro feature).
+		if ( ! empty( $settings['enable_crm_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
+		}
+
 		// ========================================================================
 		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
 		// ========================================================================
