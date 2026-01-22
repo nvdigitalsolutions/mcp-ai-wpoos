@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the document response trait from base plugin.
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+
 /**
  * Pro Word tool for AI-powered Word document generation.
  *
@@ -28,6 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -301,12 +305,16 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			return $docx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'generate',
 			'orientation'   => $orientation,
 			'title'         => $title,
 			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
 			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: %s: document title */
@@ -314,6 +322,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -369,13 +380,17 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			return $docx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'structure',
 			'orientation'   => $orientation,
 			'title'         => $title,
 			'section_count' => count( $sections ),
 			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
 			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: %s: document title */
@@ -383,6 +398,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -439,12 +457,16 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			return $docx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'format',
 			'orientation'   => $orientation,
 			'title'         => $title,
 			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
 			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: %s: document title */
@@ -452,6 +474,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -509,13 +534,17 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			return $docx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'template',
 			'template'      => $template,
 			'orientation'   => $orientation,
 			'title'         => $title,
 			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
 			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: 1: template type, 2: document title */
@@ -524,6 +553,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**

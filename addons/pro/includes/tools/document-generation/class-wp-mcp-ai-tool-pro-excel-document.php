@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the document response trait from base plugin.
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+
 /**
  * Pro Excel Document tool for AI-powered Excel spreadsheet generation.
  *
@@ -28,6 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -290,13 +294,17 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'generate',
 			'title'         => $title,
 			'row_count'     => count( $data ),
 			'column_count'  => count( $headers ),
 			'file_url'      => $xlsx_result['url'],
+			'url'           => $xlsx_result['url'],
 			'file_path'     => $xlsx_result['file'],
+			'file_name'     => basename( $xlsx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes'         => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
@@ -304,6 +312,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -363,13 +374,17 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'table',
 			'title'         => $title,
 			'row_count'     => count( $data ),
 			'column_count'  => count( $headers ),
 			'file_url'      => $xlsx_result['url'],
+			'url'           => $xlsx_result['url'],
 			'file_path'     => $xlsx_result['file'],
+			'file_name'     => basename( $xlsx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes'         => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: %s: spreadsheet title */
@@ -377,6 +392,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -429,12 +447,16 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
+		$result = array(
 			'operation'     => 'multi_sheet',
 			'title'         => $title,
 			'sheet_count'   => count( $sheets ),
 			'file_url'      => $xlsx_result['url'],
+			'url'           => $xlsx_result['url'],
 			'file_path'     => $xlsx_result['file'],
+			'file_name'     => basename( $xlsx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes'         => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
 			'text'          => sprintf(
 				/* translators: 1: spreadsheet title, 2: number of sheets */
@@ -443,6 +465,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 				count( $sheets )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**

@@ -18,12 +18,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a Pro tool for generating architectural drawings using AI.
  */
 class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	const DEFAULT_MODEL         = 'gpt-image-1.5';
 	const DEFAULT_PROVIDER      = 'openai';
@@ -304,6 +306,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		 * @param array $context   Execution context supplied to the tool.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_generate_architectural_drawing_result', $result, $arguments, $context );
+
+		// Add rendered image HTML to the response for display in chat UI.
+		$result = $this->add_image_html_to_response( $result );
 
 		return $result;
 	}
