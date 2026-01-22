@@ -5,7 +5,7 @@
  * Loads the Image Production Toolkit system for AI-powered image generation,
  * editing, enhancement, and optimization.
  *
- * Phase 2.8 - Planned Implementation
+ * Phase 2.8 - Implementation Complete
  *
  * @package WP_MCP_AI
  */
@@ -27,8 +27,8 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-settings-page.php';
 	}
 
-	// Tools will be implemented in Phase 2.8.
-	// Planned location: addons/pro/includes/tools/image-production/.
+	// Tools are loaded via the standard tool loading mechanism.
+	// Location: addons/pro/includes/tools/image-production/.
 }
 
 /**
