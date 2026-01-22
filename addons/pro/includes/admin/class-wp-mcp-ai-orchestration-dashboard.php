@@ -28,11 +28,11 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Add menu page
+	 * Add menu page under main NV oOS menu
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_assistant',
+			'wp-mcp-ai-dashboard',
 			__( 'Orchestration Dashboard', 'mcp-ai-wpoos-pro' ),
 			__( 'Orchestration', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
@@ -47,7 +47,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'mcp_ai_assistant_page_mcp-ai-orchestration' !== $hook ) {
+		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook ) {
 			return;
 		}
 

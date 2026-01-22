@@ -44,13 +44,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	}
 
 	/**
-	 * Add admin menu page under main NV oOS menu.
+	 * Add admin menu page under NV oOS Pro menu.
 	 *
 	 * @since 1.0.0
 	 */
 	public function add_admin_menu() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
+			'wp-mcp-ai-pro-dashboard',
 			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
 			__( 'Remote Sites', 'wp-mcp-ai-pro' ),
 			'manage_options',
@@ -67,7 +67,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'nv-oos_page_wp-mcp-ai-remote-sites' !== $hook ) {
+		if ( 'nv-oos-pro_page_wp-mcp-ai-remote-sites' !== $hook ) {
 			return;
 		}
 
