@@ -59,74 +59,74 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 =>  'object',
-			'properties'           =>  array(
-				'operation'            =>  array(
-					'type'                 =>  'string',
-					'enum'                 =>  array( 'generate', 'structure', 'format' ),
-					'description'          =>  __( 'Operation to perform: "generate" (create PDF from description), "structure" (create structured document with sections), "format" (apply formatting to content).', 'mcp-ai-wpoos' ),
+			'type' => 'object',
+			'properties' => array(
+				'operation' => array(
+					'type' => 'string',
+					'enum' => array( 'generate', 'structure', 'format' ),
+					'description' => __( 'Operation to perform: "generate" (create PDF from description), "structure" (create structured document with sections), "format" (apply formatting to content).', 'mcp-ai-wpoos' ),
 				),
-				'description'          =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Natural language description of the PDF document you want to create.', 'mcp-ai-wpoos' ),
+				'description' => array(
+					'type' => 'string',
+					'description' => __( 'Natural language description of the PDF document you want to create.', 'mcp-ai-wpoos' ),
 				),
-				'content'              =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Content to include in the PDF document. Can be plain text or structured data.', 'mcp-ai-wpoos' ),
+				'content' => array(
+					'type' => 'string',
+					'description' => __( 'Content to include in the PDF document. Can be plain text or structured data.', 'mcp-ai-wpoos' ),
 				),
-				'title'                =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Document title (appears in PDF metadata and optionally on first page).', 'mcp-ai-wpoos' ),
+				'title' => array(
+					'type' => 'string',
+					'description' => __( 'Document title (appears in PDF metadata and optionally on first page).', 'mcp-ai-wpoos' ),
 				),
-				'author'               =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Document author (appears in PDF metadata).', 'mcp-ai-wpoos' ),
+				'author' => array(
+					'type' => 'string',
+					'description' => __( 'Document author (appears in PDF metadata).', 'mcp-ai-wpoos' ),
 				),
-				'sections'             =>  array(
-					'type'                 =>  'array',
-					'items'                =>  array(
-						'type'                 =>  'object',
-						'properties'           =>  array(
-							'heading'              =>  array( 'type' => 'string' ),
-							'content'              =>  array( 'type' => 'string' ),
+				'sections' => array(
+					'type' => 'array',
+					'items' => array(
+						'type' => 'object',
+						'properties' => array(
+							'heading' => array( 'type' => 'string' ),
+							'content' => array( 'type' => 'string' ),
 						),
 					),
-					'description'          =>  __( 'Array of document sections with headings and content (for structure operation).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Array of document sections with headings and content (for structure operation).', 'mcp-ai-wpoos' ),
 				),
-				'formatting'           =>  array(
-					'type'                 =>  'object',
-					'properties'           =>  array(
-						'font_size'            =>  array( 'type' => 'number' ),
-						'font_family'          =>  array( 'type' => 'string' ),
-						'color'                =>  array( 'type' => 'string' ),
-						'line_height'          =>  array( 'type' => 'number' ),
+				'formatting' => array(
+					'type' => 'object',
+					'properties' => array(
+						'font_size' => array( 'type' => 'number' ),
+						'font_family' => array( 'type' => 'string' ),
+						'color' => array( 'type' => 'string' ),
+						'line_height' => array( 'type' => 'number' ),
 					),
-					'description'          =>  __( 'Formatting options for the document (font size, family, color, line height).', 'mcp-ai-wpoos' ),
+					'description' => __( 'Formatting options for the document (font size, family, color, line height).', 'mcp-ai-wpoos' ),
 				),
-				'page_size'            =>  array(
-					'type'                 =>  'string',
-					'enum'                 =>  array( 'A4', 'Letter', 'Legal', 'A3', 'A5' ),
-					'description'          =>  __( 'Page size for the document. Default: A4.', 'mcp-ai-wpoos' ),
-					'default'              =>  'A4',
+				'page_size' => array(
+					'type' => 'string',
+					'enum' => array( 'A4', 'Letter', 'Legal', 'A3', 'A5' ),
+					'description' => __( 'Page size for the document. Default: A4.', 'mcp-ai-wpoos' ),
+					'default' => 'A4',
 				),
-				'orientation'          =>  array(
-					'type'                 =>  'string',
-					'enum'                 =>  array( 'portrait', 'landscape' ),
-					'description'          =>  __( 'Page orientation. Default: portrait.', 'mcp-ai-wpoos' ),
-					'default'              =>  'portrait',
+				'orientation' => array(
+					'type' => 'string',
+					'enum' => array( 'portrait', 'landscape' ),
+					'description' => __( 'Page orientation. Default: portrait.', 'mcp-ai-wpoos' ),
+					'default' => 'portrait',
 				),
-				'model'                =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'AI model to use for content generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
+				'model' => array(
+					'type' => 'string',
+					'description' => __( 'AI model to use for content generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
 				),
-				'upload'               =>  array(
-					'type'                 =>  'boolean',
-					'description'          =>  __( 'Whether to upload the generated PDF to WordPress media library. Default: true.', 'mcp-ai-wpoos' ),
-					'default'              =>  true,
+				'upload' => array(
+					'type' => 'boolean',
+					'description' => __( 'Whether to upload the generated PDF to WordPress media library. Default: true.', 'mcp-ai-wpoos' ),
+					'default' => true,
 				),
 			),
-			'required'             =>  array( 'operation' ),
-			'additionalProperties' =>  false,
+			'required' => array( 'operation' ),
+			'additionalProperties' => false,
 		);
 	}
 
@@ -157,10 +157,10 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	public function get_definition() {
 		return array(
-			'name'                =>  $this->get_name(),
-			'description'         =>  $this->get_description(),
-			'parameters'          =>  $this->get_parameters_schema(),
-			'required_capability' =>  'upload_files',
+			'name' => $this->get_name(),
+			'description' => $this->get_description(),
+			'parameters' => $this->get_parameters_schema(),
+			'required_capability' => 'upload_files',
 		);
 	}
 
@@ -284,11 +284,11 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		// Generate PDF from AI content.
 		$pdf_result = $this->generate_pdf_document(
 			array(
-				'content'     =>  $ai_response['content'],
-				'title'       =>  $title,
-				'author'      =>  $author,
-				'page_size'   =>  $page_size,
-				'orientation' =>  $orientation,
+				'content' => $ai_response['content'],
+				'title' => $title,
+				'author' => $author,
+				'page_size' => $page_size,
+				'orientation' => $orientation,
 			),
 			$arguments,
 			$context
@@ -299,18 +299,18 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		}
 
 		$result = array(
-			'operation'     =>  'generate',
-			'page_size'     =>  $page_size,
-			'orientation'   =>  $orientation,
-			'title'         =>  $title,
-			'file_url'      =>  $pdf_result['url'],
-			'url'           =>  $pdf_result['url'], // Add for trait compatibility.
-			'file_path'     =>  $pdf_result['file'],
-			'file_name'     =>  basename( $pdf_result['file'] ),
-			'mime_type'     =>  'application/pdf',
-			'bytes'         =>  isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
-			'attachment_id' =>  $pdf_result['attachment_id'],
-			'text'          =>  sprintf(
+			'operation' => 'generate',
+			'page_size' => $page_size,
+			'orientation' => $orientation,
+			'title' => $title,
+			'file_url' => $pdf_result['url'],
+			'url' => $pdf_result['url'], // Add for trait compatibility.
+			'file_path' => $pdf_result['file'],
+			'file_name' => basename( $pdf_result['file'] ),
+			'mime_type' => 'application/pdf',
+			'bytes' => isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
+			'attachment_id' => $pdf_result['attachment_id'],
+			'text' => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated PDF document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -362,11 +362,11 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		// Generate PDF with structured content.
 		$pdf_result = $this->generate_pdf_document(
 			array(
-				'sections'    =>  $sections,
-				'title'       =>  $title,
-				'author'      =>  $author,
-				'page_size'   =>  $page_size,
-				'orientation' =>  $orientation,
+				'sections' => $sections,
+				'title' => $title,
+				'author' => $author,
+				'page_size' => $page_size,
+				'orientation' => $orientation,
 			),
 			$arguments,
 			$context
@@ -377,19 +377,19 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		}
 
 		$result = array(
-			'operation'     =>  'structure',
-			'page_size'     =>  $page_size,
-			'orientation'   =>  $orientation,
-			'title'         =>  $title,
-			'section_count' =>  count( $sections ),
-			'file_url'      =>  $pdf_result['url'],
-			'url'           =>  $pdf_result['url'],
-			'file_path'     =>  $pdf_result['file'],
-			'file_name'     =>  basename( $pdf_result['file'] ),
-			'mime_type'     =>  'application/pdf',
-			'bytes'         =>  isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
-			'attachment_id' =>  $pdf_result['attachment_id'],
-			'text'          =>  sprintf(
+			'operation' => 'structure',
+			'page_size' => $page_size,
+			'orientation' => $orientation,
+			'title' => $title,
+			'section_count' => count( $sections ),
+			'file_url' => $pdf_result['url'],
+			'url' => $pdf_result['url'],
+			'file_path' => $pdf_result['file'],
+			'file_name' => basename( $pdf_result['file'] ),
+			'mime_type' => 'application/pdf',
+			'bytes' => isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
+			'attachment_id' => $pdf_result['attachment_id'],
+			'text' => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated structured PDF document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -441,12 +441,12 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		// Generate PDF with formatting.
 		$pdf_result = $this->generate_pdf_document(
 			array(
-				'content'     =>  $content,
-				'title'       =>  $title,
-				'author'      =>  $author,
-				'formatting'  =>  $formatting,
-				'page_size'   =>  $page_size,
-				'orientation' =>  $orientation,
+				'content' => $content,
+				'title' => $title,
+				'author' => $author,
+				'formatting' => $formatting,
+				'page_size' => $page_size,
+				'orientation' => $orientation,
 			),
 			$arguments,
 			$context
@@ -457,18 +457,18 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 		}
 
 		$result = array(
-			'operation'     =>  'format',
-			'page_size'     =>  $page_size,
-			'orientation'   =>  $orientation,
-			'title'         =>  $title,
-			'file_url'      =>  $pdf_result['url'],
-			'url'           =>  $pdf_result['url'],
-			'file_path'     =>  $pdf_result['file'],
-			'file_name'     =>  basename( $pdf_result['file'] ),
-			'mime_type'     =>  'application/pdf',
-			'bytes'         =>  isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
-			'attachment_id' =>  $pdf_result['attachment_id'],
-			'text'          =>  sprintf(
+			'operation' => 'format',
+			'page_size' => $page_size,
+			'orientation' => $orientation,
+			'title' => $title,
+			'file_url' => $pdf_result['url'],
+			'url' => $pdf_result['url'],
+			'file_path' => $pdf_result['file'],
+			'file_name' => basename( $pdf_result['file'] ),
+			'mime_type' => 'application/pdf',
+			'bytes' => isset( $pdf_result['bytes'] ) ? $pdf_result['bytes'] : filesize( $pdf_result['file'] ),
+			'attachment_id' => $pdf_result['attachment_id'],
+			'text' => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated formatted PDF document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -583,10 +583,10 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 
 			// Create attachment.
 			$attachment = array(
-				'post_mime_type' =>  'application/pdf',
-				'post_title'     =>  $title,
-				'post_content'   =>  '',
-				'post_status'    =>  'inherit',
+				'post_mime_type' => 'application/pdf',
+				'post_title' => $title,
+				'post_content' => '',
+				'post_status' => 'inherit',
 			);
 
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -607,17 +607,17 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			wp_update_attachment_metadata( $attachment_id, $attachment_data );
 
 			return array(
-				'file'          =>  $final_file,
-				'url'           =>  wp_get_attachment_url( $attachment_id ),
-				'attachment_id' =>  $attachment_id,
+				'file' => $final_file,
+				'url' => wp_get_attachment_url( $attachment_id ),
+				'attachment_id' => $attachment_id,
 			);
 		}
 
 		// Return file path only (no upload).
 		return array(
-			'file'          =>  $pdf_file,
-			'url'           =>  '',
-			'attachment_id' =>  0,
+			'file' => $pdf_file,
+			'url' => '',
+			'attachment_id' => 0,
 		);
 	}
 
@@ -833,12 +833,12 @@ JAVASCRIPT;
 		// Prepare messages for AI model.
 		$messages = array(
 			array(
-				'role'    =>  'system',
-				'content' =>  $system_prompt,
+				'role' => 'system',
+				'content' => $system_prompt,
 			),
 			array(
-				'role'    =>  'user',
-				'content' =>  $user_prompt,
+				'role' => 'user',
+				'content' => $user_prompt,
 			),
 		);
 
@@ -926,8 +926,8 @@ JAVASCRIPT;
 			// Make API call.
 			$response = $provider_instance->create_chat_completion(
 				array(
-					'model'    =>  $model,
-					'messages' =>  $messages,
+					'model' => $model,
+					'messages' => $messages,
 				)
 			);
 

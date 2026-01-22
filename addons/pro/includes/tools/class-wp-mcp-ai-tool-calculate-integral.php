@@ -52,44 +52,44 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'        =>  'object',
-			'properties'  =>  array(
-				'function'    =>  array(
-					'type'        =>  'string',
-					'description' =>  __( 'Function to integrate (e.g., "x^2 + 3x" or "sin(x)")', 'mcp-ai-wpoos-pro' ),
+			'type' => 'object',
+			'properties' => array(
+				'function' => array(
+					'type' => 'string',
+					'description' => __( 'Function to integrate (e.g., "x^2 + 3x" or "sin(x)")', 'mcp-ai-wpoos-pro' ),
 				),
-				'variable'    =>  array(
-					'type'        =>  'string',
-					'description' =>  __( 'Variable of integration (default: x)', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  'x',
+				'variable' => array(
+					'type' => 'string',
+					'description' => __( 'Variable of integration (default: x)', 'mcp-ai-wpoos-pro' ),
+					'default' => 'x',
 				),
-				'type'        =>  array(
-					'type'        =>  'string',
-					'enum'        =>  array( 'indefinite', 'definite' ),
-					'description' =>  __( 'Type of integral: indefinite or definite', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  'indefinite',
+				'type' => array(
+					'type' => 'string',
+					'enum' => array( 'indefinite', 'definite' ),
+					'description' => __( 'Type of integral: indefinite or definite', 'mcp-ai-wpoos-pro' ),
+					'default' => 'indefinite',
 				),
-				'lower_limit' =>  array(
-					'type'        =>  'number',
-					'description' =>  __( 'Lower limit for definite integral', 'mcp-ai-wpoos-pro' ),
+				'lower_limit' => array(
+					'type' => 'number',
+					'description' => __( 'Lower limit for definite integral', 'mcp-ai-wpoos-pro' ),
 				),
-				'upper_limit' =>  array(
-					'type'        =>  'number',
-					'description' =>  __( 'Upper limit for definite integral', 'mcp-ai-wpoos-pro' ),
+				'upper_limit' => array(
+					'type' => 'number',
+					'description' => __( 'Upper limit for definite integral', 'mcp-ai-wpoos-pro' ),
 				),
-				'simplify'    =>  array(
-					'type'        =>  'boolean',
-					'description' =>  __( 'Simplify the result', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  true,
+				'simplify' => array(
+					'type' => 'boolean',
+					'description' => __( 'Simplify the result', 'mcp-ai-wpoos-pro' ),
+					'default' => true,
 				),
-				'format'      =>  array(
-					'type'        =>  'string',
-					'enum'        =>  array( 'latex', 'text', 'both' ),
-					'description' =>  __( 'Output format', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  'both',
+				'format' => array(
+					'type' => 'string',
+					'enum' => array( 'latex', 'text', 'both' ),
+					'description' => __( 'Output format', 'mcp-ai-wpoos-pro' ),
+					'default' => 'both',
 				),
 			),
-			'required'    =>  array( 'function' ),
+			'required' => array( 'function' ),
 		);
 	}
 
@@ -134,8 +134,8 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 		// Validate definite integral has limits.
 		if ( 'definite' === $type && ( null === $lower_limit || null === $upper_limit ) ) {
 			return array(
-				'success' =>  false,
-				'error'   =>  __( 'Definite integrals require both lower_limit and upper_limit parameters.', 'mcp-ai-wpoos-pro' ),
+				'success' => false,
+				'error' => __( 'Definite integrals require both lower_limit and upper_limit parameters.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -144,19 +144,19 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 			'wp_mcp_ai_mathjs_integral',
 			false,
 			array(
-				'function'    =>  $function,
-				'variable'    =>  $variable,
-				'type'        =>  $type,
-				'lower_limit' =>  $lower_limit,
-				'upper_limit' =>  $upper_limit,
-				'simplify'    =>  $simplify,
+				'function' => $function,
+				'variable' => $variable,
+				'type' => $type,
+				'lower_limit' => $lower_limit,
+				'upper_limit' => $upper_limit,
+				'simplify' => $simplify,
 			)
 		);
 
 		if ( false === $math_result || isset( $math_result['error'] ) ) {
 			return array(
-				'success' =>  false,
-				'error'   =>  __( 'Integral calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'success' => false,
+				'error' => __( 'Integral calculation requires math.js service. Please set up Node.js integration. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -171,14 +171,14 @@ class WP_MCP_AI_Tool_Calculate_Integral implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$result = array(
-			'success'  =>  true,
-			'message'  =>  sprintf( __( 'Integral calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
-			'text'     =>  'definite' === $type ? sprintf( 'Integral = %s', $value ) : sprintf( 'Integral = %s + C', $integral ),
-			'function' =>  $function,
-			'variable' =>  $variable,
-			'type'     =>  $type,
-			'integral' =>  $integral,
-			'latex'    =>  $latex,
+			'success' => true,
+			'message' => sprintf( __( 'Integral calculated for: %s', 'mcp-ai-wpoos-pro' ), $function ),
+			'text' => 'definite' === $type ? sprintf( 'Integral = %s', $value ) : sprintf( 'Integral = %s + C', $integral ),
+			'function' => $function,
+			'variable' => $variable,
+			'type' => $type,
+			'integral' => $integral,
+			'latex' => $latex,
 		);
 
 		if ( 'definite' === $type ) {

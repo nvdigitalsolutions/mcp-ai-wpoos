@@ -52,57 +52,57 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'        =>  'object',
-			'properties'  =>  array(
-				'function'    =>  array(
-					'type'        =>  'string',
-					'description' =>  __( 'Function to graph (e.g., "x^2" or "sin(x)")', 'mcp-ai-wpoos-pro' ),
+			'type' => 'object',
+			'properties' => array(
+				'function' => array(
+					'type' => 'string',
+					'description' => __( 'Function to graph (e.g., "x^2" or "sin(x)")', 'mcp-ai-wpoos-pro' ),
 				),
-				'x_range'     =>  array(
-					'type'        =>  'array',
-					'description' =>  __( 'X-axis range [min, max] (default: [-10, 10])', 'mcp-ai-wpoos-pro' ),
-					'items'       =>  array( 'type' => 'number' ),
-					'minItems'    =>  2,
-					'maxItems'    =>  2,
-					'default'     =>  array( -10, 10 ),
+				'x_range' => array(
+					'type' => 'array',
+					'description' => __( 'X-axis range [min, max] (default: [-10, 10])', 'mcp-ai-wpoos-pro' ),
+					'items' => array( 'type' => 'number' ),
+					'minItems' => 2,
+					'maxItems' => 2,
+					'default' => array( -10, 10 ),
 				),
-				'y_range'     =>  array(
-					'type'        =>  'array',
-					'description' =>  __( 'Y-axis range [min, max] (auto if not provided)', 'mcp-ai-wpoos-pro' ),
-					'items'       =>  array( 'type' => 'number' ),
-					'minItems'    =>  2,
-					'maxItems'    =>  2,
+				'y_range' => array(
+					'type' => 'array',
+					'description' => __( 'Y-axis range [min, max] (auto if not provided)', 'mcp-ai-wpoos-pro' ),
+					'items' => array( 'type' => 'number' ),
+					'minItems' => 2,
+					'maxItems' => 2,
 				),
-				'title'       =>  array(
-					'type'        =>  'string',
-					'description' =>  __( 'Graph title', 'mcp-ai-wpoos-pro' ),
+				'title' => array(
+					'type' => 'string',
+					'description' => __( 'Graph title', 'mcp-ai-wpoos-pro' ),
 				),
-				'width'       =>  array(
-					'type'        =>  'integer',
-					'description' =>  __( 'Graph width in pixels (default: 800)', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  800,
-					'minimum'     =>  400,
-					'maximum'     =>  2000,
+				'width' => array(
+					'type' => 'integer',
+					'description' => __( 'Graph width in pixels (default: 800)', 'mcp-ai-wpoos-pro' ),
+					'default' => 800,
+					'minimum' => 400,
+					'maximum' => 2000,
 				),
-				'height'      =>  array(
-					'type'        =>  'integer',
-					'description' =>  __( 'Graph height in pixels (default: 600)', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  600,
-					'minimum'     =>  300,
-					'maximum'     =>  1500,
+				'height' => array(
+					'type' => 'integer',
+					'description' => __( 'Graph height in pixels (default: 600)', 'mcp-ai-wpoos-pro' ),
+					'default' => 600,
+					'minimum' => 300,
+					'maximum' => 1500,
 				),
-				'show_grid'   =>  array(
-					'type'        =>  'boolean',
-					'description' =>  __( 'Show grid lines', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  true,
+				'show_grid' => array(
+					'type' => 'boolean',
+					'description' => __( 'Show grid lines', 'mcp-ai-wpoos-pro' ),
+					'default' => true,
 				),
-				'line_color'  =>  array(
-					'type'        =>  'string',
-					'description' =>  __( 'Function line color (hex format)', 'mcp-ai-wpoos-pro' ),
-					'default'     =>  '#0066cc',
+				'line_color' => array(
+					'type' => 'string',
+					'description' => __( 'Function line color (hex format)', 'mcp-ai-wpoos-pro' ),
+					'default' => '#0066cc',
 				),
 			),
-			'required'    =>  array( 'function' ),
+			'required' => array( 'function' ),
 		);
 	}
 
@@ -150,21 +150,21 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'wp_mcp_ai_graph_function',
 			false,
 			array(
-				'function'   =>  $function,
-				'x_range'    =>  $x_range,
-				'y_range'    =>  $y_range,
-				'title'      =>  $title,
-				'width'      =>  $width,
-				'height'     =>  $height,
-				'show_grid'  =>  $show_grid,
-				'line_color' =>  $line_color,
+				'function' => $function,
+				'x_range' => $x_range,
+				'y_range' => $y_range,
+				'title' => $title,
+				'width' => $width,
+				'height' => $height,
+				'show_grid' => $show_grid,
+				'line_color' => $line_color,
 			)
 		);
 
 		if ( false === $graph_result || isset( $graph_result['error'] ) ) {
 			return array(
-				'success' =>  false,
-				'error'   =>  __( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
+				'success' => false,
+				'error' => __( 'Function graphing requires a graphing service (Chart.js/D3.js). Please implement the wp_mcp_ai_graph_function filter or set up a graphing microservice. See NPM_INTEGRATION_GUIDE.md in the pro addon for implementation guide.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -173,21 +173,21 @@ class WP_MCP_AI_Tool_Graph_Function implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		if ( ! $attachment_id && ! $url ) {
 			return array(
-				'success' =>  false,
-				'error'   =>  __( 'Graph generation did not return an image.', 'mcp-ai-wpoos-pro' ),
+				'success' => false,
+				'error' => __( 'Graph generation did not return an image.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		$result = array(
-			'success'       =>  true,
-			'message'       =>  sprintf( __( 'Graph generated for function: %s', 'mcp-ai-wpoos-pro' ), $function ),
-			'text'          =>  sprintf( 'Function graphed: %s', $function ),
-			'function'      =>  $function,
-			'attachment_id' =>  $attachment_id,
-			'url'           =>  $url,
-			'width'         =>  $width,
-			'height'        =>  $height,
-			'prompt'        =>  sprintf( 'Graph of %s from x=%s to x=%s', $function, $x_range[0], $x_range[1] ),
+			'success' => true,
+			'message' => sprintf( __( 'Graph generated for function: %s', 'mcp-ai-wpoos-pro' ), $function ),
+			'text' => sprintf( 'Function graphed: %s', $function ),
+			'function' => $function,
+			'attachment_id' => $attachment_id,
+			'url' => $url,
+			'width' => $width,
+			'height' => $height,
+			'prompt' => sprintf( 'Graph of %s from x=%s to x=%s', $function, $x_range[0], $x_range[1] ),
 		);
 
 		// Add image HTML to response.

@@ -28,9 +28,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     public function execute( $arguments, $context ) {
  *         // Generate image and get attachment_id, url, etc.
  *         $result = array(
- *             'attachment_id' =>  $attachment_id,
- *             'url'           =>  $url,
- *             'text'          =>  'Image generated successfully',
+ *             'attachment_id' => $attachment_id,
+ *             'url' => $url,
+ *             'text' => 'Image generated successfully',
  *         );
  *
  *         // Add rendered image HTML to response

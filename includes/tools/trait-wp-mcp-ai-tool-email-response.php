@@ -23,11 +23,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  *     public function execute( $arguments, $context ) {
  *         $result = array(
- *             'html'          =>  '<html>...</html>',
- *             'subject'       =>  'Newsletter Title',
- *             'preview_text'  =>  'Preview...',
- *             'template_type' =>  'newsletter',
- *             'text'          =>  'Email generated successfully'
+ *             'html' => '<html>...</html>',
+ *             'subject' => 'Newsletter Title',
+ *             'preview_text' => 'Preview...',
+ *             'template_type' => 'newsletter',
+ *             'text' => 'Email generated successfully'
  *         );
  *         return $this->add_email_html_to_response( $result );
  *     }

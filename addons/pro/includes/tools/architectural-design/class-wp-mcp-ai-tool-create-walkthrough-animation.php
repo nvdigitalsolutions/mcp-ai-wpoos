@@ -49,50 +49,50 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 =>  'object',
-			'properties'           =>  array(
-				'model_data'           =>  array(
-					'type'                 =>  'object',
-					'description'          =>  __( '3D model data for walkthrough.', 'mcp-ai-wpoos-pro' ),
+			'type' => 'object',
+			'properties' => array(
+				'model_data' => array(
+					'type' => 'object',
+					'description' => __( '3D model data for walkthrough.', 'mcp-ai-wpoos-pro' ),
 				),
-				'tour_path'            =>  array(
-					'type'                 =>  'array',
-					'description'          =>  __( 'Rooms or areas to visit in order.', 'mcp-ai-wpoos-pro' ),
-					'items'                =>  array( 'type' => 'string' ),
+				'tour_path' => array(
+					'type' => 'array',
+					'description' => __( 'Rooms or areas to visit in order.', 'mcp-ai-wpoos-pro' ),
+					'items' => array( 'type' => 'string' ),
 				),
-				'duration'             =>  array(
-					'type'                 =>  'number',
-					'description'          =>  __( 'Total animation duration in seconds.', 'mcp-ai-wpoos-pro' ),
-					'minimum'              =>  10,
-					'maximum'              =>  300,
-					'default'              =>  60,
+				'duration' => array(
+					'type' => 'number',
+					'description' => __( 'Total animation duration in seconds.', 'mcp-ai-wpoos-pro' ),
+					'minimum' => 10,
+					'maximum' => 300,
+					'default' => 60,
 				),
-				'camera_speed'         =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Camera movement speed: "slow", "medium", "fast".', 'mcp-ai-wpoos-pro' ),
-					'enum'                 =>  array( 'slow', 'medium', 'fast' ),
-					'default'              =>  'medium',
+				'camera_speed' => array(
+					'type' => 'string',
+					'description' => __( 'Camera movement speed: "slow", "medium", "fast".', 'mcp-ai-wpoos-pro' ),
+					'enum' => array( 'slow', 'medium', 'fast' ),
+					'default' => 'medium',
 				),
-				'include_narration'    =>  array(
-					'type'                 =>  'boolean',
-					'description'          =>  __( 'Include AI-generated narration.', 'mcp-ai-wpoos-pro' ),
-					'default'              =>  false,
+				'include_narration' => array(
+					'type' => 'boolean',
+					'description' => __( 'Include AI-generated narration.', 'mcp-ai-wpoos-pro' ),
+					'default' => false,
 				),
-				'output_format'        =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Video format: "mp4", "webm", "mov".', 'mcp-ai-wpoos-pro' ),
-					'enum'                 =>  array( 'mp4', 'webm', 'mov' ),
-					'default'              =>  'mp4',
+				'output_format' => array(
+					'type' => 'string',
+					'description' => __( 'Video format: "mp4", "webm", "mov".', 'mcp-ai-wpoos-pro' ),
+					'enum' => array( 'mp4', 'webm', 'mov' ),
+					'default' => 'mp4',
 				),
-				'resolution'           =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Video resolution: "720p", "1080p", "4k".', 'mcp-ai-wpoos-pro' ),
-					'enum'                 =>  array( '720p', '1080p', '4k' ),
-					'default'              =>  '1080p',
+				'resolution' => array(
+					'type' => 'string',
+					'description' => __( 'Video resolution: "720p", "1080p", "4k".', 'mcp-ai-wpoos-pro' ),
+					'enum' => array( '720p', '1080p', '4k' ),
+					'default' => '1080p',
 				),
 			),
-			'required'             =>  array( 'model_data' ),
-			'additionalProperties' =>  false,
+			'required' => array( 'model_data' ),
+			'additionalProperties' => false,
 		);
 	}
 
@@ -154,20 +154,20 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 
 		// Return structured animation data.
 		$result = array(
-			'success'       =>  true,
-			'url'           =>  $animation['video_url'],
-			'prompt'        =>  sprintf( 'Walkthrough animation: %d seconds, %s speed', $duration, $camera_speed ),
-			'duration'      =>  $duration,
-			'format'        =>  $output_format,
-			'animation'     =>  $animation,
-			'settings'      =>  array(
-				'duration'      =>  $duration,
-				'camera_speed'  =>  $camera_speed,
-				'has_narration' =>  $include_narration,
-				'format'        =>  $output_format,
-				'resolution'    =>  $resolution,
+			'success' => true,
+			'url' => $animation['video_url'],
+			'prompt' => sprintf( 'Walkthrough animation: %d seconds, %s speed', $duration, $camera_speed ),
+			'duration' => $duration,
+			'format' => $output_format,
+			'animation' => $animation,
+			'settings' => array(
+				'duration' => $duration,
+				'camera_speed' => $camera_speed,
+				'has_narration' => $include_narration,
+				'format' => $output_format,
+				'resolution' => $resolution,
 			),
-			'text'          =>  __( 'Successfully created walkthrough animation.', 'mcp-ai-wpoos-pro' ),
+			'text' => __( 'Successfully created walkthrough animation.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->add_video_html_to_response( $result );
@@ -187,16 +187,16 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 	 */
 	protected function create_animation( $model_data, $tour_path, $duration, $camera_speed, $include_narration, $output_format, $resolution ) {
 		return array(
-			'video_url'    =>  '',
-			'format'       =>  $output_format,
-			'duration'     =>  $duration,
-			'file_size'    =>  0,
-			'metadata'     =>  array(
-				'tour_path'    =>  $tour_path,
-				'camera_speed' =>  $camera_speed,
-				'narration'    =>  $include_narration,
-				'resolution'   =>  $resolution,
-				'generated_at' =>  current_time( 'mysql' ),
+			'video_url' => '',
+			'format' => $output_format,
+			'duration' => $duration,
+			'file_size' => 0,
+			'metadata' => array(
+				'tour_path' => $tour_path,
+				'camera_speed' => $camera_speed,
+				'narration' => $include_narration,
+				'resolution' => $resolution,
+				'generated_at' => current_time( 'mysql' ),
 			),
 		);
 	}

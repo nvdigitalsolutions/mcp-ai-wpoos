@@ -56,112 +56,112 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 =>  'object',
-			'properties'           =>  array(
-				'type'                 =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Chart type: bar, line, pie, doughnut, radar, polarArea, scatter, bubble.', 'mcp-ai-wpoos' ),
-					'enum'                 =>  array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' ),
+			'type' => 'object',
+			'properties' => array(
+				'type' => array(
+					'type' => 'string',
+					'description' => __( 'Chart type: bar, line, pie, doughnut, radar, polarArea, scatter, bubble.', 'mcp-ai-wpoos' ),
+					'enum' => array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble' ),
 				),
-				'data'                 =>  array(
-					'type'                 =>  'object',
-					'description'          =>  __( 'Chart data object with labels and datasets.', 'mcp-ai-wpoos' ),
-					'properties'           =>  array(
-						'labels'               =>  array(
-							'type'                 =>  'array',
-							'description'          =>  __( 'Labels for the chart data points.', 'mcp-ai-wpoos' ),
-							'items'                =>  array(
-								'type'                 =>  'string',
+				'data' => array(
+					'type' => 'object',
+					'description' => __( 'Chart data object with labels and datasets.', 'mcp-ai-wpoos' ),
+					'properties' => array(
+						'labels' => array(
+							'type' => 'array',
+							'description' => __( 'Labels for the chart data points.', 'mcp-ai-wpoos' ),
+							'items' => array(
+								'type' => 'string',
 							),
 						),
-						'datasets'             =>  array(
-							'type'                 =>  'array',
-							'description'          =>  __( 'Array of dataset objects.', 'mcp-ai-wpoos' ),
-							'items'                =>  array(
-								'type'                 =>  'object',
-								'properties'           =>  array(
-									'label'                =>  array(
-										'type'                 =>  'string',
-										'description'          =>  __( 'Dataset label.', 'mcp-ai-wpoos' ),
+						'datasets' => array(
+							'type' => 'array',
+							'description' => __( 'Array of dataset objects.', 'mcp-ai-wpoos' ),
+							'items' => array(
+								'type' => 'object',
+								'properties' => array(
+									'label' => array(
+										'type' => 'string',
+										'description' => __( 'Dataset label.', 'mcp-ai-wpoos' ),
 									),
-									'data'                 =>  array(
-										'type'                 =>  'array',
-										'description'          =>  __( 'Data values for this dataset.', 'mcp-ai-wpoos' ),
-										'items'                =>  array(
-											'type'                 =>  'number',
+									'data' => array(
+										'type' => 'array',
+										'description' => __( 'Data values for this dataset.', 'mcp-ai-wpoos' ),
+										'items' => array(
+											'type' => 'number',
 										),
 									),
-									'backgroundColor'      =>  array(
-										'description'          =>  __( 'Background color(s) for the dataset.', 'mcp-ai-wpoos' ),
-										'anyOf'                =>  array(
+									'backgroundColor' => array(
+										'description' => __( 'Background color(s) for the dataset.', 'mcp-ai-wpoos' ),
+										'anyOf' => array(
 											array(
-												'type'                 =>  'string',
+												'type' => 'string',
 											),
 											array(
-												'type'                 =>  'array',
-												'items'                =>  array(
-													'type'                 =>  'string',
+												'type' => 'array',
+												'items' => array(
+													'type' => 'string',
 												),
 											),
 										),
 									),
-									'borderColor'          =>  array(
-										'description'          =>  __( 'Border color(s) for the dataset.', 'mcp-ai-wpoos' ),
-										'anyOf'                =>  array(
+									'borderColor' => array(
+										'description' => __( 'Border color(s) for the dataset.', 'mcp-ai-wpoos' ),
+										'anyOf' => array(
 											array(
-												'type'                 =>  'string',
+												'type' => 'string',
 											),
 											array(
-												'type'                 =>  'array',
-												'items'                =>  array(
-													'type'                 =>  'string',
+												'type' => 'array',
+												'items' => array(
+													'type' => 'string',
 												),
 											),
 										),
 									),
-									'borderWidth'          =>  array(
-										'type'                 =>  'number',
-										'description'          =>  __( 'Border width in pixels.', 'mcp-ai-wpoos' ),
+									'borderWidth' => array(
+										'type' => 'number',
+										'description' => __( 'Border width in pixels.', 'mcp-ai-wpoos' ),
 									),
 								),
 							),
 						),
 					),
 				),
-				'options'              =>  array(
-					'type'                 =>  'object',
-					'description'          =>  __( 'Chart.js options object for customizing the chart appearance and behavior.', 'mcp-ai-wpoos' ),
+				'options' => array(
+					'type' => 'object',
+					'description' => __( 'Chart.js options object for customizing the chart appearance and behavior.', 'mcp-ai-wpoos' ),
 				),
-				'title'                =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Chart title (optional).', 'mcp-ai-wpoos' ),
+				'title' => array(
+					'type' => 'string',
+					'description' => __( 'Chart title (optional).', 'mcp-ai-wpoos' ),
 				),
-				'width'                =>  array(
-					'type'                 =>  'integer',
-					'description'          =>  __( 'Chart canvas width in pixels (default: 800).', 'mcp-ai-wpoos' ),
-					'default'              =>  800,
-					'minimum'              =>  100,
-					'maximum'              =>  2000,
+				'width' => array(
+					'type' => 'integer',
+					'description' => __( 'Chart canvas width in pixels (default: 800).', 'mcp-ai-wpoos' ),
+					'default' => 800,
+					'minimum' => 100,
+					'maximum' => 2000,
 				),
-				'height'               =>  array(
-					'type'                 =>  'integer',
-					'description'          =>  __( 'Chart canvas height in pixels (default: 400).', 'mcp-ai-wpoos' ),
-					'default'              =>  400,
-					'minimum'              =>  100,
-					'maximum'              =>  2000,
+				'height' => array(
+					'type' => 'integer',
+					'description' => __( 'Chart canvas height in pixels (default: 400).', 'mcp-ai-wpoos' ),
+					'default' => 400,
+					'minimum' => 100,
+					'maximum' => 2000,
 				),
-				'save_as_attachment'   =>  array(
-					'type'                 =>  'boolean',
-					'description'          =>  __( 'Whether to save the chart as an HTML file attachment (default: false).', 'mcp-ai-wpoos' ),
-					'default'              =>  false,
+				'save_as_attachment' => array(
+					'type' => 'boolean',
+					'description' => __( 'Whether to save the chart as an HTML file attachment (default: false).', 'mcp-ai-wpoos' ),
+					'default' => false,
 				),
-				'file_name'            =>  array(
-					'type'                 =>  'string',
-					'description'          =>  __( 'Optional base file name for the saved HTML attachment.', 'mcp-ai-wpoos' ),
+				'file_name' => array(
+					'type' => 'string',
+					'description' => __( 'Optional base file name for the saved HTML attachment.', 'mcp-ai-wpoos' ),
 				),
 			),
-			'required'             =>  array( 'type', 'data' ),
-			'additionalProperties' =>  false,
+			'required' => array( 'type', 'data' ),
+			'additionalProperties' => false,
 		);
 	}
 
@@ -171,16 +171,16 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   =>  __( 'create_chart', 'mcp-ai-wpoos' ),
-				'payload' =>  __( 'create_chart', 'mcp-ai-wpoos' ),
+				'label' => __( 'create_chart', 'mcp-ai-wpoos' ),
+				'payload' => __( 'create_chart', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   =>  __( 'Create bar chart from data', 'mcp-ai-wpoos' ),
-				'payload' =>  __( 'Use the `create_chart` tool to create a bar chart. Ask for the data values and labels, then generate the chart configuration.', 'mcp-ai-wpoos' ),
+				'label' => __( 'Create bar chart from data', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `create_chart` tool to create a bar chart. Ask for the data values and labels, then generate the chart configuration.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   =>  __( 'Create pie chart visualization', 'mcp-ai-wpoos' ),
-				'payload' =>  __( 'Use the `create_chart` tool to create a pie chart. Ask for the data categories and their values, then generate the chart.', 'mcp-ai-wpoos' ),
+				'label' => __( 'Create pie chart visualization', 'mcp-ai-wpoos' ),
+				'payload' => __( 'Use the `create_chart` tool to create a pie chart. Ask for the data categories and their values, then generate the chart.', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -303,14 +303,14 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			}
 
 			$type_labels = array(
-				'bar'       =>  __( 'Bar Chart', 'mcp-ai-wpoos' ),
-				'line'      =>  __( 'Line Chart', 'mcp-ai-wpoos' ),
-				'pie'       =>  __( 'Pie Chart', 'mcp-ai-wpoos' ),
-				'doughnut'  =>  __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
-				'radar'     =>  __( 'Radar Chart', 'mcp-ai-wpoos' ),
-				'polarArea' =>  __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
-				'scatter'   =>  __( 'Scatter Chart', 'mcp-ai-wpoos' ),
-				'bubble'    =>  __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+				'bar' => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+				'line' => __( 'Line Chart', 'mcp-ai-wpoos' ),
+				'pie' => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+				'doughnut' => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+				'radar' => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+				'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+				'scatter' => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+				'bubble' => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
 			);
 			$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
 
@@ -322,29 +322,29 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 
 			return array(
-				'message'       =>  $message,
-				'text'          =>  $message,
-				'chart_type'    =>  $chart_type,
-				'attachment_id' =>  $storage['attachment_id'],
-				'url'           =>  $storage['url'],
-				'file_path'     =>  $storage['file'],
-				'file_name'     =>  $storage['file_name'],
-				'html'          =>  $html,
-				'chart_config'  =>  $chart_config,
-				'saved_as_file' =>  true,
-				'output_format' =>  'chart', // Enables chart embedding in chat client via iframe rendering.
+				'message' => $message,
+				'text' => $message,
+				'chart_type' => $chart_type,
+				'attachment_id' => $storage['attachment_id'],
+				'url' => $storage['url'],
+				'file_path' => $storage['file'],
+				'file_name' => $storage['file_name'],
+				'html' => $html,
+				'chart_config' => $chart_config,
+				'saved_as_file' => true,
+				'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 			);
 		}
 
 		$type_labels = array(
-			'bar'       =>  __( 'Bar Chart', 'mcp-ai-wpoos' ),
-			'line'      =>  __( 'Line Chart', 'mcp-ai-wpoos' ),
-			'pie'       =>  __( 'Pie Chart', 'mcp-ai-wpoos' ),
-			'doughnut'  =>  __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
-			'radar'     =>  __( 'Radar Chart', 'mcp-ai-wpoos' ),
-			'polarArea' =>  __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
-			'scatter'   =>  __( 'Scatter Chart', 'mcp-ai-wpoos' ),
-			'bubble'    =>  __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+			'bar' => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+			'line' => __( 'Line Chart', 'mcp-ai-wpoos' ),
+			'pie' => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+			'doughnut' => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+			'radar' => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+			'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+			'scatter' => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+			'bubble' => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
 		);
 		$chart_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
 
@@ -361,15 +361,15 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$enhanced_html .= $this->generate_chart_data_table( $chart_config );
 
 		return array(
-			'message'       =>  $message,
-			'text'          =>  $message,
-			'chart_type'    =>  $chart_type,
-			'html'          =>  $enhanced_html,
-			'chart_config'  =>  $chart_config,
-			'width'         =>  $width,
-			'height'        =>  $height,
-			'saved_as_file' =>  false,
-			'output_format' =>  'chart', // Enables chart embedding in chat client via iframe rendering.
+			'message' => $message,
+			'text' => $message,
+			'chart_type' => $chart_type,
+			'html' => $enhanced_html,
+			'chart_config' => $chart_config,
+			'width' => $width,
+			'height' => $height,
+			'saved_as_file' => false,
+			'output_format' => 'chart', // Enables chart embedding in chat client via iframe rendering.
 		);
 	}
 
@@ -492,9 +492,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	protected function build_chart_config( $type, array $data, array $options ) {
 		return array(
-			'type'    =>  $type,
-			'data'    =>  $data,
-			'options' =>  $options,
+			'type' => $type,
+			'data' => $data,
+			'options' => $options,
 		);
 	}
 
@@ -616,10 +616,10 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$title = $this->generate_attachment_title( $chart_type );
 
 		$attachment = array(
-			'post_mime_type' =>  'text/html',
-			'post_title'     =>  $title,
-			'post_content'   =>  '',
-			'post_status'    =>  'inherit',
+			'post_mime_type' => 'text/html',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -644,13 +644,13 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
-			'attachment_id' =>  (int) $attachment_id,
-			'file'          =>  $file_path,
-			'file_name'     =>  wp_basename( $file_path ),
-			'url'           =>  $local_url,
-			'mime_type'     =>  'text/html',
-			'bytes'         =>  $bytes ? (int) $bytes : 0,
-			'title'         =>  $title,
+			'attachment_id' => (int) $attachment_id,
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'mime_type' => 'text/html',
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
 		);
 	}
 
@@ -687,14 +687,14 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	protected function generate_attachment_title( $chart_type ) {
 		$type_labels = array(
-			'bar'       =>  __( 'Bar Chart', 'mcp-ai-wpoos' ),
-			'line'      =>  __( 'Line Chart', 'mcp-ai-wpoos' ),
-			'pie'       =>  __( 'Pie Chart', 'mcp-ai-wpoos' ),
-			'doughnut'  =>  __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
-			'radar'     =>  __( 'Radar Chart', 'mcp-ai-wpoos' ),
-			'polarArea' =>  __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
-			'scatter'   =>  __( 'Scatter Chart', 'mcp-ai-wpoos' ),
-			'bubble'    =>  __( 'Bubble Chart', 'mcp-ai-wpoos' ),
+			'bar' => __( 'Bar Chart', 'mcp-ai-wpoos' ),
+			'line' => __( 'Line Chart', 'mcp-ai-wpoos' ),
+			'pie' => __( 'Pie Chart', 'mcp-ai-wpoos' ),
+			'doughnut' => __( 'Doughnut Chart', 'mcp-ai-wpoos' ),
+			'radar' => __( 'Radar Chart', 'mcp-ai-wpoos' ),
+			'polarArea' => __( 'Polar Area Chart', 'mcp-ai-wpoos' ),
+			'scatter' => __( 'Scatter Chart', 'mcp-ai-wpoos' ),
+			'bubble' => __( 'Bubble Chart', 'mcp-ai-wpoos' ),
 		);
 
 		$label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
@@ -738,37 +738,37 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_tool_rules() {
 		return array(
-			'parameter_constraints' =>  array(
-				'required_fields'       =>  array( 'type', 'data' ),
-				'optional_fields'       =>  array( 'options', 'title', 'width', 'height', 'save_as_attachment', 'file_name' ),
-				'max_datasets'          =>  10,  // Maximum datasets per chart.
-				'max_data_points'       =>  1000, // Maximum data points per dataset.
+			'parameter_constraints' => array(
+				'required_fields' => array( 'type', 'data' ),
+				'optional_fields' => array( 'options', 'title', 'width', 'height', 'save_as_attachment', 'file_name' ),
+				'max_datasets' => 10,  // Maximum datasets per chart.
+				'max_data_points' => 1000, // Maximum data points per dataset.
 			),
-			'timeout_constraints'   =>  array(
-				'recommended_timeout'   =>  30,  // Chart generation is fast.
-				'max_execution_time'    =>  60,  // Maximum time for file operations.
+			'timeout_constraints' => array(
+				'recommended_timeout' => 30,  // Chart generation is fast.
+				'max_execution_time' => 60,  // Maximum time for file operations.
 			),
-			'response_constraints'  =>  array(
-				'max_size'              =>  2097152, // 2MB max HTML size.
-				'supports_streaming'    =>  false,
-				'supports_pagination'   =>  false,
+			'response_constraints' => array(
+				'max_size' => 2097152, // 2MB max HTML size.
+				'supports_streaming' => false,
+				'supports_pagination' => false,
 			),
-			'dependencies'          =>  array(
-				'required_extensions'   =>  array(), // No PHP extensions required.
-				'external_services'     =>  array(),
+			'dependencies' => array(
+				'required_extensions' => array(), // No PHP extensions required.
+				'external_services' => array(),
 			),
-			'orchestration_hints'   =>  array(
-				'can_run_parallel'      =>  true,   // Multiple charts can be generated simultaneously.
-				'requires_lock'         =>  false,  // No exclusive resources needed.
-				'cache_ttl'             =>  0,      // Don't cache - each chart is unique.
-				'retry_strategy'        =>  'simple', // Simple retry on failure.
-				'max_retries'           =>  2,
-				'idempotent'            =>  true,   // Same input always produces same output.
+			'orchestration_hints' => array(
+				'can_run_parallel' => true,   // Multiple charts can be generated simultaneously.
+				'requires_lock' => false,  // No exclusive resources needed.
+				'cache_ttl' => 0,      // Don't cache - each chart is unique.
+				'retry_strategy' => 'simple', // Simple retry on failure.
+				'max_retries' => 2,
+				'idempotent' => true,   // Same input always produces same output.
 			),
-			'resource_usage'        =>  array(
-				'memory_intensive'      =>  false,  // Minimal memory usage.
-				'cpu_intensive'         =>  false,  // Minimal CPU usage.
-				'io_intensive'          =>  false,  // Only I/O when saving attachment.
+			'resource_usage' => array(
+				'memory_intensive' => false,  // Minimal memory usage.
+				'cpu_intensive' => false,  // Minimal CPU usage.
+				'io_intensive' => false,  // Only I/O when saving attachment.
 			),
 		);
 	}

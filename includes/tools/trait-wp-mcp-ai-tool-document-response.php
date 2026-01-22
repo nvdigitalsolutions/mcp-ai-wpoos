@@ -28,10 +28,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     public function execute( $arguments, $context ) {
  *         // Generate document and get attachment_id, url, etc.
  *         $result = array(
- *             'attachment_id' =>  $attachment_id,
- *             'url'           =>  $url,
- *             'mime_type'     =>  'application/pdf',
- *             'text'          =>  'Document generated successfully',
+ *             'attachment_id' => $attachment_id,
+ *             'url' => $url,
+ *             'mime_type' => 'application/pdf',
+ *             'text' => 'Document generated successfully',
  *         );
  *
  *         // Add rendered document HTML to response
@@ -180,14 +180,14 @@ trait WP_MCP_AI_Tool_Document_Response {
 		$mime_type = strtolower( $mime_type );
 
 		$type_map = array(
-			'application/pdf'                                                         =>  'pdf',
-			'application/msword'                                                      =>  'word',
-			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' =>  'word',
-			'application/vnd.ms-excel'                                                =>  'excel',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'       =>  'excel',
-			'application/vnd.oasis.opendocument.text'                                 =>  'odt',
-			'application/vnd.oasis.opendocument.spreadsheet'                          =>  'ods',
-			'text/csv'                                                                =>  'csv',
+			'application/pdf' => 'pdf',
+			'application/msword' => 'word',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'word',
+			'application/vnd.ms-excel' => 'excel',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'excel',
+			'application/vnd.oasis.opendocument.text' => 'odt',
+			'application/vnd.oasis.opendocument.spreadsheet' => 'ods',
+			'text/csv' => 'csv',
 		);
 
 		return isset( $type_map[ $mime_type ] ) ? $type_map[ $mime_type ] : 'document';
@@ -201,13 +201,13 @@ trait WP_MCP_AI_Tool_Document_Response {
 	 */
 	protected function get_document_icon( $doc_type ) {
 		$icons = array(
-			'pdf'      =>  '📄',
-			'word'     =>  '📝',
-			'excel'    =>  '📊',
-			'csv'      =>  '📊',
-			'odt'      =>  '📝',
-			'ods'      =>  '📊',
-			'document' =>  '📋',
+			'pdf' => '📄',
+			'word' => '📝',
+			'excel' => '📊',
+			'csv' => '📊',
+			'odt' => '📝',
+			'ods' => '📊',
+			'document' => '📋',
 		);
 
 		return isset( $icons[ $doc_type ] ) ? $icons[ $doc_type ] : '📋';
