@@ -136,12 +136,25 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_veo_video_validated',
 					'generate_sora_video',
 					'generate_sora_video_validated',
+					// Video production.
+					'create_video_from_images',
+					'add_watermark_to_video',
+					'generate_video_captions',
+					'merge_videos',
+					'trim_video',
+					'resize_video_resolution',
+					'adjust_video_speed',
+					'compress_video',
+					'convert_video_format',
+					'optimize_for_platform',
 					// Video analysis.
 					'check_video_status',
 					'analyze_video',
 					'extract_video_frames',
 					'get_video_metadata',
 					'generate_video_caption',
+					'extract_video_metadata',
+					'generate_video_thumbnails',
 					// Audio generation.
 					'generate_music',
 					'generate_music_validated',
@@ -178,6 +191,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'update_term',
 					// SEO.
 					'get_rankmath_seo',
+					'multilingual_seo_audit',
+					// Translation.
+					'auto_translate_content',
+					'detect_content_language',
+					'translation_quality_check',
 					// Images for content.
 					'generate_openai_image',
 					'generate_gemini_image',
@@ -207,6 +225,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'lookup_product_price',
 					'crawl4ai_price_lookup',
 					'vision_product_search',
+					// Translation for e-commerce.
+					'translate_woocommerce_products',
+					'auto_translate_content',
+					'detect_content_language',
+					// Analytics & insights.
+					'churn_prediction',
+					'customer_segmentation_ml',
+					'revenue_forecast',
+					'cohort_analysis',
+					'funnel_analysis',
 					// Cannabis industry (Flowhub).
 					'flowhub_create_order',
 					'flowhub_get_customers',
@@ -342,6 +370,16 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '📊 Data & Analytics', 'mcp-ai-wpoos' ),
 				'description' => __( 'Data collection, reporting, analytics, and business intelligence', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Analytics Toolkit tools.
+					'collect_custom_metrics',
+					'generate_executive_dashboard',
+					'cohort_analysis',
+					'funnel_analysis',
+					'churn_prediction',
+					'customer_segmentation_ml',
+					'revenue_forecast',
+					'create_custom_report',
+					'export_analytics_api',
 					// JetEngine.
 					'get_jetengine_items',
 					'list_jetengine_rest_routes',
@@ -665,10 +703,21 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '💼 Finance & Business', 'mcp-ai-wpoos' ),
 				'description' => __( 'Financial analysis, business intelligence, and reporting tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Financial Planning Toolkit tools.
+					'financial_health_score',
+					'budget_planner',
+					'expense_tracker',
+					'net_worth_calculator',
+					'cash_flow_analyzer',
+					'retirement_calculator',
+					'tax_estimator',
 					// Analytics.
 					'google_analytics_report',
 					'quickbooks_report',
 					'get_profession_stats',
+					'revenue_forecast',
+					'churn_prediction',
+					'cohort_analysis',
 					// Charts & reporting.
 					'create_chart',
 					'pro_excel',
@@ -851,7 +900,268 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'moderate_content',
 				),
 			),
+
+			// =================================================================
+			// NEW PRO TOOLKIT PRESETS (2026)
+			// =================================================================
+
+			'business_analytics'  => array(
+				'name'        => __( '📊 Business Analytics & BI', 'mcp-ai-wpoos' ),
+				'description' => __( 'Advanced analytics, data warehousing, churn prediction, and business intelligence tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Analytics Toolkit (12 tools).
+					'collect_custom_metrics',
+					'data_warehouse_sync',
+					'real_time_event_tracking',
+					'generate_executive_dashboard',
+					'cohort_analysis',
+					'funnel_analysis',
+					'attribution_modeling',
+					'churn_prediction',
+					'customer_segmentation_ml',
+					'revenue_forecast',
+					'create_custom_report',
+					'export_analytics_api',
+					// Related tools.
+					'google_analytics_report',
+					'quickbooks_report',
+					'create_chart',
+					'pro_excel',
+					'get_profession_stats',
+				),
+			),
+
+			'financial_planning'  => array(
+				'name'        => __( '💰 Financial Planning & Wealth', 'mcp-ai-wpoos' ),
+				'description' => __( 'Retirement planning, investment analysis, budget tracking, and personal finance tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Retirement Planning (5 tools).
+					'retirement_calculator',
+					'ira_roth_comparison',
+					'withdrawal_strategy_planner',
+					'social_security_optimizer',
+					'pension_analyzer',
+					// Budget & Expense Tracking (5 tools).
+					'budget_planner',
+					'expense_tracker',
+					'net_worth_calculator',
+					'cash_flow_analyzer',
+					'bank_account_sync',
+					// Investment & Portfolio (5 tools).
+					'portfolio_visualizer',
+					'asset_allocation_planner',
+					'investment_return_calculator',
+					'rebalancing_analyzer',
+					'tax_loss_harvesting_tracker',
+					// Debt & Loan Management (3 tools).
+					'debt_payoff_calculator',
+					'mortgage_calculator',
+					'credit_score_tracker',
+					// Goal Planning & Savings (2 tools).
+					'savings_goal_planner',
+					'emergency_fund_calculator',
+					// Financial Literacy (4 tools).
+					'financial_health_score',
+					'tax_estimator',
+					'college_savings_calculator',
+					'insurance_needs_analyzer',
+				),
+			),
+
+			'multilingual_global' => array(
+				'name'        => __( '🌍 Multilingual & Global Content', 'mcp-ai-wpoos' ),
+				'description' => __( 'Translation, localization, and multilingual content management tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Translation Management (4 tools).
+					'auto_translate_content',
+					'translate_woocommerce_products',
+					'translation_memory_search',
+					'export_import_translations',
+					// Localization (3 tools).
+					'detect_content_language',
+					'localize_dates_currencies',
+					'rtl_content_optimization',
+					// Quality Assurance (3 tools).
+					'translation_quality_check',
+					'find_untranslated_strings',
+					'multilingual_seo_audit',
+					// Related content tools.
+					'save_post',
+					'create_post',
+					'search_content',
+					'get_recent_posts',
+				),
+			),
+
+			'video_production'    => array(
+				'name'        => __( '🎬 Video Production & Editing', 'mcp-ai-wpoos' ),
+				'description' => __( 'Video creation, editing, optimization, and production tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Video Creation (4 tools).
+					'create_video_from_images',
+					'add_watermark_to_video',
+					'generate_video_captions',
+					'merge_videos',
+					// Video Editing (3 tools).
+					'trim_video',
+					'resize_video_resolution',
+					'adjust_video_speed',
+					// Video Optimization (3 tools).
+					'compress_video',
+					'convert_video_format',
+					'optimize_for_platform',
+					// Video Analysis (2 tools).
+					'extract_video_metadata',
+					'generate_video_thumbnails',
+					// Related video tools.
+					'generate_veo_video',
+					'generate_sora_video',
+					'check_video_status',
+					'analyze_video',
+					'extract_video_frames',
+					'get_video_metadata',
+					'generate_video_caption',
+				),
+			),
+
+			'predictive_analytics' => array(
+				'name'        => __( '🔮 Predictive Analytics & ML', 'mcp-ai-wpoos' ),
+				'description' => __( 'Machine learning, churn prediction, forecasting, and predictive modeling', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Predictive Analytics from Analytics Toolkit.
+					'churn_prediction',
+					'customer_segmentation_ml',
+					'revenue_forecast',
+					'cohort_analysis',
+					'attribution_modeling',
+					// Related ML/AI tools.
+					'create_text_embeddings',
+					'batch_embed_content',
+					'semantic_content_search',
+					'vectorize_image',
+					'create_vector_store',
+					'list_vector_stores',
+					'get_vector_store',
+					// Hugging Face datasets for ML.
+					'huggingface_dataset_search',
+					'huggingface_dataset_get_info',
+					'huggingface_dataset_get_statistics',
+					'huggingface_recommended_datasets',
+				),
+			),
+
+			'data_warehousing'    => array(
+				'name'        => __( '🗄️ Data Warehousing & ETL', 'mcp-ai-wpoos' ),
+				'description' => __( 'Data warehouse sync, ETL operations, and data integration tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Data Warehouse & Integration.
+					'data_warehouse_sync',
+					'export_analytics_api',
+					'collect_custom_metrics',
+					'real_time_event_tracking',
+					// Batch operations.
+					'create_batch',
+					'list_batches',
+					'get_batch_status',
+					'monitor_batch',
+					// Import/Export.
+					'trigger_all_export',
+					'trigger_all_import',
+					'get_all_import_status',
+					'list_all_export_templates',
+					'list_all_import_templates',
+					// File operations.
+					'list_openai_files',
+					'get_openai_file_details',
+					// Data sources.
+					'get_jetengine_items',
+					'list_jetengine_rest_routes',
+					'jetengine',
+					'huggingface_dataset_get_rows',
+					'huggingface_dataset_get_parquet',
+				),
+			),
+
+			'content_creator_pro' => array(
+				'name'        => __( '🎥 Content Creator Pro', 'mcp-ai-wpoos' ),
+				'description' => __( 'Complete content creation suite: writing, images, video, audio, and multilingual', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Content writing.
+					'save_post',
+					'create_post',
+					'search_content',
+					'get_recent_posts',
+					'web_search',
+					'deep_research',
+					// Images.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'generate_image_caption',
+					'generate_image_alt_text',
+					'edit_gemini_image',
+					'edit_openai_image',
+					'resize_image',
+					'crop_image',
+					'remove_background',
+					// Video.
+					'create_video_from_images',
+					'add_watermark_to_video',
+					'generate_video_captions',
+					'merge_videos',
+					'trim_video',
+					'compress_video',
+					'generate_veo_video',
+					'generate_sora_video',
+					// Audio.
+					'generate_music',
+					'generate_openai_speech',
+					'transcribe_openai_audio',
+					// Translation.
+					'auto_translate_content',
+					'detect_content_language',
+					// SEO & optimization.
+					'get_rankmath_seo',
+					'moderate_content',
+				),
+			),
+
+			'saas_platform'       => array(
+				'name'        => __( '🚀 SaaS Platform', 'mcp-ai-wpoos' ),
+				'description' => __( 'Complete SaaS toolkit: analytics, churn prediction, billing, and customer management', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Analytics & insights.
+					'generate_executive_dashboard',
+					'cohort_analysis',
+					'funnel_analysis',
+					'attribution_modeling',
+					'collect_custom_metrics',
+					'real_time_event_tracking',
+					// Churn & retention.
+					'churn_prediction',
+					'customer_segmentation_ml',
+					'revenue_forecast',
+					// Reporting.
+					'create_custom_report',
+					'export_analytics_api',
+					'create_chart',
+					// User management.
+					'get_user_info',
+					// Communication.
+					'send_group_email',
+					'schedule_notify_sms',
+					'send_telegram_message',
+					// Billing & payments.
+					'payhere_get_payment',
+					// Financial planning.
+					'financial_health_score',
+					'budget_planner',
+					// Forms & data.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+				),
+			),
 		);
+
 
 		/**
 		 * Filter the tool selection presets.
