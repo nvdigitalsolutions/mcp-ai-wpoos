@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+- **Pro Toolkit Memory-Based Tracking System (January 22, 2026)**: Replaced hard toolkit count limit with transparent memory-based tracking
+  - **Previous**: Hard limit of 5 pro toolkits; checkboxes disabled when limit reached; artificial restriction
+  - **New**: Memory-based tracking showing estimated MB usage; no hard limits; all toolkits can be enabled
+  - **UI Changes**: "Pro Toolkit Memory Usage" heading; displays "X MB estimated memory usage (Y toolkits enabled)"; status badges (Low/Moderate/High Usage)
+  - **Memory Requirements**: 20 toolkits mapped to memory usage (24 MB - 256 MB range); total 1,844 MB if all enabled
+  - **Status Thresholds**: Low (<500MB), Moderate (500-799MB), High (≥800MB) - informational only, no enforcement
+  - **JavaScript**: Real-time memory calculation; dynamic counter updates; no checkbox disabling
+  - **Benefits**: Transparency for resource planning; flexibility without artificial limits; informed decision-making
+  - **Files Changed**: `includes/admin/sections/class-wp-mcp-ai-section-tools.php` (152 lines changed), `tests/test-section-tools.php` (70 lines added)
+  - **Documentation**: Complete implementation guide in [TOOLKIT_MEMORY_TRACKING.md](TOOLKIT_MEMORY_TRACKING.md)
+
 ### Added
 - **DeepSeek V4 Multi-Agent Orchestration Enhancement (January 2026)**: Comprehensive multi-agent coordination framework inspired by DeepSeek V4's orchestration patterns
   - **Agent Role System**: Four specialized roles (Planner, Executor, Critic, Specialist) with role-specific capabilities and workflows
