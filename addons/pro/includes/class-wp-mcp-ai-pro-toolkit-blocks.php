@@ -88,6 +88,8 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 			'multilingual-glossaries',
 			'ai-tool-builder-templates',
 			'ai-tool-builder-schemas',
+			'media-templates',
+			'media-collections',
 		);
 
 		foreach ( $block_dirs as $block_dir ) {

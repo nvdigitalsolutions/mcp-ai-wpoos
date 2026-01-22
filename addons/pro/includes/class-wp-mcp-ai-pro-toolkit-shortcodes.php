@@ -120,6 +120,10 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		// AI Tool Builder toolkit shortcodes.
 		add_shortcode( 'mcp_ai_tool_builder_templates', array( $this, 'render_ai_tool_builder_templates' ) );
 		add_shortcode( 'mcp_ai_tool_builder_schemas', array( $this, 'render_ai_tool_builder_schemas' ) );
+
+		// Media toolkit shortcodes.
+		add_shortcode( 'mcp_media_templates', array( $this, 'media_templates_shortcode' ) );
+		add_shortcode( 'mcp_media_collections', array( $this, 'media_collections_shortcode' ) );
 	}
 
 	/**
@@ -1514,5 +1518,207 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 
 			echo '</div>';
 		}
+	}
+
+	/**
+	 * Render Media Templates gallery.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function media_templates_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display'  => 'grid',
+				'columns'  => 3,
+				'limit'    => 9,
+				'category' => '',
+				'orderby'  => 'date',
+				'order'    => 'desc',
+			),
+			$atts,
+			'mcp_media_templates'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		// Build query args for media templates CPT.
+		$query_args = array(
+			'post_type'      => 'mcp_ai_media_tpl',
+			'posts_per_page' => absint( $atts['limit'] ),
+			'orderby'        => sanitize_key( $atts['orderby'] ),
+			'order'          => sanitize_key( $atts['order'] ),
+			'post_status'    => 'publish',
+		);
+
+		// Add category filter if specified.
+		if ( ! empty( $atts['category'] ) ) {
+			$query_args['tax_query'] = array(
+				array(
+					'taxonomy' => 'mcp_ai_tpl_category',
+					'field'    => 'slug',
+					'terms'    => sanitize_text_field( $atts['category'] ),
+				),
+			);
+		}
+
+		$templates = get_posts( $query_args );
+
+		if ( empty( $templates ) ) {
+			return $this->render_empty( __( 'No media templates found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_media_templates_view( $templates, $atts );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render Media Collections gallery.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function media_collections_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display' => 'grid',
+				'columns' => 3,
+				'limit'   => 9,
+				'orderby' => 'date',
+				'order'   => 'desc',
+			),
+			$atts,
+			'mcp_media_collections'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		// Build query args for media collections CPT.
+		$query_args = array(
+			'post_type'      => 'mcp_ai_media_coll',
+			'posts_per_page' => absint( $atts['limit'] ),
+			'orderby'        => sanitize_key( $atts['orderby'] ),
+			'order'          => sanitize_key( $atts['order'] ),
+			'post_status'    => 'publish',
+		);
+
+		$collections = get_posts( $query_args );
+
+		if ( empty( $collections ) ) {
+			return $this->render_empty( __( 'No media collections found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_media_collections_view( $collections, $atts );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render media templates view.
+	 *
+	 * @param array $templates Array of template post objects.
+	 * @param array $atts      Shortcode attributes.
+	 */
+	protected function render_media_templates_view( $templates, $atts ) {
+		$display = sanitize_key( $atts['display'] );
+		$columns = absint( $atts['columns'] );
+
+		echo '<div class="mcp-ai-media-templates mcp-ai-display-' . esc_attr( $display ) . '" data-columns="' . esc_attr( $columns ) . '">';
+
+		foreach ( $templates as $template ) {
+			$template_id   = $template->ID;
+			$template_url  = get_permalink( $template_id );
+			$edit_url      = get_edit_post_link( $template_id );
+			$thumbnail_id  = get_post_thumbnail_id( $template_id );
+			$thumbnail_url = $thumbnail_id ? wp_get_attachment_image_url( $thumbnail_id, 'medium' ) : '';
+
+			echo '<div class="mcp-ai-template-item">';
+
+			if ( $thumbnail_url ) {
+				echo '<div class="mcp-ai-template-thumbnail">';
+				echo '<a href="' . esc_url( $template_url ) . '">';
+				echo '<img src="' . esc_url( $thumbnail_url ) . '" alt="' . esc_attr( $template->post_title ) . '" />';
+				echo '</a>';
+				echo '</div>';
+			}
+
+			echo '<div class="mcp-ai-template-content">';
+			echo '<h3 class="mcp-ai-template-title">';
+			echo '<a href="' . esc_url( $template_url ) . '">' . esc_html( $template->post_title ) . '</a>';
+			echo '</h3>';
+
+			if ( $template->post_excerpt ) {
+				echo '<div class="mcp-ai-template-excerpt">' . esc_html( $template->post_excerpt ) . '</div>';
+			}
+
+			echo '<div class="mcp-ai-template-actions">';
+			echo '<a href="' . esc_url( $template_url ) . '" class="button">' . esc_html__( 'View', 'mcp-ai-wpoos-pro' ) . '</a>';
+
+			if ( current_user_can( 'edit_post', $template_id ) ) {
+				echo ' <a href="' . esc_url( $edit_url ) . '" class="button">' . esc_html__( 'Edit', 'mcp-ai-wpoos-pro' ) . '</a>';
+			}
+
+			echo '</div>';
+			echo '</div>';
+			echo '</div>';
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * Render media collections view.
+	 *
+	 * @param array $collections Array of collection post objects.
+	 * @param array $atts        Shortcode attributes.
+	 */
+	protected function render_media_collections_view( $collections, $atts ) {
+		$display = sanitize_key( $atts['display'] );
+		$columns = absint( $atts['columns'] );
+
+		echo '<div class="mcp-ai-media-collections mcp-ai-display-' . esc_attr( $display ) . '" data-columns="' . esc_attr( $columns ) . '">';
+
+		foreach ( $collections as $collection ) {
+			$collection_id = $collection->ID;
+			$collection_url = get_permalink( $collection_id );
+			$edit_url       = get_edit_post_link( $collection_id );
+			$thumbnail_id   = get_post_thumbnail_id( $collection_id );
+			$thumbnail_url  = $thumbnail_id ? wp_get_attachment_image_url( $thumbnail_id, 'medium' ) : '';
+
+			echo '<div class="mcp-ai-collection-item">';
+
+			if ( $thumbnail_url ) {
+				echo '<div class="mcp-ai-collection-thumbnail">';
+				echo '<a href="' . esc_url( $collection_url ) . '">';
+				echo '<img src="' . esc_url( $thumbnail_url ) . '" alt="' . esc_attr( $collection->post_title ) . '" />';
+				echo '</a>';
+				echo '</div>';
+			}
+
+			echo '<div class="mcp-ai-collection-content">';
+			echo '<h3 class="mcp-ai-collection-title">';
+			echo '<a href="' . esc_url( $collection_url ) . '">' . esc_html( $collection->post_title ) . '</a>';
+			echo '</h3>';
+
+			if ( $collection->post_excerpt ) {
+				echo '<div class="mcp-ai-collection-excerpt">' . esc_html( $collection->post_excerpt ) . '</div>';
+			}
+
+			echo '<div class="mcp-ai-collection-actions">';
+			echo '<a href="' . esc_url( $collection_url ) . '" class="button">' . esc_html__( 'View', 'mcp-ai-wpoos-pro' ) . '</a>';
+
+			if ( current_user_can( 'edit_post', $collection_id ) ) {
+				echo ' <a href="' . esc_url( $edit_url ) . '" class="button">' . esc_html__( 'Edit', 'mcp-ai-wpoos-pro' ) . '</a>';
+			}
+
+			echo '</div>';
+			echo '</div>';
+			echo '</div>';
+		}
+
+		echo '</div>';
 	}
 }

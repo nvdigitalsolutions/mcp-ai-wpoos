@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/media-templates",
+	"title": "Media Templates",
+	"category": "mcp-ai-toolkits",
+	"description": "Display media template gallery",
+	"keywords": ["media", "templates", "graphics", "design", "mcp"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"default": "grid"
+		},
+		"columns": {
+			"type": "number",
+			"default": 3
+		},
+		"limit": {
+			"type": "number",
+			"default": 9
+		},
+		"category": {
+			"type": "string",
+			"default": ""
+		},
+		"orderby": {
+			"type": "string",
+			"default": "date"
+		},
+		"order": {
+			"type": "string",
+			"default": "desc"
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
