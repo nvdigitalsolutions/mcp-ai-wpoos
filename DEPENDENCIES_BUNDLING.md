@@ -105,7 +105,7 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
-All 27 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+All 36 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
 
 **Core Toolkits:**
 | Package | Size | Files Copied |
@@ -120,10 +120,22 @@ All 27 Pro addon packages are automatically copied from `node_modules` to `asset
 | ffmpeg-static | 2.4 KB | index.js |
 | ffprobe-static | 1016 B | index.js |
 
+**CRM & Email Marketing Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| nodemailer | 454.7 KB | lib/ |
+| validator | 466.0 KB | index.js, lib/, es/ |
+| email-validator | 2.0 KB | index.js |
+| libphonenumber-js | 523.9 KB | index.js, min/, mobile/, metadata |
+| mailparser | 45.7 KB | lib/ |
+| csv-parse | 78.1 KB | lib/ |
+| csv-stringify | 35.6 KB | lib/ |
+| ical-generator | 549.3 KB | dist/ |
+
 **E-commerce Toolkit:**
 | Package | Size | Files Copied |
 |---------|------|-------------|
-| @woocommerce/woocommerce-rest-api | 2.1 KB | dist/index.js |
+| @woocommerce/woocommerce-rest-api | 17.0 KB | index.js, index.mjs |
 | stripe | 422.0 KB | cjs/, esm/ |
 | currency.js | 5.4 KB | dist/currency.min.js |
 
@@ -155,10 +167,10 @@ All 27 Pro addon packages are automatically copied from `node_modules` to `asset
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | gif-encoder | 42.3 KB | lib/ |
-| video-stitch | 803 B | dist/index.js |
-| subtitle | 1.2 KB | index.js |
+| video-stitch | 8.6 KB | index.js, lib/ |
+| subtitle | 43.3 KB | dist/ |
 
-**Total**: ~44.3 MB (27 packages)
+**Total**: ~46.9 MB (36 packages)
 
 #### Special Cases
 
