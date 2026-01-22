@@ -123,13 +123,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_image_variation',
 					'graphic_editor_plus',
 					'image_base',
-					// Image processing.
-					'resize_image',
-					'crop_image',
-					'rotate_image',
-					'convert_image_format',
-					'remove_background',
-					// Image processing (Pro).
+					// Image processing (Pro - preferred over basic).
 					'remove_image_background',
 					'upscale_image_ai',
 					'enhance_image_quality',
