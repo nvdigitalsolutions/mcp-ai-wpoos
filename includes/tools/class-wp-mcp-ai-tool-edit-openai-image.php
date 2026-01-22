@@ -15,6 +15,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a tool for editing images via OpenAI's DALL-E API.
@@ -23,6 +24,7 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -232,9 +234,8 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		$text    = implode( ' ', $text_parts );
-		$message = $text;
 
-		return array(
+		$result = array(
 			'success' => true,
 			'data'    => array(
 				'images'         => $saved_images,
@@ -242,9 +243,14 @@ class WP_MCP_AI_Tool_Edit_OpenAI_Image implements WP_MCP_AI_Tool_Interface, WP_M
 				'original_image' => $image_id,
 				'output_format'  => $output_format,
 				'text'           => $text,
-				'message'        => $message,
+				'message'        => $text,
 			),
 		);
+
+		// Add rendered image HTML for each edited image.
+		$result = $this->add_multiple_images_html_to_response( $result );
+
+		return $result;
 	}
 
 	/**

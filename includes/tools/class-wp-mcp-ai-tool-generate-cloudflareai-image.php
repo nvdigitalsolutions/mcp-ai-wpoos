@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a tool for generating images via Cloudflare Workers AI and storing them as attachments.
@@ -23,6 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	const DEFAULT_MODEL     = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
 	const DEFAULT_WIDTH     = 1024;
@@ -365,6 +367,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		 * @param array $context   Execution context supplied to the tool.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_generate_cloudflareai_image_result', $result, $arguments, $context );
+
+		// Add rendered image HTML to the response for display in chat UI.
+		$result = $this->add_image_html_to_response( $result );
 
 		return $result;
 	}
