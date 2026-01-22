@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load the document response trait from base plugin.
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+
 /**
  * Pro Excel Document tool for AI-powered Excel spreadsheet generation.
  *
@@ -28,6 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -55,38 +59,38 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'operation'   => array(
-					'type'        => 'string',
-					'enum'        => array( 'generate', 'table', 'multi_sheet', 'chart' ),
+			'type' => 'object',
+			'properties' => array(
+				'operation' => array(
+					'type' => 'string',
+					'enum' => array( 'generate', 'table', 'multi_sheet', 'chart' ),
 					'description' => __( 'Operation to perform: "generate" (create spreadsheet from description), "table" (create data table), "multi_sheet" (multiple worksheets), "chart" (add charts and visualizations).', 'mcp-ai-wpoos' ),
 				),
 				'description' => array(
-					'type'        => 'string',
+					'type' => 'string',
 					'description' => __( 'Natural language description of the Excel spreadsheet you want to create.', 'mcp-ai-wpoos' ),
 				),
-				'data'        => array(
-					'type'        => 'array',
+				'data' => array(
+					'type' => 'array',
 					'description' => __( 'Array of data rows for table generation. Each row is an array of cell values.', 'mcp-ai-wpoos' ),
 				),
-				'headers'     => array(
-					'type'        => 'array',
-					'items'       => array( 'type' => 'string' ),
+				'headers' => array(
+					'type' => 'array',
+					'items' => array( 'type' => 'string' ),
 					'description' => __( 'Column headers for the data table.', 'mcp-ai-wpoos' ),
 				),
-				'title'       => array(
-					'type'        => 'string',
+				'title' => array(
+					'type' => 'string',
 					'description' => __( 'Spreadsheet title (appears in document properties and optionally as worksheet name).', 'mcp-ai-wpoos' ),
 				),
-				'author'      => array(
-					'type'        => 'string',
+				'author' => array(
+					'type' => 'string',
 					'description' => __( 'Document author (appears in document properties).', 'mcp-ai-wpoos' ),
 				),
-				'sheets'      => array(
-					'type'        => 'array',
-					'items'       => array(
-						'type'       => 'object',
+				'sheets' => array(
+					'type' => 'array',
+					'items' => array(
+						'type' => 'object',
 						'properties' => array(
 							'name' => array( 'type' => 'string' ),
 							'data' => array( 'type' => 'array' ),
@@ -94,38 +98,38 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 					),
 					'description' => __( 'Array of worksheet definitions with names and data (for multi_sheet operation).', 'mcp-ai-wpoos' ),
 				),
-				'formatting'  => array(
-					'type'        => 'object',
-					'properties'  => array(
-						'header_bg'     => array( 'type' => 'string' ),
-						'header_font'   => array( 'type' => 'string' ),
-						'auto_filter'   => array( 'type' => 'boolean' ),
+				'formatting' => array(
+					'type' => 'object',
+					'properties' => array(
+						'header_bg' => array( 'type' => 'string' ),
+						'header_font' => array( 'type' => 'string' ),
+						'auto_filter' => array( 'type' => 'boolean' ),
 						'freeze_header' => array( 'type' => 'boolean' ),
 					),
 					'description' => __( 'Formatting options for the spreadsheet (colors, auto-filter, freeze panes).', 'mcp-ai-wpoos' ),
 				),
-				'formulas'    => array(
-					'type'        => 'array',
-					'items'       => array(
-						'type'       => 'object',
+				'formulas' => array(
+					'type' => 'array',
+					'items' => array(
+						'type' => 'object',
 						'properties' => array(
-							'cell'    => array( 'type' => 'string' ),
+							'cell' => array( 'type' => 'string' ),
 							'formula' => array( 'type' => 'string' ),
 						),
 					),
 					'description' => __( 'Array of formulas to add to specific cells (e.g., {"cell": "D2", "formula": "=SUM(B2:C2)"}).', 'mcp-ai-wpoos' ),
 				),
-				'model'       => array(
-					'type'        => 'string',
+				'model' => array(
+					'type' => 'string',
 					'description' => __( 'AI model to use for content generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
 				),
-				'upload'      => array(
-					'type'        => 'boolean',
+				'upload' => array(
+					'type' => 'boolean',
 					'description' => __( 'Whether to upload the generated spreadsheet to WordPress media library. Default: true.', 'mcp-ai-wpoos' ),
-					'default'     => true,
+					'default' => true,
 				),
 			),
-			'required'             => array( 'operation' ),
+			'required' => array( 'operation' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -157,9 +161,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_definition() {
 		return array(
-			'name'                => $this->get_name(),
-			'description'         => $this->get_description(),
-			'parameters'          => $this->get_parameters_schema(),
+			'name' => $this->get_name(),
+			'description' => $this->get_description(),
+			'parameters' => $this->get_parameters_schema(),
 			'required_capability' => 'upload_files',
 		);
 	}
@@ -277,10 +281,10 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 		// Generate Excel spreadsheet from AI content.
 		$xlsx_result = $this->generate_excel_document(
 			array(
-				'data'    => $data,
+				'data' => $data,
 				'headers' => $headers,
-				'title'   => $title,
-				'author'  => $author,
+				'title' => $title,
+				'author' => $author,
 			),
 			$arguments,
 			$context
@@ -290,20 +294,27 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
-			'operation'     => 'generate',
-			'title'         => $title,
-			'row_count'     => count( $data ),
-			'column_count'  => count( $headers ),
-			'file_url'      => $xlsx_result['url'],
-			'file_path'     => $xlsx_result['file'],
+		$result = array(
+			'operation' => 'generate',
+			'title' => $title,
+			'row_count' => count( $data ),
+			'column_count' => count( $headers ),
+			'file_url' => $xlsx_result['url'],
+			'url' => $xlsx_result['url'],
+			'file_path' => $xlsx_result['file'],
+			'file_name' => basename( $xlsx_result['file'] ),
+			'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes' => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
-			'text'          => sprintf(
+			'text' => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel spreadsheet: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -348,12 +359,12 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 		// Generate Excel spreadsheet with table.
 		$xlsx_result = $this->generate_excel_document(
 			array(
-				'data'       => $data,
-				'headers'    => $headers,
-				'title'      => $title,
-				'author'     => $author,
+				'data' => $data,
+				'headers' => $headers,
+				'title' => $title,
+				'author' => $author,
 				'formatting' => $formatting,
-				'formulas'   => $formulas,
+				'formulas' => $formulas,
 			),
 			$arguments,
 			$context
@@ -363,20 +374,27 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
-			'operation'     => 'table',
-			'title'         => $title,
-			'row_count'     => count( $data ),
-			'column_count'  => count( $headers ),
-			'file_url'      => $xlsx_result['url'],
-			'file_path'     => $xlsx_result['file'],
+		$result = array(
+			'operation' => 'table',
+			'title' => $title,
+			'row_count' => count( $data ),
+			'column_count' => count( $headers ),
+			'file_url' => $xlsx_result['url'],
+			'url' => $xlsx_result['url'],
+			'file_path' => $xlsx_result['file'],
+			'file_name' => basename( $xlsx_result['file'] ),
+			'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes' => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
-			'text'          => sprintf(
+			'text' => sprintf(
 				/* translators: %s: spreadsheet title */
 				__( 'Generated Excel table: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -418,7 +436,7 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 		$xlsx_result = $this->generate_excel_document(
 			array(
 				'sheets' => $sheets,
-				'title'  => $title,
+				'title' => $title,
 				'author' => $author,
 			),
 			$arguments,
@@ -429,20 +447,27 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			return $xlsx_result;
 		}
 
-		return array(
-			'operation'     => 'multi_sheet',
-			'title'         => $title,
-			'sheet_count'   => count( $sheets ),
-			'file_url'      => $xlsx_result['url'],
-			'file_path'     => $xlsx_result['file'],
+		$result = array(
+			'operation' => 'multi_sheet',
+			'title' => $title,
+			'sheet_count' => count( $sheets ),
+			'file_url' => $xlsx_result['url'],
+			'url' => $xlsx_result['url'],
+			'file_path' => $xlsx_result['file'],
+			'file_name' => basename( $xlsx_result['file'] ),
+			'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'bytes' => isset( $xlsx_result['bytes'] ) ? $xlsx_result['bytes'] : filesize( $xlsx_result['file'] ),
 			'attachment_id' => $xlsx_result['attachment_id'],
-			'text'          => sprintf(
+			'text' => sprintf(
 				/* translators: 1: spreadsheet title, 2: number of sheets */
 				__( 'Generated Excel workbook with %2$d sheets: %1$s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' ),
 				count( $sheets )
 			),
 		);
+
+		// Add rendered document HTML to the response for display in chat UI.
+		return $this->add_document_html_to_response( $result );
 	}
 
 	/**
@@ -564,9 +589,9 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			// Create attachment.
 			$attachment = array(
 				'post_mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-				'post_title'     => $title,
-				'post_content'   => '',
-				'post_status'    => 'inherit',
+				'post_title' => $title,
+				'post_content' => '',
+				'post_status' => 'inherit',
 			);
 
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -587,16 +612,16 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 			wp_update_attachment_metadata( $attachment_id, $attachment_data );
 
 			return array(
-				'file'          => $final_file,
-				'url'           => wp_get_attachment_url( $attachment_id ),
+				'file' => $final_file,
+				'url' => wp_get_attachment_url( $attachment_id ),
 				'attachment_id' => $attachment_id,
 			);
 		}
 
 		// Return file path only (no upload).
 		return array(
-			'file'          => $xlsx_file,
-			'url'           => '',
+			'file' => $xlsx_file,
+			'url' => '',
 			'attachment_id' => 0,
 		);
 	}
@@ -842,11 +867,11 @@ JAVASCRIPT;
 		// Prepare messages for AI model.
 		$messages = array(
 			array(
-				'role'    => 'system',
+				'role' => 'system',
 				'content' => $system_prompt,
 			),
 			array(
-				'role'    => 'user',
+				'role' => 'user',
 				'content' => $user_prompt,
 			),
 		);
@@ -935,7 +960,7 @@ JAVASCRIPT;
 			// Make API call.
 			$response = $provider_instance->create_chat_completion(
 				array(
-					'model'    => $model,
+					'model' => $model,
 					'messages' => $messages,
 				)
 			);

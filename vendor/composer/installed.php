@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/review-image-generation-tools',
+        'version' => 'dev-copilot/review-image-generation-tools',
+        'reference' => 'd7573fb65759e20432349fee9fbd401471a393a7',
         'pretty_version' => 'dev-copilot/fix-remote-sites-loading-issue',
         'version' => 'dev-copilot/fix-remote-sites-loading-issue',
         'reference' => 'e846a8542773fb470c5b9c060e7319d061d09c42',
@@ -29,6 +32,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/review-image-generation-tools',
+            'version' => 'dev-copilot/review-image-generation-tools',
+            'reference' => 'd7573fb65759e20432349fee9fbd401471a393a7',
             'pretty_version' => 'dev-copilot/fix-remote-sites-loading-issue',
             'version' => 'dev-copilot/fix-remote-sites-loading-issue',
             'reference' => 'e846a8542773fb470c5b9c060e7319d061d09c42',

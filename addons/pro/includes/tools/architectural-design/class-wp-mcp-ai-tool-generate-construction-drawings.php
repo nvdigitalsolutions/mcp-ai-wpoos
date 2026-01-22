@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate construction drawings.
  */
 class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -47,43 +49,43 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'floor_plan'       => array(
-					'type'        => 'object',
+			'type' => 'object',
+			'properties' => array(
+				'floor_plan' => array(
+					'type' => 'object',
 					'description' => __( 'Floor plan data to convert to blueprints.', 'mcp-ai-wpoos-pro' ),
 				),
-				'drawing_types'    => array(
-					'type'        => 'array',
+				'drawing_types' => array(
+					'type' => 'array',
 					'description' => __( 'Drawing types to generate: "floor_plan", "elevations", "sections", "site_plan".', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
+					'items' => array(
 						'type' => 'string',
 						'enum' => array( 'floor_plan', 'elevations', 'sections', 'site_plan', 'roof_plan' ),
 					),
-					'default'     => array( 'floor_plan', 'elevations' ),
+					'default' => array( 'floor_plan', 'elevations' ),
 				),
-				'scale'            => array(
-					'type'        => 'string',
+				'scale' => array(
+					'type' => 'string',
 					'description' => __( 'Drawing scale: "1/4", "1/8", "1/16" (inches per foot).', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( '1/4', '1/8', '1/16', '1/32' ),
-					'default'     => '1/4',
+					'enum' => array( '1/4', '1/8', '1/16', '1/32' ),
+					'default' => '1/4',
 				),
 				'include_dimensions' => array(
-					'type'        => 'boolean',
+					'type' => 'boolean',
 					'description' => __( 'Include dimension lines and measurements.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
-				'include_notes'    => array(
-					'type'        => 'boolean',
+				'include_notes' => array(
+					'type' => 'boolean',
 					'description' => __( 'Include construction notes and specifications.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
-				'title_block'      => array(
-					'type'        => 'object',
+				'title_block' => array(
+					'type' => 'object',
 					'description' => __( 'Title block information (project name, date, architect, etc.).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required'             => array( 'floor_plan' ),
+			'required' => array( 'floor_plan' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -141,21 +143,25 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 		}
 
 		// Return structured drawing data.
-		return array(
-			'success'   => true,
-			'drawings'  => $drawings,
-			'count'     => count( $drawings ),
-			'settings'  => array(
-				'scale'              => $scale,
-				'has_dimensions'     => $include_dimensions,
-				'has_notes'          => $include_notes,
+		$result = array(
+			'success' => true,
+			'url' => isset( $drawings[0]['image_url'] ) ? $drawings[0]['image_url'] : '',
+			'prompt' => sprintf( 'Construction drawings: %s', implode( ', ', $drawing_types ) ),
+			'drawings' => $drawings,
+			'count' => count( $drawings ),
+			'settings' => array(
+				'scale' => $scale,
+				'has_dimensions' => $include_dimensions,
+				'has_notes' => $include_notes,
 			),
-			'message'   => sprintf(
+			'text' => sprintf(
 				/* translators: %d: number of drawings */
 				_n( 'Generated %d construction drawing.', 'Generated %d construction drawings.', count( $drawings ), 'mcp-ai-wpoos-pro' ),
 				count( $drawings )
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
@@ -174,11 +180,11 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 
 		foreach ( $drawing_types as $type ) {
 			$drawings[] = array(
-				'type'        => $type,
-				'title'       => ucwords( str_replace( '_', ' ', $type ) ),
-				'scale'       => $scale,
-				'format'      => 'pdf',
-				'data'        => array(
+				'type' => $type,
+				'title' => ucwords( str_replace( '_', ' ', $type ) ),
+				'scale' => $scale,
+				'format' => 'pdf',
+				'data' => array(
 					'dimensions' => array(),
 					'annotations' => array(),
 					'title_block' => $title_block,
