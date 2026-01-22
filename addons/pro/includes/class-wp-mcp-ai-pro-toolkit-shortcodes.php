@@ -112,6 +112,14 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		// Financial Planner toolkit shortcodes.
 		add_shortcode( 'mcp_financial_budget', array( $this, 'render_financial_budget' ) );
 		add_shortcode( 'mcp_financial_goals', array( $this, 'render_financial_goals' ) );
+
+		// Multilingual toolkit shortcodes.
+		add_shortcode( 'mcp_multilingual_translation_memory', array( $this, 'render_multilingual_translation_memory' ) );
+		add_shortcode( 'mcp_multilingual_glossaries', array( $this, 'render_multilingual_glossaries' ) );
+
+		// AI Tool Builder toolkit shortcodes.
+		add_shortcode( 'mcp_ai_tool_builder_templates', array( $this, 'render_ai_tool_builder_templates' ) );
+		add_shortcode( 'mcp_ai_tool_builder_schemas', array( $this, 'render_ai_tool_builder_schemas' ) );
 	}
 
 	/**
@@ -658,6 +666,195 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 	}
 
 	/**
+	 * Render Multilingual Translation Memory.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function render_multilingual_translation_memory( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display'           => 'list',
+				'source_language'   => '',
+				'target_language'   => '',
+				'limit'             => 20,
+				'quality_score_min' => 0,
+			),
+			$atts,
+			'mcp_multilingual_translation_memory'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		$store = $this->get_data_store( 'multilingual', 'translation-memory' );
+		if ( ! $store ) {
+			return $this->render_error( __( 'Multilingual toolkit is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$query_args = array(
+			'per_page' => absint( $atts['limit'] ),
+			'orderby'  => 'quality_score',
+			'order'    => 'DESC',
+		);
+
+		if ( ! empty( $atts['source_language'] ) ) {
+			$query_args['source_language'] = sanitize_text_field( $atts['source_language'] );
+		}
+
+		if ( ! empty( $atts['target_language'] ) ) {
+			$query_args['target_language'] = sanitize_text_field( $atts['target_language'] );
+		}
+
+		if ( ! empty( $atts['quality_score_min'] ) ) {
+			$query_args['quality_score_min'] = floatval( $atts['quality_score_min'] );
+		}
+
+		$translations = $store->query_items( $query_args );
+
+		if ( empty( $translations ) ) {
+			return $this->render_empty( __( 'No translations found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_translation_memory_view( $translations, $atts );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render Multilingual Glossaries.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function render_multilingual_glossaries( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display'  => 'list',
+				'industry' => '',
+				'limit'    => 50,
+			),
+			$atts,
+			'mcp_multilingual_glossaries'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		$store = $this->get_data_store( 'multilingual', 'glossaries' );
+		if ( ! $store ) {
+			return $this->render_error( __( 'Multilingual toolkit is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$query_args = array(
+			'per_page' => absint( $atts['limit'] ),
+			'orderby'  => 'term',
+			'order'    => 'ASC',
+		);
+
+		if ( ! empty( $atts['industry'] ) ) {
+			$query_args['industry'] = sanitize_text_field( $atts['industry'] );
+		}
+
+		$glossaries = $store->query_items( $query_args );
+
+		if ( empty( $glossaries ) ) {
+			return $this->render_empty( __( 'No glossary terms found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_glossaries_view( $glossaries, $atts );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render AI Tool Builder Templates Showcase.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function render_ai_tool_builder_templates( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display'  => 'grid',
+				'category' => '',
+				'limit'    => 12,
+			),
+			$atts,
+			'mcp_ai_tool_builder_templates'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		$store = $this->get_data_store( 'ai-tool-builder', 'tool-templates' );
+		if ( ! $store ) {
+			return $this->render_error( __( 'AI Tool Builder toolkit is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$query_args = array(
+			'per_page' => absint( $atts['limit'] ),
+			'orderby'  => 'tool_name',
+			'order'    => 'ASC',
+		);
+
+		if ( ! empty( $atts['category'] ) ) {
+			$query_args['category'] = sanitize_text_field( $atts['category'] );
+		}
+
+		$templates = $store->query_items( $query_args );
+
+		if ( empty( $templates ) ) {
+			return $this->render_empty( __( 'No tool templates found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_tool_templates_view( $templates, $atts );
+		return ob_get_clean();
+	}
+
+	/**
+	 * Render AI Tool Builder Parameter Schemas.
+	 *
+	 * @param array $atts Shortcode attributes.
+	 * @return string Rendered HTML.
+	 */
+	public function render_ai_tool_builder_schemas( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'display' => 'list',
+				'limit'   => 30,
+			),
+			$atts,
+			'mcp_ai_tool_builder_schemas'
+		);
+
+		wp_enqueue_style( self::STYLE_HANDLE );
+		wp_enqueue_script( self::SCRIPT_HANDLE );
+
+		$store = $this->get_data_store( 'ai-tool-builder', 'parameter-schemas' );
+		if ( ! $store ) {
+			return $this->render_error( __( 'AI Tool Builder toolkit is not available.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$query_args = array(
+			'per_page' => absint( $atts['limit'] ),
+			'orderby'  => 'schema_name',
+			'order'    => 'ASC',
+		);
+
+		$schemas = $store->query_items( $query_args );
+
+		if ( empty( $schemas ) ) {
+			return $this->render_empty( __( 'No parameter schemas found.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		ob_start();
+		$this->render_schemas_view( $schemas, $atts );
+		return ob_get_clean();
+	}
+
+	/**
 	 * Get data store instance.
 	 *
 	 * @param string $toolkit Toolkit slug.
@@ -1026,5 +1223,296 @@ class WP_MCP_AI_Pro_Toolkit_Shortcodes {
 		}
 
 		echo '</div>';
+	}
+
+	/**
+	 * Render translation memory view.
+	 *
+	 * @param array $translations Translation memory data.
+	 * @param array $atts         Shortcode attributes.
+	 */
+	protected function render_translation_memory_view( $translations, $atts ) {
+		$display = sanitize_html_class( $atts['display'] );
+
+		if ( 'table' === $display ) {
+			echo '<div class="mcp-ai-translation-memory-table-wrap">';
+			echo '<table class="mcp-ai-translation-memory-table">';
+			echo '<thead>';
+			echo '<tr>';
+			echo '<th>' . esc_html__( 'Source', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Translation', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Languages', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Quality', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '</tr>';
+			echo '</thead>';
+			echo '<tbody>';
+
+			foreach ( $translations as $translation ) {
+				$source_text   = isset( $translation['source_text'] ) ? $translation['source_text'] : '';
+				$translated    = isset( $translation['translated_text'] ) ? $translation['translated_text'] : '';
+				$source_lang   = isset( $translation['source_language'] ) ? $translation['source_language'] : '';
+				$target_lang   = isset( $translation['target_language'] ) ? $translation['target_language'] : '';
+				$quality_score = isset( $translation['quality_score'] ) ? $translation['quality_score'] : 0;
+
+				echo '<tr>';
+				echo '<td>' . esc_html( $source_text ) . '</td>';
+				echo '<td>' . esc_html( $translated ) . '</td>';
+				echo '<td>' . esc_html( strtoupper( $source_lang ) . ' → ' . strtoupper( $target_lang ) ) . '</td>';
+				echo '<td>' . esc_html( number_format( (float) $quality_score, 2 ) ) . '</td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody>';
+			echo '</table>';
+			echo '</div>';
+		} else {
+			echo '<div class="mcp-ai-translation-memory mcp-ai-display-' . esc_attr( $display ) . '">';
+
+			foreach ( $translations as $translation ) {
+				$source_text   = isset( $translation['source_text'] ) ? $translation['source_text'] : '';
+				$translated    = isset( $translation['translated_text'] ) ? $translation['translated_text'] : '';
+				$source_lang   = isset( $translation['source_language'] ) ? $translation['source_language'] : '';
+				$target_lang   = isset( $translation['target_language'] ) ? $translation['target_language'] : '';
+				$quality_score = isset( $translation['quality_score'] ) ? $translation['quality_score'] : 0;
+				$context       = isset( $translation['context'] ) ? $translation['context'] : '';
+
+				echo '<div class="mcp-ai-translation-item">';
+				echo '<div class="mcp-ai-translation-source">';
+				echo '<span class="mcp-ai-translation-lang">' . esc_html( strtoupper( $source_lang ) ) . '</span>';
+				echo '<p>' . esc_html( $source_text ) . '</p>';
+				echo '</div>';
+				echo '<div class="mcp-ai-translation-arrow">→</div>';
+				echo '<div class="mcp-ai-translation-target">';
+				echo '<span class="mcp-ai-translation-lang">' . esc_html( strtoupper( $target_lang ) ) . '</span>';
+				echo '<p>' . esc_html( $translated ) . '</p>';
+				echo '</div>';
+				echo '<div class="mcp-ai-translation-meta">';
+				echo '<span class="mcp-ai-translation-quality">' . esc_html__( 'Quality:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( number_format( (float) $quality_score, 2 ) ) . '</span>';
+				if ( $context ) {
+					echo '<span class="mcp-ai-translation-context">' . esc_html( $context ) . '</span>';
+				}
+				echo '</div>';
+				echo '</div>';
+			}
+
+			echo '</div>';
+		}
+	}
+
+	/**
+	 * Render glossaries view.
+	 *
+	 * @param array $glossaries Glossary data.
+	 * @param array $atts       Shortcode attributes.
+	 */
+	protected function render_glossaries_view( $glossaries, $atts ) {
+		$display = sanitize_html_class( $atts['display'] );
+
+		if ( 'table' === $display ) {
+			echo '<div class="mcp-ai-glossaries-table-wrap">';
+			echo '<table class="mcp-ai-glossaries-table">';
+			echo '<thead>';
+			echo '<tr>';
+			echo '<th>' . esc_html__( 'Term', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Definition', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Industry', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Context', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '</tr>';
+			echo '</thead>';
+			echo '<tbody>';
+
+			foreach ( $glossaries as $glossary ) {
+				$term       = isset( $glossary['term'] ) ? $glossary['term'] : '';
+				$definition = isset( $glossary['definition'] ) ? $glossary['definition'] : '';
+				$industry   = isset( $glossary['industry'] ) ? $glossary['industry'] : '';
+				$context    = isset( $glossary['context'] ) ? $glossary['context'] : '';
+
+				echo '<tr>';
+				echo '<td><strong>' . esc_html( $term ) . '</strong></td>';
+				echo '<td>' . esc_html( $definition ) . '</td>';
+				echo '<td>' . esc_html( ucfirst( $industry ) ) . '</td>';
+				echo '<td>' . esc_html( $context ) . '</td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody>';
+			echo '</table>';
+			echo '</div>';
+		} else {
+			echo '<div class="mcp-ai-glossaries mcp-ai-display-' . esc_attr( $display ) . '">';
+
+			foreach ( $glossaries as $glossary ) {
+				$term             = isset( $glossary['term'] ) ? $glossary['term'] : '';
+				$definition       = isset( $glossary['definition'] ) ? $glossary['definition'] : '';
+				$industry         = isset( $glossary['industry'] ) ? $glossary['industry'] : '';
+				$context          = isset( $glossary['context'] ) ? $glossary['context'] : '';
+				$translations_raw = isset( $glossary['translations_json'] ) ? $glossary['translations_json'] : '';
+				$tags             = isset( $glossary['tags'] ) ? $glossary['tags'] : '';
+
+				echo '<div class="mcp-ai-glossary-item">';
+				echo '<h4 class="mcp-ai-glossary-term">' . esc_html( $term ) . '</h4>';
+				echo '<div class="mcp-ai-glossary-definition">' . esc_html( $definition ) . '</div>';
+
+				if ( $context ) {
+					echo '<div class="mcp-ai-glossary-context"><em>' . esc_html( $context ) . '</em></div>';
+				}
+
+				echo '<div class="mcp-ai-glossary-meta">';
+				if ( $industry ) {
+					echo '<span class="mcp-ai-glossary-industry">' . esc_html__( 'Industry:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( ucfirst( $industry ) ) . '</span>';
+				}
+				if ( $tags ) {
+					echo '<span class="mcp-ai-glossary-tags">' . esc_html( $tags ) . '</span>';
+				}
+				echo '</div>';
+
+				if ( $translations_raw ) {
+					$translations = json_decode( $translations_raw, true );
+					if ( is_array( $translations ) && ! empty( $translations ) ) {
+						echo '<div class="mcp-ai-glossary-translations">';
+						echo '<strong>' . esc_html__( 'Translations:', 'mcp-ai-wpoos-pro' ) . '</strong> ';
+						$trans_items = array();
+						foreach ( $translations as $lang => $trans ) {
+							$trans_items[] = esc_html( strtoupper( $lang ) . ': ' . $trans );
+						}
+						echo implode( ', ', $trans_items );
+						echo '</div>';
+					}
+				}
+
+				echo '</div>';
+			}
+
+			echo '</div>';
+		}
+	}
+
+	/**
+	 * Render tool templates view.
+	 *
+	 * @param array $templates Tool template data.
+	 * @param array $atts      Shortcode attributes.
+	 */
+	protected function render_tool_templates_view( $templates, $atts ) {
+		$display = sanitize_html_class( $atts['display'] );
+		$columns = ( 'grid' === $display ) ? 3 : 1;
+
+		echo '<div class="mcp-ai-tool-templates mcp-ai-display-' . esc_attr( $display ) . ' mcp-ai-columns-' . esc_attr( $columns ) . '">';
+
+		foreach ( $templates as $template ) {
+			$tool_name         = isset( $template['tool_name'] ) ? $template['tool_name'] : '';
+			$tool_slug         = isset( $template['tool_slug'] ) ? $template['tool_slug'] : '';
+			$description       = isset( $template['description'] ) ? $template['description'] : '';
+			$category          = isset( $template['category'] ) ? $template['category'] : '';
+			$required_cap      = isset( $template['required_capability'] ) ? $template['required_capability'] : '';
+			$code_template     = isset( $template['code_template'] ) ? $template['code_template'] : '';
+
+			echo '<div class="mcp-ai-tool-template">';
+			echo '<h4 class="mcp-ai-tool-template-name">' . esc_html( $tool_name ) . '</h4>';
+			if ( $tool_slug ) {
+				echo '<div class="mcp-ai-tool-template-slug"><code>' . esc_html( $tool_slug ) . '</code></div>';
+			}
+			echo '<div class="mcp-ai-tool-template-description">' . esc_html( $description ) . '</div>';
+
+			echo '<div class="mcp-ai-tool-template-meta">';
+			if ( $category ) {
+				echo '<span class="mcp-ai-tool-template-category">' . esc_html__( 'Category:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( ucfirst( $category ) ) . '</span>';
+			}
+			if ( $required_cap ) {
+				echo '<span class="mcp-ai-tool-template-capability">' . esc_html__( 'Required:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( $required_cap ) . '</span>';
+			}
+			echo '</div>';
+
+			if ( 'list' === $display && $code_template ) {
+				echo '<details class="mcp-ai-tool-template-code">';
+				echo '<summary>' . esc_html__( 'View Code Template', 'mcp-ai-wpoos-pro' ) . '</summary>';
+				echo '<pre><code>' . esc_html( $code_template ) . '</code></pre>';
+				echo '</details>';
+			}
+
+			echo '</div>';
+		}
+
+		echo '</div>';
+	}
+
+	/**
+	 * Render parameter schemas view.
+	 *
+	 * @param array $schemas Schema data.
+	 * @param array $atts    Shortcode attributes.
+	 */
+	protected function render_schemas_view( $schemas, $atts ) {
+		$display = sanitize_html_class( $atts['display'] );
+
+		if ( 'table' === $display ) {
+			echo '<div class="mcp-ai-schemas-table-wrap">';
+			echo '<table class="mcp-ai-schemas-table">';
+			echo '<thead>';
+			echo '<tr>';
+			echo '<th>' . esc_html__( 'Schema Name', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Description', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '<th>' . esc_html__( 'Validation Rules', 'mcp-ai-wpoos-pro' ) . '</th>';
+			echo '</tr>';
+			echo '</thead>';
+			echo '<tbody>';
+
+			foreach ( $schemas as $schema ) {
+				$schema_name      = isset( $schema['schema_name'] ) ? $schema['schema_name'] : '';
+				$description      = isset( $schema['description'] ) ? $schema['description'] : '';
+				$validation_rules = isset( $schema['validation_rules'] ) ? $schema['validation_rules'] : '';
+
+				echo '<tr>';
+				echo '<td><strong>' . esc_html( $schema_name ) . '</strong></td>';
+				echo '<td>' . esc_html( $description ) . '</td>';
+				echo '<td>' . esc_html( $validation_rules ) . '</td>';
+				echo '</tr>';
+			}
+
+			echo '</tbody>';
+			echo '</table>';
+			echo '</div>';
+		} else {
+			echo '<div class="mcp-ai-schemas mcp-ai-display-' . esc_attr( $display ) . '">';
+
+			foreach ( $schemas as $schema ) {
+				$schema_name      = isset( $schema['schema_name'] ) ? $schema['schema_name'] : '';
+				$description      = isset( $schema['description'] ) ? $schema['description'] : '';
+				$json_schema      = isset( $schema['json_schema'] ) ? $schema['json_schema'] : '';
+				$validation_rules = isset( $schema['validation_rules'] ) ? $schema['validation_rules'] : '';
+				$example_usage    = isset( $schema['example_usage'] ) ? $schema['example_usage'] : '';
+				$tags             = isset( $schema['tags'] ) ? $schema['tags'] : '';
+
+				echo '<div class="mcp-ai-schema-item">';
+				echo '<h4 class="mcp-ai-schema-name">' . esc_html( $schema_name ) . '</h4>';
+				echo '<div class="mcp-ai-schema-description">' . esc_html( $description ) . '</div>';
+
+				if ( $validation_rules ) {
+					echo '<div class="mcp-ai-schema-validation"><strong>' . esc_html__( 'Validation:', 'mcp-ai-wpoos-pro' ) . '</strong> ' . esc_html( $validation_rules ) . '</div>';
+				}
+
+				if ( $tags ) {
+					echo '<div class="mcp-ai-schema-tags">' . esc_html( $tags ) . '</div>';
+				}
+
+				if ( $json_schema ) {
+					echo '<details class="mcp-ai-schema-json">';
+					echo '<summary>' . esc_html__( 'View JSON Schema', 'mcp-ai-wpoos-pro' ) . '</summary>';
+					echo '<pre><code>' . esc_html( $json_schema ) . '</code></pre>';
+					echo '</details>';
+				}
+
+				if ( $example_usage ) {
+					echo '<details class="mcp-ai-schema-example">';
+					echo '<summary>' . esc_html__( 'View Example', 'mcp-ai-wpoos-pro' ) . '</summary>';
+					echo '<pre><code>' . esc_html( $example_usage ) . '</code></pre>';
+					echo '</details>';
+				}
+
+				echo '</div>';
+			}
+
+			echo '</div>';
+		}
 	}
 }

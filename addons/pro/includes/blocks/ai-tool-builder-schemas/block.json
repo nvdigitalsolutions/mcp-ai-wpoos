@@ -1,0 +1,28 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/ai-tool-builder-schemas",
+	"title": "AI Tool Builder Schemas",
+	"category": "mcp-ai-toolkits",
+	"description": "Display parameter schemas from the AI Tool Builder toolkit",
+	"keywords": ["ai", "tool", "builder", "schema", "parameters", "mcp"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"default": "list"
+		},
+		"limit": {
+			"type": "number",
+			"default": 30
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
