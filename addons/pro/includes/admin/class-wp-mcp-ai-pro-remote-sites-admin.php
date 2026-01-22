@@ -50,7 +50,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 */
 	public function add_admin_menu() {
 		add_submenu_page(
-			'wp-mcp-ai-pro-dashboard',
+			'nvoos-pro-dashboard',
 			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
 			__( 'Remote Sites', 'wp-mcp-ai-pro' ),
 			'manage_options',
