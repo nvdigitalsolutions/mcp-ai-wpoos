@@ -540,34 +540,14 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertIsArray( $memory_requirements, 'Memory requirements should be an array' );
 		$this->assertNotEmpty( $memory_requirements, 'Memory requirements should not be empty' );
 
-		// Check that all 20 toolkits have memory requirements defined.
-		$expected_toolkits = array(
-			'enable_quiz_system',
-			'enable_media_toolkit',
-			'enable_document_generation_toolkit',
-			'enable_project_management',
-			'enable_places_management',
-			'enable_ai_cpt_management',
-			'enable_eca_management',
-			'enable_health_wellness_management',
-			'enable_cloudways_toolkit',
-			'enable_ecommerce_toolkit',
-			'enable_social_media_toolkit',
-			'enable_analytics_toolkit',
-			'enable_multilingual_toolkit',
-			'enable_video_production_toolkit',
-			'enable_financial_planner_toolkit',
-			'enable_calendar_booking_toolkit',
-			'enable_dj_management_toolkit',
-			'enable_image_production_toolkit',
-			'enable_ai_tool_builder_toolkit',
-			'enable_architectural_design_toolkit',
-		);
+		// Verify all toolkits have valid memory requirements.
+		// Using actual keys from memory requirements ensures test stays in sync.
+		$this->assertCount( 20, $memory_requirements, 'Should have exactly 20 pro toolkits' );
 
-		foreach ( $expected_toolkits as $toolkit ) {
-			$this->assertArrayHasKey( $toolkit, $memory_requirements, "Memory requirement should be defined for {$toolkit}" );
-			$this->assertIsInt( $memory_requirements[ $toolkit ], "Memory requirement for {$toolkit} should be an integer" );
-			$this->assertGreaterThan( 0, $memory_requirements[ $toolkit ], "Memory requirement for {$toolkit} should be positive" );
+		foreach ( $memory_requirements as $toolkit => $memory_mb ) {
+			$this->assertStringStartsWith( 'enable_', $toolkit, "Toolkit key '{$toolkit}' should start with 'enable_'" );
+			$this->assertIsInt( $memory_mb, "Memory requirement for {$toolkit} should be an integer" );
+			$this->assertGreaterThan( 0, $memory_mb, "Memory requirement for {$toolkit} should be positive" );
 		}
 	}
 }

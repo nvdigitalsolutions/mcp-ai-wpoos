@@ -963,7 +963,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 					<script>
 					jQuery(document).ready(function($) {
-						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ); ?>;
+						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ) ?: '{}'; ?>;
+						
+						// Fallback to empty object if encoding failed.
+						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
+							toolkitMemory = {};
+						}
+						
 						var toolkitCheckboxes = $(
 							'input[name="wp_mcp_ai_settings[enable_quiz_system]"],' +
 							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
@@ -996,9 +1002,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							toolkitCheckboxes.filter(':checked').each(function() {
 								var inputName = $(this).attr('name');
 								// Extract option name from "wp_mcp_ai_settings[option_name]"
-								var optionName = inputName.match(/\[([^\]]+)\]/)[1];
-								if (toolkitMemory[optionName]) {
-									totalMemory += toolkitMemory[optionName];
+								var match = inputName.match(/\[([^\]]+)\]/);
+								if (match && match[1] && toolkitMemory[match[1]]) {
+									totalMemory += toolkitMemory[match[1]];
 								}
 							});
 
