@@ -277,8 +277,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
 		}
 
-		// Load Orchestration Dashboard (Ralph pattern - Phase 2).
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+		// NOTE: Orchestration Dashboard moved to base plugin (includes/admin/class-wp-mcp-ai-orchestration-dashboard.php)
+		// It's accessible at NV oOS → Orchestration for all users.
 
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
@@ -431,18 +431,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
 			'WP_MCP_AI_Tool_List_Events'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
 			'WP_MCP_AI_Tool_Get_Calendar_View'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
-			// Task Plan tools (Ralph pattern - Phase 1).
-			'WP_MCP_AI_Pro_Tool_Create_Task_Plan'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-task-plan.php',
-			'WP_MCP_AI_Pro_Tool_Update_Task_Plan'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-update-task-plan.php',
-			'WP_MCP_AI_Pro_Tool_Get_Task_Plan'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php',
-			// Autonomous Orchestration tools (Ralph pattern - Phase 1).
-			'WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-manage-autonomous-session.php',
-			'WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-detect-completion-indicators.php',
-			'WP_MCP_AI_Pro_Tool_Check_Exit_Conditions'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-check-exit-conditions.php',
-			'WP_MCP_AI_Pro_Tool_Analyze_Loop_Health'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-loop-health.php',
-			'WP_MCP_AI_Pro_Tool_Get_Session_Status'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-session-status.php',
-			'WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-calculate-orchestration-capacity.php',
-			// Research Enhancement tools (Ralph pattern - Phase 2).
+			// NOTE: Core orchestration tools (9 tools) moved to base plugin in includes/orchestration-init.php
+			// This includes: create/update/get task plan, manage sessions, detect completion, check exit conditions,
+			// analyze loop health, get session status, calculate capacity (Little's Law).
+			// Research Enhancement tools (Ralph pattern - Phase 2 - Pro only).
 			'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
 			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
 			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',

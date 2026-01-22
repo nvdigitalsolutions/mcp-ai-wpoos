@@ -531,6 +531,10 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 	}
 }
 
+// Load core orchestration system (autonomous task orchestration).
+// Provides 9 core orchestration tools for autonomous AI workflows.
+require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
