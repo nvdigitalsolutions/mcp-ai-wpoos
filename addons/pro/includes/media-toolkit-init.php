@@ -30,6 +30,7 @@ if ( is_admin() ) {
 	if ( ! $is_base && ! empty( $settings['enable_media_toolkit'] ) ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-design-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-toolkit-settings-page.php';
 	}
 }
 

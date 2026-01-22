@@ -23,8 +23,7 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load Social Media admin pages.
 	if ( is_admin() ) {
-		// @TODO: Create admin pages in future phase.
-		// require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-social-media-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-social-media-settings-page.php';
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
