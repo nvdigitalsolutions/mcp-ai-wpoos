@@ -3,11 +3,11 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/run-linting-on-prs',
         'version' => 'dev-copilot/run-linting-on-prs',
-        'reference' => 'c59a77fc3ffd2e9bc89eb7c988095697893cfe9c',
+        'reference' => 'b6586503c447b8cd3536732b1cc7780941c9e9a5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
         'cweagans/composer-configurable-plugin' => array(
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/run-linting-on-prs',
             'version' => 'dev-copilot/run-linting-on-prs',
-            'reference' => 'c59a77fc3ffd2e9bc89eb7c988095697893cfe9c',
+            'reference' => 'b6586503c447b8cd3536732b1cc7780941c9e9a5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -646,15 +646,6 @@
             'reference' => '448dc57a97c7225d2ac6271876682fca4c2ed340',
             'type' => 'library',
             'install_path' => __DIR__ . '/../wp-phpunit/wp-phpunit',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'yoast/phpunit-polyfills' => array(
-            'pretty_version' => '4.0.0',
-            'version' => '4.0.0.0',
-            'reference' => '134921bfca9b02d8f374c48381451da1d98402f9',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../yoast/phpunit-polyfills',
             'aliases' => array(),
             'dev_requirement' => true,
         ),
