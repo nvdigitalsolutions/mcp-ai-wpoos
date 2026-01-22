@@ -10,6 +10,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load document response trait.
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
+
 /**
  * Export project calendar events as ICS file.
  *
@@ -23,6 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Document_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -50,59 +54,59 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
+			'type' => 'object',
 			'properties' => array(
-				'project_id'       => array(
-					'type'        => 'integer',
+				'project_id' => array(
+					'type' => 'integer',
 					'description' => __( 'Project ID to export calendar from', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 1,
+					'minimum' => 1,
 				),
-				'include_tasks'    => array(
-					'type'        => 'boolean',
+				'include_tasks' => array(
+					'type' => 'boolean',
 					'description' => __( 'Include project tasks as calendar events', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
-				'include_events'   => array(
-					'type'        => 'boolean',
+				'include_events' => array(
+					'type' => 'boolean',
 					'description' => __( 'Include project events', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
 				'date_range_start' => array(
-					'type'        => 'string',
+					'type' => 'string',
 					'description' => __( 'Start date for events (ISO 8601 format, e.g., 2025-01-01)', 'mcp-ai-wpoos-pro' ),
-					'format'      => 'date',
+					'format' => 'date',
 				),
-				'date_range_end'   => array(
-					'type'        => 'string',
+				'date_range_end' => array(
+					'type' => 'string',
 					'description' => __( 'End date for events (ISO 8601 format)', 'mcp-ai-wpoos-pro' ),
-					'format'      => 'date',
+					'format' => 'date',
 				),
-				'timezone'         => array(
-					'type'        => 'string',
+				'timezone' => array(
+					'type' => 'string',
 					'description' => __( 'Timezone for events (e.g., America/New_York). Default: site timezone', 'mcp-ai-wpoos-pro' ),
-					'default'     => wp_timezone_string(),
+					'default' => wp_timezone_string(),
 				),
-				'organizer_name'   => array(
-					'type'        => 'string',
+				'organizer_name' => array(
+					'type' => 'string',
 					'description' => __( 'Organizer name for calendar events', 'mcp-ai-wpoos-pro' ),
 				),
-				'organizer_email'  => array(
-					'type'        => 'string',
+				'organizer_email' => array(
+					'type' => 'string',
 					'description' => __( 'Organizer email address', 'mcp-ai-wpoos-pro' ),
-					'format'      => 'email',
+					'format' => 'email',
 				),
-				'add_reminders'    => array(
-					'type'        => 'boolean',
+				'add_reminders' => array(
+					'type' => 'boolean',
 					'description' => __( 'Add reminder alarms to events (15 minutes before)', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+					'default' => false,
 				),
-				'download_file'    => array(
-					'type'        => 'boolean',
+				'download_file' => array(
+					'type' => 'boolean',
 					'description' => __( 'Return downloadable file URL. If false, returns ICS content as string.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
 			),
-			'required'   => array( 'project_id' ),
+			'required' => array( 'project_id' ),
 		);
 	}
 
@@ -146,7 +150,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $settings['enable_project_management'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Project Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Project Management is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -155,7 +159,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $project_id || get_post_type( $project_id ) !== 'project' ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Invalid project ID.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -164,7 +168,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $ics_available ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'ICS package is not available. Please ensure Node.js and ICS package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'ICS package is not available. Please ensure Node.js and ICS package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -173,7 +177,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $project ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Project not found.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Project not found.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -183,18 +187,18 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( empty( $events ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No events found for this project in the specified date range.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'No events found for this project in the specified date range.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Build ICS generation parameters.
 		$ics_params = array(
-			'events'   => $events,
-			'prodId'   => array(
+			'events' => $events,
+			'prodId' => array(
 				'company' => get_bloginfo( 'name' ),
 				'product' => 'Open Operator System',
 			),
-			'calName'  => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
+			'calName' => sprintf( __( 'Project: %s', 'mcp-ai-wpoos-pro' ), $project->post_title ),
 			'timezone' => isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string(),
 		);
 
@@ -204,7 +208,7 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( ! $result || isset( $result['error'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => isset( $result['error'] ) ? $result['error'] : __( 'ICS file generation failed.', 'mcp-ai-wpoos-pro' ),
+				'error' => isset( $result['error'] ) ? $result['error'] : __( 'ICS file generation failed.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -213,25 +217,40 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( $download_file && isset( $result['content'] ) ) {
 			$file_info = $this->save_ics_file( $result['content'], $project_id );
 
-			return array(
-				'success'      => true,
-				'message'      => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
-				'project_id'   => $project_id,
+			// Calculate file size safely.
+			$file_size = 0;
+			if ( isset( $file_info['path'] ) && file_exists( $file_info['path'] ) ) {
+				$size_result = filesize( $file_info['path'] );
+				if ( false !== $size_result ) {
+					$file_size = $size_result;
+				}
+			}
+
+			$response = array(
+				'success' => true,
+				'message' => __( 'Calendar exported successfully as ICS file.', 'mcp-ai-wpoos-pro' ),
+				'text' => sprintf( __( 'Calendar exported: %d events from %s', 'mcp-ai-wpoos-pro' ), count( $events ), $project->post_title ),
+				'project_id' => $project_id,
 				'project_name' => $project->post_title,
-				'event_count'  => count( $events ),
-				'file_url'     => isset( $file_info['url'] ) ? $file_info['url'] : null,
-				'file_path'    => isset( $file_info['path'] ) ? $file_info['path'] : null,
-				'filename'     => isset( $file_info['filename'] ) ? $file_info['filename'] : null,
+				'event_count' => count( $events ),
+				'file_url' => isset( $file_info['url'] ) ? $file_info['url'] : null,
+				'file_path' => isset( $file_info['path'] ) ? $file_info['path'] : null,
+				'filename' => isset( $file_info['filename'] ) ? $file_info['filename'] : null,
+				'file_size' => $file_size,
+				'mime_type' => 'text/calendar',
 			);
+
+			// Add download button and metadata display.
+			return $this->add_document_html_to_response( $response );
 		}
 
 		return array(
-			'success'      => true,
-			'message'      => __( 'Calendar exported successfully.', 'mcp-ai-wpoos-pro' ),
-			'project_id'   => $project_id,
+			'success' => true,
+			'message' => __( 'Calendar exported successfully.', 'mcp-ai-wpoos-pro' ),
+			'project_id' => $project_id,
 			'project_name' => $project->post_title,
-			'event_count'  => count( $events ),
-			'ics_content'  => isset( $result['content'] ) ? $result['content'] : null,
+			'event_count' => count( $events ),
+			'ics_content' => isset( $result['content'] ) ? $result['content'] : null,
 		);
 	}
 
@@ -274,10 +293,10 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( $include_tasks ) {
 			$tasks_query = new WP_Query(
 				array(
-					'post_type'      => 'task',
-					'post_parent'    => $project_id,
+					'post_type' => 'task',
+					'post_parent' => $project_id,
 					'posts_per_page' => -1,
-					'post_status'    => 'any',
+					'post_status' => 'any',
 				)
 			);
 
@@ -285,11 +304,11 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				$due_date = get_post_meta( $task->ID, '_task_due_date', true );
 				if ( $due_date && $this->is_in_date_range( $due_date, $start_date, $end_date ) ) {
 					$events[] = array(
-						'title'       => $task->post_title,
+						'title' => $task->post_title,
 						'description' => wp_strip_all_tags( $task->post_content ),
-						'start'       => $due_date,
-						'duration'    => array( 'hours' => 1 ),
-						'uid'         => 'task-' . $task->ID . '@' . get_site_url(),
+						'start' => $due_date,
+						'duration' => array( 'hours' => 1 ),
+						'uid' => 'task-' . $task->ID . '@' . get_site_url(),
 					);
 				}
 			}
@@ -299,10 +318,10 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		if ( $include_events ) {
 			$events_query = new WP_Query(
 				array(
-					'post_type'      => 'event',
-					'post_parent'    => $project_id,
+					'post_type' => 'event',
+					'post_parent' => $project_id,
 					'posts_per_page' => -1,
-					'post_status'    => 'publish',
+					'post_status' => 'publish',
 				)
 			);
 
@@ -310,11 +329,11 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 				$event_date = get_post_meta( $event->ID, '_event_date', true );
 				if ( $event_date && $this->is_in_date_range( $event_date, $start_date, $end_date ) ) {
 					$events[] = array(
-						'title'       => $event->post_title,
+						'title' => $event->post_title,
 						'description' => wp_strip_all_tags( $event->post_content ),
-						'start'       => $event_date,
-						'duration'    => array( 'hours' => 2 ),
-						'uid'         => 'event-' . $event->ID . '@' . get_site_url(),
+						'start' => $event_date,
+						'duration' => array( 'hours' => 2 ),
+						'uid' => 'event-' . $event->ID . '@' . get_site_url(),
 					);
 				}
 			}
@@ -390,8 +409,8 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 		file_put_contents( $file_path, $content ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		return array(
-			'url'      => $upload_dir['url'] . '/' . $filename,
-			'path'     => $file_path,
+			'url' => $upload_dir['url'] . '/' . $filename,
+			'path' => $file_path,
 			'filename' => $filename,
 		);
 	}

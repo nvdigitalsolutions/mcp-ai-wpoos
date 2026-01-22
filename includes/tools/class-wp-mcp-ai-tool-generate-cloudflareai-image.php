@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a tool for generating images via Cloudflare Workers AI and storing them as attachments.
@@ -23,6 +24,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	const DEFAULT_MODEL     = '@cf/stabilityai/stable-diffusion-xl-base-1.0';
 	const DEFAULT_WIDTH     = 1024;
@@ -58,65 +60,65 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		$defaults = $this->get_configured_defaults();
 
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'prompt'        => array(
-					'type'        => 'string',
+			'type' => 'object',
+			'properties' => array(
+				'prompt' => array(
+					'type' => 'string',
 					'description' => __( 'The text prompt describing the desired image.', 'mcp-ai-wpoos' ),
 				),
-				'model'         => array(
-					'type'        => 'string',
+				'model' => array(
+					'type' => 'string',
 					'description' => __( 'Cloudflare Workers AI model to use. Examples: @cf/black-forest-labs/flux-2-dev, @cf/leonardo/phoenix-1.0, @cf/stabilityai/stable-diffusion-xl-base-1.0', 'mcp-ai-wpoos' ),
-					'default'     => $defaults['model'],
+					'default' => $defaults['model'],
 				),
-				'width'         => array(
-					'type'        => 'integer',
+				'width' => array(
+					'type' => 'integer',
 					'description' => __( 'Width of the generated image in pixels (256-2048).', 'mcp-ai-wpoos' ),
-					'minimum'     => 256,
-					'maximum'     => 2048,
-					'default'     => $defaults['width'],
+					'minimum' => 256,
+					'maximum' => 2048,
+					'default' => $defaults['width'],
 				),
-				'height'        => array(
-					'type'        => 'integer',
+				'height' => array(
+					'type' => 'integer',
 					'description' => __( 'Height of the generated image in pixels (256-2048).', 'mcp-ai-wpoos' ),
-					'minimum'     => 256,
-					'maximum'     => 2048,
-					'default'     => $defaults['height'],
+					'minimum' => 256,
+					'maximum' => 2048,
+					'default' => $defaults['height'],
 				),
-				'num_steps'     => array(
-					'type'        => 'integer',
+				'num_steps' => array(
+					'type' => 'integer',
 					'description' => __( 'Number of diffusion steps. More steps can improve quality but take longer (1-20).', 'mcp-ai-wpoos' ),
-					'minimum'     => 1,
-					'maximum'     => 20,
-					'default'     => $defaults['num_steps'],
+					'minimum' => 1,
+					'maximum' => 20,
+					'default' => $defaults['num_steps'],
 				),
-				'guidance'      => array(
-					'type'        => 'number',
+				'guidance' => array(
+					'type' => 'number',
 					'description' => __( 'Guidance scale controls how closely the image follows the prompt. Higher values mean stricter adherence.', 'mcp-ai-wpoos' ),
-					'default'     => $defaults['guidance'],
+					'default' => $defaults['guidance'],
 				),
-				'seed'          => array(
-					'type'        => 'integer',
+				'seed' => array(
+					'type' => 'integer',
 					'description' => __( 'Random seed for reproducibility. Use the same seed with the same prompt to get similar results.', 'mcp-ai-wpoos' ),
 				),
 				'output_format' => array(
-					'type'        => 'string',
+					'type' => 'string',
 					'description' => __( 'Output format for the generated image. Use "svg" to vectorize the raster output. Default is raster format.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'default', 'svg' ),
-					'default'     => 'default',
+					'enum' => array( 'default', 'svg' ),
+					'default' => 'default',
 				),
-				'file_name'     => array(
-					'type'        => 'string',
+				'file_name' => array(
+					'type' => 'string',
 					'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 				),
-				'timeout'       => array(
-					'type'        => 'integer',
+				'timeout' => array(
+					'type' => 'integer',
 					'description' => __( 'Override the Cloudflare request timeout in seconds.', 'mcp-ai-wpoos' ),
-					'minimum'     => 5,
-					'maximum'     => 300,
+					'minimum' => 5,
+					'maximum' => 300,
 				),
 			),
-			'required'             => array( 'prompt' ),
+			'required' => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -127,15 +129,15 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'cloudflareai_text_to_image', 'mcp-ai-wpoos' ),
+				'label' => __( 'cloudflareai_text_to_image', 'mcp-ai-wpoos' ),
 				'payload' => __( 'cloudflareai_text_to_image', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Generate product visualization', 'mcp-ai-wpoos' ),
+				'label' => __( 'Generate product visualization', 'mcp-ai-wpoos' ),
 				'payload' => __( 'Use the `cloudflareai_text_to_image` tool to create a product visualization. Gather details about the product, setting, lighting, and camera angle, then assemble a detailed prompt.', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Create blog post hero image', 'mcp-ai-wpoos' ),
+				'label' => __( 'Create blog post hero image', 'mcp-ai-wpoos' ),
 				'payload' => __( 'Use the `cloudflareai_text_to_image` tool to generate a hero image for a blog post. Ask about the blog post topic and tone, then create a relevant, eye-catching image.', 'mcp-ai-wpoos' ),
 			),
 		);
@@ -148,11 +150,11 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 	 */
 	protected function get_configured_defaults() {
 		$defaults = array(
-			'model'     => self::DEFAULT_MODEL,
-			'width'     => self::DEFAULT_WIDTH,
-			'height'    => self::DEFAULT_HEIGHT,
+			'model' => self::DEFAULT_MODEL,
+			'width' => self::DEFAULT_WIDTH,
+			'height' => self::DEFAULT_HEIGHT,
 			'num_steps' => self::DEFAULT_NUM_STEPS,
-			'guidance'  => self::DEFAULT_GUIDANCE,
+			'guidance' => self::DEFAULT_GUIDANCE,
 		);
 
 		if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -246,11 +248,11 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		$num_steps = max( 1, min( 20, $num_steps ) );
 
 		$options = array(
-			'model'     => $model,
-			'width'     => $width,
-			'height'    => $height,
+			'model' => $model,
+			'width' => $width,
+			'height' => $height,
 			'num_steps' => $num_steps,
-			'guidance'  => $guidance,
+			'guidance' => $guidance,
 		);
 
 		if ( null !== $seed ) {
@@ -291,7 +293,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 					'cloudflareai_svg_conversion_failed',
 					'Failed to convert Cloudflare AI-generated image to SVG',
 					array(
-						'error'         => $svg_storage->get_error_message(),
+						'error' => $svg_storage->get_error_message(),
 						'attachment_id' => $storage['attachment_id'],
 					)
 				);
@@ -330,22 +332,22 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
-			'url'           => $storage['url'],
-			'download_url'  => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
-			'file_path'     => $storage['file'],
-			'file_name'     => $storage['file_name'],
-			'mime_type'     => $storage['mime_type'],
-			'bytes'         => $storage['bytes'],
-			'format'        => isset( $image['format'] ) ? $image['format'] : 'png',
-			'width'         => $width,
-			'height'        => $height,
-			'num_steps'     => $num_steps,
-			'guidance'      => $guidance,
-			'model'         => $model,
-			'provider'      => 'cloudflare',
-			'created'       => isset( $image['created'] ) ? $image['created'] : time(),
-			'text'          => $text,
-			'message'       => $message,
+			'url' => $storage['url'],
+			'download_url' => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
+			'file_path' => $storage['file'],
+			'file_name' => $storage['file_name'],
+			'mime_type' => $storage['mime_type'],
+			'bytes' => $storage['bytes'],
+			'format' => isset( $image['format'] ) ? $image['format'] : 'png',
+			'width' => $width,
+			'height' => $height,
+			'num_steps' => $num_steps,
+			'guidance' => $guidance,
+			'model' => $model,
+			'provider' => 'cloudflare',
+			'created' => isset( $image['created'] ) ? $image['created'] : time(),
+			'text' => $text,
+			'message' => $message,
 		);
 
 		if ( null !== $seed ) {
@@ -365,6 +367,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		 * @param array $context   Execution context supplied to the tool.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_generate_cloudflareai_image_result', $result, $arguments, $context );
+
+		// Add rendered image HTML to the response for display in chat UI.
+		$result = $this->add_image_html_to_response( $result );
 
 		return $result;
 	}
@@ -390,9 +395,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		// Map format to file extension.
 		$extensions = array(
-			'png'  => 'png',
+			'png' => 'png',
 			'jpeg' => 'jpg',
-			'jpg'  => 'jpg',
+			'jpg' => 'jpg',
 			'webp' => 'webp',
 		);
 
@@ -427,9 +432,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -456,7 +461,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		// Store Cloudflare response metadata for reference.
 		$cloudflare_meta = array(
-			'source'          => 'cloudflare',
+			'source' => 'cloudflare',
 			'original_prompt' => sanitize_textarea_field( $prompt ),
 		);
 
@@ -494,13 +499,13 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'download_url'  => $local_url,
-			'mime_type'     => $mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'download_url' => $local_url,
+			'mime_type' => $mime_type,
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
 		);
 	}
 
@@ -606,11 +611,11 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		// Prepare vectorization options.
 		$vectorization_options = array(
-			'colorMode'      => 'color',
+			'colorMode' => 'color',
 			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
-			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
-			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
-			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+			'filterSpeckle' => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode' => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical' => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
 		// Execute vectorization script.
@@ -625,7 +630,7 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 			$script_path,
 			$script_args,
 			array(
-				'timeout'    => 60,
+				'timeout' => 60,
 				'parse_json' => true,
 			)
 		);
@@ -706,9 +711,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'Cloudflare AI SVG Image', 'mcp-ai-wpoos' ) ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => sanitize_text_field( __( 'Cloudflare AI SVG Image', 'mcp-ai-wpoos' ) ),
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
@@ -725,13 +730,13 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'download_url'  => $local_url,
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => get_the_title( $attachment_id ),
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'download_url' => $local_url,
+			'mime_type' => 'image/svg+xml',
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => get_the_title( $attachment_id ),
 		);
 	}
 
@@ -823,9 +828,9 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 	 */
 	public function get_tool_rules() {
 		return array(
-			'model_requirements'    => array(
+			'model_requirements' => array(
 				'providers' => array( 'cloudflare' ),
-				'models'    => array(
+				'models' => array(
 					'@cf/stabilityai/stable-diffusion-xl-base-1.0',
 					'@cf/bytedance/stable-diffusion-xl-lightning',
 					'@cf/black-forest-labs/flux-1-schnell',
@@ -834,39 +839,39 @@ class WP_MCP_AI_Tool_Generate_CloudflareAI_Image implements WP_MCP_AI_Tool_Inter
 					'@cf/leonardo/phoenix-1.0',
 					'@cf/lykon/dreamshaper-8-lcm',
 				),
-				'required'  => false,
+				'required' => false,
 			),
 			'parameter_constraints' => array(
-				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'model', 'width', 'height', 'num_steps', 'guidance', 'seed', 'file_name', 'output_format', 'timeout' ),
+				'required_fields' => array( 'prompt' ),
+				'optional_fields' => array( 'model', 'width', 'height', 'num_steps', 'guidance', 'seed', 'file_name', 'output_format', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
-			'rate_limits'           => array(
+			'rate_limits' => array(
 				'requests_per_minute' => 15,
-				'requests_per_hour'   => 100,
+				'requests_per_hour' => 100,
 				'concurrent_requests' => 2,
 			),
-			'timeout_constraints'   => array(
+			'timeout_constraints' => array(
 				'recommended_timeout' => 60,
-				'max_execution_time'  => 120,
+				'max_execution_time' => 120,
 			),
-			'response_constraints'  => array(
-				'max_size'           => 5242880, // 5MB typical image size.
+			'response_constraints' => array(
+				'max_size' => 5242880, // 5MB typical image size.
 				'supports_streaming' => false,
 			),
-			'dependencies'          => array(
-				'required_settings'   => array(
-					'api_token'  => 'cloudflare_api_token',
+			'dependencies' => array(
+				'required_settings' => array(
+					'api_token' => 'cloudflare_api_token',
 					'account_id' => 'cloudflare_account_id',
 				),
 				'required_extensions' => array( 'gd' ), // For image processing.
 			),
-			'orchestration_hints'   => array(
+			'orchestration_hints' => array(
 				'can_run_parallel' => true,
-				'requires_lock'    => false,
-				'cache_ttl'        => 0, // Don't cache - each generation unique.
-				'retry_strategy'   => 'exponential_backoff',
-				'max_retries'      => 3,
+				'requires_lock' => false,
+				'cache_ttl' => 0, // Don't cache - each generation unique.
+				'retry_strategy' => 'exponential_backoff',
+				'max_retries' => 3,
 			),
 		);
 	}

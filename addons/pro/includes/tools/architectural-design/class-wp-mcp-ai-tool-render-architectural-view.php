@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Render architectural views.
  */
 class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -47,49 +49,49 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'model_data'     => array(
-					'type'        => 'object',
+			'type' => 'object',
+			'properties' => array(
+				'model_data' => array(
+					'type' => 'object',
 					'description' => __( '3D model data to render.', 'mcp-ai-wpoos-pro' ),
 				),
-				'view_angle'     => array(
-					'type'        => 'string',
+				'view_angle' => array(
+					'type' => 'string',
 					'description' => __( 'Camera angle: "front", "back", "left", "right", "aerial", "interior".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'front', 'back', 'left', 'right', 'aerial', 'interior' ),
-					'default'     => 'front',
+					'enum' => array( 'front', 'back', 'left', 'right', 'aerial', 'interior' ),
+					'default' => 'front',
 				),
-				'time_of_day'    => array(
-					'type'        => 'string',
+				'time_of_day' => array(
+					'type' => 'string',
 					'description' => __( 'Lighting time: "morning", "noon", "afternoon", "sunset", "night".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'morning', 'noon', 'afternoon', 'sunset', 'night' ),
-					'default'     => 'noon',
+					'enum' => array( 'morning', 'noon', 'afternoon', 'sunset', 'night' ),
+					'default' => 'noon',
 				),
-				'weather'        => array(
-					'type'        => 'string',
+				'weather' => array(
+					'type' => 'string',
 					'description' => __( 'Weather condition: "sunny", "cloudy", "overcast", "rainy".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'sunny', 'cloudy', 'overcast', 'rainy' ),
-					'default'     => 'sunny',
+					'enum' => array( 'sunny', 'cloudy', 'overcast', 'rainy' ),
+					'default' => 'sunny',
 				),
-				'quality'        => array(
-					'type'        => 'string',
+				'quality' => array(
+					'type' => 'string',
 					'description' => __( 'Rendering quality: "draft", "medium", "high", "ultra".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'draft', 'medium', 'high', 'ultra' ),
-					'default'     => 'medium',
+					'enum' => array( 'draft', 'medium', 'high', 'ultra' ),
+					'default' => 'medium',
 				),
-				'resolution'     => array(
-					'type'        => 'string',
+				'resolution' => array(
+					'type' => 'string',
 					'description' => __( 'Image resolution: "1080p", "2k", "4k".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( '1080p', '2k', '4k' ),
-					'default'     => '1080p',
+					'enum' => array( '1080p', '2k', '4k' ),
+					'default' => '1080p',
 				),
 				'include_environment' => array(
-					'type'        => 'boolean',
+					'type' => 'boolean',
 					'description' => __( 'Include surrounding environment (landscaping, sky, etc.).', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
 			),
-			'required'             => array( 'model_data' ),
+			'required' => array( 'model_data' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -150,18 +152,24 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Return structured rendering data.
-		return array(
-			'success'    => true,
-			'rendering'  => $rendering,
-			'settings'   => array(
-				'view_angle'  => $view_angle,
+		$result = array(
+			'success' => true,
+			'url' => $rendering['image_url'],
+			'prompt' => sprintf( 'Architectural view: %s angle, %s, %s weather', $view_angle, $time_of_day, $weather ),
+			'width' => isset( $rendering['dimensions']['width'] ) ? $rendering['dimensions']['width'] : null,
+			'height' => isset( $rendering['dimensions']['height'] ) ? $rendering['dimensions']['height'] : null,
+			'rendering' => $rendering,
+			'settings' => array(
+				'view_angle' => $view_angle,
 				'time_of_day' => $time_of_day,
-				'weather'     => $weather,
-				'quality'     => $quality,
-				'resolution'  => $resolution,
+				'weather' => $weather,
+				'quality' => $quality,
+				'resolution' => $resolution,
 			),
-			'message'    => __( 'Successfully rendered architectural view.', 'mcp-ai-wpoos-pro' ),
+			'text' => __( 'Successfully rendered architectural view.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
@@ -178,17 +186,17 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function render_view( $model_data, $view_angle, $time_of_day, $weather, $quality, $resolution, $include_environment ) {
 		return array(
-			'image_url'    => '',
-			'format'       => 'png',
-			'dimensions'   => array(
-				'width'  => 1920,
+			'image_url' => '',
+			'format' => 'png',
+			'dimensions' => array(
+				'width' => 1920,
 				'height' => 1080,
 			),
-			'render_time'  => 0,
-			'metadata'     => array(
-				'view_angle'  => $view_angle,
+			'render_time' => 0,
+			'metadata' => array(
+				'view_angle' => $view_angle,
 				'time_of_day' => $time_of_day,
-				'weather'     => $weather,
+				'weather' => $weather,
 				'rendered_at' => current_time( 'mysql' ),
 			),
 		);

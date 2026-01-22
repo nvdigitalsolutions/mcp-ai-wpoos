@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response.php';
+
 /**
  * Render LaTeX math equations using KaTeX.
  *
@@ -23,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -50,44 +53,44 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
+			'type' => 'object',
 			'properties' => array(
-				'latex'          => array(
-					'type'        => 'string',
+				'latex' => array(
+					'type' => 'string',
 					'description' => __( 'LaTeX math expression to render (e.g., "x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}")', 'mcp-ai-wpoos-pro' ),
 				),
-				'display_mode'   => array(
-					'type'        => 'boolean',
+				'display_mode' => array(
+					'type' => 'boolean',
 					'description' => __( 'Use display mode (centered, larger). False for inline mode.', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+					'default' => false,
 				),
 				'throw_on_error' => array(
-					'type'        => 'boolean',
+					'type' => 'boolean',
 					'description' => __( 'Throw error on invalid LaTeX. If false, displays error message in output.', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+					'default' => false,
 				),
-				'output_format'  => array(
-					'type'        => 'string',
-					'enum'        => array( 'html', 'mathml', 'html_and_mathml' ),
+				'output_format' => array(
+					'type' => 'string',
+					'enum' => array( 'html', 'mathml', 'html_and_mathml' ),
 					'description' => __( 'Output format: html (default), mathml, or html_and_mathml', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'html',
+					'default' => 'html',
 				),
-				'macros'         => array(
-					'type'        => 'object',
+				'macros' => array(
+					'type' => 'object',
 					'description' => __( 'Custom LaTeX macros as key-value pairs (e.g., {"\\RR": "\\mathbb{R}"})', 'mcp-ai-wpoos-pro' ),
 				),
-				'quiz_id'        => array(
-					'type'        => 'integer',
+				'quiz_id' => array(
+					'type' => 'integer',
 					'description' => __( 'Optional quiz ID to associate this equation with', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 1,
+					'minimum' => 1,
 				),
-				'save_rendered'  => array(
-					'type'        => 'boolean',
+				'save_rendered' => array(
+					'type' => 'boolean',
 					'description' => __( 'Cache the rendered HTML for reuse', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
 			),
-			'required'   => array( 'latex' ),
+			'required' => array( 'latex' ),
 		);
 	}
 
@@ -131,7 +134,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $settings['enable_quiz_system'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Quiz System is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Quiz System is not enabled. Please enable it in settings.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -139,7 +142,7 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $arguments['latex'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'LaTeX expression is required.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'LaTeX expression is required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -152,10 +155,10 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 			$cached_result = wp_cache_get( $cache_key, 'mcp_ai_katex' );
 			if ( $cached_result !== false ) {
 				return array(
-					'success'     => true,
-					'latex'       => $latex,
-					'html'        => $cached_result['html'],
-					'cached'      => true,
+					'success' => true,
+					'latex' => $latex,
+					'html' => $cached_result['html'],
+					'cached' => true,
 					'render_time' => 0,
 				);
 			}
@@ -166,16 +169,16 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $katex_available ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'KaTeX is not available. Please ensure Node.js and KaTeX package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'KaTeX is not available. Please ensure Node.js and KaTeX package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Build rendering parameters.
 		$render_params = array(
-			'latex'        => $latex,
-			'displayMode'  => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
+			'latex' => $latex,
+			'displayMode' => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
 			'throwOnError' => isset( $arguments['throw_on_error'] ) ? (bool) $arguments['throw_on_error'] : false,
-			'output'       => isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'html',
+			'output' => isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'html',
 		);
 
 		// Add custom macros if provided.
@@ -191,8 +194,8 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $result || isset( $result['error'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => isset( $result['error'] ) ? $result['error'] : __( 'Math equation rendering failed.', 'mcp-ai-wpoos-pro' ),
-				'latex'   => $latex,
+				'error' => isset( $result['error'] ) ? $result['error'] : __( 'Math equation rendering failed.', 'mcp-ai-wpoos-pro' ),
+				'latex' => $latex,
 			);
 		}
 
@@ -207,15 +210,18 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 			$this->associate_with_quiz( $quiz_id, $latex, $result['html'] );
 		}
 
-		return array(
-			'success'     => true,
-			'message'     => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
-			'latex'       => $latex,
-			'html'        => $result['html'],
-			'mathml'      => isset( $result['mathml'] ) ? $result['mathml'] : null,
+		$response = array(
+			'success' => true,
+			'text' => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
+			'latex' => $latex,
+			'html' => $result['html'],
+			'mathml' => isset( $result['mathml'] ) ? $result['mathml'] : null,
 			'render_time' => round( $render_time * 1000, 2 ) . 'ms',
-			'cached'      => false,
+			'cached' => false,
+			'display_mode' => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
 		);
+
+		return $this->add_math_html_to_response( $response );
 	}
 
 	/**
@@ -288,8 +294,8 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 
 		// Add new equation.
 		$equations[] = array(
-			'latex'      => $latex,
-			'html'       => $html,
+			'latex' => $latex,
+			'html' => $html,
 			'created_at' => current_time( 'mysql' ),
 		);
 

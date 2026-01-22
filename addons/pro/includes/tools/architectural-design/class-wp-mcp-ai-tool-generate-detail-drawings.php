@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate detail drawings.
  */
 class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -47,35 +49,35 @@ class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'component_type'   => array(
-					'type'        => 'string',
+			'type' => 'object',
+			'properties' => array(
+				'component_type' => array(
+					'type' => 'string',
 					'description' => __( 'Component type: "wall_section", "foundation", "roof_detail", "window", "door", "stair".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'wall_section', 'foundation', 'roof_detail', 'window', 'door', 'stair' ),
+					'enum' => array( 'wall_section', 'foundation', 'roof_detail', 'window', 'door', 'stair' ),
 				),
-				'specifications'   => array(
-					'type'        => 'object',
+				'specifications' => array(
+					'type' => 'object',
 					'description' => __( 'Component specifications and materials.', 'mcp-ai-wpoos-pro' ),
 				),
-				'scale'            => array(
-					'type'        => 'string',
+				'scale' => array(
+					'type' => 'string',
 					'description' => __( 'Detail scale: "1/2", "1", "3", "6" (inches per foot).', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( '1/2', '1', '3', '6' ),
-					'default'     => '3',
+					'enum' => array( '1/2', '1', '3', '6' ),
+					'default' => '3',
 				),
 				'include_materials_list' => array(
-					'type'        => 'boolean',
+					'type' => 'boolean',
 					'description' => __( 'Include materials and parts list.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
-				'include_notes'    => array(
-					'type'        => 'boolean',
+				'include_notes' => array(
+					'type' => 'boolean',
 					'description' => __( 'Include installation notes and instructions.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
 			),
-			'required'             => array( 'component_type' ),
+			'required' => array( 'component_type' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -133,17 +135,21 @@ class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Return structured detail data.
-		return array(
-			'success'        => true,
-			'detail'         => $detail,
+		$result = array(
+			'success' => true,
+			'url' => isset( $detail['image_url'] ) ? $detail['image_url'] : '',
+			'prompt' => sprintf( '%s detail drawing at %s scale', str_replace( '_', ' ', $component_type ), $scale ),
+			'detail' => $detail,
 			'component_type' => $component_type,
-			'scale'          => $scale,
-			'message'        => sprintf(
+			'scale' => $scale,
+			'text' => sprintf(
 				/* translators: %s: component type */
 				__( 'Successfully generated %s detail drawing.', 'mcp-ai-wpoos-pro' ),
 				str_replace( '_', ' ', $component_type )
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
@@ -159,15 +165,15 @@ class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interfac
 	 */
 	protected function generate_detail( $component_type, $specifications, $scale, $include_materials_list, $include_notes, $context ) {
 		return array(
-			'type'          => $component_type,
-			'scale'         => $scale,
-			'format'        => 'pdf',
-			'views'         => array( 'section', 'elevation', 'plan' ),
-			'materials'     => $include_materials_list ? array() : null,
-			'notes'         => $include_notes ? array() : null,
-			'metadata'      => array(
+			'type' => $component_type,
+			'scale' => $scale,
+			'format' => 'pdf',
+			'views' => array( 'section', 'elevation', 'plan' ),
+			'materials' => $include_materials_list ? array() : null,
+			'notes' => $include_notes ? array() : null,
+			'metadata' => array(
 				'specifications' => $specifications,
-				'generated_at'   => current_time( 'mysql' ),
+				'generated_at' => current_time( 'mysql' ),
 			),
 		);
 	}

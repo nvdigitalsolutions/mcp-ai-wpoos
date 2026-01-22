@@ -50,75 +50,75 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'       => 'object',
+			'type' => 'object',
 			'properties' => array(
-				'template_type'   => array(
-					'type'        => 'string',
-					'enum'        => array( 'newsletter', 'marketing', 'transactional', 'notification', 'custom' ),
+				'template_type' => array(
+					'type' => 'string',
+					'enum' => array( 'newsletter', 'marketing', 'transactional', 'notification', 'custom' ),
 					'description' => __( 'Type of email template to generate', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'newsletter',
+					'default' => 'newsletter',
 				),
-				'subject'         => array(
-					'type'        => 'string',
+				'subject' => array(
+					'type' => 'string',
 					'description' => __( 'Email subject line', 'mcp-ai-wpoos-pro' ),
 				),
-				'preview_text'    => array(
-					'type'        => 'string',
+				'preview_text' => array(
+					'type' => 'string',
 					'description' => __( 'Preview text shown in email clients', 'mcp-ai-wpoos-pro' ),
 				),
-				'components'      => array(
-					'type'        => 'array',
+				'components' => array(
+					'type' => 'array',
 					'description' => __( 'Array of email components (header, text, button, image, etc.)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
-						'type'       => 'object',
+					'items' => array(
+						'type' => 'object',
 						'properties' => array(
-							'type'       => array( 'type' => 'string' ),
-							'content'    => array( 'type' => 'string' ),
+							'type' => array( 'type' => 'string' ),
+							'content' => array( 'type' => 'string' ),
 							'attributes' => array( 'type' => 'object' ),
 						),
 					),
 				),
-				'branding'        => array(
-					'type'        => 'object',
+				'branding' => array(
+					'type' => 'object',
 					'description' => __( 'Branding options (logo, colors, fonts)', 'mcp-ai-wpoos-pro' ),
-					'properties'  => array(
-						'logo_url'        => array( 'type' => 'string' ),
-						'primary_color'   => array( 'type' => 'string' ),
+					'properties' => array(
+						'logo_url' => array( 'type' => 'string' ),
+						'primary_color' => array( 'type' => 'string' ),
 						'secondary_color' => array( 'type' => 'string' ),
-						'font_family'     => array( 'type' => 'string' ),
-						'company_name'    => array( 'type' => 'string' ),
+						'font_family' => array( 'type' => 'string' ),
+						'company_name' => array( 'type' => 'string' ),
 						'company_address' => array( 'type' => 'string' ),
 					),
 				),
-				'footer_links'    => array(
-					'type'        => 'array',
+				'footer_links' => array(
+					'type' => 'array',
 					'description' => __( 'Footer links (unsubscribe, privacy policy, etc.)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
-						'type'       => 'object',
+					'items' => array(
+						'type' => 'object',
 						'properties' => array(
 							'text' => array( 'type' => 'string' ),
-							'url'  => array( 'type' => 'string' ),
+							'url' => array( 'type' => 'string' ),
 						),
 					),
 				),
 				'container_width' => array(
-					'type'        => 'string',
+					'type' => 'string',
 					'description' => __( 'Email container width (default: 600px)', 'mcp-ai-wpoos-pro' ),
-					'default'     => '600px',
+					'default' => '600px',
 				),
-				'output_format'   => array(
-					'type'        => 'string',
-					'enum'        => array( 'html', 'mjml', 'both' ),
+				'output_format' => array(
+					'type' => 'string',
+					'enum' => array( 'html', 'mjml', 'both' ),
 					'description' => __( 'Output format: html (compiled), mjml (source), or both', 'mcp-ai-wpoos-pro' ),
-					'default'     => 'html',
+					'default' => 'html',
 				),
-				'minify'          => array(
-					'type'        => 'boolean',
+				'minify' => array(
+					'type' => 'boolean',
 					'description' => __( 'Minify HTML output for smaller file size', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+					'default' => false,
 				),
 			),
-			'required'   => array( 'components' ),
+			'required' => array( 'components' ),
 		);
 	}
 
@@ -157,7 +157,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		if ( empty( $arguments['components'] ) || ! is_array( $arguments['components'] ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Email components are required.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'Email components are required.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -168,16 +168,16 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		if ( ! $mjml_service->is_available() ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'MJML is not available. Please ensure Node.js and MJML package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
+				'error' => __( 'MJML is not available. Please ensure Node.js and MJML package are installed. See documentation for setup instructions.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
 		// Build template options.
 		$template_options = array(
-			'title'            => isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '',
-			'preview_text'     => isset( $arguments['preview_text'] ) ? sanitize_text_field( $arguments['preview_text'] ) : '',
-			'container_width'  => isset( $arguments['container_width'] ) ? sanitize_text_field( $arguments['container_width'] ) : '600px',
-			'font_family'      => 'Arial, Helvetica, sans-serif',
+			'title' => isset( $arguments['subject'] ) ? sanitize_text_field( $arguments['subject'] ) : '',
+			'preview_text' => isset( $arguments['preview_text'] ) ? sanitize_text_field( $arguments['preview_text'] ) : '',
+			'container_width' => isset( $arguments['container_width'] ) ? sanitize_text_field( $arguments['container_width'] ) : '600px',
+			'font_family' => 'Arial, Helvetica, sans-serif',
 			'background_color' => '#f4f4f4',
 		);
 
@@ -195,7 +195,7 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		if ( is_wp_error( $mjml ) ) {
 			return array(
 				'success' => false,
-				'error'   => sprintf(
+				'error' => sprintf(
 					/* translators: %s: error message */
 					__( 'MJML generation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$mjml->get_error_message()
@@ -218,17 +218,17 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		// Return MJML source if requested.
 		if ( 'mjml' === $output_format ) {
 			return array(
-				'success'       => true,
-				'message'       => __( 'Email template generated successfully.', 'mcp-ai-wpoos-pro' ),
+				'success' => true,
+				'message' => __( 'Email template generated successfully.', 'mcp-ai-wpoos-pro' ),
 				'template_type' => isset( $arguments['template_type'] ) ? $arguments['template_type'] : 'custom',
-				'mjml'          => $mjml,
+				'mjml' => $mjml,
 			);
 		}
 
 		// Compile MJML to HTML.
 		$compile_options = array(
-			'minify'          => isset( $arguments['minify'] ) ? (bool) $arguments['minify'] : false,
-			'beautify'        => ! ( isset( $arguments['minify'] ) && $arguments['minify'] ),
+			'minify' => isset( $arguments['minify'] ) ? (bool) $arguments['minify'] : false,
+			'beautify' => ! ( isset( $arguments['minify'] ) && $arguments['minify'] ),
 			'validationLevel' => 'soft',
 		);
 
@@ -237,22 +237,22 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 		if ( is_wp_error( $html ) ) {
 			return array(
 				'success' => false,
-				'error'   => sprintf(
+				'error' => sprintf(
 					/* translators: %s: error message */
 					__( 'MJML compilation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$html->get_error_message()
 				),
-				'mjml'    => $mjml, // Return MJML for debugging.
+				'mjml' => $mjml, // Return MJML for debugging.
 			);
 		}
 
 		$result = array(
-			'success'       => true,
-			'message'       => __( 'Email template generated successfully.', 'mcp-ai-wpoos-pro' ),
+			'success' => true,
+			'message' => __( 'Email template generated successfully.', 'mcp-ai-wpoos-pro' ),
 			'template_type' => isset( $arguments['template_type'] ) ? $arguments['template_type'] : 'custom',
-			'html'          => $html,
-			'subject'       => isset( $arguments['subject'] ) ? $arguments['subject'] : null,
-			'preview_text'  => isset( $arguments['preview_text'] ) ? $arguments['preview_text'] : null,
+			'html' => $html,
+			'subject' => isset( $arguments['subject'] ) ? $arguments['subject'] : null,
+			'preview_text' => isset( $arguments['preview_text'] ) ? $arguments['preview_text'] : null,
 		);
 
 		// Include MJML source if both formats requested.
@@ -260,7 +260,8 @@ class WP_MCP_AI_Tool_Generate_Email_Template implements WP_MCP_AI_Tool_Interface
 			$result['mjml'] = $mjml;
 		}
 
-		return $result;
+		// Add email preview HTML to response.
+		return $this->add_email_html_to_response( $result );
 	}
 
 	/**

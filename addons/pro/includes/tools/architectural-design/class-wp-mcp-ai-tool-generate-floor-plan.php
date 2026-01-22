@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate floor plans using AI.
  */
 class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -47,48 +49,48 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'requirements'   => array(
-					'type'        => 'string',
+			'type' => 'object',
+			'properties' => array(
+				'requirements' => array(
+					'type' => 'string',
 					'description' => __( 'Natural language description of floor plan requirements (e.g., "3 bedroom house with open kitchen").', 'mcp-ai-wpoos-pro' ),
 				),
-				'building_type'  => array(
-					'type'        => 'string',
+				'building_type' => array(
+					'type' => 'string',
 					'description' => __( 'Type of building: "residential", "commercial", "industrial", "mixed-use".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'residential', 'commercial', 'industrial', 'mixed-use' ),
-					'default'     => 'residential',
+					'enum' => array( 'residential', 'commercial', 'industrial', 'mixed-use' ),
+					'default' => 'residential',
 				),
-				'total_area'     => array(
-					'type'        => 'number',
+				'total_area' => array(
+					'type' => 'number',
 					'description' => __( 'Total floor area in square feet or square meters.', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 100,
+					'minimum' => 100,
 				),
-				'num_floors'     => array(
-					'type'        => 'integer',
+				'num_floors' => array(
+					'type' => 'integer',
 					'description' => __( 'Number of floors in the building.', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 1,
-					'default'     => 1,
+					'minimum' => 1,
+					'default' => 1,
 				),
-				'style'          => array(
-					'type'        => 'string',
+				'style' => array(
+					'type' => 'string',
 					'description' => __( 'Architectural style: "modern", "traditional", "contemporary", "minimalist".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'modern', 'traditional', 'contemporary', 'minimalist' ),
-					'default'     => 'modern',
+					'enum' => array( 'modern', 'traditional', 'contemporary', 'minimalist' ),
+					'default' => 'modern',
 				),
 				'include_furniture' => array(
-					'type'        => 'boolean',
+					'type' => 'boolean',
 					'description' => __( 'Include furniture placement in the floor plan.', 'mcp-ai-wpoos-pro' ),
-					'default'     => false,
+					'default' => false,
 				),
-				'output_format'  => array(
-					'type'        => 'string',
+				'output_format' => array(
+					'type' => 'string',
 					'description' => __( 'Output format: "svg", "png", "dxf", "json".', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'svg', 'png', 'dxf', 'json' ),
-					'default'     => 'svg',
+					'enum' => array( 'svg', 'png', 'dxf', 'json' ),
+					'default' => 'svg',
 				),
 			),
-			'required'             => array( 'requirements' ),
+			'required' => array( 'requirements' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -154,21 +156,25 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Return structured data for LLM.
-		return array(
-			'success'       => true,
-			'floor_plan'    => $floor_plan,
-			'requirements'  => $requirements,
+		$result = array(
+			'success' => true,
+			'url' => isset( $floor_plan['image_url'] ) ? $floor_plan['image_url'] : '',
+			'prompt' => sprintf( '%s floor plan: %s', $building_type, $requirements ),
+			'floor_plan' => $floor_plan,
+			'requirements' => $requirements,
 			'building_type' => $building_type,
-			'total_area'    => $total_area,
-			'num_floors'    => $num_floors,
-			'style'         => $style,
-			'format'        => $output_format,
-			'message'       => sprintf(
+			'total_area' => $total_area,
+			'num_floors' => $num_floors,
+			'style' => $style,
+			'format' => $output_format,
+			'text' => sprintf(
 				/* translators: %s: building type */
 				__( 'Successfully generated %s floor plan.', 'mcp-ai-wpoos-pro' ),
 				$building_type
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
@@ -271,16 +277,16 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 		// Mock implementation - real version would parse AI response and convert to requested format.
 		return array(
 			'format' => $output_format,
-			'data'   => array(
-				'rooms'      => array(),
+			'data' => array(
+				'rooms' => array(),
 				'dimensions' => array(),
-				'walls'      => array(),
-				'doors'      => array(),
-				'windows'    => array(),
+				'walls' => array(),
+				'doors' => array(),
+				'windows' => array(),
 			),
 			'metadata' => array(
 				'generated_at' => current_time( 'mysql' ),
-				'version'      => '1.0',
+				'version' => '1.0',
 			),
 		);
 	}
