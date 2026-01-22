@@ -35,6 +35,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$this->ajax_handlers = $ajax_handlers ?? wp_mcp_ai_container()->get( 'admin.ajax_handlers' );
 
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
+			add_action( 'admin_menu', array( $this, 'reorder_main_menu' ), 999 );
 			add_action( 'admin_init', array( $this, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 			add_action( 'admin_post_wp_mcp_ai_save_settings', array( $this, 'handle_save_settings' ) );
@@ -113,6 +114,74 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				self::PAGE_SLUG,
 				array( $this, 'render_dashboard' )
 			);
+		}
+
+	/**
+	 * Reorder submenu items to ensure proper menu order.
+	 *
+	 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
+	 * This method reorganizes the submenu items under the main NV oOS menu to maintain
+	 * a logical and consistent navigation structure.
+	 *
+	 * @since 2.1.0
+	 * @return void
+	 */
+		public function reorder_main_menu() {
+			global $submenu;
+
+			// Only reorder if the main NV oOS submenu exists.
+			if ( ! isset( $submenu[ self::PAGE_SLUG ] ) || ! is_array( $submenu[ self::PAGE_SLUG ] ) ) {
+				return;
+			}
+
+			$main_submenu = $submenu[ self::PAGE_SLUG ];
+
+			// Define desired order: General Settings (0), Orchestration (10), Task Plans (20).
+			$ordered_items = array();
+			$general_settings_item = null;
+			$orchestration_item = null;
+			$task_plans_item = null;
+			$other_items = array();
+
+			// Categorize menu items.
+			foreach ( $main_submenu as $item ) {
+				// General Settings (the main dashboard page).
+				if ( isset( $item[2] ) && self::PAGE_SLUG === $item[2] ) {
+					$general_settings_item = $item;
+				} elseif ( isset( $item[2] ) && false !== strpos( $item[2], 'mcp-ai-orchestration' ) ) {
+					// Orchestration Dashboard.
+					$orchestration_item = $item;
+				} elseif ( isset( $item[2] ) && false !== strpos( $item[2], 'post_type=mcp_task_plan' ) ) {
+					// Task Plans CPT.
+					$task_plans_item = $item;
+				} else {
+					// Other items.
+					$other_items[] = $item;
+				}
+			}
+
+			// Rebuild menu in desired order.
+			if ( $general_settings_item ) {
+				$ordered_items[0] = $general_settings_item;
+			}
+			if ( $orchestration_item ) {
+				$ordered_items[10] = $orchestration_item;
+			}
+			if ( $task_plans_item ) {
+				$ordered_items[20] = $task_plans_item;
+			}
+
+			// Add other items after.
+			$position = 30;
+			foreach ( $other_items as $item ) {
+				$ordered_items[ $position ] = $item;
+				++$position;
+			}
+
+			// Update global submenu.
+			ksort( $ordered_items );
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Required to reorder admin menu items.
+			$submenu[ self::PAGE_SLUG ] = $ordered_items;
 		}
 
 	/**
