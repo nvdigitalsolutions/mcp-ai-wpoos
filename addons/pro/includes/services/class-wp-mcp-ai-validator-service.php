@@ -312,10 +312,17 @@ class WP_MCP_AI_Validator_Service {
 	/**
 	 * Check if email is from a disposable domain.
 	 *
+	 * Uses a basic list of common disposable email domains.
+	 * For production use, consider integrating with a disposable email API
+	 * or maintaining a more comprehensive list.
+	 *
 	 * @param string $email Email address.
 	 * @return bool True if disposable.
 	 */
 	public function is_disposable_email( $email ) {
+		// Basic list of common disposable domains.
+		// This should be expanded or integrated with a service like
+		// mailcheck.ai, kickbox.io, or emaillistverify.com for production.
 		$disposable_domains = array(
 			'tempmail.com',
 			'10minutemail.com',
@@ -323,11 +330,15 @@ class WP_MCP_AI_Validator_Service {
 			'mailinator.com',
 			'throwaway.email',
 			'temp-mail.org',
+			'yopmail.com',
+			'maildrop.cc',
+			'sharklasers.com',
+			'grr.la',
 		);
 
 		$domain = substr( strrchr( $email, '@' ), 1 );
 
-		// Allow filtering the list.
+		// Allow filtering the list - recommended to hook into this for comprehensive coverage.
 		$disposable_domains = apply_filters( 'wp_mcp_ai_disposable_email_domains', $disposable_domains );
 
 		return in_array( strtolower( $domain ), array_map( 'strtolower', $disposable_domains ), true );

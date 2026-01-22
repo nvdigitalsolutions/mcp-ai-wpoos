@@ -13,12 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * CRM Contact Management Tool.
  *
- * Provides complete contact lifecycle management:
+ * Provides contact management operations:
  * - Create, read, update, delete contacts
  * - List and search contacts
  * - Validate contact data (email, phone)
- * - Track contact activity
- * - Manage tags and custom fields
+ *
+ * NOTE: This is a minimal stub implementation. Full CRUD operations
+ * will be implemented in a future update with complete database integration,
+ * validation, and activity tracking.
  *
  * @since 1.1.0
  */

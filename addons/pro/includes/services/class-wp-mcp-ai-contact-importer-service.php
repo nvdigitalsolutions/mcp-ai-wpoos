@@ -384,15 +384,17 @@ class WP_MCP_AI_Contact_Importer_Service {
 	 */
 	private function find_existing_contact( $email, $post_type ) {
 		$query = new WP_Query( array(
-			'post_type'  => $post_type,
-			'meta_query' => array(
+			'post_type'      => $post_type,
+			'meta_query'     => array(
 				array(
-					'key'   => 'email',
-					'value' => $email,
+					'key'     => 'email',
+					'value'   => $email,
+					'compare' => '=',
 				),
 			),
 			'posts_per_page' => 1,
 			'fields'         => 'ids',
+			'no_found_rows'  => true, // Performance optimization - we don't need pagination data.
 		) );
 
 		if ( $query->have_posts() ) {
@@ -429,11 +431,35 @@ class WP_MCP_AI_Contact_Importer_Service {
 			return $post_id;
 		}
 
-		// Save contact meta.
+		// Require validator service for proper sanitization.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-validator-service.php';
+		$validator = new WP_MCP_AI_Validator_Service();
+
+		// Save contact meta with proper sanitization based on field type.
+		$field_types = array(
+			'email'      => 'email',
+			'phone'      => 'phone',
+			'website'    => 'url',
+			'address'    => 'textarea',
+			'first_name' => 'text',
+			'last_name'  => 'text',
+			'company'    => 'text',
+			'city'       => 'text',
+			'state'      => 'text',
+			'zip'        => 'text',
+			'country'    => 'text',
+		);
+
 		foreach ( $contact_data as $key => $value ) {
-			if ( 'ID' !== $key ) {
-				update_post_meta( $post_id, $key, sanitize_text_field( $value ) );
+			if ( 'ID' === $key ) {
+				continue;
 			}
+
+			// Determine sanitization type.
+			$sanitize_type = isset( $field_types[ $key ] ) ? $field_types[ $key ] : 'text';
+			$sanitized_value = $validator->sanitize_input( $value, $sanitize_type );
+
+			update_post_meta( $post_id, $key, $sanitized_value );
 		}
 
 		return $post_id;
