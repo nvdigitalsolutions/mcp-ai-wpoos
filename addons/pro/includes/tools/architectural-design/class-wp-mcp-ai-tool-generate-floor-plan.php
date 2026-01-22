@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate floor plans using AI.
  */
 class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -154,8 +156,10 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Return structured data for LLM.
-		return array(
+		$result = array(
 			'success'       => true,
+			'url'           => isset( $floor_plan['image_url'] ) ? $floor_plan['image_url'] : '',
+			'prompt'        => sprintf( '%s floor plan: %s', $building_type, $requirements ),
 			'floor_plan'    => $floor_plan,
 			'requirements'  => $requirements,
 			'building_type' => $building_type,
@@ -163,12 +167,14 @@ class WP_MCP_AI_Tool_Generate_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP
 			'num_floors'    => $num_floors,
 			'style'         => $style,
 			'format'        => $output_format,
-			'message'       => sprintf(
+			'text'          => sprintf(
 				/* translators: %s: building type */
 				__( 'Successfully generated %s floor plan.', 'mcp-ai-wpoos-pro' ),
 				$building_type
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

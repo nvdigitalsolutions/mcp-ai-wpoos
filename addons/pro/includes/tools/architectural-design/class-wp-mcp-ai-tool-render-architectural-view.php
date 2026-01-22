@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Render architectural views.
  */
 class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -150,8 +152,12 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Return structured rendering data.
-		return array(
+		$result = array(
 			'success'    => true,
+			'url'        => $rendering['image_url'],
+			'prompt'     => sprintf( 'Architectural view: %s angle, %s, %s weather', $view_angle, $time_of_day, $weather ),
+			'width'      => isset( $rendering['dimensions']['width'] ) ? $rendering['dimensions']['width'] : null,
+			'height'     => isset( $rendering['dimensions']['height'] ) ? $rendering['dimensions']['height'] : null,
 			'rendering'  => $rendering,
 			'settings'   => array(
 				'view_angle'  => $view_angle,
@@ -160,8 +166,10 @@ class WP_MCP_AI_Tool_Render_Architectural_View implements WP_MCP_AI_Tool_Interfa
 				'quality'     => $quality,
 				'resolution'  => $resolution,
 			),
-			'message'    => __( 'Successfully rendered architectural view.', 'mcp-ai-wpoos-pro' ),
+			'text'       => __( 'Successfully rendered architectural view.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

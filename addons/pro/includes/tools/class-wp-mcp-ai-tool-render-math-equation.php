@@ -10,6 +10,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-math-response.php';
+
 /**
  * Render LaTeX math equations using KaTeX.
  *
@@ -23,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @since 1.1.0
  */
 class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Math_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -207,15 +210,18 @@ class WP_MCP_AI_Tool_Render_Math_Equation implements WP_MCP_AI_Tool_Interface, W
 			$this->associate_with_quiz( $quiz_id, $latex, $result['html'] );
 		}
 
-		return array(
+		$response = array(
 			'success'     => true,
-			'message'     => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
+			'text'        => __( 'Math equation rendered successfully with KaTeX.', 'mcp-ai-wpoos-pro' ),
 			'latex'       => $latex,
 			'html'        => $result['html'],
 			'mathml'      => isset( $result['mathml'] ) ? $result['mathml'] : null,
 			'render_time' => round( $render_time * 1000, 2 ) . 'ms',
 			'cached'      => false,
+			'display_mode' => isset( $arguments['display_mode'] ) ? (bool) $arguments['display_mode'] : false,
 		);
+
+		return $this->add_math_html_to_response( $response );
 	}
 
 	/**

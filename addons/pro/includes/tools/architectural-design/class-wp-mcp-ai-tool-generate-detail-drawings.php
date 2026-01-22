@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate detail drawings.
  */
 class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -133,17 +135,21 @@ class WP_MCP_AI_Tool_Generate_Detail_Drawings implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Return structured detail data.
-		return array(
+		$result = array(
 			'success'        => true,
+			'url'            => isset( $detail['image_url'] ) ? $detail['image_url'] : '',
+			'prompt'         => sprintf( '%s detail drawing at %s scale', str_replace( '_', ' ', $component_type ), $scale ),
 			'detail'         => $detail,
 			'component_type' => $component_type,
 			'scale'          => $scale,
-			'message'        => sprintf(
+			'text'           => sprintf(
 				/* translators: %s: component type */
 				__( 'Successfully generated %s detail drawing.', 'mcp-ai-wpoos-pro' ),
 				str_replace( '_', ' ', $component_type )
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

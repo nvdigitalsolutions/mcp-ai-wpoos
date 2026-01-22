@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Create floor plan variations using AI.
  */
 class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -139,18 +141,22 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Return structured variations data.
-		return array(
+		$result = array(
 			'success'           => true,
+			'url'               => isset( $variations[0]['floor_plan']['image_url'] ) ? $variations[0]['floor_plan']['image_url'] : '',
+			'prompt'            => sprintf( 'Floor plan variations: %s', $base_requirements ),
 			'variations'        => $variations,
 			'num_variations'    => count( $variations ),
 			'base_requirements' => $base_requirements,
 			'variation_focus'   => $variation_focus,
-			'message'           => sprintf(
+			'text'              => sprintf(
 				/* translators: %d: number of variations */
 				_n( 'Generated %d floor plan variation.', 'Generated %d floor plan variations.', count( $variations ), 'mcp-ai-wpoos-pro' ),
 				count( $variations )
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

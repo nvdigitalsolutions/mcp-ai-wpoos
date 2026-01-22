@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Convert sketches to floor plans using AI vision.
  */
 class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -149,8 +151,10 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Return structured conversion results.
-		return array(
+		$result = array(
 			'success'       => true,
+			'url'           => isset( $floor_plan['image_url'] ) ? $floor_plan['image_url'] : '',
+			'prompt'        => 'Converted sketch to CAD-ready floor plan',
 			'floor_plan'    => $floor_plan,
 			'source_image'  => $sketch_image,
 			'scale'         => $scale,
@@ -161,8 +165,10 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 				'doors'   => 4,
 				'windows' => 6,
 			),
-			'message'       => __( 'Successfully converted sketch to floor plan.', 'mcp-ai-wpoos-pro' ),
+			'text'          => __( 'Successfully converted sketch to floor plan.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

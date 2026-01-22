@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate construction drawings.
  */
 class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -141,8 +143,10 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 		}
 
 		// Return structured drawing data.
-		return array(
+		$result = array(
 			'success'   => true,
+			'url'       => isset( $drawings[0]['image_url'] ) ? $drawings[0]['image_url'] : '',
+			'prompt'    => sprintf( 'Construction drawings: %s', implode( ', ', $drawing_types ) ),
 			'drawings'  => $drawings,
 			'count'     => count( $drawings ),
 			'settings'  => array(
@@ -150,12 +154,14 @@ class WP_MCP_AI_Tool_Generate_Construction_Drawings implements WP_MCP_AI_Tool_In
 				'has_dimensions'     => $include_dimensions,
 				'has_notes'          => $include_notes,
 			),
-			'message'   => sprintf(
+			'text'      => sprintf(
 				/* translators: %d: number of drawings */
 				_n( 'Generated %d construction drawing.', 'Generated %d construction drawings.', count( $drawings ), 'mcp-ai-wpoos-pro' ),
 				count( $drawings )
 			),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

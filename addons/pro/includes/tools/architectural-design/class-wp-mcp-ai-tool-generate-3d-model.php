@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Generate 3D building models.
  */
 class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -145,8 +147,10 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		// Return structured 3D model data.
-		return array(
+		$result = array(
 			'success'      => true,
+			'url'          => isset( $model_data['preview_url'] ) ? $model_data['preview_url'] : '',
+			'prompt'       => sprintf( '3D model with %s roof, %s wall height', $roof_type, $wall_height ),
 			'model'        => $model_data,
 			'format'       => $output_format,
 			'specifications' => array(
@@ -154,8 +158,10 @@ class WP_MCP_AI_Tool_Generate_3d_Model implements WP_MCP_AI_Tool_Interface, WP_M
 				'roof_type'    => $roof_type,
 				'has_furniture' => $include_furniture,
 			),
-			'message'      => __( 'Successfully generated 3D building model.', 'mcp-ai-wpoos-pro' ),
+			'text'         => __( 'Successfully generated 3D building model.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**

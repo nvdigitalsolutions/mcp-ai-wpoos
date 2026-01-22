@@ -15,11 +15,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
 /**
  * Create walkthrough animations.
  */
 class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+	use WP_MCP_AI_Tool_Video_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -151,8 +153,12 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Return structured animation data.
-		return array(
+		$result = array(
 			'success'    => true,
+			'url'        => $animation['video_url'],
+			'prompt'     => sprintf( 'Walkthrough animation: %d seconds, %s speed', $duration, $camera_speed ),
+			'duration'   => $duration,
+			'format'     => $output_format,
 			'animation'  => $animation,
 			'settings'   => array(
 				'duration'         => $duration,
@@ -161,8 +167,10 @@ class WP_MCP_AI_Tool_Create_Walkthrough_Animation implements WP_MCP_AI_Tool_Inte
 				'format'           => $output_format,
 				'resolution'       => $resolution,
 			),
-			'message'    => __( 'Successfully created walkthrough animation.', 'mcp-ai-wpoos-pro' ),
+			'text'       => __( 'Successfully created walkthrough animation.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		return $this->add_video_html_to_response( $result );
 	}
 
 	/**
