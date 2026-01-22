@@ -115,3 +115,12 @@ function wp_mcp_ai_load_orchestration_dashboard() {
 	new WP_MCP_AI_Orchestration_Dashboard();
 }
 add_action( 'admin_init', 'wp_mcp_ai_load_orchestration_dashboard' );
+
+/**
+ * Initialize task plan seeder
+ */
+function wp_mcp_ai_init_task_plan_seeder() {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-task-plan-seeder.php';
+	WP_MCP_AI_Task_Plan_Seeder::init();
+}
+add_action( 'init', 'wp_mcp_ai_init_task_plan_seeder', 25 );
