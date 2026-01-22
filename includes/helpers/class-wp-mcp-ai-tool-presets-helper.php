@@ -930,6 +930,93 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			),
 
 			// =================================================================
+			// PROJECT MANAGEMENT & ORCHESTRATION
+			// =================================================================
+
+			'autonomous_orchestration' => array(
+				'name'        => __( '🎯 Autonomous Orchestration', 'mcp-ai-wpoos' ),
+				'description' => __( 'Task planning, autonomous sessions, health monitoring, and capacity management for continuous AI workflow loops', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Core orchestration tools (Base plugin).
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'manage_autonomous_session',
+					'detect_completion_indicators',
+					'check_exit_conditions',
+					'analyze_loop_health',
+					'get_session_status',
+					'calculate_orchestration_capacity',
+					// Template management (Pro addon).
+					'create_template',
+					'instantiate_template',
+					'list_templates',
+					'seed_template_library',
+					// Research enhancement (Pro addon).
+					'aggregate_research_data',
+					'extract_structured_data',
+					'convert_html_to_markdown',
+					'generate_research_report',
+					'analyze_data_patterns',
+					'verify_information',
+					// Supporting tools.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'create_post',
+					'save_post',
+				),
+			),
+
+			'task_planning' => array(
+				'name'        => __( '📋 Task Planning', 'mcp-ai-wpoos' ),
+				'description' => __( 'Create and manage task plans with progress tracking', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					'create_task_plan',
+					'update_task_plan',
+					'get_task_plan',
+					'create_template',
+					'instantiate_template',
+					'list_templates',
+				),
+			),
+
+			'research_automation' => array(
+				'name'        => __( '🔍 Research Automation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Multi-source research with aggregation, verification, and professional report generation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Research enhancement.
+					'aggregate_research_data',
+					'extract_structured_data',
+					'convert_html_to_markdown',
+					'generate_research_report',
+					'analyze_data_patterns',
+					'verify_information',
+					// Core research.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					// Data collection.
+					'search_drive',
+					'search_gmail',
+					'get_jetengine_items',
+				),
+			),
+
+			'workflow_monitoring' => array(
+				'name'        => __( '📊 Workflow Monitoring', 'mcp-ai-wpoos' ),
+				'description' => __( 'Monitor autonomous sessions, health status, and system capacity', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					'manage_autonomous_session',
+					'get_session_status',
+					'analyze_loop_health',
+					'calculate_orchestration_capacity',
+					'detect_completion_indicators',
+					'check_exit_conditions',
+				),
+			),
+
 			// NEW PRO TOOLKIT PRESETS (2026)
 			// =================================================================
 

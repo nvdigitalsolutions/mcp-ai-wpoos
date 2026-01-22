@@ -1,0 +1,280 @@
+/**
+ * Orchestration Dashboard Styles
+ */
+
+.wp-mcp-ai-orchestration-dashboard {
+	max-width: 1400px;
+}
+
+.wp-mcp-ai-orchestration-dashboard h1 {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-orchestration-dashboard .description {
+	margin-bottom: 30px;
+	color: #646970;
+}
+
+/* Overview Cards */
+.orchestration-overview {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 20px;
+	margin-bottom: 30px;
+}
+
+.overview-card {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.overview-card .card-icon {
+	font-size: 36px;
+	line-height: 1;
+}
+
+.overview-card .card-content {
+	flex: 1;
+}
+
+.overview-card .card-value {
+	font-size: 28px;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1.2;
+}
+
+.overview-card .card-label {
+	font-size: 13px;
+	color: #646970;
+	margin-top: 4px;
+}
+
+/* Sections */
+.orchestration-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+	padding: 20px;
+	margin-bottom: 20px;
+	box-shadow: 0 1px 1px rgba(0,0,0,0.04);
+}
+
+.orchestration-section h2 {
+	margin-top: 0;
+	margin-bottom: 15px;
+	font-size: 18px;
+	border-bottom: 1px solid #dcdcde;
+	padding-bottom: 10px;
+}
+
+/* Capacity Metrics */
+.capacity-metrics {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 20px;
+}
+
+.capacity-item {
+	display: flex;
+	justify-content: space-between;
+	padding: 10px;
+	background: #f6f7f7;
+	border-radius: 3px;
+}
+
+.capacity-item .label {
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.capacity-item .value {
+	color: #2271b1;
+	font-weight: 500;
+}
+
+/* Status Badges */
+.status-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.status-badge.status-active {
+	background: #d5e8d4;
+	color: #2c662d;
+}
+
+.status-badge.status-paused {
+	background: #fff4ce;
+	color: #946800;
+}
+
+.status-badge.status-completed {
+	background: #e5e5e5;
+	color: #3c434a;
+}
+
+.status-badge.status-stopped {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.status-badge.status-critical {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.status-badge.status-warning {
+	background: #fff4ce;
+	color: #946800;
+}
+
+.status-badge.status-moderate {
+	background: #d5e8d4;
+	color: #2c662d;
+}
+
+.status-badge.status-light,
+.status-badge.status-idle {
+	background: #e5e5e5;
+	color: #3c434a;
+}
+
+/* Health Badges */
+.health-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.health-badge.health-healthy {
+	background: #d5e8d4;
+	color: #2c662d;
+}
+
+.health-badge.health-warning {
+	background: #fff4ce;
+	color: #946800;
+}
+
+.health-badge.health-critical {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+/* Progress Bar */
+.progress-bar {
+	width: 100%;
+	height: 20px;
+	background: #f0f0f1;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #2271b1, #135e96);
+	transition: width 0.3s ease;
+}
+
+/* Sessions Table */
+.sessions-table-wrapper {
+	overflow-x: auto;
+}
+
+#sessions-table {
+	margin-top: 0;
+}
+
+#sessions-table th {
+	font-weight: 600;
+}
+
+#sessions-table td {
+	vertical-align: middle;
+}
+
+#sessions-table code {
+	background: #f6f7f7;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 11px;
+}
+
+#sessions-table .button-small {
+	margin-right: 5px;
+	padding: 2px 8px;
+	font-size: 11px;
+	line-height: 1.5;
+}
+
+/* Activity Feed */
+.activity-feed {
+	max-height: 400px;
+	overflow-y: auto;
+}
+
+.activity-item {
+	padding: 10px;
+	border-bottom: 1px solid #f0f0f1;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.activity-item:last-child {
+	border-bottom: none;
+}
+
+.activity-time {
+	font-size: 12px;
+	color: #646970;
+	min-width: 150px;
+}
+
+.activity-message {
+	flex: 1;
+	padding-left: 15px;
+}
+
+.activity-item.activity-error {
+	background: #fff4ce;
+}
+
+.activity-item.activity-success {
+	background: #d5e8d4;
+}
+
+.no-activity,
+.activity-loading {
+	text-align: center;
+	padding: 20px;
+	color: #646970;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.orchestration-overview {
+		grid-template-columns: 1fr;
+	}
+	
+	.capacity-metrics {
+		grid-template-columns: 1fr;
+	}
+	
+	.overview-card .card-value {
+		font-size: 24px;
+	}
+}

@@ -269,6 +269,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// Load Project Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/project-management-init.php';
 
+		// Load Ralph Orchestration CCT schemas (Pro feature).
+		if ( function_exists( 'jet_engine' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-autonomous-sessions-cct.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-plans-cct.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-execution-history-cct.php';
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+		}
+
+		// NOTE: Orchestration Dashboard moved to base plugin (includes/admin/class-wp-mcp-ai-orchestration-dashboard.php)
+		// It's accessible at NV oOS → Orchestration for all users.
+
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 
@@ -430,6 +441,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Tool_Delete_Event'                 => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-delete-event.php',
 			'WP_MCP_AI_Tool_List_Events'                  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-list-events.php',
 			'WP_MCP_AI_Tool_Get_Calendar_View'            => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-calendar-view.php',
+			// NOTE: Core orchestration tools (9 tools) moved to base plugin in includes/orchestration-init.php
+			// This includes: create/update/get task plan, manage sessions, detect completion, check exit conditions,
+			// analyze loop health, get session status, calculate capacity (Little's Law).
+			// Research Enhancement tools (Ralph pattern - Phase 2 - Pro only).
+			'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
+			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
+			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
+			'WP_MCP_AI_Pro_Tool_Generate_Research_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-research-report.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
+			'WP_MCP_AI_Pro_Tool_Verify_Information'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-verify-information.php',
+			// Template Management tools (Ralph pattern - Phase 3).
+			'WP_MCP_AI_Pro_Tool_Create_Template'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php',
+			'WP_MCP_AI_Pro_Tool_Instantiate_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-instantiate-template.php',
+			'WP_MCP_AI_Pro_Tool_List_Templates'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-templates.php',
+			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Product Actualization tool.
