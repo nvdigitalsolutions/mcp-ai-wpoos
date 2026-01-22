@@ -219,9 +219,18 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Parse left side (very simplified).
 		// Look for patterns like "2x + 5" or "x - 3".
+		// Handle implicit coefficient of 1 for bare variable.
 		$pattern = '/([+-]?\d*\.?\d*)\s*' . preg_quote( $var, '/' ) . '\s*([+-]?\d+\.?\d*)?/';
 		if ( preg_match( $pattern, $left, $matches ) ) {
-			$a = isset( $matches[1] ) && '' !== $matches[1] ? floatval( $matches[1] ) : 1;
+			$a_str = isset( $matches[1] ) ? trim( $matches[1] ) : '';
+			// Handle empty coefficient (implicit 1), explicit coefficient, or negative sign.
+			if ( '' === $a_str || '+' === $a_str ) {
+				$a = 1;
+			} elseif ( '-' === $a_str ) {
+				$a = -1;
+			} else {
+				$a = floatval( $a_str );
+			}
 			$b = isset( $matches[2] ) && '' !== $matches[2] ? floatval( $matches[2] ) : 0;
 
 			if ( 0 === $a ) {

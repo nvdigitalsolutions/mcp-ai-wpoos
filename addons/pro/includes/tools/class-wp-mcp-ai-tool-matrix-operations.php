@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Matrix_Operations implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @param float $num Number to format.
 	 * @return string Formatted number.
 	 */
-	private function format_number( $num ) {
+	public function format_number( $num ) {
 		if ( is_float( $num ) && fmod( $num, 1 ) !== 0.0 ) {
 			return number_format( $num, 2, '.', '' );
 		}

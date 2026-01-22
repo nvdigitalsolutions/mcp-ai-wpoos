@@ -220,7 +220,10 @@ class WP_MCP_AI_Tool_Export_Calendar_ICS implements WP_MCP_AI_Tool_Interface, WP
 			// Calculate file size safely.
 			$file_size = 0;
 			if ( isset( $file_info['path'] ) && file_exists( $file_info['path'] ) ) {
-				$file_size = filesize( $file_info['path'] );
+				$size_result = filesize( $file_info['path'] );
+				if ( false !== $size_result ) {
+					$file_size = $size_result;
+				}
 			}
 
 			$response = array(
