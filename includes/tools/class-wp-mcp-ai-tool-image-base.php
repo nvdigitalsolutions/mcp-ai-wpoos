@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Abstract base class for image manipulation tools.
@@ -28,6 +29,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * Get allowed image MIME types.
@@ -702,6 +704,41 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	}
 
 	/**
+	 * Format image attachment response with rendered HTML.
+	 *
+	 * Wraps save_as_attachment result and adds rendered IMG tag to the response.
+	 * Child classes should call this after save_as_attachment to ensure images
+	 * are displayed inline in chat UI.
+	 *
+	 * @param array|WP_Error $save_result Result from save_as_attachment.
+	 * @param array          $arguments   Tool arguments (may contain prompt for alt text).
+	 * @return array|WP_Error Formatted response with rendered HTML or error.
+	 */
+	protected function format_image_response( $save_result, array $arguments = array() ) {
+		if ( is_wp_error( $save_result ) ) {
+			return $save_result;
+		}
+
+		// Add text field for LLM if not present.
+		if ( empty( $save_result['text'] ) ) {
+			$operation = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : 'processed';
+			$save_result['text'] = sprintf(
+				/* translators: %s: operation name */
+				__( 'Successfully %s image.', 'mcp-ai-wpoos' ),
+				$operation
+			);
+		}
+
+		// Add prompt field for alt text if present in arguments.
+		if ( ! empty( $arguments['prompt'] ) && empty( $save_result['prompt'] ) ) {
+			$save_result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $save_result );
+	}
+
+	/**
 	 * Generate attachment title based on operation.
 	 *
 	 * @param string $operation Operation name.
@@ -721,6 +758,36 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		/* translators: %s: operation name */
 		return sprintf( __( '%s Image', 'mcp-ai-wpoos' ), ucfirst( $operation ) );
+	}
+
+	/**
+	 * Format attachment response with rendered image HTML.
+	 *
+	 * Takes an attachment ID and formats it as a complete response with rendered IMG tag.
+	 * This is a convenience method for pro tools that use a simpler save flow.
+	 *
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $arguments     Optional. Tool arguments (may contain prompt for alt text).
+	 * @return array Formatted response with rendered HTML.
+	 */
+	protected function format_attachment_response( $attachment_id, array $arguments = array() ) {
+		$url = wp_get_attachment_url( $attachment_id );
+		$attachment = get_post( $attachment_id );
+		
+		$result = array(
+			'attachment_id' => (int) $attachment_id,
+			'url'           => $url,
+			'title'         => $attachment ? $attachment->post_title : '',
+			'text'          => __( 'Image processed successfully.', 'mcp-ai-wpoos' ),
+		);
+
+		// Add prompt for alt text if provided.
+		if ( ! empty( $arguments['prompt'] ) ) {
+			$result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
