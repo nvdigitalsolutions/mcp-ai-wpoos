@@ -137,6 +137,12 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 			// Financial Planner widgets (2).
 			'class-wp-mcp-ai-financial-budget-widget.php',
 			'class-wp-mcp-ai-financial-goals-widget.php',
+			// Multilingual widgets (2).
+			'class-wp-mcp-ai-multilingual-translation-memory-widget.php',
+			'class-wp-mcp-ai-multilingual-glossaries-widget.php',
+			// AI Tool Builder widgets (2).
+			'class-wp-mcp-ai-ai-tool-builder-templates-widget.php',
+			'class-wp-mcp-ai-ai-tool-builder-schemas-widget.php',
 		);
 
 		// Load and register each widget.
@@ -215,6 +221,10 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 			'mcp_dj_packages',
 			'mcp_financial_budget',
 			'mcp_financial_goals',
+			'mcp_multilingual_translation_memory',
+			'mcp_multilingual_glossaries',
+			'mcp_ai_tool_builder_templates',
+			'mcp_ai_tool_builder_schemas',
 		);
 
 		foreach ( $shortcode_tags as $tag ) {
@@ -239,6 +249,10 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 				'mcp-ai-toolkits/dj-packages',
 				'mcp-ai-toolkits/financial-budget',
 				'mcp-ai-toolkits/financial-goals',
+				'mcp-ai-toolkits/multilingual-translation-memory',
+				'mcp-ai-toolkits/multilingual-glossaries',
+				'mcp-ai-toolkits/ai-tool-builder-templates',
+				'mcp-ai-toolkits/ai-tool-builder-schemas',
 			);
 
 			foreach ( $block_types as $block_type ) {
