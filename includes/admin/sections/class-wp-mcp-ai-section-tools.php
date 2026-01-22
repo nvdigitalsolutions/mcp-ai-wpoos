@@ -888,8 +888,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				}
 			}
 
-			$max_toolkits   = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', 5 );
-			$limit_reached  = $enabled_count >= $max_toolkits;
+			// Check environment type - disable limit in development/local environments.
+		$environment_type = function_exists( 'wp_get_environment_type' ) ? wp_get_environment_type() : 'production';
+		$default_limit    = ( 'local' === $environment_type || 'development' === $environment_type ) ? 999 : 5;
+		$max_toolkits     = apply_filters( 'wp_mcp_ai_max_active_pro_toolkits', $default_limit );
+		$limit_reached    = $enabled_count >= $max_toolkits;
 			$counter_class  = '';
 			$counter_status = '';
 

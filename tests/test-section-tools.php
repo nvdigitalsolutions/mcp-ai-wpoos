@@ -500,4 +500,91 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'remove.bg API Key', $fields['removebg_api_key']['label'] );
 		$this->assertStringContainsString( 'remove.bg', $fields['removebg_api_key']['description'] );
 	}
+
+	/**
+	 * Test that toolkit limit is higher in development/local environments.
+	 */
+	public function test_toolkit_limit_development_environment() {
+		// Mock wp_get_environment_type to return 'local'.
+		add_filter(
+			'wp_get_environment_type',
+			function () {
+				return 'local';
+			}
+		);
+
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string to simulate features subtab.
+		$_GET['subtab'] = 'features';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// In development/local environment, the limit should be 999.
+		$this->assertStringContainsString( 'of 999 pro toolkits enabled', $output, 'Should show 999 toolkit limit in local environment' );
+	}
+
+	/**
+	 * Test that toolkit limit defaults to 5 in production environment.
+	 */
+	public function test_toolkit_limit_production_environment() {
+		// Mock wp_get_environment_type to return 'production'.
+		add_filter(
+			'wp_get_environment_type',
+			function () {
+				return 'production';
+			}
+		);
+
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string to simulate features subtab.
+		$_GET['subtab'] = 'features';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// In production environment, the limit should be 5.
+		$this->assertStringContainsString( 'of 5 pro toolkits enabled', $output, 'Should show 5 toolkit limit in production environment' );
+	}
+
+	/**
+	 * Test that toolkit limit filter still works and can override the default.
+	 */
+	public function test_toolkit_limit_filter_override() {
+		// Add filter to override the limit to 10.
+		add_filter(
+			'wp_mcp_ai_max_active_pro_toolkits',
+			function ( $limit ) {
+				return 10;
+			}
+		);
+
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string to simulate features subtab.
+		$_GET['subtab'] = 'features';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// The filter should override the default, so it should show 10.
+		$this->assertStringContainsString( 'of 10 pro toolkits enabled', $output, 'Should show 10 toolkit limit when filter overrides' );
+	}
 }
