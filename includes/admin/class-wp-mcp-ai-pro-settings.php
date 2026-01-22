@@ -1074,7 +1074,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						'wpallimport'    => __( 'WP All Import', 'mcp-ai-wpoos' ),
 						'wpallexport'    => __( 'WP All Export', 'mcp-ai-wpoos' ),
 					);
-					
+
 					foreach ( $status['integrations'] as $integration => $is_active ) :
 						$display_name = isset( $integration_names[ $integration ] ) ? $integration_names[ $integration ] : ucfirst( $integration );
 						?>
