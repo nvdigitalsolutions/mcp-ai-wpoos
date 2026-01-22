@@ -25,7 +25,7 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 		$this->option_name      = 'wp_mcp_ai_financial_planner_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-financial-planner-toolkit-settings';
 		$this->has_research     = true;
-		$this->has_remote_sites = false;
+		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-money-alt';
 
 		parent::__construct();

@@ -3,6 +3,7 @@
  * Remote Capabilities Loader
  *
  * Central loader for all toolkit remote capabilities.
+ * Follows WordPress Coding Standards and security best practices.
  *
  * @package WP_MCP_AI_Pro
  * @since 2.0.0
@@ -14,11 +15,15 @@ exit;
 
 /**
  * Loads and provides access to remote capabilities for all toolkits.
+ *
+ * @since 2.0.0
  */
 class WP_MCP_AI_Remote_Capabilities_Loader {
 
 /**
  * Get remote capabilities for a specific toolkit.
+ *
+ * @since 2.0.0
  *
  * @param string $toolkit_slug Toolkit slug (e.g., 'ecommerce', 'social_media').
  * @return array Array of capability descriptions.
@@ -82,27 +87,55 @@ break;
 
 case 'dj_management':
 $capabilities = array(
-__( 'Share equipment inventory across sites', 'mcp-ai-wpoos-pro' ),
-__( 'Sync playlists between venues', 'mcp-ai-wpoos-pro' ),
-__( 'Cross-site booking and event management', 'mcp-ai-wpoos-pro' ),
-__( 'Network-wide equipment availability tracking', 'mcp-ai-wpoos-pro' ),
-__( 'Share packages and pricing across locations', 'mcp-ai-wpoos-pro' ),
-);
-break;
+				__( 'Share equipment inventory across sites', 'mcp-ai-wpoos-pro' ),
+				__( 'Sync playlists between venues', 'mcp-ai-wpoos-pro' ),
+				__( 'Cross-site booking and event management', 'mcp-ai-wpoos-pro' ),
+				__( 'Network-wide equipment availability tracking', 'mcp-ai-wpoos-pro' ),
+				__( 'Share packages and pricing across locations', 'mcp-ai-wpoos-pro' ),
+			);
+			break;
 
-case 'media_toolkit':
-case 'image_production':
-case 'video_production':
-$capabilities = array(
-__( 'Share media libraries across all sites', 'mcp-ai-wpoos-pro' ),
-__( 'Cross-site media synchronization', 'mcp-ai-wpoos-pro' ),
-__( 'Aggregate storage usage and analytics', 'mcp-ai-wpoos-pro' ),
-__( 'Remote media optimization and processing', 'mcp-ai-wpoos-pro' ),
-__( 'Network-wide media search and discovery', 'mcp-ai-wpoos-pro' ),
-);
-break;
-}
+		case 'financial_planner':
+			$capabilities = array(
+				__( 'Share budget categories across multiple sites', 'mcp-ai-wpoos-pro' ),
+				__( 'Sync financial goal templates between sites', 'mcp-ai-wpoos-pro' ),
+				__( 'Aggregate financial data from mesh network', 'mcp-ai-wpoos-pro' ),
+				__( 'Cross-site budget tracking and reporting', 'mcp-ai-wpoos-pro' ),
+				__( 'Network-wide financial health monitoring', 'mcp-ai-wpoos-pro' ),
+			);
+			break;
 
-return apply_filters( "wp_mcp_ai_{$toolkit_slug}_remote_capabilities", $capabilities );
-}
+		case 'ai_tool_builder':
+			$capabilities = array(
+				__( 'Share tool templates across all sites in network', 'mcp-ai-wpoos-pro' ),
+				__( 'Sync parameter schemas between sites', 'mcp-ai-wpoos-pro' ),
+				__( 'Network-wide tool library management', 'mcp-ai-wpoos-pro' ),
+				__( 'Cross-site tool deployment and updates', 'mcp-ai-wpoos-pro' ),
+				__( 'Aggregate tool usage statistics', 'mcp-ai-wpoos-pro' ),
+			);
+			break;
+
+		case 'media_toolkit':
+		case 'image_production':
+		case 'video_production':
+			$capabilities = array(
+				__( 'Share media libraries across all sites', 'mcp-ai-wpoos-pro' ),
+				__( 'Cross-site media synchronization', 'mcp-ai-wpoos-pro' ),
+				__( 'Aggregate storage usage and analytics', 'mcp-ai-wpoos-pro' ),
+				__( 'Remote media optimization and processing', 'mcp-ai-wpoos-pro' ),
+				__( 'Network-wide media search and discovery', 'mcp-ai-wpoos-pro' ),
+			);
+			break;
+		}
+
+		/**
+		 * Filter remote capabilities for a specific toolkit.
+		 *
+		 * @since 2.0.0
+		 *
+		 * @param array  $capabilities Array of capability descriptions.
+		 * @param string $toolkit_slug Toolkit slug.
+		 */
+		return apply_filters( "wp_mcp_ai_{$toolkit_slug}_remote_capabilities", $capabilities, $toolkit_slug );
+	}
 }
