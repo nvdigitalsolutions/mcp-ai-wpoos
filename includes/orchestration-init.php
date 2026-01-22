@@ -76,7 +76,7 @@ function wp_mcp_ai_register_orchestration_tools() {
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 	
 	// Base orchestration tools directory
-	$tools_dir = WP_MCP_AI_PLUGIN_DIR . 'includes/tools/orchestration/';
+	$tools_dir = WP_MCP_AI_PATH . 'includes/tools/orchestration/';
 
 	// Register 9 core orchestration tools
 	$core_tools = array(
@@ -111,7 +111,7 @@ add_action( 'wp_mcp_ai_tools_init', 'wp_mcp_ai_register_orchestration_tools' );
  * Load orchestration dashboard
  */
 function wp_mcp_ai_load_orchestration_dashboard() {
-	require_once WP_MCP_AI_PLUGIN_DIR . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
 	new WP_MCP_AI_Orchestration_Dashboard();
 }
 add_action( 'admin_init', 'wp_mcp_ai_load_orchestration_dashboard' );
