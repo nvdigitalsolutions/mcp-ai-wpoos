@@ -1,8 +1,9 @@
 # Ralph Wiggum Task Orchestration - Quick Reference
 
-**Version:** 1.0.0  
-**Status:** Proposal  
-**Implementation:** Phase 1 (Toolset)
+**Version:** 2.0.0  
+**Status:** Revised Proposal  
+**Implementation:** Pro Addon with CLI Integration  
+**Updated:** 2026-01-22
 
 ## What is Ralph Wiggum?
 
@@ -32,9 +33,20 @@ Exit ONLY when BOTH conditions are true:
 - Prevents API waste (rate limiting)
 - Auto-stops on error cascades
 
-## Implementation in NV oOS
+## Implementation in NV oOS Pro
 
-### Phase 1: Core Toolset (8 New Tools)
+### Revised Approach: CLI Integration + Ralph Patterns
+
+**Key Decision**: After requirement clarification, implementation includes:
+- ✅ Claude Code CLI integration (full Ralph feature set)
+- ✅ GitHub Copilot CLI integration (code assistance)
+- ✅ 13 orchestration tools (expanded from 8)
+- ✅ tmux session monitoring
+- ✅ Pro addon exclusive feature
+
+See [CLI-INTEGRATION-STRATEGY.md](CLI-INTEGRATION-STRATEGY.md) for complete details.
+
+### Phase 1: Core Toolset (13 New Tools)
 
 | Tool | Purpose | Status |
 |------|---------|--------|
@@ -46,8 +58,27 @@ Exit ONLY when BOTH conditions are true:
 | `check_exit_conditions` | Dual-condition exit logic | Proposed |
 | `manage_autonomous_session` | Session lifecycle management | Proposed |
 | `analyze_loop_health` | Monitor for runaway loops | Proposed |
+| `ai_dev_assistant` | **Unified CLI interface (Claude + Copilot)** | Proposed |
+| `get_session_status` | **Real-time session monitoring** | Proposed |
+| `control_session` | **Pause/resume/stop sessions** | Proposed |
+| `import_prd` | **Import requirements from documents** | Proposed |
+| `monitor_tmux` | **Live terminal output streaming** | Proposed |
 
-### Phase 2: Enhanced Orchestration Mode
+### Phase 2: CLI Integration
+
+**Claude Code CLI Manager:**
+- Autonomous development sessions
+- Multi-file editing
+- External project support
+- tmux session monitoring
+
+**GitHub Copilot CLI Manager:**
+- Code suggestions and completions
+- Test generation
+- Code explanations
+- Refactoring assistance
+
+### Phase 3: Enhanced Orchestration Mode
 
 **New Assistant Settings:**
 - ✅ Enable Autonomous Mode
