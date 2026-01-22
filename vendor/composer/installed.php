@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/research-task-management-tools',
-        'version' => 'dev-copilot/research-task-management-tools',
-        'reference' => '6f7bd073cfe244384a3e4e9c9d13722486b61c51',
+        'pretty_version' => 'dev-copilot/run-composer-install',
+        'version' => 'dev-copilot/run-composer-install',
+        'reference' => '9dc61a47a5585af8bbe48fa315584fb626d215e6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/research-task-management-tools',
-            'version' => 'dev-copilot/research-task-management-tools',
-            'reference' => '6f7bd073cfe244384a3e4e9c9d13722486b61c51',
+            'pretty_version' => 'dev-copilot/run-composer-install',
+            'version' => 'dev-copilot/run-composer-install',
+            'reference' => '9dc61a47a5585af8bbe48fa315584fb626d215e6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
