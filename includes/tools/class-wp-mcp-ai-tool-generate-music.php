@@ -13,12 +13,14 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php'
 require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-mubert-music-service.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-audio-response.php';
 
 /**
  * Provides a tool for generating royalty-free background music via Mubert API.
  */
 class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Audio_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -211,7 +213,10 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		 * @param array $arguments Arguments supplied to the tool.
 		 * @param array $context   Execution context supplied to the tool.
 		 */
-		return apply_filters( 'wp_mcp_ai_generate_music_result', $output, $arguments, $context );
+		$output = apply_filters( 'wp_mcp_ai_generate_music_result', $output, $arguments, $context );
+
+		// Add rendered audio HTML to the response for display in chat UI.
+		return $this->add_audio_html_to_response( $output );
 	}
 
 	/**
