@@ -4,7 +4,7 @@
 
 ## Overview
 
-The Pro addon for NV oOS provides 8 specialized toolkits with 200+ additional tools for advanced use cases. Each toolkit can be enabled/disabled independently based on your needs.
+The Pro addon for NV oOS provides 20 specialized toolkits with 300+ additional tools for advanced use cases. Each toolkit can be enabled/disabled independently based on your needs.
 
 **Location**: NV oOS → Tools → Features (subtab)
 
@@ -283,6 +283,472 @@ The Pro addon for NV oOS provides 8 specialized toolkits with 200+ additional to
 
 ---
 
+### 9. 🛠️ AI Tool Builder Toolkit
+
+**Setting**: `enable_ai_tool_builder_toolkit`  
+**Tools**: 10 professional meta-tools  
+**Status**: Pro addon required (Phase 2.9)
+
+**Features**:
+- Meta-toolkit for creating custom AI tools
+- AI-powered code generation from natural language
+- Automated test and documentation generation
+- Security vulnerability scanning
+- WordPress Coding Standards compliance checking
+- Performance benchmarking and optimization
+- Tool scaffold generation
+- Parameter schema validation
+
+**Tool Categories**:
+- **Code Generation**: Tool scaffolds, parameters, logic, refactoring (4 tools)
+- **Testing & Documentation**: Test suites, documentation, schema validation (3 tools)
+- **Quality Assurance**: Security analysis, compliance checking, performance benchmarking (3 tools)
+
+**Use Cases**:
+- Tool development workflows
+- Custom business logic creation
+- Plugin extension development
+- Quality assurance automation
+- Developer productivity enhancement
+
+**Security Note**: 
+- **Development environments only**
+- Requires `manage_options` capability
+- Review all generated code before deployment
+- Never expose to untrusted users
+
+**Documentation**: See `addons/pro/includes/tools/ai-tool-builder/README.md`
+
+---
+
+### 10. 🏗️ Architectural Design Toolkit
+
+**Setting**: `enable_architectural_design_toolkit`  
+**Tools**: 16 professional tools  
+**Status**: Pro addon required (Phase 2.10)
+
+**Features**:
+- AI-powered floor plan generation
+- 3D building model creation
+- Photorealistic rendering
+- Construction document generation
+- Building code compliance checking
+- Structural feasibility analysis
+- LEED sustainability scoring
+- Material schedules and cost estimation
+- Construction timeline planning
+
+**Tool Categories**:
+- **Floor Planning**: Floor plans, space optimization, variations, sketch conversion (4 tools)
+- **3D Modeling**: 3D models, renderings, walkthrough animations (3 tools)
+- **Documentation**: Construction drawings, detail sheets, document export (3 tools)
+- **Analysis**: Building codes, structural analysis, sustainability metrics (3 tools)
+- **Estimation**: Material schedules, cost estimation, construction timelines (3 tools)
+
+**Use Cases**:
+- Architecture firms
+- Construction companies
+- Real estate developers
+- Interior designers
+- Building contractors
+
+**Requirements**:
+- Vision-capable AI model (for sketch conversion)
+- OpenAI API key
+- Regional building code databases (optional)
+
+**Documentation**: See `addons/pro/includes/tools/architectural-design/README.md`
+
+---
+
+### 11. 📅 Calendar Booking Toolkit
+
+**Setting**: `enable_calendar_booking_toolkit`  
+**Tools**: 15 professional tools  
+**Status**: Pro addon required (Phase 2.6)
+
+**Features**:
+- Complete appointment management system
+- Google Calendar and Outlook sync
+- Automated booking confirmations and reminders
+- Business hours and availability management
+- Time slot blocking and conflict detection
+- AI-powered schedule optimization
+- Public booking link generation
+- Payment tracking integration
+
+**Tool Categories**:
+- **Appointments**: Create, update, cancel, reschedule, get details (5 tools)
+- **Availability**: Check availability, set rules, get slots, block times, optimize (5 tools)
+- **Integration**: Google/Outlook sync, confirmations, reminders, booking links (5 tools)
+
+**Use Cases**:
+- Service professionals (consultants, coaches, therapists)
+- Medical and dental practices
+- Salons and spas
+- Legal and financial advisors
+- Educational tutoring
+
+**Data Storage**:
+- Custom post types: `mcp_appointment`, `mcp_blocked_time`, `mcp_booking_link`
+- WordPress options for business hours
+
+**Documentation**: See `addons/pro/includes/tools/calendar-booking/README.md`
+
+---
+
+### 12. 🎵 DJ Management Toolkit
+
+**Setting**: `enable_dj_management_toolkit`  
+**Tools**: 18 professional tools  
+**Status**: Pro addon required (Phase 2.7)
+
+**Features**:
+- Complete DJ business management system
+- Equipment inventory and maintenance tracking
+- Music library with BPM and key analysis
+- AI-powered playlist generation
+- Harmonic mixing with Camelot Wheel
+- Event booking and timeline generation
+- Client relationship management
+- Contract and invoice generation
+- Payment tracking
+
+**Tool Categories**:
+- **Equipment**: Inventory, maintenance, reports, reservations (4 tools)
+- **Music Library**: Playlists, library management, BPM analysis, AI generation, transitions (5 tools)
+- **Event Management**: Bookings, updates, timelines, confirmations, payments (5 tools)
+- **Client Management**: Profiles, contracts, invoices, communication logs (4 tools)
+
+**Use Cases**:
+- Professional DJs
+- DJ agencies
+- Mobile entertainment companies
+- Event production companies
+- Wedding DJs
+
+**Data Storage**:
+- Custom post types: `dj_equipment`, `dj_track`, `dj_playlist`, `dj_booking`, `dj_client`
+
+**Documentation**: See `addons/pro/includes/tools/dj-management/README.md`
+
+---
+
+### 13. 🛒 E-commerce Toolkit
+
+**Setting**: `enable_ecommerce_toolkit`  
+**Tools**: 20 professional tools  
+**Status**: Pro addon required (100% complete)
+
+**Features**:
+- Advanced WooCommerce product management
+- Bulk product operations
+- CSV/Excel product import
+- Order workflow automation
+- Professional invoice generation
+- Customer segmentation and CLV analysis
+- Inventory forecasting and alerts
+- Abandoned cart recovery
+- AI-powered upsell recommendations
+- Sales performance analytics
+
+**Tool Categories**:
+- **Product Management**: Advanced creation, bulk updates, CSV import, export, inventory sync (5 tools)
+- **Order Management**: Workflow processing, invoices, bulk updates, refunds, analytics (5 tools)
+- **Customer Management**: Segmentation, lifetime value, GDPR export (3 tools)
+- **Inventory**: Movement tracking, low stock alerts, forecasting (3 tools)
+- **Marketing**: Discount campaigns, cart recovery, upsells, sales dashboard (4 tools)
+
+**Use Cases**:
+- Online stores
+- E-commerce agencies
+- Wholesale businesses
+- Subscription services
+- Multi-vendor marketplaces
+
+**Requirements**:
+- WooCommerce plugin active
+- Stripe integration (for payment features)
+
+**Documentation**: See `addons/pro/includes/tools/ecommerce/README.md`
+
+---
+
+### 14. 💰 Financial Planning Toolkit
+
+**Setting**: `enable_financial_planning_toolkit`  
+**Tools**: 24 professional tools  
+**Status**: Pro addon required (Partial - 9/24 implemented)
+
+**Features**:
+- Retirement planning and calculators
+- IRA and Roth comparison tools
+- Investment portfolio analysis (educational)
+- Budget planning and expense tracking
+- Debt payoff strategies
+- Mortgage calculations
+- Net worth tracking
+- Cash flow analysis
+- Tax estimation
+- College savings planning
+- Insurance needs analysis
+
+**Tool Categories**:
+- **Retirement**: Calculators, IRA/Roth, withdrawal strategies, social security, pensions (5 tools)
+- **Budget & Expenses**: Budget planner, expense tracker, net worth, cash flow (5 tools)
+- **Investment**: Portfolio visualization, asset allocation, returns, rebalancing, tax-loss harvesting (5 tools - educational)
+- **Debt Management**: Debt payoff, mortgage calculator, credit score tracking (3 tools)
+- **Goal Planning**: Savings goals, emergency fund (2 tools)
+- **Financial Literacy**: Health score, tax estimator, college savings, insurance (4 tools)
+
+**Use Cases**:
+- Financial advisors (educational purposes)
+- Personal finance websites
+- Banking portals
+- Financial planning services
+- Financial literacy education
+
+**Important**: Investment tools are for educational purposes only. Not financial advice.
+
+**Documentation**: See `addons/pro/includes/tools/financial-planning/README.md`
+
+---
+
+### 15. 🎨 Image Production Toolkit
+
+**Setting**: `enable_image_production_toolkit`  
+**Tools**: 15 professional tools  
+**Status**: Pro addon required (Phase 2.8)
+
+**Features**:
+- AI image generation (DALL-E, Stable Diffusion)
+- Image variation generation
+- AI inpainting and editing
+- Background removal
+- AI upscaling (2x, 4x, 8x)
+- Image quality enhancement
+- Artistic style transfer
+- Black & white colorization
+- Smart image compression
+- Format conversion (WebP, AVIF)
+- Content-aware resizing
+- Batch image processing
+- Responsive image generation
+
+**Tool Categories**:
+- **AI Generation**: Text-to-image, variations, inpainting, prompt optimization (4 tools)
+- **Editing & Enhancement**: Background removal, upscaling, enhancement, style transfer, colorization (5 tools)
+- **Optimization**: Compression, format conversion, smart resize, batch processing, responsive images, web optimization (6 tools)
+
+**Use Cases**:
+- Content creators
+- Marketing teams
+- E-commerce stores
+- Design agencies
+- Photography studios
+
+**Requirements**:
+- OpenAI API key (for DALL-E)
+- Stability AI API key (for Stable Diffusion)
+- Optional: remove.bg API key
+- Python 3 with AI libraries (optional for local processing)
+- GPU access (recommended for heavy operations)
+
+**Documentation**: See `addons/pro/includes/tools/image-production/README.md`
+
+---
+
+### 16. 📱 Social Media Toolkit
+
+**Setting**: `enable_social_media_toolkit`  
+**Tools**: 15 professional tools  
+**Status**: Pro addon required (100% complete)
+
+**Features**:
+- Cross-platform content publishing
+- Automated post scheduling
+- Bulk CSV scheduling
+- Platform-specific image optimization
+- Social video format generation
+- Mention and reply monitoring
+- AI-powered auto-responses
+- Comment moderation
+- Unified analytics dashboard
+- Hashtag performance tracking
+- Competitor analysis
+- Influencer identification
+- Content calendar creation
+- AI content suggestions
+- Social listening and trend tracking
+
+**Tool Categories**:
+- **Publishing**: Multi-platform posting, scheduling, bulk scheduling, image optimization, video creation (5 tools)
+- **Engagement**: Mention monitoring, auto-responses, comment moderation (3 tools)
+- **Analytics**: Cross-platform analytics, hashtag tracking, competitor analysis, influencer identification (4 tools)
+- **Content Management**: Content calendar, AI post ideas, trend listening (3 tools)
+
+**Use Cases**:
+- Social media managers
+- Marketing agencies
+- Brand management teams
+- Influencers
+- Community managers
+
+**Requirements**:
+- Platform API keys (Twitter, Facebook, LinkedIn, Instagram)
+- OAuth connections configured
+
+**Documentation**: See `addons/pro/includes/tools/social-media/README.md`
+
+---
+
+### 17. 🌍 Multilingual Toolkit
+
+**Setting**: `enable_multilingual_toolkit`  
+**Tools**: 10 professional tools  
+**Status**: Pro addon required (Pending implementation)
+
+**Features**:
+- AI-powered content translation
+- WooCommerce product translation
+- Translation memory and reuse
+- XLIFF/PO file import/export
+- Automatic language detection
+- Date and currency localization
+- RTL content optimization
+- Translation quality checking
+- Untranslated string detection
+- Multilingual SEO auditing
+
+**Tool Categories**:
+- **Translation**: Content translation, product translation, translation memory, import/export (4 tools)
+- **Localization**: Language detection, date/currency formatting, RTL optimization (3 tools)
+- **Quality Assurance**: Quality checks, untranslated string finder, SEO audit (3 tools)
+
+**Use Cases**:
+- International e-commerce
+- Multi-language websites
+- Global content publishers
+- Translation agencies
+- Localization services
+
+**Requirements**:
+- Translation API keys (Google Translate, DeepL, AWS)
+- Optional: WPML or Polylang integration
+
+**Documentation**: See `addons/pro/includes/tools/multilingual/README.md`
+
+---
+
+### 18. 🎬 Video Production Toolkit
+
+**Setting**: `enable_video_production_toolkit`  
+**Tools**: 12 professional tools  
+**Status**: Pro addon required (Pending implementation)
+
+**Features**:
+- Video creation from images
+- Watermark addition
+- Automated caption generation
+- Video merging and concatenation
+- Video trimming and cutting
+- Resolution resizing
+- Speed adjustment
+- Video compression
+- Format conversion
+- Platform-specific optimization
+- Metadata extraction
+- Thumbnail generation
+
+**Tool Categories**:
+- **Creation**: Image slideshows, watermarks, captions, merging (4 tools)
+- **Editing**: Trimming, resizing, speed adjustment (3 tools)
+- **Optimization**: Compression, format conversion, platform optimization (3 tools)
+- **Analysis**: Metadata extraction, thumbnail generation (2 tools)
+
+**Use Cases**:
+- Video content creators
+- Marketing teams
+- Educational content producers
+- Social media managers
+- Video production studios
+
+**Requirements**:
+- FFmpeg binary configured
+- Node.js runtime (optional)
+- NPM packages: ffmpeg-static, fluent-ffmpeg
+
+**Documentation**: See `addons/pro/includes/tools/video-production/README.md`
+
+---
+
+### 19. 📊 Analytics Toolkit
+
+**Setting**: `enable_analytics_toolkit`  
+**Tools**: 5 professional tools  
+**Status**: Pro addon required (Pending implementation)
+
+**Features**:
+- Custom metrics collection
+- Data warehouse synchronization
+- Real-time event tracking
+- Churn prediction (ML-based)
+- Customer segmentation with machine learning
+
+**Tool Categories**:
+- **Data Collection**: Custom metrics, warehouse sync, real-time tracking (3 tools)
+- **Predictive Analytics**: Churn prediction, ML-based segmentation (2 tools)
+
+**Planned Features** (not yet implemented):
+- Executive dashboards
+- Cohort analysis
+- Funnel analysis
+- Attribution modeling
+- Revenue forecasting
+- Custom report builder
+- Analytics API export
+
+**Use Cases**:
+- Data-driven businesses
+- SaaS platforms
+- E-commerce analytics
+- Marketing analytics
+- Business intelligence
+
+**Requirements**:
+- NPM packages: d3, mathjs, regression, fast-csv
+- Optional: Google Analytics 4 API integration
+
+**Documentation**: See `addons/pro/includes/tools/analytics/README.md`
+
+---
+
+### 20. 🤝 CRM Toolkit
+
+**Setting**: `enable_crm_toolkit`  
+**Tools**: 1 tool (Basic implementation)  
+**Status**: Pro addon required
+
+**Features**:
+- Contact management with CRUD operations
+- Basic CRM functionality
+- Contact data storage
+
+**Tool Provided**:
+- `manage_crm_contact` - Create, read, update, delete CRM contacts
+
+**Use Cases**:
+- Basic contact management
+- Lead tracking
+- Customer database
+- Foundation for CRM integration
+
+**Status**: This is a minimal toolkit that may be expanded in future releases.
+
+**Documentation**: See `addons/pro/includes/tools/crm/`
+
+---
+
 ## How to Enable Pro Toolkits
 
 ### Step 1: Install Pro Addon
@@ -316,6 +782,18 @@ Each toolkit has an independent checkbox:
 ☐ Enable Health & Wellness Pro Toolkit
 ☐ Enable Cloudways Pro Toolkit
 ☐ Enable AI CPT Management
+☐ Enable AI Tool Builder Toolkit
+☐ Enable Architectural Design Toolkit
+☐ Enable Calendar Booking Toolkit
+☐ Enable DJ Management Toolkit
+☐ Enable E-commerce Toolkit
+☐ Enable Financial Planning Toolkit
+☐ Enable Image Production Toolkit
+☐ Enable Social Media Toolkit
+☐ Enable Multilingual Toolkit
+☐ Enable Video Production Toolkit
+☐ Enable Analytics Toolkit
+☐ Enable CRM Toolkit
 ```
 
 **Check the boxes** for toolkits you want to use.
@@ -338,6 +816,32 @@ Some toolkits require additional configuration:
 - Configure access controls
 - Enable HIPAA mode if needed
 
+**Calendar Booking**:
+- Configure business hours
+- Set up Google Calendar or Outlook integration (optional)
+- Configure email templates for confirmations
+
+**Social Media Toolkit**:
+- Add API keys for platforms (Twitter, Facebook, LinkedIn)
+- Configure OAuth connections
+
+**Image Production**:
+- Add OpenAI API key (for DALL-E)
+- Add Stability AI API key (for Stable Diffusion)
+- Optional: Configure remove.bg API key
+
+**Multilingual**:
+- Add translation API keys (Google Translate, DeepL, or AWS)
+- Configure default languages
+
+**Video Production**:
+- Ensure FFmpeg is installed and configured
+- Verify temporary directory is writable
+
+**E-commerce**:
+- Ensure WooCommerce is installed and active
+- Configure Stripe (for payment features)
+
 ### Step 5: Save Settings
 
 Click **Save Settings** at the bottom of the page.
@@ -355,18 +859,27 @@ Click **Save Settings** at the bottom of the page.
 ### Required PHP Extensions
 - **Document Generation**: `zip`, `xml`, `gd`
 - **Health & Wellness**: `openssl` (for encryption)
+- **Image Production**: `gd` or `imagick`
+- **Video Production**: FFmpeg binary
 - **All**: Standard WordPress requirements
 
 ### Optional Integrations
-- **JetEngine**: Enhanced data storage for Projects, Places, ECAs
-- **WooCommerce**: Product management with AI CPT
+- **JetEngine**: Enhanced data storage for Projects, Places, ECAs, Calendar, DJ Management
+- **WooCommerce**: Required for E-commerce Toolkit
 - **Google Maps**: Required for Places Management
 - **Cloudways**: Required for Cloudways Toolkit
+- **WPML/Polylang**: Enhanced multilingual features
 
 ### External Services
 - **Document Generation**: Node.js runtime (recommended)
 - **Places**: Google Maps API
 - **Cloudways**: Cloudways hosting account
+- **Calendar Booking**: Google Calendar API, Outlook API (optional)
+- **Social Media**: Twitter, Facebook, LinkedIn, Instagram APIs
+- **Image Production**: OpenAI API, Stability AI API, remove.bg API
+- **Multilingual**: Google Translate, DeepL, or AWS Translation APIs
+- **Architectural Design**: OpenAI API with vision models
+- **Analytics**: Google Analytics 4 API (optional)
 
 ---
 
@@ -383,8 +896,20 @@ Each toolkit adds to memory footprint:
 - **Health & Wellness**: ~5-8 MB
 - **Cloudways**: ~10-15 MB
 - **AI CPT**: ~2-3 MB
+- **AI Tool Builder**: ~5-8 MB
+- **Architectural Design**: ~8-12 MB
+- **Calendar Booking**: ~4-6 MB
+- **DJ Management**: ~6-9 MB
+- **E-commerce**: ~8-12 MB (requires WooCommerce)
+- **Financial Planning**: ~7-10 MB
+- **Image Production**: ~10-15 MB (with AI libraries)
+- **Social Media**: ~6-9 MB
+- **Multilingual**: ~4-6 MB
+- **Video Production**: ~15-20 MB (FFmpeg dependencies)
+- **Analytics**: ~5-8 MB
+- **CRM**: ~1-2 MB
 
-**Total if all enabled**: ~80-110 MB additional memory
+**Total if all enabled**: ~180-250 MB additional memory
 
 **Recommendation**: Only enable toolkits you actively use.
 
@@ -396,6 +921,9 @@ Toolkits that create custom post types:
 - **ECA**: ECAs CPT
 - **Health & Wellness**: Multiple CPTs for health data
 - **Media Toolkit**: Media Templates, Collections CPTs
+- **Calendar Booking**: Appointments, Blocked Times, Booking Links CPTs
+- **DJ Management**: Equipment, Tracks, Playlists, Bookings, Clients CPTs
+- **E-commerce**: Uses WooCommerce CPTs (Products, Orders)
 
 **With JetEngine**: Data stored in CCTs instead of CPTs (more efficient)
 
@@ -434,6 +962,30 @@ Toolkits that create custom post types:
 2. Bundled scripts have execute permissions
 3. Temporary directory is writable
 4. Required PHP extensions loaded
+
+### Image/Video Production Errors
+
+**Check**:
+1. FFmpeg installed and accessible (for video)
+2. GD or Imagick extension enabled (for images)
+3. API keys configured (OpenAI, Stability AI)
+4. Temporary directory is writable
+5. Memory limit sufficient for large files
+
+### Social Media/Calendar Integration Errors
+
+**Check**:
+1. API credentials are valid
+2. OAuth tokens not expired
+3. Platform-specific permissions granted
+4. Rate limits not exceeded
+
+### E-commerce Toolkit Errors
+
+**Check**:
+1. WooCommerce is installed and active
+2. WooCommerce version is compatible
+3. Required permissions for product/order management
 
 ---
 
@@ -477,17 +1029,45 @@ Toolkits that create custom post types:
 | Health | 30+ | 5-8MB | None | Healthcare |
 | Cloudways | 58+ | 10-15MB | Cloudways account | Hosting |
 | AI CPT | Metabox | 2-3MB | None | Content |
+| AI Tool Builder | 10 | 5-8MB | None | Development |
+| Architectural Design | 16 | 8-12MB | Vision AI, OpenAI | Architecture |
+| Calendar Booking | 15 | 4-6MB | Optional: Google/Outlook | Appointments |
+| DJ Management | 18 | 6-9MB | None | DJ Business |
+| E-commerce | 20 | 8-12MB | WooCommerce | Online Stores |
+| Financial Planning | 24 | 7-10MB | None | Finance |
+| Image Production | 15 | 10-15MB | OpenAI, Stability AI | Images |
+| Social Media | 15 | 6-9MB | Platform APIs | Social |
+| Multilingual | 10 | 4-6MB | Translation APIs | Translation |
+| Video Production | 12 | 15-20MB | FFmpeg | Video |
+| Analytics | 5 | 5-8MB | Optional: GA4 | Analytics |
+| CRM | 1 | 1-2MB | None | Contacts |
 
 ---
 
 ## Future Roadmap
 
-**Planned Toolkits** (under consideration):
-- E-commerce Pro Toolkit
-- Social Media Management Toolkit
-- Advanced Analytics Toolkit
-- Multi-language Content Toolkit
-- Video Production Toolkit
+**Recently Implemented** (now available):
+- ✅ E-commerce Pro Toolkit (20 tools)
+- ✅ Social Media Management Toolkit (15 tools)
+- ✅ Image Production Toolkit (15 tools)
+- ✅ AI Tool Builder Toolkit (10 tools)
+- ✅ Architectural Design Toolkit (16 tools)
+- ✅ Calendar Booking Toolkit (15 tools)
+- ✅ DJ Management Toolkit (18 tools)
+- ✅ Financial Planning Toolkit (24 tools, partial implementation)
+
+**In Development**:
+- ⏳ Video Production Toolkit (12 tools planned)
+- ⏳ Multilingual Content Toolkit (10 tools planned)
+- ⏳ Advanced Analytics Toolkit (expansion from 5 to 12+ tools)
+- ⏳ CRM Toolkit (expansion beyond basic contact management)
+
+**Under Consideration**:
+- Marketing Automation Toolkit
+- Legal Document Toolkit
+- Medical Practice Management
+- Real Estate Pro Toolkit
+- Restaurant Management Toolkit
 
 **Community Requests**: Submit toolkit ideas via GitHub issues
 
@@ -518,6 +1098,6 @@ Toolkits that create custom post types:
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: 2025-01-20  
+**Version**: 2.0.0  
+**Last Updated**: 2026-01-22  
 **Applies to**: NV oOS Pro v1.1.0+
