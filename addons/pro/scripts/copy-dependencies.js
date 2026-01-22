@@ -335,6 +335,80 @@ const dependencies = [
 			{ src: 'package.json', dest: 'subtitle/package.json' },
 		],
 	},
+	// ========================================================================
+	// CRM & EMAIL MARKETING TOOLKIT PACKAGES
+	// ========================================================================
+	{
+		name: 'nodemailer',
+		dirs: [
+			{ src: 'lib', dest: 'nodemailer/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'nodemailer/package.json' },
+		],
+	},
+	{
+		name: 'validator',
+		files: [
+			{ src: 'index.js', dest: 'validator/index.js' },
+			{ src: 'lib', dest: 'validator/lib', isDir: true },
+			{ src: 'es', dest: 'validator/es', isDir: true },
+			{ src: 'package.json', dest: 'validator/package.json' },
+		],
+	},
+	{
+		name: 'email-validator',
+		files: [
+			{ src: 'index.js', dest: 'email-validator/index.js' },
+			{ src: 'package.json', dest: 'email-validator/package.json' },
+		],
+	},
+	{
+		name: 'libphonenumber-js',
+		files: [
+			{ src: 'index.js', dest: 'libphonenumber-js/index.js' },
+			{ src: 'min', dest: 'libphonenumber-js/min', isDir: true },
+			{ src: 'mobile', dest: 'libphonenumber-js/mobile', isDir: true },
+			{ src: 'metadata.min.json', dest: 'libphonenumber-js/metadata.min.json' },
+			{ src: 'package.json', dest: 'libphonenumber-js/package.json' },
+		],
+	},
+	{
+		name: 'mailparser',
+		dirs: [
+			{ src: 'lib', dest: 'mailparser/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'mailparser/package.json' },
+		],
+	},
+	{
+		name: 'csv-parse',
+		dirs: [
+			{ src: 'lib', dest: 'csv-parse/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'csv-parse/package.json' },
+		],
+	},
+	{
+		name: 'csv-stringify',
+		dirs: [
+			{ src: 'lib', dest: 'csv-stringify/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'csv-stringify/package.json' },
+		],
+	},
+	{
+		name: 'ical-generator',
+		dirs: [
+			{ src: 'dist', dest: 'ical-generator/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'ical-generator/package.json' },
+		],
+	},
 ];
 
 let totalCopied = 0;

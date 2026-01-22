@@ -125,6 +125,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_health_wellness_management'   => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
 				'enable_places_management'            => __( 'Places Management', 'mcp-ai-wpoos' ),
 				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_crm_toolkit'                  => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
 				'enable_ecommerce_toolkit'            => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
 				'enable_social_media_toolkit'         => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
 				'enable_analytics_toolkit'            => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
@@ -362,6 +363,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_eca tool', 'mcp-ai-wpoos' ),
 						__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
 						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'crm_toolkit' => array(
+					'name'        => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_crm_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close' ),
+					'npm_packages' => array( 'nodemailer', 'validator', 'email-validator', 'libphonenumber-js', 'mailparser', 'csv-parse', 'csv-stringify', 'ical-generator' ),
+					'tools_count' => 12,
+					'tools'       => array(
+						__( 'create_contact tool', 'mcp-ai-wpoos' ),
+						__( 'update_contact tool', 'mcp-ai-wpoos' ),
+						__( 'segment_contacts tool', 'mcp-ai-wpoos' ),
+						__( 'import_contacts_csv tool', 'mcp-ai-wpoos' ),
+						__( 'export_contacts_csv tool', 'mcp-ai-wpoos' ),
+						__( 'create_email_campaign tool', 'mcp-ai-wpoos' ),
+						__( 'send_email tool', 'mcp-ai-wpoos' ),
+						__( 'parse_email tool', 'mcp-ai-wpoos' ),
+						__( 'validate_email tool', 'mcp-ai-wpoos' ),
+						__( 'validate_phone tool', 'mcp-ai-wpoos' ),
+						__( 'track_campaign_metrics tool', 'mcp-ai-wpoos' ),
+						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
 					),
 				),
 				'code_formatting' => array(
@@ -762,6 +786,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'gif-encoder'                       => 'gif-encoder/lib/GIFEncoder.js',
 				'video-stitch'                      => 'video-stitch/index.js',
 				'subtitle'                          => 'subtitle/dist/index.js',
+				// CRM & Email Marketing Toolkit packages (Phase 2).
+				'nodemailer'                        => 'nodemailer/lib/nodemailer.js',
+				'validator'                         => 'validator/index.js',
+				'email-validator'                   => 'email-validator/index.js',
+				'libphonenumber-js'                 => 'libphonenumber-js/index.js',
+				'mailparser'                        => 'mailparser/lib/mail-parser.js',
+				'csv-parse'                         => 'csv-parse/lib/index.js',
+				'csv-stringify'                     => 'csv-stringify/lib/index.js',
+				'ical-generator'                    => 'ical-generator/dist/index.js',
 			);
 			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				// @types packages don't have runtime files.
