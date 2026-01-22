@@ -277,6 +277,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
 		}
 
+		// Load Orchestration Dashboard (Ralph pattern - Phase 2).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 
@@ -439,6 +442,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Analyze_Loop_Health'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-loop-health.php',
 			'WP_MCP_AI_Pro_Tool_Get_Session_Status'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-session-status.php',
 			'WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-calculate-orchestration-capacity.php',
+			// Research Enhancement tools (Ralph pattern - Phase 2).
+			'WP_MCP_AI_Pro_Tool_Aggregate_Research_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-aggregate-research-data.php',
+			'WP_MCP_AI_Pro_Tool_Extract_Structured_Data'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-extract-structured-data.php',
+			'WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-convert-html-to-markdown.php',
+			'WP_MCP_AI_Pro_Tool_Generate_Research_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-research-report.php',
+			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
+			'WP_MCP_AI_Pro_Tool_Verify_Information'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-verify-information.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Product Actualization tool.
