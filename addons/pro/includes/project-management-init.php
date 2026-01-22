@@ -226,5 +226,34 @@ function wp_mcp_ai_register_project_management_post_types() {
 			'menu_icon'          => 'dashicons-list-view',
 		)
 	);
+
+	// Register Task Template CPT (for reusable task plan templates).
+	register_post_type(
+		'mcp_task_template',
+		array(
+			'labels'             => array(
+				'name'               => __( 'Task Templates', 'mcp-ai-wpoos-pro' ),
+				'singular_name'      => __( 'Task Template', 'mcp-ai-wpoos-pro' ),
+				'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
+				'add_new_item'       => __( 'Add New Task Template', 'mcp-ai-wpoos-pro' ),
+				'edit_item'          => __( 'Edit Task Template', 'mcp-ai-wpoos-pro' ),
+				'new_item'           => __( 'New Task Template', 'mcp-ai-wpoos-pro' ),
+				'view_item'          => __( 'View Task Template', 'mcp-ai-wpoos-pro' ),
+				'search_items'       => __( 'Search Task Templates', 'mcp-ai-wpoos-pro' ),
+				'not_found'          => __( 'No task templates found', 'mcp-ai-wpoos-pro' ),
+				'not_found_in_trash' => __( 'No task templates found in trash', 'mcp-ai-wpoos-pro' ),
+			),
+			'public'             => false,
+			'publicly_queryable' => false,
+			'show_ui'            => true,
+			'show_in_menu'       => 'edit.php?post_type=mcp_ai_project',
+			'show_in_rest'       => true,
+			'has_archive'        => false,
+			'rewrite'            => false,
+			'capability_type'    => 'post',
+			'supports'           => array( 'title', 'editor', 'excerpt', 'author' ),
+			'menu_icon'          => 'dashicons-clipboard',
+		)
+	);
 }
 add_action( 'init', 'wp_mcp_ai_register_project_management_post_types' );

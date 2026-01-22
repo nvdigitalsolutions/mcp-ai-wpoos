@@ -449,6 +449,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Generate_Research_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-research-report.php',
 			'WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-analyze-data-patterns.php',
 			'WP_MCP_AI_Pro_Tool_Verify_Information'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-verify-information.php',
+			// Template Management tools (Ralph pattern - Phase 3).
+			'WP_MCP_AI_Pro_Tool_Create_Template'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php',
+			'WP_MCP_AI_Pro_Tool_Instantiate_Template'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-instantiate-template.php',
+			'WP_MCP_AI_Pro_Tool_List_Templates'           => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-list-templates.php',
+			'WP_MCP_AI_Pro_Tool_Seed_Template_Library'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-seed-template-library.php',
 			// ICS calendar export tool (enhanced with NPM package).
 			'WP_MCP_AI_Tool_Export_Calendar_ICS'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-export-calendar-ics.php',
 			// Product Actualization tool.
