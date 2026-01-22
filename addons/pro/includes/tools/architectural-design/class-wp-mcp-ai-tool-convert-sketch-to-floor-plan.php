@@ -185,6 +185,15 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 				);
 			}
 
+			// Verify user has permission to access this attachment.
+			$post = get_post( $attachment_id );
+			if ( ! $post || ( absint( $post->post_author ) !== $user_id && ! current_user_can( 'edit_others_posts' ) ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_forbidden',
+					__( 'You do not have permission to access this attachment.', 'mcp-ai-wpoos-pro' )
+				);
+			}
+
 			return $image_path;
 		}
 

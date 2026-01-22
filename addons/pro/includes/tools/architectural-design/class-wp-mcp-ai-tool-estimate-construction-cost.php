@@ -228,7 +228,8 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 	 * @return float Location factor.
 	 */
 	protected function get_location_factor( $location ) {
-		// Mock implementation - real version would use location database.
+		// TODO: Implement real location-based cost adjustment using regional database.
+		// This should query construction cost data by zip code or city.
 		return 1.0;
 	}
 }

@@ -280,8 +280,16 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 	 * @return string New date.
 	 */
 	protected function add_days( $date, $days ) {
-		$timestamp = strtotime( $date );
-		$new_timestamp = strtotime( "+{$days} days", $timestamp );
-		return gmdate( 'Y-m-d', $new_timestamp );
+		// Use DateTime for reliable date arithmetic.
+		try {
+			$datetime = new DateTime( $date );
+			$datetime->modify( "+{$days} days" );
+			return $datetime->format( 'Y-m-d' );
+		} catch ( Exception $e ) {
+			// Fallback to strtotime if DateTime fails.
+			$timestamp = strtotime( $date );
+			$new_timestamp = strtotime( "+{$days} days", $timestamp );
+			return gmdate( 'Y-m-d', $new_timestamp );
+		}
 	}
 }
