@@ -986,6 +986,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'calculate_orchestration_capacity',
 					'detect_completion_indicators',
 					'check_exit_conditions',
+				),
+			),
+
 			// NEW PRO TOOLKIT PRESETS (2026)
 			// =================================================================
 
