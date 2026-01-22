@@ -784,11 +784,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check optional integrations.
 			$status['integrations'] = array(
-				'jetengine'  => class_exists( 'Jet_Engine' ),
-				'woocommerce' => class_exists( 'WooCommerce' ),
-				'elementor'  => defined( 'ELEMENTOR_VERSION' ),
-				'rankmath'   => defined( 'RANK_MATH_VERSION' ),
-				'wpcode'     => defined( 'WPCODE_VERSION' ),
+				'jetengine'      => class_exists( 'Jet_Engine' ),
+				'jetformbuilder' => class_exists( 'Jet_Form_Builder' ),
+				'woocommerce'    => class_exists( 'WooCommerce' ),
+				'elementor'      => defined( 'ELEMENTOR_VERSION' ),
+				'rankmath'       => defined( 'RANK_MATH_VERSION' ),
+				'wpcode'         => defined( 'WPCODE_VERSION' ),
+				'newsletter'     => class_exists( 'Newsletter' ) || class_exists( 'NewsletterEmails' ),
+				'wpallimport'    => class_exists( 'PMXI_Plugin' ) || defined( 'PMXI_VERSION' ),
+				'wpallexport'    => class_exists( 'PMXE_Plugin' ) || defined( 'PMXE_VERSION' ),
 			);
 
 			return $status;
@@ -1057,9 +1061,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $status['integrations'] as $integration => $is_active ) : ?>
+					<?php
+					// Integration display names.
+					$integration_names = array(
+						'jetengine'      => __( 'JetEngine', 'mcp-ai-wpoos' ),
+						'jetformbuilder' => __( 'JetFormBuilder', 'mcp-ai-wpoos' ),
+						'woocommerce'    => __( 'WooCommerce', 'mcp-ai-wpoos' ),
+						'elementor'      => __( 'Elementor', 'mcp-ai-wpoos' ),
+						'rankmath'       => __( 'Rank Math', 'mcp-ai-wpoos' ),
+						'wpcode'         => __( 'WPCode', 'mcp-ai-wpoos' ),
+						'newsletter'     => __( 'Newsletter', 'mcp-ai-wpoos' ),
+						'wpallimport'    => __( 'WP All Import', 'mcp-ai-wpoos' ),
+						'wpallexport'    => __( 'WP All Export', 'mcp-ai-wpoos' ),
+					);
+					
+					foreach ( $status['integrations'] as $integration => $is_active ) :
+						$display_name = isset( $integration_names[ $integration ] ) ? $integration_names[ $integration ] : ucfirst( $integration );
+						?>
 						<tr>
-							<td><strong><?php echo esc_html( ucfirst( $integration ) ); ?></strong></td>
+							<td><strong><?php echo esc_html( $display_name ); ?></strong></td>
 							<td>
 								<span class="wp-mcp-ai-status-badge <?php echo $is_active ? 'active' : 'inactive'; ?>">
 									<?php echo $is_active ? esc_html__( 'Active', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive', 'mcp-ai-wpoos' ); ?>
