@@ -111,6 +111,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_gemini_image',
 					'generate_gemini_image_validated',
 					'cloudflareai_text_to_image',
+					// Image generation (Pro).
+					'generate_image_ai',
+					'generate_image_variations',
+					'image_inpainting',
+					'text_to_image_prompt_optimizer',
 					// Image editing.
 					'edit_gemini_image',
 					'edit_gemini_image_validated',
@@ -124,6 +129,17 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'rotate_image',
 					'convert_image_format',
 					'remove_background',
+					// Image processing (Pro).
+					'remove_image_background',
+					'upscale_image_ai',
+					'enhance_image_quality',
+					'apply_artistic_style',
+					'colorize_image',
+					'resize_image_smart',
+					'compress_image',
+					'optimize_for_web',
+					'batch_process_images',
+					'generate_responsive_images',
 					// Image analysis.
 					'generate_image_alt_text',
 					'generate_image_alt_text_validated',
@@ -489,6 +505,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'analyze_file_suitability',
 					// Document processing.
 					'submit_document_prompt',
+					// Document Generation (Pro).
+					'pro_pdf',
+					'pro_word',
+					'pro_excel_document',
 					// Search operations.
 					'search_content',
 					'search_content_validated',
@@ -496,7 +516,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'semantic_content_search',
 					'search_drive',
 					'search_gmail',
-					// Excel.
+					// Legacy Excel.
 					'pro_excel',
 				),
 			),
@@ -597,6 +617,20 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚕️ Healthcare Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Medical, clinical, and healthcare management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Health & Wellness Management (Pro).
+					'create_member',
+					'update_member',
+					'get_member',
+					'list_members',
+					'delete_member',
+					'get_member_health_summary',
+					'create_medical_record',
+					'update_medical_record',
+					'get_medical_record',
+					'list_medical_records',
+					'search_medical_records',
+					'delete_medical_record',
+					'generate_health_chart',
 					// Research & information.
 					'web_search',
 					'deep_research',
