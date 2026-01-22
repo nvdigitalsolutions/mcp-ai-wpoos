@@ -281,7 +281,7 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 		// WP_MCP_AI_PRO_URL . 'assets/css/toolkit-widgets.css',
 		// array(),
 		// WP_MCP_AI_PRO_VERSION
-		// );
+		// ).
 
 		// Enqueue JavaScript (placeholder - will be created in future phase).
 		// wp_enqueue_script(
@@ -290,7 +290,7 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 		// array( 'jquery' ),
 		// WP_MCP_AI_PRO_VERSION,
 		// true
-		// );
+		// ).
 
 		// Localize script with data.
 		// wp_localize_script(
@@ -303,7 +303,7 @@ class WP_MCP_AI_Pro_Toolkit_Integration {
 		// 'loading' => __( 'Loading..', 'mcp-ai-wpoos-pro' ),
 		// 'error'   => __( 'An error occurred', 'mcp-ai-wpoos-pro' ),
 		// ),
-		// )
-		// );
+		// ).
+		// ).
 	}
 }

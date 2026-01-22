@@ -103,6 +103,9 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get code to check.
@@ -355,7 +358,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 
 			// Check for PascalCase after prefix.
 			$suffix = str_replace( 'WP_MCP_AI_Tool_', '', $class_name );
-			if ( $suffix !== ucwords( $suffix, '_' ) ) {
+			if ( ucwords( $suffix, '_' ) !== $suffix ) {
 				$issues[] = array(
 					'type'     => 'naming',
 					'severity' => 'warning',
@@ -369,7 +372,7 @@ class WP_MCP_AI_Tool_Check_Tool_Compliance implements WP_MCP_AI_Tool_Interface, 
 		preg_match_all( '/(?:private|protected|public)\s+function\s+(\w+)/', $code, $matches );
 		if ( ! empty( $matches[1] ) ) {
 			foreach ( $matches[1] as $method_name ) {
-				if ( $method_name !== strtolower( $method_name ) ) {
+				if ( strtolower( $method_name ) !== $method_name ) {
 					$issues[] = array(
 						'type'     => 'naming',
 						'severity' => 'warning',

@@ -72,6 +72,9 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) ) {
@@ -99,7 +102,7 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 		$deposit      = floatval( get_post_meta( $booking_id, '_deposit', true ) );
 		$total_paid   = floatval( get_post_meta( $booking_id, '_total_paid', true ) );
 
-		$invoice_number = ! empty( $arguments['invoice_number'] ) ? sanitize_text_field( $arguments['invoice_number'] ) : 'INV-' . $booking_id . '-' . date( 'Ymd' );
+		$invoice_number = ! empty( $arguments['invoice_number'] ) ? sanitize_text_field( $arguments['invoice_number'] ) : 'INV-' . $booking_id . '-' . gmdate( 'Ymd' );
 		$due_date       = ! empty( $arguments['due_date'] ) ? sanitize_text_field( $arguments['due_date'] ) : '';
 		$custom_message = ! empty( $arguments['custom_message'] ) ? sanitize_textarea_field( $arguments['custom_message'] ) : '';
 
@@ -167,7 +170,7 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 		$invoice .= 'Invoice Number: ' . $invoice_number . "\n";
 		$invoice .= 'Invoice Date: ' . current_time( 'F j, Y' ) . "\n";
 		if ( $due_date ) {
-			$invoice .= 'Due Date: ' . date( 'F j, Y', strtotime( $due_date ) ) . "\n";
+			$invoice .= 'Due Date: ' . gmdate( 'F j, Y', strtotime( $due_date ) ) . "\n";
 		}
 		$invoice .= "\n";
 
@@ -176,7 +179,7 @@ class WP_MCP_AI_Tool_Send_Client_Invoice implements WP_MCP_AI_Tool_Interface, WP
 
 		$invoice .= "Event Details:\n";
 		$invoice .= 'Event: ' . $event_name . "\n";
-		$invoice .= 'Date: ' . date( 'F j, Y', strtotime( $event_date ) ) . "\n\n";
+		$invoice .= 'Date: ' . gmdate( 'F j, Y', strtotime( $event_date ) ) . "\n\n";
 
 		$invoice .= "SERVICES\n";
 		$invoice .= str_repeat( '-', 50 ) . "\n";

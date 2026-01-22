@@ -1,7 +1,13 @@
 <?php
-/** Optimize Schedule Tool - Phase 2.6 */
+/**
+ * Optimize Schedule Tool - Phase 2.6
+ *
+ * @package WP_MCP_AI
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
 
 class WP_MCP_AI_Tool_Optimize_Schedule implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	public static function is_available() {

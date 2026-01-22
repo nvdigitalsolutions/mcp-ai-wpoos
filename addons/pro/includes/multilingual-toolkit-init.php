@@ -27,7 +27,7 @@ if ( $is_enabled && ! $is_base ) {
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/multilingual/
+	// Tools are located in: addons/pro/includes/tools/multilingual/.
 }
 
 /**

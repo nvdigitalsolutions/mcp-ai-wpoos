@@ -67,6 +67,9 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) ) {
@@ -107,6 +110,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 			$event_name
 		);
 
+/* translators: %s: Client name */
 		$message = sprintf(
 			__( "Dear %s,\n\nThank you for booking our DJ services! We are excited to be part of your special event.\n\n", 'mcp-ai-wpoos-pro' ),
 			$client_name
@@ -114,7 +118,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 
 		$message .= "**Event Details:**\n";
 		$message .= sprintf( "Event: %s\n", $event_name );
-		$message .= sprintf( "Date: %s\n", date( 'F j, Y', strtotime( $event_date ) ) );
+		$message .= sprintf( "Date: %s\n", gmdate( 'F j, Y', strtotime( $event_date ) ) );
 		$message .= sprintf( "Time: %s - %s\n", $start_time, $end_time );
 		$message .= sprintf( "Venue: %s\n", $venue_name );
 		if ( $venue_address ) {

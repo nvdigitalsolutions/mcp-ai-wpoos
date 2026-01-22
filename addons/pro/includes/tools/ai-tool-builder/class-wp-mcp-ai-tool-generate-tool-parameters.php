@@ -99,6 +99,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Parameters implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.

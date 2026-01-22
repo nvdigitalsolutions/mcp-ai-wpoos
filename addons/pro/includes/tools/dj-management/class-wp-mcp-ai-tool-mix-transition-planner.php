@@ -74,6 +74,9 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -249,7 +252,7 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 		$suggestions = array();
 
 		// BPM adjustment suggestions.
-		if ( $bpm_compatibility['rating'] === 'moderate' || $bpm_compatibility['rating'] === 'challenging' ) {
+		if ( 'moderate' === $bpm_compatibility['rating'] || 'challenging' === $bpm_compatibility['rating'] ) {
 			$suggestions[] = sprintf(
 				/* translators: %s: BPM value */
 				__( 'Use pitch control to adjust Track A to approximately %s BPM', 'mcp-ai-wpoos-pro' ),
@@ -258,7 +261,7 @@ class WP_MCP_AI_Tool_Mix_Transition_Planner implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// EQ suggestions.
-		if ( $key_compatibility['rating'] !== 'perfect' ) {
+		if ( 'perfect' !== $key_compatibility['rating'] ) {
 			$suggestions[] = __( 'Use high-pass filter on incoming track to reduce key clash', 'mcp-ai-wpoos-pro' );
 			$suggestions[] = __( 'Gradually swap EQ frequencies during transition', 'mcp-ai-wpoos-pro' );
 		}

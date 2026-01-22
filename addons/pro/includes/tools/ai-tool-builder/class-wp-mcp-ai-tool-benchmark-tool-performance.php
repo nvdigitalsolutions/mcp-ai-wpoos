@@ -116,6 +116,9 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -316,7 +319,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 			$values     = array_filter(
 				$values,
 				function ( $v ) {
-					return $v !== null;
+					return null !== $v;
 				}
 			);
 
@@ -360,7 +363,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 			$values     = array_filter(
 				$values,
 				function ( $v ) {
-					return $v !== null;
+					return null !== $v;
 				}
 			);
 
@@ -371,7 +374,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 				// Calculate median.
 				$middle = floor( $count / 2 );
-				$median = ( $count % 2 === 0 ) ?
+				$median = ( 0 === $count % 2 ) ?
 					( $values[ $middle - 1 ] + $values[ $middle ] ) / 2 :
 					$values[ $middle ];
 

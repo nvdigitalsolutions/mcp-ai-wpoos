@@ -1,7 +1,13 @@
 <?php
-/** Generate Booking Link Tool - Phase 2.6 */
+/**
+ * Generate Booking Link Tool - Phase 2.6
+ *
+ * @package WP_MCP_AI
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
 class WP_MCP_AI_Tool_Generate_Booking_Link implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {

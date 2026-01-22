@@ -1,7 +1,13 @@
 <?php
-/** Sync Google Calendar Tool - Phase 2.6 */
+/**
+ * Sync Google Calendar Tool - Phase 2.6
+ *
+ * @package WP_MCP_AI
+ */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
 class WP_MCP_AI_Tool_Sync_Google_Calendar implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	public static function is_available() {
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {

@@ -204,7 +204,7 @@ class WP_MCP_AI_Tool_Reschedule_Appointment implements WP_MCP_AI_Tool_Interface,
 		} else {
 			// Maintain same duration.
 			$old_duration = strtotime( $old_end_time ) - strtotime( $old_start_time );
-			$new_end_time = date( 'Y-m-d H:i:s', strtotime( $new_start_time ) + $old_duration );
+			$new_end_time = gmdate( 'Y-m-d H:i:s', strtotime( $new_start_time ) + $old_duration );
 		}
 
 		// Validate time format.

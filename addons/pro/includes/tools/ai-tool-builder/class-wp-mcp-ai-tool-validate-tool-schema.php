@@ -93,6 +93,9 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get schema from arguments or file.
@@ -394,7 +397,7 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 
 		foreach ( $schema['properties'] as $param_name => $param_def ) {
 			// Check naming convention (snake_case).
-			if ( $param_name !== sanitize_key( $param_name ) ) {
+			if ( sanitize_key( $param_name ) !== $param_name ) {
 				$recommendations[] = sprintf(
 					/* translators: %s: parameter name */
 					__( 'Parameter "%s" should use snake_case naming (WordPress convention).', 'mcp-ai-wpoos-pro' ),

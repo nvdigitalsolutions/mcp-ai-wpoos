@@ -1,9 +1,13 @@
 <?php
 /**
  * Get Available Slots Tool - Phase 2.6
+ *
+ * @package WP_MCP_AI
  */
+
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; }
+	exit;
+}
 
 class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	public static function is_available() {
@@ -60,7 +64,7 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 		);
 	}
 	private function calculate_available_slots( $date, $duration ) {
-		$day_of_week    = strtolower( date( 'l', strtotime( $date ) ) );
+		$day_of_week    = strtolower( gmdate( 'l', strtotime( $date ) ) );
 		$business_hours = get_option( 'wp_mcp_ai_business_hours', array() );
 		if ( empty( $business_hours[ $day_of_week ] ) || empty( $business_hours[ $day_of_week ]['enabled'] ) ) {
 			return array();
@@ -72,8 +76,8 @@ class WP_MCP_AI_Tool_Get_Available_Slots implements WP_MCP_AI_Tool_Interface, WP
 		$current_time  = strtotime( $date . ' ' . $start );
 		$end_time      = strtotime( $date . ' ' . $end );
 		while ( $current_time + ( $duration * 60 ) <= $end_time ) {
-			$slot_start = date( 'Y-m-d H:i:s', $current_time );
-			$slot_end   = date( 'Y-m-d H:i:s', $current_time + ( $duration * 60 ) );
+			$slot_start = gmdate( 'Y-m-d H:i:s', $current_time );
+			$slot_end   = gmdate( 'Y-m-d H:i:s', $current_time + ( $duration * 60 ) );
 			$args       = array(
 				'post_type'   => 'mcp_appointment',
 				'post_status' => 'publish',

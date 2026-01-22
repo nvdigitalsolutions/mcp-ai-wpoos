@@ -82,6 +82,9 @@ class WP_MCP_AI_Tool_Track_Event_Payments implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) || ! isset( $arguments['payment_amount'] ) ) {
