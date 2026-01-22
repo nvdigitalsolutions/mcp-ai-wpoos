@@ -15,12 +15,15 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-sanitizer.php';
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
 /**
  * Provides a tool for generating videos via OpenAI Sora and storing them as attachments.
  */
 class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Video_Response;
 	const DEFAULT_MODEL    = 'sora-2';
 	const DEFAULT_SIZE     = '1080p';
 	const DEFAULT_DURATION = 5;
@@ -644,6 +647,9 @@ class WP_MCP_AI_Tool_Generate_Sora_Video implements WP_MCP_AI_Tool_Interface, WP
 			if ( ! empty( $context['agentic_loop'] ) ) {
 				do_action( 'wp_mcp_ai_sora_video_completed', $final_result, $arguments, $context );
 			}
+
+			// Add rendered video HTML to the response for display in chat UI.
+			$final_result = $this->add_video_html_to_response( $final_result );
 
 			return $final_result;
 		}

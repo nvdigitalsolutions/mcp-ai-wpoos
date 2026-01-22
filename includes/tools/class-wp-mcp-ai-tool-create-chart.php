@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chart-accessibility.php';
 
 /**
  * Creates charts using Chart.js and returns HTML/JavaScript or saves as attachment.
@@ -25,6 +26,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
 class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Rules_Interface {
 
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Chart_Accessibility;
 
 	const CHARTJS_VERSION = '4.4.0';
 
@@ -352,11 +354,17 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			$chart_label
 		);
 
+		// Add accessibility features to chart HTML.
+		$enhanced_html = $this->add_chart_accessibility( $html, $chart_config );
+
+		// Add data table alternative for screen readers.
+		$enhanced_html .= $this->generate_chart_data_table( $chart_config );
+
 		return array(
 			'message'       => $message,
 			'text'          => $message,
 			'chart_type'    => $chart_type,
-			'html'          => $html,
+			'html'          => $enhanced_html,
 			'chart_config'  => $chart_config,
 			'width'         => $width,
 			'height'        => $height,

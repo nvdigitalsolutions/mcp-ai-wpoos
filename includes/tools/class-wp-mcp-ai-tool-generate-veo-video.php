@@ -14,6 +14,8 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-async-metadata.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-video-response.php';
 
 /**
  * Generates videos from text prompts using Google's Veo models.
@@ -26,6 +28,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Async_Metadata_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Attachment_File_Resolver;
+	use WP_MCP_AI_Tool_Video_Response;
 
 	/**
 	 * {@inheritdoc}
@@ -351,6 +354,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				do_action( 'wp_mcp_ai_veo_video_completed', $final_result, $arguments, $context );
 			}
 
+			// Add rendered video HTML to the response for display in chat UI.
+			$final_result = $this->add_video_html_to_response( $final_result );
+
 			return $final_result;
 		}
 
@@ -393,6 +399,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			 */
 			do_action( 'wp_mcp_ai_veo_video_completed', $final_result, $arguments, $context );
 		}
+
+		// Add rendered video HTML to the response for display in chat UI.
+		$final_result = $this->add_video_html_to_response( $final_result );
 
 		return $final_result;
 	}
