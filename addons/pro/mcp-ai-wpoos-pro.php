@@ -332,6 +332,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
 		}
 
+		// ========================================================================
+		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
+		// ========================================================================
+		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
+		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
+
 		// Register Pro tools when Core fires its registration action.
 		add_action( 'wp_mcp_ai_register_tools', 'wp_mcp_ai_pro_register_tools', 20 );
 
