@@ -850,8 +850,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check for orchestration packages bundled into orchestration-bundle.min.js.
 			$orchestration_bundled_packages = array(
-				'p-queue',
-				'opossum', // Circuit breaker (not in package.json but used in orchestration).
+				'p-queue', // Promise queue with concurrency control.
 			);
 			if ( in_array( $package, $orchestration_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 				$orchestration_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/orchestration-bundle.min.js';

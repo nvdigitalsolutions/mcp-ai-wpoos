@@ -187,7 +187,7 @@ All 36 Pro addon packages are automatically copied from `node_modules` to `asset
 **Orchestration & Research (Browser Bundles)**:
 - **Orchestration Bundle** (`addons/pro/assets/js/orchestration-bundle.min.js`, 17KB):
   - `p-queue`: Promise queue with concurrency control for rate limiting
-  - `opossum`: Circuit breaker pattern for resilience (not in package.json, installed from root)
+  - Custom browser-compatible circuit breaker (inspired by opossum pattern)
   - Used by: Autonomous orchestration tools, task execution management
 - **Research Bundle** (`addons/pro/assets/js/research-bundle.min.js`, 360KB):
   - `cheerio`: Fast HTML parsing and data extraction
