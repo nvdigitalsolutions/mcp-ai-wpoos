@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Seed Template Library Tool Class
  */
-class WP_MCP_AI_Pro_Tool_Seed_Template_Library extends WP_MCP_AI_Tool_Base {
+class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 
 	/**
 	 * Get tool slug

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Create Template Tool Class
  */
-class WP_MCP_AI_Pro_Tool_Create_Template extends WP_MCP_AI_Tool_Base {
+class WP_MCP_AI_Pro_Tool_Create_Template {
 
 	/**
 	 * Get tool slug
