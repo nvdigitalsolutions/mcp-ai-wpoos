@@ -24,7 +24,7 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 		$this->toolkit_name     = __( 'Image Production Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_image_production_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-image-production-toolkit-settings';
-		$this->has_research     = false;
+		$this->has_research     = true;
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-format-image';
 
