@@ -214,11 +214,14 @@ trait WP_MCP_AI_Tool_Image_Response {
 
 		foreach ( $alt_candidates as $key ) {
 			if ( ! empty( $result[ $key ] ) && is_string( $result[ $key ] ) ) {
-				// Limit alt text length (recommended max is 125 characters).
 				$alt_text = $result[ $key ];
+				
+				// Limit alt text length (recommended max is 125 characters).
+				// Use substr for precise character-based truncation.
 				if ( strlen( $alt_text ) > 125 ) {
-					$alt_text = wp_trim_words( $alt_text, 15, '...' );
+					$alt_text = substr( $alt_text, 0, 122 ) . '...';
 				}
+				
 				return $alt_text;
 			}
 		}
