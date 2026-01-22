@@ -24,7 +24,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	 * @since 1.0.0
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+		// Priority 30 ensures this runs after Pro Dashboard menu registration (priority 25).
+		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 30 );
 		add_action( 'admin_init', array( $this, 'handle_actions' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_filter( 'allowed_redirect_hosts', array( $this, 'allow_google_oauth_host' ) );
