@@ -50,15 +50,15 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'schema'             => array(
+				'schema'                 => array(
 					'type'        => 'object',
 					'description' => __( 'Parameter schema to validate (JSON schema format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'tool_file'          => array(
+				'tool_file'              => array(
 					'type'        => 'string',
 					'description' => __( 'Path to tool file (alternative to providing schema directly)', 'mcp-ai-wpoos-pro' ),
 				),
-				'strict_mode'        => array(
+				'strict_mode'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable strict validation (all recommended practices required)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -68,7 +68,7 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Check WordPress-specific compatibility', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_security'     => array(
+				'check_security'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for security best practices', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -93,6 +93,9 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get schema from arguments or file.
@@ -102,7 +105,7 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 			$schema = $arguments['schema'];
 		} elseif ( isset( $arguments['tool_file'] ) && ! empty( $arguments['tool_file'] ) ) {
 			$tool_file = sanitize_text_field( $arguments['tool_file'] );
-			
+
 			if ( ! file_exists( $tool_file ) ) {
 				return array(
 					'success' => false,
@@ -120,15 +123,15 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$strict_mode        = isset( $arguments['strict_mode'] ) ? (bool) $arguments['strict_mode'] : false;
-		$check_wp_compat    = isset( $arguments['check_wordpress_compat'] ) ? (bool) $arguments['check_wordpress_compat'] : true;
-		$check_security     = isset( $arguments['check_security'] ) ? (bool) $arguments['check_security'] : true;
+		$strict_mode     = isset( $arguments['strict_mode'] ) ? (bool) $arguments['strict_mode'] : false;
+		$check_wp_compat = isset( $arguments['check_wordpress_compat'] ) ? (bool) $arguments['check_wordpress_compat'] : true;
+		$check_security  = isset( $arguments['check_security'] ) ? (bool) $arguments['check_security'] : true;
 
 		// Run validation checks.
 		$validation_results = array(
-			'structure'  => $this->validate_structure( $schema ),
-			'types'      => $this->validate_types( $schema ),
-			'required'   => $this->validate_required_fields( $schema ),
+			'structure'    => $this->validate_structure( $schema ),
+			'types'        => $this->validate_types( $schema ),
+			'required'     => $this->validate_required_fields( $schema ),
 			'descriptions' => $this->validate_descriptions( $schema ),
 		);
 
@@ -141,8 +144,8 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Aggregate results.
-		$all_errors = array();
-		$all_warnings = array();
+		$all_errors          = array();
+		$all_warnings        = array();
 		$all_recommendations = array();
 
 		foreach ( $validation_results as $category => $result ) {
@@ -164,15 +167,15 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'success'           => true,
-			'valid'             => $is_valid,
-			'errors'            => $all_errors,
-			'warnings'          => $all_warnings,
-			'recommendations'   => $all_recommendations,
-			'error_count'       => count( $all_errors ),
-			'warning_count'     => count( $all_warnings ),
+			'success'              => true,
+			'valid'                => $is_valid,
+			'errors'               => $all_errors,
+			'warnings'             => $all_warnings,
+			'recommendations'      => $all_recommendations,
+			'error_count'          => count( $all_errors ),
+			'warning_count'        => count( $all_warnings ),
 			'recommendation_count' => count( $all_recommendations ),
-			'validation_results' => $validation_results,
+			'validation_results'   => $validation_results,
 		);
 	}
 
@@ -184,7 +187,7 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function extract_schema_from_file( $file_path ) {
 		$content = file_get_contents( $file_path );
-		
+
 		// Try to extract get_parameters_schema method.
 		$pattern = '/public function get_parameters_schema\(\) \{.*?return (array\(.*?\));.*?\}/s';
 		if ( preg_match( $pattern, $content, $matches ) ) {
@@ -203,7 +206,7 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_structure( $schema ) {
-		$errors = array();
+		$errors   = array();
 		$warnings = array();
 
 		// Check for required top-level keys.
@@ -238,12 +241,15 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_types( $schema ) {
-		$errors = array();
-		$warnings = array();
+		$errors      = array();
+		$warnings    = array();
 		$valid_types = array( 'string', 'integer', 'number', 'boolean', 'array', 'object' );
 
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			return array( 'errors' => $errors, 'warnings' => $warnings );
+			return array(
+				'errors'   => $errors,
+				'warnings' => $warnings,
+			);
 		}
 
 		foreach ( $schema['properties'] as $param_name => $param_def ) {
@@ -290,17 +296,23 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_required_fields( $schema ) {
-		$errors = array();
+		$errors   = array();
 		$warnings = array();
 
 		if ( ! isset( $schema['required'] ) ) {
 			$warnings[] = __( 'Schema missing "required" array. All parameters will be optional.', 'mcp-ai-wpoos-pro' );
-			return array( 'errors' => $errors, 'warnings' => $warnings );
+			return array(
+				'errors'   => $errors,
+				'warnings' => $warnings,
+			);
 		}
 
 		if ( ! is_array( $schema['required'] ) ) {
 			$errors[] = __( 'Schema "required" field must be an array.', 'mcp-ai-wpoos-pro' );
-			return array( 'errors' => $errors, 'warnings' => $warnings );
+			return array(
+				'errors'   => $errors,
+				'warnings' => $warnings,
+			);
 		}
 
 		// Check required fields exist in properties.
@@ -328,12 +340,16 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_descriptions( $schema ) {
-		$errors = array();
-		$warnings = array();
+		$errors          = array();
+		$warnings        = array();
 		$recommendations = array();
 
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			return array( 'errors' => $errors, 'warnings' => $warnings, 'recommendations' => $recommendations );
+			return array(
+				'errors'          => $errors,
+				'warnings'        => $warnings,
+				'recommendations' => $recommendations,
+			);
 		}
 
 		foreach ( $schema['properties'] as $param_name => $param_def ) {
@@ -367,17 +383,21 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_wordpress_compatibility( $schema ) {
-		$errors = array();
-		$warnings = array();
+		$errors          = array();
+		$warnings        = array();
 		$recommendations = array();
 
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			return array( 'errors' => $errors, 'warnings' => $warnings, 'recommendations' => $recommendations );
+			return array(
+				'errors'          => $errors,
+				'warnings'        => $warnings,
+				'recommendations' => $recommendations,
+			);
 		}
 
 		foreach ( $schema['properties'] as $param_name => $param_def ) {
 			// Check naming convention (snake_case).
-			if ( $param_name !== sanitize_key( $param_name ) ) {
+			if ( sanitize_key( $param_name ) !== $param_name ) {
 				$recommendations[] = sprintf(
 					/* translators: %s: parameter name */
 					__( 'Parameter "%s" should use snake_case naming (WordPress convention).', 'mcp-ai-wpoos-pro' ),
@@ -412,12 +432,16 @@ class WP_MCP_AI_Tool_Validate_Tool_Schema implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Validation results.
 	 */
 	private function validate_security_practices( $schema ) {
-		$errors = array();
-		$warnings = array();
+		$errors          = array();
+		$warnings        = array();
 		$recommendations = array();
 
 		if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
-			return array( 'errors' => $errors, 'warnings' => $warnings, 'recommendations' => $recommendations );
+			return array(
+				'errors'          => $errors,
+				'warnings'        => $warnings,
+				'recommendations' => $recommendations,
+			);
 		}
 
 		foreach ( $schema['properties'] as $param_name => $param_def ) {

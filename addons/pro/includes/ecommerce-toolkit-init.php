@@ -28,7 +28,7 @@ if ( $is_enabled && ! $is_base && $has_wc ) {
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
-	// Tools are located in: addons/pro/includes/tools/ecommerce/
+	// Tools are located in: addons/pro/includes/tools/ecommerce/.
 }
 
 /**

@@ -50,21 +50,21 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_file'         => array(
+				'tool_file'               => array(
 					'type'        => 'string',
 					'description' => __( 'Path to tool file to analyze', 'mcp-ai-wpoos-pro' ),
 				),
-				'code'              => array(
+				'code'                    => array(
 					'type'        => 'string',
 					'description' => __( 'Tool code to analyze (alternative to file_path)', 'mcp-ai-wpoos-pro' ),
 				),
-				'severity_threshold' => array(
+				'severity_threshold'      => array(
 					'type'        => 'string',
 					'enum'        => array( 'critical', 'high', 'medium', 'low', 'info' ),
 					'description' => __( 'Minimum severity level to report', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'medium',
 				),
-				'check_categories'  => array(
+				'check_categories'        => array(
 					'type'        => 'array',
 					'description' => __( 'Security categories to check', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -78,12 +78,12 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Include fix recommendations', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'ai_enhanced'       => array(
+				'ai_enhanced'             => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use AI for deeper analysis (consumes tokens)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'model'             => array(
+				'model'                   => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for enhanced analysis', 'mcp-ai-wpoos-pro' ),
 				),
@@ -107,6 +107,9 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Get code to analyze.
@@ -116,7 +119,7 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 			$code = $arguments['code'];
 		} elseif ( ! empty( $arguments['tool_file'] ) ) {
 			$tool_file = sanitize_text_field( $arguments['tool_file'] );
-			
+
 			if ( ! file_exists( $tool_file ) ) {
 				return array(
 					'success' => false,
@@ -134,10 +137,10 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		$severity_threshold = isset( $arguments['severity_threshold'] ) ? sanitize_text_field( $arguments['severity_threshold'] ) : 'medium';
-		$check_categories   = isset( $arguments['check_categories'] ) ? array_map( 'sanitize_text_field', (array) $arguments['check_categories'] ) : array( 'injection', 'xss', 'capability', 'sanitization' );
+		$severity_threshold      = isset( $arguments['severity_threshold'] ) ? sanitize_text_field( $arguments['severity_threshold'] ) : 'medium';
+		$check_categories        = isset( $arguments['check_categories'] ) ? array_map( 'sanitize_text_field', (array) $arguments['check_categories'] ) : array( 'injection', 'xss', 'capability', 'sanitization' );
 		$include_recommendations = isset( $arguments['include_recommendations'] ) ? (bool) $arguments['include_recommendations'] : true;
-		$ai_enhanced        = isset( $arguments['ai_enhanced'] ) ? (bool) $arguments['ai_enhanced'] : false;
+		$ai_enhanced             = isset( $arguments['ai_enhanced'] ) ? (bool) $arguments['ai_enhanced'] : false;
 
 		// Perform security checks.
 		$security_issues = array();
@@ -320,7 +323,7 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 
 		// Check for state-changing operations without nonce verification.
 		$state_changing_patterns = array( 'wp_insert_post', 'wp_update_post', 'wp_delete_post', 'update_option', 'delete_option' );
-		
+
 		foreach ( $state_changing_patterns as $pattern ) {
 			if ( strpos( $code, $pattern ) !== false && strpos( $code, 'wp_verify_nonce' ) === false ) {
 				$issues[] = array(
@@ -351,7 +354,7 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 
 		// Check for file operations.
 		$file_functions = array( 'file_get_contents', 'file_put_contents', 'fopen', 'unlink', 'file' );
-		
+
 		foreach ( $file_functions as $func ) {
 			if ( strpos( $code, $func ) !== false ) {
 				$issues[] = array(
@@ -400,13 +403,22 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Filtered issues.
 	 */
 	private function filter_by_severity( $issues, $threshold ) {
-		$severity_levels = array( 'critical' => 4, 'high' => 3, 'medium' => 2, 'low' => 1, 'info' => 0 );
+		$severity_levels = array(
+			'critical' => 4,
+			'high'     => 3,
+			'medium'   => 2,
+			'low'      => 1,
+			'info'     => 0,
+		);
 		$threshold_level = isset( $severity_levels[ $threshold ] ) ? $severity_levels[ $threshold ] : 2;
 
-		return array_filter( $issues, function( $issue ) use ( $severity_levels, $threshold_level ) {
-			$issue_level = isset( $severity_levels[ $issue['severity'] ] ) ? $severity_levels[ $issue['severity'] ] : 0;
-			return $issue_level >= $threshold_level;
-		} );
+		return array_filter(
+			$issues,
+			function ( $issue ) use ( $severity_levels, $threshold_level ) {
+				$issue_level = isset( $severity_levels[ $issue['severity'] ] ) ? $severity_levels[ $issue['severity'] ] : 0;
+				return $issue_level >= $threshold_level;
+			}
+		);
 	}
 
 	/**
@@ -449,7 +461,7 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 * @return int Security score (0-100).
 	 */
 	private function calculate_security_score( $issues ) {
-		$score = 100;
+		$score              = 100;
 		$severity_penalties = array(
 			'critical' => 25,
 			'high'     => 15,
@@ -475,9 +487,14 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 * @return int Count.
 	 */
 	private function count_by_severity( $issues, $severity ) {
-		return count( array_filter( $issues, function( $issue ) use ( $severity ) {
-			return $issue['severity'] === $severity;
-		} ) );
+		return count(
+			array_filter(
+				$issues,
+				function ( $issue ) use ( $severity ) {
+					return $issue['severity'] === $severity;
+				}
+			)
+		);
 	}
 
 	/**
@@ -488,8 +505,8 @@ class WP_MCP_AI_Tool_Analyze_Tool_Security implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function generate_summary_recommendations( $issues ) {
 		$recommendations = array();
-		$critical_count = $this->count_by_severity( $issues, 'critical' );
-		$high_count = $this->count_by_severity( $issues, 'high' );
+		$critical_count  = $this->count_by_severity( $issues, 'critical' );
+		$high_count      = $this->count_by_severity( $issues, 'high' );
 
 		if ( $critical_count > 0 ) {
 			$recommendations[] = __( 'Address critical security issues immediately before deployment.', 'mcp-ai-wpoos-pro' );

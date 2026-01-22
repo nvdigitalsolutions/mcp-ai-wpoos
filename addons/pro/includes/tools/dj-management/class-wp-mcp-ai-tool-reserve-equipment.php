@@ -45,7 +45,7 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'equipment_ids'     => array(
+				'equipment_ids' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of equipment IDs to reserve (required)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -53,26 +53,26 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 					),
 					'minItems'    => 1,
 				),
-				'event_id'          => array(
+				'event_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Event ID to reserve equipment for (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'event_name'        => array(
+				'event_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Event name if event_id not provided (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'start_date'        => array(
+				'start_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Reservation start date in ISO 8601 format (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'          => array(
+				'end_date'      => array(
 					'type'        => 'string',
 					'description' => __( 'Reservation end date in ISO 8601 format (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'             => array(
+				'notes'         => array(
 					'type'        => 'string',
 					'description' => __( 'Reservation notes (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
@@ -85,6 +85,9 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -133,7 +136,7 @@ class WP_MCP_AI_Tool_Reserve_Equipment implements WP_MCP_AI_Tool_Interface, WP_M
 			$has_conflict = false;
 			foreach ( $existing_reservations as $reservation ) {
 				if ( $this->check_date_overlap( $start_date, $end_date, $reservation['start_date'], $reservation['end_date'] ) ) {
-					$conflicts[] = array(
+					$conflicts[]  = array(
 						'equipment_id'   => $equipment_id,
 						'equipment_name' => get_the_title( $equipment_id ),
 						'reason'         => __( 'Date conflict with existing reservation', 'mcp-ai-wpoos-pro' ),

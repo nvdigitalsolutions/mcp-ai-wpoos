@@ -100,56 +100,56 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'client_name'        => array(
+				'client_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Client full name (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'client_email'       => array(
+				'client_email'      => array(
 					'type'        => 'string',
 					'description' => __( 'Client email address (required)', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'email',
 				),
-				'client_phone'       => array(
+				'client_phone'      => array(
 					'type'        => 'string',
 					'description' => __( 'Client phone number', 'mcp-ai-wpoos-pro' ),
 				),
-				'appointment_type'   => array(
+				'appointment_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Type of appointment (consultation, meeting, service, etc.)', 'mcp-ai-wpoos-pro' ),
 				),
-				'start_time'         => array(
+				'start_time'        => array(
 					'type'        => 'string',
 					'description' => __( 'Appointment start time (Y-m-d H:i:s format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'end_time'           => array(
+				'end_time'          => array(
 					'type'        => 'string',
 					'description' => __( 'Appointment end time (Y-m-d H:i:s format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'duration_minutes'   => array(
+				'duration_minutes'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Duration in minutes (alternative to end_time)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 15,
 					'maximum'     => 480,
 				),
-				'location'           => array(
+				'location'          => array(
 					'type'        => 'string',
 					'description' => __( 'Appointment location or virtual meeting link', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'              => array(
+				'notes'             => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes or special requests', 'mcp-ai-wpoos-pro' ),
 				),
-				'send_notification'  => array(
+				'send_notification' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Send confirmation email to client', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_conflicts'    => array(
+				'check_conflicts'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for scheduling conflicts', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'metadata'           => array(
+				'metadata'          => array(
 					'type'        => 'object',
 					'description' => __( 'Additional custom metadata', 'mcp-ai-wpoos-pro' ),
 				),
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		$client_email = sanitize_email( $arguments['client_email'] );
 		$client_phone = ! empty( $arguments['client_phone'] ) ? sanitize_text_field( $arguments['client_phone'] ) : '';
 		$start_time   = sanitize_text_field( $arguments['start_time'] );
-		
+
 		// Calculate end time.
 		$end_time = '';
 		if ( ! empty( $arguments['end_time'] ) ) {
@@ -277,16 +277,16 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			'post_content' => ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
 			'post_status'  => 'publish',
 			'meta_input'   => array(
-				'_client_name'       => $client_name,
-				'_client_email'      => $client_email,
-				'_client_phone'      => $client_phone,
-				'_appointment_type'  => ! empty( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : 'general',
-				'_start_time'        => $start_time,
-				'_end_time'          => $end_time,
-				'_location'          => ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '',
-				'_status'            => 'confirmed',
-				'_created_by'        => $current_user_id,
-				'_created_at'        => current_time( 'mysql' ),
+				'_client_name'      => $client_name,
+				'_client_email'     => $client_email,
+				'_client_phone'     => $client_phone,
+				'_appointment_type' => ! empty( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : 'general',
+				'_start_time'       => $start_time,
+				'_end_time'         => $end_time,
+				'_location'         => ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '',
+				'_status'           => 'confirmed',
+				'_created_by'       => $current_user_id,
+				'_created_at'       => current_time( 'mysql' ),
 			),
 		);
 

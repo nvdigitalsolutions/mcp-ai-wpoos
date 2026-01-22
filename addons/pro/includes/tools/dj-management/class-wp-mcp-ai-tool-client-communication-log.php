@@ -45,11 +45,11 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'client_id'        => array(
+				'client_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Client ID (optional, can use booking_id instead)', 'mcp-ai-wpoos-pro' ),
 				),
-				'booking_id'       => array(
+				'booking_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID (optional, can use client_id instead)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -58,12 +58,12 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Type of communication (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'email', 'phone', 'meeting', 'text', 'video_call', 'note' ),
 				),
-				'subject'          => array(
+				'subject'            => array(
 					'type'        => 'string',
 					'description' => __( 'Communication subject/topic (required)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'notes'            => array(
+				'notes'              => array(
 					'type'        => 'string',
 					'description' => __( 'Communication notes/details (required)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Whether follow-up is required (optional)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'follow_up_date'   => array(
+				'follow_up_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Follow-up date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
@@ -91,6 +91,9 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -122,12 +125,14 @@ class WP_MCP_AI_Tool_Client_Communication_Log implements WP_MCP_AI_Tool_Interfac
 			}
 			$client_email = get_post_meta( $booking_id, '_client_email', true );
 			// Find client by email.
-			$clients = get_posts( array(
-				'post_type'   => 'dj_client',
-				'meta_key'    => '_email',
-				'meta_value'  => $client_email,
-				'numberposts' => 1,
-			) );
+			$clients = get_posts(
+				array(
+					'post_type'   => 'dj_client',
+					'meta_key'    => '_email',
+					'meta_value'  => $client_email,
+					'numberposts' => 1,
+				)
+			);
 			if ( ! empty( $clients ) ) {
 				$client_id = $clients[0]->ID;
 			}

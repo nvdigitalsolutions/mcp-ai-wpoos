@@ -50,23 +50,23 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_slug'         => array(
+				'tool_slug'          => array(
 					'type'        => 'string',
 					'description' => __( 'Tool slug to benchmark', 'mcp-ai-wpoos-pro' ),
 				),
-				'test_arguments'    => array(
+				'test_arguments'     => array(
 					'type'        => 'object',
 					'description' => __( 'Arguments to pass to tool for testing', 'mcp-ai-wpoos-pro' ),
 					'default'     => array(),
 				),
-				'iterations'        => array(
+				'iterations'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of test iterations to run', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 10,
 				),
-				'metrics'           => array(
+				'metrics'            => array(
 					'type'        => 'array',
 					'description' => __( 'Performance metrics to measure', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -75,7 +75,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 					),
 					'default'     => array( 'time', 'memory', 'queries' ),
 				),
-				'warmup_runs'       => array(
+				'warmup_runs'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of warmup runs before benchmarking', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
@@ -87,11 +87,11 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 					'description' => __( 'Include statistical analysis (mean, median, std dev)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'compare_baseline'  => array(
+				'compare_baseline'   => array(
 					'type'        => 'string',
 					'description' => __( 'Baseline benchmark ID to compare against', 'mcp-ai-wpoos-pro' ),
 				),
-				'save_results'      => array(
+				'save_results'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Save benchmark results for future comparison', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -116,6 +116,9 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -126,13 +129,13 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 			);
 		}
 
-		$tool_slug       = sanitize_text_field( $arguments['tool_slug'] );
-		$test_arguments  = isset( $arguments['test_arguments'] ) ? (array) $arguments['test_arguments'] : array();
-		$iterations      = isset( $arguments['iterations'] ) ? absint( $arguments['iterations'] ) : 10;
-		$metrics         = isset( $arguments['metrics'] ) ? array_map( 'sanitize_text_field', (array) $arguments['metrics'] ) : array( 'time', 'memory', 'queries' );
-		$warmup_runs     = isset( $arguments['warmup_runs'] ) ? absint( $arguments['warmup_runs'] ) : 2;
-		$include_stats   = isset( $arguments['include_statistics'] ) ? (bool) $arguments['include_statistics'] : true;
-		$save_results    = isset( $arguments['save_results'] ) ? (bool) $arguments['save_results'] : true;
+		$tool_slug      = sanitize_text_field( $arguments['tool_slug'] );
+		$test_arguments = isset( $arguments['test_arguments'] ) ? (array) $arguments['test_arguments'] : array();
+		$iterations     = isset( $arguments['iterations'] ) ? absint( $arguments['iterations'] ) : 10;
+		$metrics        = isset( $arguments['metrics'] ) ? array_map( 'sanitize_text_field', (array) $arguments['metrics'] ) : array( 'time', 'memory', 'queries' );
+		$warmup_runs    = isset( $arguments['warmup_runs'] ) ? absint( $arguments['warmup_runs'] ) : 2;
+		$include_stats  = isset( $arguments['include_statistics'] ) ? (bool) $arguments['include_statistics'] : true;
+		$save_results   = isset( $arguments['save_results'] ) ? (bool) $arguments['save_results'] : true;
 
 		// Get tool instance.
 		$tool = $this->get_tool_instance( $tool_slug );
@@ -156,7 +159,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 		for ( $i = 0; $i < $iterations; $i++ ) {
 			$iteration_result = $this->benchmark_single_run( $tool, $test_arguments, $context, $metrics );
-			$results[] = $iteration_result;
+			$results[]        = $iteration_result;
 		}
 
 		// Aggregate results.
@@ -215,7 +218,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		}
 
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $registry->get_tool( $tool_slug );
+		$tool     = $registry->get_tool( $tool_slug );
 
 		if ( ! $tool ) {
 			return new WP_Error(
@@ -263,10 +266,15 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		// Track HTTP requests.
 		if ( in_array( 'http-requests', $metrics, true ) ) {
 			$http_count = 0;
-			add_filter( 'pre_http_request', function( $response ) use ( &$http_count ) {
-				$http_count++;
-				return $response;
-			}, 10, 3 );
+			add_filter(
+				'pre_http_request',
+				function ( $response ) use ( &$http_count ) {
+					$http_count++;
+					return $response;
+				},
+				10,
+				3
+			);
 		}
 
 		// Execute tool.
@@ -307,10 +315,13 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 		foreach ( $metrics as $metric ) {
 			$metric_key = $this->get_metric_key( $metric );
-			$values = array_column( $results, $metric_key );
-			$values = array_filter( $values, function( $v ) {
-				return $v !== null;
-			} );
+			$values     = array_column( $results, $metric_key );
+			$values     = array_filter(
+				$values,
+				function ( $v ) {
+					return null !== $v;
+				}
+			);
 
 			if ( ! empty( $values ) ) {
 				$aggregated[ $metric_key ] = array(
@@ -323,9 +334,14 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Success rate.
-		$success_count = count( array_filter( $results, function( $r ) {
-			return isset( $r['success'] ) && $r['success'];
-		} ) );
+		$success_count              = count(
+			array_filter(
+				$results,
+				function ( $r ) {
+					return isset( $r['success'] ) && $r['success'];
+				}
+			)
+		);
 		$aggregated['success_rate'] = ( $success_count / count( $results ) ) * 100;
 
 		return $aggregated;
@@ -343,20 +359,23 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 		foreach ( $metrics as $metric ) {
 			$metric_key = $this->get_metric_key( $metric );
-			$values = array_column( $results, $metric_key );
-			$values = array_filter( $values, function( $v ) {
-				return $v !== null;
-			} );
+			$values     = array_column( $results, $metric_key );
+			$values     = array_filter(
+				$values,
+				function ( $v ) {
+					return null !== $v;
+				}
+			);
 
 			if ( ! empty( $values ) ) {
 				sort( $values );
 				$count = count( $values );
-				$mean = array_sum( $values ) / $count;
+				$mean  = array_sum( $values ) / $count;
 
 				// Calculate median.
 				$middle = floor( $count / 2 );
-				$median = ( $count % 2 === 0 ) ? 
-					( $values[ $middle - 1 ] + $values[ $middle ] ) / 2 : 
+				$median = ( 0 === $count % 2 ) ?
+					( $values[ $middle - 1 ] + $values[ $middle ] ) / 2 :
 					$values[ $middle ];
 
 				// Calculate standard deviation.
@@ -367,9 +386,9 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 				$std_dev = sqrt( $variance / $count );
 
 				$statistics[ $metric_key ] = array(
-					'mean'   => $mean,
-					'median' => $median,
-					'std_dev' => $std_dev,
+					'mean'     => $mean,
+					'median'   => $median,
+					'std_dev'  => $std_dev,
 					'variance' => $variance / $count,
 				);
 			}
@@ -407,7 +426,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		// Check execution time.
 		if ( isset( $results['execution_time']['average'] ) ) {
 			$avg_time = $results['execution_time']['average'];
-			
+
 			if ( $avg_time > 5 ) {
 				$recommendations[] = array(
 					'priority' => 'high',
@@ -432,8 +451,8 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		// Check memory usage.
 		if ( isset( $results['memory_used']['average'] ) ) {
 			$avg_memory = $results['memory_used']['average'];
-			$memory_mb = $avg_memory / 1024 / 1024;
-			
+			$memory_mb  = $avg_memory / 1024 / 1024;
+
 			if ( $memory_mb > 100 ) {
 				$recommendations[] = array(
 					'priority' => 'high',
@@ -458,7 +477,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 		// Check database queries.
 		if ( isset( $results['db_queries']['average'] ) ) {
 			$avg_queries = $results['db_queries']['average'];
-			
+
 			if ( $avg_queries > 50 ) {
 				$recommendations[] = array(
 					'priority' => 'high',
@@ -511,12 +530,15 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 	 */
 	private function save_benchmark_results( $tool_slug, $results ) {
 		$benchmark_id = 'bench_' . $tool_slug . '_' . time();
-		
-		update_option( 'wp_mcp_ai_benchmark_' . $benchmark_id, array(
-			'tool_slug'  => $tool_slug,
-			'timestamp'  => current_time( 'mysql' ),
-			'results'    => $results,
-		) );
+
+		update_option(
+			'wp_mcp_ai_benchmark_' . $benchmark_id,
+			array(
+				'tool_slug' => $tool_slug,
+				'timestamp' => current_time( 'mysql' ),
+				'results'   => $results,
+			)
+		);
 
 		return $benchmark_id;
 	}
@@ -535,12 +557,12 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 			return null;
 		}
 
-		$comparison = array();
+		$comparison       = array();
 		$baseline_results = $baseline['results'];
 
 		// Compare execution time.
 		if ( isset( $current['execution_time']['average'] ) && isset( $baseline_results['execution_time']['average'] ) ) {
-			$change = ( ( $current['execution_time']['average'] - $baseline_results['execution_time']['average'] ) / $baseline_results['execution_time']['average'] ) * 100;
+			$change                       = ( ( $current['execution_time']['average'] - $baseline_results['execution_time']['average'] ) / $baseline_results['execution_time']['average'] ) * 100;
 			$comparison['execution_time'] = array(
 				'change_percent' => $change,
 				'improved'       => $change < 0,
@@ -549,7 +571,7 @@ class WP_MCP_AI_Tool_Benchmark_Tool_Performance implements WP_MCP_AI_Tool_Interf
 
 		// Compare memory usage.
 		if ( isset( $current['memory_used']['average'] ) && isset( $baseline_results['memory_used']['average'] ) ) {
-			$change = ( ( $current['memory_used']['average'] - $baseline_results['memory_used']['average'] ) / $baseline_results['memory_used']['average'] ) * 100;
+			$change                    = ( ( $current['memory_used']['average'] - $baseline_results['memory_used']['average'] ) / $baseline_results['memory_used']['average'] ) * 100;
 			$comparison['memory_used'] = array(
 				'change_percent' => $change,
 				'improved'       => $change < 0,

@@ -38,6 +38,6 @@ $shortcode = '[mcp_multilingual_translation_memory ' . implode( ' ', $shortcode_
 
 // Render with block wrapper.
 ?>
-<div <?php echo get_block_wrapper_attributes(); ?>>
+<div <?php echo wp_kses_post( get_block_wrapper_attributes() ); ?>>
 	<?php echo do_shortcode( $shortcode ); ?>
 </div>

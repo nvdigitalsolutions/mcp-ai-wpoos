@@ -50,39 +50,39 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_description'   => array(
+				'tool_description'       => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed description of what the tool should do', 'mcp-ai-wpoos-pro' ),
 				),
-				'parameters'         => array(
+				'parameters'             => array(
 					'type'        => 'array',
 					'description' => __( 'Tool parameter definitions from get_parameters_schema()', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'object' ),
 				),
-				'wordpress_apis'     => array(
+				'wordpress_apis'         => array(
 					'type'        => 'array',
 					'description' => __( 'WordPress APIs to use (e.g., WP_Query, WP_REST, Custom Post Types)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array(),
 				),
-				'external_apis'      => array(
+				'external_apis'          => array(
 					'type'        => 'array',
 					'description' => __( 'External APIs to integrate (e.g., OpenAI, Stripe, SendGrid)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array(),
 				),
-				'return_format'      => array(
+				'return_format'          => array(
 					'type'        => 'string',
 					'enum'        => array( 'array', 'wp_error', 'mixed' ),
 					'description' => __( 'Expected return format', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'array',
 				),
-				'include_validation' => array(
+				'include_validation'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include parameter validation code', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_sanitization' => array(
+				'include_sanitization'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include input sanitization code', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -92,11 +92,11 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Include comprehensive error handling', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'model'              => array(
+				'model'                  => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for code generation', 'mcp-ai-wpoos-pro' ),
 				),
-				'code_style'         => array(
+				'code_style'             => array(
 					'type'        => 'string',
 					'enum'        => array( 'wordpress', 'psr-2', 'minimal' ),
 					'description' => __( 'Coding style to follow', 'mcp-ai-wpoos-pro' ),
@@ -122,6 +122,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -132,15 +135,15 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 			);
 		}
 
-		$tool_description      = sanitize_textarea_field( $arguments['tool_description'] );
-		$parameters            = isset( $arguments['parameters'] ) ? (array) $arguments['parameters'] : array();
-		$wordpress_apis        = isset( $arguments['wordpress_apis'] ) ? array_map( 'sanitize_text_field', (array) $arguments['wordpress_apis'] ) : array();
-		$external_apis         = isset( $arguments['external_apis'] ) ? array_map( 'sanitize_text_field', (array) $arguments['external_apis'] ) : array();
-		$return_format         = isset( $arguments['return_format'] ) ? sanitize_text_field( $arguments['return_format'] ) : 'array';
-		$include_validation    = isset( $arguments['include_validation'] ) ? (bool) $arguments['include_validation'] : true;
-		$include_sanitization  = isset( $arguments['include_sanitization'] ) ? (bool) $arguments['include_sanitization'] : true;
+		$tool_description       = sanitize_textarea_field( $arguments['tool_description'] );
+		$parameters             = isset( $arguments['parameters'] ) ? (array) $arguments['parameters'] : array();
+		$wordpress_apis         = isset( $arguments['wordpress_apis'] ) ? array_map( 'sanitize_text_field', (array) $arguments['wordpress_apis'] ) : array();
+		$external_apis          = isset( $arguments['external_apis'] ) ? array_map( 'sanitize_text_field', (array) $arguments['external_apis'] ) : array();
+		$return_format          = isset( $arguments['return_format'] ) ? sanitize_text_field( $arguments['return_format'] ) : 'array';
+		$include_validation     = isset( $arguments['include_validation'] ) ? (bool) $arguments['include_validation'] : true;
+		$include_sanitization   = isset( $arguments['include_sanitization'] ) ? (bool) $arguments['include_sanitization'] : true;
 		$include_error_handling = isset( $arguments['include_error_handling'] ) ? (bool) $arguments['include_error_handling'] : true;
-		$code_style            = isset( $arguments['code_style'] ) ? sanitize_text_field( $arguments['code_style'] ) : 'wordpress';
+		$code_style             = isset( $arguments['code_style'] ) ? sanitize_text_field( $arguments['code_style'] ) : 'WordPress';
 
 		// Build AI prompt for code generation.
 		$prompt = $this->build_code_generation_prompt(
@@ -221,7 +224,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 	 * @return string AI prompt.
 	 */
 	private function build_code_generation_prompt( $tool_description, $parameters, $wordpress_apis, $external_apis, $return_format, $include_validation, $include_sanitization, $include_error_handling, $code_style ) {
-		$prompt = "Generate a WordPress AI tool execute() method implementation.\n\n";
+		$prompt  = "Generate a WordPress AI tool execute() method implementation.\n\n";
 		$prompt .= "Tool Description:\n{$tool_description}\n\n";
 
 		if ( ! empty( $parameters ) ) {
@@ -265,7 +268,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 		$prompt .= "3. Main logic implementation\n";
 		$prompt .= "4. Error handling\n";
 		$prompt .= "5. Success response array\n\n";
-		$prompt .= "Output only PHP code, no markdown formatting.";
+		$prompt .= 'Output only PHP code, no markdown formatting.';
 
 		return $prompt;
 	}
@@ -279,7 +282,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function get_ai_service( $arguments, $context ) {
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		
+
 		if ( empty( $model ) && isset( $context['assistant_model'] ) ) {
 			$model = $context['assistant_model'];
 		}
@@ -348,10 +351,10 @@ class WP_MCP_AI_Tool_Generate_Tool_Logic implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Check for balanced braces.
-		$open_braces = substr_count( $code, '{' );
+		$open_braces  = substr_count( $code, '{' );
 		$close_braces = substr_count( $code, '}' );
 		if ( $open_braces !== $close_braces ) {
-			$result['valid'] = false;
+			$result['valid']      = false;
 			$result['warnings'][] = __( 'Unbalanced braces detected.', 'mcp-ai-wpoos-pro' );
 		}
 

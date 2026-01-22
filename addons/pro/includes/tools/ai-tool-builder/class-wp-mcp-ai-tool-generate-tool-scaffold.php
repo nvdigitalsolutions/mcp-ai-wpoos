@@ -50,29 +50,29 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_name'          => array(
+				'tool_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Human-readable tool name (e.g., "Generate PDF Report")', 'mcp-ai-wpoos-pro' ),
 				),
-				'tool_slug'          => array(
+				'tool_slug'        => array(
 					'type'        => 'string',
 					'description' => __( 'Tool slug in snake_case (e.g., "generate_pdf_report"). Auto-generated if not provided.', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'        => array(
+				'description'      => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed description of what the tool does', 'mcp-ai-wpoos-pro' ),
 				),
-				'capability'         => array(
+				'capability'       => array(
 					'type'        => 'string',
 					'description' => __( 'Required WordPress capability (default: manage_options)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'manage_options',
 				),
-				'toolkit'            => array(
+				'toolkit'          => array(
 					'type'        => 'string',
 					'description' => __( 'Toolkit category (e.g., "image-production", "analytics", "custom")', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'custom',
 				),
-				'interfaces'         => array(
+				'interfaces'       => array(
 					'type'        => 'array',
 					'description' => __( 'Additional interfaces to implement (e.g., WP_MCP_AI_Tool_Capability_Flags_Interface)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -80,7 +80,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 					),
 					'default'     => array(),
 				),
-				'capability_flags'   => array(
+				'capability_flags' => array(
 					'type'        => 'array',
 					'description' => __( 'Tool capability flags (pro, read-only, state-changing, etc.)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 					),
 					'default'     => array( 'pro', 'requires-capability' ),
 				),
-				'parameters'         => array(
+				'parameters'       => array(
 					'type'        => 'array',
 					'description' => __( 'Tool parameter definitions (name, type, description, required)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -102,16 +102,16 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 					),
 					'default'     => array(),
 				),
-				'output_path'        => array(
+				'output_path'      => array(
 					'type'        => 'string',
 					'description' => __( 'Custom output file path (optional, defaults to toolkit directory)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_tests'      => array(
+				'include_tests'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Generate accompanying PHPUnit test file', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'include_docs'       => array(
+				'include_docs'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Generate comprehensive documentation', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -136,6 +136,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -150,8 +153,8 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$description = sanitize_textarea_field( $arguments['description'] );
 
 		// Generate tool slug if not provided.
-		$tool_slug = isset( $arguments['tool_slug'] ) ? 
-			sanitize_title( $arguments['tool_slug'] ) : 
+		$tool_slug = isset( $arguments['tool_slug'] ) ?
+			sanitize_title( $arguments['tool_slug'] ) :
 			sanitize_title( str_replace( ' ', '_', strtolower( $tool_name ) ) );
 
 		$capability       = isset( $arguments['capability'] ) ? sanitize_text_field( $arguments['capability'] ) : 'manage_options';
@@ -191,16 +194,18 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		}
 
 		// Generate scaffold code.
-		$scaffold = $this->generate_scaffold_code( array(
-			'class_name'       => $class_name,
-			'tool_name'        => $tool_name,
-			'tool_slug'        => $tool_slug,
-			'description'      => $description,
-			'capability'       => $capability,
-			'interfaces'       => $interfaces,
-			'capability_flags' => $capability_flags,
-			'parameters'       => $parameters,
-		) );
+		$scaffold = $this->generate_scaffold_code(
+			array(
+				'class_name'       => $class_name,
+				'tool_name'        => $tool_name,
+				'tool_slug'        => $tool_slug,
+				'description'      => $description,
+				'capability'       => $capability,
+				'interfaces'       => $interfaces,
+				'capability_flags' => $capability_flags,
+				'parameters'       => $parameters,
+			)
+		);
 
 		// Write file.
 		$bytes_written = file_put_contents( $output_path, $scaffold );
@@ -213,13 +218,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		}
 
 		$result = array(
-			'success'       => true,
-			'message'       => __( 'Tool scaffold generated successfully.', 'mcp-ai-wpoos-pro' ),
-			'file_path'     => $output_path,
-			'class_name'    => $class_name,
-			'tool_slug'     => $tool_slug,
-			'file_size'     => $bytes_written,
-			'next_steps'    => array(
+			'success'    => true,
+			'message'    => __( 'Tool scaffold generated successfully.', 'mcp-ai-wpoos-pro' ),
+			'file_path'  => $output_path,
+			'class_name' => $class_name,
+			'tool_slug'  => $tool_slug,
+			'file_size'  => $bytes_written,
+			'next_steps' => array(
 				'1' => __( 'Implement the execute() method logic', 'mcp-ai-wpoos-pro' ),
 				'2' => __( 'Register the tool in the toolkit loader', 'mcp-ai-wpoos-pro' ),
 				'3' => __( 'Test the tool functionality', 'mcp-ai-wpoos-pro' ),
@@ -228,13 +233,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 
 		// Generate tests if requested.
 		if ( isset( $arguments['include_tests'] ) && $arguments['include_tests'] ) {
-			$test_result = $this->generate_test_file( $class_name, $tool_slug, $output_dir );
+			$test_result         = $this->generate_test_file( $class_name, $tool_slug, $output_dir );
 			$result['test_file'] = $test_result;
 		}
 
 		// Generate documentation if requested.
 		if ( isset( $arguments['include_docs'] ) && $arguments['include_docs'] ) {
-			$docs_result = $this->generate_documentation( $tool_name, $tool_slug, $description, $parameters );
+			$docs_result             = $this->generate_documentation( $tool_name, $tool_slug, $description, $parameters );
 			$result['documentation'] = $docs_result;
 		}
 
@@ -274,7 +279,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 			}
 			$flags_array .= "\t\t)";
 
-			$flags_method = "\n\t/**\n\t * {@inheritdoc}\n\t */\n";
+			$flags_method  = "\n\t/**\n\t * {@inheritdoc}\n\t */\n";
 			$flags_method .= "\tpublic function get_capability_flags() {\n";
 			$flags_method .= "\t\treturn " . $flags_array . ";\n";
 			$flags_method .= "\t}\n";
@@ -284,7 +289,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 		$params_schema = $this->build_parameters_schema( $parameters );
 
 		// Build the scaffold.
-		$scaffold = "<?php\n";
+		$scaffold  = "<?php\n";
 		$scaffold .= "/**\n";
 		$scaffold .= " * Tool: {$tool_name}\n";
 		$scaffold .= " *\n";
@@ -364,7 +369,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 			return "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => array(),\n\t\t\t'required'   => array(),\n\t\t)";
 		}
 
-		$schema = "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => array(\n";
+		$schema   = "array(\n\t\t\t'type'       => 'object',\n\t\t\t'properties' => array(\n";
 		$required = array();
 
 		foreach ( $parameters as $param ) {
@@ -373,8 +378,8 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 				continue;
 			}
 
-			$type = isset( $param['type'] ) ? sanitize_text_field( $param['type'] ) : 'string';
-			$desc = isset( $param['description'] ) ? esc_attr( $param['description'] ) : '';
+			$type        = isset( $param['type'] ) ? sanitize_text_field( $param['type'] ) : 'string';
+			$desc        = isset( $param['description'] ) ? esc_attr( $param['description'] ) : '';
 			$is_required = isset( $param['required'] ) && $param['required'];
 
 			if ( $is_required ) {
@@ -404,8 +409,8 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function generate_test_file( $class_name, $tool_slug, $output_dir ) {
 		$test_file = WP_MCP_AI_PRO_PATH . 'tests/tools/test-' . str_replace( '_', '-', strtolower( $tool_slug ) ) . '.php';
-		
-		$test_content = "<?php\n";
+
+		$test_content  = "<?php\n";
 		$test_content .= "/**\n * Tests for {$class_name}\n *\n * @package WP_MCP_AI\n */\n\n";
 		$test_content .= "class Test_{$class_name} extends WP_UnitTestCase {\n\n";
 		$test_content .= "\tpublic function test_tool_registration() {\n";
@@ -432,18 +437,18 @@ class WP_MCP_AI_Tool_Generate_Tool_Scaffold implements WP_MCP_AI_Tool_Interface,
 	 * @return array Result array.
 	 */
 	private function generate_documentation( $tool_name, $tool_slug, $description, $parameters ) {
-		$docs = "# {$tool_name}\n\n";
+		$docs  = "# {$tool_name}\n\n";
 		$docs .= "**Slug:** `{$tool_slug}`\n\n";
 		$docs .= "## Description\n\n{$description}\n\n";
-		
+
 		if ( ! empty( $parameters ) ) {
 			$docs .= "## Parameters\n\n";
 			foreach ( $parameters as $param ) {
 				$name = isset( $param['name'] ) ? $param['name'] : '';
 				$type = isset( $param['type'] ) ? $param['type'] : 'string';
 				$desc = isset( $param['description'] ) ? $param['description'] : '';
-				$req = isset( $param['required'] ) && $param['required'] ? 'Required' : 'Optional';
-				
+				$req  = isset( $param['required'] ) && $param['required'] ? 'Required' : 'Optional';
+
 				$docs .= "- **{$name}** ({$type}, {$req}): {$desc}\n";
 			}
 		}

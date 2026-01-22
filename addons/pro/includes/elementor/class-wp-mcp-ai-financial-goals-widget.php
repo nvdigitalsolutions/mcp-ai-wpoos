@@ -118,9 +118,9 @@ class WP_MCP_AI_Financial_Goals_Widget extends \Elementor\Widget_Base {
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'all',
 				'options' => array(
-					'all'        => __( 'All Goals', 'mcp-ai-wpoos-pro' ),
-					'active'     => __( 'Active', 'mcp-ai-wpoos-pro' ),
-					'completed'  => __( 'Completed', 'mcp-ai-wpoos-pro' ),
+					'all'         => __( 'All Goals', 'mcp-ai-wpoos-pro' ),
+					'active'      => __( 'Active', 'mcp-ai-wpoos-pro' ),
+					'completed'   => __( 'Completed', 'mcp-ai-wpoos-pro' ),
 					'in_progress' => __( 'In Progress', 'mcp-ai-wpoos-pro' ),
 				),
 			)

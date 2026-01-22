@@ -83,8 +83,14 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 					'type'        => 'object',
 					'description' => __( 'BPM range (optional)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'min' => array( 'type' => 'number', 'minimum' => 1 ),
-						'max' => array( 'type' => 'number', 'maximum' => 300 ),
+						'min' => array(
+							'type'    => 'number',
+							'minimum' => 1,
+						),
+						'max' => array(
+							'type'    => 'number',
+							'maximum' => 300,
+						),
 					),
 				),
 				'exclude_explicit' => array(
@@ -100,6 +106,9 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -166,16 +175,16 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		if ( count( $meta_query ) > 1 ) {
-			$meta_query['relation'] = 'AND';
+			$meta_query['relation']   = 'AND';
 			$query_args['meta_query'] = $meta_query;
 		} elseif ( count( $meta_query ) === 1 ) {
 			$query_args['meta_query'] = $meta_query;
 		}
 
 		// Execute query.
-		$tracks_query = new WP_Query( $query_args );
-		$selected_tracks = array();
-		$total_duration = 0;
+		$tracks_query            = new WP_Query( $query_args );
+		$selected_tracks         = array();
+		$total_duration          = 0;
 		$target_duration_seconds = $duration * 60;
 
 		if ( $tracks_query->have_posts() ) {
@@ -184,7 +193,7 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 				$track_id = get_the_ID();
 
 				$track_duration = absint( get_post_meta( $track_id, '_duration', true ) );
-				
+
 				// Skip if this would exceed target duration by too much.
 				if ( $total_duration > 0 && ( $total_duration + $track_duration ) > ( $target_duration_seconds * 1.2 ) ) {
 					continue;
@@ -238,15 +247,15 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 		update_post_meta( $playlist_id, '_created_date', current_time( 'mysql' ) );
 
 		return array(
-			'success'      => true,
-			'playlist_id'  => $playlist_id,
-			'message'      => sprintf(
+			'success'     => true,
+			'playlist_id' => $playlist_id,
+			'message'     => sprintf(
 				/* translators: 1: playlist name, 2: track count */
 				__( 'AI-generated playlist "%1$s" created with %2$d tracks.', 'mcp-ai-wpoos-pro' ),
 				$name,
 				count( $selected_tracks )
 			),
-			'playlist'     => array(
+			'playlist'    => array(
 				'id'             => $playlist_id,
 				'name'           => $name,
 				'mood'           => $mood,
@@ -255,7 +264,7 @@ class WP_MCP_AI_Tool_Generate_Playlist_AI implements WP_MCP_AI_Tool_Interface, W
 				'track_count'    => count( $selected_tracks ),
 				'total_duration' => round( $total_duration / 60, 1 ),
 			),
-			'tracks'       => $selected_tracks,
+			'tracks'      => $selected_tracks,
 		);
 	}
 

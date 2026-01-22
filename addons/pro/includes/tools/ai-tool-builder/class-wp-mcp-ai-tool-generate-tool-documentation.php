@@ -50,15 +50,15 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'tool_class'       => array(
+				'tool_class'        => array(
 					'type'        => 'string',
 					'description' => __( 'Tool class name to document', 'mcp-ai-wpoos-pro' ),
 				),
-				'tool_file'        => array(
+				'tool_file'         => array(
 					'type'        => 'string',
 					'description' => __( 'Path to tool file for analysis', 'mcp-ai-wpoos-pro' ),
 				),
-				'doc_sections'     => array(
+				'doc_sections'      => array(
 					'type'        => 'array',
 					'description' => __( 'Documentation sections to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -67,7 +67,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 					),
 					'default'     => array( 'overview', 'parameters', 'examples', 'return-values' ),
 				),
-				'include_examples' => array(
+				'include_examples'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include code usage examples', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -78,23 +78,23 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array(),
 				),
-				'output_format'    => array(
+				'output_format'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'markdown', 'html', 'phpdoc' ),
 					'description' => __( 'Documentation output format', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'markdown',
 				),
-				'audience_level'   => array(
+				'audience_level'    => array(
 					'type'        => 'string',
 					'enum'        => array( 'beginner', 'intermediate', 'advanced', 'developer' ),
 					'description' => __( 'Target audience technical level', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'intermediate',
 				),
-				'output_file'      => array(
+				'output_file'       => array(
 					'type'        => 'string',
 					'description' => __( 'Path to save documentation file', 'mcp-ai-wpoos-pro' ),
 				),
-				'model'            => array(
+				'model'             => array(
 					'type'        => 'string',
 					'description' => __( 'AI model to use for documentation generation', 'mcp-ai-wpoos-pro' ),
 				),
@@ -118,6 +118,9 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -185,13 +188,13 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 
 		// Save to file if path provided.
 		if ( isset( $arguments['output_file'] ) && ! empty( $arguments['output_file'] ) ) {
-			$output_file = sanitize_text_field( $arguments['output_file'] );
+			$output_file   = sanitize_text_field( $arguments['output_file'] );
 			$bytes_written = file_put_contents( $output_file, $formatted_docs );
 
 			if ( false !== $bytes_written ) {
 				$result['file_saved'] = true;
-				$result['file_path'] = $output_file;
-				$result['file_size'] = $bytes_written;
+				$result['file_path']  = $output_file;
+				$result['file_size']  = $bytes_written;
 			} else {
 				$result['warning'] = __( 'Failed to save documentation file.', 'mcp-ai-wpoos-pro' );
 			}
@@ -209,11 +212,11 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 	 */
 	private function analyze_tool_for_docs( $tool_class, $tool_file ) {
 		$tool_data = array(
-			'class_name'  => $tool_class,
-			'name'        => '',
-			'description' => '',
-			'slug'        => '',
-			'parameters'  => array(),
+			'class_name'   => $tool_class,
+			'name'         => '',
+			'description'  => '',
+			'slug'         => '',
+			'parameters'   => array(),
 			'capabilities' => array(),
 		);
 
@@ -335,10 +338,10 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 
 			case 'phpdoc':
 				// Wrap in PHPDoc format.
-				$lines = explode( "\n", $content );
+				$lines  = explode( "\n", $content );
 				$phpdoc = "/**\n";
 				foreach ( $lines as $line ) {
-					$phpdoc .= " * " . $line . "\n";
+					$phpdoc .= ' * ' . $line . "\n";
 				}
 				$phpdoc .= " */\n";
 				return $phpdoc;
@@ -358,7 +361,7 @@ class WP_MCP_AI_Tool_Generate_Tool_Documentation implements WP_MCP_AI_Tool_Inter
 	 */
 	private function get_ai_service( $arguments, $context ) {
 		$model = isset( $arguments['model'] ) ? sanitize_text_field( $arguments['model'] ) : '';
-		
+
 		if ( empty( $model ) && isset( $context['assistant_model'] ) ) {
 			$model = $context['assistant_model'];
 		}

@@ -45,70 +45,70 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'           => array(
+				'action'       => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'add', 'update', 'search', 'delete' ),
 				),
-				'track_id'         => array(
+				'track_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Track ID (required for update/delete)', 'mcp-ai-wpoos-pro' ),
 				),
-				'title'            => array(
+				'title'        => array(
 					'type'        => 'string',
 					'description' => __( 'Track title (required for add)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'artist'           => array(
+				'artist'       => array(
 					'type'        => 'string',
 					'description' => __( 'Artist name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'album'            => array(
+				'album'        => array(
 					'type'        => 'string',
 					'description' => __( 'Album name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'genre'            => array(
+				'genre'        => array(
 					'type'        => 'string',
 					'description' => __( 'Music genre (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'bpm'              => array(
+				'bpm'          => array(
 					'type'        => 'number',
 					'description' => __( 'Beats per minute (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 300,
 				),
-				'key'              => array(
+				'key'          => array(
 					'type'        => 'string',
 					'description' => __( 'Musical key (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 10,
 				),
-				'duration'         => array(
+				'duration'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Track duration in seconds (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'year'             => array(
+				'year'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Release year (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1900,
 					'maximum'     => 2100,
 				),
-				'tags'             => array(
+				'tags'         => array(
 					'type'        => 'array',
 					'description' => __( 'Tags for categorization (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'file_path'        => array(
+				'file_path'    => array(
 					'type'        => 'string',
 					'description' => __( 'File path or URL (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'search_query'     => array(
+				'search_query' => array(
 					'type'        => 'string',
 					'description' => __( 'Search query (required for search action)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
@@ -121,6 +121,9 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate action.
@@ -164,8 +167,8 @@ class WP_MCP_AI_Tool_Manage_Music_Library implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$title    = sanitize_text_field( $arguments['title'] );
-		$artist   = ! empty( $arguments['artist'] ) ? sanitize_text_field( $arguments['artist'] ) : '';
+		$title  = sanitize_text_field( $arguments['title'] );
+		$artist = ! empty( $arguments['artist'] ) ? sanitize_text_field( $arguments['artist'] ) : '';
 
 		$post_data = array(
 			'post_title'  => $title . ( $artist ? ' - ' . $artist : '' ),

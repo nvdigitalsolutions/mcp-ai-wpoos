@@ -45,47 +45,47 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'name'             => array(
+				'name'            => array(
 					'type'        => 'string',
 					'description' => __( 'Playlist name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description'      => array(
+				'description'     => array(
 					'type'        => 'string',
 					'description' => __( 'Playlist description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'event_type'       => array(
+				'event_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Event type this playlist is for (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wedding', 'corporate', 'birthday', 'club', 'private_party', 'festival', 'other' ),
 				),
-				'genre'            => array(
+				'genre'           => array(
 					'type'        => 'string',
 					'description' => __( 'Primary genre (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'mood'             => array(
+				'mood'            => array(
 					'type'        => 'string',
 					'description' => __( 'Playlist mood (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'energetic', 'chill', 'romantic', 'party', 'upbeat', 'mellow' ),
 				),
-				'tracks'           => array(
+				'tracks'          => array(
 					'type'        => 'array',
 					'description' => __( 'Array of track objects (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
-							'title'  => array( 'type' => 'string' ),
-							'artist' => array( 'type' => 'string' ),
-							'bpm'    => array( 'type' => 'number' ),
-							'key'    => array( 'type' => 'string' ),
+							'title'    => array( 'type' => 'string' ),
+							'artist'   => array( 'type' => 'string' ),
+							'bpm'      => array( 'type' => 'number' ),
+							'key'      => array( 'type' => 'string' ),
 							'duration' => array( 'type' => 'number' ),
 						),
 					),
 				),
-				'target_duration'  => array(
+				'target_duration' => array(
 					'type'        => 'number',
 					'description' => __( 'Target playlist duration in minutes (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -98,6 +98,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -163,14 +166,14 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		update_post_meta( $playlist_id, '_total_duration', $total_duration );
 
 		return array(
-			'success'      => true,
-			'playlist_id'  => $playlist_id,
-			'message'      => sprintf(
+			'success'     => true,
+			'playlist_id' => $playlist_id,
+			'message'     => sprintf(
 				/* translators: %s: playlist name */
 				__( 'Playlist "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
 				$name
 			),
-			'playlist'     => array(
+			'playlist'    => array(
 				'id'              => $playlist_id,
 				'name'            => $name,
 				'event_type'      => $event_type,

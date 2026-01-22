@@ -97,11 +97,11 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'appointment_id'  => array(
+				'appointment_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Appointment ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_history' => array(
+				'include_history'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include change and activity history', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -174,23 +174,23 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 
 		// Build appointment details.
 		$details = array(
-			'id'               => $appointment_id,
-			'title'            => get_the_title( $appointment_id ),
-			'client'           => array(
+			'id'          => $appointment_id,
+			'title'       => get_the_title( $appointment_id ),
+			'client'      => array(
 				'name'  => get_post_meta( $appointment_id, '_client_name', true ),
 				'email' => get_post_meta( $appointment_id, '_client_email', true ),
 				'phone' => get_post_meta( $appointment_id, '_client_phone', true ),
 			),
-			'appointment'      => array(
+			'appointment' => array(
 				'type'       => get_post_meta( $appointment_id, '_appointment_type', true ),
 				'start_time' => get_post_meta( $appointment_id, '_start_time', true ),
 				'end_time'   => get_post_meta( $appointment_id, '_end_time', true ),
 				'location'   => get_post_meta( $appointment_id, '_location', true ),
 				'status'     => get_post_meta( $appointment_id, '_status', true ),
 			),
-			'notes'            => $appointment->post_content,
-			'created_at'       => get_post_meta( $appointment_id, '_created_at', true ),
-			'created_by'       => get_post_meta( $appointment_id, '_created_by', true ),
+			'notes'       => $appointment->post_content,
+			'created_at'  => get_post_meta( $appointment_id, '_created_at', true ),
+			'created_by'  => get_post_meta( $appointment_id, '_created_by', true ),
 		);
 
 		// Include history if requested.
@@ -214,10 +214,10 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 			$cancelled_at = get_post_meta( $appointment_id, '_cancelled_at', true );
 			if ( $cancelled_at ) {
 				$details['history']['cancelled'] = array(
-					'at'              => $cancelled_at,
-					'by'              => get_post_meta( $appointment_id, '_cancelled_by', true ),
-					'by_user_id'      => get_post_meta( $appointment_id, '_cancelled_by_user_id', true ),
-					'reason'          => get_post_meta( $appointment_id, '_cancellation_reason', true ),
+					'at'               => $cancelled_at,
+					'by'               => get_post_meta( $appointment_id, '_cancelled_by', true ),
+					'by_user_id'       => get_post_meta( $appointment_id, '_cancelled_by_user_id', true ),
+					'reason'           => get_post_meta( $appointment_id, '_cancellation_reason', true ),
 					'refund_processed' => get_post_meta( $appointment_id, '_refund_processed', true ),
 				);
 			}
@@ -225,12 +225,12 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 
 		// Include custom metadata if requested.
 		if ( ! empty( $arguments['include_metadata'] ) ) {
-			$all_meta = get_post_meta( $appointment_id );
+			$all_meta    = get_post_meta( $appointment_id );
 			$custom_meta = array();
 
 			foreach ( $all_meta as $key => $value ) {
 				if ( strpos( $key, '_custom_' ) === 0 ) {
-					$clean_key = str_replace( '_custom_', '', $key );
+					$clean_key                 = str_replace( '_custom_', '', $key );
 					$custom_meta[ $clean_key ] = is_array( $value ) && count( $value ) === 1 ? $value[0] : $value;
 				}
 			}
@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Get_Appointment_Details implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success' => true,
+			'success'     => true,
 			'appointment' => $details,
 		);
 	}

@@ -95,6 +95,9 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		if ( empty( $arguments['name'] ) || empty( $arguments['email'] ) ) {
@@ -115,12 +118,14 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Check for existing client with same email.
-		$existing = get_posts( array(
-			'post_type'  => 'dj_client',
-			'meta_key'   => '_email',
-			'meta_value' => $email,
-			'numberposts' => 1,
-		) );
+		$existing = get_posts(
+			array(
+				'post_type'   => 'dj_client',
+				'meta_key'    => '_email',
+				'meta_value'  => $email,
+				'numberposts' => 1,
+			)
+		);
 
 		if ( ! empty( $existing ) ) {
 			return array(

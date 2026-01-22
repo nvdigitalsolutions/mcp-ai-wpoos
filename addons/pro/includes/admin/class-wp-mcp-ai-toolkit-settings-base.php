@@ -437,46 +437,46 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 		<?php
 	}
 
-/**
- * Render remote sites tab.
- */
-protected function render_remote_sites_tab() {
-// Check if Remote Sites is enabled.
-$settings = get_option( $this->option_name, array() );
-if ( empty( $settings['enable_remote_sites'] ) ) {
-?>
+	/**
+	 * Render remote sites tab.
+	 */
+	protected function render_remote_sites_tab() {
+		// Check if Remote Sites is enabled.
+		$settings = get_option( $this->option_name, array() );
+		if ( empty( $settings['enable_remote_sites'] ) ) {
+			?>
 <div class="toolkit-card">
 <h2><?php esc_html_e( 'Remote Sites Integration', 'mcp-ai-wpoos-pro' ); ?></h2>
 <p><?php esc_html_e( 'Remote Sites functionality allows this toolkit to query and interact with remote WordPress/WooCommerce sites in your mesh network.', 'mcp-ai-wpoos-pro' ); ?></p>
 <p><?php esc_html_e( 'Enable Remote Sites in the Configuration tab to access this feature.', 'mcp-ai-wpoos-pro' ); ?></p>
 </div>
-<?php
-return;
-}
+			<?php
+			return;
+		}
 
-// Load Remote Site Manager.
-require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
+		// Load Remote Site Manager.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-remote-site-manager.php';
 
-// Get all configured remote sites.
-$remote_sites = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
+		// Get all configured remote sites.
+		$remote_sites = WP_MCP_AI_Pro_Remote_Site_Manager::get_all_connections();
 
-?>
+		?>
 <div class="toolkit-card">
 <h2><?php esc_html_e( 'Remote Sites Configuration', 'mcp-ai-wpoos-pro' ); ?></h2>
 <p><?php esc_html_e( 'This toolkit can interact with the following remote sites. Configure remote sites in the main Remote Sites settings page.', 'mcp-ai-wpoos-pro' ); ?></p>
 
-<?php if ( empty( $remote_sites ) ) : ?>
+		<?php if ( empty( $remote_sites ) ) : ?>
 <div class="notice notice-warning inline">
 <p>
-<?php
-echo wp_kses_post(
-sprintf(
-/* translators: %s: Link to remote sites settings */
-__( 'No remote sites configured. <a href="%s">Add remote sites</a> to enable cross-site functionality.', 'mcp-ai-wpoos-pro' ),
-admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' )
-)
-);
-?>
+			<?php
+			echo wp_kses_post(
+				sprintf(
+				/* translators: %s: Link to remote sites settings */
+					__( 'No remote sites configured. <a href="%s">Add remote sites</a> to enable cross-site functionality.', 'mcp-ai-wpoos-pro' ),
+					admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' )
+				)
+			);
+			?>
 </p>
 </div>
 <?php else : ?>
@@ -490,13 +490,13 @@ admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' )
 </tr>
 </thead>
 <tbody>
-<?php foreach ( $remote_sites as $site_id => $site ) : ?>
+	<?php foreach ( $remote_sites as $site_id => $site ) : ?>
 <tr>
 <td><strong><?php echo esc_html( $site['name'] ?? __( '(Unnamed Site)', 'mcp-ai-wpoos-pro' ) ); ?></strong></td>
 <td><code><?php echo esc_html( $site['url'] ?? '-' ); ?></code></td>
-<td><?php echo esc_html( ucfirst( $site['type'] ?? 'wordpress' ) ); ?></td>
+<td><?php echo esc_html( ucfirst( $site['type'] ?? 'WordPress' ) ); ?></td>
 <td>
-<?php if ( ! empty( $site['enabled'] ) ) : ?>
+		<?php if ( ! empty( $site['enabled'] ) ) : ?>
 <span style="color: green;">●</span> <?php esc_html_e( 'Active', 'mcp-ai-wpoos-pro' ); ?>
 <?php else : ?>
 <span style="color: red;">●</span> <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?>
@@ -509,55 +509,55 @@ admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' )
 
 <p>
 <a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-pro-remote-sites' ) ); ?>" class="button button-secondary">
-<?php esc_html_e( 'Manage Remote Sites', 'mcp-ai-wpoos-pro' ); ?>
+	<?php esc_html_e( 'Manage Remote Sites', 'mcp-ai-wpoos-pro' ); ?>
 </a>
 </p>
 <?php endif; ?>
 </div>
 
-<?php
-// Render toolkit-specific remote sites functionality.
-$this->render_toolkit_remote_features();
-}
+		<?php
+		// Render toolkit-specific remote sites functionality.
+		$this->render_toolkit_remote_features();
+	}
 
-/**
- * Render toolkit-specific remote sites features.
- * Child classes can override this to provide custom remote features.
- */
-protected function render_toolkit_remote_features() {
-?>
+	/**
+	 * Render toolkit-specific remote sites features.
+	 * Child classes can override this to provide custom remote features.
+	 */
+	protected function render_toolkit_remote_features() {
+		?>
 <div class="toolkit-card">
 <h2><?php esc_html_e( 'Remote Features', 'mcp-ai-wpoos-pro' ); ?></h2>
 <p><?php esc_html_e( 'This toolkit supports the following remote site capabilities:', 'mcp-ai-wpoos-pro' ); ?></p>
 
-<?php
-// Get toolkit-specific capabilities.
-$capabilities = $this->get_remote_capabilities();
+		<?php
+		// Get toolkit-specific capabilities.
+		$capabilities = $this->get_remote_capabilities();
 
-if ( ! empty( $capabilities ) ) :
-?>
+		if ( ! empty( $capabilities ) ) :
+			?>
 <ul style="list-style: disc; margin-left: 20px;">
-<?php foreach ( $capabilities as $capability ) : ?>
+			<?php foreach ( $capabilities as $capability ) : ?>
 <li><?php echo esc_html( $capability ); ?></li>
 <?php endforeach; ?>
 </ul>
-<?php else : ?>
+	<?php else : ?>
 <p><em><?php esc_html_e( 'No specific remote capabilities configured for this toolkit.', 'mcp-ai-wpoos-pro' ); ?></em></p>
-<?php endif; ?>
+	<?php endif; ?>
 </div>
-<?php
-}
+		<?php
+	}
 
-/**
- * Get toolkit-specific remote capabilities.
- * Child classes should override this to specify their capabilities.
- *
- * @return array Array of capability descriptions.
- */
-protected function get_remote_capabilities() {
+	/**
+	 * Get toolkit-specific remote capabilities.
+	 * Child classes should override this to specify their capabilities.
+	 *
+	 * @return array Array of capability descriptions.
+	 */
+	protected function get_remote_capabilities() {
 		// Try to load from centralized capabilities loader.
 		$loader_file = WP_MCP_AI_PRO_PATH . 'includes/admin/remote-capabilities/class-wp-mcp-ai-remote-capabilities-loader.php';
-		
+
 		if ( file_exists( $loader_file ) ) {
 			require_once $loader_file;
 			return WP_MCP_AI_Remote_Capabilities_Loader::get_capabilities( $this->toolkit_slug );

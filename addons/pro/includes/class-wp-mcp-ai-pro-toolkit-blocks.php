@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 		// Register block category.
 		add_filter(
 			'block_categories_all',
-			function( $categories ) {
+			function ( $categories ) {
 				return array_merge(
 					$categories,
 					array(
@@ -68,7 +68,7 @@ class WP_MCP_AI_Pro_Toolkit_Blocks {
 		}
 
 		// Get blocks directory path.
-		$blocks_dir = dirname( __FILE__ ) . '/blocks/';
+		$blocks_dir = __DIR__ . '/blocks/';
 
 		// Register all blocks by scanning the blocks directory.
 		$block_dirs = array(

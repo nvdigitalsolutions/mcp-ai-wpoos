@@ -97,54 +97,54 @@ class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'appointment_id'     => array(
+				'appointment_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Appointment ID to update (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'client_name'        => array(
+				'client_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Updated client name', 'mcp-ai-wpoos-pro' ),
 				),
-				'client_email'       => array(
+				'client_email'      => array(
 					'type'        => 'string',
 					'description' => __( 'Updated client email', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'email',
 				),
-				'client_phone'       => array(
+				'client_phone'      => array(
 					'type'        => 'string',
 					'description' => __( 'Updated client phone', 'mcp-ai-wpoos-pro' ),
 				),
-				'appointment_type'   => array(
+				'appointment_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Updated appointment type', 'mcp-ai-wpoos-pro' ),
 				),
-				'start_time'         => array(
+				'start_time'        => array(
 					'type'        => 'string',
 					'description' => __( 'Updated start time (Y-m-d H:i:s format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'end_time'           => array(
+				'end_time'          => array(
 					'type'        => 'string',
 					'description' => __( 'Updated end time (Y-m-d H:i:s format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'location'           => array(
+				'location'          => array(
 					'type'        => 'string',
 					'description' => __( 'Updated location', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'              => array(
+				'notes'             => array(
 					'type'        => 'string',
 					'description' => __( 'Updated notes', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'             => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'Updated status', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'confirmed', 'completed', 'cancelled', 'no-show' ),
 				),
-				'send_notification'  => array(
+				'send_notification' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Send update notification to client', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_conflicts'    => array(
+				'check_conflicts'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for scheduling conflicts when updating time', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_Update_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Update status.
 		if ( isset( $arguments['status'] ) ) {
-			$status = sanitize_text_field( $arguments['status'] );
+			$status         = sanitize_text_field( $arguments['status'] );
 			$valid_statuses = array( 'pending', 'confirmed', 'completed', 'cancelled', 'no-show' );
 			if ( ! in_array( $status, $valid_statuses, true ) ) {
 				return new WP_Error(

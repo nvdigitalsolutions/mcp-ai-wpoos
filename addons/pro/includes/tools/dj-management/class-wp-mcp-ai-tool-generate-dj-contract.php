@@ -45,21 +45,21 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'booking_id'       => array(
+				'booking_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Booking ID to generate contract for (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'dj_name'          => array(
+				'dj_name'             => array(
 					'type'        => 'string',
 					'description' => __( 'DJ or business name (required)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'dj_address'       => array(
+				'dj_address'          => array(
 					'type'        => 'string',
 					'description' => __( 'DJ business address (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
 				),
-				'payment_terms'    => array(
+				'payment_terms'       => array(
 					'type'        => 'string',
 					'description' => __( 'Payment terms (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 500,
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Cancellation policy (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'additional_terms' => array(
+				'additional_terms'    => array(
 					'type'        => 'string',
 					'description' => __( 'Additional terms and conditions (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
@@ -82,6 +82,9 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		if ( empty( $arguments['booking_id'] ) || empty( $arguments['dj_name'] ) ) {
@@ -112,11 +115,11 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 		$total_price   = get_post_meta( $booking_id, '_total_price', true );
 		$deposit       = get_post_meta( $booking_id, '_deposit', true );
 
-		$dj_name              = sanitize_text_field( $arguments['dj_name'] );
-		$dj_address           = ! empty( $arguments['dj_address'] ) ? sanitize_textarea_field( $arguments['dj_address'] ) : '';
-		$payment_terms        = ! empty( $arguments['payment_terms'] ) ? sanitize_textarea_field( $arguments['payment_terms'] ) : '';
-		$cancellation_policy  = ! empty( $arguments['cancellation_policy'] ) ? sanitize_textarea_field( $arguments['cancellation_policy'] ) : '';
-		$additional_terms     = ! empty( $arguments['additional_terms'] ) ? sanitize_textarea_field( $arguments['additional_terms'] ) : '';
+		$dj_name             = sanitize_text_field( $arguments['dj_name'] );
+		$dj_address          = ! empty( $arguments['dj_address'] ) ? sanitize_textarea_field( $arguments['dj_address'] ) : '';
+		$payment_terms       = ! empty( $arguments['payment_terms'] ) ? sanitize_textarea_field( $arguments['payment_terms'] ) : '';
+		$cancellation_policy = ! empty( $arguments['cancellation_policy'] ) ? sanitize_textarea_field( $arguments['cancellation_policy'] ) : '';
+		$additional_terms    = ! empty( $arguments['additional_terms'] ) ? sanitize_textarea_field( $arguments['additional_terms'] ) : '';
 
 		// Generate contract content.
 		$contract = $this->build_contract(
@@ -168,8 +171,8 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 	 * @return string Contract content.
 	 */
 	private function build_contract( $dj_name, $dj_address, $client_name, $event_name, $event_date, $start_time, $end_time, $venue_name, $venue_address, $total_price, $deposit, $payment_terms, $cancellation_policy, $additional_terms ) {
-		$contract = "DJ SERVICE AGREEMENT\n\n";
-		$contract .= "Date: " . current_time( 'F j, Y' ) . "\n\n";
+		$contract  = "DJ SERVICE AGREEMENT\n\n";
+		$contract .= 'Date: ' . current_time( 'F j, Y' ) . "\n\n";
 
 		$contract .= "SERVICE PROVIDER:\n";
 		$contract .= $dj_name . "\n";
@@ -182,12 +185,12 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 		$contract .= $client_name . "\n\n";
 
 		$contract .= "EVENT DETAILS:\n";
-		$contract .= "Event: " . $event_name . "\n";
-		$contract .= "Date: " . date( 'F j, Y', strtotime( $event_date ) ) . "\n";
-		$contract .= "Time: " . $start_time . " - " . $end_time . "\n";
-		$contract .= "Venue: " . $venue_name . "\n";
+		$contract .= 'Event: ' . $event_name . "\n";
+		$contract .= 'Date: ' . date( 'F j, Y', strtotime( $event_date ) ) . "\n";
+		$contract .= 'Time: ' . $start_time . ' - ' . $end_time . "\n";
+		$contract .= 'Venue: ' . $venue_name . "\n";
 		if ( $venue_address ) {
-			$contract .= "Address: " . $venue_address . "\n";
+			$contract .= 'Address: ' . $venue_address . "\n";
 		}
 		$contract .= "\n";
 
@@ -196,10 +199,10 @@ class WP_MCP_AI_Tool_Generate_DJ_Contract implements WP_MCP_AI_Tool_Interface, W
 
 		$contract .= "COMPENSATION:\n";
 		if ( $total_price ) {
-			$contract .= "Total Fee: $" . number_format( $total_price, 2 ) . "\n";
+			$contract .= 'Total Fee: $' . number_format( $total_price, 2 ) . "\n";
 			if ( $deposit ) {
-				$contract .= "Deposit: $" . number_format( $deposit, 2 ) . " (due upon signing)\n";
-				$contract .= "Balance: $" . number_format( $total_price - $deposit, 2 ) . " (due on or before event date)\n";
+				$contract .= 'Deposit: $' . number_format( $deposit, 2 ) . " (due upon signing)\n";
+				$contract .= 'Balance: $' . number_format( $total_price - $deposit, 2 ) . " (due on or before event date)\n";
 			}
 		}
 		if ( $payment_terms ) {

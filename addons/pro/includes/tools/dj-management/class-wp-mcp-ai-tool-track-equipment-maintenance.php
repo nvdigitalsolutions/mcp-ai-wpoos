@@ -45,36 +45,36 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'equipment_id'        => array(
+				'equipment_id'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Equipment ID to track maintenance for (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'maintenance_type'    => array(
+				'maintenance_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Type of maintenance (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cleaning', 'repair', 'inspection', 'calibration', 'replacement', 'upgrade' ),
 				),
-				'maintenance_date'    => array(
+				'maintenance_date' => array(
 					'type'        => 'string',
 					'description' => __( 'Maintenance date in ISO 8601 format (YYYY-MM-DD) (required)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'performed_by'        => array(
+				'performed_by'     => array(
 					'type'        => 'string',
 					'description' => __( 'Name of person who performed maintenance (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'cost'                => array(
+				'cost'             => array(
 					'type'        => 'number',
 					'description' => __( 'Maintenance cost (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 				),
-				'notes'               => array(
+				'notes'            => array(
 					'type'        => 'string',
 					'description' => __( 'Maintenance notes/details (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 2000,
 				),
-				'next_maintenance'    => array(
+				'next_maintenance' => array(
 					'type'        => 'string',
 					'description' => __( 'Next scheduled maintenance date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
@@ -87,6 +87,9 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( array $arguments, array $context = array() ) {
 		// Validate required parameters.
@@ -123,12 +126,12 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 
 		// Add new maintenance record.
 		$maintenance_record = array(
-			'type'             => $maintenance_type,
-			'date'             => $maintenance_date,
-			'performed_by'     => $performed_by,
-			'cost'             => $cost,
-			'notes'            => $notes,
-			'recorded_at'      => current_time( 'mysql' ),
+			'type'         => $maintenance_type,
+			'date'         => $maintenance_date,
+			'performed_by' => $performed_by,
+			'cost'         => $cost,
+			'notes'        => $notes,
+			'recorded_at'  => current_time( 'mysql' ),
 		);
 
 		$maintenance_history[] = $maintenance_record;
@@ -148,16 +151,16 @@ class WP_MCP_AI_Tool_Track_Equipment_Maintenance implements WP_MCP_AI_Tool_Inter
 		$equipment_name = get_the_title( $equipment_id );
 
 		return array(
-			'success'             => true,
-			'message'             => sprintf(
+			'success'            => true,
+			'message'            => sprintf(
 				/* translators: 1: maintenance type, 2: equipment name */
 				__( '%1$s maintenance logged for equipment "%2$s".', 'mcp-ai-wpoos-pro' ),
 				ucfirst( $maintenance_type ),
 				$equipment_name
 			),
-			'equipment_id'        => $equipment_id,
-			'maintenance_record'  => $maintenance_record,
-			'next_maintenance'    => $next_maintenance,
+			'equipment_id'       => $equipment_id,
+			'maintenance_record' => $maintenance_record,
+			'next_maintenance'   => $next_maintenance,
 		);
 	}
 
