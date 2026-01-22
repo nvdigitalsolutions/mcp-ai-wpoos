@@ -24,7 +24,7 @@ class WP_MCP_AI_Video_Production_Settings_Page extends WP_MCP_AI_Toolkit_Setting
 		$this->toolkit_name     = __( 'Video Production Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_video_production_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-video-production-toolkit-settings';
-		$this->has_research     = false;
+		$this->has_research     = true;
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-video-alt3';
 
