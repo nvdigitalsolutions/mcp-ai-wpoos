@@ -283,10 +283,6 @@
 - Tool count discrepancies in README.md and other docs
 - Last updated dates in documentation index files (now December 24, 2025)
 
-## [Unreleased]
-
-### Added
-
 #### Gemini Geospatial API Integration (December 22, 2025)
 - **AI-Powered Location Queries**: Integrated Gemini Geospatial API for contextual, location-based queries with Google Maps grounding
   - **New Client Method**: Added `create_geospatial_query()` to `WP_MCP_AI_Gemini_Client`
