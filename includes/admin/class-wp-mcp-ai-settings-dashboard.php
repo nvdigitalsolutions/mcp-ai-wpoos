@@ -120,6 +120,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 	 * Reorder submenu items to ensure proper menu order.
 	 *
 	 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
+	 * This method reorganizes the submenu items under the main NV oOS menu to maintain
+	 * a logical and consistent navigation structure.
+	 *
+	 * @since 2.1.0
+	 * @return void
 	 */
 		public function reorder_main_menu() {
 			global $submenu;
