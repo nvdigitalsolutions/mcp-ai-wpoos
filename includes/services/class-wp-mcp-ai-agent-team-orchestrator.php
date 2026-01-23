@@ -544,8 +544,8 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 *
 	 * Searches in the following order:
 	 * 1. Assistants with specific agent role metadata
-	 * 2. Any published assistant (as generalist)
-	 * 3. Profession-based agents
+	 * 2. Profession-based agents (have relevant expertise)
+	 * 3. Any published assistant (as generalist)
 	 * 4. Virtual agents (last resort)
 	 *
 	 * @param array $roles Required role identifiers.
@@ -600,54 +600,54 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 				);
 				$agent_found = true;
 			} else {
-				// Step 2: Try to find any generic assistant if role-specific not found.
-				$generic_query = new WP_Query(
-					array(
-						'post_type'      => 'mcp_ai_assistant',
-						'post_status'    => 'publish',
-						'posts_per_page' => 1,
-						'orderby'        => 'rand',
-					)
-				);
-
-				if ( $generic_query->have_posts() ) {
-					$agent_post = $generic_query->posts[0];
-					$agents[]   = array(
-						'id'        => $agent_post->ID,
-						'title'     => $agent_post->post_title,
-						'name'      => $agent_post->post_title,
-						'role'      => 'generalist',
-						'expertise' => array(),
-					);
+				// Step 2: Try to find a profession-based agent with relevant expertise.
+				$profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
+				if ( $profession_agent ) {
+					$agents[]    = $profession_agent;
 					$agent_found = true;
 					
 					WP_MCP_AI_Logger::log_event(
-						'team_composition_fallback_generic',
-						sprintf( 'No agent with role "%s" found, using generic assistant instead', $role ),
+						'team_composition_fallback_profession',
+						sprintf( 'No assistant with role "%s" found, using profession-based agent with relevant expertise', $role ),
 						array(
-							'required_role'      => $role,
-							'fallback_agent_id'  => $agent_post->ID,
-							'fallback_agent_name' => $agent_post->post_title,
+							'required_role' => $role,
+							'profession_id' => $profession_agent['id'],
+							'profession'    => $profession_agent['profession'] ?? 'unknown',
 						)
 					);
 				} else {
-					// Step 3: Try to find a profession-based agent.
-					$profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
-					if ( $profession_agent ) {
-						$agents[]    = $profession_agent;
+					// Step 3: Try to find any generic published assistant.
+					$generic_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_ai_assistant',
+							'post_status'    => 'publish',
+							'posts_per_page' => 1,
+							'orderby'        => 'rand',
+						)
+					);
+
+					if ( $generic_query->have_posts() ) {
+						$agent_post = $generic_query->posts[0];
+						$agents[]   = array(
+							'id'        => $agent_post->ID,
+							'title'     => $agent_post->post_title,
+							'name'      => $agent_post->post_title,
+							'role'      => 'generalist',
+							'expertise' => array(),
+						);
 						$agent_found = true;
 						
 						WP_MCP_AI_Logger::log_event(
-							'team_composition_fallback_profession',
-							sprintf( 'No assistant found for role "%s", using profession-based agent', $role ),
+							'team_composition_fallback_generic',
+							sprintf( 'No role-specific agent or profession found for "%s", using generic assistant as last resort before virtual', $role ),
 							array(
-								'required_role' => $role,
-								'profession_id' => $profession_agent['id'],
-								'profession'    => $profession_agent['profession'] ?? 'unknown',
+								'required_role'       => $role,
+								'fallback_agent_id'   => $agent_post->ID,
+								'fallback_agent_name' => $agent_post->post_title,
 							)
 						);
 					} else {
-						// Step 4: Create a virtual agent as last resort.
+						// Step 4: Create a virtual agent as absolute last resort.
 						$virtual_agent = $this->create_virtual_agent_for_role( $role );
 						if ( $virtual_agent ) {
 							$agents[]    = $virtual_agent;
@@ -655,10 +655,10 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 							
 							WP_MCP_AI_Logger::log_event(
 								'team_composition_virtual_agent',
-								sprintf( 'No assistant or profession found for role "%s", using virtual agent', $role ),
+								sprintf( 'No assistants or professions found for role "%s", creating virtual agent', $role ),
 								array(
-									'required_role'  => $role,
-									'virtual_agent_id' => $virtual_agent['id'],
+									'required_role'     => $role,
+									'virtual_agent_id'  => $virtual_agent['id'],
 								)
 							);
 						}

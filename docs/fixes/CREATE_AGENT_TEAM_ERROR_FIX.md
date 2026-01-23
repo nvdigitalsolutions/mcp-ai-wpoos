@@ -58,8 +58,8 @@ There was no detailed logging to help diagnose why team composition was failing.
 - Error codes provide specific failure reasons
 - Error data includes actionable suggestions
 
-### 2. Multi-Level Fallback System
-Implemented a 4-tier fallback system in `find_agents_for_roles()`:
+### 2. Corrected Multi-Level Fallback System
+Implemented a 4-tier fallback system in `find_agents_for_roles()` with the optimal priority order:
 
 **Step 1:** Search for assistants with specific agent role metadata
 ```php
@@ -69,22 +69,24 @@ meta_query => array(
 )
 ```
 
-**Step 2:** Use any published assistant as a generalist
+**Step 2:** Try profession-based agents (have relevant expertise)
+```php
+$profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
+```
+
+**Step 3:** Use any published assistant as a generalist (last resort before virtual)
 ```php
 'post_type' => 'mcp_ai_assistant',
 'post_status' => 'publish',
 'orderby' => 'rand'
 ```
 
-**Step 3:** Try profession-based agents
-```php
-$profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
-```
-
-**Step 4:** Create virtual agents as last resort
+**Step 4:** Create virtual agents as absolute last resort
 ```php
 $virtual_agent = $this->create_virtual_agent_for_role( $role );
 ```
+
+This order prioritizes agents with relevant expertise (profession-based) over random generic assistants.
 
 ### 3. Virtual Agent System
 New `create_virtual_agent_for_role()` method creates placeholder agents when no real agents are available:
