@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-projects-settings-visibility',
-        'version' => 'dev-copilot/fix-projects-settings-visibility',
-        'reference' => '7673ce324174ba046907e4c918cde6679fc0437b',
+        'pretty_version' => 'dev-copilot/start-implementation-research-pages',
+        'version' => 'dev-copilot/start-implementation-research-pages',
+        'reference' => '7d2ff43c0b362ddc5366c250df2583895d5589ad',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-projects-settings-visibility',
-            'version' => 'dev-copilot/fix-projects-settings-visibility',
-            'reference' => '7673ce324174ba046907e4c918cde6679fc0437b',
+            'pretty_version' => 'dev-copilot/start-implementation-research-pages',
+            'version' => 'dev-copilot/start-implementation-research-pages',
+            'reference' => '7d2ff43c0b362ddc5366c250df2583895d5589ad',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
