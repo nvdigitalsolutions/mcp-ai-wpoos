@@ -956,26 +956,44 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for research packages bundled into research-bundle.min.js.
+			// These packages (cheerio, turndown) are in Pro addon's node_modules.
 			$research_bundled_packages = array(
 				'cheerio',
 				'turndown',
 			);
 			if ( in_array( $package, $research_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check bundled file (production).
 				$research_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/research-bundle.min.js';
 				if ( file_exists( $research_bundle_path ) ) {
 					return true;
 				}
+				// Priority 2: Fallback to Pro addon's node_modules (development).
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+				// These packages are not in base, so return false if not found.
+				return false;
 			}
 
 			// Check for orchestration packages bundled into orchestration-bundle.min.js.
+			// These packages (p-queue) are in Pro addon's node_modules.
 			$orchestration_bundled_packages = array(
 				'p-queue', // Promise queue with concurrency control.
 			);
 			if ( in_array( $package, $orchestration_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check bundled file (production).
 				$orchestration_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/orchestration-bundle.min.js';
 				if ( file_exists( $orchestration_bundle_path ) ) {
 					return true;
 				}
+				// Priority 2: Fallback to Pro addon's node_modules (development).
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+				// These packages are not in base, so return false if not found.
+				return false;
 			}
 
 			// ===================================================================

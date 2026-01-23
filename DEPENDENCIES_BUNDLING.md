@@ -19,12 +19,9 @@ Located in root `package.json`:
     "@microsoft/fetch-event-source": "^2.0.1",  // SSE for streaming
     "@neplex/vectorizer": "^0.0.5",              // Vector embeddings
     "chart.js": "^4.4.7",                        // Charts in admin
-    "cheerio": "^1.0.0",                         // HTML parsing (Pro addon)
     "dompurify": "^3.3.0",                       // HTML sanitization
     "ky": "^1.14.0",                             // HTTP client
-    "marked": "^17.0.0",                         // Markdown parsing
-    "p-queue": "^8.0.1",                         // Promise queue (Pro addon)
-    "turndown": "^7.2.0"                         // HTML to Markdown (Pro addon)
+    "marked": "^17.0.0"                          // Markdown parsing
   }
 }
 ```
@@ -33,7 +30,6 @@ Located in root `package.json`:
 
 - **Bundled into `chat-bundle.min.js`**: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`
 - **Copied to `assets/js/vendor/`**: `chart.js`, `@neplex/vectorizer`
-- **Bundled for Pro addon use**: `cheerio`, `turndown`, `p-queue` (see Pro Addon Bundling below)
 
 Build commands:
 ```bash
@@ -55,6 +51,7 @@ Located in `addons/pro/package.json`:
     "@woocommerce/woocommerce-rest-api": "^1.0.1", // E-commerce API
     "axios": "^1.6.5",                            // HTTP client
     "chart.js": "^4.4.7",                         // Charts (also in base)
+    "cheerio": "^1.0.0",                          // HTML parsing for research tools
     "currency.js": "^2.0.4",                      // Currency formatting
     "d3": "^7.8.5",                               // Data visualization
     "docx": "^9.5.1",                             // Word document generation
@@ -74,12 +71,14 @@ Located in `addons/pro/package.json`:
     "linkedin-api-client": "^0.3.0",              // LinkedIn API
     "mathjs": "^12.3.0",                          // Math library
     "mjml": "^4.18.0",                            // Email templates
+    "p-queue": "^8.0.1",                          // Promise queue for rate limiting
     "pdfkit": "^0.17.2",                          // PDF generation
     "prettier": "^3.4.2",                         // Code formatting
     "regression": "^2.0.1",                       // Statistical regression
     "sharp": "^0.33.5",                           // Image processing
     "stripe": "^14.0.0",                          // Payment processing
     "subtitle": "^3.0.0",                         // Subtitle files
+    "turndown": "^7.2.0",                         // HTML to Markdown conversion
     "twitter-api-v2": "^1.15.2",                  // Twitter API
     "video-stitch": "^1.7.1"                      // Video stitching
   }
@@ -110,7 +109,7 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
-All 36 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+All 39 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
 
 **Core Toolkits:**
 | Package | Size | Files Copied |
@@ -175,7 +174,7 @@ All 36 Pro addon packages are automatically copied from `node_modules` to `asset
 | video-stitch | 8.6 KB | index.js, lib/ |
 | subtitle | 43.3 KB | dist/ |
 
-**Total**: ~46.9 MB (36 packages)
+**Total**: ~46.9 MB (39 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
 
 #### Special Cases
 
@@ -186,15 +185,16 @@ All 36 Pro addon packages are automatically copied from `node_modules` to `asset
 
 **Orchestration & Research (Browser Bundles)**:
 - **Orchestration Bundle** (`addons/pro/assets/js/orchestration-bundle.min.js`, 17KB):
-  - `p-queue`: Promise queue with concurrency control for rate limiting
+  - `p-queue`: Promise queue with concurrency control for rate limiting (installed in Pro addon)
   - Custom browser-compatible circuit breaker (inspired by opossum pattern)
   - Used by: Autonomous orchestration tools, task execution management
 - **Research Bundle** (`addons/pro/assets/js/research-bundle.min.js`, 360KB):
-  - `cheerio`: Fast HTML parsing and data extraction
-  - `turndown`: HTML to Markdown conversion
+  - `cheerio`: Fast HTML parsing and data extraction (installed in Pro addon)
+  - `turndown`: HTML to Markdown conversion (installed in Pro addon)
   - Used by: Research compiler, web scraping tools, content aggregation
-- Built via: `esbuild.config.pro.js` using packages from root `node_modules/`
+- Built via: `esbuild.config.pro.js` using packages from Pro addon's `node_modules/`
 - Build command: `npm run build:js:pro` (runs automatically on `npm install`)
+- Note: esbuild resolves these packages from `addons/pro/node_modules/` using the `nodePaths` configuration
 
 **Chart.js**:
 - Duplicated in base and Pro for different contexts
