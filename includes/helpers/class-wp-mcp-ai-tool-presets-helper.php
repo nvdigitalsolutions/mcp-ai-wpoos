@@ -50,6 +50,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_agent_team',
 					'delegate_to_agent',
 					'aggregate_agent_results',
+					'execute_workflow',
 					// Supporting tools for agentic operations.
 					'list_professions',
 					'get_profession',
@@ -602,6 +603,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_agent_team',
 					'delegate_to_agent',
 					'aggregate_agent_results',
+					'execute_workflow',
 				),
 			),
 
@@ -1463,6 +1465,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Coordination.
 					'create_agent_team',
 					'delegate_to_agent',
+					'execute_workflow',
 				),
 			),
 
