@@ -386,11 +386,142 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				return trim( $which_result );
 			}
 
+			// Check if llama-server is available (alternative).
+			$which_result = shell_exec( 'which llama-server 2>/dev/null' );
+			if ( ! empty( $which_result ) ) {
+				return trim( $which_result );
+			}
+
+			// Detect platform for installation instructions.
+			$platform = $this->detect_platform();
+
 			return new WP_Error(
 				'wp_mcp_ai_no_inference_binary',
-				__( 'Inference binary not found. Please install llama.cpp or provide a pre-compiled binary.', 'mcp-ai-wpoos' ),
+				$this->get_binary_installation_instructions( $platform ),
 				array( 'status' => 500 )
 			);
+		}
+
+		/**
+		 * Detect platform and architecture.
+		 *
+		 * @return array Platform information.
+		 */
+		private function detect_platform() {
+			$os   = PHP_OS_FAMILY;
+			$arch = php_uname( 'm' );
+
+			$platform = array(
+				'os'     => $os,
+				'arch'   => $arch,
+				'binary' => 'llama-cli',
+				'dir'    => '',
+			);
+
+			// Normalize architecture names.
+			if ( in_array( $arch, array( 'x86_64', 'amd64', 'AMD64' ), true ) ) {
+				$platform['arch_normalized'] = 'x64';
+			} elseif ( in_array( $arch, array( 'aarch64', 'arm64', 'ARM64' ), true ) ) {
+				$platform['arch_normalized'] = 'arm64';
+			} elseif ( strpos( $arch, 'arm' ) !== false ) {
+				$platform['arch_normalized'] = 'arm';
+			} else {
+				$platform['arch_normalized'] = 'unknown';
+			}
+
+			// Set platform-specific details.
+			if ( 'Windows' === $os ) {
+				$platform['binary'] = 'llama-cli.exe';
+				$platform['dir']    = 'windows-' . $platform['arch_normalized'];
+			} elseif ( 'Linux' === $os ) {
+				$platform['binary'] = 'llama-cli';
+				$platform['dir']    = 'linux-' . $platform['arch_normalized'];
+
+				// Detect Cloudways hosting (Ubuntu-based).
+				if ( $this->is_cloudways_hosting() ) {
+					$platform['hosting']     = 'cloudways';
+					$platform['description'] = 'Cloudways Ubuntu ' . $platform['arch_normalized'];
+				}
+			} elseif ( 'Darwin' === $os ) {
+				$platform['binary'] = 'llama-cli';
+				$platform['dir']    = 'macos-' . $platform['arch_normalized'];
+			}
+
+			return $platform;
+		}
+
+		/**
+		 * Check if running on Cloudways hosting.
+		 *
+		 * @return bool True if Cloudways detected.
+		 */
+		private function is_cloudways_hosting() {
+			// Check for Cloudways-specific environment indicators.
+			$indicators = array(
+				defined( 'CLOUDWAYS_DEPLOYMENT' ),
+				getenv( 'CLOUDWAYS_DEPLOYMENT' ) !== false,
+				file_exists( '/cloudways.yml' ),
+				strpos( gethostname(), 'cloudways' ) !== false,
+			);
+
+			return in_array( true, $indicators, true );
+		}
+
+		/**
+		 * Get installation instructions for llama.cpp binary.
+		 *
+		 * @param array $platform Platform information.
+		 * @return string Installation instructions.
+		 */
+		private function get_binary_installation_instructions( $platform ) {
+			$os = $platform['os'];
+			$arch_normalized = $platform['arch_normalized'];
+
+			$instructions = __( 'Inference binary (llama.cpp) not found. ', 'mcp-ai-wpoos' );
+
+			// Platform-specific instructions.
+			if ( 'Linux' === $os && 'x64' === $arch_normalized ) {
+				if ( isset( $platform['hosting'] ) && 'cloudways' === $platform['hosting'] ) {
+					$instructions .= sprintf(
+						/* translators: %s: Download URL */
+						__( 'For Cloudways hosting, download the pre-compiled Linux x64 binary from: %s. Upload it to your server at: wp-content/plugins/mcp-ai-wpoos/bin/llama.cpp/ and make it executable with: chmod +x llama-cli', 'mcp-ai-wpoos' ),
+						'https://github.com/ggerganov/llama.cpp/releases/latest'
+					);
+				} else {
+					$instructions .= sprintf(
+						/* translators: %s: Download URL */
+						__( 'Download the pre-compiled Linux x64 binary from %s, or install via: apt-get install llama.cpp (if available). Place the binary in wp-content/plugins/mcp-ai-wpoos/bin/llama.cpp/ or add it to your system PATH.', 'mcp-ai-wpoos' ),
+						'https://github.com/ggerganov/llama.cpp/releases/latest'
+					);
+				}
+			} elseif ( 'Linux' === $os && 'arm64' === $arch_normalized ) {
+				$instructions .= sprintf(
+					/* translators: %s: Download URL */
+					__( 'Download the pre-compiled Linux ARM64 binary from %s. Place it in wp-content/plugins/mcp-ai-wpoos/bin/llama.cpp/ and make it executable with: chmod +x llama-cli', 'mcp-ai-wpoos' ),
+					'https://github.com/ggerganov/llama.cpp/releases/latest'
+				);
+			} elseif ( 'Windows' === $os ) {
+				$instructions .= sprintf(
+					/* translators: %s: Download URL */
+					__( 'Download the pre-compiled Windows binary from %s. Place llama-cli.exe in wp-content/plugins/mcp-ai-wpoos/bin/llama.cpp/', 'mcp-ai-wpoos' ),
+					'https://github.com/ggerganov/llama.cpp/releases/latest'
+				);
+			} elseif ( 'Darwin' === $os ) {
+				$instructions .= sprintf(
+					/* translators: %s: Download URL */
+					__( 'Download the pre-compiled macOS binary from %s, or install via Homebrew: brew install llama.cpp. Place the binary in wp-content/plugins/mcp-ai-wpoos/bin/llama.cpp/', 'mcp-ai-wpoos' ),
+					'https://github.com/ggerganov/llama.cpp/releases/latest'
+				);
+			} else {
+				$instructions .= sprintf(
+					/* translators: 1: OS name, 2: Architecture */
+					__( 'Your platform (%1$s %2$s) requires manual installation. Please download from https://github.com/ggerganov/llama.cpp/releases/latest or compile from source.', 'mcp-ai-wpoos' ),
+					$os,
+					$arch_normalized
+				);
+			}
+
+			return $instructions;
 		}
 
 		/**

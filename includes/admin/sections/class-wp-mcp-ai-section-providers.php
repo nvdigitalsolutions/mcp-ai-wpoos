@@ -1204,8 +1204,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 			return $input;
 		}
-	}
-}
 
 /**
  * Render the embedded model management UI.
@@ -1229,4 +1227,6 @@ $downloaded_models = $client->get_downloaded_models();
 </p>
 </div>
 <?php
+}
+}
 }
