@@ -116,16 +116,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			);
 		}
 
-	/**
-	 * Reorder submenu items to ensure proper menu order.
-	 *
-	 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
-	 * This method reorganizes the submenu items under the main NV oOS menu to maintain
-	 * a logical and consistent navigation structure.
-	 *
-	 * @since 2.1.0
-	 * @return void
-	 */
+		/**
+		 * Reorder submenu items to ensure proper menu order.
+		 *
+		 * Ensures General Settings appears before Orchestration Dashboard and Task Plans.
+		 * This method reorganizes the submenu items under the main NV oOS menu to maintain
+		 * a logical and consistent navigation structure.
+		 *
+		 * @since 2.1.0
+		 * @return void
+		 */
 		public function reorder_main_menu() {
 			global $submenu;
 
@@ -137,11 +137,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$main_submenu = $submenu[ self::PAGE_SLUG ];
 
 			// Define desired order: General Settings (0), Orchestration (10), Task Plans (20).
-			$ordered_items = array();
+			$ordered_items         = array();
 			$general_settings_item = null;
-			$orchestration_item = null;
-			$task_plans_item = null;
-			$other_items = array();
+			$orchestration_item    = null;
+			$task_plans_item       = null;
+			$other_items           = array();
 
 			// Categorize menu items.
 			foreach ( $main_submenu as $item ) {
@@ -184,23 +184,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$submenu[ self::PAGE_SLUG ] = $ordered_items;
 		}
 
-	/**
-	 * Register settings with WordPress.
-	 *
-	 * IMPORTANT: We do NOT register a sanitize_callback here because:
-	 * 1. We manually sanitize in handle_save_settings() with proper context
-	 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
-	 * 3. The callback has no POST context during update_option(), breaking subtab protection
-	 * 4. This would cause provider keys to be cleared when navigating tabs
-	 *
-	 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
-	 */
+		/**
+		 * Register settings with WordPress.
+		 *
+		 * IMPORTANT: We do NOT register a sanitize_callback here because:
+		 * 1. We manually sanitize in handle_save_settings() with proper context
+		 * 2. WordPress would call the callback on EVERY update_option(), causing double-sanitization
+		 * 3. The callback has no POST context during update_option(), breaking subtab protection
+		 * 4. This would cause provider keys to be cleared when navigating tabs
+		 *
+		 * See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/TBD
+		 */
 		public function register_settings() {
 			register_setting(
 				'wp_mcp_ai_settings_group',
 				WP_MCP_AI_Admin_Settings::OPTION_NAME,
 				array(
-					'type'              => 'array',
+					'type' => 'array',
 				// No sanitize_callback - we handle sanitization manually in handle_save_settings().
 				)
 			);
@@ -377,10 +377,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// Step 1: Clear ALL caches before reading existing settings.
 				// This prevents race conditions and ensures we have the latest database values.
 				WP_MCP_AI_Admin_Settings::reset_settings_cache();
-				
+
 				// Also clear any object cache entries for this option.
 				wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-				
+
 				// Clear any transients that might cache settings.
 				delete_transient( 'wp_mcp_ai_settings_cache' );
 
@@ -392,7 +392,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// Store with timestamp for auditing purposes.
 				$backup_key = 'wp_mcp_ai_settings_backup_' . time();
 				update_option( $backup_key, $existing_settings, false ); // No autoload for backups.
-				
+
 				// Clean up old backups (keep last 5).
 				$this->cleanup_old_setting_backups( 5 );
 
@@ -515,7 +515,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					WP_MCP_AI_Admin_Settings::reset_settings_cache();
 					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 					delete_transient( 'wp_mcp_ai_settings_cache' );
-					
+
 					// Fire action hook for extensions to clear their own caches.
 					do_action( 'wp_mcp_ai_settings_saved', $merged_settings, $existing_settings, $sanitized_new );
 				}
@@ -707,6 +707,19 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$tools_js['url'],
 					array( 'jquery', 'wp-mcp-ai-ajax-error-service' ),
 					$tools_js['version'],
+					true
+				);
+			}
+
+			// Enqueue admin settings scripts if on providers tab (for embedded model management).
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter check.
+			if ( isset( $_GET['tab'] ) && 'providers' === $_GET['tab'] ) {
+				$admin_settings_js = $this->get_asset_file( 'assets/js/admin-settings.js' );
+				wp_enqueue_script(
+					'wp-mcp-ai-admin-settings',
+					$admin_settings_js['url'],
+					array( 'jquery', 'jquery-ui-sortable', 'wp-mcp-ai-ajax-error-service' ),
+					$admin_settings_js['version'],
 					true
 				);
 			}
@@ -1030,12 +1043,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Add export metadata.
 			$export_data = array(
-				'version'      => '1.0',
-				'exported_at'  => current_time( 'mysql' ),
-				'exported_by'  => wp_get_current_user()->user_login,
-				'site_url'     => get_site_url(),
+				'version'        => '1.0',
+				'exported_at'    => current_time( 'mysql' ),
+				'exported_by'    => wp_get_current_user()->user_login,
+				'site_url'       => get_site_url(),
 				'plugin_version' => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
-				'settings'     => $settings,
+				'settings'       => $settings,
 			);
 
 			// Create JSON with pretty print.
@@ -1082,13 +1095,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Validate file size (max 5MB for settings file).
 			$max_size = 5 * MB_IN_BYTES;
 			if ( $file['size'] > $max_size ) {
-				wp_send_json_error( array(
-					'message' => sprintf(
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
 						/* translators: %s: Maximum file size */
-						__( 'File too large. Maximum size: %s', 'mcp-ai-wpoos' ),
-						size_format( $max_size )
-					),
-				) );
+							__( 'File too large. Maximum size: %s', 'mcp-ai-wpoos' ),
+							size_format( $max_size )
+						),
+					)
+				);
 			}
 
 			// Validate file type using WordPress function (more secure than client MIME type).
@@ -1114,13 +1129,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$import_data = json_decode( $json_content, true );
 
 			if ( null === $import_data || JSON_ERROR_NONE !== json_last_error() ) {
-				wp_send_json_error( array(
-					'message' => sprintf(
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
 						/* translators: %s: JSON error message */
-						__( 'Invalid JSON format: %s', 'mcp-ai-wpoos' ),
-						json_last_error_msg()
-					),
-				) );
+							__( 'Invalid JSON format: %s', 'mcp-ai-wpoos' ),
+							json_last_error_msg()
+						),
+					)
+				);
 			}
 
 			// Validate import data structure.
@@ -1139,10 +1156,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$validation_errors = $this->validate_merged_settings( $sanitized_settings, $current_settings );
 
 			if ( ! empty( $validation_errors ) ) {
-				wp_send_json_error( array(
-					'message' => __( 'Settings validation failed:', 'mcp-ai-wpoos' ),
-					'errors'  => $validation_errors,
-				) );
+				wp_send_json_error(
+					array(
+						'message' => __( 'Settings validation failed:', 'mcp-ai-wpoos' ),
+						'errors'  => $validation_errors,
+					)
+				);
 			}
 
 			// Save imported settings.
@@ -1157,11 +1176,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
-			wp_send_json_success( array(
-				'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
-				'imported_count' => count( $sanitized_settings ),
-				'imported_from'  => isset( $import_data['site_url'] ) ? esc_url( $import_data['site_url'] ) : 'unknown',
-			) );
+			wp_send_json_success(
+				array(
+					'message'        => __( 'Settings imported successfully!', 'mcp-ai-wpoos' ),
+					'imported_count' => count( $sanitized_settings ),
+					'imported_from'  => isset( $import_data['site_url'] ) ? esc_url( $import_data['site_url'] ) : 'unknown',
+				)
+			);
 		}
 
 		/**
@@ -1186,9 +1207,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				wp_cache_flush();
 			}
 
-			wp_send_json_success( array(
-				'message' => __( 'All settings caches cleared successfully!', 'mcp-ai-wpoos' ),
-			) );
+			wp_send_json_success(
+				array(
+					'message' => __( 'All settings caches cleared successfully!', 'mcp-ai-wpoos' ),
+				)
+			);
 		}
 
 		/**
@@ -1222,9 +1245,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 			delete_transient( 'wp_mcp_ai_settings_cache' );
 
-			wp_send_json_success( array(
-				'message' => __( 'Settings reset to defaults successfully!', 'mcp-ai-wpoos' ),
-			) );
+			wp_send_json_success(
+				array(
+					'message' => __( 'Settings reset to defaults successfully!', 'mcp-ai-wpoos' ),
+				)
+			);
 		}
 
 		/**
@@ -1244,9 +1269,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 			$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
-			$issues = array();
+			$issues   = array();
 			$warnings = array();
-			$info = array();
+			$info     = array();
 
 			// Check 1: Settings exist.
 			if ( empty( $settings ) ) {
@@ -1269,11 +1294,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Check 4: Provider keys configured.
-			$provider_keys = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url' );
+			$provider_keys        = array( 'openai_api_key', 'gemini_api_key', 'ollama_endpoint_url' );
 			$configured_providers = 0;
 			foreach ( $provider_keys as $key ) {
 				if ( ! empty( $settings[ $key ] ) ) {
-					$configured_providers++;
+					++$configured_providers;
 				}
 			}
 			if ( 0 === $configured_providers ) {
@@ -1284,7 +1309,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 			// Check 5: Cache status.
 			$cache_exists = false !== wp_cache_get( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-			$info[] = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
+			$info[]       = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
 
 			// Check 6: Backup count.
 			global $wpdb;
@@ -1294,7 +1319,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'wp_mcp_ai_settings_backup_%'
 				)
 			);
-			$info[] = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
+			$info[]       = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
 
 			// Prepare response.
 			$health_status = 'good';
@@ -1304,16 +1329,18 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$health_status = 'warning';
 			}
 
-			wp_send_json_success( array(
-				'status'   => $health_status,
-				'issues'   => $issues,
-				'warnings' => $warnings,
-				'info'     => $info,
-				'message'  => sprintf(
-					__( 'Health check complete. Status: %s', 'mcp-ai-wpoos' ),
-					strtoupper( $health_status )
-				),
-			) );
+			wp_send_json_success(
+				array(
+					'status'   => $health_status,
+					'issues'   => $issues,
+					'warnings' => $warnings,
+					'info'     => $info,
+					'message'  => sprintf(
+						__( 'Health check complete. Status: %s', 'mcp-ai-wpoos' ),
+						strtoupper( $health_status )
+					),
+				)
+			);
 		}
 	}
 }
