@@ -40,6 +40,13 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	protected $validator;
 
 	/**
+	 * Security manager.
+	 *
+	 * @var WP_MCP_AI_Security_Manager
+	 */
+	protected $security_manager;
+
+	/**
 	 * Tracks authentication details for the current request.
 	 *
 	 * @var array
@@ -56,6 +63,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 		$container           = wp_mcp_ai_container();
 		$this->authenticator = $authenticator ?? $container->get( 'rest.authenticator' );
 		$this->validator     = $validator ?? $container->get( 'rest.validator' );
+		$this->security_manager = new WP_MCP_AI_Security_Manager();
 	}
 
 	/**
@@ -99,11 +107,17 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	 */
 	protected function success( $data, $status = 200 ) {
 		$response = new WP_REST_Response( $data, $status );
-		$response->set_headers(
-			array(
-				'X-WP-MCP-AI-Version' => WP_MCP_AI_VERSION,
-			)
+		
+		// Add version header.
+		$headers = array(
+			'X-WP-MCP-AI-Version' => WP_MCP_AI_VERSION,
 		);
+		
+		// Add security headers.
+		$security_headers = $this->security_manager->get_security_headers();
+		$headers          = array_merge( $headers, $security_headers );
+		
+		$response->set_headers( $headers );
 		return $response;
 	}
 
@@ -111,19 +125,60 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	 * Permission callback for authenticated requests.
 	 *
 	 * Checks if the request is authenticated via Bearer token, WordPress cookie, or guest token.
+	 * Also applies security manager checks (IP filtering, HTTPS requirement, role/capability checks).
 	 *
 	 * @param WP_REST_Request $request REST request object.
 	 * @return bool|WP_Error True if authenticated, WP_Error otherwise.
 	 */
 	protected function permissions_check_authenticated( WP_REST_Request $request ) {
+		// Step 1: Check IP and HTTPS requirements (before authentication).
+		$user_id      = get_current_user_id();
+		$security_check = $this->security_manager->check_user_access( $user_id, 'rest_api' );
+		
+		if ( is_wp_error( $security_check ) ) {
+			return $security_check;
+		}
+
+		// Step 2: Authenticate the request.
 		$auth_result = $this->authenticator->authenticate( $request );
 
 		if ( is_wp_error( $auth_result ) ) {
+			// Log authentication failure.
+			$this->security_manager->log_security_event(
+				'auth_failure',
+				array(
+					'error_code' => $auth_result->get_error_code(),
+					'endpoint'   => $request->get_route(),
+				),
+				$user_id
+			);
 			return $auth_result;
 		}
 
 		// Store auth context for use in the request handler.
 		$this->auth_context = $auth_result;
+		
+		// Get authenticated user ID.
+		$authenticated_user_id = isset( $this->auth_context['user_id'] ) ? absint( $this->auth_context['user_id'] ) : 0;
+
+		// Step 3: Check role and capability requirements for authenticated users.
+		if ( $authenticated_user_id > 0 ) {
+			$security_check = $this->security_manager->check_user_access( $authenticated_user_id, 'rest_api' );
+			
+			if ( is_wp_error( $security_check ) ) {
+				return $security_check;
+			}
+			
+			// Log successful authentication if enabled.
+			$this->security_manager->log_security_event(
+				'auth_success',
+				array(
+					'method'   => $this->auth_context['token_type'] ?? 'wordpress',
+					'endpoint' => $request->get_route(),
+				),
+				$authenticated_user_id
+			);
+		}
 
 		return true;
 	}
