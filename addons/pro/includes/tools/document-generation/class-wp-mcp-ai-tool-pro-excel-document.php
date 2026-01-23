@@ -930,38 +930,38 @@ JAVASCRIPT;
 	 * @return array|WP_Error Response or error.
 	 */
 	protected function call_provider( $provider, $model, array $messages, array $context ) {
-		// Load provider classes if needed.
-		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Provider' ) ) {
-			require_once WP_MCP_AI_PATH . 'includes/providers/class-wp-mcp-ai-openai-provider.php';
+		// Load client classes if needed.
+		if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
 		}
 
 		try {
 			switch ( $provider ) {
 				case 'gemini':
-					if ( ! class_exists( 'WP_MCP_AI_Gemini_Provider' ) ) {
-						require_once WP_MCP_AI_PATH . 'includes/providers/class-wp-mcp-ai-gemini-provider.php';
+					if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
+						require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 					}
-					$provider_instance = new WP_MCP_AI_Gemini_Provider();
+					$client_instance = new WP_MCP_AI_Gemini_Client();
 					break;
 
 				case 'ollama':
-					if ( ! class_exists( 'WP_MCP_AI_Ollama_Provider' ) ) {
-						require_once WP_MCP_AI_PATH . 'includes/providers/class-wp-mcp-ai-ollama-provider.php';
+					if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
+						require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-ollama-client.php';
 					}
-					$provider_instance = new WP_MCP_AI_Ollama_Provider();
+					$client_instance = new WP_MCP_AI_Ollama_Client();
 					break;
 
 				case 'openai':
 				default:
-					$provider_instance = new WP_MCP_AI_OpenAI_Provider();
+					$client_instance = new WP_MCP_AI_OpenAI_Client();
 					break;
 			}
 
 			// Make API call.
-			$response = $provider_instance->create_chat_completion(
+			$response = $client_instance->create_chat_completion(
+				$messages,
 				array(
 					'model' => $model,
-					'messages' => $messages,
 				)
 			);
 
