@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/run-composer-install-production-again',
-        'version' => 'dev-copilot/run-composer-install-production-again',
-        'reference' => '6230fcac2b0cf36abc23a7873f8d039386da5a07',
+        'pretty_version' => 'dev-copilot/fix-excel-file-creation-error',
+        'version' => 'dev-copilot/fix-excel-file-creation-error',
+        'reference' => '737c1d964e7e454b596a3225b8a415417fce59ff',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/run-composer-install-production-again',
-            'version' => 'dev-copilot/run-composer-install-production-again',
-            'reference' => '6230fcac2b0cf36abc23a7873f8d039386da5a07',
+            'pretty_version' => 'dev-copilot/fix-excel-file-creation-error',
+            'version' => 'dev-copilot/fix-excel-file-creation-error',
+            'reference' => '737c1d964e7e454b596a3225b8a415417fce59ff',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
