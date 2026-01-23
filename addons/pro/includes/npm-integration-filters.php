@@ -509,3 +509,163 @@ function wp_mcp_ai_npm_integration_admin_notice() {
 	}
 }
 add_action( 'admin_notices', 'wp_mcp_ai_npm_integration_admin_notice' );
+
+/**
+ * Generate QR code for TOTP authentication
+ *
+ * Uses qrcode NPM package to generate QR codes for authenticator apps.
+ *
+ * @since 1.3.0
+ *
+ * @param string $data    Data to encode (typically otpauth:// URI).
+ * @param string $format  Output format: 'base64' (default), 'svg', or 'data-url'.
+ * @param array  $options QR code options (size, margin, error correction level).
+ * @return string|WP_Error QR code string or WP_Error on failure.
+ */
+function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = array() ) {
+	// Check if Node.js is available.
+	if ( ! wp_mcp_ai_is_nodejs_available() ) {
+		return new WP_Error(
+			'nodejs_not_available',
+			__( 'Node.js is required for QR code generation. Please install Node.js on your server.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	// Default options.
+	$defaults = array(
+		'width'               => 200,
+		'margin'              => 2,
+		'errorCorrectionLevel' => 'M', // L, M, Q, H.
+		'color'               => array(
+			'dark'  => '#000000',
+			'light' => '#ffffff',
+		),
+	);
+
+	$options = wp_parse_args( $options, $defaults );
+
+	// Build service path.
+	$service_file = WP_MCP_AI_PRO_PATH . 'includes/npm-services/qrcode-service.js';
+
+	// If service doesn't exist yet, create a simple inline implementation.
+	if ( ! file_exists( $service_file ) ) {
+		// Create the service file.
+		$service_dir = dirname( $service_file );
+		if ( ! file_exists( $service_dir ) ) {
+			wp_mkdir_p( $service_dir );
+		}
+
+		$service_code = <<<'JAVASCRIPT'
+#!/usr/bin/env node
+/**
+ * QR Code Generation Service
+ * 
+ * Uses qrcode NPM package to generate QR codes.
+ * Compatible with TOTP authenticator apps.
+ */
+
+const QRCode = require('qrcode');
+
+// Get command line arguments.
+const action = process.argv[2];
+const params = JSON.parse(process.argv[3] || '{}');
+
+async function generateQRCode() {
+    try {
+        const { data, format, options } = params;
+        
+        if (!data) {
+            throw new Error('Data is required for QR code generation');
+        }
+
+        const qrOptions = {
+            width: options.width || 200,
+            margin: options.margin || 2,
+            errorCorrectionLevel: options.errorCorrectionLevel || 'M',
+            color: options.color || {
+                dark: '#000000',
+                light: '#ffffff'
+            }
+        };
+
+        let result;
+        
+        switch (format) {
+            case 'base64':
+                result = await QRCode.toDataURL(data, qrOptions);
+                // Extract base64 part only (remove data:image/png;base64, prefix).
+                result = result.split(',')[1];
+                break;
+                
+            case 'svg':
+                result = await QRCode.toString(data, { ...qrOptions, type: 'svg' });
+                break;
+                
+            case 'data-url':
+            default:
+                result = await QRCode.toDataURL(data, qrOptions);
+                break;
+        }
+
+        console.log(JSON.stringify({
+            success: true,
+            result: result
+        }));
+        
+    } catch (error) {
+        console.error(JSON.stringify({
+            success: false,
+            error: error.message
+        }));
+        process.exit(1);
+    }
+}
+
+// Execute action.
+if (action === 'generate') {
+    generateQRCode();
+} else {
+    console.error(JSON.stringify({
+        success: false,
+        error: 'Unknown action: ' + action
+    }));
+    process.exit(1);
+}
+JAVASCRIPT;
+
+		file_put_contents( $service_file, $service_code );
+		chmod( $service_file, 0755 );
+	}
+
+	// Execute Node.js service.
+	$params = array(
+		'data'    => $data,
+		'format'  => $format,
+		'options' => $options,
+	);
+
+	$result = wp_mcp_ai_exec_node_service( $service_file, 'generate', $params, 10 );
+
+	if ( is_wp_error( $result ) ) {
+		return $result;
+	}
+
+	// Parse JSON result.
+	$result_data = json_decode( $result, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'qr_generation_failed',
+			$result_data['error'] ?? __( 'Failed to generate QR code.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data['result'];
+}
+
+/**
+ * Add QR code generation filter for vault TOTP
+ *
+ * @since 1.3.0
+ */
+add_filter( 'wp_mcp_ai_generate_qr_code', 'wp_mcp_ai_generate_qr_code', 10, 3 );
