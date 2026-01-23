@@ -28,7 +28,8 @@ try {
 		margin: 50
 	});
 
-	doc.pipe(fs.createWriteStream(outputFile));
+	const stream = fs.createWriteStream(outputFile);
+	doc.pipe(stream);
 
 	// Set document metadata.
 	if (data.title) {
@@ -72,8 +73,17 @@ try {
 	}
 
 	doc.end();
-	console.log('PDF generated successfully');
-	process.exit(0);
+
+	// Wait for the stream to finish writing before exiting.
+	stream.on('finish', () => {
+		console.log('PDF generated successfully');
+		process.exit(0);
+	});
+
+	stream.on('error', (error) => {
+		console.error('Error writing PDF file:', error.message);
+		process.exit(1);
+	});
 } catch (error) {
 	console.error('Error generating PDF:', error.message);
 	process.exit(1);
