@@ -36,7 +36,10 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
-	// Load settings page.
+	// Load settings pages.
+	// Main toolkit settings page (under Pro Dashboard).
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
+	// CPT-specific settings page (under Projects menu).
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
 
 	// Load Project Research & Add page.
