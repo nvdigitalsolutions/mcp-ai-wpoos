@@ -249,6 +249,9 @@ class WP_MCP_AI_Password_Vault_Admin {
 				<a href="?page=wp-mcp-ai-password-vault&tab=settings" class="nav-tab <?php echo 'settings' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Security Settings', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
+				<a href="?page=wp-mcp-ai-password-vault&tab=automation" class="nav-tab <?php echo 'automation' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
 			</nav>
 
 			<div class="tab-content">
@@ -262,6 +265,9 @@ class WP_MCP_AI_Password_Vault_Admin {
 						break;
 					case 'settings':
 						$this->render_settings_tab( $settings );
+						break;
+					case 'automation':
+						$this->render_automation_tab( $settings );
 						break;
 					case 'vault':
 					default:
@@ -942,6 +948,200 @@ class WP_MCP_AI_Password_Vault_Admin {
 					<li><?php esc_html_e( 'Download the JSON file and upload it above', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ol>
 				<p><strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Delete the export file after importing for security.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render automation tab (Phase 4)
+	 *
+	 * Handles automatic background sync and conflict resolution.
+	 *
+	 * @param array $settings Vault settings.
+	 */
+	private function render_automation_tab( $settings ) {
+		$sync_service = new WP_MCP_AI_Vault_Background_Sync();
+		$conflict_resolver = new WP_MCP_AI_Vault_Conflict_Resolver();
+
+		$sync_settings = get_option( 'wp_mcp_ai_vault_sync_settings', array() );
+		$last_sync = $sync_service->get_last_sync_time();
+		$next_sync = $sync_service->get_next_sync_time();
+		$sync_logs = $sync_service->get_sync_logs( 10 );
+		$pending_conflicts = $conflict_resolver->get_pending_conflicts();
+		?>
+		<div class="vault-tabs-content">
+			<h2><?php esc_html_e( 'Automatic Background Sync', 'mcp-ai-wpoos-pro' ); ?></h2>
+
+			<!-- Sync Status Card -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Sync Status', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<table class="form-table">
+					<tr>
+						<th><?php esc_html_e( 'Auto Sync:', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<strong><?php echo ! empty( $sync_settings['auto_sync_enabled'] ) ? esc_html__( 'Enabled', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos-pro' ); ?></strong>
+						</td>
+					</tr>
+					<?php if ( $last_sync ) : ?>
+					<tr>
+						<th><?php esc_html_e( 'Last Sync:', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( human_time_diff( $last_sync ) . ' ago' ); ?></td>
+					</tr>
+					<?php endif; ?>
+					<?php if ( $next_sync ) : ?>
+					<tr>
+						<th><?php esc_html_e( 'Next Sync:', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td><?php echo esc_html( human_time_diff( $next_sync ) ); ?></td>
+					</tr>
+					<?php endif; ?>
+					<tr>
+						<th><?php esc_html_e( 'Pending Conflicts:', 'mcp-ai-wpoos-pro' ); ?></th>
+						<td>
+							<strong><?php echo esc_html( count( $pending_conflicts ) ); ?></strong>
+							<?php if ( count( $pending_conflicts ) > 0 ) : ?>
+								<a href="#conflicts" class="button button-small"><?php esc_html_e( 'View Conflicts', 'mcp-ai-wpoos-pro' ); ?></a>
+							<?php endif; ?>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<!-- Configure Auto Sync -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Configure Automatic Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'wp_mcp_ai_configure_auto_sync', 'wp_mcp_ai_auto_sync_nonce' ); ?>
+					<input type="hidden" name="action" value="wp_mcp_ai_configure_auto_sync" />
+
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="auto_sync_enabled"><?php esc_html_e( 'Enable Auto Sync', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<label>
+									<input type="checkbox" name="auto_sync_enabled" id="auto_sync_enabled" value="1" <?php checked( ! empty( $sync_settings['auto_sync_enabled'] ) ); ?> />
+									<?php esc_html_e( 'Automatically synchronize vault with Bitwarden server', 'mcp-ai-wpoos-pro' ); ?>
+								</label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="sync_interval"><?php esc_html_e( 'Sync Interval', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="sync_interval" id="sync_interval">
+									<option value="every_15_minutes" <?php selected( $sync_settings['sync_interval'] ?? '', 'every_15_minutes' ); ?>><?php esc_html_e( 'Every 15 Minutes', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="every_30_minutes" <?php selected( $sync_settings['sync_interval'] ?? '', 'every_30_minutes' ); ?>><?php esc_html_e( 'Every 30 Minutes', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="hourly" <?php selected( $sync_settings['sync_interval'] ?? 'hourly', 'hourly' ); ?>><?php esc_html_e( 'Hourly', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="every_2_hours" <?php selected( $sync_settings['sync_interval'] ?? '', 'every_2_hours' ); ?>><?php esc_html_e( 'Every 2 Hours', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="every_6_hours" <?php selected( $sync_settings['sync_interval'] ?? '', 'every_6_hours' ); ?>><?php esc_html_e( 'Every 6 Hours', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="twicedaily" <?php selected( $sync_settings['sync_interval'] ?? '', 'twicedaily' ); ?>><?php esc_html_e( 'Twice Daily', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="daily" <?php selected( $sync_settings['sync_interval'] ?? '', 'daily' ); ?>><?php esc_html_e( 'Daily', 'mcp-ai-wpoos-pro' ); ?></option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="conflict_resolution"><?php esc_html_e( 'Conflict Resolution', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="conflict_resolution" id="conflict_resolution">
+									<option value="newest_wins" <?php selected( $sync_settings['conflict_resolution'] ?? 'newest_wins', 'newest_wins' ); ?>><?php esc_html_e( 'Newest Wins (Recommended)', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="local_wins" <?php selected( $sync_settings['conflict_resolution'] ?? '', 'local_wins' ); ?>><?php esc_html_e( 'Local Wins', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="remote_wins" <?php selected( $sync_settings['conflict_resolution'] ?? '', 'remote_wins' ); ?>><?php esc_html_e( 'Remote Wins', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="merge" <?php selected( $sync_settings['conflict_resolution'] ?? '', 'merge' ); ?>><?php esc_html_e( 'Merge (Combine Data)', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="manual" <?php selected( $sync_settings['conflict_resolution'] ?? '', 'manual' ); ?>><?php esc_html_e( 'Manual (Review Each)', 'mcp-ai-wpoos-pro' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'How to handle conflicts when both local and remote items have been modified', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+					</table>
+
+					<?php submit_button( __( 'Save Auto Sync Settings', 'mcp-ai-wpoos-pro' ) ); ?>
+				</form>
+			</div>
+
+			<!-- Recent Sync Logs -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Recent Sync Activity', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<?php if ( ! empty( $sync_logs ) ) : ?>
+					<table class="wp-list-table widefat fixed striped">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Time', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Message', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Level', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php foreach ( $sync_logs as $log ) : ?>
+								<tr>
+									<td><?php echo esc_html( $log['timestamp'] ); ?></td>
+									<td><?php echo esc_html( $log['message'] ); ?></td>
+									<td>
+										<span class="badge badge-<?php echo esc_attr( $log['level'] ); ?>">
+											<?php echo esc_html( ucfirst( $log['level'] ) ); ?>
+										</span>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				<?php else : ?>
+					<p><?php esc_html_e( 'No sync activity yet.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<?php endif; ?>
+			</div>
+
+			<!-- Pending Conflicts -->
+			<?php if ( ! empty( $pending_conflicts ) ) : ?>
+				<div class="vault-card" id="conflicts">
+					<h3><?php esc_html_e( 'Pending Conflicts', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<p><?php esc_html_e( 'The following items have conflicting changes that need to be resolved:', 'mcp-ai-wpoos-pro' ); ?></p>
+
+					<?php foreach ( $pending_conflicts as $conflict ) : ?>
+						<div class="conflict-item">
+							<h4><?php echo esc_html( $conflict['local_item']['name'] ?? 'Unknown Item' ); ?></h4>
+							<p><strong><?php esc_html_e( 'Detected:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php echo esc_html( $conflict['timestamp'] ); ?></p>
+
+							<div class="conflict-comparison">
+								<div class="conflict-local">
+									<h5><?php esc_html_e( 'Local Version', 'mcp-ai-wpoos-pro' ); ?></h5>
+									<p><?php esc_html_e( 'Modified:', 'mcp-ai-wpoos-pro' ); ?> <?php echo esc_html( $conflict['local_item']['modified'] ?? 'Unknown' ); ?></p>
+								</div>
+								<div class="conflict-remote">
+									<h5><?php esc_html_e( 'Remote Version', 'mcp-ai-wpoos-pro' ); ?></h5>
+									<p><?php esc_html_e( 'Modified:', 'mcp-ai-wpoos-pro' ); ?> <?php echo esc_html( $conflict['remote_item']['modified'] ?? 'Unknown' ); ?></p>
+								</div>
+							</div>
+
+							<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top: 10px;">
+								<?php wp_nonce_field( 'wp_mcp_ai_resolve_conflict_' . $conflict['id'], 'wp_mcp_ai_conflict_nonce' ); ?>
+								<input type="hidden" name="action" value="wp_mcp_ai_resolve_conflict" />
+								<input type="hidden" name="conflict_id" value="<?php echo esc_attr( $conflict['id'] ); ?>" />
+
+								<button type="submit" name="resolution" value="local" class="button"><?php esc_html_e( 'Use Local', 'mcp-ai-wpoos-pro' ); ?></button>
+								<button type="submit" name="resolution" value="remote" class="button"><?php esc_html_e( 'Use Remote', 'mcp-ai-wpoos-pro' ); ?></button>
+								<button type="submit" name="resolution" value="merge" class="button button-primary"><?php esc_html_e( 'Merge Both', 'mcp-ai-wpoos-pro' ); ?></button>
+							</form>
+						</div>
+					<?php endforeach; ?>
+				</div>
+			<?php endif; ?>
+
+			<!-- Help Section -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'About Automatic Sync', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p><?php esc_html_e( 'Automatic background sync keeps your WordPress vault synchronized with your external Bitwarden server at regular intervals using WP-Cron.', 'mcp-ai-wpoos-pro' ); ?></p>
+				<h4><?php esc_html_e( 'Conflict Resolution Strategies:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><strong><?php esc_html_e( 'Newest Wins:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'The most recently modified version is kept (recommended for most users)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Local Wins:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Always keep the WordPress version', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Remote Wins:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Always keep the Bitwarden server version', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Merge:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Intelligently combines data from both versions', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Manual:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Review and resolve each conflict individually', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
 			</div>
 		</div>
 		<?php

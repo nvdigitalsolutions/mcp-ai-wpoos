@@ -700,4 +700,235 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			return $exported;
 		}, $fields );
 	}
+
+	/**
+	 * Export vault to encrypted Bitwarden JSON format.
+	 *
+	 * Creates a password-protected encrypted export compatible with Bitwarden.
+	 *
+	 * @param int    $user_id  User ID to export for.
+	 * @param string $password Encryption password.
+	 * @param array  $options  Export options.
+	 * @return string|WP_Error Encrypted JSON string or WP_Error on failure.
+	 */
+	public function export_encrypted_bitwarden_json( $user_id, $password, $options = array() ) {
+		if ( empty( $password ) ) {
+			return new WP_Error( 'no_password', 'Encryption password is required' );
+		}
+
+		// Get unencrypted export first.
+		$json_data = $this->export_bitwarden_json( $user_id, $options );
+
+		if ( is_wp_error( $json_data ) ) {
+			return $json_data;
+		}
+
+		// Parse JSON to get data object.
+		$data = json_decode( $json_data, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error( 'json_error', 'Failed to parse export data' );
+		}
+
+		// Encrypt the data using Bitwarden's encryption format.
+		$encrypted_data = $this->encrypt_bitwarden_format( $data, $password );
+
+		if ( is_wp_error( $encrypted_data ) ) {
+			return $encrypted_data;
+		}
+
+		// Create encrypted export structure.
+		$encrypted_export = array(
+			'encrypted'     => true,
+			'encType'       => 0, // AES-256-CBC with HMAC-SHA256.
+			'encKeyValidation_DO_NOT_EDIT' => $encrypted_data['key_validation'],
+			'data'          => $encrypted_data['encrypted_string'],
+			'salt'          => $encrypted_data['salt'],
+			'kdfIterations' => 100000,
+			'kdfType'       => 0, // PBKDF2-SHA256.
+		);
+
+		return wp_json_encode( $encrypted_export, JSON_PRETTY_PRINT );
+	}
+
+	/**
+	 * Encrypt data using Bitwarden's encryption format.
+	 *
+	 * Uses PBKDF2-HMAC-SHA256 for key derivation and AES-256-CBC + HMAC-SHA256 for encryption.
+	 *
+	 * @param array  $data     Data to encrypt.
+	 * @param string $password Encryption password.
+	 * @return array|WP_Error Encrypted data array or WP_Error on failure.
+	 */
+	private function encrypt_bitwarden_format( $data, $password ) {
+		try {
+			// Generate random salt (16 bytes).
+			$salt = random_bytes( 16 );
+
+			// Derive encryption key using PBKDF2 (32 bytes = 256 bits).
+			$key = hash_pbkdf2( 'sha256', $password, $salt, 100000, 32, true );
+
+			// Split key into encryption key and MAC key.
+			$enc_key = substr( $key, 0, 16 ); // First 128 bits for encryption.
+			$mac_key = substr( $key, 16, 16 ); // Second 128 bits for MAC.
+
+			// Serialize data to JSON.
+			$plain_text = wp_json_encode( $data );
+
+			// Generate random IV (16 bytes).
+			$iv = random_bytes( 16 );
+
+			// Encrypt using AES-256-CBC.
+			$cipher_text = openssl_encrypt(
+				$plain_text,
+				'aes-128-cbc',
+				$enc_key,
+				OPENSSL_RAW_DATA,
+				$iv
+			);
+
+			if ( $cipher_text === false ) {
+				return new WP_Error( 'encryption_failed', 'Failed to encrypt data' );
+			}
+
+			// Create MAC over IV + ciphertext.
+			$mac_data = $iv . $cipher_text;
+			$mac = hash_hmac( 'sha256', $mac_data, $mac_key, true );
+
+			// Combine IV + ciphertext + MAC.
+			$encrypted_bytes = $iv . $cipher_text . $mac;
+
+			// Base64 encode.
+			$encrypted_string = base64_encode( $encrypted_bytes );
+
+			// Create key validation string.
+			$key_validation = base64_encode( hash( 'sha256', $key, true ) );
+
+			return array(
+				'encrypted_string' => $encrypted_string,
+				'salt'             => base64_encode( $salt ),
+				'key_validation'   => $key_validation,
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error( 'encryption_exception', $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Import encrypted Bitwarden JSON export.
+	 *
+	 * @param string $encrypted_json Encrypted Bitwarden JSON export data.
+	 * @param string $password       Decryption password.
+	 * @param int    $user_id        User ID to import for.
+	 * @param array  $options        Import options.
+	 * @return array|WP_Error Import results or WP_Error on failure.
+	 */
+	public function import_encrypted_bitwarden_json( $encrypted_json, $password, $user_id, $options = array() ) {
+		if ( empty( $password ) ) {
+			return new WP_Error( 'no_password', 'Decryption password is required' );
+		}
+
+		// Parse encrypted JSON.
+		$encrypted_data = json_decode( $encrypted_json, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error( 'json_error', 'Invalid encrypted JSON format' );
+		}
+
+		// Verify it's encrypted.
+		if ( empty( $encrypted_data['encrypted'] ) ) {
+			return new WP_Error( 'not_encrypted', 'This is not an encrypted export' );
+		}
+
+		// Decrypt the data.
+		$decrypted_data = $this->decrypt_bitwarden_format(
+			$encrypted_data['data'],
+			$encrypted_data['salt'],
+			$password,
+			$encrypted_data['encKeyValidation_DO_NOT_EDIT'] ?? ''
+		);
+
+		if ( is_wp_error( $decrypted_data ) ) {
+			return $decrypted_data;
+		}
+
+		// Parse decrypted data.
+		$data = json_decode( $decrypted_data, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			return new WP_Error( 'decryption_error', 'Failed to parse decrypted data' );
+		}
+
+		// Import the decrypted data.
+		$plain_json = wp_json_encode( $data );
+		return $this->import_bitwarden_json( $plain_json, $user_id, $options );
+	}
+
+	/**
+	 * Decrypt data using Bitwarden's encryption format.
+	 *
+	 * @param string $encrypted_string Base64 encoded encrypted data.
+	 * @param string $salt_b64        Base64 encoded salt.
+	 * @param string $password        Decryption password.
+	 * @param string $key_validation  Key validation string.
+	 * @return string|WP_Error Decrypted data or WP_Error on failure.
+	 */
+	private function decrypt_bitwarden_format( $encrypted_string, $salt_b64, $password, $key_validation = '' ) {
+		try {
+			// Decode base64 inputs.
+			$encrypted_bytes = base64_decode( $encrypted_string );
+			$salt = base64_decode( $salt_b64 );
+
+			if ( $encrypted_bytes === false || $salt === false ) {
+				return new WP_Error( 'decode_error', 'Failed to decode encrypted data' );
+			}
+
+			// Derive encryption key using PBKDF2.
+			$key = hash_pbkdf2( 'sha256', $password, $salt, 100000, 32, true );
+
+			// Verify key if validation provided.
+			if ( ! empty( $key_validation ) ) {
+				$computed_validation = base64_encode( hash( 'sha256', $key, true ) );
+				if ( $computed_validation !== $key_validation ) {
+					return new WP_Error( 'wrong_password', 'Incorrect password' );
+				}
+			}
+
+			// Split key.
+			$enc_key = substr( $key, 0, 16 );
+			$mac_key = substr( $key, 16, 16 );
+
+			// Extract components.
+			$iv = substr( $encrypted_bytes, 0, 16 );
+			$mac = substr( $encrypted_bytes, -32 );
+			$cipher_text = substr( $encrypted_bytes, 16, -32 );
+
+			// Verify MAC.
+			$mac_data = $iv . $cipher_text;
+			$computed_mac = hash_hmac( 'sha256', $mac_data, $mac_key, true );
+
+			if ( ! hash_equals( $computed_mac, $mac ) ) {
+				return new WP_Error( 'mac_verification_failed', 'Data integrity check failed' );
+			}
+
+			// Decrypt.
+			$plain_text = openssl_decrypt(
+				$cipher_text,
+				'aes-128-cbc',
+				$enc_key,
+				OPENSSL_RAW_DATA,
+				$iv
+			);
+
+			if ( $plain_text === false ) {
+				return new WP_Error( 'decryption_failed', 'Failed to decrypt data' );
+			}
+
+			return $plain_text;
+
+		} catch ( Exception $e ) {
+			return new WP_Error( 'decryption_exception', $e->getMessage() );
+		}
+	}
 }

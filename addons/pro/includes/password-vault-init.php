@@ -34,6 +34,13 @@ function wp_mcp_ai_pro_init_password_vault() {
 	// Load vault folder CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-folder-cpt.php';
 
+	// Load conflict resolver (Phase 4).
+	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-conflict-resolver.php';
+
+	// Load background sync service (Phase 4).
+	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-background-sync.php';
+	new WP_MCP_AI_Vault_Background_Sync();
+
 	// Load admin interface (if in admin context).
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-password-vault-admin.php';
