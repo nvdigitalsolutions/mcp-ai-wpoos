@@ -144,7 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Debug logging for subtab sanitization.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 				if ( $enable_logging ) {
 					error_log(
@@ -276,7 +276,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					case 'number':
 						// Handle empty strings differently based on field definition:
 						// 1. If field explicitly allows empty string (e.g., filter fields with default=''),
-						//    preserve the empty string for "use auto-detection" functionality
+						// preserve the empty string for "use auto-detection" functionality
 						// 2. Otherwise, skip empty values to prevent overwriting existing settings
 						if ( '' === $value ) {
 							// Check if this field explicitly allows empty strings by checking if default is ''
@@ -446,9 +446,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							</select>
 							<?php
 							break;
+
+						case 'custom':
+							// For custom field types, call the provided callback function.
+							if ( isset( $field['callback'] ) && is_callable( $field['callback'] ) ) {
+								call_user_func( $field['callback'], $field );
+							}
+							break;
 					}
 
-					if ( $description ) :
+					if ( $description && 'custom' !== $type ) :
 						?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
 						<?php
