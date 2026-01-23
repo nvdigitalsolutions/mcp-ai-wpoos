@@ -65,6 +65,13 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		protected $cloudflare_client;
 
 		/**
+		 * Embedded client instance.
+		 *
+		 * @var WP_MCP_AI_Embedded_Client
+		 */
+		protected $embedded_client;
+
+		/**
 		 * Constructor.
 		 *
 		 * @param WP_MCP_AI_OpenAI_Client      $openai_client        OpenAI client instance.
@@ -74,8 +81,9 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		 * @param WP_MCP_AI_Anthropic_Client   $anthropic_client     Anthropic client instance (optional).
 		 * @param WP_MCP_AI_Huggingface_Client $huggingface_client   Hugging Face client instance (optional).
 		 * @param WP_MCP_AI_Cloudflare_Client  $cloudflare_client    Cloudflare client instance (optional).
+		 * @param WP_MCP_AI_Embedded_Client    $embedded_client      Embedded client instance (optional).
 		 */
-		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null ) {
+		public function __construct( WP_MCP_AI_OpenAI_Client $openai_client, WP_MCP_AI_Gemini_Client $gemini_client, WP_MCP_AI_Ollama_Client $ollama_client = null, WP_MCP_AI_LM_Studio_Client $lm_studio_client = null, WP_MCP_AI_Anthropic_Client $anthropic_client = null, WP_MCP_AI_Huggingface_Client $huggingface_client = null, WP_MCP_AI_Cloudflare_Client $cloudflare_client = null, WP_MCP_AI_Embedded_Client $embedded_client = null ) {
 			$this->openai_client      = $openai_client;
 			$this->gemini_client      = $gemini_client;
 			$this->ollama_client      = $ollama_client ? $ollama_client : new WP_MCP_AI_Ollama_Client();
@@ -83,6 +91,11 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$this->anthropic_client   = $anthropic_client ? $anthropic_client : new WP_MCP_AI_Anthropic_Client();
 			$this->huggingface_client = $huggingface_client ? $huggingface_client : new WP_MCP_AI_Huggingface_Client();
 			$this->cloudflare_client  = $cloudflare_client ? $cloudflare_client : new WP_MCP_AI_Cloudflare_Client();
+
+			// Embedded client is Pro-only.
+			if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
+				$this->embedded_client = $embedded_client ? $embedded_client : new WP_MCP_AI_Embedded_Client();
+			}
 		}
 
 		/**
@@ -107,7 +120,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			$last_error = null;
 
@@ -183,6 +196,16 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 
 				case 'cloudflare':
 					return $this->cloudflare_client->create_chat_completion( $messages, $options );
+
+				case 'embedded':
+					if ( isset( $this->embedded_client ) && $this->embedded_client ) {
+						return $this->embedded_client->create_chat_completion( $messages, $options );
+					}
+					return new WP_Error(
+						'wp_mcp_ai_embedded_not_available',
+						__( 'Embedded LLM provider is only available in the Pro version.', 'mcp-ai-wpoos' ),
+						array( 'status' => 400 )
+					);
 
 				case 'openai':
 				default:
