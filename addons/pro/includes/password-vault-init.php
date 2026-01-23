@@ -55,5 +55,29 @@ function wp_mcp_ai_pro_register_vault_rest_routes() {
 	$controller->register_routes();
 }
 
+/**
+ * Register vault tools with tool registry
+ *
+ * @since 1.3.0
+ *
+ * @param array $tools Existing tools array.
+ * @return array Updated tools array.
+ */
+function wp_mcp_ai_pro_register_vault_tools( $tools ) {
+	$vault_tools = array(
+		// Vault Access tool (read-only).
+		'WP_MCP_AI_Pro_Tool_Vault_Access'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-access.php',
+		// Vault Manage tool (CRUD operations).
+		'WP_MCP_AI_Pro_Tool_Vault_Manage'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-manage.php',
+		// Generate Password tool.
+		'WP_MCP_AI_Pro_Tool_Generate_Password' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-password.php',
+	);
+
+	return array_merge( $tools, $vault_tools );
+}
+
+// Register vault tools.
+add_filter( 'wp_mcp_ai_pro_tools', 'wp_mcp_ai_pro_register_vault_tools', 10 );
+
 // Initialize on init hook.
 add_action( 'init', 'wp_mcp_ai_pro_init_password_vault', 20 );
