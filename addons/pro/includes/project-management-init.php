@@ -66,7 +66,8 @@ function wp_mcp_ai_init_project_management_admin() {
 	WP_MCP_AI_Project_Management_AI_Actions::init();
 	WP_MCP_AI_Project_Management_Bulk_AI::init();
 }
-add_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' );
+// Changed from 'admin_init' to 'plugins_loaded' to ensure submenu pages are registered before 'admin_menu' fires.
+add_action( 'plugins_loaded', 'wp_mcp_ai_init_project_management_admin' );
 
 /**
  * Enqueue project management admin styles.
