@@ -26,7 +26,7 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 		$this->option_name      = 'wp_mcp_ai_document_generation_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-document-generation-toolkit-settings';
 		$this->has_research     = true;
-		$this->has_remote_sites = false;
+		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-media-document';
 
 		parent::__construct();
