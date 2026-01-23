@@ -74,7 +74,14 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'array',
 					'items'       => array(
 						'type'  => 'array',
-						'items' => array(),
+						'items' => array(
+							'anyOf' => array(
+								array( 'type' => 'string' ),
+								array( 'type' => 'number' ),
+								array( 'type' => 'boolean' ),
+								array( 'type' => 'null' ),
+							),
+						),
 					),
 					'description' => __( 'Array of data rows for table generation. Each row is an array of cell values.', 'mcp-ai-wpoos' ),
 				),
@@ -101,7 +108,14 @@ class WP_MCP_AI_Tool_Pro_Excel_Document implements WP_MCP_AI_Tool_Interface, WP_
 								'type'  => 'array',
 								'items' => array(
 									'type'  => 'array',
-									'items' => array(),
+									'items' => array(
+										'anyOf' => array(
+											array( 'type' => 'string' ),
+											array( 'type' => 'number' ),
+											array( 'type' => 'boolean' ),
+											array( 'type' => 'null' ),
+										),
+									),
 								),
 							),
 						),
