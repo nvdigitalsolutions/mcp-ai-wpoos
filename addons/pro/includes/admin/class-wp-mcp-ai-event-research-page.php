@@ -1,8 +1,8 @@
 <?php
 /**
- * Research & Add admin page for Project CPT.
+ * Research & Add admin page for Event CPT.
  *
- * Provides a dedicated page for researching projects before adding them,
+ * Provides a dedicated page for researching events before adding them,
  * with full chat interface for AI assistance.
  *
  * @package WP_MCP_AI_Pro
@@ -15,11 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
 
 /**
- * Project Research Admin Page
+ * Event Research Admin Page
  *
- * Adds a submenu page under Projects menu for AI-powered project research.
+ * Adds a submenu page under Events menu for AI-powered event research.
  */
-class WP_MCP_AI_Project_Research_Page {
+class WP_MCP_AI_Event_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
 
 	/**
@@ -27,7 +27,7 @@ class WP_MCP_AI_Project_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'research-project';
+	const PAGE_SLUG = 'research-event';
 
 	/**
 	 * Initialize the page.
@@ -35,16 +35,16 @@ class WP_MCP_AI_Project_Research_Page {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_create_project_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_create_event_from_research', array( __CLASS__, 'handle_create_from_research' ) );
 	}
 
 	/**
-	 * Add submenu page under Projects menu.
+	 * Add submenu page under Events menu.
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_project',
-			__( 'Research & Add Project', 'mcp-ai-wpoos-pro' ),
+			'edit.php?post_type=mcp_ai_event',
+			__( 'Research & Add Event', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			self::PAGE_SLUG,
@@ -59,7 +59,7 @@ class WP_MCP_AI_Project_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'mcp_ai_project_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'mcp_ai_event_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
@@ -94,15 +94,15 @@ class WP_MCP_AI_Project_Research_Page {
 			'wpMcpAiResearchPage',
 			array(
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_project' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_project' ),
-				'researchTool' => 'research_project',
+				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_event' ),
+				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_event' ),
+				'researchTool' => 'research_event',
 				'strings'      => array(
 					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
 					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating Project...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'Project created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create a project with the researched information?', 'mcp-ai-wpoos-pro' ),
+					'creating'      => __( 'Creating Event...', 'mcp-ai-wpoos-pro' ),
+					'created'       => __( 'Event created successfully!', 'mcp-ai-wpoos-pro' ),
+					'confirmCreate' => __( 'Create an event with the researched information?', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -113,7 +113,7 @@ class WP_MCP_AI_Project_Research_Page {
 	 */
 	public static function render_page() {
 		// Get assistant from settings.
-		$settings     = get_option( 'wp_mcp_ai_project_settings', array() );
+		$settings     = get_option( 'wp_mcp_ai_event_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
 
 		// If no assistant configured or invalid, get the first available assistant.
@@ -134,7 +134,7 @@ class WP_MCP_AI_Project_Research_Page {
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
-				<?php esc_html_e( 'Research & Add Project', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Research & Add Event', 'mcp-ai-wpoos-pro' ); ?>
 			</h1>
 
 			<hr class="wp-header-end">
@@ -144,34 +144,34 @@ class WP_MCP_AI_Project_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Search existing projects or research new ideas on the web', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Use calendar view to check timelines and conflicts', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Create projects with tasks and milestones', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Manage project resources and assignments', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing events or research ideas on the web', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use calendar view to check for scheduling conflicts', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create events with proper timing and details', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Link events to projects and invite attendees', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'List existing projects to avoid duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Check timeline:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Review schedule conflicts before creating', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Web research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find best practices and methodologies', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Break it down:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Define tasks and milestones after creating', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'List existing events to avoid conflicts', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Check calendar:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Review calendar before scheduling', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Web research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find venue information and best practices', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Link to projects:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Associate events with relevant projects', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
 					<div class="wp-mcp-ai-research-examples">
 						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul class="wp-mcp-ai-example-list">
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research a website redesign project with timeline, phases, and deliverables">
-								<?php esc_html_e( '"Research a website redesign project..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research planning a team kickoff meeting with agenda, attendees, and materials needed">
+								<?php esc_html_e( '"Research planning a team kickoff meeting..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about planning a product launch including marketing strategy and milestones">
-								<?php esc_html_e( '"Find information about planning a product launch..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about organizing a product launch event including venue, catering, and timeline">
+								<?php esc_html_e( '"Find information about organizing a product launch..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research an employee training program with curriculum, schedule, and assessment plan">
-								<?php esc_html_e( '"Research an employee training program..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research scheduling a quarterly review meeting with preparation requirements and key topics">
+								<?php esc_html_e( '"Research scheduling a quarterly review..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -179,13 +179,13 @@ class WP_MCP_AI_Project_Research_Page {
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
-							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_project' ) ); ?>" class="button">
-								<?php esc_html_e( 'View All Projects', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_event' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Events', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>
 						<p>
-							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_project' ) ); ?>" class="button">
-								<?php esc_html_e( 'Add Project Manually', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_event' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add Event Manually', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>
 					</div>
@@ -195,10 +195,9 @@ class WP_MCP_AI_Project_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive project tools.
-							// Includes research, creation, task management, and calendar tools.
+							// Render chat interface with comprehensive event tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="research_project,create_project,list_projects,create_task,list_tasks,create_event,list_events,get_calendar_view,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_event,list_events,get_calendar_view,list_projects,web_search,search_content"]'
 							);
 							?>
 						</div>
@@ -225,15 +224,15 @@ class WP_MCP_AI_Project_Research_Page {
 	}
 
 	/**
-	 * Handle AJAX request to create project from research.
+	 * Handle AJAX request to create event from research.
 	 */
 	public static function handle_create_from_research() {
 		// Verify nonce.
-		check_ajax_referer( 'wp_mcp_ai_research_project', 'nonce' );
+		check_ajax_referer( 'wp_mcp_ai_research_event', 'nonce' );
 
 		// Check user capability.
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to create projects.', 'mcp-ai-wpoos-pro' ) ) );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to create events.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Get research data from request.
@@ -252,18 +251,18 @@ class WP_MCP_AI_Project_Research_Page {
 		}
 
 		if ( empty( $research_data['title'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Project title is required.', 'mcp-ai-wpoos-pro' ) ) );
+			wp_send_json_error( array( 'message' => __( 'Event title is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Process featured image generation request.
-		$research_data = self::process_featured_image_request( $research_data, $research_data['title'], 'a project' );
+		$research_data = self::process_featured_image_request( $research_data, $research_data['title'], 'an event' );
 
-		// Use the create_project tool to create the project.
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Project' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Create Project tool not available.', 'mcp-ai-wpoos-pro' ) ) );
+		// Use the create_event tool to create the event.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Event' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Create Event tool not available.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$tool   = new WP_MCP_AI_Tool_Create_Project();
+		$tool   = new WP_MCP_AI_Tool_Create_Event();
 		$result = $tool->execute(
 			$research_data,
 			array( 'user_id' => get_current_user_id() )
@@ -273,19 +272,19 @@ class WP_MCP_AI_Project_Research_Page {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
-		// Return success with project ID and edit URL.
-		$project_id = isset( $result['project_id'] ) ? $result['project_id'] : 0;
-		$edit_url   = $project_id > 0 ? admin_url( 'post.php?post=' . $project_id . '&action=edit' ) : '';
+		// Return success with event ID and edit URL.
+		$event_id = isset( $result['event_id'] ) ? $result['event_id'] : 0;
+		$edit_url = $event_id > 0 ? admin_url( 'post.php?post=' . $event_id . '&action=edit' ) : '';
 
 		wp_send_json_success(
 			array(
-				'message'    => __( 'Project created successfully!', 'mcp-ai-wpoos-pro' ),
-				'project_id' => $project_id,
-				'edit_url'   => $edit_url,
+				'message'  => __( 'Event created successfully!', 'mcp-ai-wpoos-pro' ),
+				'event_id' => $event_id,
+				'edit_url' => $edit_url,
 			)
 		);
 	}
 }
 
 // Initialize.
-WP_MCP_AI_Project_Research_Page::init();
+WP_MCP_AI_Event_Research_Page::init();
