@@ -89,6 +89,24 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				),
 			)
 		);
+
+		// Workflow status endpoint.
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/workflows/(?P<workflow_id>[a-zA-Z0-9_-]+)/status',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_workflow_status' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+				'args'                => array(
+					'workflow_id' => array(
+						'required'          => true,
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -282,6 +300,67 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
 			),
 			200
+		);
+	}
+
+	/**
+	 * Get workflow status
+	 *
+	 * Returns the current status of an enhanced workflow including:
+	 * - Workflow state (initialized, running, completed, failed)
+	 * - Task progress (total tasks, completed tasks)
+	 * - Timestamps (created, started, completed)
+	 *
+	 * @param WP_REST_Request $request REST request.
+	 * @return WP_REST_Response|WP_Error Response with workflow status or error.
+	 */
+	public function get_workflow_status( $request ) {
+		$workflow_id = sanitize_text_field( $request->get_param( 'workflow_id' ) );
+
+		// Get enhanced workflow coordinator.
+		if ( ! function_exists( 'wp_mcp_ai_get_enhanced_workflow_coordinator' ) ) {
+			$this->log_error(
+				'Enhanced workflow coordinator not available',
+				array( 'workflow_id' => $workflow_id )
+			);
+
+			return new WP_Error(
+				'coordinator_unavailable',
+				__( 'Enhanced workflow coordinator is not available.', 'mcp-ai-wpoos' ),
+				array( 'status' => 503 )
+			);
+		}
+
+		$coordinator = wp_mcp_ai_get_enhanced_workflow_coordinator();
+		$status      = $coordinator->get_workflow_status( $workflow_id );
+
+		if ( is_wp_error( $status ) ) {
+			$this->log_error(
+				'Failed to get workflow status',
+				array(
+					'workflow_id' => $workflow_id,
+					'error'       => $status->get_error_message(),
+				)
+			);
+
+			return $status;
+		}
+
+		$this->log_event(
+			'workflow_status_retrieved',
+			'Workflow status retrieved successfully',
+			array(
+				'workflow_id' => $workflow_id,
+				'state'       => $status['state'],
+			)
+		);
+
+		return rest_ensure_response(
+			array(
+				'success'     => true,
+				'workflow_id' => $workflow_id,
+				'status'      => $status,
+			)
 		);
 	}
 }
