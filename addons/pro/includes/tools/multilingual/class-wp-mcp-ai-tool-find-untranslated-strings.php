@@ -77,7 +77,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 // TODO: Implement find_untranslated_strings logic
 
 return array(

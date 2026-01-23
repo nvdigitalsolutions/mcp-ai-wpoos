@@ -79,7 +79,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 // TODO: Implement localize_dates_currencies logic
 
 return array(

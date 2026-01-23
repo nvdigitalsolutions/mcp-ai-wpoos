@@ -87,7 +87,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 $post_id          = absint( $arguments['post_id'] );
 $target_language  = sanitize_text_field( $arguments['target_language'] );
 $source_language  = ! empty( $arguments['source_language'] ) ? sanitize_text_field( $arguments['source_language'] ) : 'en';
