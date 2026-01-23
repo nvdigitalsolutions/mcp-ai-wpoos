@@ -7,7 +7,7 @@ triaging production incidents.
 ## npm/Composer Install Error After Cloning (getcwd() / uv_cwd Failed)
 
 ### Problem
-When running `npm install` or `composer install --no-dev --optimize-autoloader` after cloning the repository, you get one of these errors:
+When running `npm install` or `composer install --no-dev --classmap-authoritative` after cloning the repository, you get one of these errors:
 
 **npm error:**
 ```
@@ -47,7 +47,7 @@ cd mcp-ai-wpoos
 pwd  # Should show: /home/master/applications/YOURAPP/public_html/wp-content/plugins/mcp-ai-wpoos
 
 # Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 ```
 
 **Important for Cloudways:**
@@ -66,7 +66,7 @@ cd mcp-ai-wpoos
 
 # Install dependencies while IN the clone directory
 npm install
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --classmap-authoritative
 
 # THEN copy to WordPress plugins directory
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
@@ -83,7 +83,7 @@ git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 
 # Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 ```
 
 **Option 3: If You Already Copied Without Installing**
@@ -96,7 +96,7 @@ cd /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ls -la composer.json  # Should exist
 
 # Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 ```
 
 **Option 4: If You're Already Getting the Error (Critical Fix)**
@@ -117,7 +117,7 @@ pwd  # Should show the full path without errors
 ls -la package.json composer.json
 
 # 5. Now install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 ```
 
 **Why this happens:** When you move files while your shell is in that directory, the shell's working directory becomes "orphaned" - it points to a path that no longer exists. The only fix is to start a new shell session and navigate to the correct location.
@@ -165,7 +165,7 @@ SSH into your server and run:
 
 ```bash
 cd /path/to/wp-content/plugins/wpoos
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --classmap-authoritative
 ```
 
 This removes all development dependencies and rebuilds the autoloader for production.
@@ -184,7 +184,7 @@ When deploying to production:
 
 1. **Always use `--no-dev` flag in production:**
    ```bash
-   composer install --no-dev --optimize-autoloader
+   composer install --no-dev --classmap-authoritative
    ```
 
 2. **Add to deployment scripts:**
@@ -192,13 +192,13 @@ When deploying to production:
    #!/bin/bash
    # deploy.sh
    cd /path/to/plugin
-   composer install --no-dev --optimize-autoloader --no-interaction
+   composer install --no-dev --classmap-authoritative --no-interaction
    ```
 
 3. **CI/CD Pipeline Example:**
    ```yaml
    - name: Install PHP dependencies
-     run: composer install --no-dev --optimize-autoloader --no-interaction
+     run: composer install --no-dev --classmap-authoritative --no-interaction
    ```
 
 4. **Check your composer.lock:**

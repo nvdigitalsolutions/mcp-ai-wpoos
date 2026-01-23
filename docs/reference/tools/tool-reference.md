@@ -1,8 +1,8 @@
 # Built-in tool reference
 
-**Status:** ✅ VERIFIED - January 15, 2025  
-**Tool Count:** 146 unique tools (119 base + 27 Pro addon)  
-**Last Updated:** January 15, 2025
+**Status:** ✅ VERIFIED - January 23, 2026  
+**Tool Count:** 398 unique tools (141 base/extended + 257 Pro addon)  
+**Last Updated:** January 23, 2026
 
 NV oOS registers a suite of default tools through the central registry so every assistant can opt-in without custom code. The registry initialises on `plugins_loaded`, loads the bundled implementations, and exposes extension hooks for third parties to add their own integrations.【F:includes/class-wp-mcp-ai-tool-registry.php†L12-L124】【F:includes/tools/tools-init.php†L12-L14】
 

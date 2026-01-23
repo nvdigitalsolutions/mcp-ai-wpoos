@@ -1,0 +1,36 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/financial-budget",
+	"title": "Financial Budget",
+	"category": "mcp-ai-toolkits",
+	"description": "Display budget tracking from the Financial toolkit",
+	"keywords": ["financial", "budget", "money", "expenses", "tracking", "mcp"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"view": {
+			"type": "string",
+			"default": "summary"
+		},
+		"period": {
+			"type": "string",
+			"default": "month"
+		},
+		"show_categories": {
+			"type": "boolean",
+			"default": true
+		},
+		"show_progress": {
+			"type": "boolean",
+			"default": true
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}

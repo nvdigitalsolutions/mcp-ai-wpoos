@@ -52,7 +52,7 @@ This quick reference provides fast access to the most common tasks and commands 
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 ```
 
 **For Local/VPS:**
@@ -61,12 +61,12 @@ npm install && composer install --no-dev --optimize-autoloader
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 
 # Option 2: Clone, install, then copy
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
+npm install && composer install --no-dev --classmap-authoritative
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
 ```
 

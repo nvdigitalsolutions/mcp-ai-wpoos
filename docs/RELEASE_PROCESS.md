@@ -121,7 +121,7 @@ grep '"version"' package.json
 - [ ] Frontend assets built: `npm run build`
 - [ ] Production Composer dependencies installed:
   ```bash
-  composer install --no-dev --prefer-dist --optimize-autoloader
+  composer install --no-dev --prefer-dist --classmap-authoritative
   ```
 - [ ] Test local build
 - [ ] Verify plugin activates without errors
@@ -624,7 +624,7 @@ npm test
 
 # Build assets
 npm run build
-composer install --no-dev --optimize-autoloader
+composer install --no-dev --classmap-authoritative
 
 # Create tag
 git tag -a v1.x.x -m "Release version 1.x.x"

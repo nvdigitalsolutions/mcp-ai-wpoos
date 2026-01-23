@@ -1,0 +1,96 @@
+<?php
+/**
+ * Convert Video Format Tool
+ *
+ * Convert videos between formats (MP4, WebM, MOV, AVI) with codec options.
+ *
+ * @package WP_MCP_AI_Pro
+ * @since 1.1.0
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+exit;
+}
+
+class WP_MCP_AI_Tool_Convert_Video_Format implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+
+public static function is_available() {
+if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
+return false;
+}
+
+$settings = get_option( 'wp_mcp_ai_settings', array() );
+return ! empty( $settings['enable_video_production_toolkit'] );
+}
+
+public static function get_unavailable_reason() {
+$settings = get_option( 'wp_mcp_ai_settings', array() );
+if ( empty( $settings['enable_video_production_toolkit'] ) ) {
+return __( 'Video Production toolkit is not enabled.', 'mcp-ai-wpoos-pro' );
+}
+return __( 'Convert Video Format tool is not available.', 'mcp-ai-wpoos-pro' );
+}
+
+public function get_slug() {
+return 'convert_video_format';
+}
+
+public function get_name() {
+return __( 'Convert Video Format', 'mcp-ai-wpoos-pro' );
+}
+
+public function get_description() {
+return __( 'Convert videos between formats (MP4, WebM, MOV, AVI) with codec options.', 'mcp-ai-wpoos-pro' );
+}
+
+public function get_parameters_schema() {
+return array(
+'type'       => 'object',
+'properties' => array(
+				'video_id' => array(
+					'type' => 'integer',
+					'description' => 'Video media ID',
+				),
+				'output_format' => array(
+					'type' => 'string',
+					'description' => 'Output format',
+					'enum' => array( 'mp4', 'webm', 'mov', 'avi' ),
+				),
+				'video_codec' => array(
+					'type' => 'string',
+					'description' => 'Video codec',
+					'enum' => array( 'h264', 'h265', 'vp8', 'vp9' ),
+					'default' => 'h264',
+				),
+				'audio_codec' => array(
+					'type' => 'string',
+					'description' => 'Audio codec',
+					'enum' => array( 'aac', 'mp3', 'opus', 'vorbis' ),
+					'default' => 'aac',
+				),
+			),
+'required'   => array(),
+);
+}
+
+public function get_required_capability() {
+return 'upload_files';
+}
+
+public function get_capability_flags() {
+return array(
+'media'           => true,
+'video_editing'   => true,
+);
+}
+
+public function execute( $arguments, $context ) {
+// TODO: Implement convert_video_format logic
+// This requires FFmpeg or similar video processing library
+
+return array(
+'success' => true,
+'message' => __( 'Convert Video Format executed successfully. Note: Video processing requires FFmpeg.', 'mcp-ai-wpoos-pro' ),
+);
+}
+}

@@ -27,6 +27,19 @@ const nodeScriptOptions = {
 	logLevel: 'info',
 };
 
+// Browser bundle options for orchestration (IIFE for WordPress)
+const browserBundleOptions = {
+	bundle: true,
+	platform: 'browser',
+	target: ['es2015'], // Compatible with WordPress requirements
+	format: 'iife', // Immediately Invoked Function Expression
+	minify: true,
+	sourcemap: true,
+	logLevel: 'info',
+	// Resolve packages from Pro addon's node_modules (for cheerio, turndown, p-queue)
+	nodePaths: [path.join(__dirname, 'addons', 'pro', 'node_modules')],
+};
+
 // Scripts to bundle
 const builds = [
 	{
@@ -43,6 +56,20 @@ const builds = [
 		entryPoints: ['addons/pro/scripts/generate-excel.js'],
 		outfile: 'addons/pro/bin/generate-excel.bundle.js',
 		...nodeScriptOptions,
+	},
+	// Orchestration bundle (opossum + p-queue)
+	{
+		entryPoints: ['addons/pro/assets/js/orchestration-bundle.js'],
+		outfile: 'addons/pro/assets/js/orchestration-bundle.min.js',
+		...browserBundleOptions,
+		globalName: 'WpMcpAiOrchestrationBundle',
+	},
+	// Research bundle (cheerio + turndown)
+	{
+		entryPoints: ['addons/pro/assets/js/research-bundle.js'],
+		outfile: 'addons/pro/assets/js/research-bundle.min.js',
+		...browserBundleOptions,
+		globalName: 'WpMcpAiResearchBundle',
 	},
 ];
 

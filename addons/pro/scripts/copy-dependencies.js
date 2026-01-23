@@ -109,6 +109,14 @@ const dependencies = [
 		],
 	},
 	{
+		name: 'chart.js',
+		files: [
+			{ src: 'dist/chart.umd.js', dest: 'chart.js/chart.umd.js' },
+			{ src: 'dist/chart.umd.min.js', dest: 'chart.js/chart.umd.min.js' },
+			{ src: 'package.json', dest: 'chart.js/package.json' },
+		],
+	},
+	{
 		name: 'ics',
 		files: [
 			{ src: 'dist/index.js', dest: 'ics/index.js' },
@@ -152,6 +160,253 @@ const dependencies = [
 			{ src: 'index.js', dest: 'fluent-ffmpeg/index.js' },
 			{ src: 'lib', dest: 'fluent-ffmpeg/lib', isDir: true },
 			{ src: 'package.json', dest: 'fluent-ffmpeg/package.json' },
+		],
+	},
+	// ========================================================================
+	// NEW PRO TOOLKITS PACKAGES (Phase 2+)
+	// ========================================================================
+	// E-commerce Toolkit
+	{
+		name: '@woocommerce/woocommerce-rest-api',
+		files: [
+			{ src: 'index.js', dest: 'woocommerce-rest-api/index.js' },
+			{ src: 'index.mjs', dest: 'woocommerce-rest-api/index.mjs' },
+			{ src: 'package.json', dest: 'woocommerce-rest-api/package.json' },
+		],
+	},
+	{
+		name: 'stripe',
+		dirs: [
+			{ src: 'cjs', dest: 'stripe/cjs' },
+			{ src: 'esm', dest: 'stripe/esm' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'stripe/package.json' },
+		],
+	},
+	{
+		name: 'currency.js',
+		files: [
+			{ src: 'dist/currency.min.js', dest: 'currency.js/currency.min.js' },
+			{ src: 'package.json', dest: 'currency.js/package.json' },
+		],
+	},
+	// Social Media Toolkit
+	{
+		name: 'twitter-api-v2',
+		dirs: [
+			{ src: 'dist', dest: 'twitter-api-v2/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'twitter-api-v2/package.json' },
+		],
+	},
+	{
+		name: 'axios',
+		dirs: [
+			{ src: 'dist', dest: 'axios/dist' },
+		],
+		files: [
+			{ src: 'index.js', dest: 'axios/index.js' },
+			{ src: 'package.json', dest: 'axios/package.json' },
+		],
+	},
+	{
+		name: 'facebook-nodejs-business-sdk',
+		dirs: [
+			{ src: 'dist', dest: 'facebook-nodejs-business-sdk/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'facebook-nodejs-business-sdk/package.json' },
+		],
+	},
+	{
+		name: 'linkedin-api-client',
+		dirs: [
+			{ src: 'dist', dest: 'linkedin-api-client/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'linkedin-api-client/package.json' },
+		],
+	},
+	// Analytics Toolkit
+	{
+		name: 'd3',
+		dirs: [
+			{ src: 'dist', dest: 'd3/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'd3/package.json' },
+		],
+	},
+	{
+		name: 'mathjs',
+		dirs: [
+			{ src: 'lib', dest: 'mathjs/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'mathjs/package.json' },
+		],
+	},
+	{
+		name: 'regression',
+		files: [
+			{ src: 'dist/regression.min.js', dest: 'regression/regression.min.js' },
+			{ src: 'package.json', dest: 'regression/package.json' },
+		],
+	},
+	{
+		name: 'fast-csv',
+		dirs: [
+			{ src: 'build', dest: 'fast-csv/build' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'fast-csv/package.json' },
+		],
+	},
+	// Multilingual Toolkit
+	{
+		name: 'i18next',
+		dirs: [
+			{ src: 'dist', dest: 'i18next/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'i18next/package.json' },
+		],
+	},
+	{
+		name: 'franc',
+		files: [
+			{ src: 'index.js', dest: 'franc/index.js' },
+			{ src: 'package.json', dest: 'franc/package.json' },
+		],
+	},
+	{
+		name: 'google-translate-api-x',
+		files: [
+			{ src: 'index.cjs', dest: 'google-translate-api-x/index.cjs' },
+			{ src: 'lib', dest: 'google-translate-api-x/lib', isDir: true },
+			{ src: 'package.json', dest: 'google-translate-api-x/package.json' },
+		],
+	},
+	{
+		name: 'iso-639-1',
+		files: [
+			{ src: 'build/index.js', dest: 'iso-639-1/index.js' },
+			{ src: 'package.json', dest: 'iso-639-1/package.json' },
+		],
+	},
+	// Video Production Toolkit
+	{
+		name: 'ffmpeg-static',
+		files: [
+			{ src: 'index.js', dest: 'ffmpeg-static/index.js' },
+			{ src: 'package.json', dest: 'ffmpeg-static/package.json' },
+		],
+	},
+	{
+		name: 'ffprobe-static',
+		files: [
+			{ src: 'index.js', dest: 'ffprobe-static/index.js' },
+			{ src: 'package.json', dest: 'ffprobe-static/package.json' },
+		],
+	},
+	{
+		name: 'gif-encoder',
+		files: [
+			{ src: 'lib', dest: 'gif-encoder/lib', isDir: true },
+			{ src: 'package.json', dest: 'gif-encoder/package.json' },
+		],
+	},
+	{
+		name: 'video-stitch',
+		files: [
+			{ src: 'index.js', dest: 'video-stitch/index.js' },
+			{ src: 'lib', dest: 'video-stitch/lib', isDir: true },
+			{ src: 'package.json', dest: 'video-stitch/package.json' },
+		],
+	},
+	{
+		name: 'subtitle',
+		dirs: [
+			{ src: 'dist', dest: 'subtitle/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'subtitle/package.json' },
+		],
+	},
+	// ========================================================================
+	// CRM & EMAIL MARKETING TOOLKIT PACKAGES
+	// ========================================================================
+	{
+		name: 'nodemailer',
+		dirs: [
+			{ src: 'lib', dest: 'nodemailer/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'nodemailer/package.json' },
+		],
+	},
+	{
+		name: 'validator',
+		files: [
+			{ src: 'index.js', dest: 'validator/index.js' },
+			{ src: 'lib', dest: 'validator/lib', isDir: true },
+			{ src: 'es', dest: 'validator/es', isDir: true },
+			{ src: 'package.json', dest: 'validator/package.json' },
+		],
+	},
+	{
+		name: 'email-validator',
+		files: [
+			{ src: 'index.js', dest: 'email-validator/index.js' },
+			{ src: 'package.json', dest: 'email-validator/package.json' },
+		],
+	},
+	{
+		name: 'libphonenumber-js',
+		files: [
+			{ src: 'index.js', dest: 'libphonenumber-js/index.js' },
+			{ src: 'min', dest: 'libphonenumber-js/min', isDir: true },
+			{ src: 'mobile', dest: 'libphonenumber-js/mobile', isDir: true },
+			{ src: 'metadata.min.json', dest: 'libphonenumber-js/metadata.min.json' },
+			{ src: 'package.json', dest: 'libphonenumber-js/package.json' },
+		],
+	},
+	{
+		name: 'mailparser',
+		dirs: [
+			{ src: 'lib', dest: 'mailparser/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'mailparser/package.json' },
+		],
+	},
+	{
+		name: 'csv-parse',
+		dirs: [
+			{ src: 'lib', dest: 'csv-parse/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'csv-parse/package.json' },
+		],
+	},
+	{
+		name: 'csv-stringify',
+		dirs: [
+			{ src: 'lib', dest: 'csv-stringify/lib' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'csv-stringify/package.json' },
+		],
+	},
+	{
+		name: 'ical-generator',
+		dirs: [
+			{ src: 'dist', dest: 'ical-generator/dist' },
+		],
+		files: [
+			{ src: 'package.json', dest: 'ical-generator/package.json' },
 		],
 	},
 ];

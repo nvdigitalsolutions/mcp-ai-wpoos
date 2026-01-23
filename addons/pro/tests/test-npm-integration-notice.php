@@ -68,7 +68,7 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 		// If packages are missing, should have entries in 'missing' array.
 		if ( ! $result['available'] ) {
 			$this->assertNotEmpty( $result['missing'] );
-			
+
 			// Each missing package should be a string.
 			foreach ( $result['missing'] as $package ) {
 				$this->assertIsString( $package );
@@ -157,7 +157,7 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 		if ( ! empty( $output ) ) {
 			// Should have notice wrapper.
 			$this->assertStringContainsString( 'notice notice-warning', $output );
-			
+
 			// Should mention Node.js or NPM packages.
 			$this->assertThat(
 				$output,
@@ -170,7 +170,7 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 
 			// Should list features requiring Node.js.
 			$this->assertStringContainsString( 'Features requiring Node.js:', $output );
-			
+
 			// Should mention specific tools.
 			$this->assertThat(
 				$output,
@@ -249,11 +249,11 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 
 		// Check if packages are actually missing.
 		$package_check = wp_mcp_ai_check_vendor_packages();
-		
+
 		if ( ! empty( $output ) && ! $package_check['available'] && ! empty( $package_check['missing'] ) ) {
 			// Should show "Missing packages:" header.
 			$this->assertStringContainsString( 'Missing packages:', $output );
-			
+
 			// Should list at least one package name from the missing array.
 			$found_package = false;
 			foreach ( $package_check['missing'] as $package ) {
@@ -288,7 +288,7 @@ class Test_NPM_Integration_Notice extends WP_UnitTestCase {
 			// Should have proper opening and closing tags.
 			$this->assertStringContainsString( '<div class="notice notice-warning', $output );
 			$this->assertStringContainsString( '</div>', $output );
-			
+
 			// Should have proper link structure (if Node.js link is present).
 			if ( strpos( $output, 'nodejs.org' ) !== false ) {
 				$this->assertStringContainsString( '<a href="https://nodejs.org/"', $output );

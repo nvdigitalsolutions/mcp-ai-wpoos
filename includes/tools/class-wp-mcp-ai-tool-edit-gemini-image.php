@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a tool for editing images via Gemini Nano Banana and storing them as attachments.
@@ -27,6 +28,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
@@ -71,62 +73,62 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$mime_choices   = array_keys( $this->get_allowed_mime_types() );
 
 		return array(
-			'type'                 => 'object',
-			'properties'           => array_merge(
+			'type' => 'object',
+			'properties' => array_merge(
 				array(
-					'prompt'           => array(
-						'type'        => 'string',
+					'prompt' => array(
+						'type' => 'string',
 						'description' => __( 'Text instruction describing the desired edits (e.g., "remove background", "change sky to sunset", "make brighter").', 'mcp-ai-wpoos' ),
 					),
-					'attachment_id'    => array(
-						'type'        => 'integer',
+					'attachment_id' => array(
+						'type' => 'integer',
 						'description' => __( 'WordPress attachment ID of the image to edit.', 'mcp-ai-wpoos' ),
 					),
-					'file_id'          => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'mcp-ai-wpoos' ) ),
-					'url'              => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ) ),
-					'image_url'        => array(
-						'type'        => 'string',
+					'file_id' => $this->get_file_id_parameter_schema( __( 'OpenAI or Gemini file identifier. Use this when the image was uploaded via the files endpoint.', 'mcp-ai-wpoos' ) ),
+					'url' => $this->get_url_parameter_schema( 'image', __( 'URL of the image to edit. REQUIRED when user attaches an image in chat - extract the "url" field from the message content segment (look for segments with type:"input_image" that contain a url field). Can be a WordPress media URL or external URL.', 'mcp-ai-wpoos' ) ),
+					'image_url' => array(
+						'type' => 'string',
 						'description' => __( 'URL of the image to edit (legacy parameter, use "url" instead).', 'mcp-ai-wpoos' ),
 					),
-					'image_data'       => array(
-						'type'        => 'string',
+					'image_data' => array(
+						'type' => 'string',
 						'description' => __( 'Base64-encoded image data to edit (alternative to attachment_id, url, or file_id). Useful for editing images created in the chat.', 'mcp-ai-wpoos' ),
 					),
 					'source_mime_type' => array(
-						'type'        => 'string',
+						'type' => 'string',
 						'description' => __( 'MIME type of the source image data (required when using image_data).', 'mcp-ai-wpoos' ),
 					),
-					'model'            => array(
-						'type'        => 'string',
+					'model' => array(
+						'type' => 'string',
 						'description' => __( 'Gemini image model to use.', 'mcp-ai-wpoos' ),
-						'default'     => $defaults['model'],
+						'default' => $defaults['model'],
 					),
-					'aspect_ratio'     => array(
-						'type'        => 'string',
+					'aspect_ratio' => array(
+						'type' => 'string',
 						'description' => __( 'Aspect ratio for the edited image.', 'mcp-ai-wpoos' ),
-						'enum'        => $aspect_choices,
-						'default'     => $defaults['aspect_ratio'],
+						'enum' => $aspect_choices,
+						'default' => $defaults['aspect_ratio'],
 					),
-					'mime_type'        => array(
-						'type'        => 'string',
+					'mime_type' => array(
+						'type' => 'string',
 						'description' => __( 'Preferred MIME type for the saved image.', 'mcp-ai-wpoos' ),
-						'enum'        => $mime_choices,
-						'default'     => $defaults['mime_type'],
+						'enum' => $mime_choices,
+						'default' => $defaults['mime_type'],
 					),
-					'file_name'        => array(
-						'type'        => 'string',
+					'file_name' => array(
+						'type' => 'string',
 						'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 					),
-					'timeout'          => array(
-						'type'        => 'integer',
+					'timeout' => array(
+						'type' => 'integer',
 						'description' => __( 'Override the Gemini request timeout in seconds.', 'mcp-ai-wpoos' ),
-						'minimum'     => 5,
-						'maximum'     => 300,
+						'minimum' => 5,
+						'maximum' => 300,
 					),
 				),
 				$this->get_output_format_parameter_schema()
 			),
-			'required'             => array( 'prompt' ),
+			'required' => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -137,21 +139,21 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'edit_gemini_image', 'mcp-ai-wpoos' ),
+				'label' => __( 'edit_gemini_image', 'mcp-ai-wpoos' ),
 				'payload' => __( 'edit_gemini_image', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'label'   => __( 'Remove background', 'mcp-ai-wpoos' ),
+				'label' => __( 'Remove background', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
 				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to remove the background from an image. IMPORTANT: %s Use a prompt like "remove background, make transparent".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
-				'label'   => __( 'Change image style', 'mcp-ai-wpoos' ),
+				'label' => __( 'Change image style', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
 				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to change the style of an image. IMPORTANT: %s Create a prompt like "convert to watercolor painting style".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
 			array(
-				'label'   => __( 'Enhance photo', 'mcp-ai-wpoos' ),
+				'label' => __( 'Enhance photo', 'mcp-ai-wpoos' ),
 				/* translators: %s: URL extraction instruction for LLMs */
 				'payload' => sprintf( __( 'Use the `edit_gemini_image` tool to enhance a photo. IMPORTANT: %s Use prompts like "enhance brightness and contrast", "sharpen details", or "improve lighting".', 'mcp-ai-wpoos' ), self::URL_EXTRACTION_INSTRUCTION ),
 			),
@@ -227,9 +229,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$client  = new WP_MCP_AI_Gemini_Client();
 		$options = array(
-			'model'        => $model,
+			'model' => $model,
 			'aspect_ratio' => $aspect_ratio,
-			'mime_type'    => $mime_type,
+			'mime_type' => $mime_type,
 			'source_image' => $source_image,
 		);
 
@@ -267,7 +269,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 					'gemini_edit_svg_conversion_failed',
 					'Failed to convert Gemini-edited image to SVG',
 					array(
-						'error'         => $svg_storage->get_error_message(),
+						'error' => $svg_storage->get_error_message(),
 						'attachment_id' => $storage['attachment_id'],
 					)
 				);
@@ -289,22 +291,22 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		$message = $text;
 
 		$result = array(
-			'attachment_id'     => $storage['attachment_id'],
-			'url'               => $storage['url'],
-			'download_url'      => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
-			'file_name'         => $storage['file_name'],
-			'mime_type'         => $storage['mime_type'],
-			'bytes'             => $storage['bytes'],
-			'title'             => $storage['title'],
-			'model'             => isset( $image['model'] ) ? $image['model'] : $model,
-			'aspect_ratio'      => isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
-			'format'            => isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ),
-			'edit_instruction'  => $prompt,
+			'attachment_id' => $storage['attachment_id'],
+			'url' => $storage['url'],
+			'download_url' => isset( $storage['download_url'] ) && '' !== $storage['download_url'] ? $storage['download_url'] : $storage['url'],
+			'file_name' => $storage['file_name'],
+			'mime_type' => $storage['mime_type'],
+			'bytes' => $storage['bytes'],
+			'title' => $storage['title'],
+			'model' => isset( $image['model'] ) ? $image['model'] : $model,
+			'aspect_ratio' => isset( $image['aspect_ratio'] ) ? $image['aspect_ratio'] : $aspect_ratio,
+			'format' => isset( $image['format'] ) ? $image['format'] : $this->map_mime_type_to_format( $storage['mime_type'] ),
+			'edit_instruction' => $prompt,
 			'source_attachment' => isset( $arguments['attachment_id'] ) ? absint( $arguments['attachment_id'] ) : null,
-			'provider'          => 'gemini', // Track provider for accurate cost attribution.
-			'output_format'     => $output_format,
-			'text'              => $text, // Descriptive message for LLM and chat UI.
-			'message'           => $message,
+			'provider' => 'gemini', // Track provider for accurate cost attribution.
+			'output_format' => $output_format,
+			'text' => $text, // Descriptive message for LLM and chat UI.
+			'message' => $message,
 		);
 
 		// Add vectorization metadata if SVG output was used.
@@ -332,6 +334,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 		 * @param array $context   Execution context supplied to the tool.
 		 */
 		$result = apply_filters( 'wp_mcp_ai_edit_gemini_image_result', $result, $arguments, $context );
+
+		// Add rendered image HTML to the response for display in chat UI.
+		$result = $this->add_image_html_to_response( $result );
 
 		return $result;
 	}
@@ -570,9 +575,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			return array(
-				'data'      => $image_data,
+				'data' => $image_data,
 				'mime_type' => $mime_type,
-				'source'    => 'attachment',
+				'source' => 'attachment',
 			);
 		} elseif ( '' !== $image_url ) {
 			// Try to resolve URL to attachment ID first.
@@ -597,9 +602,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 						}
 
 						return array(
-							'data'      => $image_data,
+							'data' => $image_data,
 							'mime_type' => $mime_type,
-							'source'    => 'attachment_url',
+							'source' => 'attachment_url',
 						);
 					}
 				}
@@ -621,9 +626,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 						$mime_type = ! empty( $file_info['type'] ) ? $file_info['type'] : 'image/png';
 
 						return array(
-							'data'      => $image_data,
+							'data' => $image_data,
 							'mime_type' => $mime_type,
-							'source'    => 'local_url',
+							'source' => 'local_url',
 						);
 					}
 				}
@@ -652,9 +657,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			$mime_type = isset( $headers['content-type'] ) ? $headers['content-type'] : 'image/png';
 
 			return array(
-				'data'      => $image_data,
+				'data' => $image_data,
 				'mime_type' => $mime_type,
-				'source'    => 'url',
+				'source' => 'url',
 			);
 		} elseif ( '' !== $image_data ) {
 			// Use base64-encoded image data (blob) directly.
@@ -679,9 +684,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 
 			return array(
-				'data'      => $decoded_data,
+				'data' => $decoded_data,
 				'mime_type' => $mime_type,
-				'source'    => 'blob',
+				'source' => 'blob',
 			);
 		} else {
 			return new WP_Error( 'wp_mcp_ai_missing_source', __( 'You must provide attachment_id, file_id, url, image_url, or image_data.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -903,8 +908,8 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function get_configured_defaults() {
 		$defaults = array(
-			'model'        => self::DEFAULT_MODEL,
-			'mime_type'    => self::DEFAULT_MIME_TYPE,
+			'model' => self::DEFAULT_MODEL,
+			'mime_type' => self::DEFAULT_MIME_TYPE,
 			'aspect_ratio' => self::DEFAULT_ASPECT_RATIO,
 		);
 
@@ -945,9 +950,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function get_allowed_aspect_ratios() {
 		return array(
-			'1:1'  => '1:1',
-			'3:4'  => '3:4',
-			'4:3'  => '4:3',
+			'1:1' => '1:1',
+			'3:4' => '3:4',
+			'4:3' => '4:3',
 			'9:16' => '9:16',
 			'16:9' => '16:9',
 		);
@@ -960,7 +965,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function get_allowed_mime_types() {
 		return array(
-			'image/png'  => 'PNG',
+			'image/png' => 'PNG',
 			'image/jpeg' => 'JPEG',
 		);
 	}
@@ -1040,9 +1045,9 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -1078,13 +1083,13 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'download_url'  => $local_url,
-			'mime_type'     => $mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'download_url' => $local_url,
+			'mime_type' => $mime_type,
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
 		);
 	}
 
@@ -1178,7 +1183,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 		$content = array(
 			'encoding' => 'base64',
-			'data'     => $encoded,
+			'data' => $encoded,
 		);
 
 		if ( '' !== $mime_type ) {
@@ -1245,41 +1250,41 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	public function get_tool_rules() {
 		return array(
-			'model_requirements'    => array(
+			'model_requirements' => array(
 				'providers' => array( 'gemini' ),
-				'models'    => array( 'gemini-2.5-flash-image', 'gemini-exp-1206' ),
-				'required'  => true,
+				'models' => array( 'gemini-2.5-flash-image', 'gemini-exp-1206' ),
+				'required' => true,
 			),
 			'parameter_constraints' => array(
-				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array( 'attachment_id', 'file_id', 'url', 'image_url', 'image_data', 'source_mime_type', 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
+				'required_fields' => array( 'prompt' ),
+				'optional_fields' => array( 'attachment_id', 'file_id', 'url', 'image_url', 'image_data', 'source_mime_type', 'model', 'aspect_ratio', 'mime_type', 'file_name', 'timeout' ),
 				'max_prompt_length' => 4000,
 			),
-			'rate_limits'           => array(
+			'rate_limits' => array(
 				'requests_per_minute' => 15,
-				'requests_per_hour'   => 100,
+				'requests_per_hour' => 100,
 				'concurrent_requests' => 2,
 			),
-			'timeout_constraints'   => array(
+			'timeout_constraints' => array(
 				'recommended_timeout' => 60,
-				'max_execution_time'  => 120,
+				'max_execution_time' => 120,
 			),
-			'response_constraints'  => array(
-				'max_size'           => 5242880, // 5MB typical image size.
+			'response_constraints' => array(
+				'max_size' => 5242880, // 5MB typical image size.
 				'supports_streaming' => false,
 			),
-			'dependencies'          => array(
-				'required_settings'   => array(
+			'dependencies' => array(
+				'required_settings' => array(
 					'api_key' => 'wp_mcp_ai_gemini_api_key',
 				),
 				'required_extensions' => array( 'gd' ), // For image processing.
 			),
-			'orchestration_hints'   => array(
+			'orchestration_hints' => array(
 				'can_run_parallel' => true,
-				'requires_lock'    => false,
-				'cache_ttl'        => 0, // Don't cache - each edit is unique.
-				'retry_strategy'   => 'exponential_backoff',
-				'max_retries'      => 3,
+				'requires_lock' => false,
+				'cache_ttl' => 0, // Don't cache - each edit is unique.
+				'retry_strategy' => 'exponential_backoff',
+				'max_retries' => 3,
 			),
 		);
 	}

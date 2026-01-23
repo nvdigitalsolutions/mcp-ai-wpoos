@@ -37,7 +37,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_profession',
+			'wp-mcp-ai-dashboard',
 			__( 'Orchestration Dashboard', 'mcp-ai-wpoos' ),
 			__( 'Orchestration', 'mcp-ai-wpoos' ),
 			'manage_options',
@@ -53,7 +53,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'mcp_ai_profession_page_mcp-ai-orchestration-dashboard' !== $hook ) {
+		if ( 'nv-oos_page_mcp-ai-orchestration-dashboard' !== $hook ) {
 			return;
 		}
 

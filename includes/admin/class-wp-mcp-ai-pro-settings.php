@@ -125,6 +125,18 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_health_wellness_management'   => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
 				'enable_places_management'            => __( 'Places Management', 'mcp-ai-wpoos' ),
 				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_crm_toolkit'                  => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ecommerce_toolkit'            => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+				'enable_social_media_toolkit'         => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_analytics_toolkit'            => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+				'enable_multilingual_toolkit'         => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+				'enable_video_production_toolkit'     => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ai_tool_builder_toolkit'      => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architectural_design_toolkit' => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+				'enable_calendar_booking_toolkit'     => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_dj_management_toolkit'        => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_financial_planner_toolkit'    => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+				'enable_image_production_toolkit'     => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'            => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'              => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                 => __( 'Site Creator', 'mcp-ai-wpoos' ),
@@ -359,6 +371,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'crm_toolkit' => array(
+					'name'        => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_crm_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close' ),
+					'npm_packages' => array( 'nodemailer', 'validator', 'email-validator', 'libphonenumber-js', 'mailparser', 'csv-parse', 'csv-stringify', 'ical-generator' ),
+					'tools_count' => 12,
+					'tools'       => array(
+						__( 'create_contact tool', 'mcp-ai-wpoos' ),
+						__( 'update_contact tool', 'mcp-ai-wpoos' ),
+						__( 'segment_contacts tool', 'mcp-ai-wpoos' ),
+						__( 'import_contacts_csv tool', 'mcp-ai-wpoos' ),
+						__( 'export_contacts_csv tool', 'mcp-ai-wpoos' ),
+						__( 'create_email_campaign tool', 'mcp-ai-wpoos' ),
+						__( 'send_email tool', 'mcp-ai-wpoos' ),
+						__( 'parse_email tool', 'mcp-ai-wpoos' ),
+						__( 'validate_email tool', 'mcp-ai-wpoos' ),
+						__( 'validate_phone tool', 'mcp-ai-wpoos' ),
+						__( 'track_campaign_metrics tool', 'mcp-ai-wpoos' ),
+						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
+					),
+				),
 				'code_formatting' => array(
 					'name'        => __( 'Code Formatting', 'mcp-ai-wpoos' ),
 					'description' => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
@@ -370,6 +405,216 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'tools'       => array(
 						__( 'format_code tool', 'mcp-ai-wpoos' ),
 						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'ecommerce_toolkit' => array(
+					'name'        => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_ecommerce_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
+					'tools_count' => 8,
+					'tools'       => array(
+						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
+						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
+						__( 'process_payment tool', 'mcp-ai-wpoos' ),
+						__( 'manage_orders tool', 'mcp-ai-wpoos' ),
+						__( 'calculate_pricing tool', 'mcp-ai-wpoos' ),
+						__( 'manage_customers tool', 'mcp-ai-wpoos' ),
+						__( 'track_shipments tool', 'mcp-ai-wpoos' ),
+						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'social_media_toolkit' => array(
+					'name'        => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_social_media_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'twitter-api-v2', 'axios', 'facebook-nodejs-business-sdk', 'linkedin-api-client' ),
+					'tools_count' => 12,
+					'tools'       => array(
+						__( 'post_to_twitter tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_facebook tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_linkedin tool', 'mcp-ai-wpoos' ),
+						__( 'post_to_instagram tool', 'mcp-ai-wpoos' ),
+						__( 'schedule_social_post tool', 'mcp-ai-wpoos' ),
+						__( 'analyze_engagement tool', 'mcp-ai-wpoos' ),
+						__( 'manage_social_campaigns tool', 'mcp-ai-wpoos' ),
+						__( 'cross_post_content tool', 'mcp-ai-wpoos' ),
+						__( 'track_mentions tool', 'mcp-ai-wpoos' ),
+						__( 'generate_hashtags tool', 'mcp-ai-wpoos' ),
+						__( 'schedule_thread tool', 'mcp-ai-wpoos' ),
+						__( 'monitor_trends tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'analytics_toolkit' => array(
+					'name'        => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_analytics_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'd3', 'mathjs', 'regression', 'fast-csv' ),
+					'tools_count' => 10,
+					'tools'       => array(
+						__( 'create_dashboard tool', 'mcp-ai-wpoos' ),
+						__( 'visualize_data tool', 'mcp-ai-wpoos' ),
+						__( 'perform_regression_analysis tool', 'mcp-ai-wpoos' ),
+						__( 'calculate_statistics tool', 'mcp-ai-wpoos' ),
+						__( 'generate_predictions tool', 'mcp-ai-wpoos' ),
+						__( 'export_csv tool', 'mcp-ai-wpoos' ),
+						__( 'import_csv tool', 'mcp-ai-wpoos' ),
+						__( 'create_charts tool', 'mcp-ai-wpoos' ),
+						__( 'analyze_trends tool', 'mcp-ai-wpoos' ),
+						__( 'generate_insights tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'multilingual_toolkit' => array(
+					'name'        => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_multilingual_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'i18next', 'franc', 'google-translate-api-x', 'iso-639-1' ),
+					'tools_count' => 6,
+					'tools'       => array(
+						__( 'translate_content tool', 'mcp-ai-wpoos' ),
+						__( 'detect_language tool', 'mcp-ai-wpoos' ),
+						__( 'manage_translations tool', 'mcp-ai-wpoos' ),
+						__( 'localize_content tool', 'mcp-ai-wpoos' ),
+						__( 'validate_language_codes tool', 'mcp-ai-wpoos' ),
+						__( 'batch_translate tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'video_production_toolkit' => array(
+					'name'        => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_video_production_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate', 'exec' ),
+					'npm_packages' => array( 'ffmpeg-static', 'ffprobe-static', 'gif-encoder', 'video-stitch', 'subtitle' ),
+					'tools_count' => 10,
+					'tools'       => array(
+						__( 'create_video tool', 'mcp-ai-wpoos' ),
+						__( 'edit_video tool', 'mcp-ai-wpoos' ),
+						__( 'convert_video tool', 'mcp-ai-wpoos' ),
+						__( 'compress_video tool', 'mcp-ai-wpoos' ),
+						__( 'add_subtitles tool', 'mcp-ai-wpoos' ),
+						__( 'generate_gif tool', 'mcp-ai-wpoos' ),
+						__( 'stitch_videos tool', 'mcp-ai-wpoos' ),
+						__( 'extract_audio tool', 'mcp-ai-wpoos' ),
+						__( 'add_watermark tool', 'mcp-ai-wpoos' ),
+						__( 'trim_video tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'ai_tool_builder_toolkit' => array(
+					'name'        => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation capabilities.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_ai_tool_builder_toolkit'] ),
+					'category'    => 'infrastructure',
+					'php_functions' => array(),
+					'npm_packages' => array( 'prettier' ),
+					'tools_count' => 5,
+					'tools'       => array(
+						__( 'scaffold_tool tool', 'mcp-ai-wpoos' ),
+						__( 'generate_tool_code tool', 'mcp-ai-wpoos' ),
+						__( 'test_tool tool', 'mcp-ai-wpoos' ),
+						__( 'document_tool tool', 'mcp-ai-wpoos' ),
+						__( 'validate_tool tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'architectural_design_toolkit' => array(
+					'name'        => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_architectural_design_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'd3' ),
+					'tools_count' => 6,
+					'tools'       => array(
+						__( 'generate_floor_plan tool', 'mcp-ai-wpoos' ),
+						__( 'create_3d_model tool', 'mcp-ai-wpoos' ),
+						__( 'generate_blueprint tool', 'mcp-ai-wpoos' ),
+						__( 'check_code_compliance tool', 'mcp-ai-wpoos' ),
+						__( 'estimate_costs tool', 'mcp-ai-wpoos' ),
+						__( 'optimize_layout tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'calendar_booking_toolkit' => array(
+					'name'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Appointment scheduling, availability management, calendar synchronization, booking management, and automated reminder system.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_calendar_booking_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'ics', 'ical-generator' ),
+					'tools_count' => 7,
+					'tools'       => array(
+						__( 'schedule_appointment tool', 'mcp-ai-wpoos' ),
+						__( 'check_availability tool', 'mcp-ai-wpoos' ),
+						__( 'sync_calendar tool', 'mcp-ai-wpoos' ),
+						__( 'manage_bookings tool', 'mcp-ai-wpoos' ),
+						__( 'send_reminders tool', 'mcp-ai-wpoos' ),
+						__( 'cancel_booking tool', 'mcp-ai-wpoos' ),
+						__( 'reschedule_appointment tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'dj_management_toolkit' => array(
+					'name'        => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Equipment tracking, playlist management, event scheduling, client management, and music library organization for DJs and event organizers.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_dj_management_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array(),
+					'tools_count' => 8,
+					'tools'       => array(
+						__( 'track_equipment tool', 'mcp-ai-wpoos' ),
+						__( 'manage_playlists tool', 'mcp-ai-wpoos' ),
+						__( 'schedule_events tool', 'mcp-ai-wpoos' ),
+						__( 'manage_clients tool', 'mcp-ai-wpoos' ),
+						__( 'organize_music_library tool', 'mcp-ai-wpoos' ),
+						__( 'generate_setlist tool', 'mcp-ai-wpoos' ),
+						__( 'track_bookings tool', 'mcp-ai-wpoos' ),
+						__( 'manage_invoices tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'financial_planner_toolkit' => array(
+					'name'        => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'Retirement planning, budgeting, investment tracking, debt management, and financial goal planning with advanced analytics.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_financial_planner_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array(),
+					'npm_packages' => array( 'mathjs', 'regression', 'currency.js' ),
+					'tools_count' => 9,
+					'tools'       => array(
+						__( 'plan_retirement tool', 'mcp-ai-wpoos' ),
+						__( 'create_budget tool', 'mcp-ai-wpoos' ),
+						__( 'track_investments tool', 'mcp-ai-wpoos' ),
+						__( 'manage_debt tool', 'mcp-ai-wpoos' ),
+						__( 'set_financial_goals tool', 'mcp-ai-wpoos' ),
+						__( 'calculate_roi tool', 'mcp-ai-wpoos' ),
+						__( 'project_savings tool', 'mcp-ai-wpoos' ),
+						__( 'analyze_expenses tool', 'mcp-ai-wpoos' ),
+						__( 'generate_financial_report tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'image_production_toolkit' => array(
+					'name'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
+					'description' => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
+					'enabled'     => ! empty( $settings['enable_image_production_toolkit'] ),
+					'category'    => 'specialized',
+					'php_functions' => array( 'proc_open', 'proc_close' ),
+					'npm_packages' => array( 'sharp' ),
+					'tools_count' => 8,
+					'tools'       => array(
+						__( 'generate_image tool', 'mcp-ai-wpoos' ),
+						__( 'edit_image tool', 'mcp-ai-wpoos' ),
+						__( 'enhance_image tool', 'mcp-ai-wpoos' ),
+						__( 'apply_filters tool', 'mcp-ai-wpoos' ),
+						__( 'remove_background tool', 'mcp-ai-wpoos' ),
+						__( 'upscale_image tool', 'mcp-ai-wpoos' ),
+						__( 'batch_process_images tool', 'mcp-ai-wpoos' ),
+						__( 'create_thumbnail tool', 'mcp-ai-wpoos' ),
 					),
 				),
 			);
@@ -539,11 +784,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 			// Check optional integrations.
 			$status['integrations'] = array(
-				'jetengine'  => class_exists( 'Jet_Engine' ),
-				'woocommerce' => class_exists( 'WooCommerce' ),
-				'elementor'  => defined( 'ELEMENTOR_VERSION' ),
-				'rankmath'   => defined( 'RANK_MATH_VERSION' ),
-				'wpcode'     => defined( 'WPCODE_VERSION' ),
+				'jetengine'      => class_exists( 'Jet_Engine' ),
+				'jetformbuilder' => class_exists( 'Jet_Form_Builder' ),
+				'woocommerce'    => class_exists( 'WooCommerce' ),
+				'elementor'      => defined( 'ELEMENTOR_VERSION' ),
+				'rankmath'       => defined( 'RANK_MATH_VERSION' ),
+				'wpcode'         => defined( 'WPCODE_VERSION' ),
+				'newsletter'     => class_exists( 'Newsletter' ) || class_exists( 'NewsletterEmails' ),
+				'wpallimport'    => class_exists( 'PMXI_Plugin' ) || defined( 'PMXI_VERSION' ),
+				'wpallexport'    => class_exists( 'PMXE_Plugin' ) || defined( 'PMXE_VERSION' ),
 			);
 
 			return $status;
@@ -602,20 +851,85 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		/**
 		 * Check if a package is installed by looking for vendor files or bundled builds.
 		 *
-		 * Checks for packages in vendor directories, bundled into built JavaScript files,
-		 * bundled into local scripts, or in node_modules (both base and Pro addon locations).
+		 * Checks vendor directories FIRST (production), then bundled builds, then node_modules (development).
+		 * This ensures production deployments with vendor files are detected before dev fallbacks.
 		 *
 		 * @param string $package Package name.
 		 * @return bool True if package appears to be installed.
 		 */
 		private static function check_package_installed( $package ) {
-			// Check for vendor copies (chart.js, vectorizer).
+			// Check for base vendor copies (chart.js, vectorizer).
 			if ( 'chart.js' === $package ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/chart.min.js' );
 			}
 			if ( '@neplex/vectorizer' === $package ) {
 				return file_exists( WP_MCP_AI_PATH . 'assets/js/vendor/neplex-vectorizer/' );
 			}
+
+			// ===================================================================
+			// PRIORITY 1: Check Pro addon packages in vendor directory FIRST
+			// This is the production deployment - check BEFORE dev fallbacks
+			// ===================================================================
+			$pro_vendor_packages = array(
+				// Original packages (Phase 1).
+				'@turf/turf'                        => 'turf/dist/esm/index.js',
+				'@types/pdfkit'                     => false, // TypeScript types only, no runtime file.
+				'fluent-ffmpeg'                     => 'fluent-ffmpeg/index.js',
+				'ics'                               => 'ics/index.js',
+				'katex'                             => 'katex/dist/katex.min.js',
+				'mjml'                              => 'mjml/lib/index.js',
+				'prettier'                          => 'prettier/standalone.js',
+				'sharp'                             => 'sharp/lib/index.js',
+				// E-commerce Toolkit packages (Phase 2).
+				'@woocommerce/woocommerce-rest-api' => 'woocommerce-rest-api/index.js',
+				'stripe'                            => 'stripe/cjs/stripe.core.js',
+				'currency.js'                       => 'currency.js/currency.min.js',
+				// Social Media Toolkit packages (Phase 2).
+				'twitter-api-v2'                    => 'twitter-api-v2/dist/cjs/index.js',
+				'axios'                             => 'axios/dist/axios.js',
+				'facebook-nodejs-business-sdk'      => 'facebook-nodejs-business-sdk/dist/cjs.js',
+				'linkedin-api-client'               => 'linkedin-api-client/dist/lib/auth.js',
+				// Analytics Toolkit packages (Phase 2).
+				'd3'                                => 'd3/dist/d3.min.js',
+				'mathjs'                            => 'mathjs/lib/cjs/index.js',
+				'regression'                        => 'regression/regression.min.js',
+				'fast-csv'                          => 'fast-csv/build/src/index.js',
+				// Multilingual Toolkit packages (Phase 2).
+				'i18next'                           => 'i18next/dist/cjs/i18next.js',
+				'franc'                             => 'franc/index.js',
+				'google-translate-api-x'            => 'google-translate-api-x/index.cjs',
+				'iso-639-1'                         => 'iso-639-1/index.js',
+				// Video Production Toolkit packages (Phase 2).
+				'ffmpeg-static'                     => 'ffmpeg-static/index.js',
+				'ffprobe-static'                    => 'ffprobe-static/index.js',
+				'gif-encoder'                       => 'gif-encoder/lib/GIFEncoder.js',
+				'video-stitch'                      => 'video-stitch/index.js',
+				'subtitle'                          => 'subtitle/dist/index.js',
+				// CRM & Email Marketing Toolkit packages (Phase 2).
+				'nodemailer'                        => 'nodemailer/lib/nodemailer.js',
+				'validator'                         => 'validator/index.js',
+				'email-validator'                   => 'email-validator/index.js',
+				'libphonenumber-js'                 => 'libphonenumber-js/index.js',
+				'mailparser'                        => 'mailparser/lib/mail-parser.js',
+				'csv-parse'                         => 'csv-parse/lib/index.js',
+				'csv-stringify'                     => 'csv-stringify/lib/index.js',
+				'ical-generator'                    => 'ical-generator/dist/index.js',
+			);
+			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// @types packages don't have runtime files.
+				if ( false === $pro_vendor_packages[ $package ] ) {
+					return true; // TypeScript type definitions are always available.
+				}
+				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
+				if ( file_exists( $vendor_path ) ) {
+					return true;
+				}
+			}
+
+			// ===================================================================
+			// PRIORITY 2: Check for packages bundled into built files
+			// These are also production assets (chat-bundle, document bundles)
+			// ===================================================================
 
 			// Check for packages bundled into chat-bundle.min.js via esbuild.
 			$bundled_packages = array(
@@ -641,27 +955,51 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				}
 			}
 
-			// Check for Pro addon packages in vendor directory.
-			$pro_vendor_packages = array(
-				'@turf/turf'     => 'turf/dist/esm/index.js',
-				'@types/pdfkit'  => false, // TypeScript types only, no runtime file.
-				'fluent-ffmpeg'  => 'fluent-ffmpeg/index.js',
-				'ics'            => 'ics/index.js',
-				'katex'          => 'katex/dist/katex.min.js',
-				'mjml'           => 'mjml/lib/index.js',
-				'prettier'       => 'prettier/standalone.js',
-				'sharp'          => 'sharp/lib/index.js',
+			// Check for research packages bundled into research-bundle.min.js.
+			// These packages (cheerio, turndown) are in Pro addon's node_modules.
+			$research_bundled_packages = array(
+				'cheerio',
+				'turndown',
 			);
-			if ( isset( $pro_vendor_packages[ $package ] ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				// @types packages don't have runtime files.
-				if ( false === $pro_vendor_packages[ $package ] ) {
-					return true; // TypeScript type definitions are always available.
-				}
-				$vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $pro_vendor_packages[ $package ];
-				if ( file_exists( $vendor_path ) ) {
+			if ( in_array( $package, $research_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check bundled file (production).
+				$research_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/research-bundle.min.js';
+				if ( file_exists( $research_bundle_path ) ) {
 					return true;
 				}
+				// Priority 2: Fallback to Pro addon's node_modules (development).
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+				// These packages are not in base, so return false if not found.
+				return false;
 			}
+
+			// Check for orchestration packages bundled into orchestration-bundle.min.js.
+			// These packages (p-queue) are in Pro addon's node_modules.
+			$orchestration_bundled_packages = array(
+				'p-queue', // Promise queue with concurrency control.
+			);
+			if ( in_array( $package, $orchestration_bundled_packages, true ) && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Priority 1: Check bundled file (production).
+				$orchestration_bundle_path = WP_MCP_AI_PRO_PATH . 'assets/js/orchestration-bundle.min.js';
+				if ( file_exists( $orchestration_bundle_path ) ) {
+					return true;
+				}
+				// Priority 2: Fallback to Pro addon's node_modules (development).
+				$pro_node_modules_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package;
+				if ( file_exists( $pro_node_modules_path ) ) {
+					return true;
+				}
+				// These packages are not in base, so return false if not found.
+				return false;
+			}
+
+			// ===================================================================
+			// PRIORITY 3: Fallback to node_modules (DEVELOPMENT ONLY)
+			// Only check these if vendor files are not found
+			// ===================================================================
 
 			// Fallback: Check Pro node_modules (for development).
 			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
@@ -741,9 +1079,25 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php foreach ( $status['integrations'] as $integration => $is_active ) : ?>
+					<?php
+					// Integration display names.
+					$integration_names = array(
+						'jetengine'      => __( 'JetEngine', 'mcp-ai-wpoos' ),
+						'jetformbuilder' => __( 'JetFormBuilder', 'mcp-ai-wpoos' ),
+						'woocommerce'    => __( 'WooCommerce', 'mcp-ai-wpoos' ),
+						'elementor'      => __( 'Elementor', 'mcp-ai-wpoos' ),
+						'rankmath'       => __( 'Rank Math', 'mcp-ai-wpoos' ),
+						'wpcode'         => __( 'WPCode', 'mcp-ai-wpoos' ),
+						'newsletter'     => __( 'Newsletter', 'mcp-ai-wpoos' ),
+						'wpallimport'    => __( 'WP All Import', 'mcp-ai-wpoos' ),
+						'wpallexport'    => __( 'WP All Export', 'mcp-ai-wpoos' ),
+					);
+
+					foreach ( $status['integrations'] as $integration => $is_active ) :
+						$display_name = isset( $integration_names[ $integration ] ) ? $integration_names[ $integration ] : ucfirst( $integration );
+						?>
 						<tr>
-							<td><strong><?php echo esc_html( ucfirst( $integration ) ); ?></strong></td>
+							<td><strong><?php echo esc_html( $display_name ); ?></strong></td>
 							<td>
 								<span class="wp-mcp-ai-status-badge <?php echo $is_active ? 'active' : 'inactive'; ?>">
 									<?php echo $is_active ? esc_html__( 'Active', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive', 'mcp-ai-wpoos' ); ?>

@@ -500,4 +500,54 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'remove.bg API Key', $fields['removebg_api_key']['label'] );
 		$this->assertStringContainsString( 'remove.bg', $fields['removebg_api_key']['description'] );
 	}
+
+	/**
+	 * Test that toolkit memory usage is displayed correctly.
+	 */
+	public function test_toolkit_memory_usage_displayed() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Set up the query string to simulate features subtab.
+		$_GET['subtab'] = 'features';
+
+		// Capture output.
+		ob_start();
+		$section->render();
+		$output = ob_get_clean();
+
+		// Clear $_GET.
+		unset( $_GET['subtab'] );
+
+		// Should show memory usage instead of count.
+		$this->assertStringContainsString( 'MB estimated memory usage', $output, 'Should show MB memory usage' );
+		$this->assertStringContainsString( 'Pro Toolkit Memory Usage', $output, 'Should have memory usage heading' );
+		$this->assertStringContainsString( 'toolkits enabled', $output, 'Should show count of toolkits' );
+	}
+
+	/**
+	 * Test that toolkit memory requirements are defined for all toolkits.
+	 */
+	public function test_toolkit_memory_requirements_defined() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_toolkit_memory_requirements' );
+		$method->setAccessible( true );
+
+		$memory_requirements = $method->invoke( $section );
+
+		$this->assertIsArray( $memory_requirements, 'Memory requirements should be an array' );
+		$this->assertNotEmpty( $memory_requirements, 'Memory requirements should not be empty' );
+
+		// Verify all toolkits have valid memory requirements.
+		// Using actual keys from memory requirements ensures test stays in sync.
+		$this->assertCount( 20, $memory_requirements, 'Should have exactly 20 pro toolkits' );
+
+		foreach ( $memory_requirements as $toolkit => $memory_mb ) {
+			$this->assertStringStartsWith( 'enable_', $toolkit, "Toolkit key '{$toolkit}' should start with 'enable_'" );
+			$this->assertIsInt( $memory_mb, "Memory requirement for {$toolkit} should be an integer" );
+			$this->assertGreaterThan( 0, $memory_mb, "Memory requirement for {$toolkit} should be positive" );
+		}
+	}
 }

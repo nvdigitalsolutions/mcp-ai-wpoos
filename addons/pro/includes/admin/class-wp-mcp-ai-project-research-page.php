@@ -238,10 +238,21 @@ class WP_MCP_AI_Project_Research_Page {
 
 		// Get research data from request.
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
-		$research_data = isset( $_POST['research_data'] ) ? json_decode( wp_unslash( $_POST['research_data'] ), true ) : array();
+		$research_data_raw = isset( $_POST['research_data'] ) ? wp_unslash( $_POST['research_data'] ) : '';
+		
+		if ( empty( $research_data_raw ) ) {
+			wp_send_json_error( array( 'message' => __( 'No research data provided.', 'mcp-ai-wpoos-pro' ) ) );
+		}
 
-		if ( empty( $research_data ) || empty( $research_data['title'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Invalid research data.', 'mcp-ai-wpoos-pro' ) ) );
+		$research_data = json_decode( $research_data_raw, true );
+
+		// Validate JSON decoding.
+		if ( null === $research_data || JSON_ERROR_NONE !== json_last_error() ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON data format.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		if ( empty( $research_data['title'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Project title is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Process featured image generation request.

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/start-implementation-research-pages',
+        'version' => 'dev-copilot/start-implementation-research-pages',
+        'reference' => '7d2ff43c0b362ddc5366c250df2583895d5589ad',
         'pretty_version' => 'dev-copilot/fix-provider-keys-clearing',
         'version' => 'dev-copilot/fix-provider-keys-clearing',
         'reference' => 'cb7fe13ba5d3d7be792e9d92532ed081617fbbed',
@@ -32,6 +35,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/start-implementation-research-pages',
+            'version' => 'dev-copilot/start-implementation-research-pages',
+            'reference' => '7d2ff43c0b362ddc5366c250df2583895d5589ad',
             'pretty_version' => 'dev-copilot/fix-provider-keys-clearing',
             'version' => 'dev-copilot/fix-provider-keys-clearing',
             'reference' => 'cb7fe13ba5d3d7be792e9d92532ed081617fbbed',

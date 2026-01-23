@@ -453,6 +453,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rest-api-context-fix.php
 
 require_once WP_MCP_AI_PATH . 'includes/class-admin-settings.php';
 require_once WP_MCP_AI_PATH . 'includes/class-resource-manager.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-optional-components.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
@@ -529,6 +530,10 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 		require_once $pro_addon_file;
 	}
 }
+
+// Load core orchestration system (autonomous task orchestration).
+// Provides 9 core orchestration tools for autonomous AI workflows.
+require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
@@ -1704,6 +1709,10 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_cleanup_openai_files' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_cleanup_openai_files' );
 		}
+
+		// Trigger optional components download (vectorizer & knowledge base).
+		// This runs in the background after activation to avoid blocking.
+		do_action( 'wp_mcp_ai_after_activation' );
 
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).

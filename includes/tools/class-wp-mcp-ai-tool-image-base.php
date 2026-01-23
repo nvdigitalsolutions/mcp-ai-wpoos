@@ -19,6 +19,7 @@ require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-r
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-svg-vectorizer.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Abstract base class for image manipulation tools.
@@ -28,6 +29,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	use WP_MCP_AI_NodeJS_Subprocess;
 	use WP_MCP_AI_SVG_Vectorizer;
 	use WP_MCP_AI_Tool_Chat_Response;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	/**
 	 * Get allowed image MIME types.
@@ -36,11 +38,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function get_allowed_mime_types() {
 		return array(
-			'image/jpeg'    => 'jpg',
-			'image/jpg'     => 'jpg',
-			'image/png'     => 'png',
-			'image/webp'    => 'webp',
-			'image/gif'     => 'gif',
+			'image/jpeg' => 'jpg',
+			'image/jpg' => 'jpg',
+			'image/png' => 'png',
+			'image/webp' => 'webp',
+			'image/gif' => 'gif',
 			'image/svg+xml' => 'svg',
 		);
 	}
@@ -155,12 +157,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 				// Store this image as a potential fallback.
 				// We store images in order found (which typically means most recent first in the messages array).
 				$found_images[] = array(
-					'url'            => $segment_url,
+					'url' => $segment_url,
 					'url_normalized' => $segment_url_normalized,
-					'attachment_id'  => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
-					'file_name'      => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
-					'mime_type'      => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
-					'bytes'          => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
+					'attachment_id' => isset( $segment['attachment_id'] ) ? absint( $segment['attachment_id'] ) : 0,
+					'file_name' => isset( $segment['file_name'] ) ? sanitize_text_field( $segment['file_name'] ) : '',
+					'mime_type' => isset( $segment['mime_type'] ) ? sanitize_text_field( $segment['mime_type'] ) : '',
+					'bytes' => isset( $segment['bytes'] ) ? absint( $segment['bytes'] ) : 0,
 				);
 			}
 		}
@@ -661,9 +663,9 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		$attachment = array(
 			'post_mime_type' => $image_editor->mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -691,14 +693,49 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $final_file_path,
-			'file_name'     => wp_basename( $final_file_path ),
-			'url'           => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
-			'mime_type'     => $image_editor->mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
-			'size'          => $image_editor->get_size(),
+			'file' => $final_file_path,
+			'file_name' => wp_basename( $final_file_path ),
+			'url' => isset( $upload['url'] ) ? $upload['url'] : wp_get_attachment_url( $attachment_id ),
+			'mime_type' => $image_editor->mime_type,
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
+			'size' => $image_editor->get_size(),
 		);
+	}
+
+	/**
+	 * Format image attachment response with rendered HTML.
+	 *
+	 * Wraps save_as_attachment result and adds rendered IMG tag to the response.
+	 * Child classes should call this after save_as_attachment to ensure images
+	 * are displayed inline in chat UI.
+	 *
+	 * @param array|WP_Error $save_result Result from save_as_attachment.
+	 * @param array          $arguments   Tool arguments (may contain prompt for alt text).
+	 * @return array|WP_Error Formatted response with rendered HTML or error.
+	 */
+	protected function format_image_response( $save_result, array $arguments = array() ) {
+		if ( is_wp_error( $save_result ) ) {
+			return $save_result;
+		}
+
+		// Add text field for LLM if not present.
+		if ( empty( $save_result['text'] ) ) {
+			$operation = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : 'processed';
+			$save_result['text'] = sprintf(
+				/* translators: %s: operation name */
+				__( 'Successfully %s image.', 'mcp-ai-wpoos' ),
+				$operation
+			);
+		}
+
+		// Add prompt field for alt text if present in arguments.
+		if ( ! empty( $arguments['prompt'] ) && empty( $save_result['prompt'] ) ) {
+			$save_result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $save_result );
 	}
 
 	/**
@@ -721,6 +758,36 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		/* translators: %s: operation name */
 		return sprintf( __( '%s Image', 'mcp-ai-wpoos' ), ucfirst( $operation ) );
+	}
+
+	/**
+	 * Format attachment response with rendered image HTML.
+	 *
+	 * Takes an attachment ID and formats it as a complete response with rendered IMG tag.
+	 * This is a convenience method for pro tools that use a simpler save flow.
+	 *
+	 * @param int   $attachment_id Attachment ID.
+	 * @param array $arguments     Optional. Tool arguments (may contain prompt for alt text).
+	 * @return array Formatted response with rendered HTML.
+	 */
+	protected function format_attachment_response( $attachment_id, array $arguments = array() ) {
+		$url = wp_get_attachment_url( $attachment_id );
+		$attachment = get_post( $attachment_id );
+		
+		$result = array(
+			'attachment_id' => (int) $attachment_id,
+			'url' => $url,
+			'title' => $attachment ? $attachment->post_title : '',
+			'text' => __( 'Image processed successfully.', 'mcp-ai-wpoos' ),
+		);
+
+		// Add prompt for alt text if provided.
+		if ( ! empty( $arguments['prompt'] ) ) {
+			$result['prompt'] = $arguments['prompt'];
+		}
+
+		// Use image response trait to add rendered IMG tag.
+		return $this->add_image_html_to_response( $result );
 	}
 
 	/**
@@ -763,7 +830,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		$content = array(
 			'encoding' => 'base64',
-			'data'     => $encoded,
+			'data' => $encoded,
 		);
 
 		if ( '' !== $mime_type ) {
@@ -827,21 +894,21 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_source_parameters_schema() {
 		return array(
 			'attachment_id' => array(
-				'type'        => 'integer',
+				'type' => 'integer',
 				'description' => __( 'WordPress attachment ID of the image to process.', 'mcp-ai-wpoos' ),
 			),
-			'file_id'       => $this->get_file_id_parameter_schema(),
-			'url'           => $this->get_url_parameter_schema( 'image' ),
-			'image_url'     => array(
-				'type'        => 'string',
+			'file_id' => $this->get_file_id_parameter_schema(),
+			'url' => $this->get_url_parameter_schema( 'image' ),
+			'image_url' => array(
+				'type' => 'string',
 				'description' => __( 'URL of the image to process (alternative to attachment_id). Legacy parameter, use url instead.', 'mcp-ai-wpoos' ),
 			),
-			'image_data'    => array(
-				'type'        => 'string',
+			'image_data' => array(
+				'type' => 'string',
 				'description' => __( 'Base64-encoded image data to process (alternative to attachment_id, file_id, or url).', 'mcp-ai-wpoos' ),
 			),
-			'file_name'     => array(
-				'type'        => 'string',
+			'file_name' => array(
+				'type' => 'string',
 				'description' => __( 'Optional base file name for the saved image attachment.', 'mcp-ai-wpoos' ),
 			),
 		);
@@ -855,10 +922,10 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_output_format_parameter_schema() {
 		return array(
 			'output_format' => array(
-				'type'        => 'string',
+				'type' => 'string',
 				'description' => __( 'Output format for the processed image. Use "svg" to vectorize the result. Default is the same as source format.', 'mcp-ai-wpoos' ),
-				'enum'        => array( 'default', 'svg' ),
-				'default'     => 'default',
+				'enum' => array( 'default', 'svg' ),
+				'default' => 'default',
 			),
 		);
 	}
@@ -915,11 +982,11 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		// Prepare vectorization options - use sensible defaults for image tool output.
 		$vectorization_options = array(
-			'colorMode'      => 'color',
+			'colorMode' => 'color',
 			'colorPrecision' => isset( $arguments['color_precision'] ) ? absint( $arguments['color_precision'] ) : 6,
-			'filterSpeckle'  => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
-			'mode'           => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
-			'hierarchical'   => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
+			'filterSpeckle' => isset( $arguments['filter_speckle'] ) ? absint( $arguments['filter_speckle'] ) : 4,
+			'mode' => isset( $arguments['mode'] ) ? sanitize_text_field( $arguments['mode'] ) : 'spline',
+			'hierarchical' => isset( $arguments['hierarchical'] ) ? sanitize_text_field( $arguments['hierarchical'] ) : 'stacked',
 		);
 
 		// Execute vectorization script.
@@ -934,7 +1001,7 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 			$script_path,
 			$script_args,
 			array(
-				'timeout'    => 60,
+				'timeout' => 60,
 				'parse_json' => true,
 			)
 		);
@@ -1019,9 +1086,9 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'SVG Image', 'mcp-ai-wpoos' ) ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => sanitize_text_field( __( 'SVG Image', 'mcp-ai-wpoos' ) ),
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -1047,12 +1114,12 @@ abstract class WP_MCP_AI_Tool_Image_Base implements WP_MCP_AI_Tool_Interface, WP
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $attachment_url,
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => get_the_title( $attachment_id ),
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $attachment_url,
+			'mime_type' => 'image/svg+xml',
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => get_the_title( $attachment_id ),
 		);
 	}
 }
