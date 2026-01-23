@@ -1201,9 +1201,96 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return void
 		 */
 		public function render_embedded_model_management( $field_data ) {
+			// Create nonce for AJAX requests.
+			$nonce = wp_create_nonce( 'wp_mcp_ai_embedded_model_management' );
+
+			// Get available and downloaded models.
+			$available_models  = array();
+			$downloaded_models = array();
+
+			if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				$client            = new WP_MCP_AI_Embedded_Client();
+				$available_models  = $client->get_available_models();
+				$downloaded_models = $client->get_downloaded_models();
+			}
 			?>
-			<div class="wp-mcp-ai-embedded-model-management">
-				<p><?php esc_html_e( 'Embedded model management interface will be available here. Configure and download models for client-side inference.', 'mcp-ai-wpoos' ); ?></p>
+			<div class="wp-mcp-ai-embedded-model-management" data-nonce="<?php echo esc_attr( $nonce ); ?>">
+				<div class="wp-mcp-ai-model-list">
+					<?php if ( empty( $available_models ) ) : ?>
+						<p class="description">
+							<?php esc_html_e( 'No embedded models are currently available.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php else : ?>
+						<table class="wp-list-table widefat fixed striped">
+							<thead>
+								<tr>
+									<th scope="col" style="width: 30%;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 35%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Size', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $available_models as $slug => $model ) : ?>
+									<?php
+									$is_downloaded = isset( $downloaded_models[ $slug ] );
+									$status_class  = $is_downloaded ? 'downloaded' : 'not-downloaded';
+									?>
+									<tr class="wp-mcp-ai-model-row" data-model-slug="<?php echo esc_attr( $slug ); ?>">
+										<td>
+											<strong><?php echo esc_html( $model['name'] ); ?></strong>
+											<br>
+											<small class="description">
+												<?php
+												/* translators: %s: license type */
+												printf( esc_html__( 'License: %s', 'mcp-ai-wpoos' ), esc_html( $model['license'] ) );
+												?>
+											</small>
+										</td>
+										<td>
+											<?php echo esc_html( $model['description'] ); ?>
+										</td>
+										<td>
+											<span class="wp-mcp-ai-model-size">
+												<?php echo esc_html( size_format( (int) $model['size'], 2 ) ); ?>
+											</span>
+										</td>
+										<td>
+											<span class="wp-mcp-ai-model-status wp-mcp-ai-status-<?php echo esc_attr( $status_class ); ?>">
+												<?php
+												if ( $is_downloaded ) {
+													echo '<span class="dashicons dashicons-yes-alt"></span> ';
+													esc_html_e( 'Downloaded', 'mcp-ai-wpoos' );
+												} else {
+													echo '<span class="dashicons dashicons-download"></span> ';
+													esc_html_e( 'Not Downloaded', 'mcp-ai-wpoos' );
+												}
+												?>
+											</span>
+										</td>
+										<td>
+											<?php if ( $is_downloaded ) : ?>
+												<button type="button" class="button wp-mcp-ai-delete-model" data-model-slug="<?php echo esc_attr( $slug ); ?>">
+													<?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?>
+												</button>
+											<?php else : ?>
+												<button type="button" class="button button-primary wp-mcp-ai-download-model" data-model-slug="<?php echo esc_attr( $slug ); ?>">
+													<?php esc_html_e( 'Download', 'mcp-ai-wpoos' ); ?>
+												</button>
+											<?php endif; ?>
+										</td>
+									</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+						<p class="description" style="margin-top: 10px;">
+							<?php
+							esc_html_e( 'Downloaded models are stored in your WordPress uploads directory and can be used for client-side inference in the browser.', 'mcp-ai-wpoos' );
+							?>
+						</p>
+					<?php endif; ?>
+				</div>
 			</div>
 			<?php
 		}
