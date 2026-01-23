@@ -103,7 +103,16 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		if ( empty( $team_members ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_agents_available',
-				__( 'No suitable agents available for team composition.', 'mcp-ai-wpoos' )
+				sprintf(
+					/* translators: %s: task type */
+					__( 'No suitable agents available for %s team composition. Please ensure you have at least one published assistant, or the system will automatically create virtual agents. Check the plugin logs for more details.', 'mcp-ai-wpoos' ),
+					$task_type
+				),
+				array(
+					'task_type'      => $task_type,
+					'required_roles' => $template['roles'],
+					'suggestion'     => __( 'Create at least one assistant in the WordPress admin, or the system will use virtual agents.', 'mcp-ai-wpoos' ),
+				)
 			);
 		}
 
@@ -533,14 +542,24 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	/**
 	 * Find available agents for required roles
 	 *
+	 * Searches in the following order:
+	 * 1. Assistants with specific agent role metadata
+	 * 2. Any published assistant (as generalist)
+	 * 3. Profession-based agents
+	 * 4. Virtual agents (last resort)
+	 *
 	 * @param array $roles Required role identifiers.
+	 * @param array $task_requirements Task requirements.
 	 * @return array Array of agent data.
 	 */
-	protected function find_agents_for_roles( $roles ) {
-		$agents = array();
+	protected function find_agents_for_roles( $roles, $task_requirements = array() ) {
+		$agents        = array();
+		$missing_roles = array();
 
 		foreach ( $roles as $role ) {
-			// Query for assistants with this role.
+			$agent_found = false;
+
+			// Step 1: Query for assistants with this specific role.
 			$query = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_assistant',
@@ -557,14 +576,31 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			);
 
 			if ( $query->have_posts() ) {
-				$agent_post = $query->posts[0];
-				$agents[]   = array(
-					'id'    => $agent_post->ID,
-					'title' => $agent_post->post_title,
-					'role'  => $role,
+				$agent_post  = $query->posts[0];
+				$professions = get_post_meta( $agent_post->ID, '_wp_mcp_ai_professions', true );
+				$expertise   = array();
+				
+				// Extract expertise from professions if available.
+				if ( is_array( $professions ) && ! empty( $professions ) ) {
+					foreach ( $professions as $profession_slug ) {
+						$profession_data = $this->get_profession_data( $profession_slug );
+						if ( $profession_data && ! empty( $profession_data['expertise'] ) ) {
+							$expertise = array_merge( $expertise, $profession_data['expertise'] );
+						}
+					}
+				}
+
+				$agents[] = array(
+					'id'          => $agent_post->ID,
+					'title'       => $agent_post->post_title,
+					'name'        => $agent_post->post_title,
+					'role'        => $role,
+					'professions' => is_array( $professions ) ? $professions : array(),
+					'expertise'   => array_unique( $expertise ),
 				);
+				$agent_found = true;
 			} else {
-				// Try to find a generic agent if role-specific not found.
+				// Step 2: Try to find any generic assistant if role-specific not found.
 				$generic_query = new WP_Query(
 					array(
 						'post_type'      => 'mcp_ai_assistant',
@@ -577,14 +613,78 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 				if ( $generic_query->have_posts() ) {
 					$agent_post = $generic_query->posts[0];
 					$agents[]   = array(
-						'id'    => $agent_post->ID,
-						'title' => $agent_post->post_title,
-						'role'  => 'generalist',
+						'id'        => $agent_post->ID,
+						'title'     => $agent_post->post_title,
+						'name'      => $agent_post->post_title,
+						'role'      => 'generalist',
+						'expertise' => array(),
 					);
+					$agent_found = true;
+					
+					WP_MCP_AI_Logger::log_event(
+						'team_composition_fallback_generic',
+						sprintf( 'No agent with role "%s" found, using generic assistant instead', $role ),
+						array(
+							'required_role'      => $role,
+							'fallback_agent_id'  => $agent_post->ID,
+							'fallback_agent_name' => $agent_post->post_title,
+						)
+					);
+				} else {
+					// Step 3: Try to find a profession-based agent.
+					$profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
+					if ( $profession_agent ) {
+						$agents[]    = $profession_agent;
+						$agent_found = true;
+						
+						WP_MCP_AI_Logger::log_event(
+							'team_composition_fallback_profession',
+							sprintf( 'No assistant found for role "%s", using profession-based agent', $role ),
+							array(
+								'required_role' => $role,
+								'profession_id' => $profession_agent['id'],
+								'profession'    => $profession_agent['profession'] ?? 'unknown',
+							)
+						);
+					} else {
+						// Step 4: Create a virtual agent as last resort.
+						$virtual_agent = $this->create_virtual_agent_for_role( $role );
+						if ( $virtual_agent ) {
+							$agents[]    = $virtual_agent;
+							$agent_found = true;
+							
+							WP_MCP_AI_Logger::log_event(
+								'team_composition_virtual_agent',
+								sprintf( 'No assistant or profession found for role "%s", using virtual agent', $role ),
+								array(
+									'required_role'  => $role,
+									'virtual_agent_id' => $virtual_agent['id'],
+								)
+							);
+						}
+					}
 				}
 			}
 
+			if ( ! $agent_found ) {
+				$missing_roles[] = $role;
+			}
+
 			wp_reset_postdata();
+		}
+
+		// Log missing roles for debugging.
+		if ( ! empty( $missing_roles ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'team_composition_missing_agents',
+				'Could not find agents for required roles after all fallbacks',
+				array(
+					'missing_roles'  => $missing_roles,
+					'required_roles' => $roles,
+					'task_type'      => isset( $task_requirements['task_type'] ) ? $task_requirements['task_type'] : 'unknown',
+					'agents_found'   => count( $agents ),
+				)
+			);
 		}
 
 		return $agents;
@@ -876,6 +976,89 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			'type' => 'generic',
 			'name' => ucfirst( $role ) . ' Agent',
 		);
+	}
+
+	/**
+	 * Create a virtual agent for a role as last resort
+	 *
+	 * Creates a virtual agent that can execute basic role functions
+	 * even when no assistants or professions are available.
+	 *
+	 * @param string $role Agent role (planner, executor, critic).
+	 * @return array Virtual agent data.
+	 */
+	protected function create_virtual_agent_for_role( $role ) {
+		$role_definitions = array(
+			'planner'  => array(
+				'name'      => __( 'Virtual Planner', 'mcp-ai-wpoos' ),
+				'expertise' => array( 'task decomposition', 'strategic planning', 'workflow design' ),
+			),
+			'executor' => array(
+				'name'      => __( 'Virtual Executor', 'mcp-ai-wpoos' ),
+				'expertise' => array( 'task execution', 'content creation', 'problem solving' ),
+			),
+			'critic'   => array(
+				'name'      => __( 'Virtual Critic', 'mcp-ai-wpoos' ),
+				'expertise' => array( 'quality assurance', 'validation', 'feedback' ),
+			),
+		);
+
+		$definition = isset( $role_definitions[ $role ] ) ? $role_definitions[ $role ] : array(
+			'name'      => sprintf( __( 'Virtual %s', 'mcp-ai-wpoos' ), ucfirst( $role ) ),
+			'expertise' => array(),
+		);
+
+		return array(
+			'id'        => 'virtual_' . $role . '_' . wp_generate_uuid4(),
+			'title'     => $definition['name'],
+			'name'      => $definition['name'],
+			'role'      => $role,
+			'type'      => 'virtual',
+			'expertise' => $definition['expertise'],
+		);
+	}
+
+	/**
+	 * Get profession data by slug
+	 *
+	 * Retrieves profession information including expertise areas.
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @return array|null Profession data or null.
+	 */
+	protected function get_profession_data( $profession_slug ) {
+		// Check if professions are stored as posts.
+		$profession_query = new WP_Query(
+			array(
+				'post_type'      => 'mcp_ai_profession',
+				'post_status'    => 'publish',
+				'name'           => $profession_slug,
+				'posts_per_page' => 1,
+			)
+		);
+
+		if ( $profession_query->have_posts() ) {
+			$profession_post = $profession_query->posts[0];
+			$expertise       = get_post_meta( $profession_post->ID, '_expertise', true );
+			
+			wp_reset_postdata();
+			
+			return array(
+				'id'        => $profession_post->ID,
+				'slug'      => $profession_slug,
+				'name'      => $profession_post->post_title,
+				'expertise' => is_array( $expertise ) ? $expertise : array(),
+			);
+		}
+
+		wp_reset_postdata();
+
+		// Fallback: Check if there's a profession class/registry.
+		if ( function_exists( 'wp_mcp_ai_get_profession' ) ) {
+			return wp_mcp_ai_get_profession( $profession_slug );
+		}
+
+		return null;
 	}
 
 	/**
