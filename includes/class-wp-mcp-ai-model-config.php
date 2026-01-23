@@ -2186,6 +2186,13 @@ class WP_MCP_AI_Model_Config {
 			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
 		}
 
+		// Check enable_embedded setting (defaults to false if not set).
+		// Embedded LLM runs in the browser, so no API key is required - just check if enabled and a model is selected.
+		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : false;
+		if ( $enable_embedded && ! empty( $settings['embedded_model'] ) ) {
+			$providers['embedded'] = __( 'Embedded LLM', 'mcp-ai-wpoos' );
+		}
+
 		return $providers;
 	}
 
