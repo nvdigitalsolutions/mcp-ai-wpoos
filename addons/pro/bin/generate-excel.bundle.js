@@ -64352,7 +64352,10 @@ async function generateExcel() {
     process.exit(1);
   }
 }
-generateExcel();
+generateExcel().catch((error) => {
+  console.error("Unhandled error:", error.message);
+  process.exit(1);
+});
 /*! Bundled license information:
 
 safe-buffer/index.js:
