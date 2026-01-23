@@ -1772,9 +1772,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		public static function sanitize_provider_meta( $provider ) {
 			$provider = is_string( $provider ) ? sanitize_key( $provider ) : '';
 
-			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
+			$allowed_providers = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 			if ( ! is_array( $allowed_providers ) ) {
-				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+				$allowed_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			}
 
 			if ( ! in_array( $provider, $allowed_providers, true ) ) {
@@ -3533,9 +3533,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				$provider = $default_provider;
 			}
 
-			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
+			$provider_choices = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 			if ( ! is_array( $provider_choices ) ) {
-				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+				$provider_choices = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			}
 
 			if ( '' === $temperature ) {

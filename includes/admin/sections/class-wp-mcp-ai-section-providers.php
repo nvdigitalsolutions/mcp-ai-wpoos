@@ -140,9 +140,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					$embedded_models[ $slug ] = $model['name'];
 				}
 			}
+			
+			// Add placeholder if no models are downloaded.
+			if ( empty( $embedded_models ) ) {
+				$embedded_models[''] = __( '-- Download Model --', 'mcp-ai-wpoos' );
+			}
 
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1142,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
