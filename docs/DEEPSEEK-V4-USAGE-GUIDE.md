@@ -4,6 +4,8 @@
 **Date:** January 18, 2026  
 **Target Audience:** WordPress administrators and developers
 
+> **📖 Technical Reference:** For complete architectural details, see [ORCHESTRATION-LAYER-ARCHITECTURE.md - Section 6](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement)
+
 ---
 
 ## Table of Contents

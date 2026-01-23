@@ -63,15 +63,15 @@ class WP_MCP_AI_Prettier_Service {
 		}
 
 		$defaults = array(
-			'parser'          => 'babel',      // Parser: babel, typescript, css, html, markdown, php, json, yaml.
-			'printWidth'      => 80,           // Line width.
-			'tabWidth'        => 2,            // Tab width.
-			'useTabs'         => true,         // Use tabs instead of spaces.
-			'semi'            => true,         // Add semicolons.
-			'singleQuote'     => true,         // Use single quotes.
-			'trailingComma'   => 'es5',        // Trailing commas: none, es5, all.
-			'bracketSpacing'  => true,         // Spaces in object literals.
-			'arrowParens'     => 'always',     // Arrow function parens: always, avoid.
+			'parser'         => 'babel',      // Parser: babel, typescript, css, html, markdown, php, json, yaml.
+			'printWidth'     => 80,           // Line width.
+			'tabWidth'       => 2,            // Tab width.
+			'useTabs'        => true,         // Use tabs instead of spaces.
+			'semi'           => true,         // Add semicolons.
+			'singleQuote'    => true,         // Use single quotes.
+			'trailingComma'  => 'es5',        // Trailing commas: none, es5, all.
+			'bracketSpacing' => true,         // Spaces in object literals.
+			'arrowParens'    => 'always',     // Arrow function parens: always, avoid.
 		);
 
 		$options = wp_parse_args( $options, $defaults );
@@ -149,20 +149,20 @@ class WP_MCP_AI_Prettier_Service {
 	 */
 	public function get_supported_types() {
 		return array(
-			'js'         => 'babel',
-			'jsx'        => 'babel',
-			'ts'         => 'typescript',
-			'tsx'        => 'typescript',
-			'css'        => 'css',
-			'scss'       => 'scss',
-			'less'       => 'less',
-			'html'       => 'html',
-			'php'        => 'php',
-			'json'       => 'json',
-			'yaml'       => 'yaml',
-			'yml'        => 'yaml',
-			'md'         => 'markdown',
-			'markdown'   => 'markdown',
+			'js'       => 'babel',
+			'jsx'      => 'babel',
+			'ts'       => 'typescript',
+			'tsx'      => 'typescript',
+			'css'      => 'css',
+			'scss'     => 'scss',
+			'less'     => 'less',
+			'html'     => 'html',
+			'php'      => 'php',
+			'json'     => 'json',
+			'yaml'     => 'yaml',
+			'yml'      => 'yaml',
+			'md'       => 'markdown',
+			'markdown' => 'markdown',
 		);
 	}
 

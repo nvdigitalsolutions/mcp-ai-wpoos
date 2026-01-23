@@ -6,6 +6,12 @@
     <testsuites>
         <testsuite name="WP MCP AI Plugin Test Suite">
             <directory suffix=".php">tests</directory>
+            <exclude>tests/manual-test-preset-preview.php</exclude>
         </testsuite>
     </testsuites>
+    <groups>
+        <exclude>
+            <group>external-http</group>
+        </exclude>
+    </groups>
 </phpunit>

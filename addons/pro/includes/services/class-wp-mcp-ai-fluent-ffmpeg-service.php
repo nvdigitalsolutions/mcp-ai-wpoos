@@ -112,11 +112,11 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		}
 
 		$defaults = array(
-			'timestamps'    => array(), // Specific timestamps in seconds.
-			'count'         => 10,      // Number of frames to extract.
-			'size'          => '640x?', // Output size.
-			'folder'        => null,    // Output folder (null = temp).
-			'filename'      => 'frame-%i.jpg', // Output filename pattern.
+			'timestamps' => array(), // Specific timestamps in seconds.
+			'count'      => 10,      // Number of frames to extract.
+			'size'       => '640x?', // Output size.
+			'folder'     => null,    // Output folder (null = temp).
+			'filename'   => 'frame-%i.jpg', // Output filename pattern.
 		);
 
 		$options = wp_parse_args( $options, $defaults );
@@ -166,10 +166,10 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		}
 
 		$defaults = array(
-			'timestamp'  => '10%',    // Timestamp or percentage.
-			'size'       => '320x240', // Thumbnail size.
-			'folder'     => null,      // Output folder (null = temp).
-			'filename'   => 'thumbnail.jpg', // Output filename.
+			'timestamp' => '10%',    // Timestamp or percentage.
+			'size'      => '320x240', // Thumbnail size.
+			'folder'    => null,      // Output folder (null = temp).
+			'filename'  => 'thumbnail.jpg', // Output filename.
 		);
 
 		$options = wp_parse_args( $options, $defaults );
@@ -220,12 +220,12 @@ class WP_MCP_AI_Fluent_FFmpeg_Service {
 		}
 
 		$defaults = array(
-			'format'       => 'mp4',        // Output format.
-			'codec'        => 'libx264',    // Video codec.
-			'audio_codec'  => 'aac',        // Audio codec.
-			'bitrate'      => '1000k',      // Video bitrate.
-			'size'         => null,         // Output size (e.g., '1280x720').
-			'fps'          => null,         // Frame rate.
+			'format'      => 'mp4',        // Output format.
+			'codec'       => 'libx264',    // Video codec.
+			'audio_codec' => 'aac',        // Audio codec.
+			'bitrate'     => '1000k',      // Video bitrate.
+			'size'        => null,         // Output size (e.g., '1280x720').
+			'fps'         => null,         // Frame rate.
 		);
 
 		$options = wp_parse_args( $options, $defaults );

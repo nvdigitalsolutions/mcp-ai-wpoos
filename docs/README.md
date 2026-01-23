@@ -23,7 +23,7 @@ Comprehensive guides for all users
 ### 📚 **[API Reference](reference/)**
 Complete technical reference
 - **[REST API](reference/api/rest-api.md)** ⭐ Essential
-- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All 133 tools
+- **[Tool Reference](reference/tools/tool-reference.md)** ⭐ All 398 tools (141 base + 257 Pro)
 - **[Models](reference/models/)** - AI model specifications
 - **[Technical Specs](reference/technical/)** - Token counting, compatibility
 
@@ -80,7 +80,7 @@ Historical reference (244 documents from 2024-2025)
 
 - **Total Files:** 551+ markdown documents
 - **Categories:** 9 main categories + archive
-- **Tools Documented:** 159 (95 base + 64 pro)
+- **Tools Documented:** 398 (141 base + 257 Pro)
 - **Quality Score:** 9.5/10
 - **Last Reorganized:** December 24, 2025
 

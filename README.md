@@ -143,11 +143,54 @@ NV oOS implements a comprehensive orchestration layer for managing AI operations
 
 > **📖 For a detailed explanation of how NV oOS extends standard SSE and MCP protocols with novel orchestration features, see [ORCHESTRATION-LAYER-ARCHITECTURE.md](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)**
 
-### Why This Architecture Is Novel: Overcoming PHP's Limitations
+### Core Orchestration Layer: Overcoming PHP's Limitations
 
 **Critical Context:** Most real-time AI streaming systems are built with Node.js, Python FastAPI, or Go — platforms designed for asynchronous, event-driven operations. These platforms natively support:
 - Long-lived connections and persistent state
 - Non-blocking I/O and parallel execution
+- Event loops and asynchronous callbacks
+- WebSocket protocols and SSE streaming
+
+**NV oOS achieves the same capabilities in PHP/WordPress** — an environment fundamentally not designed for these patterns — through a sophisticated **orchestration layer** that creates a "persistent-behavior illusion":
+
+1. **Real-Time Budget Enforcement** - Monitors token/memory usage during streaming, prevents exhaustion through predictive allocation
+2. **Capability-Based Tool Gating** - WordPress role-based access control for AI tool execution  
+3. **Predictive Optimization** - Analyzes usage patterns to prevent resource overruns before they occur
+4. **Distributed Orchestration** - Multi-provider support with policy-aware routing
+5. **Auditability & Compliance** - Complete governance layer with logging and rate limiting
+6. **Cron-Based Task Orchestration** - Extends orchestration to async operations with budget inheritance
+
+### Multi-Agent Orchestration Enhancement (DeepSeek V4-Inspired)
+
+**Added:** January 2026 (v1.1.0)
+
+Building upon the core orchestration layer, NV oOS now includes a **sophisticated multi-agent coordination framework** inspired by DeepSeek V4's orchestration patterns:
+
+**Key Components:**
+- **Agent Role System** - Four specialized roles (Planner, Executor, Critic, Specialist) with role-specific capabilities
+- **Team Composition** - Automated team assembly based on task requirements and profession expertise
+- **Coordinated Workflows** - Multi-step workflows with agent delegation, result aggregation, and validation
+- **Team CPT Integration** - Persistent team configurations with orchestration modes (single/sequential/parallel/swarm)
+- **Profession-Based Discovery** - 200+ professions auto-assigned agent roles via intelligent seeding
+
+**Example Multi-Agent Workflow:**
+```php
+// 1. Compose research team (planner + executors + critic)
+$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+$team = $orchestrator->compose_team( array( 'task_type' => 'research' ) );
+
+// 2. Execute coordinated workflow
+// Planner decomposes task → Executors research subtasks → 
+// Communication service aggregates → Critic validates quality
+$result = $orchestrator->execute_team_workflow( $team, $task, $context );
+```
+
+**Documentation:**
+- See [Multi-Agent Orchestration](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) for complete technical details
+- See [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) for documentation suite overview  
+- See [DEEPSEEK-V4-USAGE-GUIDE.md](docs/DEEPSEEK-V4-USAGE-GUIDE.md) for practical examples
+
+### Why This Architecture Is Novel: Overcoming PHP's Limitations
 - Event loops and background workers
 
 **PHP/WordPress, by contrast, is fundamentally request-based:**
@@ -213,7 +256,77 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
-### Settings Management System (January 20, 2026) ⭐ **LATEST**
+### Critical Fixes & Enhancements (January 15-22, 2026) ⭐ **LATEST**
+
+**7 Critical Fixes Implemented:**
+
+1. **Token Manager Save Issue (Jan 21)** - Fixed tool settings not persisting despite success messages
+   - Root Cause: Triple-sanitization causing data loss
+   - Impact: All tool limits, multipliers, and model preferences now save correctly
+   - [Details →](docs/fixes/token-manager-save-issue-fix-2026-01-21.md)
+
+2. **Provider Keys Clearing (Jan 20)** - Fixed API keys being cleared on tab navigation
+   - Root Cause: Double-sanitization via WordPress Settings API
+   - Impact: Provider configurations persist across admin tab navigation
+   - [Details →](docs/fixes/provider-keys-clearing-fix-2026-01-20.md)
+
+3. **Unified Team Transcripts (Jan 18)** - Fixed transcript recording for team chats
+   - Root Cause: Missing pattern recognition for team member assistant IDs
+   - Impact: Transcripts save for all team chat types (unified_team_*, team_*_member_*)
+   - [Details →](docs/fixes/unified-team-transcript-recording-fix-2026-01-18.md)
+
+4. **Tool Preset Multiplier (Jan 18)** - Fixed broken "Apply Preset" button on Token Manager
+   - Root Cause: Tool registry query returning empty array
+   - Impact: Preset application works correctly (Conservative/Balanced/Performance/Aggressive)
+   - [Details →](docs/fixes/TOOL_PRESET_MULTIPLIER_FIX.md)
+
+5. **HuggingFace Token Limits (Jan 17)** - Fixed Qwen3-Coder exceeding max_completion_tokens
+   - Root Cause: Using deprecated `max_tokens` parameter
+   - Impact: Qwen models work correctly with proper token limits
+   - [Details →](docs/fixes/huggingface-max-completion-tokens-fix-2026-01-17.md)
+
+6. **OAuth Redirect URI (Jan 17)** - Fixed Gmail OAuth redirect_uri_mismatch errors
+   - Root Cause: Inconsistent URL construction
+   - Impact: OAuth flows consistent across all WordPress installations
+   - [Details →](docs/fixes/oauth-redirect-uri-mismatch-fix-2026-01-17.md)
+
+7. **Model Dropdown Base+Pro (Jan 16)** - Fixed dropdown when base & pro plugins both active
+   - Root Cause: Script localization lost with multiple plugin instances
+   - Impact: Model dropdown works in all deployment modes
+   - [Details →](docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
+
+**Pro Toolkit Infrastructure - Phase 3 Complete:**
+- ✅ All 11 Pro toolkit settings pages implemented
+- ✅ 7 Active toolkits: E-commerce, Social Media, Analytics, Multilingual, Video Production, Financial Planner, Media
+- ✅ 4 new Social Media Analytics tools (cross-platform analytics, hashtag tracking, competitor analysis, influencer identification)
+- ✅ Multi-agent functionality: Each toolkit can have dedicated AI assistant (up to 5 concurrent agents)
+- [Phase 3 Details →](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
+
+**Documentation Updates:**
+- ✅ Code review completed (Jan 18) - All changes production ready
+- ✅ Root directory reorganization (Jan 13) - 20+ files moved to organized subdirectories
+- ✅ 6 detailed fix documentation files created
+- [Code Review →](docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
+
+### Composer Autoloader Optimization (January 22, 2026)
+
+**CRITICAL FIX:** Resolved production fatal error caused by dev dependencies in Composer autoloader:
+
+- **Problem:** Autoloader referenced `myclabs/deep-copy` and other PHPUnit dependencies missing in production
+- **Solution:** Regenerated with `--no-dev --classmap-authoritative` flags
+- **Results:**
+  - ✅ Fatal error eliminated
+  - ✅ 71% reduction in classmap size (2000+ → 565 classes)
+  - ✅ 95% reduction in vendor directory (145 MB → 7 MB)
+  - ✅ ~30% faster class loading with authoritative classmap
+  - ✅ All distribution packages regenerated
+  
+- **Documentation:** [BUILD.md](BUILD.md#troubleshooting) includes troubleshooting section for this error
+- **Implementation:** Root directory cleaned - 9 planning/implementation docs moved to [`docs/implementation-history/2026/january/`](docs/implementation-history/2026/january/)
+
+> **Repository Maintenance:** Root now contains only 6 essential markdown files: README, CHANGELOG, CONTRIBUTING, SECURITY, BUILD, and DEPENDENCIES_BUNDLING.
+
+### Settings Management System (January 20, 2026)
 
 **NEW:** Production-ready settings management with comprehensive backup, validation, and diagnostic tools:
 
@@ -308,7 +421,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - **Google Maps Grounding** - Access to 250M+ places database for factual, context-aware responses
 - **New Tool:** `gemini_geospatial_query` - Location-based AI queries with map visualization tokens
 - **Reduced Hallucinations** - Factual grounding with real-time Google Maps data
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#gemini-geospatial-api-integration-december-22-2025)
+- [See CHANGELOG →](CHANGELOG.md#gemini-geospatial-api-integration-december-22-2025)
 
 ### 📦 OpenAI Batch API Integration (Dec 21, 2025)
 - **50% Cost Reduction** - Asynchronous bulk operations with dedicated quota and higher rate limits
@@ -316,14 +429,14 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 - **4 New Tools** - Create, monitor, list, and auto-monitor batch jobs
 - **Automatic Monitoring** - WordPress cron integration with email notifications
 - **Use Cases** - Bulk content generation, mass embeddings, large-scale moderation, dataset processing
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#openai-batch-api-integration-december-21-2025)
+- [See CHANGELOG →](CHANGELOG.md#openai-batch-api-integration-december-21-2025)
 
 ### 🛡️ OpenAI Moderation API Integration (Dec 21, 2025)
 - **Content Safety & Compliance** - Automated moderation for text and images
 - **14 Violation Categories** - Sexual content, hate speech, harassment, self-harm, violence, illicit content
 - **New Tool:** `moderate_content` - Multimodal moderation with confidence scores
 - **Free API** - No token costs for moderation
-- [Full Details →](docs/implementation-history/2025/summaries/FINAL_IMPLEMENTATION_SUMMARY.md#openai-moderation-api-integration-december-21-2025)
+- [See CHANGELOG →](CHANGELOG.md#openai-moderation-api-integration-december-21-2025)
 
 ### 🎓 IGCSE Teams Implementation (Dec 2025)
 - **6 Specialized Teams** - Mathematics, Science, Humanities, Languages & Technology, Year-Level, Academic Support

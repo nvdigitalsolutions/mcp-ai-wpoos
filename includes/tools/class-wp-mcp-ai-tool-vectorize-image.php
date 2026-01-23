@@ -126,6 +126,14 @@ class WP_MCP_AI_Tool_Vectorize_Image extends WP_MCP_AI_Tool_Image_Base implement
 			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos' ) );
 		}
 
+		// Check if vectorizer library is installed.
+		if ( ! WP_MCP_AI_Optional_Components::is_vectorizer_installed() ) {
+			return new WP_Error(
+				'wp_mcp_ai_vectorizer_not_installed',
+				__( 'Vectorizer library is not installed. It will be automatically downloaded in the background. Please try again in a few minutes, or contact your administrator to manually install it.', 'mcp-ai-wpoos' )
+			);
+		}
+
 		// Check if Node.js is available.
 		if ( ! $this->is_nodejs_available() ) {
 			return new WP_Error(

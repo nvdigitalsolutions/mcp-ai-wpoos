@@ -167,6 +167,32 @@ $result = $orchestrator->execute_team_workflow( $team, $task, $context );
 
 ## Related Resources
 
+### Architecture Documentation
+
+**File:** [ORCHESTRATION-LAYER-ARCHITECTURE.md](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)
+
+**Section 6: Multi-Agent Orchestration (DeepSeek V4-Inspired Enhancement)**
+
+Complete technical documentation of the multi-agent orchestration system integrated into the core orchestration layer:
+- Agent role abstractions (Planner, Executor, Critic, Specialist)
+- Agent communication service with 5 aggregation strategies
+- Team orchestrator with predefined templates
+- Agent coordination tools (MCP-compliant)
+- Profession CPT integration (8 orchestration meta fields)
+- Team CPT integration (3 orchestration meta fields, 4 execution modes)
+- PHP workaround patterns for multi-agent coordination
+- Patent relevance and technical innovation analysis
+
+**This is the authoritative technical reference** for understanding how the multi-agent system extends the core orchestration layer's "persistent-behavior illusion" to enable distributed agent coordination in WordPress/PHP.
+
+**Read this document** to understand:
+- How multi-agent orchestration builds upon the PHP AI workarounds
+- Technical implementation details of agent roles and workflows
+- Integration patterns with Profession and Team CPT
+- Why multi-agent orchestration strengthens the patent claims
+
+---
+
 ### Test Suite
 
 **File:** `/tests/test-deepseek-v4-orchestration-validation.php` (9.7KB)

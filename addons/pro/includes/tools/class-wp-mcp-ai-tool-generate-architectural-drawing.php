@@ -18,12 +18,14 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-gemini-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-media-url-utils.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-nodejs-subprocess.php';
+require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-image-response.php';
 
 /**
  * Provides a Pro tool for generating architectural drawings using AI.
  */
 class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Shortcuts_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface, WP_MCP_AI_Tool_Rules_Interface {
 	use WP_MCP_AI_NodeJS_Subprocess;
+	use WP_MCP_AI_Tool_Image_Response;
 
 	const DEFAULT_MODEL         = 'gpt-image-1.5';
 	const DEFAULT_PROVIDER      = 'openai';
@@ -60,121 +62,121 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type'                 => 'object',
-			'properties'           => array(
-				'prompt'             => array(
-					'type'        => 'string',
+			'type' => 'object',
+			'properties' => array(
+				'prompt' => array(
+					'type' => 'string',
 					'description' => __( 'Architectural requirements or description (e.g., "residential floor plan with 3 bedrooms, open kitchen, 2000 sq ft").', 'mcp-ai-wpoos-pro' ),
 				),
-				'drawing_type'       => array(
-					'type'        => 'string',
+				'drawing_type' => array(
+					'type' => 'string',
 					'description' => __( 'Type of architectural drawing to generate.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => $this->get_drawing_types(),
-					'default'     => self::DEFAULT_DRAWING_TYPE,
+					'enum' => $this->get_drawing_types(),
+					'default' => self::DEFAULT_DRAWING_TYPE,
 				),
 				'presentation_style' => array(
-					'type'        => 'string',
+					'type' => 'string',
 					'description' => __( 'Visual presentation style for the drawing.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => $this->get_presentation_styles(),
-					'default'     => self::DEFAULT_STYLE,
+					'enum' => $this->get_presentation_styles(),
+					'default' => self::DEFAULT_STYLE,
 				),
-				'scale'              => array(
-					'type'        => 'string',
+				'scale' => array(
+					'type' => 'string',
 					'description' => __( 'Architectural scale notation (e.g., "1/4\"=1\'-0\"", "1:100", "1:50"). Default: 1/4"=1\'-0"', 'mcp-ai-wpoos-pro' ),
-					'default'     => self::DEFAULT_SCALE,
+					'default' => self::DEFAULT_SCALE,
 				),
-				'dimensions'         => array(
-					'type'        => 'object',
+				'dimensions' => array(
+					'type' => 'object',
 					'description' => __( 'Dimensional specifications for the space (width, depth, height in feet or meters).', 'mcp-ai-wpoos-pro' ),
-					'properties'  => array(
-						'width'  => array(
-							'type'        => 'number',
+					'properties' => array(
+						'width' => array(
+							'type' => 'number',
 							'description' => __( 'Width of the space.', 'mcp-ai-wpoos-pro' ),
-							'minimum'     => 1,
+							'minimum' => 1,
 						),
-						'depth'  => array(
-							'type'        => 'number',
+						'depth' => array(
+							'type' => 'number',
 							'description' => __( 'Depth of the space.', 'mcp-ai-wpoos-pro' ),
-							'minimum'     => 1,
+							'minimum' => 1,
 						),
 						'height' => array(
-							'type'        => 'number',
+							'type' => 'number',
 							'description' => __( 'Height of the space (for sections/elevations).', 'mcp-ai-wpoos-pro' ),
-							'minimum'     => 1,
+							'minimum' => 1,
 						),
-						'unit'   => array(
-							'type'        => 'string',
+						'unit' => array(
+							'type' => 'string',
 							'description' => __( 'Unit of measurement.', 'mcp-ai-wpoos-pro' ),
-							'enum'        => array( 'feet', 'meters', 'inches', 'centimeters' ),
-							'default'     => 'feet',
+							'enum' => array( 'feet', 'meters', 'inches', 'centimeters' ),
+							'default' => 'feet',
 						),
 					),
 				),
-				'materials'          => array(
-					'type'        => 'array',
+				'materials' => array(
+					'type' => 'array',
 					'description' => __( 'List of materials/finishes to include (e.g., ["wood flooring", "concrete walls", "glass curtain wall"]).', 'mcp-ai-wpoos-pro' ),
-					'items'       => array(
+					'items' => array(
 						'type' => 'string',
 					),
 				),
-				'building_code'      => array(
-					'type'        => 'string',
+				'building_code' => array(
+					'type' => 'string',
 					'description' => __( 'Building code standard to reference (IBC, IRC, NBC, Eurocode).', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'ibc', 'irc', 'nbc', 'eurocode', 'none' ),
-					'default'     => 'none',
+					'enum' => array( 'ibc', 'irc', 'nbc', 'eurocode', 'none' ),
+					'default' => 'none',
 				),
-				'annotations'        => array(
-					'type'        => 'boolean',
+				'annotations' => array(
+					'type' => 'boolean',
 					'description' => __( 'Include dimension annotations and callouts. Default: true for technical/annotated styles.', 'mcp-ai-wpoos-pro' ),
-					'default'     => true,
+					'default' => true,
 				),
-				'provider'           => array(
-					'type'        => 'string',
+				'provider' => array(
+					'type' => 'string',
 					'description' => __( 'AI provider to use for generation.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'openai', 'gemini' ),
-					'default'     => self::DEFAULT_PROVIDER,
+					'enum' => array( 'openai', 'gemini' ),
+					'default' => self::DEFAULT_PROVIDER,
 				),
-				'model'              => array(
-					'type'        => 'string',
+				'model' => array(
+					'type' => 'string',
 					'description' => __( 'AI model to use. For OpenAI: gpt-image-1.5, gpt-image-1, dall-e-3. For Gemini: gemini-2.5-flash-image.', 'mcp-ai-wpoos-pro' ),
-					'default'     => self::DEFAULT_MODEL,
+					'default' => self::DEFAULT_MODEL,
 				),
-				'size'               => array(
-					'type'        => 'string',
+				'size' => array(
+					'type' => 'string',
 					'description' => __( 'Image size. OpenAI: 1024x1024, 1024x1536, 1536x1024. Gemini uses aspect_ratio instead.', 'mcp-ai-wpoos-pro' ),
-					'default'     => self::DEFAULT_SIZE,
+					'default' => self::DEFAULT_SIZE,
 				),
-				'aspect_ratio'       => array(
-					'type'        => 'string',
+				'aspect_ratio' => array(
+					'type' => 'string',
 					'description' => __( 'Aspect ratio for Gemini (1:1, 3:4, 4:3, 9:16, 16:9). Default: 3:4 for portrait drawings.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( '1:1', '3:4', '4:3', '9:16', '16:9' ),
-					'default'     => '3:4',
+					'enum' => array( '1:1', '3:4', '4:3', '9:16', '16:9' ),
+					'default' => '3:4',
 				),
-				'quality'            => array(
-					'type'        => 'string',
+				'quality' => array(
+					'type' => 'string',
 					'description' => __( 'Image quality. OpenAI: low, medium, high. Default: high for architectural drawings.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'low', 'medium', 'high', 'auto' ),
-					'default'     => self::DEFAULT_QUALITY,
+					'enum' => array( 'low', 'medium', 'high', 'auto' ),
+					'default' => self::DEFAULT_QUALITY,
 				),
-				'output_format'      => array(
-					'type'        => 'string',
+				'output_format' => array(
+					'type' => 'string',
 					'description' => __( 'Output format: png (raster) or svg (vector). SVG is vectorized from raster output.', 'mcp-ai-wpoos-pro' ),
-					'enum'        => array( 'png', 'svg', 'both' ),
-					'default'     => self::DEFAULT_OUTPUT_FORMAT,
+					'enum' => array( 'png', 'svg', 'both' ),
+					'default' => self::DEFAULT_OUTPUT_FORMAT,
 				),
-				'file_name'          => array(
-					'type'        => 'string',
+				'file_name' => array(
+					'type' => 'string',
 					'description' => __( 'Optional base file name for the saved drawing.', 'mcp-ai-wpoos-pro' ),
 				),
-				'timeout'            => array(
-					'type'        => 'integer',
+				'timeout' => array(
+					'type' => 'integer',
 					'description' => __( 'Request timeout in seconds (5-300). Default: 90.', 'mcp-ai-wpoos-pro' ),
-					'minimum'     => 5,
-					'maximum'     => 300,
-					'default'     => 90,
+					'minimum' => 5,
+					'maximum' => 300,
+					'default' => 90,
 				),
 			),
-			'required'             => array( 'prompt' ),
+			'required' => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -185,19 +187,19 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	public function get_shortcut_tasks() {
 		return array(
 			array(
-				'label'   => __( 'generate_architectural_drawing', 'mcp-ai-wpoos-pro' ),
+				'label' => __( 'generate_architectural_drawing', 'mcp-ai-wpoos-pro' ),
 				'payload' => __( 'generate_architectural_drawing', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Floor Plan with dimensions', 'mcp-ai-wpoos-pro' ),
+				'label' => __( 'Floor Plan with dimensions', 'mcp-ai-wpoos-pro' ),
 				'payload' => __( 'Use generate_architectural_drawing to create a residential floor plan. Ask for room layout, square footage, and special features, then generate with dimensions and annotations.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Building Elevation', 'mcp-ai-wpoos-pro' ),
+				'label' => __( 'Building Elevation', 'mcp-ai-wpoos-pro' ),
 				'payload' => __( 'Use generate_architectural_drawing to create a building elevation. Ask about building style, materials, and height, then generate with material callouts.', 'mcp-ai-wpoos-pro' ),
 			),
 			array(
-				'label'   => __( 'Construction Detail', 'mcp-ai-wpoos-pro' ),
+				'label' => __( 'Construction Detail', 'mcp-ai-wpoos-pro' ),
 				'payload' => __( 'Use generate_architectural_drawing to create a construction detail. Ask about the specific building assembly (wall section, window detail, etc.) and materials, then generate with annotations and scale.', 'mcp-ai-wpoos-pro' ),
 			),
 		);
@@ -305,6 +307,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		 */
 		$result = apply_filters( 'wp_mcp_ai_generate_architectural_drawing_result', $result, $arguments, $context );
 
+		// Add rendered image HTML to the response for display in chat UI.
+		$result = $this->add_image_html_to_response( $result );
+
 		return $result;
 	}
 
@@ -388,16 +393,16 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	protected function get_drawing_type_instructions( $drawing_type ) {
 		$instructions = array(
-			'floor_plan'             => 'Show the layout from above with walls, doors, windows, and room labels. Include furniture placement and circulation paths.',
-			'elevation'              => 'Show the exterior view of the building facade with accurate proportions, material indications, and vertical dimensions.',
-			'section'                => 'Show a vertical cut through the building revealing interior structure, floor levels, ceiling heights, and construction assemblies.',
-			'detail'                 => 'Show an enlarged view of a specific building component with precise construction details, material layers, and connection methods.',
-			'site_plan'              => 'Show the building placement on the site with property boundaries, landscaping, parking, and site access.',
+			'floor_plan' => 'Show the layout from above with walls, doors, windows, and room labels. Include furniture placement and circulation paths.',
+			'elevation' => 'Show the exterior view of the building facade with accurate proportions, material indications, and vertical dimensions.',
+			'section' => 'Show a vertical cut through the building revealing interior structure, floor levels, ceiling heights, and construction assemblies.',
+			'detail' => 'Show an enlarged view of a specific building component with precise construction details, material layers, and connection methods.',
+			'site_plan' => 'Show the building placement on the site with property boundaries, landscaping, parking, and site access.',
 			'reflected_ceiling_plan' => 'Show the ceiling layout from below with lighting fixtures, HVAC diffusers, and ceiling grid.',
-			'roof_plan'              => 'Show the roof layout from above with roof slopes, drainage, penetrations, and roofing materials.',
-			'3d_axonometric'         => 'Show a three-dimensional view with parallel projection showing multiple faces of the building simultaneously.',
-			'isometric'              => 'Show a three-dimensional view with 30-degree angles showing the building in isometric projection.',
-			'construction_detail'    => 'Show precise construction assembly details with material layers, fasteners, and installation sequences.',
+			'roof_plan' => 'Show the roof layout from above with roof slopes, drainage, penetrations, and roofing materials.',
+			'3d_axonometric' => 'Show a three-dimensional view with parallel projection showing multiple faces of the building simultaneously.',
+			'isometric' => 'Show a three-dimensional view with 30-degree angles showing the building in isometric projection.',
+			'construction_detail' => 'Show precise construction assembly details with material layers, fasteners, and installation sequences.',
 		);
 
 		return isset( $instructions[ $drawing_type ] ) ? $instructions[ $drawing_type ] : '';
@@ -411,12 +416,12 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	protected function get_style_instructions( $style ) {
 		$instructions = array(
-			'technical'    => 'Use precise line weights, architectural symbols, and professional drafting conventions. Black lines on white background.',
-			'sketched'     => 'Use hand-drawn sketch style with loose linework and artistic shading. Convey design intent with expressive strokes.',
-			'rendered'     => 'Use realistic rendering with materials, lighting, shadows, and textures. Show depth and three-dimensional qualities.',
+			'technical' => 'Use precise line weights, architectural symbols, and professional drafting conventions. Black lines on white background.',
+			'sketched' => 'Use hand-drawn sketch style with loose linework and artistic shading. Convey design intent with expressive strokes.',
+			'rendered' => 'Use realistic rendering with materials, lighting, shadows, and textures. Show depth and three-dimensional qualities.',
 			'line_drawing' => 'Use clean, uniform line work without shading or color. Focus on clarity and readability.',
-			'annotated'    => 'Use technical style with extensive annotations, dimension lines, notes, and material callouts.',
-			'schematic'    => 'Use simplified diagrammatic representation focusing on key elements and relationships without detailed ornamentation.',
+			'annotated' => 'Use technical style with extensive annotations, dimension lines, notes, and material callouts.',
+			'schematic' => 'Use simplified diagrammatic representation focusing on key elements and relationships without detailed ornamentation.',
 		);
 
 		return isset( $instructions[ $style ] ) ? $instructions[ $style ] : '';
@@ -438,11 +443,11 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		$timeout = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 90;
 
 		$options = array(
-			'model'           => $model,
-			'size'            => $size,
-			'quality'         => $quality,
+			'model' => $model,
+			'size' => $size,
+			'quality' => $quality,
 			'response_format' => 'b64_json',
-			'timeout'         => max( 5, min( 300, $timeout ) ),
+			'timeout' => max( 5, min( 300, $timeout ) ),
 		);
 
 		$client = new WP_MCP_AI_OpenAI_Client();
@@ -498,10 +503,10 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		$timeout      = isset( $arguments['timeout'] ) ? absint( $arguments['timeout'] ) : 90;
 
 		$options = array(
-			'model'        => $model,
+			'model' => $model,
 			'aspect_ratio' => $aspect_ratio,
-			'mime_type'    => 'image/png',
-			'timeout'      => max( 5, min( 300, $timeout ) ),
+			'mime_type' => 'image/png',
+			'timeout' => max( 5, min( 300, $timeout ) ),
 		);
 
 		$client = new WP_MCP_AI_Gemini_Client();
@@ -599,9 +604,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -626,8 +631,8 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		// Store metadata.
 		$meta = array(
-			'source'          => 'architectural_drawing',
-			'provider'        => 'openai',
+			'source' => 'architectural_drawing',
+			'provider' => 'openai',
 			'original_prompt' => sanitize_textarea_field( $prompt ),
 		);
 
@@ -645,12 +650,12 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'mime_type'     => $mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'mime_type' => $mime_type,
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
 		);
 	}
 
@@ -712,9 +717,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title'     => $title,
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => $title,
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -739,8 +744,8 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		// Store metadata.
 		$meta = array(
-			'source'          => 'architectural_drawing',
-			'provider'        => 'gemini',
+			'source' => 'architectural_drawing',
+			'provider' => 'gemini',
 			'original_prompt' => sanitize_textarea_field( $prompt ),
 		);
 
@@ -755,12 +760,12 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'mime_type'     => $mime_type,
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => $title,
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'mime_type' => $mime_type,
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => $title,
 		);
 	}
 
@@ -806,11 +811,11 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 		$presentation_style = isset( $arguments['presentation_style'] ) ? $arguments['presentation_style'] : 'technical';
 
 		$vectorization_options = array(
-			'colorMode'      => ( 'line_drawing' === $presentation_style || 'technical' === $presentation_style ) ? 'binary' : 'color',
+			'colorMode' => ( 'line_drawing' === $presentation_style || 'technical' === $presentation_style ) ? 'binary' : 'color',
 			'colorPrecision' => 6,
-			'filterSpeckle'  => 4,
-			'mode'           => 'spline',
-			'hierarchical'   => 'stacked',
+			'filterSpeckle' => 4,
+			'mode' => 'spline',
+			'hierarchical' => 'stacked',
 		);
 
 		// Execute vectorization script.
@@ -825,7 +830,7 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 			$script_path,
 			$script_args,
 			array(
-				'timeout'    => 60,
+				'timeout' => 60,
 				'parse_json' => true,
 			)
 		);
@@ -911,9 +916,9 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		$attachment = array(
 			'post_mime_type' => 'image/svg+xml',
-			'post_title'     => sanitize_text_field( __( 'Architectural Drawing SVG', 'mcp-ai-wpoos-pro' ) ),
-			'post_content'   => '',
-			'post_status'    => 'inherit',
+			'post_title' => sanitize_text_field( __( 'Architectural Drawing SVG', 'mcp-ai-wpoos-pro' ) ),
+			'post_content' => '',
+			'post_status' => 'inherit',
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
@@ -928,12 +933,12 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 
 		return array(
 			'attachment_id' => (int) $attachment_id,
-			'file'          => $file_path,
-			'file_name'     => wp_basename( $file_path ),
-			'url'           => $local_url,
-			'mime_type'     => 'image/svg+xml',
-			'bytes'         => $bytes ? (int) $bytes : 0,
-			'title'         => get_the_title( $attachment_id ),
+			'file' => $file_path,
+			'file_name' => wp_basename( $file_path ),
+			'url' => $local_url,
+			'mime_type' => 'image/svg+xml',
+			'bytes' => $bytes ? (int) $bytes : 0,
+			'title' => get_the_title( $attachment_id ),
 		);
 	}
 
@@ -1077,14 +1082,14 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 	 */
 	public function get_tool_rules() {
 		return array(
-			'model_requirements'    => array(
+			'model_requirements' => array(
 				'providers' => array( 'openai', 'gemini' ),
-				'models'    => array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-2.5-flash-image' ),
-				'required'  => true,
+				'models' => array( 'gpt-image-1.5', 'gpt-image-1', 'dall-e-3', 'gemini-2.5-flash-image' ),
+				'required' => true,
 			),
 			'parameter_constraints' => array(
-				'required_fields'   => array( 'prompt' ),
-				'optional_fields'   => array(
+				'required_fields' => array( 'prompt' ),
+				'optional_fields' => array(
 					'drawing_type',
 					'presentation_style',
 					'scale',
@@ -1103,32 +1108,32 @@ class WP_MCP_AI_Tool_Generate_Architectural_Drawing implements WP_MCP_AI_Tool_In
 				),
 				'max_prompt_length' => 4000,
 			),
-			'rate_limits'           => array(
+			'rate_limits' => array(
 				'requests_per_minute' => 3,
-				'requests_per_hour'   => 20,
+				'requests_per_hour' => 20,
 				'concurrent_requests' => 1,
 			),
-			'timeout_constraints'   => array(
+			'timeout_constraints' => array(
 				'recommended_timeout' => 90,
-				'max_execution_time'  => 300,
+				'max_execution_time' => 300,
 			),
-			'response_constraints'  => array(
-				'max_size'           => 10485760, // 10MB for high-quality architectural drawings.
+			'response_constraints' => array(
+				'max_size' => 10485760, // 10MB for high-quality architectural drawings.
 				'supports_streaming' => false,
 			),
-			'dependencies'          => array(
-				'required_settings'   => array(
+			'dependencies' => array(
+				'required_settings' => array(
 					'openai_api_key' => 'wp_mcp_ai_openai_api_key',
 					'gemini_api_key' => 'wp_mcp_ai_gemini_api_key',
 				),
 				'optional_extensions' => array( 'nodejs' ), // For SVG vectorization.
 			),
-			'orchestration_hints'   => array(
+			'orchestration_hints' => array(
 				'can_run_parallel' => false, // Architectural drawings are resource-intensive.
-				'requires_lock'    => true,
-				'cache_ttl'        => 0,
-				'retry_strategy'   => 'exponential_backoff',
-				'max_retries'      => 2,
+				'requires_lock' => true,
+				'cache_ttl' => 0,
+				'retry_strategy' => 'exponential_backoff',
+				'max_retries' => 2,
 			),
 		);
 	}
