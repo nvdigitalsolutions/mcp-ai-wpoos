@@ -21,7 +21,7 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->toolkit_slug     = 'document-generation';
+		$this->toolkit_slug     = 'document_generation';
 		$this->toolkit_name     = __( 'Document Generation Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_document_generation_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-document-generation-toolkit-settings';
