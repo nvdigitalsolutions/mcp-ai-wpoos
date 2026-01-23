@@ -36,7 +36,10 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
-	// Load settings page.
+	// Load settings pages.
+	// Main toolkit settings page (under Pro Dashboard).
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
+	// CPT-specific settings page (under Projects menu).
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
 
 	// Load Project Research & Add page.
@@ -217,7 +220,7 @@ function wp_mcp_ai_register_project_management_post_types() {
 			'public'             => false,
 			'publicly_queryable' => false,
 			'show_ui'            => true,
-			'show_in_menu'       => 'edit.php?post_type=mcp_ai_project',
+			'show_in_menu'       => 'edit.php?post_type=mcp_ai_task',
 			'show_in_rest'       => true,
 			'has_archive'        => false,
 			'rewrite'            => false,
@@ -246,7 +249,7 @@ function wp_mcp_ai_register_project_management_post_types() {
 			'public'             => false,
 			'publicly_queryable' => false,
 			'show_ui'            => true,
-			'show_in_menu'       => 'edit.php?post_type=mcp_ai_project',
+			'show_in_menu'       => 'edit.php?post_type=mcp_ai_task',
 			'show_in_rest'       => true,
 			'has_archive'        => false,
 			'rewrite'            => false,
