@@ -28,6 +28,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_run_orchestration_seeder', array( $this, 'ajax_run_seeder' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_orchestration_stats', array( $this, 'ajax_get_stats' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_recent_workflows', array( $this, 'ajax_get_recent_workflows' ) );
 	}
 
 	/**
@@ -119,6 +120,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<div class="orchestration-chart-container">
 				<h2><?php esc_html_e( 'Agent Role Distribution', 'mcp-ai-wpoos' ); ?></h2>
 				<?php $this->render_role_distribution_chart( $stats ); ?>
+			</div>
+
+			<!-- Recent Workflows -->
+			<div class="orchestration-workflows-container">
+				<h2><?php esc_html_e( 'Recent Workflows', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_recent_workflows(); ?>
 			</div>
 
 			<!-- Quick Actions -->
@@ -490,6 +497,30 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Render recent workflows section.
+	 *
+	 * @return void
+	 */
+	protected function render_recent_workflows() {
+		?>
+		<div class="workflows-list-container">
+			<div class="workflows-header">
+				<button type="button" class="button button-secondary" id="refresh-workflows-btn">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+			<div id="workflows-list-content">
+				<div class="workflows-loading">
+					<span class="spinner is-active"></span>
+					<p><?php esc_html_e( 'Loading workflows...', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * AJAX handler: Run orchestration seeder.
 	 *
 	 * @return void
@@ -531,6 +562,75 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		$stats = $this->get_orchestration_statistics();
 		wp_send_json_success( $stats );
+	}
+
+	/**
+	 * AJAX handler: Get recent workflows.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_recent_workflows() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflows = $this->get_recent_workflows();
+		wp_send_json_success( $workflows );
+	}
+
+	/**
+	 * Get recent workflows from transients.
+	 *
+	 * @return array List of recent workflows.
+	 */
+	protected function get_recent_workflows() {
+		// Get all workflow transients.
+		global $wpdb;
+		
+		$transient_prefix = '_transient_wp_mcp_ai_workflow_';
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} 
+				WHERE option_name LIKE %s 
+				ORDER BY option_id DESC 
+				LIMIT 10",
+				$wpdb->esc_like( $transient_prefix ) . '%'
+			)
+		);
+
+		$workflows = array();
+		foreach ( $transients as $transient ) {
+			$workflow_id = str_replace( $transient_prefix, '', $transient->option_name );
+			$workflow_data = maybe_unserialize( $transient->option_value );
+			
+			if ( is_array( $workflow_data ) && isset( $workflow_data['workflow_id'] ) ) {
+				$tasks_total = isset( $workflow_data['tasks'] ) ? count( $workflow_data['tasks'] ) : 0;
+				$tasks_done = 0;
+				
+				if ( isset( $workflow_data['tasks'] ) && is_array( $workflow_data['tasks'] ) ) {
+					foreach ( $workflow_data['tasks'] as $task ) {
+						if ( isset( $task['status'] ) && 'completed' === $task['status'] ) {
+							$tasks_done++;
+						}
+					}
+				}
+				
+				$workflows[] = array(
+					'workflow_id'  => $workflow_data['workflow_id'],
+					'state'        => $workflow_data['state'] ?? 'unknown',
+					'tasks_total'  => $tasks_total,
+					'tasks_done'   => $tasks_done,
+					'created_at'   => $workflow_data['created_at'] ?? '',
+					'updated_at'   => $workflow_data['updated_at'] ?? '',
+					'started_at'   => $workflow_data['started_at'] ?? null,
+					'completed_at' => $workflow_data['completed_at'] ?? null,
+				);
+			}
+		}
+
+		return $workflows;
 	}
 }
 

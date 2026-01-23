@@ -14,6 +14,7 @@
 		 */
 		init: function() {
 			this.bindEvents();
+			this.loadWorkflows();
 		},
 
 		/**
@@ -25,6 +26,9 @@
 
 			// Refresh stats button
 			$('#refresh-stats-btn').on('click', this.refreshStats.bind(this));
+
+			// Refresh workflows button
+			$('#refresh-workflows-btn').on('click', this.loadWorkflows.bind(this));
 		},
 
 		/**
@@ -128,6 +132,112 @@
 					$button.html(originalText);
 				}
 			});
+		},
+
+		/**
+		 * Load and display recent workflows.
+		 *
+		 * @param {Event} e Click event (optional).
+		 */
+		loadWorkflows: function(e) {
+			if (e) {
+				e.preventDefault();
+			}
+
+			const $container = $('#workflows-list-content');
+			const $button = $('#refresh-workflows-btn');
+			const originalText = $button.html();
+
+			// Show loading state
+			$button.prop('disabled', true);
+			$button.html('<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Loading...');
+			
+			$container.html('<div class="workflows-loading"><span class="spinner is-active"></span><p>Loading workflows...</p></div>');
+
+			// Make AJAX request
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_recent_workflows',
+					nonce: wpMcpAiOrchestration.nonce
+				},
+				success: function(response) {
+					if (response.success) {
+						OrchestrationDashboard.renderWorkflows(response.data);
+					} else {
+						$container.html('<div class="workflows-error"><p>Error: ' + (response.data.message || 'Unknown error') + '</p></div>');
+					}
+					$button.prop('disabled', false);
+					$button.html(originalText);
+				},
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					$container.html('<div class="workflows-error"><p>Error loading workflows. Check console for details.</p></div>');
+					$button.prop('disabled', false);
+					$button.html(originalText);
+				}
+			});
+		},
+
+		/**
+		 * Render workflows table.
+		 *
+		 * @param {Array} workflows List of workflow objects.
+		 */
+		renderWorkflows: function(workflows) {
+			const $container = $('#workflows-list-content');
+
+			if (!workflows || workflows.length === 0) {
+				$container.html('<div class="workflows-empty"><p>No workflows found. Use the <code>execute_workflow</code> tool to create multi-agent workflows.</p></div>');
+				return;
+			}
+
+			let html = '<table class="wp-list-table widefat fixed striped workflows-table">';
+			html += '<thead><tr>';
+			html += '<th class="workflow-id-col">Workflow ID</th>';
+			html += '<th class="workflow-state-col">State</th>';
+			html += '<th class="workflow-progress-col">Progress</th>';
+			html += '<th class="workflow-created-col">Created</th>';
+			html += '<th class="workflow-updated-col">Updated</th>';
+			html += '</tr></thead><tbody>';
+
+			workflows.forEach(function(workflow) {
+				const stateClass = workflow.state === 'completed' ? 'success' : 
+								   workflow.state === 'failed' ? 'error' : 
+								   workflow.state === 'running' ? 'info' : 'default';
+				const progress = workflow.tasks_total > 0 ? Math.round((workflow.tasks_done / workflow.tasks_total) * 100) : 0;
+				
+				html += '<tr>';
+				html += '<td class="workflow-id"><code>' + workflow.workflow_id + '</code></td>';
+				html += '<td class="workflow-state"><span class="workflow-status-badge status-' + stateClass + '">' + workflow.state + '</span></td>';
+				html += '<td class="workflow-progress">';
+				html += '<div class="progress-bar-container">';
+				html += '<div class="progress-bar" style="width: ' + progress + '%;"></div>';
+				html += '</div>';
+				html += '<span class="progress-text">' + workflow.tasks_done + '/' + workflow.tasks_total + ' (' + progress + '%)</span>';
+				html += '</td>';
+				html += '<td class="workflow-created">' + OrchestrationDashboard.formatDate(workflow.created_at) + '</td>';
+				html += '<td class="workflow-updated">' + OrchestrationDashboard.formatDate(workflow.updated_at) + '</td>';
+				html += '</tr>';
+			});
+
+			html += '</tbody></table>';
+			$container.html(html);
+		},
+
+		/**
+		 * Format date string.
+		 *
+		 * @param {string} dateString MySQL datetime string.
+		 * @return {string} Formatted date.
+		 */
+		formatDate: function(dateString) {
+			if (!dateString) {
+				return '—';
+			}
+			const date = new Date(dateString);
+			return date.toLocaleString();
 		}
 	};
 
