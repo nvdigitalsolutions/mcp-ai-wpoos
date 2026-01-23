@@ -30,6 +30,7 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 		$this->has_research     = true;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-portfolio';
+		$this->parent_slug      = 'edit.php?post_type=mcp_ai_project';
 
 		parent::__construct();
 	}
