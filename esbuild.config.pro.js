@@ -36,6 +36,8 @@ const browserBundleOptions = {
 	minify: true,
 	sourcemap: true,
 	logLevel: 'info',
+	// Resolve packages from Pro addon's node_modules (for cheerio, turndown, p-queue)
+	nodePaths: [path.join(__dirname, 'addons', 'pro', 'node_modules')],
 };
 
 // Scripts to bundle
