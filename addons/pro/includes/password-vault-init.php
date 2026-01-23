@@ -22,13 +22,17 @@ function wp_mcp_ai_pro_init_password_vault() {
 	// Load encryption service (OWASP-compliant cryptography).
 	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-encryption-service.php';
 
+	// Load Bitwarden import/export service.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-bitwarden-import-export.php';
+
+	// Load Bitwarden sync service.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-bitwarden-sync-service.php';
+
 	// Load vault item CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-item-cpt.php';
-	WP_MCP_AI_Vault_Item_CPT::init();
 
 	// Load vault folder CPT.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/vault/class-wp-mcp-ai-vault-folder-cpt.php';
-	WP_MCP_AI_Vault_Folder_CPT::init();
 
 	// Load admin interface (if in admin context).
 	if ( is_admin() ) {

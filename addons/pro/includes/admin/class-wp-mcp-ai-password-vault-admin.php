@@ -34,6 +34,11 @@ class WP_MCP_AI_Password_Vault_Admin {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		add_action( 'admin_post_vault_generate_password', array( $this, 'handle_generate_password' ) );
 		add_action( 'admin_post_vault_generate_totp_secret', array( $this, 'handle_generate_totp_secret' ) );
+		
+		// Import/Export/Sync handlers.
+		add_action( 'admin_post_wp_mcp_ai_vault_import_bitwarden', array( $this, 'handle_import_bitwarden' ) );
+		add_action( 'admin_post_wp_mcp_ai_vault_export_bitwarden', array( $this, 'handle_export_bitwarden' ) );
+		add_action( 'admin_post_wp_mcp_ai_vault_sync_bitwarden', array( $this, 'handle_sync_bitwarden' ) );
 	}
 
 	/**
@@ -238,6 +243,9 @@ class WP_MCP_AI_Password_Vault_Admin {
 				<a href="?page=wp-mcp-ai-password-vault&tab=generator" class="nav-tab <?php echo 'generator' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Password Generator & Authenticator', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
+				<a href="?page=wp-mcp-ai-password-vault&tab=sync" class="nav-tab <?php echo 'sync' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ); ?>
+				</a>
 				<a href="?page=wp-mcp-ai-password-vault&tab=settings" class="nav-tab <?php echo 'settings' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Security Settings', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
@@ -248,6 +256,9 @@ class WP_MCP_AI_Password_Vault_Admin {
 				switch ( $active_tab ) {
 					case 'generator':
 						$this->render_generator_tab( $settings );
+						break;
+					case 'sync':
+						$this->render_sync_tab( $settings );
 						break;
 					case 'settings':
 						$this->render_settings_tab( $settings );
@@ -570,6 +581,369 @@ class WP_MCP_AI_Password_Vault_Admin {
 
 			<?php submit_button(); ?>
 		</form>
+		<?php
+	}
+
+	/**
+	 * Handle Bitwarden import.
+	 *
+	 * @since 1.3.0
+	 */
+	public function handle_import_bitwarden() {
+		check_admin_referer( 'vault_import_bitwarden', 'vault_import_nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		if ( ! isset( $_FILES['bitwarden_import_file'] ) || $_FILES['bitwarden_import_file']['error'] !== UPLOAD_ERR_OK ) {
+			wp_die( esc_html__( 'No file uploaded or upload error.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Validate file type.
+		$file_type = wp_check_filetype( $_FILES['bitwarden_import_file']['name'] );
+		if ( $file_type['ext'] !== 'json' ) {
+			wp_die( esc_html__( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Read file content.
+		$json_data = file_get_contents( $_FILES['bitwarden_import_file']['tmp_name'] );
+		
+		// Parse options.
+		$options = array(
+			'merge_folders'    => ! empty( $_POST['merge_folders'] ),
+			'skip_duplicates'  => ! empty( $_POST['skip_duplicates'] ),
+			'import_totp'      => ! empty( $_POST['import_totp'] ),
+			'import_favorites' => ! empty( $_POST['import_favorites'] ),
+		);
+
+		// Import.
+		$import_service = new WP_MCP_AI_Bitwarden_Import_Export();
+		$result         = $import_service->import_bitwarden_json( $json_data, get_current_user_id(), $options );
+
+		if ( $result['success'] ) {
+			$message = sprintf(
+				/* translators: 1: items imported, 2: folders imported, 3: items skipped */
+				esc_html__( 'Import successful! Imported %1$d items, %2$d folders. Skipped %3$d items.', 'mcp-ai-wpoos-pro' ),
+				$result['imported_count'],
+				$result['folder_count'],
+				$result['skipped_count']
+			);
+			
+			if ( ! empty( $result['errors'] ) ) {
+				$message .= '<br><br><strong>' . esc_html__( 'Errors:', 'mcp-ai-wpoos-pro' ) . '</strong><br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
+			}
+			
+			wp_die( $message, esc_html__( 'Import Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		} else {
+			$error_message = esc_html__( 'Import failed.', 'mcp-ai-wpoos-pro' );
+			if ( ! empty( $result['errors'] ) ) {
+				$error_message .= '<br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
+			}
+			wp_die( $error_message, esc_html__( 'Import Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+	}
+
+	/**
+	 * Handle Bitwarden export.
+	 *
+	 * @since 1.3.0
+	 */
+	public function handle_export_bitwarden() {
+		check_admin_referer( 'vault_export_bitwarden', 'vault_export_nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Parse options.
+		$options = array(
+			'include_folders'  => ! empty( $_POST['include_folders'] ),
+			'include_totp'     => ! empty( $_POST['include_totp'] ),
+			'include_history'  => ! empty( $_POST['include_history'] ),
+			'include_favorites' => ! empty( $_POST['include_favorites'] ),
+		);
+
+		// Export.
+		$import_export = new WP_MCP_AI_Bitwarden_Import_Export();
+		$json_data     = $import_export->export_to_bitwarden_json( get_current_user_id(), $options );
+
+		if ( is_wp_error( $json_data ) ) {
+			wp_die( esc_html( $json_data->get_error_message() ), esc_html__( 'Export Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+
+		// Send file download.
+		$filename = 'bitwarden-export-' . date( 'Y-m-d-His' ) . '.json';
+		
+		header( 'Content-Type: application/json' );
+		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+		header( 'Content-Length: ' . strlen( $json_data ) );
+		header( 'Pragma: no-cache' );
+		header( 'Expires: 0' );
+		
+		echo $json_data;
+		exit;
+	}
+
+	/**
+	 * Handle Bitwarden sync.
+	 *
+	 * @since 1.3.0
+	 */
+	public function handle_sync_bitwarden() {
+		check_admin_referer( 'vault_sync_bitwarden', 'vault_sync_nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$server_url      = esc_url_raw( $_POST['bitwarden_server_url'] ?? '' );
+		$email           = sanitize_text_field( $_POST['bitwarden_email'] ?? '' );
+		$password        = $_POST['bitwarden_password'] ?? '';
+		$auth_method     = sanitize_text_field( $_POST['auth_method'] ?? 'password' );
+		$sync_direction  = sanitize_text_field( $_POST['sync_direction'] ?? 'pull' );
+
+		if ( empty( $server_url ) || empty( $email ) || empty( $password ) ) {
+			wp_die( esc_html__( 'Please fill in all required fields.', 'mcp-ai-wpoos-pro' ), esc_html__( 'Sync Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+
+		$sync_service = new WP_MCP_AI_Bitwarden_Sync_Service();
+
+		// Authenticate.
+		$auth_result = $sync_service->authenticate( $server_url, $email, $password, $auth_method );
+		if ( is_wp_error( $auth_result ) ) {
+			wp_die( esc_html( $auth_result->get_error_message() ), esc_html__( 'Authentication Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+
+		$access_token = $auth_result['access_token'];
+
+		// Perform sync.
+		if ( $sync_direction === 'pull' ) {
+			$result = $sync_service->sync_from_bitwarden( get_current_user_id(), $access_token );
+		} else {
+			$result = $sync_service->sync_to_bitwarden( get_current_user_id(), $access_token );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			wp_die( esc_html( $result->get_error_message() ), esc_html__( 'Sync Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+
+		if ( $result['success'] ) {
+			if ( $sync_direction === 'pull' ) {
+				$message = sprintf(
+					/* translators: 1: items synced, 2: folders synced */
+					esc_html__( 'Sync successful! Pulled %1$d items and %2$d folders from Bitwarden.', 'mcp-ai-wpoos-pro' ),
+					$result['imported_count'],
+					$result['folder_count']
+				);
+			} else {
+				$message = sprintf(
+					/* translators: 1: items synced, 2: folders synced */
+					esc_html__( 'Sync successful! Pushed %1$d items and %2$d folders to Bitwarden.', 'mcp-ai-wpoos-pro' ),
+					$result['items_synced'],
+					$result['folders_synced']
+				);
+			}
+			
+			if ( ! empty( $result['errors'] ) ) {
+				$message .= '<br><br><strong>' . esc_html__( 'Errors:', 'mcp-ai-wpoos-pro' ) . '</strong><br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
+			}
+			
+			wp_die( $message, esc_html__( 'Sync Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		} else {
+			wp_die( esc_html__( 'Sync failed.', 'mcp-ai-wpoos-pro' ), esc_html__( 'Sync Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+		}
+	}
+
+	/**
+	 * Render Import/Export & Sync tab.
+	 *
+	 * @since 1.3.0
+	 * @param array $settings Vault settings.
+	 */
+	private function render_sync_tab( $settings ) {
+		$user_id = get_current_user_id();
+		?>
+		<div class="sync-container">
+			<h2><?php esc_html_e( 'Import/Export & Bitwarden Sync', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import vault data from Bitwarden JSON export, export your WordPress vault to Bitwarden format, or sync bidirectionally with an external Bitwarden/Vaultwarden server.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<!-- Import Section -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Import from Bitwarden', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Import vault items from a Bitwarden JSON export file.', 'mcp-ai-wpoos-pro' ); ?></p>
+				
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'vault_import_bitwarden', 'vault_import_nonce' ); ?>
+					<input type="hidden" name="action" value="wp_mcp_ai_vault_import_bitwarden" />
+					
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="bitwarden_import_file"><?php esc_html_e( 'Bitwarden Export File', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<input type="file" name="bitwarden_import_file" id="bitwarden_import_file" accept=".json" required />
+								<p class="description"><?php esc_html_e( 'Select your Bitwarden JSON export file (unencrypted format).', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Import Options', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<fieldset>
+									<label>
+										<input type="checkbox" name="merge_folders" value="1" checked />
+										<?php esc_html_e( 'Merge folders with existing (instead of creating duplicates)', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="skip_duplicates" value="1" checked />
+										<?php esc_html_e( 'Skip duplicate items', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="import_totp" value="1" checked />
+										<?php esc_html_e( 'Import TOTP secrets', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="import_favorites" value="1" checked />
+										<?php esc_html_e( 'Import favorite status', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+								</fieldset>
+							</td>
+						</tr>
+					</table>
+
+					<?php submit_button( __( 'Import from Bitwarden', 'mcp-ai-wpoos-pro' ), 'primary', 'submit', false ); ?>
+				</form>
+			</div>
+
+			<!-- Export Section -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Export to Bitwarden Format', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Export your WordPress vault to Bitwarden-compatible JSON format.', 'mcp-ai-wpoos-pro' ); ?></p>
+				
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'vault_export_bitwarden', 'vault_export_nonce' ); ?>
+					<input type="hidden" name="action" value="wp_mcp_ai_vault_export_bitwarden" />
+					
+					<table class="form-table">
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Export Options', 'mcp-ai-wpoos-pro' ); ?></th>
+							<td>
+								<fieldset>
+									<label>
+										<input type="checkbox" name="include_folders" value="1" checked />
+										<?php esc_html_e( 'Include folders', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="include_totp" value="1" checked />
+										<?php esc_html_e( 'Include TOTP secrets', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="include_history" value="1" checked />
+										<?php esc_html_e( 'Include password history', 'mcp-ai-wpoos-pro' ); ?>
+									</label><br />
+									<label>
+										<input type="checkbox" name="include_favorites" value="1" checked />
+										<?php esc_html_e( 'Include favorite status', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+								</fieldset>
+							</td>
+						</tr>
+					</table>
+
+					<?php submit_button( __( 'Export to Bitwarden JSON', 'mcp-ai-wpoos-pro' ), 'secondary', 'submit', false ); ?>
+				</form>
+			</div>
+
+			<!-- Sync Section -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'Sync with Bitwarden/Vaultwarden Server', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p class="description"><?php esc_html_e( 'Bidirectional sync with an external Bitwarden or Vaultwarden server.', 'mcp-ai-wpoos-pro' ); ?></p>
+				
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<?php wp_nonce_field( 'vault_sync_bitwarden', 'vault_sync_nonce' ); ?>
+					<input type="hidden" name="action" value="wp_mcp_ai_vault_sync_bitwarden" />
+					
+					<table class="form-table">
+						<tr>
+							<th scope="row">
+								<label for="bitwarden_server_url"><?php esc_html_e( 'Server URL', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<input type="url" name="bitwarden_server_url" id="bitwarden_server_url" class="regular-text" 
+									value="<?php echo esc_attr( $settings['bitwarden_server_url'] ?? 'https://vault.bitwarden.com' ); ?>" required />
+								<p class="description"><?php esc_html_e( 'Bitwarden server URL (e.g., https://vault.bitwarden.com or your Vaultwarden server)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="bitwarden_email"><?php esc_html_e( 'Email/Client ID', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<input type="text" name="bitwarden_email" id="bitwarden_email" class="regular-text" 
+									value="<?php echo esc_attr( $settings['bitwarden_email'] ?? '' ); ?>" required />
+								<p class="description"><?php esc_html_e( 'Your Bitwarden account email or API client ID', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="bitwarden_password"><?php esc_html_e( 'Password/API Secret', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<input type="password" name="bitwarden_password" id="bitwarden_password" class="regular-text" required />
+								<p class="description"><?php esc_html_e( 'Your master password or API client secret (not stored, only used for this sync)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="auth_method"><?php esc_html_e( 'Authentication Method', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="auth_method" id="auth_method">
+									<option value="password"><?php esc_html_e( 'Password', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="api_key"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'Choose authentication method', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row">
+								<label for="sync_direction"><?php esc_html_e( 'Sync Direction', 'mcp-ai-wpoos-pro' ); ?></label>
+							</th>
+							<td>
+								<select name="sync_direction" id="sync_direction">
+									<option value="pull"><?php esc_html_e( 'Pull from Bitwarden to WordPress', 'mcp-ai-wpoos-pro' ); ?></option>
+									<option value="push"><?php esc_html_e( 'Push from WordPress to Bitwarden', 'mcp-ai-wpoos-pro' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'Choose sync direction (bidirectional sync coming in future update)', 'mcp-ai-wpoos-pro' ); ?></p>
+							</td>
+						</tr>
+					</table>
+
+					<p>
+						<button type="button" class="button" id="test-bitwarden-connection"><?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos-pro' ); ?></button>
+						<span id="connection-test-result"></span>
+					</p>
+
+					<?php submit_button( __( 'Sync Now', 'mcp-ai-wpoos-pro' ), 'primary', 'submit', false ); ?>
+				</form>
+			</div>
+
+			<!-- Help Section -->
+			<div class="vault-card">
+				<h3><?php esc_html_e( 'How to Export from Bitwarden', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ol>
+					<li><?php esc_html_e( 'Open Bitwarden (web, desktop, or browser extension)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Go to Tools → Export Vault', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Select ".json" as the file format (not ".json (Encrypted)")', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Enter your master password to confirm', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Download the JSON file and upload it above', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ol>
+				<p><strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Delete the export file after importing for security.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+		</div>
 		<?php
 	}
 }
