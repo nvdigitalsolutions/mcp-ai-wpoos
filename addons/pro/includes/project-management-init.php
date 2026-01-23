@@ -11,6 +11,28 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Research & Add and Settings pages for admin.
+if ( is_admin() ) {
+	// Check if project management is enabled and not in base version (unless Pro addon is active).
+	$settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$is_enabled    = ! empty( $settings['enable_project_management'] );
+	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+		// Load toolkit settings page (under Pro Dashboard).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
+		
+		// Load Project Research & Add and Settings pages (under Projects menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-research-page.php';
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
+		
+		// Load Event Research & Add and Settings pages (under Events menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-research-page.php';
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-event-settings-page.php';
+	}
+}
+
 /**
  * Initialize project management admin interface.
  */
@@ -36,22 +58,6 @@ function wp_mcp_ai_init_project_management_admin() {
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-ai-actions.php';
 	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-bulk-ai.php';
 
-	// Load settings pages.
-	// Main toolkit settings page (under Pro Dashboard).
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
-	// CPT-specific settings page (under Projects menu).
-	require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';
-
-	// Load Project Research & Add page.
-	$project_settings = get_option( 'wp_mcp_ai_project_settings', array() );
-	$is_enabled       = ! empty( $settings['enable_project_management'] );
-	$is_base          = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-	$is_pro_active    = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-research-page.php';
-	}
-
 	// Initialize metaboxes.
 	WP_MCP_AI_Project_Metabox::init();
 	WP_MCP_AI_Task_Metabox::init();
@@ -66,8 +72,7 @@ function wp_mcp_ai_init_project_management_admin() {
 	WP_MCP_AI_Project_Management_AI_Actions::init();
 	WP_MCP_AI_Project_Management_Bulk_AI::init();
 }
-// Changed from 'admin_init' to 'plugins_loaded' to ensure submenu pages are registered before 'admin_menu' fires.
-add_action( 'plugins_loaded', 'wp_mcp_ai_init_project_management_admin' );
+add_action( 'admin_init', 'wp_mcp_ai_init_project_management_admin' );
 
 /**
  * Enqueue project management admin styles.
