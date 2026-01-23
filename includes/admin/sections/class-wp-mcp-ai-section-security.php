@@ -494,32 +494,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 
 			// Validate IP addresses in whitelist.
 			if ( isset( $input['ip_whitelist'] ) && ! empty( $input['ip_whitelist'] ) ) {
-				$ips   = array_filter( array_map( 'trim', explode( "\n", $input['ip_whitelist'] ) ) );
-				$valid = true;
-				foreach ( $ips as $ip ) {
-					// Basic validation - could be enhanced.
-					if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) && ! preg_match( '/^[0-9.:\/]+$/', $ip ) ) {
-						$valid = false;
-						break;
-					}
-				}
-				if ( ! $valid ) {
-					$errors[] = __( 'IP Whitelist contains invalid IP addresses or CIDR ranges.', 'mcp-ai-wpoos' );
+				$validation_result = $this->validate_ip_list( $input['ip_whitelist'] );
+				if ( is_wp_error( $validation_result ) ) {
+					$errors[] = __( 'IP Whitelist: ', 'mcp-ai-wpoos' ) . $validation_result->get_error_message();
 				}
 			}
 
 			// Validate IP addresses in blacklist.
 			if ( isset( $input['ip_blacklist'] ) && ! empty( $input['ip_blacklist'] ) ) {
-				$ips   = array_filter( array_map( 'trim', explode( "\n", $input['ip_blacklist'] ) ) );
-				$valid = true;
-				foreach ( $ips as $ip ) {
-					if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) && ! preg_match( '/^[0-9.:\/]+$/', $ip ) ) {
-						$valid = false;
-						break;
-					}
-				}
-				if ( ! $valid ) {
-					$errors[] = __( 'IP Blacklist contains invalid IP addresses or CIDR ranges.', 'mcp-ai-wpoos' );
+				$validation_result = $this->validate_ip_list( $input['ip_blacklist'] );
+				if ( is_wp_error( $validation_result ) ) {
+					$errors[] = __( 'IP Blacklist: ', 'mcp-ai-wpoos' ) . $validation_result->get_error_message();
 				}
 			}
 
@@ -543,6 +528,54 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 			}
 
 			return $input;
+		}
+
+		/**
+		 * Validate a list of IP addresses or CIDR ranges.
+		 *
+		 * @param string $ip_list Line-separated list of IPs/CIDR ranges.
+		 * @return true|WP_Error True if valid, WP_Error otherwise.
+		 */
+		private function validate_ip_list( $ip_list ) {
+			$ips = array_filter( array_map( 'trim', explode( "\n", $ip_list ) ) );
+
+			foreach ( $ips as $entry ) {
+				// Check if it's a CIDR range.
+				if ( strpos( $entry, '/' ) !== false ) {
+					// Validate CIDR format.
+					$parts = explode( '/', $entry );
+					if ( count( $parts ) !== 2 ) {
+						return new WP_Error( 'invalid_cidr', sprintf( __( 'Invalid CIDR format: %s', 'mcp-ai-wpoos' ), $entry ) );
+					}
+
+					list($ip, $mask) = $parts;
+
+					// Validate IP part.
+					if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+						return new WP_Error( 'invalid_cidr_ip', sprintf( __( 'Invalid IP in CIDR: %s', 'mcp-ai-wpoos' ), $entry ) );
+					}
+
+					// Validate mask.
+					$mask_int = intval( $mask );
+					// Check for IPv4 or IPv6.
+					if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+						if ( $mask_int < 0 || $mask_int > 32 ) {
+							return new WP_Error( 'invalid_cidr_mask', sprintf( __( 'Invalid IPv4 CIDR mask (must be 0-32): %s', 'mcp-ai-wpoos' ), $entry ) );
+						}
+					} elseif ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
+						if ( $mask_int < 0 || $mask_int > 128 ) {
+							return new WP_Error( 'invalid_cidr_mask', sprintf( __( 'Invalid IPv6 CIDR mask (must be 0-128): %s', 'mcp-ai-wpoos' ), $entry ) );
+						}
+					}
+				} else {
+					// Validate as plain IP address.
+					if ( ! filter_var( $entry, FILTER_VALIDATE_IP ) ) {
+						return new WP_Error( 'invalid_ip', sprintf( __( 'Invalid IP address: %s', 'mcp-ai-wpoos' ), $entry ) );
+					}
+				}
+			}
+
+			return true;
 		}
 	}
 }

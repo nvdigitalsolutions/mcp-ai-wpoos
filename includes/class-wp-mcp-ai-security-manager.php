@@ -281,19 +281,84 @@ class WP_MCP_AI_Security_Manager {
 	 * Check if an IP is in a CIDR range.
 	 *
 	 * @param string $ip   IP address to check.
-	 * @param string $cidr CIDR notation (e.g., 192.168.1.0/24).
+	 * @param string $cidr CIDR notation (e.g., 192.168.1.0/24 or 2001:db8::/32).
 	 * @return bool True if IP is in CIDR range.
 	 */
 	private function ip_in_cidr( $ip, $cidr ) {
-		list($subnet, $mask) = explode( '/', $cidr );
+		// Validate CIDR format.
+		if ( strpos( $cidr, '/' ) === false ) {
+			return false;
+		}
 
-		// Convert IPs to long integers.
+		$parts = explode( '/', $cidr );
+		if ( count( $parts ) !== 2 ) {
+			return false; // Malformed CIDR.
+		}
+
+		list($subnet, $mask) = $parts;
+
+		// Check if this is IPv6.
+		if ( strpos( $ip, ':' ) !== false || strpos( $subnet, ':' ) !== false ) {
+			return $this->ipv6_in_cidr( $ip, $subnet, $mask );
+		}
+
+		// IPv4 handling.
 		$ip_long     = ip2long( $ip );
 		$subnet_long = ip2long( $subnet );
-		$mask_long   = -1 << ( 32 - (int) $mask );
+
+		// Validate IP addresses.
+		if ( false === $ip_long || false === $subnet_long ) {
+			return false;
+		}
+
+		$mask_long = -1 << ( 32 - (int) $mask );
 
 		// Check if IP is in subnet.
 		return ( $ip_long & $mask_long ) === ( $subnet_long & $mask_long );
+	}
+
+	/**
+	 * Check if an IPv6 address is in a CIDR range.
+	 *
+	 * @param string $ip     IPv6 address.
+	 * @param string $subnet IPv6 subnet.
+	 * @param string $mask   CIDR mask (prefix length).
+	 * @return bool True if IP is in CIDR range.
+	 */
+	private function ipv6_in_cidr( $ip, $subnet, $mask ) {
+		// Convert to binary strings.
+		$ip_bin     = @inet_pton( $ip );
+		$subnet_bin = @inet_pton( $subnet );
+
+		if ( false === $ip_bin || false === $subnet_bin ) {
+			return false;
+		}
+
+		$mask_int = (int) $mask;
+		if ( $mask_int < 0 || $mask_int > 128 ) {
+			return false;
+		}
+
+		// Compare binary strings bit by bit up to mask length.
+		$full_bytes = floor( $mask_int / 8 );
+		$remainder  = $mask_int % 8;
+
+		// Compare full bytes.
+		for ( $i = 0; $i < $full_bytes; $i++ ) {
+			if ( $ip_bin[ $i ] !== $subnet_bin[ $i ] ) {
+				return false;
+			}
+		}
+
+		// Compare remainder bits if any.
+		if ( $remainder > 0 && $full_bytes < strlen( $ip_bin ) ) {
+			$mask_byte = ~( ( 1 << ( 8 - $remainder ) ) - 1 );
+			if ( ( ord( $ip_bin[ $full_bytes ] ) & $mask_byte ) !== ( ord( $subnet_bin[ $full_bytes ] ) & $mask_byte ) ) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	/**

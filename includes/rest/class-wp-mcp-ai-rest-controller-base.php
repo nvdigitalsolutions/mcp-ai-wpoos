@@ -132,11 +132,15 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	 */
 	protected function permissions_check_authenticated( WP_REST_Request $request ) {
 		// Step 1: Check IP and HTTPS requirements (before authentication).
-		$user_id      = get_current_user_id();
-		$security_check = $this->security_manager->check_user_access( $user_id, 'rest_api' );
-		
+		// These checks don't require a user context.
+		$security_check = $this->security_manager->check_ip_access( $this->get_client_ip() );
 		if ( is_wp_error( $security_check ) ) {
 			return $security_check;
+		}
+
+		$https_check = $this->security_manager->check_https_requirement();
+		if ( is_wp_error( $https_check ) ) {
+			return $https_check;
 		}
 
 		// Step 2: Authenticate the request.
@@ -150,7 +154,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 					'error_code' => $auth_result->get_error_code(),
 					'endpoint'   => $request->get_route(),
 				),
-				$user_id
+				0
 			);
 			return $auth_result;
 		}
@@ -163,10 +167,24 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 
 		// Step 3: Check role and capability requirements for authenticated users.
 		if ( $authenticated_user_id > 0 ) {
-			$security_check = $this->security_manager->check_user_access( $authenticated_user_id, 'rest_api' );
-			
-			if ( is_wp_error( $security_check ) ) {
-				return $security_check;
+			// Check role access.
+			if ( ! $this->security_manager->check_role_access( $authenticated_user_id ) ) {
+				$this->security_manager->log_security_event( 'role_denied', array( 'endpoint' => $request->get_route() ), $authenticated_user_id );
+				return $this->error(
+					'insufficient_role',
+					__( 'Access denied: Your user role does not have permission to access this resource.', 'mcp-ai-wpoos' ),
+					403
+				);
+			}
+
+			// Check capability requirement.
+			if ( ! $this->security_manager->check_capability_requirement( $authenticated_user_id ) ) {
+				$this->security_manager->log_security_event( 'capability_denied', array( 'endpoint' => $request->get_route() ), $authenticated_user_id );
+				return $this->error(
+					'insufficient_capability',
+					__( 'Access denied: You do not have sufficient capabilities to access this resource.', 'mcp-ai-wpoos' ),
+					403
+				);
 			}
 			
 			// Log successful authentication if enabled.
@@ -181,6 +199,35 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get client IP address.
+	 *
+	 * @return string Client IP address.
+	 */
+	private function get_client_ip() {
+		$ip_keys = array(
+			'HTTP_CF_CONNECTING_IP', // Cloudflare.
+			'HTTP_X_FORWARDED_FOR',  // Proxy/load balancer.
+			'HTTP_X_REAL_IP',        // Nginx proxy.
+			'REMOTE_ADDR',           // Direct connection.
+		);
+
+		foreach ( $ip_keys as $key ) {
+			if ( isset( $_SERVER[ $key ] ) ) {
+				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
+				// Get first IP if multiple (X-Forwarded-For can contain multiple IPs).
+				if ( strpos( $ip, ',' ) !== false ) {
+					$ip = trim( explode( ',', $ip )[0] );
+				}
+				if ( filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+					return $ip;
+				}
+			}
+		}
+
+		return '0.0.0.0';
 	}
 
 	/**
