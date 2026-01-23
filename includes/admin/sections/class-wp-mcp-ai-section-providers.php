@@ -584,6 +584,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => '',
 				),
 
+				// Embedded LLM Settings (Pro version only).
+				'enable_embedded'                    => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable on-device embedded language models', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Run language models directly in the browser using WebGPU/WebAssembly. No API keys required, fully private.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				) : null,
+				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'        => 'text',
+					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Model identifier for the default embedded model (e.g., "Phi-3-mini-4k-instruct").', 'mcp-ai-wpoos' ),
+					'placeholder' => 'Phi-3-mini-4k-instruct',
+					'default'     => 'Phi-3-mini-4k-instruct',
+				) : null,
+				'embedded_model_management'          => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'        => 'custom',
+					'label'       => __( 'Model Management', 'mcp-ai-wpoos' ),
+					'description' => __( 'Manage embedded models available for client-side inference.', 'mcp-ai-wpoos' ),
+					'callback'    => array( $this, 'render_embedded_model_management' ),
+				) : null,
+
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
 					'type'           => 'checkbox',
@@ -787,39 +809,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			);
 		}
 
-		// Add Embedded LLM settings for Pro version only.
-		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-			$fields['enable_embedded'] = array(
-				'type'           => 'checkbox',
-				'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
-				'checkbox_label' => __( 'Enable Embedded LLM (On-Server AI) as an available provider', 'mcp-ai-wpoos' ),
-				'description'    => __( 'When enabled, allows running small language models directly on your server without external API calls. Models are downloaded on-demand and run locally using llama.cpp. <strong>Pro feature only.</strong>', 'mcp-ai-wpoos' ),
-				'default'        => false,
-			);
-
-			$fields['embedded_model'] = array(
-				'type'        => 'select',
-				'label'       => __( 'Embedded Model', 'mcp-ai-wpoos' ),
-				'description' => __( 'Select which embedded model to use. Models must be downloaded before use. Smaller models (0.5B-2B) run faster but provide lower quality responses. Larger models (3B-7B) provide better quality but require more RAM and processing time.', 'mcp-ai-wpoos' ),
-				'choices'     => array(
-					''                        => __( '-- Select a Model --', 'mcp-ai-wpoos' ),
-					'qwen2-0.5b-instruct'     => __( 'Qwen2 0.5B Instruct (~350MB) - Ultra-fast, basic tasks', 'mcp-ai-wpoos' ),
-					'granite-3.1-2b-instruct' => __( 'IBM Granite 3.1 2B Instruct (~1.2GB) - Balanced quality/speed', 'mcp-ai-wpoos' ),
-					'phi-3-mini-4k-instruct'  => __( 'Microsoft Phi-3 Mini (~2.3GB) - High quality, slower', 'mcp-ai-wpoos' ),
-				),
-				'default'     => '',
-			);
-
-			$fields['embedded_model_management'] = array(
-				'type'        => 'custom',
-				'label'       => __( 'Model Management', 'mcp-ai-wpoos' ),
-				'description' => __( 'Download, delete, and manage embedded language models.', 'mcp-ai-wpoos' ),
-				'callback'    => array( $this, 'render_embedded_model_management' ),
-			);
-		}
-
-		return $fields;
-	}
+		/**
+		 * Get provider sub-tab groups configuration.
+		 *
+		 * @return array
+		 */
+		protected function get_subtab_groups() {
 			return array(
 				'priority'             => array(
 					'id'     => 'priority',
@@ -857,6 +852,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
+				'embedded'             => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'id'     => 'embedded',
+					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-smartphone',
+					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
+				) : null,
 				'huggingface'          => array(
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
@@ -882,18 +883,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'fields' => array( 'google_maps_api_key' ),
 				),
 			);
-
-			// Add Embedded LLM subtab for Pro version only.
-			if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-				$groups['embedded'] = array(
-					'id'     => 'embedded',
-					'label'  => __( 'Embedded LLM (Pro)', 'mcp-ai-wpoos' ),
-					'icon'   => 'dashicons-superhero',
-					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
-				);
-			}
-
-			return $groups;
 		}
 
 		/**
@@ -1205,28 +1194,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			return $input;
 		}
 
-/**
- * Render the embedded model management UI.
- *
- * @param array $field_data Field configuration.
- */
-public function render_embedded_model_management( $field_data ) {
-if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-echo '<p>' . esc_html__( 'Embedded LLM feature is not available. Please ensure you are using the Pro version.', 'mcp-ai-wpoos' ) . '</p>';
-return;
-}
-
-$client            = new WP_MCP_AI_Embedded_Client();
-$available_models  = $client->get_available_models();
-$downloaded_models = $client->get_downloaded_models();
-
-?>
-<div class="wp-mcp-ai-embedded-models">
-<p>
-<?php esc_html_e( 'Manage embedded language models that run directly on your server. Download models on-demand and delete them when no longer needed.', 'mcp-ai-wpoos' ); ?>
-</p>
-</div>
-<?php
-}
-}
+		/**
+		 * Render embedded model management custom field.
+		 *
+		 * @param array $field_data Field configuration data.
+		 * @return void
+		 */
+		public function render_embedded_model_management( $field_data ) {
+			?>
+			<div class="wp-mcp-ai-embedded-model-management">
+				<p><?php esc_html_e( 'Embedded model management interface will be available here. Configure and download models for client-side inference.', 'mcp-ai-wpoos' ); ?></p>
+			</div>
+			<?php
+		}
+	}
 }
