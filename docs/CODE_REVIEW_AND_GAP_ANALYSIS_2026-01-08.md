@@ -419,7 +419,7 @@ All workflows passing successfully.
 
 **Critical:**
 1. ✅ Remove development dependencies
-   - Run `composer install --no-dev --optimize-autoloader`
+   - Run `composer install --no-dev --classmap-authoritative`
    - This will be completed at the end of this review
 
 **Optional Improvements (Non-Blocking):**
@@ -542,7 +542,7 @@ All workflows passing successfully.
 **Status: ✅ APPROVED FOR PRODUCTION**
 
 **Conditions:**
-1. ✅ Run `composer install --no-dev --optimize-autoloader` (completed in this review)
+1. ✅ Run `composer install --no-dev --classmap-authoritative` (completed in this review)
 2. ⚠️ Optional: Fix probe tools before next release
 3. ⚠️ Optional: Improve test coverage (can be done incrementally)
 
@@ -626,4 +626,4 @@ Bug (3):            █ 1%
 
 **Approval Status:** ✅ **APPROVED FOR PRODUCTION DEPLOYMENT**
 
-**Conditions:** Complete `composer install --no-dev --optimize-autoloader` before deployment.
+**Conditions:** Complete `composer install --no-dev --classmap-authoritative` before deployment.

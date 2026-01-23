@@ -277,6 +277,23 @@ $result = $orchestrator->execute_team_workflow(
 - `docs/DEEPSEEK-V4-IMPLEMENTATION-SUMMARY.md` - This file
 - `docs/DEEPSEEK-V4-IMPLEMENTATION-STATUS.md` - Detailed implementation status
 - `docs/DEEPSEEK-V4-EXECUTIVE-SUMMARY.md` - Executive summary
+- **`docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md`** - **Complete technical documentation** (see Section 6: Multi-Agent Orchestration)
+
+### Architecture Documentation
+
+**IMPORTANT:** For complete technical details of the multi-agent orchestration system, see:
+
+**[ORCHESTRATION-LAYER-ARCHITECTURE.md - Section 6](architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement)**
+
+This is the **authoritative technical reference** that documents:
+- How multi-agent orchestration extends the core orchestration layer
+- Integration with Profession CPT (8 orchestration meta fields)
+- Integration with Team CPT (3 orchestration meta fields, 4 execution modes)
+- Agent role system, communication service, and team orchestrator
+- PHP workaround patterns for distributed agent coordination
+- Why multi-agent orchestration strengthens the patent claims
+
+**The ORCHESTRATION-LAYER-ARCHITECTURE.md document** places the DeepSeek V4 multi-agent enhancement in context with the core orchestration layer's PHP AI workarounds, showing how both systems work together to overcome WordPress/PHP's architectural limitations.
 
 ---
 

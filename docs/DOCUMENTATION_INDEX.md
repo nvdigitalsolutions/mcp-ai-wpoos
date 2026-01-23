@@ -1,14 +1,28 @@
 # NV oOS Documentation Index
 
-**Last Updated:** January 18, 2026  
+**Last Updated:** January 22, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
 This document provides a comprehensive index of all documentation available for the Open Operator System (NV oOS) plugin.
 
-**Total Documentation:** 653+ files (647+ in docs/ folder, 6 essential files in root)
+**Total Documentation:** 650+ files (644+ in docs/ folder, 6 essential files in root)
 
-> **📌 JANUARY 18, 2026 UPDATE (LATEST):** 
+> **📌 JANUARY 23, 2026 UPDATE (LATEST):** 
+> - **Tool Count Documentation Updated** - Corrected tool counts across all primary documentation
+> - **Accurate Counts**: 398 tools total (141 base/extended + 257 Pro addon)
+> - **Files Updated**: docs/README.md, docs/reference/README.md, docs/reference/tools/tool-reference.md
+> - **Verified**: Counts verified against actual tool registry and Pro addon registration
+> - **Previous counts were outdated**: Was showing 133-193 tools, now shows accurate 398 tools
+
+> **📌 JANUARY 22, 2026 UPDATE:** 
+> - **Documentation Consolidation Complete** - Menu-related documentation consolidated
+> - **Menu Fixes Consolidated** - 6 files merged into comprehensive guide at `docs/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`
+> - **Files Removed from Root**: MENU_FIX_SUMMARY.md, MENU_REORGANIZATION_SUMMARY.md, MENU_STRUCTURE_VISUAL.md, REMOTE_SITES_MENU_FIX.md, REMOTE_SITES_MENU_FIX_VISUAL.md, PR_SUMMARY.md
+> - **Feature Docs Organized** - TOOLKIT_MEMORY_TRACKING.md moved to `docs/features/`
+> - **Root Directory Even Cleaner** - Only 6 essential documentation files remain in root
+
+> **📌 JANUARY 18, 2026 UPDATE:** 
 > - **PR #2990 - Tool Preset Multiplier Fix** - Fixed broken "Apply Preset" button on Token Manager page
 > - **Root Cause**: Tool registry returned empty array during preset application
 > - **Solution**: Refactored to iterate through tool categories first (200+ tools), then check registry

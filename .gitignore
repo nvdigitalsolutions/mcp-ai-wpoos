@@ -26,6 +26,7 @@ composer.phar
 # Ignore ZIP files everywhere except in build directory
 *.zip
 !/build/*.zip
+!/build/optional-components/*.zip
 
 # Ignore all vendor by default
 /vendor/*
@@ -85,6 +86,19 @@ composer.phar
 # The chat-bundle.js source file uses ES6 imports that browsers cannot execute directly.
 !assets/js/chat-bundle.min.js
 !assets/js/chat-bundle.min.js.map
+
+# Keep Pro addon bundles (orchestration and research) which are required for the plugin to work.
+# These bundle external npm dependencies (p-queue, cheerio, turndown) for browser use.
+!addons/pro/assets/js/orchestration-bundle.min.js
+!addons/pro/assets/js/orchestration-bundle.min.js.map
+!addons/pro/assets/js/research-bundle.min.js
+!addons/pro/assets/js/research-bundle.min.js.map
+
+# Keep vendor production files (pre-built from npm packages)
+!addons/pro/assets/vendor/**/*.min.js
+!addons/pro/assets/vendor/**/*.min.css
+!addons/pro/assets/vendor/**/*.js
+!addons/pro/assets/vendor/**/*.css
 mcp-diagnostic-debug.php
 BUGFIX_SUMMARY.md
 test-storage-service.html

@@ -522,6 +522,109 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables AI-powered Cloudways hosting management for servers and applications. Provides 58+ tools for server management, application deployment, monitoring, security, backups, and performance optimization. Includes server operations, database management, SSL certificate management, and deployment automation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// ========================================================================
+				// PRO TOOLKITS - New Professional Toolkits (Phases 2-6)
+				// ========================================================================
+
+				// E-commerce Toolkit.
+				'enable_ecommerce_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable E-commerce Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced WooCommerce and e-commerce tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 20 AI-powered e-commerce tools for product management, order processing, inventory tracking, customer segmentation, and sales analytics. Requires WooCommerce. Supports mesh network for multi-store inventory sync. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Social Media Management Toolkit.
+				'enable_social_media_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Social Media Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable social media management and content tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 15 AI-powered social media tools for content calendar management, multi-platform posting, analytics, hashtag tracking, competitor analysis, and automated responses. Supports mesh network for cross-site posting. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Advanced Analytics Toolkit.
+				'enable_analytics_toolkit'             => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Analytics Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced analytics and reporting tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12 AI-powered analytics tools for revenue forecasting, customer segmentation, churn prediction, custom reports, and data warehouse integrations (BigQuery, Snowflake, Redshift). Supports mesh network for aggregated reporting. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Multilingual Content Toolkit.
+				'enable_multilingual_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Multilingual Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable multilingual content management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 10 AI-powered multilingual tools for content translation, language detection, RTL optimization, translation memory, quality checks, and WooCommerce product translation. Supports mesh network for shared translation memory. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Video Production Toolkit.
+				'enable_video_production_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Video Production Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable video editing and production tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12 AI-powered video tools for editing, compression, format conversion, watermarking, thumbnail generation, captions, and platform optimization. Requires FFmpeg on server. Supports mesh network for distributed rendering. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Financial Planner Toolkit.
+				'enable_financial_planner_toolkit'     => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable financial planning and analysis tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 24 AI-powered financial tools for retirement planning, budget management, investment analysis, debt calculation, goal planning, and tax estimation. Includes Plaid API integration for bank account sync. EDUCATIONAL USE ONLY - Not financial advice. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Calendar Booking Toolkit (Phase 2.6).
+				'enable_calendar_booking_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable appointment scheduling and booking tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12-15 AI-powered booking tools for appointment scheduling, calendar sync (Google/Outlook/iCloud), staff management, service offerings, availability management, and payment processing. Supports mesh network for multi-location availability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// DJ Management Toolkit (Phase 2.7).
+				'enable_dj_management_toolkit'         => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable DJ Management Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable DJ business management tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 15-18 AI-powered DJ management tools for event booking, equipment inventory, playlist creation, contract generation, payment tracking, and music API integrations (Spotify, Apple Music, YouTube). Includes DocuSign/HelloSign for contracts. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Image Production Toolkit (Phase 2.8).
+				'enable_image_production_toolkit'      => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Image Production Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI image generation and editing tools (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 12-15 AI-powered image tools for AI generation (DALL-E 3, Stable Diffusion), upscaling, editing, format conversion, compression, and watermarking. Supports mesh network for GPU-accelerated processing. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// AI Tool Builder Toolkit (Phase 2.9).
+				'enable_ai_tool_builder_toolkit'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable meta-toolkit for building custom tools with AI (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 10 AI-powered meta-tools for building new tools: scaffolding, code generation, parameter schema design, test generation, documentation, and quality assurance. Uses OpenAI Codex for intelligent tool creation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Architectural Design Toolkit (Phase 2.10).
+				'enable_architectural_design_toolkit' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 16 professional architectural tools: AI floor plan generation, space optimization, 3D modeling, photorealistic rendering, construction blueprints, code compliance checking, sustainability analysis, and cost estimation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -590,7 +693,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architectural_design_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -727,6 +830,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function render_subtab_footer( $subtab ) {
 			switch ( $subtab ) {
+				case 'features':
+					$this->render_features_footer();
+					break;
 				case 'external_tools':
 					$this->render_external_tools_footer();
 					break;
@@ -743,6 +849,190 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					$this->render_site_creator_footer();
 					break;
 			}
+		}
+
+		/**
+		 * Get estimated memory requirements (in MB) for each pro toolkit.
+		 *
+		 * @return array Associative array of toolkit_key => memory_in_mb.
+		 */
+		private function get_toolkit_memory_requirements() {
+			return array(
+				'enable_quiz_system'                   => 32,   // 7 tools, database operations.
+				'enable_media_toolkit'                 => 48,   // Template management, image processing.
+				'enable_document_generation_toolkit'   => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
+				'enable_project_management'            => 64,   // 13 tools, complex data structures.
+				'enable_places_management'             => 56,   // 6+ tools, Google Maps API, geocoding.
+				'enable_ai_cpt_management'             => 24,   // Metabox integration, lightweight.
+				'enable_eca_management'                => 40,   // 5+ tools, iSAMS integration.
+				'enable_health_wellness_management'    => 128,  // 30+ tools, secure health data storage.
+				'enable_cloudways_toolkit'             => 192,  // 58+ tools, extensive server management.
+				'enable_ecommerce_toolkit'             => 80,   // 20 tools, WooCommerce integration.
+				'enable_social_media_toolkit'          => 64,   // 15 tools, multi-platform APIs.
+				'enable_analytics_toolkit'             => 96,   // 12 tools, data warehouse integrations.
+				'enable_multilingual_toolkit'          => 72,   // 10 tools, translation memory.
+				'enable_video_production_toolkit'      => 256,  // 12 tools, FFmpeg, video processing.
+				'enable_financial_planner_toolkit'     => 80,   // 24 tools, Plaid API integration.
+				'enable_calendar_booking_toolkit'      => 64,   // 12-15 tools, calendar sync.
+				'enable_dj_management_toolkit'         => 72,   // 15-18 tools, music APIs, contracts.
+				'enable_image_production_toolkit'      => 192,  // 12-15 tools, AI generation, GPU processing.
+				'enable_ai_tool_builder_toolkit'       => 48,   // 10 meta-tools, code generation.
+				'enable_architectural_design_toolkit'  => 160,  // 16 tools, 3D modeling, rendering.
+			);
+		}
+
+		/**
+		 * Render features footer with toolkit memory usage counter.
+		 */
+		private function render_features_footer() {
+			// Count currently enabled pro toolkits and calculate memory usage.
+			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+
+			$toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
+
+			$enabled_count    = 0;
+			$total_memory_mb  = 0;
+
+			foreach ( $toolkit_memory_requirements as $option => $memory_mb ) {
+				if ( ! empty( $settings[ $option ] ) ) {
+					$enabled_count++;
+					$total_memory_mb += $memory_mb;
+				}
+			}
+
+			// Memory thresholds for status indicators (no hard limit).
+			$counter_class  = '';
+			$counter_status = '';
+
+			if ( $total_memory_mb >= 800 ) {
+				$counter_class  = 'toolkit-limit-maximum';
+				$counter_status = __( 'High Usage', 'mcp-ai-wpoos' );
+			} elseif ( $total_memory_mb >= 500 ) {
+				$counter_class  = 'toolkit-limit-warning';
+				$counter_status = __( 'Moderate Usage', 'mcp-ai-wpoos' );
+			} else {
+				$counter_class  = 'toolkit-limit-good';
+				$counter_status = __( 'Low Usage', 'mcp-ai-wpoos' );
+			}
+
+			?>
+			<tr class="toolkit-limit-info">
+				<th scope="row"></th>
+				<td>
+					<div class="toolkit-limit-counter-container" style="padding: 15px; background: #f0f0f1; border: 1px solid #c3c4c7; border-radius: 4px; margin-top: 20px;">
+						<h3 style="margin-top: 0;">
+							<span class="dashicons dashicons-chart-bar"></span>
+							<?php esc_html_e( 'Pro Toolkit Memory Usage', 'mcp-ai-wpoos' ); ?>
+						</h3>
+						<p style="font-size: 18px; margin: 10px 0;">
+							<strong class="toolkit-limit-counter <?php echo esc_attr( $counter_class ); ?>">
+								<span class="current-count"><?php echo esc_html( $total_memory_mb ); ?></span> 
+								<?php
+								esc_html_e( 'MB estimated memory usage', 'mcp-ai-wpoos' );
+								?>
+								<span style="font-size: 14px; color: #646970; margin-left: 10px;">
+									<?php
+									printf(
+										/* translators: %d: Number of enabled toolkits */
+										esc_html__( '(%d toolkits enabled)', 'mcp-ai-wpoos' ),
+										esc_html( $enabled_count )
+									);
+									?>
+								</span>
+							</strong>
+							<span class="toolkit-status-badge" style="margin-left: 10px; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
+								<?php echo esc_html( $counter_status ); ?>
+							</span>
+						</p>
+						<p class="description">
+							<?php
+							esc_html_e( 'This shows the estimated memory usage for all enabled pro toolkits. Memory requirements vary by toolkit complexity and tool count. You can enable as many toolkits as needed for your use case.', 'mcp-ai-wpoos' );
+							?>
+						</p>
+					</div>
+
+					<style>
+						.toolkit-limit-good { color: #00a32a; }
+						.toolkit-limit-warning { color: #dba617; }
+						.toolkit-limit-maximum { color: #b32d2e; }
+						.toolkit-status-badge { background: #f0f0f1; color: #2c3338; display: inline-block; }
+						.toolkit-limit-good + .toolkit-status-badge { background: #d4edda; color: #155724; }
+						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
+						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
+					</style>
+
+					<script>
+					jQuery(document).ready(function($) {
+						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ) ?: '{}'; ?>;
+						
+						// Fallback to empty object if encoding failed.
+						if (!toolkitMemory || typeof toolkitMemory !== 'object') {
+							toolkitMemory = {};
+						}
+						
+						var toolkitCheckboxes = $(
+							'input[name="wp_mcp_ai_settings[enable_quiz_system]"],' +
+							'input[name="wp_mcp_ai_settings[enable_media_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_document_generation_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_project_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_places_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ai_cpt_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_eca_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_health_wellness_management]"],' +
+							'input[name="wp_mcp_ai_settings[enable_cloudways_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ecommerce_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_social_media_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_analytics_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_multilingual_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_video_production_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_financial_planner_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_calendar_booking_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_dj_management_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
+						);
+
+						function updateToolkitMemory() {
+							var totalMemory = 0;
+							var counter = $('.toolkit-limit-counter .current-count');
+							var statusBadge = $('.toolkit-status-badge');
+
+							// Calculate total memory from checked toolkits
+							toolkitCheckboxes.filter(':checked').each(function() {
+								var inputName = $(this).attr('name');
+								// Extract option name from "wp_mcp_ai_settings[option_name]"
+								var match = inputName.match(/\[([^\]]+)\]/);
+								if (match && match[1] && toolkitMemory[match[1]]) {
+									totalMemory += toolkitMemory[match[1]];
+								}
+							});
+
+							// Display memory in MB
+							counter.text(totalMemory);
+
+							// Update colors and status based on memory thresholds
+							$('.toolkit-limit-counter').removeClass('toolkit-limit-good toolkit-limit-warning toolkit-limit-maximum');
+							if (totalMemory >= 800) {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-maximum');
+								statusBadge.text(<?php echo wp_json_encode( __( 'High Usage', 'mcp-ai-wpoos' ) ); ?>);
+							} else if (totalMemory >= 500) {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-warning');
+								statusBadge.text(<?php echo wp_json_encode( __( 'Moderate Usage', 'mcp-ai-wpoos' ) ); ?>);
+							} else {
+								$('.toolkit-limit-counter').addClass('toolkit-limit-good');
+								statusBadge.text(<?php echo wp_json_encode( __( 'Low Usage', 'mcp-ai-wpoos' ) ); ?>);
+							}
+						}
+
+						// Run on page load and checkbox change
+						toolkitCheckboxes.on('change', updateToolkitMemory);
+						updateToolkitMemory();
+					});
+					</script>
+				</td>
+			</tr>
+			<?php
 		}
 
 		/**

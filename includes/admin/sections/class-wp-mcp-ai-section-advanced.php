@@ -1110,6 +1110,215 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</script>
 			</div>
 
+			<!-- TASK TEMPLATE LIBRARY SECTION -->
+			<div class="wp-mcp-ai-task-template-management-section" style="margin-top: 50px;">
+				<h3><?php esc_html_e( 'Task Template Library Management', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage the task template library used for autonomous task execution with the Ralph orchestration system. Templates provide pre-built workflows for common automation scenarios like research, content creation, and data analysis.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<?php
+				// Get task template counts (Pro only if mcp_task_template exists).
+				$has_templates    = post_type_exists( 'mcp_task_template' );
+				$has_task_plans   = post_type_exists( 'mcp_task_plan' );
+				$template_query   = null;
+				$template_total_count   = 0;
+				$template_publish_count = 0;
+				$template_draft_count   = 0;
+				
+				if ( $has_templates ) {
+					$template_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_task_template',
+							'post_status'    => 'any',
+							'posts_per_page' => -1,
+							'fields'         => 'ids',
+						)
+					);
+					$template_total_count = $template_query->found_posts;
+
+					foreach ( $template_query->posts as $template_id ) {
+						$status = get_post_status( $template_id );
+						if ( 'publish' === $status ) {
+							++$template_publish_count;
+						} elseif ( 'draft' === $status ) {
+							++$template_draft_count;
+						}
+					}
+				}
+
+				// Get task plan counts (available in base).
+				$plan_query = null;
+				$plan_total_count = 0;
+				if ( $has_task_plans ) {
+					$plan_query = new WP_Query(
+						array(
+							'post_type'      => 'mcp_task_plan',
+							'post_status'    => 'any',
+							'posts_per_page' => -1,
+							'fields'         => 'ids',
+						)
+					);
+					$plan_total_count = $plan_query->found_posts;
+				}
+
+				// Check if templates were seeded.
+				$template_is_seeded    = get_option( 'wp_mcp_ai_task_templates_seeded', false );
+				$template_seeded_text  = $template_is_seeded ? __( 'Yes', 'mcp-ai-wpoos' ) : __( 'No', 'mcp-ai-wpoos' );
+				$template_seeded_class = $template_is_seeded ? 'success' : 'warning';
+				?>
+
+				<div class="wp-mcp-ai-template-stats" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<?php if ( $has_task_plans ) : ?>
+							<li><strong><?php esc_html_e( 'Total Task Plans:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $plan_total_count ); ?></li>
+						<?php endif; ?>
+						<?php if ( $has_templates ) : ?>
+							<li><strong><?php esc_html_e( 'Total Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $template_total_count ); ?> 
+								<span class="description">(Pro)</span>
+							</li>
+							<li><strong><?php esc_html_e( 'Published Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $template_publish_count ); ?></li>
+							<?php if ( $template_draft_count > 0 ) : ?>
+								<li><strong><?php esc_html_e( 'Draft Templates:', 'mcp-ai-wpoos' ); ?></strong> <?php echo absint( $template_draft_count ); ?></li>
+							<?php endif; ?>
+							<li><strong><?php esc_html_e( 'Library Seeded:', 'mcp-ai-wpoos' ); ?></strong>
+								<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $template_seeded_class ); ?>">
+									<?php echo esc_html( $template_seeded_text ); ?>
+								</span>
+							</li>
+						<?php endif; ?>
+					</ul>
+					<p class="description" style="margin: 10px 0 0 0;">
+						<?php if ( $has_task_plans ) : ?>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_task_plan' ) ); ?>">
+								<?php esc_html_e( 'View all task plans', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+						<?php endif; ?>
+						<?php if ( $has_templates && $has_task_plans ) : ?>
+							&nbsp;|&nbsp;
+						<?php endif; ?>
+						<?php if ( $has_templates ) : ?>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_task_template' ) ); ?>">
+								<?php esc_html_e( 'View all task templates', 'mcp-ai-wpoos' ); ?> &rarr;
+							</a>
+						<?php endif; ?>
+					</p>
+				</div>
+
+				<?php if ( $has_templates && defined( 'WP_MCP_AI_PRO_VERSION' ) ) : ?>
+				<div class="wp-mcp-ai-seed-template-actions" style="margin-top: 20px;">
+					<h4><?php esc_html_e( 'Seed Template Library (Pro)', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'Load pre-built professional templates for common workflows. Categories include research, content creation, data analysis, marketing, and more.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<div style="margin: 15px 0;">
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-seed-templates-btn">
+								<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Seed Template Library', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Adds pre-built templates without overwriting existing ones.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+
+						<p>
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-seed-templates-overwrite-btn">
+								<span class="dashicons dashicons-update" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Reseed with Overwrite', 'mcp-ai-wpoos' ); ?>
+							</button>
+							<span class="description" style="margin-left: 10px;">
+								<?php esc_html_e( 'Updates existing templates with latest versions from the library.', 'mcp-ai-wpoos' ); ?>
+							</span>
+						</p>
+					</div>
+
+					<div id="wp-mcp-ai-seed-templates-message" class="notice" style="display: none; margin: 15px 0;">
+						<p></p>
+					</div>
+				</div>
+
+				<script type="text/javascript">
+				jQuery(document).ready(function($) {
+					function performTemplateSeed(overwrite, buttonId) {
+						var $button = $(buttonId);
+						var $message = $('#wp-mcp-ai-seed-templates-message');
+						var originalText = $button.html();
+
+						// Disable both buttons.
+						$('#wp-mcp-ai-seed-templates-btn, #wp-mcp-ai-seed-templates-overwrite-btn')
+							.prop('disabled', true)
+							.addClass('disabled');
+
+						// Update button text.
+						$button.html('<span class="dashicons dashicons-update spin" style="margin-top: 3px;"></span> <?php echo esc_js( __( 'Seeding...', 'mcp-ai-wpoos' ) ); ?>');
+
+						// Make AJAX request.
+						$.ajax({
+							url: ajaxurl,
+							type: 'POST',
+							data: {
+								action: 'wp_mcp_ai_seed_task_templates',
+								overwrite: overwrite,
+								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_seed_task_templates' ) ); ?>
+							},
+							success: function(response) {
+								if (response.success) {
+									$message
+										.removeClass('notice-error notice-warning')
+										.addClass('notice-success')
+										.find('p').html(response.data.message);
+									$message.show();
+
+									// Reload stats after a short delay.
+									setTimeout(function() {
+										location.reload();
+									}, 2000);
+								} else {
+									$message
+										.removeClass('notice-success notice-warning')
+										.addClass('notice-error')
+										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+									$message.show();
+								}
+							},
+							error: function(xhr, status, error) {
+								$message
+									.removeClass('notice-success notice-warning')
+									.addClass('notice-error')
+									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
+								$message.show();
+							},
+							complete: function() {
+								// Re-enable buttons and restore text.
+								$('#wp-mcp-ai-seed-templates-btn, #wp-mcp-ai-seed-templates-overwrite-btn')
+									.prop('disabled', false)
+									.removeClass('disabled');
+								$button.html(originalText);
+							}
+						});
+					}
+
+					$('#wp-mcp-ai-seed-templates-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will seed the task template library with pre-built professional templates. Existing templates will not be modified. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performTemplateSeed(false, '#wp-mcp-ai-seed-templates-btn');
+						}
+					});
+
+					$('#wp-mcp-ai-seed-templates-overwrite-btn').on('click', function(e) {
+						e.preventDefault();
+						if (confirm(<?php echo wp_json_encode( __( 'This will update existing templates with the latest versions from the library. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
+							performTemplateSeed(true, '#wp-mcp-ai-seed-templates-overwrite-btn');
+						}
+					});
+				});
+				</script>
+				<?php endif; ?>
+			</div>
+
 			<!-- GEMINI COST TRACKING MIGRATION SECTION -->
 			<div class="wp-mcp-ai-gemini-migration-section" style="margin-top: 50px;">
 				<h3><?php esc_html_e( 'Gemini Cost Tracking Migration', 'mcp-ai-wpoos' ); ?></h3>

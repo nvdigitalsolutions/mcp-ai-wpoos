@@ -62,12 +62,24 @@ The repository is maintained in a **production-ready state** with only productio
 - The plugin can be cloned and used directly as a production plugin
 - Repository size stays minimal (~7 MB vendor vs ~145 MB with dev dependencies)
 - No dev-only files are accidentally deployed to WordPress.org
+- **Optimized autoloader prevents fatal errors in production** (no dev dependency references)
 
 **Before committing changes to `vendor/`:**
 ```bash
-# Always run with --no-dev to keep the repository production-ready
-composer install --no-dev --prefer-dist --optimize-autoloader
+# Always run with --no-dev and --classmap-authoritative to keep the repository production-ready
+# The --classmap-authoritative flag optimizes the autoloader for production and prevents
+# fatal errors like "Failed opening required myclabs/deep-copy/src/DeepCopy/deep_copy.php"
+composer install --no-dev --prefer-dist --classmap-authoritative
 ```
+
+**Autoloader Optimization:**
+The `--classmap-authoritative` flag tells Composer to:
+- Generate an optimized classmap for faster autoloading
+- Only include files from production dependencies
+- Skip filesystem checks for missing classes (improves performance)
+- Prevent references to dev dependencies like `myclabs/deep-copy`, `phpunit/phpunit`
+
+This optimization reduces the classmap from 2000+ classes (with dev deps) to 574 classes (production only).
 
 #### Production Dependencies
 
@@ -534,6 +546,35 @@ The GitHub Actions workflow will automatically build and publish the ZIP files t
 See [RELEASE_CHECKLIST.md](docs/troubleshooting/deployment/RELEASE_CHECKLIST.md) for complete release instructions.
 
 ## Troubleshooting
+
+### Fatal Error: Failed opening required 'deep_copy.php'
+
+If you see this error in production:
+```
+Fatal error: Uncaught Error: Failed opening required 'vendor/composer/../myclabs/deep-copy/src/DeepCopy/deep_copy.php'
+```
+
+This means the Composer autoloader was generated with dev dependencies included, but the dev packages are missing in production.
+
+**Fix:**
+```bash
+# Remove vendor directory
+rm -rf vendor/
+
+# Regenerate with production-only dependencies and optimized autoloader
+composer install --no-dev --prefer-dist --classmap-authoritative
+
+# Rebuild distribution packages
+./bin/rebuild-all-zips.sh
+```
+
+**Why this happens:**
+- Dev dependencies like `myclabs/deep-copy` (used by PHPUnit) were included when autoloader was generated
+- The autoloader references these files in `autoload_files.php`
+- When deployed to production without dev dependencies, PHP tries to load missing files
+
+**Prevention:**
+Always regenerate the autoloader with `--no-dev --classmap-authoritative` before committing vendor changes.
 
 ### Vectorizer Module Error
 

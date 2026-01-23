@@ -36,6 +36,7 @@ Build commands:
 npm run build:js        # Bundles chat dependencies
 npm run install:chartjs # Copies chart.js
 npm run install:vectorizer # Copies vectorizer
+npm run build:js:pro    # Bundles Pro addon orchestration & research packages
 ```
 
 ## Pro Addon Dependencies
@@ -45,18 +46,41 @@ Located in `addons/pro/package.json`:
 ```json
 {
   "dependencies": {
-    "@turf/turf": "^7.3.2",        // Geospatial analysis
-    "@types/pdfkit": "^0.17.4",    // TypeScript types
-    "chart.js": "^4.4.7",          // Charts (also in base)
-    "docx": "^9.5.1",              // Word document generation
-    "exceljs": "^4.4.0",           // Excel generation
-    "fluent-ffmpeg": "^2.1.3",     // Video processing
-    "ics": "^3.8.1",               // Calendar export
-    "katex": "^0.16.11",           // Math rendering
-    "mjml": "^4.18.0",             // Email templates
-    "pdfkit": "^0.17.2",           // PDF generation
-    "prettier": "^3.4.2",          // Code formatting
-    "sharp": "^0.33.5"             // Image processing
+    "@turf/turf": "^7.3.2",                       // Geospatial analysis
+    "@types/pdfkit": "^0.17.4",                   // TypeScript types
+    "@woocommerce/woocommerce-rest-api": "^1.0.1", // E-commerce API
+    "axios": "^1.6.5",                            // HTTP client
+    "chart.js": "^4.4.7",                         // Charts (also in base)
+    "cheerio": "^1.0.0",                          // HTML parsing for research tools
+    "currency.js": "^2.0.4",                      // Currency formatting
+    "d3": "^7.8.5",                               // Data visualization
+    "docx": "^9.5.1",                             // Word document generation
+    "exceljs": "^4.4.0",                          // Excel generation
+    "facebook-nodejs-business-sdk": "^24.0.1",    // Facebook API
+    "fast-csv": "^5.0.0",                         // CSV processing
+    "ffmpeg-static": "^5.2.0",                    // Video processing
+    "ffprobe-static": "^3.1.0",                   // Video metadata
+    "fluent-ffmpeg": "^2.1.3",                    // Video processing wrapper
+    "franc": "^6.1.0",                            // Language detection
+    "gif-encoder": "^0.7.2",                      // GIF creation
+    "google-translate-api-x": "^10.7.0",          // Translation
+    "i18next": "^23.7.0",                         // i18n framework
+    "ics": "^3.8.1",                              // Calendar export
+    "iso-639-1": "^3.1.0",                        // Language codes
+    "katex": "^0.16.11",                          // Math rendering
+    "linkedin-api-client": "^0.3.0",              // LinkedIn API
+    "mathjs": "^12.3.0",                          // Math library
+    "mjml": "^4.18.0",                            // Email templates
+    "p-queue": "^8.0.1",                          // Promise queue for rate limiting
+    "pdfkit": "^0.17.2",                          // PDF generation
+    "prettier": "^3.4.2",                         // Code formatting
+    "regression": "^2.0.1",                       // Statistical regression
+    "sharp": "^0.33.5",                           // Image processing
+    "stripe": "^14.0.0",                          // Payment processing
+    "subtitle": "^3.0.0",                         // Subtitle files
+    "turndown": "^7.2.0",                         // HTML to Markdown conversion
+    "twitter-api-v2": "^1.15.2",                  // Twitter API
+    "video-stitch": "^1.7.1"                      // Video stitching
   }
 }
 ```
@@ -85,6 +109,9 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
+All 39 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+
+**Core Toolkits:**
 | Package | Size | Files Copied |
 |---------|------|-------------|
 | @turf/turf | 53.2 KB | dist/ (cjs & esm) |
@@ -94,8 +121,60 @@ node scripts/copy-dependencies.js
 | prettier | 99.3 KB | standalone.js, parsers |
 | mjml | 1.8 KB | lib/ |
 | fluent-ffmpeg | 111.4 KB | index.js, lib/ |
+| ffmpeg-static | 2.4 KB | index.js |
+| ffprobe-static | 1016 B | index.js |
 
-**Total**: 3.4 MB
+**CRM & Email Marketing Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| nodemailer | 454.7 KB | lib/ |
+| validator | 466.0 KB | index.js, lib/, es/ |
+| email-validator | 2.0 KB | index.js |
+| libphonenumber-js | 523.9 KB | index.js, min/, mobile/, metadata |
+| mailparser | 45.7 KB | lib/ |
+| csv-parse | 78.1 KB | lib/ |
+| csv-stringify | 35.6 KB | lib/ |
+| ical-generator | 549.3 KB | dist/ |
+
+**E-commerce Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| @woocommerce/woocommerce-rest-api | 17.0 KB | index.js, index.mjs |
+| stripe | 422.0 KB | cjs/, esm/ |
+| currency.js | 5.4 KB | dist/currency.min.js |
+
+**Social Media Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| twitter-api-v2 | 979.6 KB | dist/ |
+| axios | 1.8 MB | dist/, index.js |
+| facebook-nodejs-business-sdk | 27.4 MB | dist/ |
+| linkedin-api-client | 145.3 KB | dist/ |
+
+**Analytics Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| d3 | 848.6 KB | dist/ |
+| mathjs | 8.9 MB | lib/ |
+| regression | 8.3 KB | dist/regression.min.js |
+| fast-csv | 4.7 KB | build/ |
+
+**Multilingual Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| i18next | 404.9 KB | dist/ |
+| franc | 9.8 KB | index.js |
+| google-translate-api-x | 23.3 KB | index.cjs, lib/ |
+| iso-639-1 | 10.0 KB | build/index.js |
+
+**Video Production Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| gif-encoder | 42.3 KB | lib/ |
+| video-stitch | 8.6 KB | index.js, lib/ |
+| subtitle | 43.3 KB | dist/ |
+
+**Total**: ~46.9 MB (39 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
 
 #### Special Cases
 
@@ -103,6 +182,19 @@ node scripts/copy-dependencies.js
 - Bundled into standalone scripts via esbuild
 - Located in `addons/pro/bin/`
 - `generate-pdf.bundle.js`, `generate-word.bundle.js`, `generate-excel.bundle.js`
+
+**Orchestration & Research (Browser Bundles)**:
+- **Orchestration Bundle** (`addons/pro/assets/js/orchestration-bundle.min.js`, 17KB):
+  - `p-queue`: Promise queue with concurrency control for rate limiting (installed in Pro addon)
+  - Custom browser-compatible circuit breaker (inspired by opossum pattern)
+  - Used by: Autonomous orchestration tools, task execution management
+- **Research Bundle** (`addons/pro/assets/js/research-bundle.min.js`, 360KB):
+  - `cheerio`: Fast HTML parsing and data extraction (installed in Pro addon)
+  - `turndown`: HTML to Markdown conversion (installed in Pro addon)
+  - Used by: Research compiler, web scraping tools, content aggregation
+- Built via: `esbuild.config.pro.js` using packages from Pro addon's `node_modules/`
+- Build command: `npm run build:js:pro` (runs automatically on `npm install`)
+- Note: esbuild resolves these packages from `addons/pro/node_modules/` using the `nodePaths` configuration
 
 **Chart.js**:
 - Duplicated in base and Pro for different contexts

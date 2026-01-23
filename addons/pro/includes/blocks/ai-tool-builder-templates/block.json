@@ -1,0 +1,32 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "mcp-ai-toolkits/ai-tool-builder-templates",
+	"title": "AI Tool Builder Templates",
+	"category": "mcp-ai-toolkits",
+	"description": "Display tool templates from the AI Tool Builder toolkit",
+	"keywords": ["ai", "tool", "builder", "templates", "mcp"],
+	"textdomain": "mcp-ai-wpoos-pro",
+	"attributes": {
+		"display": {
+			"type": "string",
+			"default": "grid"
+		},
+		"category": {
+			"type": "string",
+			"default": ""
+		},
+		"limit": {
+			"type": "number",
+			"default": 12
+		}
+	},
+	"supports": {
+		"align": true,
+		"spacing": {
+			"margin": true,
+			"padding": true
+		}
+	},
+	"render": "file:./render.php"
+}
