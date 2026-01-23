@@ -61,7 +61,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 				'provider'       => array(
 					'type'        => 'string',
 					'description' => __( 'AI provider name.', 'mcp-ai-wpoos' ),
-					'enum'        => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ),
+					'enum' => array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ),
 				),
 				'use_web_search' => array(
 					'type'        => 'boolean',

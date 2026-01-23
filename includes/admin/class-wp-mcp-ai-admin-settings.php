@@ -2229,10 +2229,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 
 			if ( isset( $settings['default_provider'] ) ) {
 				$provider = sanitize_key( $settings['default_provider'] );
-				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' ) );
+				$allowed  = apply_filters( 'wp_mcp_ai_allowed_providers', array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' ) );
 
 				if ( ! is_array( $allowed ) ) {
-					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+					$allowed = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 				}
 
 				if ( in_array( $provider, $allowed, true ) ) {
@@ -4281,7 +4281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$saved_list   = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
 				: array();
-			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio' );
+			$default_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			// Merge saved value with defaults to ensure all providers are included.
 			// Existing users may have old lists without 'huggingface'.
