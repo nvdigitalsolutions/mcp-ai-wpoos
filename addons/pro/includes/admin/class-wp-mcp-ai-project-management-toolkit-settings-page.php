@@ -97,8 +97,16 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 				<div class="storage-info">
 					<?php
 					$jetengine_active = class_exists( 'Jet_Engine' );
-					$cct_module       = $jetengine_active && method_exists( jet_engine(), 'module_loader' ) ? jet_engine()->module_loader->get_module( 'custom-content-types' ) : null;
-					$cct_enabled      = $cct_module && $cct_module->is_active();
+					$cct_module       = null;
+					$cct_enabled      = false;
+					
+					if ( $jetengine_active && method_exists( jet_engine(), 'module_loader' ) ) {
+						$cct_module = jet_engine()->module_loader->get_module( 'custom-content-types' );
+					}
+					
+					if ( $cct_module && method_exists( $cct_module, 'is_active' ) ) {
+						$cct_enabled = $cct_module->is_active();
+					}
 					?>
 					<p>
 						<strong><?php esc_html_e( 'JetEngine Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
@@ -124,7 +132,7 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 							echo wp_kses_post(
 								sprintf(
 									/* translators: %s: JetEngine URL */
-									__( 'For enterprise-scale projects, consider <a href="%s" target="_blank">JetEngine</a> (~$26/year) for CCT-based storage with 10-100x performance improvements.', 'mcp-ai-wpoos-pro' ),
+									__( 'For enterprise-scale projects, consider <a href="%s" target="_blank">JetEngine</a> for CCT-based storage with 10-100x performance improvements.', 'mcp-ai-wpoos-pro' ),
 									'https://crocoblock.com/plugins/jetengine/'
 								)
 							);
