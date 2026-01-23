@@ -224,9 +224,10 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$downloaded_size = filesize( $filepath );
 			$expected_size   = $model['size'];
 
-			// Allow 5% variance in file size.
+			// Allow 20% variance in file size to accommodate variations in actual model file sizes.
+			// Model sizes on Hugging Face may differ from estimates due to quantization and metadata.
 			$size_diff = abs( $downloaded_size - $expected_size );
-			if ( $size_diff > ( $expected_size * 0.05 ) ) {
+			if ( $size_diff > ( $expected_size * 0.20 ) ) {
 				// Delete incomplete file.
 				wp_delete_file( $filepath );
 
