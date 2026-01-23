@@ -71,7 +71,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 // TODO: Implement detect_content_language logic
 
 return array(

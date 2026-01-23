@@ -81,7 +81,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 // TODO: Implement translate_woocommerce_products logic
 
 return array(

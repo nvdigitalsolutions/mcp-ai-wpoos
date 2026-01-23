@@ -76,7 +76,7 @@ return array(
 );
 }
 
-public function execute( $arguments, $context ) {
+public function execute( array $arguments = array(), array $context = array() ) {
 // TODO: Implement translation_quality_check logic
 
 return array(

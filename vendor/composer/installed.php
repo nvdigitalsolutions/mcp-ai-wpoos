@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/enhance-quick-tool-selection-presets',
-        'version' => 'dev-copilot/enhance-quick-tool-selection-presets',
-        'reference' => '4d147510854145a7c92fc3adec43b8d6fec5c3db',
+        'pretty_version' => 'dev-copilot/fix-multilingual-tool-fatal-error',
+        'version' => 'dev-copilot/fix-multilingual-tool-fatal-error',
+        'reference' => 'c333674fb590073b58ee0f54aadd505fdd07986a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -29,9 +29,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/enhance-quick-tool-selection-presets',
-            'version' => 'dev-copilot/enhance-quick-tool-selection-presets',
-            'reference' => '4d147510854145a7c92fc3adec43b8d6fec5c3db',
+            'pretty_version' => 'dev-copilot/fix-multilingual-tool-fatal-error',
+            'version' => 'dev-copilot/fix-multilingual-tool-fatal-error',
+            'reference' => 'c333674fb590073b58ee0f54aadd505fdd07986a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
