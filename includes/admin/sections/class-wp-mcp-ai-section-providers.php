@@ -1253,7 +1253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 										</td>
 										<td>
 											<span class="wp-mcp-ai-model-size">
-												<?php echo esc_html( size_format( $model['size'], 2 ) ); ?>
+												<?php echo esc_html( size_format( (int) $model['size'], 2 ) ); ?>
 											</span>
 										</td>
 										<td>
