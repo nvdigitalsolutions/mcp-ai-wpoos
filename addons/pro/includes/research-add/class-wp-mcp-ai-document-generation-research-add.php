@@ -24,7 +24,7 @@ class WP_MCP_AI_Document_Generation_Research_Add extends WP_MCP_AI_Research_Add_
 	 * Constructor.
 	 */
 	public function __construct() {
-		parent::__construct( 'document-generation' );
+		parent::__construct( 'document_generation' );
 
 		// Register field schemas.
 		add_filter( 'wp_mcp_ai_toolkit_cpt_field_schema', array( $this, 'filter_cpt_field_schema' ), 10, 3 );
@@ -52,7 +52,7 @@ class WP_MCP_AI_Document_Generation_Research_Add extends WP_MCP_AI_Research_Add_
 	 * @return array Filtered schema.
 	 */
 	public function filter_cpt_field_schema( $schema, $toolkit_slug, $entity_type ) {
-		if ( 'document-generation' !== $toolkit_slug ) {
+		if ( 'document_generation' !== $toolkit_slug ) {
 			return $schema;
 		}
 
