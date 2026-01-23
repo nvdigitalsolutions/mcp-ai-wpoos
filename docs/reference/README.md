@@ -15,7 +15,7 @@ REST API, MCP endpoint, authentication:
 
 ### [Tools Reference](tools/)
 Complete tool documentation:
-- [Tool Reference](tools/tool-reference.md) ⭐ **ESSENTIAL** - All 133 tools
+- [Tool Reference](tools/tool-reference.md) ⭐ **ESSENTIAL** - All 398 tools (141 base + 257 Pro)
 - [Tool Grouping](tools/tool-grouping.md) - Organization by dependency
 - [Capability Flags](tools/capability-flags-usage.md) - Tool capabilities
 - [Tool Multipliers](tools/TOOL-MULTIPLIERS.md) - Token usage multipliers
