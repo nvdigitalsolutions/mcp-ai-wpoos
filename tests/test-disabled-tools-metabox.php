@@ -1,6 +1,10 @@
 <?php
 /**
  * Tests to ensure disabled tools do not appear in the Available Tools metabox.
+ *
+ * Tests cover two filtering mechanisms:
+ * 1. Toolkit-level filtering: Tools from disabled toolkits (Feature Manager)
+ * 2. Individual tool filtering: Individually disabled tools (Tool Manager)
  */
 class WP_MCP_AI_Disabled_Tools_Metabox_Test extends WP_UnitTestCase {
 
