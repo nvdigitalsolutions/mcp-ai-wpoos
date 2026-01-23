@@ -99,15 +99,16 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 				<div class="storage-info">
 					<?php
 					$jetengine_active = class_exists( 'Jet_Engine' );
-					$cct_module       = null;
 					$cct_enabled      = false;
 					
-					if ( $jetengine_active && method_exists( jet_engine(), 'module_loader' ) ) {
-						$cct_module = jet_engine()->module_loader->get_module( 'custom-content-types' );
-					}
-					
-					if ( $cct_module && method_exists( $cct_module, 'is_active' ) ) {
-						$cct_enabled = $cct_module->is_active();
+					// Check if JetEngine is active and CCT module is enabled.
+					if ( $jetengine_active ) {
+						$engine = jet_engine();
+						
+						// Verify engine instance is valid and check if CCT module is active.
+						if ( $engine && isset( $engine->modules ) && method_exists( $engine->modules, 'is_module_active' ) ) {
+							$cct_enabled = $engine->modules->is_module_active( 'custom-content-types' );
+						}
 					}
 					?>
 					<p>
