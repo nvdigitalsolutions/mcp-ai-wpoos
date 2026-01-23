@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-pro-excel-document-error',
+        'version' => 'dev-copilot/fix-pro-excel-document-error',
+        'reference' => '1c995a05ed9b0c2c6c5232718c8d6b0308121b49',
         'pretty_version' => 'dev-copilot/fix-download-button-issue',
         'version' => 'dev-copilot/fix-download-button-issue',
         'reference' => '94735b80aee2946bbbae9eae67836da4265d94f5',
@@ -47,6 +50,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-pro-excel-document-error',
+            'version' => 'dev-copilot/fix-pro-excel-document-error',
+            'reference' => '1c995a05ed9b0c2c6c5232718c8d6b0308121b49',
             'pretty_version' => 'dev-copilot/fix-download-button-issue',
             'version' => 'dev-copilot/fix-download-button-issue',
             'reference' => '94735b80aee2946bbbae9eae67836da4265d94f5',
