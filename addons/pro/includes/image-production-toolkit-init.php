@@ -27,6 +27,10 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-image-production-settings-page.php';
 	}
 
+	// Load Research & Add for CCT/CPT integration.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-image-production-research-add.php';
+	new WP_MCP_AI_Image_Production_Research_Add();
+
 	// Tools are loaded via the standard tool loading mechanism.
 	// Location: addons/pro/includes/tools/image-production/.
 }

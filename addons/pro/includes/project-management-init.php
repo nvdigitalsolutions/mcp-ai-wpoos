@@ -23,6 +23,10 @@ if ( is_admin() ) {
 		// Load toolkit settings page (under Pro Dashboard).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
 		
+		// Load Research & Add for CCT/CPT integration.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-project-management-research-add.php';
+		new WP_MCP_AI_Project_Management_Research_Add();
+		
 		// Load Project Research & Add and Settings pages (under Projects menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-research-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-settings-page.php';

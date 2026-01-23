@@ -26,6 +26,10 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-settings-page.php';
 	}
 
+	// Load Research & Add for CCT/CPT integration.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-document-generation-research-add.php';
+	new WP_MCP_AI_Document_Generation_Research_Add();
+
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/document-generation/.
 }

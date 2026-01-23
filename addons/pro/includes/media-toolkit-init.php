@@ -31,6 +31,10 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-design-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-media-toolkit-settings-page.php';
+
+		// Load Research & Add for CCT/CPT integration.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-media-research-add.php';
+		new WP_MCP_AI_Media_Research_Add();
 	}
 }
 

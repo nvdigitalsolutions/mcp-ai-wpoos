@@ -27,6 +27,10 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-design-settings-page.php';
 	}
 
+	// Load Research & Add for CCT/CPT integration.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-architectural-design-research-add.php';
+	new WP_MCP_AI_Architectural_Design_Research_Add();
+
 	// Load Architectural Design tools.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_architectural_design_tools' );
 }
