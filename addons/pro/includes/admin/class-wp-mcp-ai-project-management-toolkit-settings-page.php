@@ -101,8 +101,8 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 					$jetengine_active = class_exists( 'Jet_Engine' );
 					$cct_enabled      = false;
 					
-					// Check if JetEngine is active and has modules.
-					if ( $jetengine_active && function_exists( 'jet_engine' ) ) {
+					// Check if JetEngine is active and CCT module is enabled.
+					if ( $jetengine_active ) {
 						$engine = jet_engine();
 						
 						// Check if CCT module is active using the correct method.
