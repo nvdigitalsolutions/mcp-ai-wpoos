@@ -2364,6 +2364,14 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 			$tools = $this->registry->get_tools();
 
+			// Filter out globally disabled tools.
+			$tools = array_filter(
+				$tools,
+				function ( $tool ) {
+					return $this->registry->is_tool_enabled( $tool->get_slug() );
+				}
+			);
+
 			$disable_tool_shortcuts = get_post_meta( $post->ID, self::META_DISABLE_TOOL_SHORTCUTS, true );
 			$disable_tool_shortcuts = self::sanitize_disable_tool_shortcuts_meta( $disable_tool_shortcuts );
 
