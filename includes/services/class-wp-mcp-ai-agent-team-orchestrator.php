@@ -543,10 +543,10 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * Find available agents for required roles
 	 *
 	 * Searches in the following order:
-	 * 1. Assistants with specific agent role metadata
+	 * 1. Assistants with specific agent role metadata (best match)
 	 * 2. Profession-based agents (have relevant expertise)
-	 * 3. Any published assistant (as generalist)
-	 * 4. Virtual agents (last resort)
+	 * 3. Virtual agents (role-specific with defined expertise)
+	 * 4. Generic assistants (last resort - no specific configuration)
 	 *
 	 * @param array $roles Required role identifiers.
 	 * @param array $task_requirements Task requirements.
@@ -616,49 +616,51 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 						)
 					);
 				} else {
-					// Step 3: Try to find any generic published assistant.
-					$generic_query = new WP_Query(
-						array(
-							'post_type'      => 'mcp_ai_assistant',
-							'post_status'    => 'publish',
-							'posts_per_page' => 1,
-							'orderby'        => 'rand',
-						)
-					);
-
-					if ( $generic_query->have_posts() ) {
-						$agent_post = $generic_query->posts[0];
-						$agents[]   = array(
-							'id'        => $agent_post->ID,
-							'title'     => $agent_post->post_title,
-							'name'      => $agent_post->post_title,
-							'role'      => 'generalist',
-							'expertise' => array(),
-						);
+					// Step 3: Create a virtual agent with role-specific expertise.
+					$virtual_agent = $this->create_virtual_agent_for_role( $role );
+					if ( $virtual_agent ) {
+						$agents[]    = $virtual_agent;
 						$agent_found = true;
 						
 						WP_MCP_AI_Logger::log_event(
-							'team_composition_fallback_generic',
-							sprintf( 'No role-specific agent or profession found for "%s", using generic assistant as last resort before virtual', $role ),
+							'team_composition_virtual_agent',
+							sprintf( 'No role-specific assistant or profession found for "%s", creating virtual agent with role-appropriate expertise', $role ),
 							array(
-								'required_role'       => $role,
-								'fallback_agent_id'   => $agent_post->ID,
-								'fallback_agent_name' => $agent_post->post_title,
+								'required_role'     => $role,
+								'virtual_agent_id'  => $virtual_agent['id'],
+								'expertise'         => $virtual_agent['expertise'],
 							)
 						);
 					} else {
-						// Step 4: Create a virtual agent as absolute last resort.
-						$virtual_agent = $this->create_virtual_agent_for_role( $role );
-						if ( $virtual_agent ) {
-							$agents[]    = $virtual_agent;
+						// Step 4: Last resort - try any generic published assistant.
+						$generic_query = new WP_Query(
+							array(
+								'post_type'      => 'mcp_ai_assistant',
+								'post_status'    => 'publish',
+								'posts_per_page' => 1,
+								'orderby'        => 'rand',
+							)
+						);
+
+						if ( $generic_query->have_posts() ) {
+							$agent_post = $generic_query->posts[0];
+							$agents[]   = array(
+								'id'        => $agent_post->ID,
+								'title'     => $agent_post->post_title,
+								'name'      => $agent_post->post_title,
+								'role'      => 'generalist',
+								'expertise' => array(),
+							);
 							$agent_found = true;
 							
 							WP_MCP_AI_Logger::log_event(
-								'team_composition_virtual_agent',
-								sprintf( 'No assistants or professions found for role "%s", creating virtual agent', $role ),
+								'team_composition_fallback_generic',
+								sprintf( 'No suitable agents found for "%s", using random generic assistant as absolute last resort', $role ),
 								array(
-									'required_role'     => $role,
-									'virtual_agent_id'  => $virtual_agent['id'],
+									'required_role'       => $role,
+									'fallback_agent_id'   => $agent_post->ID,
+									'fallback_agent_name' => $agent_post->post_title,
+									'warning'             => 'Generic assistant has no specific configuration for this role',
 								)
 							);
 						}

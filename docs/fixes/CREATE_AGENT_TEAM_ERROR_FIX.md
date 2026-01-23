@@ -58,10 +58,10 @@ There was no detailed logging to help diagnose why team composition was failing.
 - Error codes provide specific failure reasons
 - Error data includes actionable suggestions
 
-### 2. Corrected Multi-Level Fallback System
+### 2. Optimized Multi-Level Fallback System
 Implemented a 4-tier fallback system in `find_agents_for_roles()` with the optimal priority order:
 
-**Step 1:** Search for assistants with specific agent role metadata
+**Step 1:** Search for assistants with specific agent role metadata (best match)
 ```php
 meta_query => array(
     'key' => '_wp_mcp_ai_agent_role',
@@ -74,19 +74,28 @@ meta_query => array(
 $profession_agent = $this->find_profession_agent_for_role( $role, $task_requirements );
 ```
 
-**Step 3:** Use any published assistant as a generalist (last resort before virtual)
+**Step 3:** Create virtual agents (role-specific with defined expertise)
+```php
+$virtual_agent = $this->create_virtual_agent_for_role( $role );
+// Returns agent with role-appropriate expertise:
+// - Planner: task decomposition, strategic planning, workflow design
+// - Executor: task execution, content creation, problem solving
+// - Critic: quality assurance, validation, feedback
+```
+
+**Step 4:** Use any published assistant as generalist (absolute last resort)
 ```php
 'post_type' => 'mcp_ai_assistant',
 'post_status' => 'publish',
 'orderby' => 'rand'
+// Warning: Random assistant with no specific configuration for this role
 ```
 
-**Step 4:** Create virtual agents as absolute last resort
-```php
-$virtual_agent = $this->create_virtual_agent_for_role( $role );
-```
-
-This order prioritizes agents with relevant expertise (profession-based) over random generic assistants.
+**Rationale for this order:**
+1. **Specific role assistants** - Explicitly configured for the role
+2. **Profession-based agents** - Have relevant expertise for the task domain
+3. **Virtual agents** - Designed specifically for the role with appropriate expertise arrays
+4. **Generic assistants** - Random assistant with no role-specific configuration (worst match)
 
 ### 3. Virtual Agent System
 New `create_virtual_agent_for_role()` method creates placeholder agents when no real agents are available:
