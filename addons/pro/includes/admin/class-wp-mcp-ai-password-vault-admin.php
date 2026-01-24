@@ -105,7 +105,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'nv-oos-pro_page_wp-mcp-ai-password-vault' !== $hook ) {
+		if ( 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' !== $hook ) {
 			return;
 		}
 
