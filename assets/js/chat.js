@@ -11649,11 +11649,16 @@
         state.conversation.push(assistantMessage);
         
         // Create empty message bubble for progressive updates
-        const bubble = appendMessage(state.messagesEl, 'assistant', { text: '' }, true, { state: state });
-        if (bubble) {
-            bubble.setAttribute('data-message-id', assistantMessageId);
-            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
-        }
+        // We can't use appendMessage with empty text as it returns null
+        const bubble = document.createElement('div');
+        bubble.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+        bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
+        bubble.setAttribute('data-message-id', assistantMessageId);
+        state.messagesEl.appendChild(bubble);
+        console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        
+        // Scroll to show the new message
+        scrollBatcher.scrollToBottom(state.messagesEl);
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
@@ -11662,6 +11667,22 @@
             temperature: state.config.temperature || 0.7,
             maxTokens: maxTokens
         });
+
+        // Helper function to update message bubble with content
+        // Uses cached bubble reference for performance (avoids querySelector on every chunk)
+        function updateMessageBubble(content) {
+            if (bubble) {
+                if (markdownService && markdownService.renderMarkdown) {
+                    // markdownService.renderMarkdown processes markdown and escapes HTML (see line 15798)
+                    // This makes it safe from XSS attacks
+                    bubble.innerHTML = markdownService.renderMarkdown(content);
+                } else {
+                    // textContent is safe from XSS as it doesn't parse HTML
+                    bubble.textContent = content;
+                }
+                scrollBatcher.scrollToBottom(state.messagesEl);
+            }
+        }
 
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
@@ -11674,11 +11695,17 @@
                 
                 // Update message with each chunk
                 if (chunk.done) {
-                    // Final chunk - update status
+                    // Final chunk - update status and ensure bubble has final content
                     console.log('[NV oOS] Received done chunk:', {
                         callbackNumber: chunkCallbackCount,
                         finalContentLength: chunk.fullContent.length
                     });
+                    
+                    fullContent = chunk.fullContent;
+                    assistantMessage.content[0].text = fullContent;
+                    
+                    // Update the message bubble with final content
+                    updateMessageBubble(fullContent);
                     
                     setStatus(state.container, {
                         message: getString('complete', 'Complete'),
@@ -11699,15 +11726,7 @@
                     assistantMessage.content[0].text = fullContent;
                     
                     // Update the message bubble directly
-                    const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
-                    if (bubble) {
-                        if (markdownService && markdownService.renderMarkdown) {
-                            bubble.innerHTML = markdownService.renderMarkdown(fullContent);
-                        } else {
-                            bubble.textContent = fullContent;
-                        }
-                        scrollToBottom(state);
-                    }
+                    updateMessageBubble(fullContent);
                 }
             }
         )
@@ -11733,7 +11752,7 @@
                 } else {
                     bubble.textContent = result.content;
                 }
-                scrollToBottom(state);
+                scrollBatcher.scrollToBottom(state.messagesEl);
                 
                 // Attach usage badges if usage data is available from embedded LLM
                 if (result.usage && typeof result.usage === 'object') {
