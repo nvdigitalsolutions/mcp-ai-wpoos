@@ -131,8 +131,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get downloaded embedded models.
+			$embedded_models = array();
+			if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				$client = new WP_MCP_AI_Embedded_Client();
+				$downloaded_models = $client->get_downloaded_models();
+				foreach ( $downloaded_models as $slug => $model ) {
+					$embedded_models[ $slug ] = $model['name'];
+				}
+			}
+			
+			// Add placeholder if no models are downloaded.
+			if ( empty( $embedded_models ) ) {
+				$embedded_models[''] = __( '-- Download Model --', 'mcp-ai-wpoos' );
+			}
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -593,11 +608,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'        => false,
 				) : null,
 				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
-					'type'        => 'text',
+					'type'        => 'select',
 					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Model identifier for the default embedded model (e.g., "Phi-3-mini-4k-instruct").', 'mcp-ai-wpoos' ),
-					'placeholder' => 'Phi-3-mini-4k-instruct',
-					'default'     => 'Phi-3-mini-4k-instruct',
+					'description' => __( 'Select a downloaded model to use for embedded inference. If no models are downloaded, please download one using the Model Management section below.', 'mcp-ai-wpoos' ),
+					'options'     => $embedded_models,
+					'default'     => '',
 				) : null,
 				'embedded_model_management'          => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'        => 'custom',
@@ -1132,7 +1147,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {

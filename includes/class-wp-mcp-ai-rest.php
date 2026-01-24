@@ -3134,9 +3134,10 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						$tool_result = new WP_Error(
 							'tool_fatal_error',
 							sprintf(
-								/* translators: %s: tool name */
-								__( 'Tool %s failed with a fatal error.', 'mcp-ai-wpoos' ),
-								$tool_name
+								/* translators: 1: tool name, 2: error message */
+								__( 'Tool %1$s failed with a fatal error: %2$s', 'mcp-ai-wpoos' ),
+								$tool_name,
+								$e->getMessage()
 							)
 						);
 					}

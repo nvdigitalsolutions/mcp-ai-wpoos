@@ -82,6 +82,7 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-tool-
 // Load agent coordination services (DeepSeek V4 enhancements - Phase 1).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-communication-service.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-team-orchestrator.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-enhanced-workflow-coordinator.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
@@ -328,6 +329,24 @@ function wp_mcp_ai_get_async_tool_executor() {
  */
 function wp_mcp_ai_get_async_health_monitor() {
 	return 'WP_MCP_AI_Async_Health_Monitor';
+}
+
+/**
+ * Get enhanced workflow coordinator instance
+ *
+ * Helper function to get the enhanced workflow coordinator for advanced
+ * multi-agent workflows with parallel execution and dependency management.
+ *
+ * @return WP_MCP_AI_Enhanced_Workflow_Coordinator Coordinator instance.
+ */
+function wp_mcp_ai_get_enhanced_workflow_coordinator() {
+	static $coordinator = null;
+
+	if ( null === $coordinator ) {
+		$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
+	}
+
+	return $coordinator;
 }
 
 /**
