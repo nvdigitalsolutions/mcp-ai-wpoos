@@ -1150,7 +1150,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					// Include additional error details if available.
 					if ( is_array( $error_data ) ) {
 						if ( isset( $error_data['status'] ) ) {
-							$error_msg .= ' ' . sprintf( __( '(HTTP Status: %d)', 'mcp-ai-wpoos' ), absint( $error_data['status'] ) );
+							$error_msg .= ' ' . sprintf(
+								/* translators: %d: HTTP status code */
+								__( '(HTTP Status: %d)', 'mcp-ai-wpoos' ),
+								absint( $error_data['status'] )
+							);
 						}
 						if ( isset( $error_data['body'] ) && is_string( $error_data['body'] ) ) {
 							$body_data = json_decode( $error_data['body'], true );
