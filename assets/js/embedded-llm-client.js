@@ -527,7 +527,11 @@
 		
 		// Enhanced error handling (best practices)
 		categorizeError: categorizeError,
-		checkModelSuitability: checkModelSuitability
+		checkModelSuitability: checkModelSuitability,
+		
+		// Initialization state
+		isReady: () => webLLMReady && webLLM !== null,
+		waitForReady: waitForWebLLM
 	};
 
 })();
