@@ -1048,6 +1048,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
+				'embedded'    => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<tr>

@@ -717,10 +717,6 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				}
 			}
 
-			// Check if safe mode is enabled (deprecated but still checked).
-			if ( function_exists( 'ini_get' ) && ini_get( 'safe_mode' ) ) {
-				return true;
-			}
 
 			return false;
 		}
