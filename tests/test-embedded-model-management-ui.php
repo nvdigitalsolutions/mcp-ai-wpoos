@@ -126,4 +126,55 @@ class Test_Embedded_Model_Management_UI extends WP_UnitTestCase {
 			has_action( 'wp_ajax_wp_mcp_ai_list_embedded_models', array( 'WP_MCP_AI_Embedded_Model_Ajax', 'list_models' ) )
 		);
 	}
+
+	/**
+	 * Test that model identifier column is displayed in the table.
+	 */
+	public function test_model_identifier_column_displayed() {
+		// Skip if base version.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Embedded LLM is not available in base version.' );
+		}
+
+		// Create section instance.
+		$section = new WP_MCP_AI_Section_Providers();
+
+		// Capture output.
+		ob_start();
+		$section->render_embedded_model_management( array() );
+		$output = ob_get_clean();
+
+		// Check that output contains Model Identifier column header.
+		$this->assertStringContainsString( 'Model Identifier', $output );
+
+		// Check that model slugs are displayed in code tags.
+		$this->assertStringContainsString( '<code', $output );
+		$this->assertStringContainsString( 'qwen2-0.5b-instruct', $output );
+	}
+
+	/**
+	 * Test that usage instructions are shown for downloaded models.
+	 */
+	public function test_usage_instructions_for_downloaded_models() {
+		// Skip if base version.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Embedded LLM is not available in base version.' );
+		}
+
+		// Create section instance.
+		$section = new WP_MCP_AI_Section_Providers();
+
+		// Capture output.
+		ob_start();
+		$section->render_embedded_model_management( array() );
+		$output = ob_get_clean();
+
+		// Check that usage instructions class exists in the output.
+		$this->assertStringContainsString( 'wp-mcp-ai-model-usage-info', $output );
+
+		// Check that instructions text is present.
+		$this->assertStringContainsString( 'How to use this model:', $output );
+		$this->assertStringContainsString( 'The model identifier is:', $output );
+		$this->assertStringContainsString( 'Default Embedded Model', $output );
+	}
 }

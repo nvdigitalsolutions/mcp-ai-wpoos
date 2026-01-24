@@ -731,6 +731,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					self::test_cloudflare( $settings );
 					break;
 
+				case 'embedded':
+					self::test_embedded( $settings );
+					break;
+
 				case 'google_maps':
 					self::test_google_maps( $settings );
 					break;
@@ -1114,6 +1118,80 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'Account ID', 'mcp-ai-wpoos' )      => $account_id,
 							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
 							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Embedded LLM connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_embedded( $settings ) {
+			// Check if in base version (embedded not available).
+			if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is only available in the Pro version.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['enable_embedded'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				$client = new WP_MCP_AI_Embedded_Client();
+				$result = $client->test_connection();
+
+				if ( is_wp_error( $result ) ) {
+					$error_data = $result->get_error_data();
+					$error_msg  = $result->get_error_message();
+
+					// Include additional error details if available.
+					if ( is_array( $error_data ) && isset( $error_data['status'] ) ) {
+						$error_msg .= ' ' . sprintf( __( '(Status: %d)', 'mcp-ai-wpoos' ), absint( $error_data['status'] ) );
+					}
+
+					wp_send_json_error( array( 'message' => $error_msg ) );
+					return;
+				}
+
+				// Get downloaded models.
+				$downloaded_models = $client->get_downloaded_models();
+				$model_count       = count( $downloaded_models );
+				$selected_model    = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : '';
+
+				// Get model name if a model is selected.
+				$selected_model_name = __( 'Not configured', 'mcp-ai-wpoos' );
+				if ( $selected_model && isset( $downloaded_models[ $selected_model ] ) ) {
+					$selected_model_name = $downloaded_models[ $selected_model ]['name'];
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Embedded LLM connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Downloaded Models', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Selected Model', 'mcp-ai-wpoos' )    => $selected_model_name,
+							__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
+							__( 'Inference Binary', 'mcp-ai-wpoos' )  => __( 'Available', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
