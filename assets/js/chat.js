@@ -11645,6 +11645,34 @@
             // Completion successful
             assistantMessage.content[0].text = result.content;
             
+            // Update the final message bubble in the DOM with the complete content
+            // This ensures the message is visible even if the streaming updates missed the final chunk
+            const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+            if (bubble && result.content) {
+                if (markdownService && markdownService.renderMarkdown) {
+                    bubble.innerHTML = markdownService.renderMarkdown(result.content);
+                } else {
+                    bubble.textContent = result.content;
+                }
+                scrollToBottom(state);
+                
+                // Attach usage badges if usage data is available from embedded LLM
+                if (result.usage && typeof result.usage === 'object') {
+                    // Add provider and model info for badge display
+                    const usage = Object.assign({}, result.usage);
+                    if (!usage.provider) {
+                        usage.provider = 'Embedded LLM';
+                    }
+                    // Get model name from state config if available
+                    if (!usage.model && state.config && state.config.model) {
+                        usage.model = state.config.model;
+                    }
+                    
+                    // Attach usage badges to the bubble (no cost data for embedded LLM)
+                    attachUsageBadges(bubble, usage, null);
+                }
+            }
+            
             // Save to storage
             saveConversationToStorage(state);
             
