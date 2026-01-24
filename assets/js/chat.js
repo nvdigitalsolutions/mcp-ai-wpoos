@@ -11598,7 +11598,12 @@
             id: assistantMessageId
         };
         state.conversation.push(assistantMessage);
-        renderMessage(state, assistantMessage);
+        
+        // Create empty message bubble for progressive updates
+        const bubble = appendMessage(state.messagesEl, 'assistant', { text: '' }, true, { state: state });
+        if (bubble) {
+            bubble.setAttribute('data-message-id', assistantMessageId);
+        }
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
@@ -11623,14 +11628,13 @@
                     fullContent = chunk.fullContent;
                     assistantMessage.content[0].text = fullContent;
                     
-                    // Update the message bubble
+                    // Update the message bubble directly
                     const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
                     if (bubble) {
-                        const textContainer = bubble.querySelector('.wp-mcp-ai-chat__message-text');
-                        if (textContainer && markdownService && markdownService.renderMarkdown) {
-                            textContainer.innerHTML = markdownService.renderMarkdown(fullContent);
-                        } else if (textContainer) {
-                            textContainer.textContent = fullContent;
+                        if (markdownService && markdownService.renderMarkdown) {
+                            bubble.innerHTML = markdownService.renderMarkdown(fullContent);
+                        } else {
+                            bubble.textContent = fullContent;
                         }
                         scrollToBottom(state);
                     }
