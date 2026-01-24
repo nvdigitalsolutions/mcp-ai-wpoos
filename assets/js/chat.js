@@ -11483,7 +11483,7 @@
             })
             .then(function() {
                 // Model loaded, now generate completion
-                return generateEmbeddedCompletion(state, embeddedClient, messages, finalize);
+                return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
             })
             .catch(function(error) {
                 // Use enhanced error categorization for better user feedback
@@ -11509,7 +11509,7 @@
         }
 
         // Model already loaded, generate completion
-        return generateEmbeddedCompletion(state, embeddedClient, messages, finalize);
+        return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
     }
 
     /**
@@ -11519,8 +11519,9 @@
      * @param {Object} embeddedClient Embedded LLM client instance
      * @param {Array} messages Messages array
      * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
      */
-    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize) {
+    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext) {
         setStatus(state.container, {
             message: getString('embeddedGenerating', 'Generating response...'),
             type: 'processing',
@@ -11612,6 +11613,7 @@
             handleError(state, {
                 message: getString('embeddedGenerationError', 'Failed to generate response: ') + error.message
             });
+            restoreSubmissionState(state, submissionContext);
             finalize();
             throw error;
         });

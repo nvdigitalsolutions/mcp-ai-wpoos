@@ -1359,10 +1359,84 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		if ( ! empty( $config['disable_prebuilt_shortcuts'] ) ) {
+			// Even with prebuilt shortcuts disabled, ensure fallback shortcut if no custom shortcuts
+			if ( empty( $shortcuts ) ) {
+				$fallback_shortcut = array(
+					'tool'    => 'default',
+					'label'   => sanitize_text_field( __( 'What can you do?', 'mcp-ai-wpoos' ) ),
+					'payload' => sanitize_textarea_field( 'Can you tell me what you can do?' ),
+				);
+
+				/**
+				 * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+				 *
+				 * @since 1.0.1
+				 *
+				 * @param array $fallback_shortcut Default shortcut configuration.
+				 * @param int   $assistant_id      Assistant post ID.
+				 */
+				$fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
+
+				if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
+					$fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
+						? sanitize_key( $fallback_shortcut['tool'] )
+						: 'default';
+
+					$fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
+					$fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
+
+					if ( isset( $fallback_shortcut['description'] ) ) {
+						if ( is_string( $fallback_shortcut['description'] ) ) {
+							$fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
+						} else {
+							unset( $fallback_shortcut['description'] );
+						}
+					}
+
+					$shortcuts[] = $fallback_shortcut;
+				}
+			}
 			return $shortcuts;
 		}
 
 		if ( empty( $selected_tools ) ) {
+			// Even with no tools selected, ensure fallback shortcut if no custom shortcuts
+			if ( empty( $shortcuts ) ) {
+				$fallback_shortcut = array(
+					'tool'    => 'default',
+					'label'   => sanitize_text_field( __( 'What can you do?', 'mcp-ai-wpoos' ) ),
+					'payload' => sanitize_textarea_field( 'Can you tell me what you can do?' ),
+				);
+
+				/**
+				 * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+				 *
+				 * @since 1.0.1
+				 *
+				 * @param array $fallback_shortcut Default shortcut configuration.
+				 * @param int   $assistant_id      Assistant post ID.
+				 */
+				$fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
+
+				if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
+					$fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
+						? sanitize_key( $fallback_shortcut['tool'] )
+						: 'default';
+
+					$fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
+					$fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
+
+					if ( isset( $fallback_shortcut['description'] ) ) {
+						if ( is_string( $fallback_shortcut['description'] ) ) {
+							$fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
+						} else {
+							unset( $fallback_shortcut['description'] );
+						}
+					}
+
+					$shortcuts[] = $fallback_shortcut;
+				}
+			}
 			return $shortcuts;
 		}
 
