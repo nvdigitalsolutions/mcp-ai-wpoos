@@ -11431,12 +11431,24 @@
         
         // Check if embedded LLM class is available
         if (!window.WP_MCP_AI_EmbeddedLLM) {
+            console.error('[NV oOS] Embedded LLM class not found. window.WP_MCP_AI_EmbeddedLLM is:', window.WP_MCP_AI_EmbeddedLLM);
             handleError(state, {
                 message: getString('embeddedClientMissing', 'Embedded LLM client not loaded. Please refresh the page.')
             });
             restoreSubmissionState(state, submissionContext);
             finalize();
             return Promise.reject(new Error('Embedded LLM client not available'));
+        }
+
+        // Verify it's a constructor function/class
+        if (typeof window.WP_MCP_AI_EmbeddedLLM !== 'function') {
+            console.error('[NV oOS] WP_MCP_AI_EmbeddedLLM is not a constructor. Type:', typeof window.WP_MCP_AI_EmbeddedLLM, 'Value:', window.WP_MCP_AI_EmbeddedLLM);
+            handleError(state, {
+                message: getString('embeddedClientInvalid', 'Embedded LLM client is invalid. Please refresh the page and clear your browser cache.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client is not a constructor'));
         }
 
         // Create embedded client instance for this widget if not already created
@@ -11449,6 +11461,16 @@
         }
 
         const embeddedClient = state.embeddedClient;
+
+        // Verify embedded client has required methods
+        if (!embeddedClient || typeof embeddedClient.isReady !== 'function' || typeof embeddedClient.waitForReady !== 'function') {
+            handleError(state, {
+                message: getString('embeddedClientInvalid', 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client instance is invalid or outdated'));
+        }
 
         // Wait for embedded client to be fully initialized (WebLLM loaded)
         if (!embeddedClient.isReady()) {

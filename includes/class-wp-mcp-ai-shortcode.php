@@ -118,6 +118,37 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
+		// Register embedded LLM client scripts (always register, enqueue conditionally).
+		// This prevents conflicts when multiple widgets with different providers are on the same page.
+		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
+			$embedded_script_path  = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+			$webllm_loader_path    = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+			$webllm_loader_version = $this->get_asset_version( 'assets/js/webllm-loader.js' );
+
+			// Register WebLLM loader (loads WebLLM library dynamically).
+			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
+				wp_register_script(
+					'webllm-loader',
+					$webllm_loader_path,
+					array(),
+					$webllm_loader_version,
+					true
+				);
+			}
+
+			// Register embedded LLM client (depends on WebLLM loader).
+			if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-embedded-llm-client',
+					$embedded_script_path,
+					array( 'webllm-loader' ),
+					$embedded_script_version,
+					true
+				);
+			}
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$color_css = WP_MCP_AI_Admin_Settings::get_chat_color_css();
 
@@ -432,6 +463,11 @@ class WP_MCP_AI_Shortcode {
 			'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
 			/* translators: %s: tool name that is temporarily unavailable */
 			'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
+			// Embedded LLM client messages.
+			'embeddedClientMissing'         => __( 'Embedded LLM client not loaded. Please refresh the page.', 'mcp-ai-wpoos' ),
+			'embeddedClientInvalid'         => __( 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.', 'mcp-ai-wpoos' ),
+			'embeddedClientInitializing'    => __( 'Initializing embedded AI client...', 'mcp-ai-wpoos' ),
+			'embeddedClientInitError'       => __( 'Failed to initialize embedded AI client: ', 'mcp-ai-wpoos' ),
 			'roleLabels'                    => array(
 				'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'user'      => __( 'You', 'mcp-ai-wpoos' ),
@@ -736,103 +772,20 @@ class WP_MCP_AI_Shortcode {
 				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
 			}
 
-			// Enqueue embedded LLM client script if provider is embedded.
-			// Check: provider is embedded AND (base version not defined OR base version is false).
-			// Embedded provider is only available in Pro version (not base version).
-			// This MUST be done before enqueuing chat script to ensure proper loading order.
-			// Skip embedded provider in Elementor editor to prevent JavaScript conflicts.
+			// Enqueue embedded LLM client scripts if this assistant uses embedded provider.
+			// Scripts are already registered in register_assets(), just enqueue them here.
+			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
-				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
-				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
-				$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
-				$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
-
-				// Register WebLLM loader script (only once per page).
-				// Best Practice: Use separate JS files instead of inline scripts.
-				if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
-					wp_register_script(
-						'webllm-loader',
-						$webllm_loader_path,
-						array(),
-						$webllm_loader_version,
-						true
-					);
-				}
-
-				// Register embedded LLM client.
-				// It will wait for WebLLM to load before initializing.
-				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
-					wp_register_script(
-						'wp-mcp-ai-embedded-llm-client',
-						$embedded_script_path,
-						array( 'webllm-loader' ), // Depends on the loader.
-						$embedded_script_version,
-						true
-					);
-				}
-
-				// Enqueue the loader and embedded client.
+				// Enqueue embedded provider scripts.
 				// WordPress ensures these are only loaded once even if called multiple times.
 				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 			}
 
-			// Register or re-register chat script with proper dependencies.
-			// IMPORTANT: Only re-register if not already registered with embedded provider dependency.
-			$script_relative = 'assets/js/chat-bundle.min.js';
-			$script_path     = WP_MCP_AI_URL . $script_relative;
-			$script_version  = $this->get_asset_version( $script_relative );
-
-			// Check if we need to register/re-register with embedded provider dependency.
-			// In Elementor editor, we skip embedded provider so we should not add the dependency.
-			$should_register_with_embedded = $needs_embedded_provider && ! $is_elementor_editor;
-			$already_registered            = wp_script_is( self::SCRIPT_HANDLE, 'registered' );
-			$was_deregistered              = false;
-
-			// Only re-register if:
-			// 1. Not registered yet, OR
-			// 2. Registered without embedded provider dependency but we need it now.
-			if ( ! $already_registered || ( $should_register_with_embedded && $already_registered ) ) {
-				// If already registered, check if it has the embedded provider dependency.
-				if ( $already_registered ) {
-					global $wp_scripts;
-					$has_embedded_dep = isset( $wp_scripts->registered[ self::SCRIPT_HANDLE ] )
-						&& isset( $wp_scripts->registered[ self::SCRIPT_HANDLE ]->deps )
-						&& in_array( 'wp-mcp-ai-embedded-llm-client', $wp_scripts->registered[ self::SCRIPT_HANDLE ]->deps, true );
-
-					// Only re-register if we need embedded dep but don't have it.
-					if ( $should_register_with_embedded && ! $has_embedded_dep ) {
-						wp_deregister_script( self::SCRIPT_HANDLE );
-						$already_registered = false;
-						$was_deregistered   = true;
-					}
-				}
-
-				// Register with appropriate dependencies.
-				if ( ! $already_registered ) {
-					$script_deps = $should_register_with_embedded ? array( 'wp-mcp-ai-embedded-llm-client' ) : array();
-
-					wp_register_script(
-						self::SCRIPT_HANDLE,
-						$script_path,
-						$script_deps,
-						$script_version,
-						true
-					);
-
-					// Apply localization after registration.
-					// Always reapply if script was deregistered to ensure localization data is not lost.
-					if ( ! $is_elementor_editor && ( $was_deregistered || ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) ) {
-						$this->apply_script_localization( $settings );
-					}
-				}
-			} elseif ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
-				// Fallback: use register_assets() if script is not registered yet.
-				$this->register_assets();
-			}
-
+			// Enqueue chat script (always with same dependencies - no conditional changes).
+			// This prevents conflicts when multiple widgets with different providers are on the same page.
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
 
