@@ -298,10 +298,14 @@ class WP_MCP_AI_Shortcode {
 	/**
 	 * Get localized strings for the chat interface.
 	 *
+	 * Provides all user-facing text strings for the JavaScript chat widget,
+	 * including UI labels, status messages, error messages, and role labels.
+	 * Strings are translatable via WordPress i18n functions.
+	 *
 	 * @return array Array of localized strings for JavaScript.
 	 */
 	protected function get_strings() {
-		return array(
+		$strings = array(
 			'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
 			'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
 			'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
@@ -435,6 +439,29 @@ class WP_MCP_AI_Shortcode {
 				'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
 			),
 		);
+
+		/**
+		 * Filter the localized strings for the chat interface.
+		 *
+		 * Allows developers and themes to customize the chat interface text,
+		 * enabling white-label customization, brand-specific messaging, and
+		 * contextual modifications without modifying core plugin code.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $strings Array of localized strings with keys matching
+		 *                       JavaScript properties (e.g., 'placeholder', 'send', 'error').
+		 *
+		 * @example
+		 * ```php
+		 * add_filter( 'wp_mcp_ai_chat_strings', function( $strings ) {
+		 *     $strings['placeholder'] = 'How can we assist you today?';
+		 *     $strings['error'] = 'Something went wrong. Please contact support.';
+		 *     return $strings;
+		 * });
+		 * ```
+		 */
+		return apply_filters( 'wp_mcp_ai_chat_strings', $strings );
 	}
 
 	/**
