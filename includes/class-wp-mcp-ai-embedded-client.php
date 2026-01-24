@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 	/**
 	 * Provides a wrapper for embedded language models.
-	 * 
+	 *
 	 * This client downloads and manages small language models that can run
 	 * directly on the server without requiring external API calls or separate
 	 * inference servers like Ollama or LM Studio.
@@ -42,7 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'format'      => 'gguf',
 				'license'     => 'Apache 2.0',
 			),
-			'phi-3-mini-4k-instruct' => array(
+			'phi-3-mini-4k-instruct'  => array(
 				'name'        => 'Microsoft Phi-3 Mini',
 				'description' => 'Efficient 3.8B parameter model with 4K context',
 				'size'        => 2300000000, // ~2.3GB
@@ -51,7 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'format'      => 'gguf',
 				'license'     => 'MIT',
 			),
-			'qwen2-0.5b-instruct' => array(
+			'qwen2-0.5b-instruct'     => array(
 				'name'        => 'Qwen2 0.5B Instruct',
 				'description' => 'Ultra-compact 0.5B parameter model for basic tasks',
 				'size'        => 350000000, // ~350MB
@@ -115,11 +115,11 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					$downloaded[ $slug ] = array_merge(
 						$model,
 						array(
-							'slug'        => $slug,
-							'filepath'    => $filepath,
-							'filesize'    => filesize( $filepath ),
-							'downloaded'  => true,
-							'modified'    => filemtime( $filepath ),
+							'slug'       => $slug,
+							'filepath'   => $filepath,
+							'filesize'   => filesize( $filepath ),
+							'downloaded' => true,
+							'modified'   => filemtime( $filepath ),
 						)
 					);
 				}
@@ -355,7 +355,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 */
 		private function get_inference_binary() {
 			// Check for llama.cpp binary in plugin directory.
-			$plugin_dir = WP_MCP_AI_PLUGIN_DIR;
+			$plugin_dir = WP_MCP_AI_PATH;
 			$bin_dir    = trailingslashit( $plugin_dir ) . 'bin/llama.cpp/';
 
 			// Detect platform.
@@ -381,16 +381,18 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				return $binary_path;
 			}
 
-			// Check if llama-cli is in system PATH.
-			$which_result = shell_exec( 'which llama-cli 2>/dev/null' );
-			if ( ! empty( $which_result ) ) {
-				return trim( $which_result );
-			}
+			// Check if llama-cli is in system PATH (only if shell_exec is available).
+			if ( function_exists( 'shell_exec' ) && ! $this->is_shell_exec_disabled() ) {
+				$which_result = shell_exec( 'which llama-cli 2>/dev/null' );
+				if ( ! empty( $which_result ) ) {
+					return trim( $which_result );
+				}
 
-			// Check if llama-server is available (alternative).
-			$which_result = shell_exec( 'which llama-server 2>/dev/null' );
-			if ( ! empty( $which_result ) ) {
-				return trim( $which_result );
+				// Check if llama-server is available (alternative).
+				$which_result = shell_exec( 'which llama-server 2>/dev/null' );
+				if ( ! empty( $which_result ) ) {
+					return trim( $which_result );
+				}
 			}
 
 			// Detect platform for installation instructions.
@@ -475,7 +477,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 		 * @return string Installation instructions.
 		 */
 		private function get_binary_installation_instructions( $platform ) {
-			$os = $platform['os'];
+			$os              = $platform['os'];
 			$arch_normalized = $platform['arch_normalized'];
 
 			$instructions = __( 'Inference binary (llama.cpp) not found. ', 'mcp-ai-wpoos' );
@@ -565,14 +567,14 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 			$prompt = $this->build_prompt( $messages );
 
 			// Prepare inference command.
-			$max_tokens    = isset( $options['max_tokens'] ) ? intval( $options['max_tokens'] ) : 512;
-			$temperature   = isset( $options['temperature'] ) ? floatval( $options['temperature'] ) : 0.7;
-			$top_p         = isset( $options['top_p'] ) ? floatval( $options['top_p'] ) : 0.9;
+			$max_tokens  = isset( $options['max_tokens'] ) ? intval( $options['max_tokens'] ) : 512;
+			$temperature = isset( $options['temperature'] ) ? floatval( $options['temperature'] ) : 0.7;
+			$top_p       = isset( $options['top_p'] ) ? floatval( $options['top_p'] ) : 0.9;
 
 			// Escape shell arguments.
-			$binary_escaped   = escapeshellarg( $binary );
-			$model_escaped    = escapeshellarg( $model_filepath );
-			$prompt_escaped   = escapeshellarg( $prompt );
+			$binary_escaped = escapeshellarg( $binary );
+			$model_escaped  = escapeshellarg( $model_filepath );
+			$prompt_escaped = escapeshellarg( $prompt );
 
 			// Build command.
 			$command = sprintf(
@@ -593,6 +595,15 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					'max_tokens' => $max_tokens,
 				)
 			);
+
+			// Check if shell_exec is available.
+			if ( ! function_exists( 'shell_exec' ) || $this->is_shell_exec_disabled() ) {
+				return new WP_Error(
+					'wp_mcp_ai_shell_exec_disabled',
+					__( 'shell_exec() function is not available. This is required for embedded model inference. Please contact your hosting provider to enable it.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
 
 			// Execute inference.
 			$start_time = microtime( true );
@@ -670,7 +681,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				}
 			}
 
-			$prompt .= "Assistant: ";
+			$prompt .= 'Assistant: ';
 
 			return $prompt;
 		}
@@ -689,6 +700,29 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 
 			// Minimum 120 seconds for embedded inference.
 			return max( 120, $timeout );
+		}
+
+		/**
+		 * Check if shell_exec is disabled.
+		 *
+		 * @return bool True if shell_exec is disabled.
+		 */
+		private function is_shell_exec_disabled() {
+			// Check if shell_exec is in the list of disabled functions.
+			$disabled = ini_get( 'disable_functions' );
+			if ( ! empty( $disabled ) ) {
+				$disabled_functions = array_map( 'trim', explode( ',', $disabled ) );
+				if ( in_array( 'shell_exec', $disabled_functions, true ) ) {
+					return true;
+				}
+			}
+
+			// Check if safe mode is enabled (deprecated but still checked).
+			if ( function_exists( 'ini_get' ) && ini_get( 'safe_mode' ) ) {
+				return true;
+			}
+
+			return false;
 		}
 	}
 }
