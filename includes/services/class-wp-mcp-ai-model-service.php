@@ -610,6 +610,7 @@ class WP_MCP_AI_Model_Service {
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
 			'cloudflare'  => '@cf/meta/llama-3.2-3b-instruct',
+			'embedded'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
