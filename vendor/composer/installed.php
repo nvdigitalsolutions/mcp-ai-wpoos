@@ -1,6 +1,12 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-pro-settings-page-features',
+        'version' => 'dev-copilot/add-pro-settings-page-features',
+        'reference' => '0b3e42c90b9015504a3a431fd5ada21b67727ae9',
+        'pretty_version' => 'dev-copilot/improve-ai-integration',
+        'version' => 'dev-copilot/improve-ai-integration',
+        'reference' => '97dcea7b52872aba2a8e4e148996f311d1fadbbc',
         'pretty_version' => 'dev-copilot/install-composer-dependencies-again',
         'version' => 'dev-copilot/install-composer-dependencies-again',
         'reference' => '1521bf9f60df100e9109d835efb14ed49d77cff8',
@@ -11,6 +17,12 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-pro-settings-page-features',
+            'version' => 'dev-copilot/add-pro-settings-page-features',
+            'reference' => '0b3e42c90b9015504a3a431fd5ada21b67727ae9',
+            'pretty_version' => 'dev-copilot/improve-ai-integration',
+            'version' => 'dev-copilot/improve-ai-integration',
+            'reference' => '97dcea7b52872aba2a8e4e148996f311d1fadbbc',
             'pretty_version' => 'dev-copilot/install-composer-dependencies-again',
             'version' => 'dev-copilot/install-composer-dependencies-again',
             'reference' => '1521bf9f60df100e9109d835efb14ed49d77cff8',
