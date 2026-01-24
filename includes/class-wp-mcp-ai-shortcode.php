@@ -811,10 +811,8 @@ class WP_MCP_AI_Shortcode {
 
 					// Apply localization after registration.
 					// Always reapply if script was deregistered to ensure localization data is not lost.
-					if ( ! $is_elementor_editor ) {
-						if ( $was_deregistered || ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) {
-							$this->apply_script_localization( $settings );
-						}
+					if ( ! $is_elementor_editor && ( $was_deregistered || ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) ) {
+						$this->apply_script_localization( $settings );
 					}
 				}
 			} elseif ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {

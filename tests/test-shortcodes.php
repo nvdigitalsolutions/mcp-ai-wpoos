@@ -60,6 +60,27 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Get normalized localization data from registered script.
+	 *
+	 * @param string $handle Script handle.
+	 * @return string Concatenated localization data.
+	 */
+	protected function get_script_localization_data( $handle ) {
+		if ( ! isset( wp_scripts()->registered[ $handle ] ) ) {
+			return '';
+		}
+
+		$registered     = wp_scripts()->registered[ $handle ];
+		$localised_data = $registered->extra['data'] ?? array();
+
+		if ( is_string( $localised_data ) ) {
+			$localised_data = array( $localised_data );
+		}
+
+		return implode( "\n", $localised_data );
+	}
+
+	/**
 	 * Ensure that rendering the chat shortcode enqueues the assets once.
 	 */
 	public function test_chat_shortcode_enqueues_scripts_once() {
@@ -814,12 +835,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
 		$this->assertArrayHasKey( $handle, wp_scripts()->registered, 'Script should be registered after first shortcode.' );
 
-		$registered_after_first = wp_scripts()->registered[ $handle ];
-		$localised_data_first   = $registered_after_first->extra['data'] ?? array();
-		if ( is_string( $localised_data_first ) ) {
-			$localised_data_first = array( $localised_data_first );
-		}
-		$localised_first = implode( "\n", $localised_data_first );
+		$localised_first = $this->get_script_localization_data( $handle );
 
 		$this->assertNotEmpty( $localised_first, 'Localization data should exist after first shortcode.' );
 		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised_first, 'Nonce should be present in localization after first shortcode.' );
@@ -832,12 +848,7 @@ class Test_Shortcodes extends WP_UnitTestCase {
 		// Verify localization STILL exists after second shortcode (this is the critical check).
 		$this->assertArrayHasKey( $handle, wp_scripts()->registered, 'Script should still be registered after second shortcode.' );
 
-		$registered_after_second = wp_scripts()->registered[ $handle ];
-		$localised_data_second   = $registered_after_second->extra['data'] ?? array();
-		if ( is_string( $localised_data_second ) ) {
-			$localised_data_second = array( $localised_data_second );
-		}
-		$localised_second = implode( "\n", $localised_data_second );
+		$localised_second = $this->get_script_localization_data( $handle );
 
 		$this->assertNotEmpty( $localised_second, 'Localization data should STILL exist after second shortcode.' );
 		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised_second, 'Nonce should still be present in localization after second shortcode.' );
