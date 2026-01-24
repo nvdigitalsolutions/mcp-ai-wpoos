@@ -60,6 +60,27 @@ class Test_Shortcodes extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Get normalized localization data from registered script.
+	 *
+	 * @param string $handle Script handle.
+	 * @return string Concatenated localization data.
+	 */
+	protected function get_script_localization_data( $handle ) {
+		if ( ! isset( wp_scripts()->registered[ $handle ] ) ) {
+			return '';
+		}
+
+		$registered     = wp_scripts()->registered[ $handle ];
+		$localised_data = $registered->extra['data'] ?? array();
+
+		if ( is_string( $localised_data ) ) {
+			$localised_data = array( $localised_data );
+		}
+
+		return implode( "\n", $localised_data );
+	}
+
+	/**
 	 * Ensure that rendering the chat shortcode enqueues the assets once.
 	 */
 	public function test_chat_shortcode_enqueues_scripts_once() {
@@ -775,5 +796,71 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$chat_script->deps,
 			'chat script should NOT depend on embedded-llm-client when provider is not embedded.'
 		);
+	}
+
+	/**
+	 * Test that localization is preserved when multiple shortcodes are rendered on the same page.
+	 * This test specifically addresses the issue where embedded provider widgets would cause
+	 * script deregistration, losing the localization data.
+	 */
+	public function test_multiple_shortcodes_preserve_localization() {
+		// Create two assistants: one regular, one that would use embedded provider.
+		$assistant_1 = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Regular Assistant',
+			)
+		);
+
+		$assistant_2 = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Second Assistant',
+			)
+		);
+
+		// Reset scripts to simulate fresh page load.
+		wp_scripts()->reset();
+
+		// Trigger init hook to register assets.
+		do_action( 'init' );
+
+		// Render first shortcode.
+		$markup_1 = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_1 ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup_1, 'First shortcode should render.' );
+
+		// Verify localization exists after first shortcode.
+		$handle = WP_MCP_AI_Shortcode::SCRIPT_HANDLE;
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered, 'Script should be registered after first shortcode.' );
+
+		$localised_first = $this->get_script_localization_data( $handle );
+
+		$this->assertNotEmpty( $localised_first, 'Localization data should exist after first shortcode.' );
+		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised_first, 'Nonce should be present in localization after first shortcode.' );
+		$this->assertMatchesRegularExpression( '/"restUrl":"[^"]+"/', $localised_first, 'restUrl should be present in localization after first shortcode.' );
+
+		// Render second shortcode.
+		$markup_2 = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_2 ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup_2, 'Second shortcode should render.' );
+
+		// Verify localization STILL exists after second shortcode (this is the critical check).
+		$this->assertArrayHasKey( $handle, wp_scripts()->registered, 'Script should still be registered after second shortcode.' );
+
+		$localised_second = $this->get_script_localization_data( $handle );
+
+		$this->assertNotEmpty( $localised_second, 'Localization data should STILL exist after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"nonce":"[^"]+"/', $localised_second, 'Nonce should still be present in localization after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"restUrl":"[^"]+"/', $localised_second, 'restUrl should still be present in localization after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"uploadEndpoint":"[^"]+"/', $localised_second, 'uploadEndpoint should still be present in localization after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"filesEndpoint":"[^"]+"/', $localised_second, 'filesEndpoint should still be present in localization after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"toolsEndpoint":"[^"]+"/', $localised_second, 'toolsEndpoint should still be present in localization after second shortcode.' );
+		$this->assertMatchesRegularExpression( '/"transcriptsEndpoint":"[^"]+"/', $localised_second, 'transcriptsEndpoint should still be present in localization after second shortcode.' );
+
+		// Verify script is enqueued only once.
+		$script_counts = array_count_values( wp_scripts()->queue );
+		$this->assertArrayHasKey( $handle, $script_counts, 'Script should be in the queue.' );
+		$this->assertSame( 1, $script_counts[ $handle ], 'Script should be enqueued exactly once despite multiple shortcodes.' );
 	}
 }
