@@ -107,12 +107,12 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'hashtags'              => array(
+				'hashtags'                => array(
 					'type'        => 'array',
 					'description' => __( 'Specific hashtags to track (without # symbol)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'platforms'             => array(
+				'platforms'               => array(
 					'type'        => 'array',
 					'description' => __( 'Platforms to analyze (default: all connected)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -120,15 +120,15 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 						'enum' => array( 'twitter', 'instagram', 'tiktok', 'linkedin' ),
 					),
 				),
-				'date_from'             => array(
+				'date_from'               => array(
 					'type'        => 'string',
 					'description' => __( 'Start date (Y-m-d format, default: 30 days ago)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'               => array(
+				'date_to'                 => array(
 					'type'        => 'string',
 					'description' => __( 'End date (Y-m-d format, default: today)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_trending'      => array(
+				'include_trending'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include trending hashtags discovery', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -138,19 +138,19 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 					'description' => __( 'Include hashtag recommendations', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'min_reach'             => array(
+				'min_reach'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum reach threshold for trending hashtags', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1000,
 					'minimum'     => 0,
 				),
-				'sort_by'               => array(
+				'sort_by'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Sort results by metric', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'reach', 'engagement', 'impressions', 'posts_count' ),
 					'default'     => 'engagement',
 				),
-				'limit'                 => array(
+				'limit'                   => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of hashtags to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
@@ -203,13 +203,13 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Parse and sanitize arguments.
-		$hashtags    = isset( $arguments['hashtags'] ) && is_array( $arguments['hashtags'] ) ? array_map( 'sanitize_text_field', $arguments['hashtags'] ) : array();
-		$platforms   = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] ) ? array_map( 'sanitize_text_field', $arguments['platforms'] ) : array();
-		$date_from   = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
-		$date_to     = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : gmdate( 'Y-m-d' );
-		$min_reach   = isset( $arguments['min_reach'] ) ? absint( $arguments['min_reach'] ) : 1000;
-		$sort_by     = isset( $arguments['sort_by'] ) ? sanitize_text_field( $arguments['sort_by'] ) : 'engagement';
-		$limit       = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
+		$hashtags  = isset( $arguments['hashtags'] ) && is_array( $arguments['hashtags'] ) ? array_map( 'sanitize_text_field', $arguments['hashtags'] ) : array();
+		$platforms = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] ) ? array_map( 'sanitize_text_field', $arguments['platforms'] ) : array();
+		$date_from = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
+		$date_to   = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : gmdate( 'Y-m-d' );
+		$min_reach = isset( $arguments['min_reach'] ) ? absint( $arguments['min_reach'] ) : 1000;
+		$sort_by   = isset( $arguments['sort_by'] ) ? sanitize_text_field( $arguments['sort_by'] ) : 'engagement';
+		$limit     = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
 
 		// Validate date range.
 		if ( strtotime( $date_from ) > strtotime( $date_to ) ) {
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 
 		// Clean hashtags (remove # if present).
 		$hashtags = array_map(
-			function( $tag ) {
+			function ( $tag ) {
 				return ltrim( $tag, '#' );
 			},
 			$hashtags
@@ -316,18 +316,18 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 
 		foreach ( $hashtags as $hashtag ) {
 			$hashtag_data = array(
-				'hashtag'      => $hashtag,
-				'total_reach'  => 0,
-				'total_engagement' => 0,
+				'hashtag'           => $hashtag,
+				'total_reach'       => 0,
+				'total_engagement'  => 0,
 				'total_impressions' => 0,
-				'total_posts'  => 0,
-				'by_platform'  => array(),
+				'total_posts'       => 0,
+				'by_platform'       => array(),
 			);
 
 			foreach ( $platforms as $platform ) {
-				$platform_data = $this->get_hashtag_platform_data( $hashtag, $platform, $date_from, $date_to );
+				$platform_data                            = $this->get_hashtag_platform_data( $hashtag, $platform, $date_from, $date_to );
 				$hashtag_data['by_platform'][ $platform ] = $platform_data;
-				
+
 				$hashtag_data['total_reach']       += $platform_data['reach'];
 				$hashtag_data['total_engagement']  += $platform_data['engagement'];
 				$hashtag_data['total_impressions'] += $platform_data['impressions'];
@@ -344,7 +344,7 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		// Sort by requested metric.
 		usort(
 			$tracked,
-			function( $a, $b ) use ( $sort_by ) {
+			function ( $a, $b ) use ( $sort_by ) {
 				$key = 'total_' . $sort_by;
 				if ( ! isset( $a[ $key ] ) ) {
 					$key = $sort_by;
@@ -394,7 +394,7 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		$trending = array();
 
 		foreach ( $platforms as $platform ) {
-			$platform_trending = $this->get_platform_trending_hashtags( $platform, $date_from, $date_to, $min_reach );
+			$platform_trending     = $this->get_platform_trending_hashtags( $platform, $date_from, $date_to, $min_reach );
 			$trending[ $platform ] = array_slice( $platform_trending, 0, $limit );
 		}
 
@@ -439,10 +439,10 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		// Analyze current hashtag performance.
 		if ( ! empty( $hashtags ) ) {
 			$performance = $this->track_specific_hashtags( $hashtags, $platforms, $date_from, $date_to, 'engagement' );
-			
+
 			// Find related high-performing hashtags.
 			$recommendations['suggested_hashtags'] = $this->find_related_hashtags( $hashtags, $platforms );
-			
+
 			// Analyze best posting times.
 			$recommendations['best_times_to_post'] = $this->analyze_optimal_posting_times( $hashtags, $platforms, $date_from, $date_to );
 		}
@@ -496,13 +496,33 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function get_optimal_hashtag_count( $platform ) {
 		$recommendations = array(
-			'twitter'   => array( 'min' => 1, 'max' => 2, 'optimal' => 1 ),
-			'instagram' => array( 'min' => 3, 'max' => 30, 'optimal' => 11 ),
-			'tiktok'    => array( 'min' => 3, 'max' => 5, 'optimal' => 4 ),
-			'linkedin'  => array( 'min' => 1, 'max' => 3, 'optimal' => 2 ),
+			'twitter'   => array(
+				'min'     => 1,
+				'max'     => 2,
+				'optimal' => 1,
+			),
+			'instagram' => array(
+				'min'     => 3,
+				'max'     => 30,
+				'optimal' => 11,
+			),
+			'tiktok'    => array(
+				'min'     => 3,
+				'max'     => 5,
+				'optimal' => 4,
+			),
+			'linkedin'  => array(
+				'min'     => 1,
+				'max'     => 3,
+				'optimal' => 2,
+			),
 		);
 
-		return $recommendations[ $platform ] ?? array( 'min' => 1, 'max' => 5, 'optimal' => 3 );
+		return $recommendations[ $platform ] ?? array(
+			'min'     => 1,
+			'max'     => 5,
+			'optimal' => 3,
+		);
 	}
 
 	/**
@@ -517,8 +537,8 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 	protected function get_platform_insights( $platform, $hashtags ) {
 		// Mock data - in production, provide actionable insights.
 		return array(
-			'tips'        => array(),
-			'warnings'    => array(),
+			'tips'          => array(),
+			'warnings'      => array(),
 			'opportunities' => array(),
 		);
 	}
@@ -541,14 +561,14 @@ class WP_MCP_AI_Tool_Track_Hashtag_Performance implements WP_MCP_AI_Tool_Interfa
 		);
 
 		if ( isset( $response['tracked_hashtags'] ) && ! empty( $response['tracked_hashtags'] ) ) {
-			$tracked = $response['tracked_hashtags'];
+			$tracked                           = $response['tracked_hashtags'];
 			$summary['total_hashtags_tracked'] = count( $tracked );
 			$summary['best_performing']        = $tracked[0] ?? null;
 			$summary['worst_performing']       = end( $tracked ) ?: null;
-			
+
 			$total_engagement = array_sum( array_column( $tracked, 'total_engagement' ) );
 			$total_reach      = array_sum( array_column( $tracked, 'total_reach' ) );
-			
+
 			$summary['average_engagement'] = round( $total_engagement / count( $tracked ), 2 );
 			$summary['average_reach']      = round( $total_reach / count( $tracked ), 2 );
 		}

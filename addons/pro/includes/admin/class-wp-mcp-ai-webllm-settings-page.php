@@ -23,21 +23,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  * WebLLM Advanced Features Settings Page
  */
 class WP_MCP_AI_WebLLM_Settings_Page {
-	
+
 	/**
 	 * Settings option name
 	 *
 	 * @var string
 	 */
 	const OPTION_NAME = 'wp_mcp_ai_webllm_settings';
-	
+
 	/**
 	 * Page slug
 	 *
 	 * @var string
 	 */
 	const PAGE_SLUG = 'wp-mcp-ai-webllm-settings';
-	
+
 	/**
 	 * Constructor
 	 */
@@ -46,7 +46,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 	}
-	
+
 	/**
 	 * Add settings page to admin menu
 	 */
@@ -60,7 +60,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			array( $this, 'render_settings_page' )
 		);
 	}
-	
+
 	/**
 	 * Register settings
 	 */
@@ -74,15 +74,15 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 				'default'           => $this->get_default_settings(),
 			)
 		);
-		
-		// Feature Flags Section
+
+		// Feature Flags Section.
 		add_settings_section(
 			'webllm_features',
 			__( 'Feature Flags', 'mcp-ai-wpoos' ),
 			array( $this, 'render_features_section' ),
 			self::PAGE_SLUG
 		);
-		
+
 		add_settings_field(
 			'enable_tool_calling',
 			__( 'Enable Tool Calling', 'mcp-ai-wpoos' ),
@@ -90,7 +90,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			self::PAGE_SLUG,
 			'webllm_features'
 		);
-		
+
 		add_settings_field(
 			'enable_multimodal',
 			__( 'Enable Multi-Modal (Vision)', 'mcp-ai-wpoos' ),
@@ -98,15 +98,15 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			self::PAGE_SLUG,
 			'webllm_features'
 		);
-		
-		// Performance Section
+
+		// Performance Section.
 		add_settings_section(
 			'webllm_performance',
 			__( 'Performance & Optimization', 'mcp-ai-wpoos' ),
 			array( $this, 'render_performance_section' ),
 			self::PAGE_SLUG
 		);
-		
+
 		add_settings_field(
 			'cache_models',
 			__( 'Cache Models in Browser', 'mcp-ai-wpoos' ),
@@ -114,7 +114,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			self::PAGE_SLUG,
 			'webllm_performance'
 		);
-		
+
 		add_settings_field(
 			'max_tools',
 			__( 'Maximum Tools per Request', 'mcp-ai-wpoos' ),
@@ -122,15 +122,15 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			self::PAGE_SLUG,
 			'webllm_performance'
 		);
-		
-		// Debug Section
+
+		// Debug Section.
 		add_settings_section(
 			'webllm_debug',
 			__( 'Debug & Diagnostics', 'mcp-ai-wpoos' ),
 			array( $this, 'render_debug_section' ),
 			self::PAGE_SLUG
 		);
-		
+
 		add_settings_field(
 			'enable_console_logs',
 			__( 'Enable Console Logging', 'mcp-ai-wpoos' ),
@@ -139,7 +139,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			'webllm_debug'
 		);
 	}
-	
+
 	/**
 	 * Get default settings
 	 *
@@ -147,14 +147,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 	 */
 	private function get_default_settings() {
 		return array(
-			'enable_tool_calling'  => false,
-			'enable_multimodal'    => false,
-			'cache_models'         => true,
-			'max_tools'            => 20,
-			'enable_console_logs'  => false,
+			'enable_tool_calling' => false,
+			'enable_multimodal'   => false,
+			'cache_models'        => true,
+			'max_tools'           => 20,
+			'enable_console_logs' => false,
 		);
 	}
-	
+
 	/**
 	 * Sanitize settings
 	 *
@@ -163,27 +163,27 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 	 */
 	public function sanitize_settings( $input ) {
 		$sanitized = array();
-		
+
 		$sanitized['enable_tool_calling'] = ! empty( $input['enable_tool_calling'] );
 		$sanitized['enable_multimodal']   = ! empty( $input['enable_multimodal'] );
 		$sanitized['cache_models']        = ! empty( $input['cache_models'] );
 		$sanitized['max_tools']           = absint( $input['max_tools'] ?? 20 );
 		$sanitized['enable_console_logs'] = ! empty( $input['enable_console_logs'] );
-		
-		// Validate max_tools range
+
+		// Validate max_tools range.
 		if ( $sanitized['max_tools'] < 1 ) {
 			$sanitized['max_tools'] = 1;
 		} elseif ( $sanitized['max_tools'] > 50 ) {
 			$sanitized['max_tools'] = 50;
 		}
-		
-		// Update legacy options for backward compatibility
+
+		// Update legacy options for backward compatibility.
 		update_option( 'wp_mcp_ai_enable_webllm_tools', $sanitized['enable_tool_calling'] );
 		update_option( 'wp_mcp_ai_enable_webllm_vision', $sanitized['enable_multimodal'] );
-		
+
 		return $sanitized;
 	}
-	
+
 	/**
 	 * Render settings page
 	 */
@@ -191,7 +191,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		
+
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -259,14 +259,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</div>
 		<?php
 	}
-	
+
 	/**
 	 * Render features section description
 	 */
 	public function render_features_section() {
 		echo '<p>' . esc_html__( 'Enable experimental WebLLM features. These features are loaded conditionally to minimize bundle size.', 'mcp-ai-wpoos' ) . '</p>';
 	}
-	
+
 	/**
 	 * Render tool calling field
 	 */
@@ -276,9 +276,9 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		?>
 		<label>
 			<input type="checkbox" 
-			       name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_tool_calling]" 
-			       value="1" 
-			       <?php checked( $checked ); ?>>
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_tool_calling]" 
+					value="1" 
+					<?php checked( $checked ); ?>>
 			<?php esc_html_e( 'Enable browser-side tool calling (Experimental)', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
@@ -288,7 +288,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</p>
 		<?php
 	}
-	
+
 	/**
 	 * Render multimodal field
 	 */
@@ -298,9 +298,9 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		?>
 		<label>
 			<input type="checkbox" 
-			       name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_multimodal]" 
-			       value="1" 
-			       <?php checked( $checked ); ?>>
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_multimodal]" 
+					value="1" 
+					<?php checked( $checked ); ?>>
 			<?php esc_html_e( 'Enable vision models for image analysis (Experimental)', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
@@ -314,14 +314,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</p>
 		<?php
 	}
-	
+
 	/**
 	 * Render performance section description
 	 */
 	public function render_performance_section() {
 		echo '<p>' . esc_html__( 'Configure performance and optimization settings for WebLLM features.', 'mcp-ai-wpoos' ) . '</p>';
 	}
-	
+
 	/**
 	 * Render cache models field
 	 */
@@ -331,9 +331,9 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		?>
 		<label>
 			<input type="checkbox" 
-			       name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cache_models]" 
-			       value="1" 
-			       <?php checked( $checked ); ?>>
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[cache_models]" 
+					value="1" 
+					<?php checked( $checked ); ?>>
 			<?php esc_html_e( 'Cache downloaded models in browser storage', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
@@ -343,7 +343,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</p>
 		<?php
 	}
-	
+
 	/**
 	 * Render max tools field
 	 */
@@ -352,11 +352,11 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		$value    = absint( $settings['max_tools'] ?? 20 );
 		?>
 		<input type="number" 
-		       name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_tools]" 
-		       value="<?php echo esc_attr( $value ); ?>" 
-		       min="1" 
-		       max="50" 
-		       class="small-text">
+				name="<?php echo esc_attr( self::OPTION_NAME ); ?>[max_tools]" 
+				value="<?php echo esc_attr( $value ); ?>" 
+				min="1" 
+				max="50" 
+				class="small-text">
 		<p class="description">
 			<?php esc_html_e( 'Maximum number of tools to pass to the model in a single request. Lower values improve performance but limit tool availability.', 'mcp-ai-wpoos' ); ?>
 			<br>
@@ -366,14 +366,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</p>
 		<?php
 	}
-	
+
 	/**
 	 * Render debug section description
 	 */
 	public function render_debug_section() {
 		echo '<p>' . esc_html__( 'Debug and diagnostic options for troubleshooting WebLLM features.', 'mcp-ai-wpoos' ) . '</p>';
 	}
-	
+
 	/**
 	 * Render console logs field
 	 */
@@ -383,9 +383,9 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		?>
 		<label>
 			<input type="checkbox" 
-			       name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_console_logs]" 
-			       value="1" 
-			       <?php checked( $checked ); ?>>
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_console_logs]" 
+					value="1" 
+					<?php checked( $checked ); ?>>
 			<?php esc_html_e( 'Enable verbose console logging', 'mcp-ai-wpoos' ); ?>
 		</label>
 		<p class="description">
@@ -401,7 +401,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		</p>
 		<?php
 	}
-	
+
 	/**
 	 * Enqueue admin assets
 	 *
@@ -411,9 +411,11 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		if ( false === strpos( $hook, self::PAGE_SLUG ) ) {
 			return;
 		}
-		
-		// Add custom CSS for settings page
-		wp_add_inline_style( 'wp-admin', '
+
+		// Add custom CSS for settings page.
+		wp_add_inline_style(
+			'wp-admin',
+			'
 			.webllm-info-card h2 { margin-top: 0; }
 			.webllm-info-card ul { margin-left: 20px; }
 			.webllm-info-card code { 
@@ -422,9 +424,10 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 				border-radius: 3px; 
 				font-size: 13px;
 			}
-		' );
+		'
+		);
 	}
 }
 
-// Initialize settings page
+// Initialize settings page.
 new WP_MCP_AI_WebLLM_Settings_Page();

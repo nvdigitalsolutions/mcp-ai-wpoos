@@ -114,7 +114,7 @@ class WP_MCP_AI_Media_Design_Page {
 	 */
 	public static function admin_head_styles() {
 		$screen = get_current_screen();
-		
+
 		// Only output on our design page.
 		if ( ! $screen || 'media_page_' . self::PAGE_SLUG !== $screen->id ) {
 			return;

@@ -102,30 +102,30 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'event_type'  => array(
+				'event_type' => array(
 					'type'        => 'string',
 					'description' => 'Type of event to track',
 					'enum'        => array( 'page_view', 'click', 'form_submission', 'purchase', 'custom' ),
 				),
-				'event_name'  => array(
+				'event_name' => array(
 					'type'        => 'string',
 					'description' => 'Name of the event',
 					'maxLength'   => 255,
 				),
-				'event_data'  => array(
+				'event_data' => array(
 					'type'        => 'object',
 					'description' => 'Event-specific data',
 				),
-				'page_url'    => array(
+				'page_url'   => array(
 					'type'        => 'string',
 					'description' => 'URL where event occurred',
 				),
-				'user_id'     => array(
+				'user_id'    => array(
 					'type'        => 'integer',
 					'description' => 'User ID (0 for anonymous)',
 					'minimum'     => 0,
 				),
-				'session_id'  => array(
+				'session_id' => array(
 					'type'        => 'string',
 					'description' => 'Session identifier',
 				),
@@ -154,8 +154,8 @@ class WP_MCP_AI_Tool_Real_Time_Event_Tracking implements WP_MCP_AI_Tool_Interfac
 	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'      => true,
-			'real_time'      => true,
+			'analytics'       => true,
+			'real_time'       => true,
 			'data_collection' => true,
 		);
 	}

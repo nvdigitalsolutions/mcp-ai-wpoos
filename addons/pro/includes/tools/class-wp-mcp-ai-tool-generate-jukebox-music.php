@@ -47,50 +47,50 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'prompt' => array(
-					'type' => 'string',
+			'type'                 => 'object',
+			'properties'           => array(
+				'prompt'        => array(
+					'type'        => 'string',
 					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano with vocals" or "rock ballad in the style of Queen").', 'mcp-ai-wpoos-pro' ),
 				),
-				'model' => array(
-					'type' => 'string',
+				'model'         => array(
+					'type'        => 'string',
 					'description' => __( 'Jukebox model to use: "1b_lyrics" (faster, lower quality), "5b" (no lyrics), or "5b_lyrics" (best quality with lyrics).', 'mcp-ai-wpoos-pro' ),
-					'enum' => array( '1b_lyrics', '5b', '5b_lyrics' ),
-					'default' => WP_MCP_AI_Jukebox_Service::DEFAULT_MODEL,
+					'enum'        => array( '1b_lyrics', '5b', '5b_lyrics' ),
+					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_MODEL,
 				),
 				'sample_length' => array(
-					'type' => 'integer',
+					'type'        => 'integer',
 					'description' => __( 'Duration of the music in seconds (1-60). Note: Longer samples take significantly more time to generate.', 'mcp-ai-wpoos-pro' ),
-					'default' => WP_MCP_AI_Jukebox_Service::DEFAULT_SAMPLE_LENGTH,
-					'minimum' => 1,
-					'maximum' => WP_MCP_AI_Jukebox_Service::MAX_SAMPLE_LENGTH,
+					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_SAMPLE_LENGTH,
+					'minimum'     => 1,
+					'maximum'     => WP_MCP_AI_Jukebox_Service::MAX_SAMPLE_LENGTH,
 				),
-				'artist' => array(
-					'type' => 'string',
+				'artist'        => array(
+					'type'        => 'string',
 					'description' => __( 'Optional artist style to emulate (e.g., "Ella Fitzgerald", "Frank Sinatra", "The Beatles").', 'mcp-ai-wpoos-pro' ),
 				),
-				'genre' => array(
-					'type' => 'string',
+				'genre'         => array(
+					'type'        => 'string',
 					'description' => __( 'Optional music genre (e.g., "jazz", "rock", "classical", "pop", "country").', 'mcp-ai-wpoos-pro' ),
 				),
-				'lyrics' => array(
-					'type' => 'string',
+				'lyrics'        => array(
+					'type'        => 'string',
 					'description' => __( 'Optional custom lyrics for the AI to sing. Only works with models that include "_lyrics" in the name.', 'mcp-ai-wpoos-pro' ),
 				),
-				'temperature' => array(
-					'type' => 'number',
+				'temperature'   => array(
+					'type'        => 'number',
 					'description' => __( 'Optional creativity level (0.0-1.0, higher = more random). Default is 0.98.', 'mcp-ai-wpoos-pro' ),
-					'default' => WP_MCP_AI_Jukebox_Service::DEFAULT_TEMPERATURE,
-					'minimum' => 0.0,
-					'maximum' => 1.0,
+					'default'     => WP_MCP_AI_Jukebox_Service::DEFAULT_TEMPERATURE,
+					'minimum'     => 0.0,
+					'maximum'     => 1.0,
 				),
-				'file_name' => array(
-					'type' => 'string',
+				'file_name'     => array(
+					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
-			'required' => array( 'prompt' ),
+			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -196,15 +196,15 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		// Build result array.
 		$output = array(
 			'attachment_id' => $storage['attachment_id'],
-			'url' => $storage['url'],
-			'file_path' => $storage['file'],
-			'file_name' => $storage['file_name'],
-			'mime_type' => $storage['mime_type'],
-			'bytes' => $storage['bytes'],
-			'format' => $result['format'],
+			'url'           => $storage['url'],
+			'file_path'     => $storage['file'],
+			'file_name'     => $storage['file_name'],
+			'mime_type'     => $storage['mime_type'],
+			'bytes'         => $storage['bytes'],
+			'format'        => $result['format'],
 			'sample_length' => $result['sample_length'],
-			'prompt' => $prompt,
-			'model' => $result['model'],
+			'prompt'        => $prompt,
+			'model'         => $result['model'],
 		);
 
 		if ( ! empty( $storage['duration_formatted'] ) ) {
@@ -232,8 +232,8 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 			array(
 				'attachment_id' => $storage['attachment_id'],
 				'sample_length' => $result['sample_length'],
-				'format' => $result['format'],
-				'model' => $result['model'],
+				'format'        => $result['format'],
+				'model'         => $result['model'],
 			)
 		);
 
@@ -283,9 +283,9 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 
 		// Determine MIME type.
 		$mime_types = array(
-			'wav' => 'audio/wav',
-			'mp3' => 'audio/mpeg',
-			'ogg' => 'audio/ogg',
+			'wav'  => 'audio/wav',
+			'mp3'  => 'audio/mpeg',
+			'ogg'  => 'audio/ogg',
 			'flac' => 'audio/flac',
 		);
 
@@ -331,9 +331,9 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		// Create attachment post.
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title' => $title,
-			'post_content' => '',
-			'post_status' => 'inherit',
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -392,15 +392,15 @@ class WP_MCP_AI_Tool_Generate_Jukebox_Music implements WP_MCP_AI_Tool_Interface,
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
-			'attachment_id' => (int) $attachment_id,
-			'file' => $file_path,
-			'file_name' => wp_basename( $file_path ),
-			'url' => $local_url,
-			'mime_type' => $mime_type,
-			'bytes' => $bytes ? (int) $bytes : 0,
-			'duration' => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
+			'attachment_id'      => (int) $attachment_id,
+			'file'               => $file_path,
+			'file_name'          => wp_basename( $file_path ),
+			'url'                => $local_url,
+			'mime_type'          => $mime_type,
+			'bytes'              => $bytes ? (int) $bytes : 0,
+			'duration'           => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
 			'duration_formatted' => isset( $metadata['length_formatted'] ) ? $metadata['length_formatted'] : '',
-			'title' => $title,
+			'title'              => $title,
 		);
 	}
 

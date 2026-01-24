@@ -169,7 +169,7 @@ class WP_MCP_AI_Task_Plan_Seeder {
 	 * @return string
 	 */
 	private static function generate_ecommerce_launch_plan() {
-		return "# E-commerce Store Launch
+		return '# E-commerce Store Launch
 
 ## Goal
 Launch a professional e-commerce store from scratch, covering platform setup, product listings, payment integration, and marketing preparation.
@@ -204,7 +204,7 @@ Launch a professional e-commerce store from scratch, covering platform setup, pr
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: E-commerce
 ';
 	}
@@ -215,7 +215,7 @@ Toolkit: E-commerce
 	 * @return string
 	 */
 	private static function generate_social_media_campaign_plan() {
-		return "# Social Media Marketing Campaign
+		return '# Social Media Marketing Campaign
 
 ## Goal
 Execute a comprehensive social media marketing campaign across multiple platforms with scheduled content, engagement tracking, and analytics.
@@ -247,7 +247,7 @@ Execute a comprehensive social media marketing campaign across multiple platform
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Social Media
 ';
 	}
@@ -258,7 +258,7 @@ Toolkit: Social Media
 	 * @return string
 	 */
 	private static function generate_financial_portfolio_plan() {
-		return "# Client Financial Portfolio Analysis
+		return '# Client Financial Portfolio Analysis
 
 ## Goal
 Conduct a comprehensive financial portfolio analysis for a client, including risk assessment, retirement planning, and investment recommendations.
@@ -290,7 +290,7 @@ Conduct a comprehensive financial portfolio analysis for a client, including ris
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Financial Planner
 ';
 	}
@@ -301,7 +301,7 @@ Toolkit: Financial Planner
 	 * @return string
 	 */
 	private static function generate_analytics_audit_plan() {
-		return "# Website Analytics & Performance Audit
+		return '# Website Analytics & Performance Audit
 
 ## Goal
 Perform a complete analytics audit of website performance, user behavior, conversion funnels, and generate actionable insights for optimization.
@@ -334,7 +334,7 @@ Perform a complete analytics audit of website performance, user behavior, conver
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Analytics
 ';
 	}
@@ -345,7 +345,7 @@ Toolkit: Analytics
 	 * @return string
 	 */
 	private static function generate_video_production_plan() {
-		return "# Video Marketing Series Production
+		return '# Video Marketing Series Production
 
 ## Goal
 Plan, produce, and distribute a professional video marketing series including scripting, filming, editing, optimization, and multi-platform publishing.
@@ -376,7 +376,7 @@ Plan, produce, and distribute a professional video marketing series including sc
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Video Production
 ';
 	}
@@ -387,7 +387,7 @@ Toolkit: Video Production
 	 * @return string
 	 */
 	private static function generate_multilingual_expansion_plan() {
-		return "# Multilingual Website Expansion
+		return '# Multilingual Website Expansion
 
 ## Goal
 Expand website to support multiple languages with professional translation, localization, SEO optimization, and cultural adaptation.
@@ -416,7 +416,7 @@ Expand website to support multiple languages with professional translation, loca
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Multilingual
 ';
 	}
@@ -427,7 +427,7 @@ Toolkit: Multilingual
 	 * @return string
 	 */
 	private static function generate_content_marketing_plan() {
-		return "# Content Marketing Strategy Launch
+		return '# Content Marketing Strategy Launch
 
 ## Goal
 Develop and execute a complete content marketing strategy including blog series, social media distribution, SEO optimization, and performance tracking.
@@ -463,7 +463,7 @@ Develop and execute a complete content marketing strategy including blog series,
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Media + Social Media
 ';
 	}
@@ -474,7 +474,7 @@ Toolkit: Media + Social Media
 	 * @return string
 	 */
 	private static function generate_image_optimization_plan() {
-		return "# Product Photography & Image Optimization
+		return '# Product Photography & Image Optimization
 
 ## Goal
 Create professional product photography workflow with batch processing, background removal, optimization, and consistent branding across all product images.
@@ -503,7 +503,7 @@ Create professional product photography workflow with batch processing, backgrou
 
 ## Status
 Progress: 0%
-Created: " . current_time( 'Y-m-d H:i:s' ) . '
+Created: ' . current_time( 'Y-m-d H:i:s' ) . '
 Toolkit: Image Production
 ';
 	}

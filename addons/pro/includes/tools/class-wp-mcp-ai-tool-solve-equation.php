@@ -52,30 +52,30 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => array(
-				'equation' => array(
-					'type' => 'string',
+				'equation'   => array(
+					'type'        => 'string',
 					'description' => __( 'Equation to solve (e.g., "2x + 5 = 15" or "x^2 - 4 = 0")', 'mcp-ai-wpoos-pro' ),
 				),
-				'variable' => array(
-					'type' => 'string',
+				'variable'   => array(
+					'type'        => 'string',
 					'description' => __( 'Variable to solve for (default: x)', 'mcp-ai-wpoos-pro' ),
-					'default' => 'x',
+					'default'     => 'x',
 				),
 				'show_steps' => array(
-					'type' => 'boolean',
+					'type'        => 'boolean',
 					'description' => __( 'Show solution steps when available', 'mcp-ai-wpoos-pro' ),
-					'default' => false,
+					'default'     => false,
 				),
-				'format' => array(
-					'type' => 'string',
-					'enum' => array( 'latex', 'text', 'both' ),
+				'format'     => array(
+					'type'        => 'string',
+					'enum'        => array( 'latex', 'text', 'both' ),
 					'description' => __( 'Output format: latex (formatted), text (plain), or both', 'mcp-ai-wpoos-pro' ),
-					'default' => 'both',
+					'default'     => 'both',
 				),
 			),
-			'required' => array( 'equation' ),
+			'required'   => array( 'equation' ),
 		);
 	}
 
@@ -109,17 +109,17 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$equation  = sanitize_text_field( $arguments['equation'] );
-		$variable  = isset( $arguments['variable'] ) ? sanitize_text_field( $arguments['variable'] ) : 'x';
+		$equation   = sanitize_text_field( $arguments['equation'] );
+		$variable   = isset( $arguments['variable'] ) ? sanitize_text_field( $arguments['variable'] ) : 'x';
 		$show_steps = isset( $arguments['show_steps'] ) ? (bool) $arguments['show_steps'] : false;
-		$format    = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'both';
+		$format     = isset( $arguments['format'] ) ? sanitize_text_field( $arguments['format'] ) : 'both';
 
 		// Parse equation (split by = sign).
 		$parts = explode( '=', $equation );
 		if ( count( $parts ) !== 2 ) {
 			return array(
 				'success' => false,
-				'error' => __( 'Invalid equation format. Please use format: expression = expression (e.g., "2x + 5 = 15")', 'mcp-ai-wpoos-pro' ),
+				'error'   => __( 'Invalid equation format. Please use format: expression = expression (e.g., "2x + 5 = 15")', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -131,8 +131,8 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'wp_mcp_ai_mathjs_solve',
 			false,
 			array(
-				'left' => $left_side,
-				'right' => $right_side,
+				'left'     => $left_side,
+				'right'    => $right_side,
 				'variable' => $variable,
 			)
 		);
@@ -143,7 +143,7 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			if ( is_wp_error( $solution ) ) {
 				return array(
 					'success' => false,
-					'error' => $solution->get_error_message(),
+					'error'   => $solution->get_error_message(),
 				);
 			}
 			$math_result = array( 'solutions' => array( $solution ) );
@@ -154,7 +154,7 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $solutions ) ) {
 			return array(
 				'success' => false,
-				'error' => __( 'No solutions found for the given equation.', 'mcp-ai-wpoos-pro' ),
+				'error'   => __( 'No solutions found for the given equation.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -177,13 +177,13 @@ class WP_MCP_AI_Tool_Solve_Equation implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		$result = array(
-			'success' => true,
-			'message' => sprintf( __( 'Equation solved: %s', 'mcp-ai-wpoos-pro' ), $equation ),
-			'text' => sprintf( 'Solutions: %s', $text_output ),
-			'equation' => $equation,
-			'variable' => $variable,
-			'solutions' => $solutions,
-			'latex' => $latex_output,
+			'success'       => true,
+			'message'       => sprintf( __( 'Equation solved: %s', 'mcp-ai-wpoos-pro' ), $equation ),
+			'text'          => sprintf( 'Solutions: %s', $text_output ),
+			'equation'      => $equation,
+			'variable'      => $variable,
+			'solutions'     => $solutions,
+			'latex'         => $latex_output,
 			'solution_text' => $text_output,
 		);
 

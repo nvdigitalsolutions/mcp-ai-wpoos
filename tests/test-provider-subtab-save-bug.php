@@ -43,21 +43,21 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_openai'     => true,
-				'openai_api_key'    => 'sk-old-openai-key',
-				'enable_anthropic'  => true,
-				'anthropic_api_key' => 'sk-ant-old-key',
-				'enable_gemini'     => true,
-				'gemini_api_key'    => 'AIza-old-key',
-				'enable_ollama'     => true,
+				'enable_openai'       => true,
+				'openai_api_key'      => 'sk-old-openai-key',
+				'enable_anthropic'    => true,
+				'anthropic_api_key'   => 'sk-ant-old-key',
+				'enable_gemini'       => true,
+				'gemini_api_key'      => 'AIza-old-key',
+				'enable_ollama'       => true,
 				'ollama_endpoint_url' => 'http://localhost:11434',
 			)
 		);
 
 		// Simulate saving OpenAI subtab with new API key.
 		// This mimics what happens when user submits the form from Providers → OpenAI subtab.
-		$_POST['subtab_providers'] = 'openai';
-		$_POST['active_tab']        = 'providers';
+		$_POST['subtab_providers']   = 'openai';
+		$_POST['active_tab']         = 'providers';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_openai'  => '1', // Still enabled.
 			'openai_api_key' => 'sk-new-openai-key', // New key.
@@ -66,7 +66,7 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 
 		// Create dashboard and simulate save.
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
-		
+
 		// Call the sanitize_settings method directly (this is what handle_save_settings calls).
 		$sanitized = $dashboard->sanitize_settings( $_POST['wp_mcp_ai_settings'], 'providers' );
 
@@ -104,9 +104,9 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 		);
 
 		// Simulate form submission with save_all_tabs flag AND subtab (edge case).
-		$_POST['subtab_providers'] = 'openai';
-		$_POST['active_tab']        = 'providers';
-		$_POST['save_all_tabs']     = '1'; // This should be ignored when subtab is present!
+		$_POST['subtab_providers']   = 'openai';
+		$_POST['active_tab']         = 'providers';
+		$_POST['save_all_tabs']      = '1'; // This should be ignored when subtab is present!
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_openai'  => '1',
 			'openai_api_key' => 'sk-new-key',
@@ -133,15 +133,15 @@ class WP_MCP_AI_Provider_Subtab_Save_Bug_Test extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_logging' => false,
+				'enable_logging'  => false,
 				'request_timeout' => 60,
 			)
 		);
 
 		// Simulate form submission from simple settings page (save_all_tabs, no subtab).
 		// No subtab means we're on the flat settings page where ALL fields are visible.
-		$_POST['active_tab']        = 'general';
-		$_POST['save_all_tabs']     = '1';
+		$_POST['active_tab']         = 'general';
+		$_POST['save_all_tabs']      = '1';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_logging'  => '1', // Enabling logging.
 			'request_timeout' => '120', // Updating timeout.

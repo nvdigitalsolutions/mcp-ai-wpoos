@@ -48,33 +48,33 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'prompt' => array(
-					'type' => 'string',
+			'type'                 => 'object',
+			'properties'           => array(
+				'prompt'    => array(
+					'type'        => 'string',
 					'description' => __( 'Description of the desired music (e.g., "upbeat jazz piano trio" or "cinematic orchestral soundtrack").', 'mcp-ai-wpoos' ),
 				),
-				'duration' => array(
-					'type' => 'integer',
+				'duration'  => array(
+					'type'        => 'integer',
 					'description' => __( 'Duration of the music in seconds (15-1500). Mubert supports up to 25 minutes.', 'mcp-ai-wpoos' ),
-					'default' => WP_MCP_AI_Mubert_Music_Service::DEFAULT_DURATION,
-					'minimum' => WP_MCP_AI_Mubert_Music_Service::MIN_DURATION,
-					'maximum' => WP_MCP_AI_Mubert_Music_Service::MAX_DURATION,
+					'default'     => WP_MCP_AI_Mubert_Music_Service::DEFAULT_DURATION,
+					'minimum'     => WP_MCP_AI_Mubert_Music_Service::MIN_DURATION,
+					'maximum'     => WP_MCP_AI_Mubert_Music_Service::MAX_DURATION,
 				),
-				'genre' => array(
-					'type' => 'string',
+				'genre'     => array(
+					'type'        => 'string',
 					'description' => __( 'Optional music genre from 150+ available (e.g., "jazz", "rock", "classical", "electronic", "ambient").', 'mcp-ai-wpoos' ),
 				),
-				'mood' => array(
-					'type' => 'string',
+				'mood'      => array(
+					'type'        => 'string',
 					'description' => __( 'Optional mood from 50+ available (e.g., "upbeat", "calm", "dramatic", "mysterious", "energetic").', 'mcp-ai-wpoos' ),
 				),
 				'file_name' => array(
-					'type' => 'string',
+					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos' ),
 				),
 			),
-			'required' => array( 'prompt' ),
+			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -168,16 +168,16 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Build result array.
 		$output = array(
 			'attachment_id' => $storage['attachment_id'],
-			'url' => $storage['url'],
-			'file_path' => $storage['file'],
-			'file_name' => $storage['file_name'],
-			'mime_type' => $storage['mime_type'],
-			'bytes' => $storage['bytes'],
-			'format' => $result['format'],
-			'duration' => $result['duration'],
-			'sample_rate' => $result['sample_rate'],
-			'prompt' => $prompt,
-			'provider' => 'mubert',
+			'url'           => $storage['url'],
+			'file_path'     => $storage['file'],
+			'file_name'     => $storage['file_name'],
+			'mime_type'     => $storage['mime_type'],
+			'bytes'         => $storage['bytes'],
+			'format'        => $result['format'],
+			'duration'      => $result['duration'],
+			'sample_rate'   => $result['sample_rate'],
+			'prompt'        => $prompt,
+			'provider'      => 'mubert',
 		);
 
 		if ( ! empty( $storage['duration_formatted'] ) ) {
@@ -201,8 +201,8 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'Stored Mubert music generation as a media attachment.',
 			array(
 				'attachment_id' => $storage['attachment_id'],
-				'duration' => $result['duration'],
-				'format' => $result['format'],
+				'duration'      => $result['duration'],
+				'format'        => $result['format'],
 			)
 		);
 
@@ -242,9 +242,9 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 		// Determine file extension and MIME type.
 		$mime_types = array(
-			'wav' => 'audio/wav',
-			'mp3' => 'audio/mpeg',
-			'ogg' => 'audio/ogg',
+			'wav'  => 'audio/wav',
+			'mp3'  => 'audio/mpeg',
+			'ogg'  => 'audio/ogg',
 			'flac' => 'audio/flac',
 		);
 
@@ -297,9 +297,9 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		// Create attachment post.
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title' => $title,
-			'post_content' => '',
-			'post_status' => 'inherit',
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -355,17 +355,17 @@ class WP_MCP_AI_Tool_Generate_Music implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		return array(
-			'message' => $summary_text,
-			'summary' => $summary_text,
-			'attachment_id' => (int) $attachment_id,
-			'file' => $file_path,
-			'file_name' => wp_basename( $file_path ),
-			'url' => $local_url,
-			'mime_type' => $mime_type,
-			'bytes' => $bytes ? (int) $bytes : 0,
-			'duration' => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
+			'message'            => $summary_text,
+			'summary'            => $summary_text,
+			'attachment_id'      => (int) $attachment_id,
+			'file'               => $file_path,
+			'file_name'          => wp_basename( $file_path ),
+			'url'                => $local_url,
+			'mime_type'          => $mime_type,
+			'bytes'              => $bytes ? (int) $bytes : 0,
+			'duration'           => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
 			'duration_formatted' => isset( $metadata['length_formatted'] ) ? $metadata['length_formatted'] : '',
-			'title' => $title,
+			'title'              => $title,
 		);
 	}
 

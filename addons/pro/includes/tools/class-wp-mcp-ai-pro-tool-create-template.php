@@ -32,20 +32,20 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'create_template',
-			'description' => 'Creates a reusable task plan template with placeholders for variables, default configurations, and usage tracking. Templates can be used to standardize workflows like research, content creation, data analysis, or custom processes.',
+			'name'         => 'create_template',
+			'description'  => 'Creates a reusable task plan template with placeholders for variables, default configurations, and usage tracking. Templates can be used to standardize workflows like research, content creation, data analysis, or custom processes.',
 			'input_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
-					'template_name' => array(
+					'template_name'     => array(
 						'type'        => 'string',
 						'description' => 'Name of the template',
 					),
-					'description'   => array(
+					'description'       => array(
 						'type'        => 'string',
 						'description' => 'Description of what this template is for and when to use it',
 					),
-					'category'      => array(
+					'category'          => array(
 						'type'        => 'string',
 						'description' => 'Template category',
 						'enum'        => array( 'research', 'content', 'data_analysis', 'development', 'marketing', 'custom' ),
@@ -54,7 +54,7 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 						'type'        => 'string',
 						'description' => 'Markdown template content with placeholders like {{goal}}, {{topic}}, {{count}}, etc. Use GFM checkbox format for tasks.',
 					),
-					'default_config' => array(
+					'default_config'    => array(
 						'type'        => 'object',
 						'description' => 'Default configuration values',
 						'properties'  => array(
@@ -68,17 +68,17 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 							),
 						),
 					),
-					'tags'          => array(
+					'tags'              => array(
 						'type'        => 'array',
 						'description' => 'Tags for template organization',
 						'items'       => array( 'type' => 'string' ),
 					),
-					'version'       => array(
+					'version'           => array(
 						'type'        => 'string',
 						'description' => 'Template version (e.g., 1.0.0)',
 					),
 				),
-				'required' => array( 'template_name', 'description', 'category', 'markdown_template' ),
+				'required'   => array( 'template_name', 'description', 'category', 'markdown_template' ),
 			),
 		);
 	}
@@ -129,19 +129,19 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 		if ( $use_cct ) {
 			// Create template using CCT.
 			$template_data = array(
-				'template_name'     => $template_name,
-				'description'       => $description,
-				'category'          => $category,
-				'markdown_template' => $markdown_template,
-				'default_config'    => wp_json_encode( $default_config ),
-				'tags'              => is_array( $tags ) ? implode( ', ', $tags ) : '',
-				'status'            => 'draft',
-				'usage_count'       => 0,
-				'success_rate'      => 0,
+				'template_name'       => $template_name,
+				'description'         => $description,
+				'category'            => $category,
+				'markdown_template'   => $markdown_template,
+				'default_config'      => wp_json_encode( $default_config ),
+				'tags'                => is_array( $tags ) ? implode( ', ', $tags ) : '',
+				'status'              => 'draft',
+				'usage_count'         => 0,
+				'success_rate'        => 0,
 				'avg_completion_time' => 0,
-				'version'           => $version,
-				'author_id'         => $author_id,
-				'metadata'          => wp_json_encode( array( 'created_at' => current_time( 'mysql' ) ) ),
+				'version'             => $version,
+				'author_id'           => $author_id,
+				'metadata'            => wp_json_encode( array( 'created_at' => current_time( 'mysql' ) ) ),
 			);
 
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
@@ -195,14 +195,14 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 		$placeholders = array_unique( $matches[1] ?? array() );
 
 		return array(
-			'success'      => true,
-			'template_id'  => $template_id,
+			'success'       => true,
+			'template_id'   => $template_id,
 			'template_name' => $template_name,
-			'category'     => $category,
-			'version'      => $version,
-			'placeholders' => $placeholders,
-			'storage_type' => $use_cct ? 'cct' : 'cpt',
-			'message'      => 'Template created successfully. Use this template_id to instantiate task plans.',
+			'category'      => $category,
+			'version'       => $version,
+			'placeholders'  => $placeholders,
+			'storage_type'  => $use_cct ? 'cct' : 'cpt',
+			'message'       => 'Template created successfully. Use this template_id to instantiate task plans.',
 		);
 	}
 

@@ -201,14 +201,14 @@ class WP_MCP_AI_Tool_Data_Warehouse_Sync implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		return array(
-			'success'     => true,
-			'destination' => $destination,
-			'data_type'   => $data_type,
-			'sync_mode'   => $sync_mode,
+			'success'        => true,
+			'destination'    => $destination,
+			'data_type'      => $data_type,
+			'sync_mode'      => $sync_mode,
 			'records_synced' => count( $data ),
-			'started_at'  => $start_date,
-			'ended_at'    => $end_date,
-			'message'     => sprintf(
+			'started_at'     => $start_date,
+			'ended_at'       => $end_date,
+			'message'        => sprintf(
 				/* translators: 1: records count, 2: destination */
 				__( 'Successfully synced %1$d records to %2$s.', 'mcp-ai-wpoos-pro' ),
 				count( $data ),

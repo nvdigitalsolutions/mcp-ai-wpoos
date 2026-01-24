@@ -239,7 +239,7 @@ class WP_MCP_AI_Project_Research_Page {
 		// Get research data from request.
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
 		$research_data_raw = isset( $_POST['research_data'] ) ? wp_unslash( $_POST['research_data'] ) : '';
-		
+
 		if ( empty( $research_data_raw ) ) {
 			wp_send_json_error( array( 'message' => __( 'No research data provided.', 'mcp-ai-wpoos-pro' ) ) );
 		}

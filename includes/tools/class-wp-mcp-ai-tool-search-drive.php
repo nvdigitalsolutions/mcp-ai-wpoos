@@ -18,6 +18,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  */
 class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 	const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3';
 

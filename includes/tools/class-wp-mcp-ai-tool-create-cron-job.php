@@ -18,6 +18,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
  */
 class WP_MCP_AI_Tool_Create_Cron_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */

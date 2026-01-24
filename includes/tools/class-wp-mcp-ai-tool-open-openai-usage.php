@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -65,7 +66,7 @@ class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		$summary_text = __( 'OpenAI Usage Dashboard', 'mcp-ai-wpoos' );
-		
+
 		return array(
 			'message'     => $summary_text,
 			'summary'     => $summary_text,

@@ -105,28 +105,28 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'period'                => array(
+				'period'                 => array(
 					'type'        => 'string',
 					'description' => 'Reporting period: daily, weekly, monthly, quarterly, yearly',
 					'enum'        => array( 'daily', 'weekly', 'monthly', 'quarterly', 'yearly' ),
 					'default'     => 'monthly',
 				),
-				'compare_previous'      => array(
+				'compare_previous'       => array(
 					'type'        => 'boolean',
 					'description' => 'Compare with previous period',
 					'default'     => true,
 				),
-				'include_forecasts'     => array(
+				'include_forecasts'      => array(
 					'type'        => 'boolean',
 					'description' => 'Include future forecasts and projections',
 					'default'     => true,
 				),
-				'include_benchmarks'    => array(
+				'include_benchmarks'     => array(
 					'type'        => 'boolean',
 					'description' => 'Include industry benchmarks comparison',
 					'default'     => false,
 				),
-				'metrics_focus'         => array(
+				'metrics_focus'          => array(
 					'type'        => 'array',
 					'description' => 'Specific metrics to focus on',
 					'items'       => array(
@@ -135,7 +135,7 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 					),
 					'default'     => array( 'revenue', 'growth', 'customers' ),
 				),
-				'include_alerts'        => array(
+				'include_alerts'         => array(
 					'type'        => 'boolean',
 					'description' => 'Include critical alerts and anomalies',
 					'default'     => true,
@@ -170,9 +170,9 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'  => true,
-			'reporting'  => true,
-			'executive'  => true,
+			'analytics' => true,
+			'reporting' => true,
+			'executive' => true,
 		);
 	}
 
@@ -220,7 +220,7 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 			$dashboard['kpis'] = $this->collect_kpis( $date_range, $metrics_focus );
 
 			if ( $compare_previous ) {
-				$previous_range = $this->get_previous_period_range( $period );
+				$previous_range                 = $this->get_previous_period_range( $period );
 				$dashboard['period_comparison'] = $this->compare_periods( $date_range, $previous_range, $metrics_focus );
 			}
 
@@ -401,11 +401,11 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 		$avg_order_value = $order_count > 0 ? $revenue / $order_count : 0;
 
 		return array(
-			'total_revenue'      => round( floatval( $revenue ), 2 ),
-			'total_orders'       => intval( $order_count ),
-			'new_customers'      => intval( $new_customers ),
-			'avg_order_value'    => round( $avg_order_value, 2 ),
-			'highlights'         => $this->generate_highlights( $revenue, $order_count, $new_customers ),
+			'total_revenue'   => round( floatval( $revenue ), 2 ),
+			'total_orders'    => intval( $order_count ),
+			'new_customers'   => intval( $new_customers ),
+			'avg_order_value' => round( $avg_order_value, 2 ),
+			'highlights'      => $this->generate_highlights( $revenue, $order_count, $new_customers ),
 		);
 	}
 
@@ -506,9 +506,9 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 		);
 
 		return array(
-			'total_revenue'  => round( floatval( $total ), 2 ),
-			'recurring'      => 0,
-			'one_time'       => round( floatval( $total ), 2 ),
+			'total_revenue' => round( floatval( $total ), 2 ),
+			'recurring'     => 0,
+			'one_time'      => round( floatval( $total ), 2 ),
 		);
 	}
 
@@ -522,9 +522,9 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	private function get_growth_kpis( $date_range ) {
 		return array(
-			'revenue_growth'   => 0,
-			'customer_growth'  => 0,
-			'order_growth'     => 0,
+			'revenue_growth'  => 0,
+			'customer_growth' => 0,
+			'order_growth'    => 0,
 		);
 	}
 
@@ -550,10 +550,10 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 		);
 
 		return array(
-			'new_customers'       => intval( $new_customers ),
-			'retention_rate'      => 0,
-			'churn_rate'          => 0,
-			'lifetime_value'      => 0,
+			'new_customers'  => intval( $new_customers ),
+			'retention_rate' => 0,
+			'churn_rate'     => 0,
+			'lifetime_value' => 0,
 		);
 	}
 
@@ -599,9 +599,9 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	private function get_marketing_kpis( $date_range ) {
 		return array(
-			'cac'         => 0,
-			'conversion'  => 0,
-			'traffic'     => 0,
+			'cac'        => 0,
+			'conversion' => 0,
+			'traffic'    => 0,
 		);
 	}
 
@@ -617,9 +617,9 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	private function compare_periods( $current_range, $previous_range, $metrics_focus ) {
 		return array(
-			'revenue_change'   => 0,
-			'customer_change'  => 0,
-			'order_change'     => 0,
+			'revenue_change'  => 0,
+			'customer_change' => 0,
+			'order_change'    => 0,
 		);
 	}
 
@@ -634,10 +634,10 @@ class WP_MCP_AI_Tool_Generate_Executive_Dashboard implements WP_MCP_AI_Tool_Inte
 	 */
 	private function generate_forecasts( $date_range, $period ) {
 		return array(
-			'next_period_revenue'   => 0,
-			'next_quarter_revenue'  => 0,
-			'year_end_projection'   => 0,
-			'confidence_level'      => 'medium',
+			'next_period_revenue'  => 0,
+			'next_quarter_revenue' => 0,
+			'year_end_projection'  => 0,
+			'confidence_level'     => 'medium',
 		);
 	}
 

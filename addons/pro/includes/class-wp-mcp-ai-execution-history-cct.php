@@ -281,35 +281,35 @@ class WP_MCP_AI_Execution_History_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'              => array(
+				'_ID'         => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'session_id'       => array(
+				'session_id'  => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'tool_name'        => array(
+				'tool_name'   => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'success'          => array(
+				'success'     => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'duration_ms'      => array(
-					'enabled'     => true,
-					'is_sortable' => true,
-					'is_num'      => true,
-				),
-				'tokens_used'      => array(
+				'duration_ms' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'executed_at'      => array(
+				'tokens_used' => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'executed_at' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),

@@ -52,19 +52,19 @@ class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Bas
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'sizes'      => array(
+					'sizes'   => array(
 						'type'        => 'array',
 						'description' => __( 'Array of widths to generate. Default: [320, 640, 768, 1024, 1366, 1920].', 'mcp-ai-wpoos-pro' ),
 						'items'       => array( 'type' => 'integer' ),
 						'default'     => array( 320, 640, 768, 1024, 1366, 1920 ),
 					),
-					'format'     => array(
+					'format'  => array(
 						'type'        => 'string',
 						'description' => __( 'Output format: "same" (keep original), "webp", "avif", "jpg".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'same', 'webp', 'avif', 'jpg' ),
 						'default'     => 'webp',
 					),
-					'quality'    => array(
+					'quality' => array(
 						'type'        => 'integer',
 						'description' => __( 'Quality for all variants (1-100).', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 1,
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_Generate_Responsive_Images extends WP_MCP_AI_Tool_Image_Bas
 		// Filter out sizes larger than source.
 		$sizes = array_filter(
 			$sizes,
-			function( $width ) use ( $source_size ) {
+			function ( $width ) use ( $source_size ) {
 				return $width <= $source_size['width'];
 			}
 		);

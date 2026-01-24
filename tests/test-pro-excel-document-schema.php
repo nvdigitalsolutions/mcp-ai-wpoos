@@ -51,10 +51,10 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 		$data_items = $schema['properties']['data']['items'];
 		$this->assertIsArray( $data_items );
 		$this->assertArrayHasKey( 'items', $data_items );
-		
+
 		// The items should not be an empty array.
 		$this->assertNotEmpty( $data_items['items'], 'data.items.items should not be empty' );
-		
+
 		// Check that it has proper type definition (anyOf for mixed types).
 		$this->assertArrayHasKey( 'anyOf', $data_items['items'], 'data.items.items should have anyOf for mixed types' );
 	}
@@ -71,17 +71,17 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 		$this->assertIsArray( $sheets_items );
 		$this->assertArrayHasKey( 'properties', $sheets_items );
 		$this->assertArrayHasKey( 'data', $sheets_items['properties'] );
-		
+
 		// Check nested data array structure.
 		$sheet_data = $sheets_items['properties']['data'];
 		$this->assertArrayHasKey( 'items', $sheet_data );
-		
+
 		$sheet_data_items = $sheet_data['items'];
 		$this->assertArrayHasKey( 'items', $sheet_data_items );
-		
+
 		// The items should not be an empty array.
 		$this->assertNotEmpty( $sheet_data_items['items'], 'sheets.items.data.items.items should not be empty' );
-		
+
 		// Check that it has proper type definition (anyOf for mixed types).
 		$this->assertArrayHasKey( 'anyOf', $sheet_data_items['items'], 'sheets.items.data.items.items should have anyOf for mixed types' );
 	}
@@ -154,12 +154,12 @@ class WP_MCP_AI_Tool_Pro_Excel_Document_Schema_Tests extends WP_UnitTestCase {
 		// Check if this is an 'items' key with an empty array value.
 		if ( isset( $value['items'] ) && is_array( $value['items'] ) ) {
 			$items = $value['items'];
-			
+
 			// Empty array items are invalid for OpenAI.
 			if ( empty( $items ) ) {
 				$this->fail( "Found empty items array at path: $path" );
 			}
-			
+
 			// Recursively validate items.
 			$this->validate_no_empty_items_recursive( $items, $path . '.items' );
 		}

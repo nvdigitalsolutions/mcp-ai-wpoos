@@ -28,11 +28,11 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'title'            => array(
+					'title'             => array(
 						'type'        => 'string',
 						'description' => 'Report title',
 					),
-					'sections'         => array(
+					'sections'          => array(
 						'type'        => 'array',
 						'description' => 'Report sections with content',
 						'items'       => array(
@@ -43,7 +43,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 							),
 						),
 					),
-					'include_toc'      => array(
+					'include_toc'       => array(
 						'type'        => 'boolean',
 						'description' => 'Include table of contents (default: true)',
 						'default'     => true,
@@ -53,7 +53,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 						'description' => 'Include citations section (default: true)',
 						'default'     => true,
 					),
-					'citations'        => array(
+					'citations'         => array(
 						'type'        => 'array',
 						'description' => 'List of citations/sources',
 						'items'       => array( 'type' => 'string' ),
@@ -73,33 +73,33 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		$include_cit = isset( $arguments['include_citations'] ) ? (bool) $arguments['include_citations'] : true;
 		$citations   = isset( $arguments['citations'] ) ? $arguments['citations'] : array();
 
-		$report = "# {$title}\n\n";
-		$report .= "_Generated on " . gmdate( 'F j, Y' ) . "_\n\n";
+		$report  = "# {$title}\n\n";
+		$report .= '_Generated on ' . gmdate( 'F j, Y' ) . "_\n\n";
 
 		if ( $include_toc && count( $sections ) > 1 ) {
 			$report .= "## Table of Contents\n\n";
 			foreach ( $sections as $i => $section ) {
-				$report .= ( $i + 1 ) . ". " . $section['heading'] . "\n";
+				$report .= ( $i + 1 ) . '. ' . $section['heading'] . "\n";
 			}
 			$report .= "\n---\n\n";
 		}
 
 		foreach ( $sections as $section ) {
-			$report .= "## " . $section['heading'] . "\n\n";
+			$report .= '## ' . $section['heading'] . "\n\n";
 			$report .= $section['content'] . "\n\n";
 		}
 
 		if ( $include_cit && ! empty( $citations ) ) {
 			$report .= "## References\n\n";
 			foreach ( $citations as $i => $citation ) {
-				$report .= ( $i + 1 ) . ". " . $citation . "\n";
+				$report .= ( $i + 1 ) . '. ' . $citation . "\n";
 			}
 		}
 
 		return array(
-			'success'      => true,
-			'report'       => $report,
-			'word_count'   => str_word_count( $report ),
+			'success'       => true,
+			'report'        => $report,
+			'word_count'    => str_word_count( $report ),
 			'section_count' => count( $sections ),
 		);
 	}

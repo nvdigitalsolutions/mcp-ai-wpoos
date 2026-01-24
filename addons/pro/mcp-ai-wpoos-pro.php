@@ -219,7 +219,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
-			
+
 			// Load WebLLM Advanced Features settings page (Phase 1).
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
 

@@ -245,8 +245,8 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		$statuses = $include_refunds ? array( 'wc-completed', 'wc-processing', 'wc-refunded' ) : array( 'wc-completed', 'wc-processing' );
 
 		// Prepare placeholders for IN clause.
-		$placeholders        = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
-		$results             = array();
+		$placeholders = implode( ', ', array_fill( 0, count( $statuses ), '%s' ) );
+		$results      = array();
 
 		// Revenue.
 		if ( in_array( 'revenue', $metrics, true ) ) {
@@ -397,12 +397,12 @@ class WP_MCP_AI_Tool_Sales_Performance_Dashboard implements WP_MCP_AI_Tool_Inter
 		if ( ! empty( $category_ids ) ) {
 			$category_placeholders = implode( ', ', array_fill( 0, count( $category_ids ), '%d' ) );
 			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$query  .= " AND tr.term_taxonomy_id IN ($category_placeholders)";
+			$query .= " AND tr.term_taxonomy_id IN ($category_placeholders)";
 			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-			$params  = array_merge( $params, $category_ids );
+			$params = array_merge( $params, $category_ids );
 		}
 
-		$query  .= ' GROUP BY oim_product.meta_value ORDER BY SUM(oim_total.meta_value) DESC LIMIT %d';
+		$query   .= ' GROUP BY oim_product.meta_value ORDER BY SUM(oim_total.meta_value) DESC LIMIT %d';
 		$params[] = $limit;
 
 		$top_products = $wpdb->get_results(

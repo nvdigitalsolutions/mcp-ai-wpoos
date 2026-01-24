@@ -51,11 +51,11 @@ trait WP_MCP_AI_Tool_Chat_Response {
 	 */
 	protected function format_chat_response( $data, $message = '', $options = array() ) {
 		$defaults = array(
-			'include_data'    => true,  // Include the original data in response.
-			'data_key'        => 'data', // Key to use for data in response.
-			'auto_generate'   => true,  // Auto-generate message if empty.
-			'message_prefix'  => '',    // Prefix to add to message.
-			'message_suffix'  => '',    // Suffix to add to message.
+			'include_data'   => true,  // Include the original data in response.
+			'data_key'       => 'data', // Key to use for data in response.
+			'auto_generate'  => true,  // Auto-generate message if empty.
+			'message_prefix' => '',    // Prefix to add to message.
+			'message_suffix' => '',    // Suffix to add to message.
 		);
 
 		$options = wp_parse_args( $options, $defaults );
@@ -185,9 +185,9 @@ trait WP_MCP_AI_Tool_Chat_Response {
 		// Add pagination if provided.
 		if ( isset( $options['page'] ) ) {
 			$response['pagination'] = array(
-				'page'       => absint( $options['page'] ),
-				'per_page'   => isset( $options['per_page'] ) ? absint( $options['per_page'] ) : 20,
-				'total'      => isset( $options['total'] ) ? absint( $options['total'] ) : $count,
+				'page'     => absint( $options['page'] ),
+				'per_page' => isset( $options['per_page'] ) ? absint( $options['per_page'] ) : 20,
+				'total'    => isset( $options['total'] ) ? absint( $options['total'] ) : $count,
 			);
 
 			// Calculate total pages.
@@ -217,7 +217,7 @@ trait WP_MCP_AI_Tool_Chat_Response {
 		}
 
 		// Check for existing message-like fields.
-		$message_keys = array( 'message', 'text', 'summary', 'description' );
+		$message_keys  = array( 'message', 'text', 'summary', 'description' );
 		$found_message = '';
 
 		foreach ( $message_keys as $key ) {

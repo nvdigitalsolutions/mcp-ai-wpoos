@@ -154,13 +154,13 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		// Execute asynchronously if needed.
 		if ( $should_execute_async ) {
 			$result = $this->execute_async( $tool_slug, $arguments, $context );
-			
+
 			// Record completion for async (as queued).
 			if ( $monitor && ! is_wp_error( $result ) ) {
 				$duration = microtime( true ) - $start_time;
 				$monitor->record_execution_complete( $tool_slug, $duration, true, $context );
 			}
-			
+
 			return $result;
 		}
 
@@ -258,9 +258,9 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 	 */
 	protected function check_capacity_routing( $tool_slug, array $context ) {
 		// Check if capacity-aware routing is enabled.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		$capacity_aware_enabled = isset( $settings['enable_capacity_aware_routing'] ) 
-			? (bool) $settings['enable_capacity_aware_routing'] 
+		$settings               = get_option( 'wp_mcp_ai_settings', array() );
+		$capacity_aware_enabled = isset( $settings['enable_capacity_aware_routing'] )
+			? (bool) $settings['enable_capacity_aware_routing']
 			: true; // Enabled by default.
 
 		if ( ! $capacity_aware_enabled ) {
@@ -280,12 +280,12 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 			// Critical capacity - queue non-critical tools.
 			$is_critical_request = isset( $context['priority'] ) && 'critical' === $context['priority'];
 			$is_agent_request    = isset( $context['agent_role'] );
-			
+
 			// Allow critical requests and agent requests through.
 			if ( $is_critical_request || $is_agent_request ) {
 				return null; // Let other factors decide.
 			}
-			
+
 			// Queue non-critical tools.
 			WP_MCP_AI_Logger::log_event(
 				'capacity_routing',
@@ -296,7 +296,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 					'reason'         => 'critical_capacity',
 				)
 			);
-			
+
 			return true; // Queue it.
 		}
 
@@ -304,12 +304,12 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		if ( isset( $metrics['utilization'] ) && $metrics['utilization'] > self::UTILIZATION_THRESHOLD_HIGH ) {
 			// High utilization - consider agent role priority.
 			$agent_role = isset( $context['agent_role'] ) ? $context['agent_role'] : null;
-			
+
 			if ( 'executor' === $agent_role ) {
 				// Executor agents get priority - allow sync execution.
 				return null;
 			}
-			
+
 			// Queue for other requests.
 			WP_MCP_AI_Logger::log_event(
 				'capacity_routing',
@@ -320,7 +320,7 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 					'reason'      => 'high_utilization',
 				)
 			);
-			
+
 			return true; // Queue it.
 		}
 
@@ -329,18 +329,18 @@ class WP_MCP_AI_Tool_Execution_Orchestrator {
 		if ( isset( $system_metrics['health_status'] ) && 'critical' === $system_metrics['health_status'] ) {
 			// System is critical - be conservative.
 			$is_critical_request = isset( $context['priority'] ) && 'critical' === $context['priority'];
-			
+
 			if ( ! $is_critical_request ) {
 				WP_MCP_AI_Logger::log_event(
 					'capacity_routing',
 					sprintf( 'Tool "%s" queued due to critical system health', $tool_slug ),
 					array(
-						'tool_slug'      => $tool_slug,
-						'health_status'  => 'critical',
-						'reason'         => 'system_critical',
+						'tool_slug'     => $tool_slug,
+						'health_status' => 'critical',
+						'reason'        => 'system_critical',
 					)
 				);
-				
+
 				return true; // Queue it.
 			}
 		}

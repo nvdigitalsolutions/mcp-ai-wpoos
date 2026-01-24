@@ -56,65 +56,65 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'prompt' => array(
-					'type' => 'string',
+			'type'                 => 'object',
+			'properties'           => array(
+				'prompt'                  => array(
+					'type'        => 'string',
 					'description' => __( 'Detailed description of the video to generate. Use cinematic language (e.g., "wide shot", "golden hour", "slow zoom"). Be specific about subjects, actions, setting, lighting, and camera movements.', 'mcp-ai-wpoos' ),
 				),
-				'duration' => array(
-					'type' => 'integer',
+				'duration'                => array(
+					'type'        => 'integer',
 					'description' => __( 'Video duration in seconds (4-8). Default is 5 seconds. Veo 3.1 supports 4-8 seconds, Veo 2.0 supports 5-8 seconds. Note: If 1080p resolution is requested, duration will be automatically set to 8 seconds (API requirement).', 'mcp-ai-wpoos' ),
-					'minimum' => 4,
-					'maximum' => 8,
-					'default' => 5,
+					'minimum'     => 4,
+					'maximum'     => 8,
+					'default'     => 5,
 				),
-				'aspect_ratio' => array(
-					'type' => 'string',
+				'aspect_ratio'            => array(
+					'type'        => 'string',
 					'description' => __( 'Video aspect ratio. Supported values: "3:2" for landscape (default), "2:3" for portrait, "1:1" for square, or "auto" to let the model decide.', 'mcp-ai-wpoos' ),
-					'enum' => array( '1:1', '2:3', '3:2', 'auto' ),
-					'default' => '3:2',
+					'enum'        => array( '1:1', '2:3', '3:2', 'auto' ),
+					'default'     => '3:2',
 				),
-				'resolution' => array(
-					'type' => 'string',
+				'resolution'              => array(
+					'type'        => 'string',
 					'description' => __( 'Video resolution. "720p" (default, supported by all models and durations) or "1080p" (Veo 3.1 only, automatically sets 8 seconds duration). Veo 2.0 always outputs 720p regardless of this parameter.', 'mcp-ai-wpoos' ),
-					'enum' => array( '720p', '1080p' ),
-					'default' => '720p',
+					'enum'        => array( '720p', '1080p' ),
+					'default'     => '720p',
 				),
-				'style' => array(
-					'type' => 'string',
+				'style'                   => array(
+					'type'        => 'string',
 					'description' => __( 'Visual style preset: "cinematic", "realistic", "anime", "documentary", "artistic". This enhances the prompt with style-specific language.', 'mcp-ai-wpoos' ),
-					'enum' => array( 'cinematic', 'realistic', 'anime', 'documentary', 'artistic', 'none' ),
-					'default' => 'none',
+					'enum'        => array( 'cinematic', 'realistic', 'anime', 'documentary', 'artistic', 'none' ),
+					'default'     => 'none',
 				),
-				'negative_prompt' => array(
-					'type' => 'string',
+				'negative_prompt'         => array(
+					'type'        => 'string',
 					'description' => __( 'What to avoid in the video (e.g., "blurry, low quality, distorted").', 'mcp-ai-wpoos' ),
 				),
-				'reference_image_id' => array(
-					'type' => 'integer',
+				'reference_image_id'      => array(
+					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID of a reference image to guide video generation (optional).', 'mcp-ai-wpoos' ),
-					'minimum' => 1,
+					'minimum'     => 1,
 				),
 				'reference_image_file_id' => $this->get_file_id_parameter_schema(),
-				'reference_image_url' => $this->get_url_parameter_schema( 'image', __( 'URL of a reference image to guide video generation (optional).', 'mcp-ai-wpoos' ) ),
-				'seed' => array(
-					'type' => 'integer',
+				'reference_image_url'     => $this->get_url_parameter_schema( 'image', __( 'URL of a reference image to guide video generation (optional).', 'mcp-ai-wpoos' ) ),
+				'seed'                    => array(
+					'type'        => 'integer',
 					'description' => __( 'Random seed for reproducible results. Use the same seed and prompt to generate similar videos.', 'mcp-ai-wpoos' ),
-					'minimum' => 0,
+					'minimum'     => 0,
 				),
-				'save_to_media' => array(
-					'type' => 'boolean',
+				'save_to_media'           => array(
+					'type'        => 'boolean',
 					'description' => __( 'Whether to save the generated video to WordPress Media Library. Default is true.', 'mcp-ai-wpoos' ),
-					'default' => true,
+					'default'     => true,
 				),
-				'model' => array(
-					'type' => 'string',
+				'model'                   => array(
+					'type'        => 'string',
 					'description' => __( 'Force a specific Veo model: "veo-3.1" (default, supports 1080p) or "veo-2.0" (720p max). If not specified, automatically uses Veo 3.1 with fallback to Veo 2.0 on quota/availability issues.', 'mcp-ai-wpoos' ),
-					'enum' => array( 'veo-3.1', 'veo-2.0' ),
+					'enum'        => array( 'veo-3.1', 'veo-2.0' ),
 				),
 			),
-			'required' => array( 'prompt' ),
+			'required'             => array( 'prompt' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -166,11 +166,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Prepare generation arguments with settings fallback.
 		$generation_args = array(
-			'prompt' => $prompt,
+			'prompt'       => $prompt,
 			'aspect_ratio' => isset( $arguments['aspect_ratio'] ) ? $arguments['aspect_ratio'] : $defaults['aspect_ratio'],
-			'resolution' => isset( $arguments['resolution'] ) ? $arguments['resolution'] : $defaults['resolution'],
-			'async' => $use_async,
-			'user_id' => $user_id,
+			'resolution'   => isset( $arguments['resolution'] ) ? $arguments['resolution'] : $defaults['resolution'],
+			'async'        => $use_async,
+			'user_id'      => $user_id,
 		);
 
 		// Pass assistant_id if available in context for proper completion hook routing.
@@ -317,25 +317,25 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			);
 
 			$final_result = array(
-				'success' => true,
+				'success'       => true,
 				'attachment_id' => $save_result['attachment_id'],
-				'url' => $save_result['url'],
-				'file_name' => isset( $save_result['file_name'] ) ? $save_result['file_name'] : '',
-				'edit_url' => $edit_url,
-				'prompt' => $result['prompt'],
-				'duration' => $result['duration'],
-				'aspect_ratio' => $result['aspect_ratio'],
-				'resolution' => $result['resolution'],
-				'model' => $result['model'],
-				'provider' => $result['provider'],
-				'cost' => $cost,
-				'message' => sprintf(
+				'url'           => $save_result['url'],
+				'file_name'     => isset( $save_result['file_name'] ) ? $save_result['file_name'] : '',
+				'edit_url'      => $edit_url,
+				'prompt'        => $result['prompt'],
+				'duration'      => $result['duration'],
+				'aspect_ratio'  => $result['aspect_ratio'],
+				'resolution'    => $result['resolution'],
+				'model'         => $result['model'],
+				'provider'      => $result['provider'],
+				'cost'          => $cost,
+				'message'       => sprintf(
 					/* translators: 1: attachment ID, 2: media library edit URL */
 					__( 'Video generated successfully and saved as <a href="%2$s" target="_blank">attachment ID %1$d</a>.', 'mcp-ai-wpoos' ),
 					$save_result['attachment_id'],
 					esc_url( $edit_url )
 				),
-				'text' => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
+				'text'          => implode( ' ', $text_parts ), // Descriptive message for LLM and chat UI.
 			);
 
 			// Fire completion action for video generation (only when in chat/agentic context).
@@ -365,17 +365,17 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		$data_url     = 'data:video/mp4;base64,' . $video_base64;
 
 		$final_result = array(
-			'success' => true,
-			'video_url' => $data_url,
-			'prompt' => $result['prompt'],
-			'duration' => $result['duration'],
+			'success'      => true,
+			'video_url'    => $data_url,
+			'prompt'       => $result['prompt'],
+			'duration'     => $result['duration'],
 			'aspect_ratio' => $result['aspect_ratio'],
-			'resolution' => $result['resolution'],
-			'model' => $result['model'],
-			'provider' => $result['provider'],
-			'cost' => $cost,
-			'message' => __( 'Video generated successfully (temporary - not saved to Media Library).', 'mcp-ai-wpoos' ),
-			'text' => sprintf(
+			'resolution'   => $result['resolution'],
+			'model'        => $result['model'],
+			'provider'     => $result['provider'],
+			'cost'         => $cost,
+			'message'      => __( 'Video generated successfully (temporary - not saved to Media Library).', 'mcp-ai-wpoos' ),
+			'text'         => sprintf(
 				/* translators: 1: duration in seconds, 2: resolution, 3: aspect ratio */
 				__( 'Successfully generated temporary video. Format: %1$ds, %2$s, %3$s', 'mcp-ai-wpoos' ),
 				$result['duration'],
@@ -416,10 +416,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	protected function get_default_video_settings() {
 		$defaults = array(
-			'model' => 'veo-2.0-generate-001', // Conservative default.
-			'resolution' => '720p',
+			'model'        => 'veo-2.0-generate-001', // Conservative default.
+			'resolution'   => '720p',
 			'aspect_ratio' => '3:2',
-			'duration' => 5,
+			'duration'     => 5,
 		);
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -468,11 +468,11 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$style_prefixes = array(
-			'cinematic' => 'Cinematic shot with professional lighting and composition: ',
-			'realistic' => 'Photorealistic footage with natural lighting and authentic details: ',
-			'anime' => 'Anime-style animation with vibrant colors and expressive characters: ',
+			'cinematic'   => 'Cinematic shot with professional lighting and composition: ',
+			'realistic'   => 'Photorealistic footage with natural lighting and authentic details: ',
+			'anime'       => 'Anime-style animation with vibrant colors and expressive characters: ',
 			'documentary' => 'Documentary-style footage with natural, observational cinematography: ',
-			'artistic' => 'Artistic interpretation with creative visual style and unique perspective: ',
+			'artistic'    => 'Artistic interpretation with creative visual style and unique perspective: ',
 		);
 
 		if ( isset( $style_prefixes[ $style ] ) ) {
@@ -553,7 +553,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'base64' => base64_encode( $image_data ),
+			'base64'    => base64_encode( $image_data ),
 			'mime_type' => $mime_type,
 		);
 	}
@@ -598,14 +598,14 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'video/mp4',
-			'post_title' => sprintf(
+			'post_title'     => sprintf(
 				/* translators: %s: truncated prompt */
 				__( 'Veo Generated Video: %s', 'mcp-ai-wpoos' ),
 				substr( $result['prompt'], 0, 50 )
 			),
-			'post_content' => $result['prompt'],
-			'post_status' => 'inherit',
-			'post_author' => $user_id,
+			'post_content'   => $result['prompt'],
+			'post_status'    => 'inherit',
+			'post_author'    => $user_id,
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $upload['file'] );
@@ -616,12 +616,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Add metadata.
 		$metadata = array(
-			'veo_prompt' => $result['prompt'],
-			'veo_duration' => $result['duration'],
+			'veo_prompt'       => $result['prompt'],
+			'veo_duration'     => $result['duration'],
 			'veo_aspect_ratio' => $result['aspect_ratio'],
-			'veo_resolution' => $result['resolution'],
-			'veo_model' => $result['model'],
-			'veo_provider' => $result['provider'],
+			'veo_resolution'   => $result['resolution'],
+			'veo_model'        => $result['model'],
+			'veo_provider'     => $result['provider'],
 		);
 
 		// Store job_id if provided - allows recovery of completion status when transient expires.
@@ -645,9 +645,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 			'Veo generated video saved to Media Library',
 			array(
 				'attachment_id' => $attachment_id,
-				'filename' => $filename,
-				'duration' => $result['duration'],
-				'job_id' => $job_id,
+				'filename'      => $filename,
+				'duration'      => $result['duration'],
+				'job_id'        => $job_id,
 			)
 		);
 
@@ -674,9 +674,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Default cost structure.
 		$cost = array(
-			'cost_usd' => 0.0,
-			'provider' => isset( $result['provider'] ) ? $result['provider'] : 'gemini',
-			'model' => $model,
+			'cost_usd'     => 0.0,
+			'provider'     => isset( $result['provider'] ) ? $result['provider'] : 'gemini',
+			'model'        => $model,
 			'is_estimated' => false,
 		);
 
@@ -847,7 +847,7 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 				'Cannot generate expected_url: upload directory not available',
 				array(
 					'job_id' => $job_id,
-					'error' => isset( $upload_dir['error'] ) ? $upload_dir['error'] : 'Unknown error',
+					'error'  => isset( $upload_dir['error'] ) ? $upload_dir['error'] : 'Unknown error',
 				)
 			);
 		}
@@ -861,9 +861,9 @@ class WP_MCP_AI_Tool_Generate_Veo_Video implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		return array(
-			'expected_url' => $expected_url,
+			'expected_url'      => $expected_url,
 			'expected_filename' => $expected_filename,
-			'message' => $message,
+			'message'           => $message,
 		);
 	}
 }

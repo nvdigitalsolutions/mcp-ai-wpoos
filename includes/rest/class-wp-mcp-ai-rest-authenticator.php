@@ -674,7 +674,7 @@ class WP_MCP_AI_REST_Authenticator {
 		$guest_token = $this->extract_guest_token( $request );
 		if ( ! empty( $guest_token ) ) {
 			// Guest tokens are valid but have limited access.
-			$this->auth_context['is_guest']   = true;
+			$this->auth_context['is_guest']    = true;
 			$this->auth_context['guest_token'] = $guest_token;
 			return $this->get_auth_context();
 		}

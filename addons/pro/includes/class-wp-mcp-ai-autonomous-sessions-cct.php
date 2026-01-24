@@ -278,35 +278,35 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'              => array(
+				'_ID'                  => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'session_id'       => array(
+				'session_id'           => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'plan_id'          => array(
-					'enabled'     => true,
-					'is_sortable' => true,
-					'is_num'      => true,
-				),
-				'status'           => array(
-					'enabled'     => true,
-					'is_sortable' => true,
-				),
-				'health'           => array(
-					'enabled'     => true,
-					'is_sortable' => true,
-				),
-				'iterations'       => array(
+				'plan_id'              => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'tokens_used'      => array(
+				'status'               => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'health'               => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+				),
+				'iterations'           => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'tokens_used'          => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
@@ -315,11 +315,11 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'cct_created'      => array(
+				'cct_created'          => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'cct_modified'     => array(
+				'cct_modified'         => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
@@ -550,10 +550,10 @@ class WP_MCP_AI_Autonomous_Sessions_CCT {
 	protected static function build_field( $id, $name, $label, $type, $args = array() ) {
 		return array_merge(
 			array(
-				'id'         => (string) $id,
-				'name'       => $name,
-				'title'      => $label,
-				'type'       => $type,
+				'id'          => (string) $id,
+				'name'        => $name,
+				'title'       => $label,
+				'type'        => $type,
 				'object_type' => 'field',
 			),
 			$args

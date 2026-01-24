@@ -146,28 +146,28 @@ class WP_MCP_AI_SiteKit_Integration {
 		}
 
 		$sitekit_tools = array(
-			'sitekit_get_analytics'       => array(
+			'sitekit_get_analytics'      => array(
 				'name'                => 'sitekit_get_analytics',
 				'description'         => 'Retrieve Google Analytics data through Site Kit',
 				'class'               => 'WP_MCP_AI_Tool_SiteKit_Analytics',
 				'required_capability' => 'manage_options',
 				'category'            => 'analytics',
 			),
-			'sitekit_get_search_console'  => array(
+			'sitekit_get_search_console' => array(
 				'name'                => 'sitekit_get_search_console',
 				'description'         => 'Retrieve Google Search Console data through Site Kit',
 				'class'               => 'WP_MCP_AI_Tool_SiteKit_Search_Console',
 				'required_capability' => 'manage_options',
 				'category'            => 'seo',
 			),
-			'sitekit_get_pagespeed'       => array(
+			'sitekit_get_pagespeed'      => array(
 				'name'                => 'sitekit_get_pagespeed',
 				'description'         => 'Get PageSpeed Insights scores and recommendations',
 				'class'               => 'WP_MCP_AI_Tool_SiteKit_PageSpeed',
 				'required_capability' => 'manage_options',
 				'category'            => 'performance',
 			),
-			'sitekit_get_adsense'         => array(
+			'sitekit_get_adsense'        => array(
 				'name'                => 'sitekit_get_adsense',
 				'description'         => 'Retrieve AdSense earnings and performance metrics',
 				'class'               => 'WP_MCP_AI_Tool_SiteKit_AdSense',
@@ -297,10 +297,10 @@ class WP_MCP_AI_SiteKit_Integration {
 	 * @since 1.2.0
 	 */
 	public function render_settings() {
-		$enabled         = get_option( 'wp_mcp_ai_sitekit_enabled', true );
-		$cache_duration  = get_option( 'wp_mcp_ai_sitekit_cache_duration', self::CACHE_DURATION );
-		$default_range   = get_option( 'wp_mcp_ai_sitekit_default_range', 'last_28_days' );
-		$enable_logging  = get_option( 'wp_mcp_ai_sitekit_enable_logging', false );
+		$enabled        = get_option( 'wp_mcp_ai_sitekit_enabled', true );
+		$cache_duration = get_option( 'wp_mcp_ai_sitekit_cache_duration', self::CACHE_DURATION );
+		$default_range  = get_option( 'wp_mcp_ai_sitekit_default_range', 'last_28_days' );
+		$enable_logging = get_option( 'wp_mcp_ai_sitekit_enable_logging', false );
 		?>
 		<tr>
 			<th scope="row">
@@ -444,11 +444,11 @@ class WP_MCP_AI_SiteKit_Integration {
 	 */
 	public function get_status() {
 		return array(
-			'available'         => $this->is_sitekit_available(),
-			'user_has_access'   => $this->user_has_sitekit_access(),
-			'sitekit_installed' => class_exists( 'Google\\Site_Kit\\Plugin' ),
+			'available'           => $this->is_sitekit_available(),
+			'user_has_access'     => $this->user_has_sitekit_access(),
+			'sitekit_installed'   => class_exists( 'Google\\Site_Kit\\Plugin' ),
 			'integration_enabled' => get_option( 'wp_mcp_ai_sitekit_enabled', true ),
-			'cache_duration'    => $this->get_cache_duration(),
+			'cache_duration'      => $this->get_cache_duration(),
 		);
 	}
 }

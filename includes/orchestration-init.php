@@ -74,31 +74,31 @@ function wp_mcp_ai_register_orchestration_tools() {
 	}
 
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
-	
+
 	// Base orchestration tools directory
 	$tools_dir = WP_MCP_AI_PATH . 'includes/tools/orchestration/';
 
 	// Register 9 core orchestration tools
 	$core_tools = array(
-		'create_task_plan'                   => 'class-wp-mcp-ai-tool-create-task-plan.php',
-		'update_task_plan'                   => 'class-wp-mcp-ai-tool-update-task-plan.php',
-		'get_task_plan'                      => 'class-wp-mcp-ai-tool-get-task-plan.php',
-		'manage_autonomous_session'          => 'class-wp-mcp-ai-tool-manage-autonomous-session.php',
-		'detect_completion_indicators'       => 'class-wp-mcp-ai-tool-detect-completion-indicators.php',
-		'check_exit_conditions'              => 'class-wp-mcp-ai-tool-check-exit-conditions.php',
-		'analyze_loop_health'                => 'class-wp-mcp-ai-tool-analyze-loop-health.php',
-		'get_session_status'                 => 'class-wp-mcp-ai-tool-get-session-status.php',
-		'calculate_orchestration_capacity'   => 'class-wp-mcp-ai-tool-calculate-orchestration-capacity.php',
+		'create_task_plan'                 => 'class-wp-mcp-ai-tool-create-task-plan.php',
+		'update_task_plan'                 => 'class-wp-mcp-ai-tool-update-task-plan.php',
+		'get_task_plan'                    => 'class-wp-mcp-ai-tool-get-task-plan.php',
+		'manage_autonomous_session'        => 'class-wp-mcp-ai-tool-manage-autonomous-session.php',
+		'detect_completion_indicators'     => 'class-wp-mcp-ai-tool-detect-completion-indicators.php',
+		'check_exit_conditions'            => 'class-wp-mcp-ai-tool-check-exit-conditions.php',
+		'analyze_loop_health'              => 'class-wp-mcp-ai-tool-analyze-loop-health.php',
+		'get_session_status'               => 'class-wp-mcp-ai-tool-get-session-status.php',
+		'calculate_orchestration_capacity' => 'class-wp-mcp-ai-tool-calculate-orchestration-capacity.php',
 	);
 
 	foreach ( $core_tools as $slug => $file ) {
 		$file_path = $tools_dir . $file;
 		if ( file_exists( $file_path ) ) {
 			require_once $file_path;
-			
+
 			// Convert slug to class name
 			$class_name = 'WP_MCP_AI_Tool_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $slug ) ) );
-			
+
 			if ( class_exists( $class_name ) ) {
 				$registry->register( new $class_name() );
 			}

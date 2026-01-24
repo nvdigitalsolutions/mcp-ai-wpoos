@@ -65,18 +65,22 @@ class WP_MCP_AI_Contact_Importer_Service {
 		}
 
 		$defaults = array(
-			'delimiter' => ',',
-			'columns'   => true,
+			'delimiter'        => ',',
+			'columns'          => true,
 			'skip_empty_lines' => true,
 		);
 
 		$options = wp_parse_args( $options, $defaults );
 
 		// Allow Node.js-based parsing via filter.
-		$result = apply_filters( 'wp_mcp_ai_csv_parse', false, array(
-			'file_path' => $file_path,
-			'options'   => $options,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_csv_parse',
+			false,
+			array(
+				'file_path' => $file_path,
+				'options'   => $options,
+			)
+		);
 
 		if ( false === $result ) {
 			// Fallback to PHP CSV parsing.
@@ -111,7 +115,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 			// First row as headers.
 			if ( 0 === $row_index && $options['columns'] ) {
 				$headers = $row;
-				$row_index++;
+				++$row_index;
 				continue;
 			}
 
@@ -131,7 +135,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 				$data[] = $row;
 			}
 
-			$row_index++;
+			++$row_index;
 		}
 
 		fclose( $handle );
@@ -162,10 +166,14 @@ class WP_MCP_AI_Contact_Importer_Service {
 		$options = wp_parse_args( $options, $defaults );
 
 		// Allow Node.js-based generation via filter.
-		$result = apply_filters( 'wp_mcp_ai_csv_stringify', false, array(
-			'data'    => $data,
-			'options' => $options,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_csv_stringify',
+			false,
+			array(
+				'data'    => $data,
+				'options' => $options,
+			)
+		);
 
 		if ( false === $result ) {
 			// Fallback to PHP CSV generation.
@@ -213,9 +221,9 @@ class WP_MCP_AI_Contact_Importer_Service {
 	 */
 	public function import_contacts( $data, $options = array() ) {
 		$defaults = array(
-			'post_type'      => 'crm_contact',
-			'field_mapping'  => array(),
-			'validate'       => true,
+			'post_type'       => 'crm_contact',
+			'field_mapping'   => array(),
+			'validate'        => true,
 			'skip_duplicates' => true,
 			'update_existing' => false,
 		);
@@ -223,10 +231,10 @@ class WP_MCP_AI_Contact_Importer_Service {
 		$options = wp_parse_args( $options, $defaults );
 
 		$results = array(
-			'total'     => count( $data ),
-			'imported'  => 0,
-			'skipped'   => 0,
-			'errors'    => array(),
+			'total'    => count( $data ),
+			'imported' => 0,
+			'skipped'  => 0,
+			'errors'   => array(),
 		);
 
 		// Require validator service.
@@ -245,7 +253,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 						'row'   => $index + 1,
 						'error' => $validation->get_error_message(),
 					);
-					$results['skipped']++;
+					++$results['skipped'];
 					continue;
 				}
 			}
@@ -258,7 +266,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 						// Update existing contact.
 						$contact_data['ID'] = $existing;
 					} else {
-						$results['skipped']++;
+						++$results['skipped'];
 						continue;
 					}
 				}
@@ -272,9 +280,9 @@ class WP_MCP_AI_Contact_Importer_Service {
 					'row'   => $index + 1,
 					'error' => $contact_id->get_error_message(),
 				);
-				$results['skipped']++;
+				++$results['skipped'];
 			} else {
-				$results['imported']++;
+				++$results['imported'];
 			}
 		}
 
@@ -345,7 +353,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 	/**
 	 * Validate contact data.
 	 *
-	 * @param array                         $contact_data Contact data.
+	 * @param array                       $contact_data Contact data.
 	 * @param WP_MCP_AI_Validator_Service $validator Validator service.
 	 * @return bool|WP_Error True if valid, error otherwise.
 	 */
@@ -383,19 +391,21 @@ class WP_MCP_AI_Contact_Importer_Service {
 	 * @return int|false Contact ID or false if not found.
 	 */
 	private function find_existing_contact( $email, $post_type ) {
-		$query = new WP_Query( array(
-			'post_type'      => $post_type,
-			'meta_query'     => array(
-				array(
-					'key'     => 'email',
-					'value'   => $email,
-					'compare' => '=',
+		$query = new WP_Query(
+			array(
+				'post_type'      => $post_type,
+				'meta_query'     => array(
+					array(
+						'key'     => 'email',
+						'value'   => $email,
+						'compare' => '=',
+					),
 				),
-			),
-			'posts_per_page' => 1,
-			'fields'         => 'ids',
-			'no_found_rows'  => true, // Performance optimization - we don't need pagination data.
-		) );
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true, // Performance optimization - we don't need pagination data.
+			)
+		);
 
 		if ( $query->have_posts() ) {
 			return $query->posts[0];
@@ -456,7 +466,7 @@ class WP_MCP_AI_Contact_Importer_Service {
 			}
 
 			// Determine sanitization type.
-			$sanitize_type = isset( $field_types[ $key ] ) ? $field_types[ $key ] : 'text';
+			$sanitize_type   = isset( $field_types[ $key ] ) ? $field_types[ $key ] : 'text';
 			$sanitized_value = $validator->sanitize_input( $value, $sanitize_type );
 
 			update_post_meta( $post_id, $key, $sanitized_value );

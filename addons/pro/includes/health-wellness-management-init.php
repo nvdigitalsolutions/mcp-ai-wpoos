@@ -28,7 +28,7 @@ if ( is_admin() ) {
 		// Load Member (primary CPT) settings and research pages.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-member-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-member-research-page.php';
-		
+
 		// Load Policy settings and research pages.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-research-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-policy-settings-page.php';

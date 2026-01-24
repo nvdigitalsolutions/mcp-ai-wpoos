@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -85,7 +86,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		try {
 			$profession_service = wp_mcp_ai_get_profession_service();
-			
+
 			if ( ! $profession_service ) {
 				return array(
 					'success' => false,
@@ -108,7 +109,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 					'trace'     => $e->getTraceAsString(),
 				)
 			);
-			
+
 			return array(
 				'success' => false,
 				'message' => sprintf(
@@ -127,7 +128,7 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 					'trace' => $e->getTraceAsString(),
 				)
 			);
-			
+
 			return array(
 				'success' => false,
 				'message' => sprintf(

@@ -169,7 +169,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Huggingface_Dataset_List_Splits' ) ) {
 
 			// Format response.
 			$splits = isset( $result['splits'] ) ? $result['splits'] : array();
-			$count = count( $splits );
+			$count  = count( $splits );
 
 			/* translators: %d: number of splits */
 			$message = sprintf( __( 'Found %d splits in dataset.', 'mcp-ai-wpoos' ), $count );

@@ -502,7 +502,7 @@ class WP_MCP_AI_Security_Manager {
 
 		// Add HSTS if enabled.
 		if ( $this->settings->get( 'enable_hsts', false ) && is_ssl() ) {
-			$max_age            = absint( $this->settings->get( 'hsts_max_age', 31536000 ) );
+			$max_age                              = absint( $this->settings->get( 'hsts_max_age', 31536000 ) );
 			$headers['Strict-Transport-Security'] = "max-age={$max_age}; includeSubDomains";
 		}
 

@@ -49,7 +49,7 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'      => array(
+				'floor_plan'         => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data to optimize (from generate_floor_plan or JSON).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 					),
 					'default'     => array( 'traffic_flow', 'space_efficiency' ),
 				),
-				'constraints'     => array(
+				'constraints'        => array(
 					'type'        => 'object',
 					'description' => __( 'Design constraints (e.g., load-bearing walls, fixed elements).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 						'min_room_size'  => array( 'type' => 'number' ),
 					),
 				),
-				'priority_rooms'  => array(
+				'priority_rooms'     => array(
 					'type'        => 'array',
 					'description' => __( 'Rooms to prioritize in optimization.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -157,16 +157,16 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function analyze_layout( $floor_plan, $optimization_goals ) {
 		return array(
-			'traffic_flow_score'   => 0.75,
-			'space_efficiency'     => 0.68,
-			'natural_light_score'  => 0.82,
-			'accessibility_score'  => 0.71,
-			'issues'               => array(
+			'traffic_flow_score'  => 0.75,
+			'space_efficiency'    => 0.68,
+			'natural_light_score' => 0.82,
+			'accessibility_score' => 0.71,
+			'issues'              => array(
 				'Narrow hallway creates bottleneck',
 				'Kitchen lacks counter space',
 				'Master bedroom has poor natural light',
 			),
-			'opportunities'        => array(
+			'opportunities'       => array(
 				'Combine living and dining for open concept',
 				'Relocate bathroom for better flow',
 				'Add skylight to improve natural lighting',
@@ -217,10 +217,10 @@ class WP_MCP_AI_Tool_Optimize_Space_Layout implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function calculate_improvements( $analysis, $suggestions ) {
 		return array(
-			'traffic_flow_improvement'  => '+15%',
+			'traffic_flow_improvement'     => '+15%',
 			'space_efficiency_improvement' => '+10%',
-			'estimated_cost'            => 'Medium',
-			'implementation_time'       => '2-4 weeks',
+			'estimated_cost'               => 'Medium',
+			'implementation_time'          => '2-4 weeks',
 		);
 	}
 }

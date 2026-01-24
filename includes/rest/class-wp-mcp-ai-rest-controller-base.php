@@ -60,9 +60,9 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	 * @param WP_MCP_AI_REST_Validator|null     $validator     Request validator (optional, for DI).
 	 */
 	public function __construct( $authenticator = null, $validator = null ) {
-		$container           = wp_mcp_ai_container();
-		$this->authenticator = $authenticator ?? $container->get( 'rest.authenticator' );
-		$this->validator     = $validator ?? $container->get( 'rest.validator' );
+		$container              = wp_mcp_ai_container();
+		$this->authenticator    = $authenticator ?? $container->get( 'rest.authenticator' );
+		$this->validator        = $validator ?? $container->get( 'rest.validator' );
 		$this->security_manager = new WP_MCP_AI_Security_Manager();
 	}
 
@@ -107,16 +107,16 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 	 */
 	protected function success( $data, $status = 200 ) {
 		$response = new WP_REST_Response( $data, $status );
-		
+
 		// Add version header.
 		$headers = array(
 			'X-WP-MCP-AI-Version' => WP_MCP_AI_VERSION,
 		);
-		
+
 		// Add security headers.
 		$security_headers = $this->security_manager->get_security_headers();
 		$headers          = array_merge( $headers, $security_headers );
-		
+
 		$response->set_headers( $headers );
 		return $response;
 	}
@@ -161,7 +161,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 
 		// Store auth context for use in the request handler.
 		$this->auth_context = $auth_result;
-		
+
 		// Get authenticated user ID.
 		$authenticated_user_id = isset( $this->auth_context['user_id'] ) ? absint( $this->auth_context['user_id'] ) : 0;
 
@@ -186,7 +186,7 @@ abstract class WP_MCP_AI_REST_Controller_Base {
 					403
 				);
 			}
-			
+
 			// Log successful authentication if enabled.
 			$this->security_manager->log_security_event(
 				'auth_success',

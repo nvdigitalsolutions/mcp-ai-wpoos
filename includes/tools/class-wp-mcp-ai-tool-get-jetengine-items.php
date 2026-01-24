@@ -14,6 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * Determine whether JetEngine is available.
 	 *
@@ -147,7 +148,7 @@ class WP_MCP_AI_Tool_Get_JetEngine_Items implements WP_MCP_AI_Tool_Interface, WP
 			count( $results ),
 			$content_type
 		);
-		
+
 		return array(
 			'message' => $summary_text,
 			'summary' => $summary_text,

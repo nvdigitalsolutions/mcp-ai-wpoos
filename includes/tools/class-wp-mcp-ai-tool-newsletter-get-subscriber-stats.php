@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  */
 class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * Determine whether Newsletter plugin is available.
 	 *

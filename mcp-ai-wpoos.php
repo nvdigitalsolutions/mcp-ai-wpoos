@@ -55,7 +55,7 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 
 /**
  * Define base version mode constant.
- * 
+ *
  * Defaults to false (full mode with all available tools).
  * Set to true in wp-config.php to enable base mode (core tools only).
  */

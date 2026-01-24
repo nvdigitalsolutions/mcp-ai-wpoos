@@ -121,10 +121,10 @@ class WP_MCP_AI_Shortcode {
 		// Register embedded LLM client scripts (always register, enqueue conditionally).
 		// This prevents conflicts when multiple widgets with different providers are on the same page.
 		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
-			$embedded_script_path  = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+			$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
-			$webllm_loader_path    = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
-			$webllm_loader_version = $this->get_asset_version( 'assets/js/webllm-loader.js' );
+			$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+			$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
 
 			// Register WebLLM loader (loads WebLLM library dynamically).
 			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
@@ -918,7 +918,7 @@ class WP_MCP_AI_Shortcode {
 								'assistant_id' => $assistant_id,
 								'tool_count'   => count( $tool_definitions ),
 								'tool_names'   => array_map(
-									function( $def ) {
+									function ( $def ) {
 										return isset( $def['function']['name'] ) ? $def['function']['name'] : 'unknown';
 									},
 									$tool_definitions

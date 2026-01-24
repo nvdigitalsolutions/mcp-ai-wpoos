@@ -40,7 +40,7 @@ class Test_Unified_Team_Chat_Fix extends WP_UnitTestCase {
 
 		// Initialize REST controller with mock client.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		
+
 		// Create mock router that returns a simple response.
 		$mock_client = $this->createMock( WP_MCP_AI_Language_Model_Router::class );
 		$mock_client->method( 'create_chat_completion' )

@@ -66,8 +66,8 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Now includes async tool execution jobs.
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int      $user_id User ID to filter jobs by (0 for all if admin).
-	 * @param int      $limit   Maximum number of jobs to return (default 10).
+	 * @param int             $user_id User ID to filter jobs by (0 for all if admin).
+	 * @param int             $limit   Maximum number of jobs to return (default 10).
 	 * @param int|string|null $assistant_id Optional assistant ID to filter jobs for specific chat widget. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of job status objects.
 	 */
@@ -257,7 +257,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Follows SOC by delegating actual job retrieval to async executor.
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int      $user_id User ID to filter by.
+	 * @param int             $user_id User ID to filter by.
 	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of async tool jobs formatted like cron jobs.
 	 */
@@ -339,7 +339,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * For better performance, consider implementing a dedicated job tracking table if
 	 * the number of concurrent jobs becomes significant.
 	 *
-	 * @param int      $user_id User ID to filter by.
+	 * @param int             $user_id User ID to filter by.
 	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array of video generation jobs formatted like cron jobs.
 	 */
@@ -543,7 +543,7 @@ class WP_MCP_AI_Cron_Status_Service {
 	 * Now includes async tool jobs in counts.
 	 * Supports filtering by assistant_id for multi-widget isolation.
 	 *
-	 * @param int      $user_id User ID to filter by.
+	 * @param int             $user_id User ID to filter by.
 	 * @param int|string|null $assistant_id Optional assistant ID to filter by. Can be int or string (e.g., "unified_team_123").
 	 * @return array Array with counts: pending, running, completed, failed, total.
 	 */

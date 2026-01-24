@@ -199,10 +199,10 @@ trait WP_MCP_AI_Tool_Math_Response {
 	 * @return string HTML with KaTeX rendering.
 	 */
 	protected function render_with_katex( $expression, $display_mode, $index = 0 ) {
-		$unique_id = 'wp-mcp-ai-math-' . wp_generate_password( 8, false ) . '-' . $index;
+		$unique_id          = 'wp-mcp-ai-math-' . wp_generate_password( 8, false ) . '-' . $index;
 		$escaped_expression = esc_attr( $expression );
 
-		$html = '<div class="wp-mcp-ai-math-container" id="' . esc_attr( $unique_id ) . '" ';
+		$html  = '<div class="wp-mcp-ai-math-container" id="' . esc_attr( $unique_id ) . '" ';
 		$html .= 'data-latex="' . $escaped_expression . '" ';
 		$html .= 'data-display-mode="' . ( $display_mode ? 'true' : 'false' ) . '" ';
 		$html .= 'style="' . ( $display_mode ? 'text-align: center; margin: 15px 0;' : 'display: inline-block;' ) . '">';
@@ -249,7 +249,7 @@ trait WP_MCP_AI_Tool_Math_Response {
 		$delimiter = $display_mode ? '$$' : '$';
 		$wrapped   = $delimiter . $expression . $delimiter;
 
-		$html = '<div class="wp-mcp-ai-math-fallback" style="' . ( $display_mode ? 'text-align: center; margin: 15px 0;' : 'display: inline-block;' ) . '">';
+		$html  = '<div class="wp-mcp-ai-math-fallback" style="' . ( $display_mode ? 'text-align: center; margin: 15px 0;' : 'display: inline-block;' ) . '">';
 		$html .= '<code style="font-family: monospace; background: #f5f5f5; padding: ' . ( $display_mode ? '10px 15px' : '2px 6px' ) . '; border-radius: 3px; display: ' . ( $display_mode ? 'block' : 'inline-block' ) . ';">';
 		$html .= esc_html( $wrapped );
 		$html .= '</code>';
@@ -289,7 +289,7 @@ trait WP_MCP_AI_Tool_Math_Response {
 		$plugin_url = plugins_url( '', WP_MCP_AI_FILE );
 		$katex_url  = $plugin_url . '/addons/pro/assets/vendor/katex';
 
-		$html = '<!-- KaTeX CSS -->';
+		$html  = '<!-- KaTeX CSS -->';
 		$html .= '<link rel="stylesheet" href="' . esc_url( $katex_url . '/katex.min.css' ) . '">';
 		$html .= '<!-- KaTeX JS -->';
 		$html .= '<script defer src="' . esc_url( $katex_url . '/katex.min.js' ) . '"></script>';
