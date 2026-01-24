@@ -31,6 +31,7 @@
 	},
 	"dependencies": {
 		"@microsoft/fetch-event-source": "^2.0.1",
+		"@mlc-ai/web-llm": "^0.2.80",
 		"@neplex/vectorizer": "^0.0.5",
 		"chart.js": "^4.4.7",
 		"dompurify": "^3.3.0",
