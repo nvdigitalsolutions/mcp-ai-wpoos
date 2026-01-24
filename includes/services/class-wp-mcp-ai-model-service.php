@@ -83,6 +83,10 @@ class WP_MCP_AI_Model_Service {
 				$models = $this->get_cloudflare_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
+			case 'embedded':
+				$models = $this->get_embedded_models( $settings );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'model_service_invalid_provider',
@@ -503,6 +507,50 @@ class WP_MCP_AI_Model_Service {
 		$models['@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'] = 'DeepSeek R1 Distill Qwen 32B';
 		$models['@cf/meta/llama-3.2-1b-instruct']               = 'Llama 3.2 1B Instruct';
 		$models['@cf/meta/llama-3.2-3b-instruct']               = 'Llama 3.2 3B Instruct';
+
+		return $models;
+	}
+
+	/**
+	 * Get embedded models
+	 *
+	 * @param array $settings Settings array.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_embedded_models( $settings ) {
+		// Check if embedded provider is enabled.
+		if ( empty( $settings['enable_embedded'] ) ) {
+			return array();
+		}
+
+		// Check if in base version (embedded not available).
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			return array();
+		}
+
+		// Check if embedded client class exists.
+		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
+			return array();
+		}
+
+		$models = array();
+
+		// Get downloaded models from embedded client.
+		$embedded_client   = new WP_MCP_AI_Embedded_Client();
+		$downloaded_models = $embedded_client->get_downloaded_models();
+
+		// Build models array from downloaded models.
+		foreach ( $downloaded_models as $slug => $model_data ) {
+			$models[ $slug ] = $model_data['name'];
+		}
+
+		// If no models are downloaded, return available models list.
+		if ( empty( $models ) ) {
+			$available_models = $embedded_client->get_available_models();
+			foreach ( $available_models as $slug => $model_data ) {
+				$models[ $slug ] = $model_data['name'];
+			}
+		}
 
 		return $models;
 	}
