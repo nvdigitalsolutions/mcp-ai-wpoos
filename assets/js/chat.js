@@ -10608,6 +10608,7 @@
                 messageBundleTimer: null, // Timer for message bundling delay
                 cptActionsContainer: cptActionsContainer,
                 lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
+                embeddedClient: null, // Instance of embedded LLM client (created when needed for embedded provider)
             };
 
             initialiseExistingSpeechButtons(state);
@@ -11425,7 +11426,9 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function sendChatEmbedded(state, messages, finalize, submissionContext) {
-        // Check if embedded LLM client is available
+        console.log('[NV oOS] sendChatEmbedded called for instance:', state.config.assistantId);
+        
+        // Check if embedded LLM class is available
         if (!window.WP_MCP_AI_EmbeddedLLM) {
             handleError(state, {
                 message: getString('embeddedClientMissing', 'Embedded LLM client not loaded. Please refresh the page.')
@@ -11435,7 +11438,14 @@
             return Promise.reject(new Error('Embedded LLM client not available'));
         }
 
-        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+        // Create embedded client instance for this widget if not already created
+        if (!state.embeddedClient) {
+            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now();
+            state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
+            console.log('[NV oOS] Created new embedded client instance:', instanceId);
+        }
+
+        const embeddedClient = state.embeddedClient;
 
         // Wait for embedded client to be fully initialized (WebLLM loaded)
         if (!embeddedClient.isReady()) {
@@ -11473,7 +11483,9 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function sendChatEmbeddedInternal(state, messages, finalize, submissionContext) {
-        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+        const embeddedClient = state.embeddedClient;
+        
+        console.log('[NV oOS] sendChatEmbeddedInternal called with client instance:', embeddedClient.instanceId);
 
         // Get model from config
         const modelId = state.config.model;
@@ -11489,21 +11501,23 @@
         // Check if model is loaded
         if (!embeddedClient.isModelLoaded()) {
             // Check model suitability before loading (best practice)
-            if (embeddedClient.checkModelSuitability) {
-                const suitability = embeddedClient.checkModelSuitability(modelId);
+            if (window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability) {
+                const suitability = window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability(modelId);
                 if (!suitability.suitable && suitability.warning) {
-                    console.warn('Model Suitability Warning:', suitability);
+                    console.warn('[NV oOS] Model Suitability Warning:', suitability);
                     
                     // Log warning for now. Future enhancement: show user confirmation dialog
                     // with options to proceed with large model or switch to suggested model.
                     // This would require UI changes and user preference storage.
                     if (suitability.suggestedModel) {
-                        console.info('Suggested alternative model:', suitability.suggestedModel);
+                        console.info('[NV oOS] Suggested alternative model:', suitability.suggestedModel);
                     }
                 }
             }
             
             // Model not loaded yet - need to load it first
+            console.log('[NV oOS] Model not loaded, loading model:', modelId);
+            
             setStatus(state.container, {
                 message: getString('embeddedModelLoading', 'Loading AI model in your browser...'),
                 type: 'processing',
@@ -11521,18 +11535,19 @@
             })
             .then(function() {
                 // Model loaded, now generate completion
+                console.log('[NV oOS] Model loaded successfully, generating completion');
                 return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
             })
             .catch(function(error) {
                 // Use enhanced error categorization for better user feedback
                 let errorMessage = getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message;
                 
-                if (embeddedClient.categorizeError) {
-                    const categorized = embeddedClient.categorizeError(error);
+                if (window.WP_MCP_AI_EmbeddedLLM.categorizeError) {
+                    const categorized = window.WP_MCP_AI_EmbeddedLLM.categorizeError(error);
                     errorMessage = categorized.message;
                     
                     // Log technical details for debugging
-                    console.error('Embedded LLM Error:', {
+                    console.error('[NV oOS] Embedded LLM Error:', {
                         originalError: error.message,
                         category: categorized.technicalCategory,
                         recoverable: categorized.recoverable
@@ -11547,6 +11562,7 @@
         }
 
         // Model already loaded, generate completion
+        console.log('[NV oOS] Model already loaded, generating completion');
         return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
     }
 

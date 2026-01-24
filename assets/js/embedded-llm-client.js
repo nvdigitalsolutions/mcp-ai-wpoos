@@ -4,6 +4,8 @@
  * Runs LLM models entirely in the browser using WebGPU/WebAssembly.
  * No server-side dependencies required - fully private and local.
  * 
+ * Refactored to support multiple instances per page (one per chat widget).
+ * 
  * @package WP_MCP_AI
  * @since 1.1.0
  */
@@ -11,11 +13,8 @@
 (function() {
 	'use strict';
 
-	// WebLLM will be loaded dynamically via import() in the loader script.
+	// Global WebLLM library state (loaded once, shared across all instances)
 	let webLLM = null;
-	let currentEngine = null;
-	let isInitializing = false;
-	let modelLoaded = false;
 	let webLLMReady = false;
 
 	/**
@@ -113,7 +112,7 @@
 	};
 
 	/**
-	 * Initialize WebLLM library
+	 * Initialize WebLLM library (global, called once)
 	 * Waits for WebLLM to be loaded via dynamic import
 	 */
 	async function initializeWebLLM() {
@@ -132,7 +131,7 @@
 	}
 
 	/**
-	 * Check if WebGPU is supported
+	 * Check if WebGPU is supported (static utility)
 	 */
 	async function checkWebGPUSupport() {
 		if (!navigator.gpu) {
@@ -164,237 +163,300 @@
 	}
 
 	/**
-	 * Load and initialize a model
-	 * 
-	 * @param {string} modelId Model identifier
-	 * @param {Function} progressCallback Progress update callback
+	 * EmbeddedLLMClient Class
+	 * Instance-based client that can be created per chat widget
 	 */
-	async function loadModel(modelId, progressCallback) {
-		if (isInitializing) {
-			throw new Error('Model is already being initialized');
+	class EmbeddedLLMClient {
+		constructor(instanceId) {
+			this.instanceId = instanceId || 'default';
+			this.currentEngine = null;
+			this.isInitializing = false;
+			this.modelLoaded = false;
+			this.currentModelId = null;
+			
+			console.log('[NV oOS Embedded Client] Created new instance:', this.instanceId);
 		}
 
-		if (!AVAILABLE_MODELS[modelId]) {
-			throw new Error('Invalid model ID: ' + modelId);
+		/**
+		 * Wait for WebLLM library to be ready
+		 */
+		async waitForReady() {
+			return waitForWebLLM();
 		}
 
-		isInitializing = true;
-		modelLoaded = false;
+		/**
+		 * Check if WebLLM is ready
+		 */
+		isReady() {
+			return webLLMReady && webLLM !== null;
+		}
 
-		try {
-			// Initialize WebLLM if not already done
-			const initialized = await initializeWebLLM();
-			if (!initialized) {
-				throw new Error('Failed to initialize WebLLM library');
+		/**
+		 * Load and initialize a model for this instance
+		 * 
+		 * @param {string} modelId Model identifier
+		 * @param {Function} progressCallback Progress update callback
+		 */
+		async loadModel(modelId, progressCallback) {
+			if (this.isInitializing) {
+				throw new Error('Model is already being initialized for instance ' + this.instanceId);
 			}
 
-			// Check WebGPU support
-			const gpuSupport = await checkWebGPUSupport();
-			if (!gpuSupport.supported) {
-				throw new Error(gpuSupport.message);
+			if (!AVAILABLE_MODELS[modelId]) {
+				throw new Error('Invalid model ID: ' + modelId);
 			}
 
-			// Progress callback setup
-			const initProgressCallback = (progress) => {
-				if (progressCallback) {
-					progressCallback({
-						text: progress.text || '',
-						progress: progress.progress || 0
+			console.log('[NV oOS Embedded Client] Loading model for instance:', {
+				instanceId: this.instanceId,
+				modelId: modelId
+			});
+
+			this.isInitializing = true;
+			this.modelLoaded = false;
+
+			try {
+				// Initialize WebLLM if not already done (global)
+				const initialized = await initializeWebLLM();
+				if (!initialized) {
+					throw new Error('Failed to initialize WebLLM library');
+				}
+
+				// Check WebGPU support
+				const gpuSupport = await checkWebGPUSupport();
+				if (!gpuSupport.supported) {
+					throw new Error(gpuSupport.message);
+				}
+
+				// Progress callback setup
+				const initProgressCallback = (progress) => {
+					if (progressCallback) {
+						progressCallback({
+							text: progress.text || '',
+							progress: progress.progress || 0
+						});
+					}
+				};
+
+				// Create engine with progress tracking for this instance
+				this.currentEngine = await webLLM.CreateMLCEngine(
+					modelId,
+					{
+						initProgressCallback: initProgressCallback,
+						logLevel: 'INFO'
+					}
+				);
+
+				this.modelLoaded = true;
+				this.isInitializing = false;
+				this.currentModelId = modelId;
+
+				console.log('[NV oOS Embedded Client] Model loaded successfully for instance:', {
+					instanceId: this.instanceId,
+					modelId: modelId
+				});
+
+				return {
+					success: true,
+					model: modelId,
+					modelName: AVAILABLE_MODELS[modelId].name
+				};
+
+			} catch (error) {
+				this.isInitializing = false;
+				this.modelLoaded = false;
+				console.error('[NV oOS Embedded Client] Model load failed for instance:', this.instanceId, error);
+				throw error;
+			}
+		}
+
+		/**
+		 * Unload current model and free memory for this instance
+		 */
+		async unloadModel() {
+			if (this.currentEngine) {
+				try {
+					console.log('[NV oOS Embedded Client] Unloading model for instance:', this.instanceId);
+					await this.currentEngine.unload();
+					this.currentEngine = null;
+					this.modelLoaded = false;
+					this.currentModelId = null;
+					return true;
+				} catch (error) {
+					console.error('[NV oOS Embedded Client] Error unloading model for instance:', this.instanceId, error);
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * Check if a model is currently loaded
+		 */
+		isModelLoaded() {
+			return this.modelLoaded;
+		}
+
+		/**
+		 * Get current model ID
+		 */
+		getCurrentModel() {
+			return this.currentModelId;
+		}
+
+		/**
+		 * Generate chat completion (non-streaming)
+		 * 
+		 * @param {Array} messages Array of message objects [{role: 'user', content: '...'}]
+		 * @param {Object} options Generation options
+		 */
+		async generateCompletion(messages, options = {}) {
+			if (!this.modelLoaded || !this.currentEngine) {
+				throw new Error('No model is currently loaded. Please load a model first.');
+			}
+
+			try {
+				const response = await this.currentEngine.chat.completions.create({
+					messages: messages,
+					temperature: options.temperature || 0.7,
+					max_tokens: options.max_tokens || 512,
+					top_p: options.top_p || 0.9,
+					stream: false
+				});
+
+				return {
+					success: true,
+					content: response.choices[0].message.content,
+					usage: response.usage || {}
+				};
+
+			} catch (error) {
+				throw new Error('Generation failed: ' + error.message);
+			}
+		}
+
+		/**
+		 * Generate streaming chat completion
+		 * 
+		 * @param {Array} messages Array of message objects
+		 * @param {Object} options Generation options
+		 * @param {Function} onChunk Callback for each chunk
+		 */
+		async generateStreamingCompletion(messages, options = {}, onChunk) {
+			if (!this.modelLoaded || !this.currentEngine) {
+				throw new Error('No model is currently loaded. Please load a model first.');
+			}
+
+			try {
+				// Log streaming start
+				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
+					instanceId: this.instanceId,
+					messageCount: messages.length,
+					temperature: options.temperature || 0.7,
+					maxTokens: options.max_tokens || 512
+				});
+
+				const asyncChunkGenerator = await this.currentEngine.chat.completions.create({
+					messages: messages,
+					temperature: options.temperature || 0.7,
+					max_tokens: options.max_tokens || 512,
+					top_p: options.top_p || 0.9,
+					stream: true
+				});
+
+				let fullContent = '';
+				let lastChunk = null;
+				let chunkCount = 0;
+
+				for await (const chunk of asyncChunkGenerator) {
+					lastChunk = chunk; // Keep track of last chunk for usage data
+					const delta = chunk.choices[0]?.delta?.content || '';
+					if (delta) {
+						chunkCount++;
+						fullContent += delta;
+						
+						// Log chunk received (only log every 5th chunk to avoid spam)
+						if (chunkCount % 5 === 0 || chunkCount === 1) {
+							console.log('[NV oOS Embedded Client] Chunk received for instance:', {
+								instanceId: this.instanceId,
+								chunkNumber: chunkCount,
+								deltaLength: delta.length,
+								totalLength: fullContent.length
+							});
+						}
+						
+						if (onChunk) {
+							onChunk({
+								content: delta,
+								fullContent: fullContent,
+								done: false
+							});
+						}
+					}
+				}
+
+				// Log completion
+				console.log('[NV oOS Embedded Client] Streaming completed for instance:', {
+					instanceId: this.instanceId,
+					totalChunks: chunkCount,
+					contentLength: fullContent.length,
+					hasUsage: !!(lastChunk && lastChunk.usage)
+				});
+
+				if (onChunk) {
+					console.log('[NV oOS Embedded Client] Calling onChunk with done=true for instance:', this.instanceId);
+					onChunk({
+						content: '',
+						fullContent: fullContent,
+						done: true
 					});
 				}
-			};
 
-			// Create engine with progress tracking
-			currentEngine = await webLLM.CreateMLCEngine(
-				modelId,
-				{
-					initProgressCallback: initProgressCallback,
-					logLevel: 'INFO'
-				}
-			);
+				// Extract usage data from last chunk if available
+				const usage = lastChunk && lastChunk.usage ? lastChunk.usage : {};
 
-			modelLoaded = true;
-			isInitializing = false;
+				const result = {
+					success: true,
+					content: fullContent,
+					usage: usage
+				};
 
-			return {
-				success: true,
-				model: modelId,
-				modelName: AVAILABLE_MODELS[modelId].name
-			};
-
-		} catch (error) {
-			isInitializing = false;
-			modelLoaded = false;
-			throw error;
-		}
-	}
-
-	/**
-	 * Unload current model and free memory
-	 */
-	async function unloadModel() {
-		if (currentEngine) {
-			try {
-				await currentEngine.unload();
-				currentEngine = null;
-				modelLoaded = false;
-				return true;
-			} catch (error) {
-				console.error('Error unloading model:', error);
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Generate chat completion
-	 * 
-	 * @param {Array} messages Array of message objects [{role: 'user', content: '...'}]
-	 * @param {Object} options Generation options
-	 */
-	async function generateCompletion(messages, options = {}) {
-		if (!modelLoaded || !currentEngine) {
-			throw new Error('No model is currently loaded. Please load a model first.');
-		}
-
-		try {
-			const response = await currentEngine.chat.completions.create({
-				messages: messages,
-				temperature: options.temperature || 0.7,
-				max_tokens: options.max_tokens || 512,
-				top_p: options.top_p || 0.9,
-				stream: false
-			});
-
-			return {
-				success: true,
-				content: response.choices[0].message.content,
-				usage: response.usage || {}
-			};
-
-		} catch (error) {
-			throw new Error('Generation failed: ' + error.message);
-		}
-	}
-
-	/**
-	 * Generate streaming chat completion
-	 * 
-	 * @param {Array} messages Array of message objects
-	 * @param {Object} options Generation options
-	 * @param {Function} onChunk Callback for each chunk
-	 */
-	async function generateStreamingCompletion(messages, options = {}, onChunk) {
-		if (!modelLoaded || !currentEngine) {
-			throw new Error('No model is currently loaded. Please load a model first.');
-		}
-
-		try {
-			// Log streaming start
-			console.log('[NV oOS Embedded Client] Starting streaming completion:', {
-				messageCount: messages.length,
-				temperature: options.temperature || 0.7,
-				maxTokens: options.max_tokens || 512
-			});
-
-			const asyncChunkGenerator = await currentEngine.chat.completions.create({
-				messages: messages,
-				temperature: options.temperature || 0.7,
-				max_tokens: options.max_tokens || 512,
-				top_p: options.top_p || 0.9,
-				stream: true
-			});
-
-			let fullContent = '';
-			let lastChunk = null;
-			let chunkCount = 0;
-
-			for await (const chunk of asyncChunkGenerator) {
-				lastChunk = chunk; // Keep track of last chunk for usage data
-				const delta = chunk.choices[0]?.delta?.content || '';
-				if (delta) {
-					chunkCount++;
-					fullContent += delta;
-					
-					// Log chunk received (only log every 5th chunk to avoid spam)
-					if (chunkCount % 5 === 0 || chunkCount === 1) {
-						console.log('[NV oOS Embedded Client] Chunk received:', {
-							chunkNumber: chunkCount,
-							deltaLength: delta.length,
-							totalLength: fullContent.length
-						});
-					}
-					
-					if (onChunk) {
-						onChunk({
-							content: delta,
-							fullContent: fullContent,
-							done: false
-						});
-					}
-				}
-			}
-
-			// Log completion
-			console.log('[NV oOS Embedded Client] Streaming completed:', {
-				totalChunks: chunkCount,
-				contentLength: fullContent.length,
-				hasUsage: !!(lastChunk && lastChunk.usage)
-			});
-
-			if (onChunk) {
-				console.log('[NV oOS Embedded Client] Calling onChunk with done=true');
-				onChunk({
-					content: '',
-					fullContent: fullContent,
-					done: true
+				console.log('[NV oOS Embedded Client] Returning final result for instance:', {
+					instanceId: this.instanceId,
+					success: result.success,
+					contentLength: result.content.length,
+					usageData: result.usage
 				});
+
+				return result;
+
+			} catch (error) {
+				console.error('[NV oOS Embedded Client] Streaming generation failed for instance:', this.instanceId, error);
+				throw new Error('Streaming generation failed: ' + error.message);
+			}
+		}
+
+		/**
+		 * Get runtime stats for this instance
+		 */
+		async getRuntimeStats() {
+			if (!this.currentEngine) {
+				return null;
 			}
 
-			// Extract usage data from last chunk if available
-			const usage = lastChunk && lastChunk.usage ? lastChunk.usage : {};
-
-			const result = {
-				success: true,
-				content: fullContent,
-				usage: usage
-			};
-
-			console.log('[NV oOS Embedded Client] Returning final result:', {
-				success: result.success,
-				contentLength: result.content.length,
-				usageData: result.usage
-			});
-
-			return result;
-
-		} catch (error) {
-			console.error('[NV oOS Embedded Client] Streaming generation failed:', error);
-			throw new Error('Streaming generation failed: ' + error.message);
-		}
-	}
-
-	/**
-	 * Get runtime stats
-	 */
-	async function getRuntimeStats() {
-		if (!currentEngine) {
-			return null;
-		}
-
-		try {
-			const stats = await currentEngine.runtimeStatsText();
-			return stats;
-		} catch (error) {
-			console.error('Error getting runtime stats:', error);
-			return null;
+			try {
+				const stats = await this.currentEngine.runtimeStatsText();
+				return stats;
+			} catch (error) {
+				console.error('[NV oOS Embedded Client] Error getting runtime stats for instance:', this.instanceId, error);
+				return null;
+			}
 		}
 	}
 
 	/**
 	 * Enhanced error categorization for better user feedback
 	 * Based on industry best practices for WebLLM error handling
+	 * Static utility function
 	 * 
 	 * @param {Error} error Original error object
 	 * @returns {Object} Categorized error with user-friendly message
@@ -551,29 +613,17 @@
 	}
 
 	// Export public API
-	window.WP_MCP_AI_EmbeddedLLM = {
-		// Model management
-		availableModels: AVAILABLE_MODELS,
-		loadModel: loadModel,
-		unloadModel: unloadModel,
-		isModelLoaded: () => modelLoaded,
-		getCurrentModel: () => currentEngine ? 'loaded' : null,
-
-		// Generation
-		generateCompletion: generateCompletion,
-		generateStreamingCompletion: generateStreamingCompletion,
-
-		// Utilities
-		checkWebGPUSupport: checkWebGPUSupport,
-		getRuntimeStats: getRuntimeStats,
-		
-		// Enhanced error handling (best practices)
-		categorizeError: categorizeError,
-		checkModelSuitability: checkModelSuitability,
-		
-		// Initialization state
-		isReady: () => webLLMReady && webLLM !== null,
-		waitForReady: waitForWebLLM
+	// Provide both class for creating instances and legacy singleton-style API for backward compatibility
+	window.WP_MCP_AI_EmbeddedLLM = EmbeddedLLMClient;
+	
+	// Static utilities attached to the class
+	window.WP_MCP_AI_EmbeddedLLM.availableModels = AVAILABLE_MODELS;
+	window.WP_MCP_AI_EmbeddedLLM.checkWebGPUSupport = checkWebGPUSupport;
+	window.WP_MCP_AI_EmbeddedLLM.categorizeError = categorizeError;
+	window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability = checkModelSuitability;
+	window.WP_MCP_AI_EmbeddedLLM.waitForWebLLM = waitForWebLLM;
+	window.WP_MCP_AI_EmbeddedLLM.isWebLLMReady = function() {
+		return webLLMReady && webLLM !== null;
 	};
 
 })();
