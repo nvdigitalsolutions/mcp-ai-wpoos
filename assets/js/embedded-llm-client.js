@@ -174,6 +174,7 @@
 			// Validate and generate instance ID
 			if (!instanceId || typeof instanceId !== 'string' || instanceId.trim() === '') {
 				// Generate unique ID if not provided or invalid
+				// Format: embedded-{timestamp}-{random9chars}
 				this.instanceId = 'embedded-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
 				console.warn('[NV oOS Embedded Client] No valid instanceId provided, generated:', this.instanceId);
 			} else {
@@ -385,8 +386,8 @@
 						chunkCount++;
 						fullContent += delta;
 						
-						// Log chunk received (configurable frequency to avoid spam)
-						if (chunkCount % CHUNK_LOG_FREQUENCY === 0 || chunkCount === 1) {
+						// Log chunk received at configurable frequency (initial chunks + every Nth)
+						if (chunkCount <= CHUNK_LOG_FREQUENCY || chunkCount % CHUNK_LOG_FREQUENCY === 0) {
 							console.log('[NV oOS Embedded Client] Chunk received for instance:', {
 								instanceId: this.instanceId,
 								chunkNumber: chunkCount,

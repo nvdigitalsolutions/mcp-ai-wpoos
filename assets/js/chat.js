@@ -11441,8 +11441,9 @@
 
         // Create embedded client instance for this widget if not already created
         if (!state.embeddedClient) {
-            // Generate unique instance ID with timestamp and random component
-            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+            // Generate unique instance ID
+            // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
+            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
             state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
             console.log('[NV oOS] Created new embedded client instance:', instanceId);
         }
@@ -11663,8 +11664,8 @@
                         showTime: false
                     });
                 } else {
-                    // Progressive update
-                    if (chunkCallbackCount % EMBEDDED_CHUNK_LOG_FREQUENCY === 0 || chunkCallbackCount === 1) {
+                    // Progressive update - log at configurable frequency (initial chunks + every Nth)
+                    if (chunkCallbackCount <= EMBEDDED_CHUNK_LOG_FREQUENCY || chunkCallbackCount % EMBEDDED_CHUNK_LOG_FREQUENCY === 0) {
                         console.log('[NV oOS] Received chunk callback:', {
                             callbackNumber: chunkCallbackCount,
                             deltaLength: chunk.content.length,
