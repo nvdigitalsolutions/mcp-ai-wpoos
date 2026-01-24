@@ -867,11 +867,66 @@ class WP_MCP_AI_Shortcode {
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
 			// Add provider and model for client-side execution (embedded provider).
+			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
 			if ( ! empty( $assistant_provider ) ) {
 				$config['provider'] = $assistant_provider;
 			}
 			if ( ! empty( $assistant_model ) ) {
 				$config['model'] = $assistant_model;
+			}
+
+			// Add assistant defaults (system_prompt, temperature) for client-side execution.
+			// This ensures embedded providers have access to the same defaults as server-side providers.
+			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
+				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+			}
+			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
+				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+			}
+
+			// Add tool definitions for embedded provider (Phase 1: Tool Support Implementation).
+			// This enables client-side LLM to know which tools are available and call them.
+			// Tools will be executed server-side via the existing orchestration layer.
+			if ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) {
+				$tool_definitions = array();
+
+				if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+					$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+					foreach ( $assistant_config_for_provider['tools'] as $tool_slug ) {
+						$tool = $registry->get_tool( $tool_slug );
+						if ( $tool && method_exists( $tool, 'get_definition' ) ) {
+							$definition = $tool->get_definition();
+							if ( $definition && is_array( $definition ) ) {
+								// Ensure tool definition is in OpenAI-compatible format.
+								// Most tools already return this format.
+								$tool_definitions[] = $definition;
+							}
+						}
+					}
+				}
+
+				if ( ! empty( $tool_definitions ) ) {
+					$config['tools'] = $tool_definitions;
+
+					// Log tool definitions being passed to embedded provider.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) && 'embedded' === $assistant_provider ) {
+						WP_MCP_AI_Logger::log_event(
+							'embedded_tools_config',
+							'Embedded provider: Tool definitions passed to client',
+							array(
+								'assistant_id' => $assistant_id,
+								'tool_count'   => count( $tool_definitions ),
+								'tool_names'   => array_map(
+									function( $def ) {
+										return isset( $def['function']['name'] ) ? $def['function']['name'] : 'unknown';
+									},
+									$tool_definitions
+								),
+							)
+						);
+					}
+				}
 			}
 
 			// Add team information if team is configured.

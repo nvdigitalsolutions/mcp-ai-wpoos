@@ -11592,6 +11592,197 @@
     }
 
     /**
+     * Handle tool calls from embedded LLM response (Phase 3: Tool Execution)
+     * Executes tools via WordPress REST API using existing orchestration layer
+     * and continues conversation with results
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} embeddedClient Embedded LLM client instance
+     * @param {Array} conversationMessages Current conversation
+     * @param {Object} llmResult LLM response with tool_calls
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     * @param {Number} iterationCount Current iteration (for max iteration check)
+     */
+    function handleEmbeddedToolCalls(state, embeddedClient, conversationMessages, llmResult, finalize, submissionContext, iterationCount) {
+        iterationCount = iterationCount || 0;
+        const MAX_ITERATIONS = 5; // Prevent infinite loops
+
+        if (iterationCount >= MAX_ITERATIONS) {
+            console.warn('[NV oOS] Max tool iterations reached:', MAX_ITERATIONS);
+
+            // Add warning message
+            appendMessage(state, 'system',
+                getString('maxIterationsReached', 'Maximum tool iterations reached. Conversation may be incomplete.'),
+                { isWarning: true }
+            );
+
+            finalize();
+            return Promise.resolve();
+        }
+
+        console.log('[NV oOS] Executing tools for embedded provider (iteration ' + (iterationCount + 1) + '):', llmResult.tool_calls);
+
+        // Display assistant's tool-calling message if there's content
+        if (llmResult.content) {
+            // The message bubble already exists from streaming, just ensure it's visible
+            console.log('[NV oOS] Assistant message with tool calls already displayed');
+        }
+
+        // Add assistant message to conversation
+        const assistantMessage = {
+            role: 'assistant',
+            content: llmResult.content || '',
+            tool_calls: llmResult.tool_calls
+        };
+        conversationMessages.push(assistantMessage);
+
+        // Execute each tool call using existing orchestration
+        const toolExecutionPromises = llmResult.tool_calls.map(function(toolCall) {
+            return executeToolViaOrchestrator(state, toolCall);
+        });
+
+        return Promise.all(toolExecutionPromises)
+            .then(function(toolResults) {
+                // Add tool results to conversation
+                toolResults.forEach(function(result, index) {
+                    const toolMessage = {
+                        role: 'tool',
+                        tool_call_id: llmResult.tool_calls[index].id,
+                        name: llmResult.tool_calls[index].function.name,
+                        content: JSON.stringify(result)
+                    };
+
+                    conversationMessages.push(toolMessage);
+
+                    // Display tool result (reuse existing display logic)
+                    displayToolResult(state, llmResult.tool_calls[index].function.name, result);
+                });
+
+                // Continue conversation with tool results (recursive call)
+                return generateEmbeddedCompletion(
+                    state,
+                    embeddedClient,
+                    conversationMessages,
+                    finalize,
+                    submissionContext,
+                    iterationCount + 1
+                );
+            })
+            .catch(function(error) {
+                console.error('[NV oOS] Tool execution failed:', error);
+                handleError(state, {
+                    message: getString('toolExecutionFailed', 'Tool execution failed: ') + error.message
+                });
+                restoreSubmissionState(state, submissionContext);
+                finalize();
+            });
+    }
+
+    /**
+     * Execute a single tool via WordPress REST API (Phase 3: Tool Execution)
+     * Uses the EXISTING /tools endpoint which routes through Tool_Execution_Orchestrator
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} toolCall Tool call object from LLM
+     * @returns {Promise} Tool result
+     */
+    function executeToolViaOrchestrator(state, toolCall) {
+        console.log('[NV oOS] Executing tool via orchestrator:', toolCall.function.name);
+
+        // Parse tool arguments
+        let toolArgs = {};
+        try {
+            toolArgs = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+            console.error('[NV oOS] Failed to parse tool arguments:', e);
+            return Promise.resolve({
+                error: 'Failed to parse tool arguments',
+                raw_arguments: toolCall.function.arguments
+            });
+        }
+
+        // Call the EXISTING WordPress REST API tools endpoint
+        const payload = {
+            tool: toolCall.function.name,
+            arguments: toolArgs,
+            assistant_id: state.config.assistantId
+        };
+
+        // Show loading indicator
+        const loadingIndicator = showToolLoadingIndicator(state, toolCall.function.name);
+
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            // Remove loading indicator
+            hideToolLoadingIndicator(loadingIndicator);
+
+            console.log('[NV oOS] Tool result from orchestrator:', {
+                tool: toolCall.function.name,
+                success: !data.error,
+                wasAsync: data.async || false,
+                hasCachedResult: data.cached || false
+            });
+
+            return data;
+        })
+        .catch(function(error) {
+            // Remove loading indicator
+            hideToolLoadingIndicator(loadingIndicator);
+
+            console.error('[NV oOS] Tool execution error:', error);
+            return {
+                error: 'Tool execution failed: ' + error.message
+            };
+        });
+    }
+
+    /**
+     * Display tool execution result in chat
+     */
+    function displayToolResult(state, toolName, result) {
+        if (result && result.async) {
+            // Tool was queued for async execution
+            const asyncMsg = getString('toolProcessing', '%s is temporarily processing your request. The assistant will continue using available information.').replace('%s', toolName);
+            appendMessage(state, 'system', asyncMsg, { toolName: toolName, isAsync: true });
+        } else if (result && result.error) {
+            // Tool execution error
+            appendMessage(state, 'system', 'Tool "' + toolName + '" error: ' + result.error, { toolName: toolName, isError: true });
+        } else {
+            // Generic success
+            appendMessage(state, 'system', 'Tool "' + toolName + '" completed', { toolName: toolName });
+        }
+    }
+
+    /**
+     * Show loading indicator for tool execution
+     */
+    function showToolLoadingIndicator(state, toolName) {
+        const loadingMsg = appendMessage(state, 'system',
+            getString('toolProcessing', '%s is processing...').replace('%s', toolName),
+            { isLoading: true, toolName: toolName }
+        );
+        return loadingMsg;
+    }
+
+    /**
+     * Hide loading indicator
+     */
+    function hideToolLoadingIndicator(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }
+
+    /**
      * Generate completion using embedded LLM client
      * 
      * @param {Object} state Chat state
@@ -11599,9 +11790,11 @@
      * @param {Array} messages Messages array
      * @param {Function} finalize Cleanup function
      * @param {Object} submissionContext Submission context for restore
+     * @param {Number} iterationCount Current iteration count for tool calling
      */
-    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext) {
-        console.log('[NV oOS] Starting embedded completion generation');
+    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext, iterationCount) {
+        iterationCount = iterationCount || 0;
+        console.log('[NV oOS] Starting embedded completion generation (iteration ' + iterationCount + ')');
         
         setStatus(state.container, {
             message: getString('embeddedGenerating', 'Generating response...'),
@@ -11627,8 +11820,22 @@
             };
         });
 
+        // Prepend system prompt from assistant configuration if available and not already in messages
+        // This ensures embedded providers receive the same system instructions as server-side providers
+        if (state.config.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            formattedMessages.unshift({
+                role: 'system',
+                content: state.config.systemPrompt
+            });
+            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+                systemPromptLength: state.config.systemPrompt.length,
+                systemPromptPreview: state.config.systemPrompt.substring(0, 100) + '...'
+            });
+        }
+
         console.log('[NV oOS] Formatted messages for embedded client:', {
             messageCount: formattedMessages.length,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
             lastMessage: formattedMessages[formattedMessages.length - 1]
         });
 
@@ -11662,11 +11869,39 @@
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+        
+        // Get temperature from config or use default
+        // Use assistant configuration value if available, otherwise default to 0.7
+        const temperature = state.config.temperature !== undefined && state.config.temperature !== null 
+            ? parseFloat(state.config.temperature) 
+            : 0.7;
 
         console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
-            temperature: state.config.temperature || 0.7,
-            maxTokens: maxTokens
+            temperature: temperature,
+            maxTokens: maxTokens,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+            hasTools: !!(state.config.tools && state.config.tools.length > 0),
+            toolCount: state.config.tools ? state.config.tools.length : 0
         });
+
+        // Build request options (Phase 2: Tool Support)
+        const requestOptions = {
+            temperature: temperature,
+            max_tokens: maxTokens
+        };
+
+        // Add tools if available (Phase 2: Tool Support Implementation)
+        if (state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0) {
+            requestOptions.tools = state.config.tools;
+            requestOptions.tool_choice = 'auto'; // Let model decide when to use tools
+
+            console.log('[NV oOS] Passing tools to WebLLM:', {
+                toolCount: state.config.tools.length,
+                toolNames: state.config.tools.map(function(t) {
+                    return t.function ? t.function.name : 'unknown';
+                })
+            });
+        }
 
         // Helper function to update message bubble with content
         // Uses cached bubble reference for performance (avoids querySelector on every chunk)
@@ -11686,10 +11921,7 @@
 
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
-            {
-                temperature: state.config.temperature || 0.7,
-                max_tokens: maxTokens
-            },
+            requestOptions,
             function(chunk) {
                 chunkCallbackCount++;
                 
@@ -11736,9 +11968,20 @@
                 success: result.success,
                 contentLength: result.content ? result.content.length : 0,
                 hasUsage: !!(result.usage),
+                hasToolCalls: !!(result.tool_calls),
+                toolCallsCount: result.tool_calls ? result.tool_calls.length : 0,
                 usage: result.usage
             });
-            
+
+            // Check if response includes tool_calls (Phase 3: Tool Execution)
+            if (result.tool_calls && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
+                console.log('[NV oOS] LLM requested tool calls:', result.tool_calls);
+
+                // Execute tools and continue conversation
+                return handleEmbeddedToolCalls(state, embeddedClient, conversationMessages, result, finalize, submissionContext);
+            }
+
+            // No tool calls - finish the conversation
             assistantMessage.content[0].text = result.content;
             
             // Update the final message bubble in the DOM with the complete content
