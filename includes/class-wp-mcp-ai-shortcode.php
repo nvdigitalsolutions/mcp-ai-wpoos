@@ -775,7 +775,8 @@ class WP_MCP_AI_Shortcode {
 			$script_version  = $this->get_asset_version( $script_relative );
 
 			// Check if we need to register/re-register with embedded provider dependency.
-			$should_register_with_embedded = $needs_embedded_provider;
+			// In Elementor editor, we skip embedded provider so we should not add the dependency.
+			$should_register_with_embedded = $needs_embedded_provider && ! $is_elementor_editor;
 			$already_registered            = wp_script_is( self::SCRIPT_HANDLE, 'registered' );
 			$was_deregistered              = false;
 
