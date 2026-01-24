@@ -52,11 +52,11 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		$options  = wp_parse_args( $options, $defaults );
 
 		$result = array(
-			'success'         => false,
-			'imported_count'  => 0,
-			'skipped_count'   => 0,
-			'folder_count'    => 0,
-			'errors'          => array(),
+			'success'        => false,
+			'imported_count' => 0,
+			'skipped_count'  => 0,
+			'folder_count'   => 0,
+			'errors'         => array(),
 		);
 
 		// Parse JSON.
@@ -85,7 +85,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 				$folder_id = $this->import_folder( $folder, $user_id, $options );
 				if ( $folder_id ) {
 					$folder_map[ $folder['id'] ] = $folder_id;
-					$result['folder_count']++;
+					++$result['folder_count'];
 				}
 			}
 		}
@@ -95,7 +95,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			try {
 				// Check for duplicates if enabled.
 				if ( $options['skip_duplicates'] && $this->item_exists( $item, $user_id ) ) {
-					$result['skipped_count']++;
+					++$result['skipped_count'];
 					continue;
 				}
 
@@ -107,9 +107,9 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 				// Import item.
 				$item_id = $this->import_item( $item, $user_id, $options );
 				if ( $item_id ) {
-					$result['imported_count']++;
+					++$result['imported_count'];
 				} else {
-					$result['skipped_count']++;
+					++$result['skipped_count'];
 				}
 			} catch ( Exception $e ) {
 				$result['errors'][] = sprintf( 'Error importing item "%s": %s', $item['name'] ?? 'unknown', $e->getMessage() );
@@ -130,9 +130,9 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 */
 	public function export_to_bitwarden_json( $user_id, $options = array() ) {
 		$defaults = array(
-			'include_folders'  => true,
-			'include_totp'     => true,
-			'include_history'  => true,
+			'include_folders'   => true,
+			'include_totp'      => true,
+			'include_history'   => true,
 			'include_favorites' => true,
 		);
 		$options  = wp_parse_args( $options, $defaults );
@@ -177,13 +177,15 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	private function import_folder( $folder, $user_id, $options ) {
 		// Check if folder already exists.
 		if ( $options['merge_folders'] ) {
-			$existing = get_posts( array(
-				'post_type'   => 'mcp_vault_folder',
-				'author'      => $user_id,
-				'title'       => $folder['name'],
-				'post_status' => 'private',
-				'numberposts' => 1,
-			) );
+			$existing = get_posts(
+				array(
+					'post_type'   => 'mcp_vault_folder',
+					'author'      => $user_id,
+					'title'       => $folder['name'],
+					'post_status' => 'private',
+					'numberposts' => 1,
+				)
+			);
 
 			if ( ! empty( $existing ) ) {
 				return $existing[0]->ID;
@@ -191,12 +193,14 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		}
 
 		// Create new folder.
-		$folder_id = wp_insert_post( array(
-			'post_type'   => 'mcp_vault_folder',
-			'post_title'  => sanitize_text_field( $folder['name'] ),
-			'post_status' => 'private',
-			'post_author' => $user_id,
-		) );
+		$folder_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_vault_folder',
+				'post_title'  => sanitize_text_field( $folder['name'] ),
+				'post_status' => 'private',
+				'post_author' => $user_id,
+			)
+		);
 
 		if ( ! is_wp_error( $folder_id ) ) {
 			// Store original Bitwarden ID for reference.
@@ -217,7 +221,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 */
 	private function import_item( $item, $user_id, $options ) {
 		// Determine item type (1=login, 2=note, 3=card, 4=identity).
-		$type_map = array(
+		$type_map  = array(
 			1 => 'login',
 			2 => 'note',
 			3 => 'card',
@@ -226,12 +230,14 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		$item_type = isset( $type_map[ $item['type'] ] ) ? $type_map[ $item['type'] ] : 'note';
 
 		// Create vault item post.
-		$item_id = wp_insert_post( array(
-			'post_type'   => 'mcp_vault_item',
-			'post_title'  => sanitize_text_field( $item['name'] ),
-			'post_status' => 'private',
-			'post_author' => $user_id,
-		) );
+		$item_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_vault_item',
+				'post_title'  => sanitize_text_field( $item['name'] ),
+				'post_status' => 'private',
+				'post_author' => $user_id,
+			)
+		);
 
 		if ( is_wp_error( $item_id ) ) {
 			return false;
@@ -320,12 +326,15 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 		// Store URIs.
 		if ( isset( $login['uris'] ) && is_array( $login['uris'] ) ) {
-			$uris = array_map( function( $uri_obj ) {
-				return array(
-					'uri'   => isset( $uri_obj['uri'] ) ? esc_url_raw( $uri_obj['uri'] ) : '',
-					'match' => isset( $uri_obj['match'] ) ? absint( $uri_obj['match'] ) : 0,
-				);
-			}, $login['uris'] );
+			$uris = array_map(
+				function ( $uri_obj ) {
+					return array(
+						'uri'   => isset( $uri_obj['uri'] ) ? esc_url_raw( $uri_obj['uri'] ) : '',
+						'match' => isset( $uri_obj['match'] ) ? absint( $uri_obj['match'] ) : 0,
+					);
+				},
+				$login['uris']
+			);
 			update_post_meta( $item_id, '_vault_uris', $uris );
 		}
 	}
@@ -409,7 +418,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 			// Encrypt sensitive field values (type 1 = hidden).
 			if ( $field_data['type'] === 1 && ! empty( $field_data['value'] ) ) {
-				$field_data['value'] = $this->encryption_service->encrypt( $field_data['value'], $user_id );
+				$field_data['value']     = $this->encryption_service->encrypt( $field_data['value'], $user_id );
 				$field_data['encrypted'] = true;
 			}
 
@@ -431,14 +440,16 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	private function item_exists( $item, $user_id ) {
 		// Check by original Bitwarden ID if present.
 		if ( isset( $item['id'] ) ) {
-			$existing = get_posts( array(
-				'post_type'   => 'mcp_vault_item',
-				'author'      => $user_id,
-				'meta_key'    => '_bitwarden_item_id',
-				'meta_value'  => sanitize_text_field( $item['id'] ),
-				'post_status' => 'private',
-				'numberposts' => 1,
-			) );
+			$existing = get_posts(
+				array(
+					'post_type'   => 'mcp_vault_item',
+					'author'      => $user_id,
+					'meta_key'    => '_bitwarden_item_id',
+					'meta_value'  => sanitize_text_field( $item['id'] ),
+					'post_status' => 'private',
+					'numberposts' => 1,
+				)
+			);
 
 			if ( ! empty( $existing ) ) {
 				return true;
@@ -446,18 +457,25 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		}
 
 		// Check by name and type.
-		$type_map = array( 1 => 'login', 2 => 'note', 3 => 'card', 4 => 'identity' );
+		$type_map  = array(
+			1 => 'login',
+			2 => 'note',
+			3 => 'card',
+			4 => 'identity',
+		);
 		$item_type = isset( $type_map[ $item['type'] ] ) ? $type_map[ $item['type'] ] : 'note';
 
-		$existing = get_posts( array(
-			'post_type'   => 'mcp_vault_item',
-			'author'      => $user_id,
-			'title'       => $item['name'],
-			'meta_key'    => '_vault_item_type',
-			'meta_value'  => $item_type,
-			'post_status' => 'private',
-			'numberposts' => 1,
-		) );
+		$existing = get_posts(
+			array(
+				'post_type'   => 'mcp_vault_item',
+				'author'      => $user_id,
+				'title'       => $item['name'],
+				'meta_key'    => '_vault_item_type',
+				'meta_value'  => $item_type,
+				'post_status' => 'private',
+				'numberposts' => 1,
+			)
+		);
 
 		return ! empty( $existing );
 	}
@@ -469,19 +487,24 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 * @return array        Array of folder data.
 	 */
 	private function get_user_folders( $user_id ) {
-		$folders = get_posts( array(
-			'post_type'      => 'mcp_vault_folder',
-			'author'         => $user_id,
-			'post_status'    => 'private',
-			'posts_per_page' => -1,
-		) );
+		$folders = get_posts(
+			array(
+				'post_type'      => 'mcp_vault_folder',
+				'author'         => $user_id,
+				'post_status'    => 'private',
+				'posts_per_page' => -1,
+			)
+		);
 
-		return array_map( function( $folder ) {
-			return array(
-				'id'   => 'wp-folder-' . $folder->ID,
-				'name' => $folder->post_title,
-			);
-		}, $folders );
+		return array_map(
+			function ( $folder ) {
+				return array(
+					'id'   => 'wp-folder-' . $folder->ID,
+					'name' => $folder->post_title,
+				);
+			},
+			$folders
+		);
 	}
 
 	/**
@@ -491,12 +514,14 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 * @return array        Array of vault item posts.
 	 */
 	private function get_user_items( $user_id ) {
-		return get_posts( array(
-			'post_type'      => 'mcp_vault_item',
-			'author'         => $user_id,
-			'post_status'    => 'private',
-			'posts_per_page' => -1,
-		) );
+		return get_posts(
+			array(
+				'post_type'      => 'mcp_vault_item',
+				'author'         => $user_id,
+				'post_status'    => 'private',
+				'posts_per_page' => -1,
+			)
+		);
 	}
 
 	/**
@@ -509,7 +534,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 */
 	private function convert_to_bitwarden_format( $item, $user_id, $options ) {
 		$item_type = get_post_meta( $item->ID, '_vault_item_type', true );
-		
+
 		// Type map (reverse of import).
 		$type_map = array(
 			'login'    => 1,
@@ -517,7 +542,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			'card'     => 3,
 			'identity' => 4,
 		);
-		$bw_type = isset( $type_map[ $item_type ] ) ? $type_map[ $item_type ] : 2;
+		$bw_type  = isset( $type_map[ $item_type ] ) ? $type_map[ $item_type ] : 2;
 
 		$bitwarden_item = array(
 			'id'             => 'wp-item-' . $item->ID,
@@ -538,7 +563,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 		// Add favorite status.
 		if ( $options['include_favorites'] ) {
-			$is_favorite = get_post_meta( $item->ID, '_vault_favorite', true );
+			$is_favorite                = get_post_meta( $item->ID, '_vault_favorite', true );
 			$bitwarden_item['favorite'] = $is_favorite === '1';
 		}
 
@@ -681,24 +706,27 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 	 * @return array          Custom fields for Bitwarden format.
 	 */
 	private function export_custom_fields( $fields, $user_id ) {
-		return array_map( function( $field ) use ( $user_id ) {
-			$exported = array(
-				'name'  => $field['name'],
-				'value' => $field['value'],
-				'type'  => isset( $field['type'] ) ? $field['type'] : 0,
-			);
+		return array_map(
+			function ( $field ) use ( $user_id ) {
+				$exported = array(
+					'name'  => $field['name'],
+					'value' => $field['value'],
+					'type'  => isset( $field['type'] ) ? $field['type'] : 0,
+				);
 
-			// Decrypt if encrypted.
-			if ( isset( $field['encrypted'] ) && $field['encrypted'] ) {
-				try {
-					$exported['value'] = $this->encryption_service->decrypt( $field['value'], $user_id );
-				} catch ( Exception $e ) {
-					$exported['value'] = '';
+				// Decrypt if encrypted.
+				if ( isset( $field['encrypted'] ) && $field['encrypted'] ) {
+					try {
+						$exported['value'] = $this->encryption_service->decrypt( $field['value'], $user_id );
+					} catch ( Exception $e ) {
+						$exported['value'] = '';
+					}
 				}
-			}
 
-			return $exported;
-		}, $fields );
+				return $exported;
+			},
+			$fields
+		);
 	}
 
 	/**
@@ -739,13 +767,13 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 		// Create encrypted export structure.
 		$encrypted_export = array(
-			'encrypted'     => true,
-			'encType'       => 0, // AES-256-CBC with HMAC-SHA256.
+			'encrypted'                    => true,
+			'encType'                      => 0, // AES-256-CBC with HMAC-SHA256.
 			'encKeyValidation_DO_NOT_EDIT' => $encrypted_data['key_validation'],
-			'data'          => $encrypted_data['encrypted_string'],
-			'salt'          => $encrypted_data['salt'],
-			'kdfIterations' => 100000,
-			'kdfType'       => 0, // PBKDF2-SHA256.
+			'data'                         => $encrypted_data['encrypted_string'],
+			'salt'                         => $encrypted_data['salt'],
+			'kdfIterations'                => 100000,
+			'kdfType'                      => 0, // PBKDF2-SHA256.
 		);
 
 		return wp_json_encode( $encrypted_export, JSON_PRETTY_PRINT );
@@ -793,7 +821,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 
 			// Create MAC over IV + ciphertext.
 			$mac_data = $iv . $cipher_text;
-			$mac = hash_hmac( 'sha256', $mac_data, $mac_key, true );
+			$mac      = hash_hmac( 'sha256', $mac_data, $mac_key, true );
 
 			// Combine IV + ciphertext + MAC.
 			$encrypted_bytes = $iv . $cipher_text . $mac;
@@ -878,7 +906,7 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 		try {
 			// Decode base64 inputs.
 			$encrypted_bytes = base64_decode( $encrypted_string );
-			$salt = base64_decode( $salt_b64 );
+			$salt            = base64_decode( $salt_b64 );
 
 			if ( $encrypted_bytes === false || $salt === false ) {
 				return new WP_Error( 'decode_error', 'Failed to decode encrypted data' );
@@ -900,12 +928,12 @@ class WP_MCP_AI_Bitwarden_Import_Export {
 			$mac_key = substr( $key, 16, 16 );
 
 			// Extract components.
-			$iv = substr( $encrypted_bytes, 0, 16 );
-			$mac = substr( $encrypted_bytes, -32 );
+			$iv          = substr( $encrypted_bytes, 0, 16 );
+			$mac         = substr( $encrypted_bytes, -32 );
 			$cipher_text = substr( $encrypted_bytes, 16, -32 );
 
 			// Verify MAC.
-			$mac_data = $iv . $cipher_text;
+			$mac_data     = $iv . $cipher_text;
 			$computed_mac = hash_hmac( 'sha256', $mac_data, $mac_key, true );
 
 			if ( ! hash_equals( $computed_mac, $mac ) ) {

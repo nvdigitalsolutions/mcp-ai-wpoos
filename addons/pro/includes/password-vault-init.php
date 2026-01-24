@@ -73,9 +73,9 @@ function wp_mcp_ai_pro_register_vault_rest_routes() {
 function wp_mcp_ai_pro_register_vault_tools( $tools ) {
 	$vault_tools = array(
 		// Vault Access tool (read-only).
-		'WP_MCP_AI_Pro_Tool_Vault_Access'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-access.php',
+		'WP_MCP_AI_Pro_Tool_Vault_Access'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-access.php',
 		// Vault Manage tool (CRUD operations).
-		'WP_MCP_AI_Pro_Tool_Vault_Manage'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-manage.php',
+		'WP_MCP_AI_Pro_Tool_Vault_Manage'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-vault-manage.php',
 		// Generate Password tool.
 		'WP_MCP_AI_Pro_Tool_Generate_Password' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-generate-password.php',
 	);

@@ -65,16 +65,16 @@ class WP_MCP_AI_Vault_Folder_CPT {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'description'         => __( 'Folders for organizing vault items', 'mcp-ai-wpoos-pro' ),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => false, // Hidden from admin UI - managed via custom admin page.
-			'show_in_menu'        => false,
-			'query_var'           => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'capabilities'        => array(
+			'labels'                => $labels,
+			'description'           => __( 'Folders for organizing vault items', 'mcp-ai-wpoos-pro' ),
+			'public'                => false,
+			'publicly_queryable'    => false,
+			'show_ui'               => false, // Hidden from admin UI - managed via custom admin page.
+			'show_in_menu'          => false,
+			'query_var'             => false,
+			'rewrite'               => false,
+			'capability_type'       => 'post',
+			'capabilities'          => array(
 				'edit_post'          => 'edit_own_vault_folders',
 				'read_post'          => 'read_own_vault_folders',
 				'delete_post'        => 'delete_own_vault_folders',
@@ -84,12 +84,12 @@ class WP_MCP_AI_Vault_Folder_CPT {
 				'publish_posts'      => 'publish_vault_folders',
 				'read_private_posts' => 'read_private_vault_folders',
 			),
-			'has_archive'         => false,
-			'hierarchical'        => true, // Support parent/child folders.
-			'menu_position'       => null,
-			'supports'            => array( 'title', 'author', 'page-attributes' ),
-			'show_in_rest'        => true, // Enable REST API access.
-			'rest_base'           => 'vault-folders',
+			'has_archive'           => false,
+			'hierarchical'          => true, // Support parent/child folders.
+			'menu_position'         => null,
+			'supports'              => array( 'title', 'author', 'page-attributes' ),
+			'show_in_rest'          => true, // Enable REST API access.
+			'rest_base'             => 'vault-folders',
 			'rest_controller_class' => 'WP_REST_Posts_Controller',
 		);
 

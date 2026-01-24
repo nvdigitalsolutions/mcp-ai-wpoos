@@ -72,16 +72,16 @@ class WP_MCP_AI_Vault_Item_CPT {
 		);
 
 		$args = array(
-			'labels'              => $labels,
-			'description'         => __( 'Encrypted vault items (passwords, notes, cards, identities)', 'mcp-ai-wpoos-pro' ),
-			'public'              => false,
-			'publicly_queryable'  => false,
-			'show_ui'             => false, // Hidden from admin UI - managed via custom admin page.
-			'show_in_menu'        => false,
-			'query_var'           => false,
-			'rewrite'             => false,
-			'capability_type'     => 'post',
-			'capabilities'        => array(
+			'labels'                => $labels,
+			'description'           => __( 'Encrypted vault items (passwords, notes, cards, identities)', 'mcp-ai-wpoos-pro' ),
+			'public'                => false,
+			'publicly_queryable'    => false,
+			'show_ui'               => false, // Hidden from admin UI - managed via custom admin page.
+			'show_in_menu'          => false,
+			'query_var'             => false,
+			'rewrite'               => false,
+			'capability_type'       => 'post',
+			'capabilities'          => array(
 				'edit_post'          => 'edit_own_vault_items',
 				'read_post'          => 'read_own_vault_items',
 				'delete_post'        => 'delete_own_vault_items',
@@ -91,12 +91,12 @@ class WP_MCP_AI_Vault_Item_CPT {
 				'publish_posts'      => 'publish_vault_items',
 				'read_private_posts' => 'read_private_vault_items',
 			),
-			'has_archive'         => false,
-			'hierarchical'        => false,
-			'menu_position'       => null,
-			'supports'            => array( 'title', 'author' ),
-			'show_in_rest'        => true, // Enable REST API access.
-			'rest_base'           => 'vault-items',
+			'has_archive'           => false,
+			'hierarchical'          => false,
+			'menu_position'         => null,
+			'supports'              => array( 'title', 'author' ),
+			'show_in_rest'          => true, // Enable REST API access.
+			'rest_base'             => 'vault-items',
 			'rest_controller_class' => 'WP_REST_Posts_Controller',
 		);
 

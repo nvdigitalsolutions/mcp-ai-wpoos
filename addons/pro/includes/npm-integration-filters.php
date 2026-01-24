@@ -533,10 +533,10 @@ function wp_mcp_ai_generate_qr_code( $data, $format = 'data-url', $options = arr
 
 	// Default options.
 	$defaults = array(
-		'width'               => 200,
-		'margin'              => 2,
+		'width'                => 200,
+		'margin'               => 2,
 		'errorCorrectionLevel' => 'M', // L, M, Q, H.
-		'color'               => array(
+		'color'                => array(
 			'dark'  => '#000000',
 			'light' => '#ffffff',
 		),

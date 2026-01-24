@@ -35,49 +35,49 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'vault_access',
-			'description' => 'Read-only access to password vault. Search and retrieve login credentials, secure notes, cards, or identity information securely. Use when you need to access stored passwords or credentials for automation tasks.',
-			'category'    => 'password_vault',
-			'input_schema' => array(
+			'name'                => 'vault_access',
+			'description'         => 'Read-only access to password vault. Search and retrieve login credentials, secure notes, cards, or identity information securely. Use when you need to access stored passwords or credentials for automation tasks.',
+			'category'            => 'password_vault',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'action'     => array(
+					'action'    => array(
 						'type'        => 'string',
 						'enum'        => array( 'list', 'search', 'get' ),
 						'description' => 'Action to perform: list (get all items), search (find by query), get (get specific item by ID)',
 					),
-					'item_type'  => array(
+					'item_type' => array(
 						'type'        => 'string',
 						'enum'        => array( 'login', 'note', 'card', 'identity' ),
 						'description' => 'Filter by item type (optional)',
 					),
-					'folder_id'  => array(
+					'folder_id' => array(
 						'type'        => 'integer',
 						'description' => 'Filter by folder ID (optional)',
 					),
-					'query'      => array(
+					'query'     => array(
 						'type'        => 'string',
 						'description' => 'Search query (required for search action)',
 					),
-					'item_id'    => array(
+					'item_id'   => array(
 						'type'        => 'integer',
 						'description' => 'Vault item ID (required for get action)',
 					),
-					'per_page'   => array(
+					'per_page'  => array(
 						'type'        => 'integer',
 						'default'     => 20,
 						'minimum'     => 1,
 						'maximum'     => 100,
 						'description' => 'Number of items per page (for list/search)',
 					),
-					'page'       => array(
+					'page'      => array(
 						'type'        => 'integer',
 						'default'     => 1,
 						'minimum'     => 1,
 						'description' => 'Page number (for list/search)',
 					),
 				),
-				'required' => array( 'action' ),
+				'required'   => array( 'action' ),
 			),
 			'required_capability' => 'edit_posts',
 		);
@@ -286,9 +286,9 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 * @return array
 	 */
 	protected function prepare_item( $post, $include_data = true ) {
-		$item_type  = get_post_meta( $post->ID, '_vault_item_type', true );
-		$folder_id  = get_post_meta( $post->ID, '_vault_folder_id', true );
-		$favorite   = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
+		$item_type = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$favorite  = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
 
 		$item = array(
 			'id'         => $post->ID,

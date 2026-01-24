@@ -154,17 +154,17 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 				'callback'            => array( $this, 'search_items' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 				'args'                => array(
-					'query'      => array(
+					'query'     => array(
 						'required'    => true,
 						'type'        => 'string',
 						'description' => 'Search query',
 					),
-					'item_type'  => array(
+					'item_type' => array(
 						'type'        => 'string',
 						'enum'        => array( 'login', 'note', 'card', 'identity' ),
 						'description' => 'Filter by item type',
 					),
-					'folder_id'  => array(
+					'folder_id' => array(
 						'type'        => 'integer',
 						'description' => 'Filter by folder ID',
 					),
@@ -230,7 +230,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 		if ( isset( $this->rate_limits[ $user_id ] ) ) {
 			$this->rate_limits[ $user_id ] = array_filter(
 				$this->rate_limits[ $user_id ],
-				function( $timestamp ) use ( $current_time, $window ) {
+				function ( $timestamp ) use ( $current_time, $window ) {
 					return $timestamp > ( $current_time - $window );
 				}
 			);
@@ -560,11 +560,11 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function generate_password( $request ) {
-		$length     = $request->get_param( 'length' ) ? absint( $request->get_param( 'length' ) ) : 16;
-		$uppercase  = (bool) $request->get_param( 'uppercase' );
-		$lowercase  = (bool) $request->get_param( 'lowercase' );
-		$numbers    = (bool) $request->get_param( 'numbers' );
-		$symbols    = (bool) $request->get_param( 'symbols' );
+		$length          = $request->get_param( 'length' ) ? absint( $request->get_param( 'length' ) ) : 16;
+		$uppercase       = (bool) $request->get_param( 'uppercase' );
+		$lowercase       = (bool) $request->get_param( 'lowercase' );
+		$numbers         = (bool) $request->get_param( 'numbers' );
+		$symbols         = (bool) $request->get_param( 'symbols' );
 		$avoid_ambiguous = (bool) $request->get_param( 'avoid_ambiguous' );
 
 		$password = $this->encryption_service->generate_password(
@@ -666,15 +666,15 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Prepare item for REST response
 	 *
-	 * @param WP_Post $item Post object.
+	 * @param WP_Post         $item Post object.
 	 * @param WP_REST_Request $request Request object.
 	 * @return array
 	 */
 	public function prepare_item_for_response( $item, $request ) {
-		$post = $item; // For backward compatibility with existing code
-		$item_type  = get_post_meta( $post->ID, '_vault_item_type', true );
-		$folder_id  = get_post_meta( $post->ID, '_vault_folder_id', true );
-		$favorite   = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
+		$post           = $item; // For backward compatibility with existing code
+		$item_type      = get_post_meta( $post->ID, '_vault_item_type', true );
+		$folder_id      = get_post_meta( $post->ID, '_vault_folder_id', true );
+		$favorite       = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
 		$encrypted_data = get_post_meta( $post->ID, '_vault_encrypted_data', true );
 
 		$data = array();
@@ -722,11 +722,11 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 
 			case 'card':
 				return array(
-					'cardholder'     => sanitize_text_field( $request->get_param( 'cardholder' ) ),
-					'card_number'    => sanitize_text_field( $request->get_param( 'card_number' ) ),
-					'expiry_month'   => sanitize_text_field( $request->get_param( 'expiry_month' ) ),
-					'expiry_year'    => sanitize_text_field( $request->get_param( 'expiry_year' ) ),
-					'security_code'  => sanitize_text_field( $request->get_param( 'security_code' ) ),
+					'cardholder'    => sanitize_text_field( $request->get_param( 'cardholder' ) ),
+					'card_number'   => sanitize_text_field( $request->get_param( 'card_number' ) ),
+					'expiry_month'  => sanitize_text_field( $request->get_param( 'expiry_month' ) ),
+					'expiry_year'   => sanitize_text_field( $request->get_param( 'expiry_year' ) ),
+					'security_code' => sanitize_text_field( $request->get_param( 'security_code' ) ),
 				);
 
 			case 'identity':

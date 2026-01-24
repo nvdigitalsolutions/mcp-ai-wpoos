@@ -107,7 +107,7 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		}
 
 		// Encrypt using AES-256-GCM.
-		$auth_tag    = '';
+		$auth_tag   = '';
 		$ciphertext = openssl_encrypt(
 			$plaintext,
 			self::CIPHER_METHOD,
@@ -283,7 +283,7 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		}
 
 		// Generate password using cryptographically secure random.
-		$password      = '';
+		$password       = '';
 		$charset_length = strlen( $charset );
 
 		try {
@@ -312,34 +312,35 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		// Length scoring.
 		$length = strlen( $password );
 		if ( $length >= 8 ) {
-			$score++;
+			++$score;
 		}
 		if ( $length >= 12 ) {
-			$score++;
+			++$score;
 		}
 		if ( $length >= 16 ) {
-			$score++;
+			++$score;
 		}
 
 		// Character diversity scoring.
 		if ( preg_match( '/[a-z]/', $password ) ) {
-			$score++;
+			++$score;
 		}
 		if ( preg_match( '/[A-Z]/', $password ) ) {
-			$score++;
+			++$score;
 		}
 		if ( preg_match( '/[0-9]/', $password ) ) {
-			$score++;
+			++$score;
 		}
 		if ( preg_match( '/[^a-zA-Z0-9]/', $password ) ) {
-			$score++;
+			++$score;
 		}
 
 		// Normalize to 0-4 scale.
 		return min( 4, (int) ( $score / 2 ) );
 	}
 
-	/* ========================================================================
+	/*
+	========================================================================
 	 * TOTP (Time-based One-Time Password) Functions - RFC 6238
 	 * Compatible with Google Authenticator, Authy, Microsoft Authenticator
 	 * ======================================================================== */
@@ -534,7 +535,7 @@ class WP_MCP_AI_Vault_Encryption_Service {
 		$chunks = str_split( $bits, 5 );
 
 		foreach ( $chunks as $chunk ) {
-			$chunk = str_pad( $chunk, 5, '0', STR_PAD_RIGHT );
+			$chunk   = str_pad( $chunk, 5, '0', STR_PAD_RIGHT );
 			$output .= $alphabet[ bindec( $chunk ) ];
 		}
 

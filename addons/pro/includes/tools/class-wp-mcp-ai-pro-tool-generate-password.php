@@ -35,10 +35,10 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'generate_password',
-			'description' => 'Generate cryptographically secure random passwords with customizable strength and character sets. Returns password with strength analysis. Use when you need to create strong passwords for new accounts or password rotation.',
-			'category'    => 'password_vault',
-			'input_schema' => array(
+			'name'                => 'generate_password',
+			'description'         => 'Generate cryptographically secure random passwords with customizable strength and character sets. Returns password with strength analysis. Use when you need to create strong passwords for new accounts or password rotation.',
+			'category'            => 'password_vault',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
 					'length'          => array(

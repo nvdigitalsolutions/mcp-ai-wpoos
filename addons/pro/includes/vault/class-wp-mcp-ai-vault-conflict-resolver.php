@@ -132,9 +132,9 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 
 		// Merge URIs (combine unique URIs).
 		if ( ! empty( $remote_item['uri'] ) ) {
-			$local_uris  = $this->parse_uris( $local_item['uri'] ?? '' );
-			$remote_uris = $this->parse_uris( $remote_item['uri'] );
-			$merged_uris = array_unique( array_merge( $local_uris, $remote_uris ) );
+			$local_uris    = $this->parse_uris( $local_item['uri'] ?? '' );
+			$remote_uris   = $this->parse_uris( $remote_item['uri'] );
+			$merged_uris   = array_unique( array_merge( $local_uris, $remote_uris ) );
 			$merged['uri'] = implode( "\n", $merged_uris );
 		}
 
@@ -156,8 +156,8 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 
 		// Merge custom fields (combine unique fields).
 		if ( ! empty( $remote_item['custom_fields'] ) ) {
-			$local_fields  = $local_item['custom_fields'] ?? array();
-			$remote_fields = $remote_item['custom_fields'];
+			$local_fields            = $local_item['custom_fields'] ?? array();
+			$remote_fields           = $remote_item['custom_fields'];
 			$merged['custom_fields'] = $this->merge_custom_fields( $local_fields, $remote_fields );
 		}
 
@@ -201,12 +201,12 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 	 * @return array Merged custom fields.
 	 */
 	private function merge_custom_fields( $local_fields, $remote_fields ) {
-		$merged = array();
+		$merged     = array();
 		$seen_names = array();
 
 		// Add all local fields.
 		foreach ( $local_fields as $field ) {
-			$merged[] = $field;
+			$merged[]     = $field;
 			$seen_names[] = $field['name'] ?? '';
 		}
 
@@ -232,7 +232,7 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 		// Store conflict for manual resolution.
 		$conflicts = get_option( 'wp_mcp_ai_vault_conflicts', array() );
 
-		$conflict_id = wp_generate_uuid4();
+		$conflict_id               = wp_generate_uuid4();
 		$conflicts[ $conflict_id ] = array(
 			'id'          => $conflict_id,
 			'local_item'  => $local_item,
@@ -247,7 +247,7 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 
 		// Return local item with conflict marker.
 		$local_item['has_conflict'] = true;
-		$local_item['conflict_id'] = $conflict_id;
+		$local_item['conflict_id']  = $conflict_id;
 
 		return $local_item;
 	}
@@ -284,9 +284,12 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 	 */
 	public function get_pending_conflicts() {
 		$conflicts = get_option( 'wp_mcp_ai_vault_conflicts', array() );
-		return array_filter( $conflicts, function( $conflict ) {
-			return $conflict['status'] === 'pending';
-		} );
+		return array_filter(
+			$conflicts,
+			function ( $conflict ) {
+				return $conflict['status'] === 'pending';
+			}
+		);
 	}
 
 	/**
@@ -303,8 +306,8 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 			return new WP_Error( 'invalid_conflict', 'Conflict not found' );
 		}
 
-		$conflict = $conflicts[ $conflict_id ];
-		$local_item = $conflict['local_item'];
+		$conflict    = $conflicts[ $conflict_id ];
+		$local_item  = $conflict['local_item'];
 		$remote_item = $conflict['remote_item'];
 
 		switch ( $choice ) {
@@ -322,8 +325,8 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 		}
 
 		// Mark conflict as resolved.
-		$conflicts[ $conflict_id ]['status'] = 'resolved';
-		$conflicts[ $conflict_id ]['resolution'] = $choice;
+		$conflicts[ $conflict_id ]['status']      = 'resolved';
+		$conflicts[ $conflict_id ]['resolution']  = $choice;
 		$conflicts[ $conflict_id ]['resolved_at'] = current_time( 'mysql' );
 		update_option( 'wp_mcp_ai_vault_conflicts', $conflicts );
 
@@ -335,9 +338,12 @@ class WP_MCP_AI_Vault_Conflict_Resolver {
 	 */
 	public function clear_resolved_conflicts() {
 		$conflicts = get_option( 'wp_mcp_ai_vault_conflicts', array() );
-		$pending = array_filter( $conflicts, function( $conflict ) {
-			return $conflict['status'] === 'pending';
-		} );
+		$pending   = array_filter(
+			$conflicts,
+			function ( $conflict ) {
+				return $conflict['status'] === 'pending';
+			}
+		);
 		update_option( 'wp_mcp_ai_vault_conflicts', $pending );
 	}
 

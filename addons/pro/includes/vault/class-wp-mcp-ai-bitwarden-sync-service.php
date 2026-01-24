@@ -72,23 +72,26 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 
 		if ( $auth_method === 'api_key' ) {
 			// API key authentication (client_credentials flow).
-			$body['grant_type']     = 'client_credentials';
-			$body['client_id']      = $email; // Client ID from Bitwarden.
-			$body['client_secret']  = $master_password; // Client secret.
-			$body['scope']          = 'api';
+			$body['grant_type']    = 'client_credentials';
+			$body['client_id']     = $email; // Client ID from Bitwarden.
+			$body['client_secret'] = $master_password; // Client secret.
+			$body['scope']         = 'api';
 			unset( $body['username'] );
 		} else {
 			// Password authentication (resource owner password flow).
 			$body['password'] = $master_password;
 		}
 
-		$response = wp_remote_post( $token_url, array(
-			'headers' => array(
-				'Content-Type' => 'application/x-www-form-urlencoded',
-			),
-			'body'    => $body,
-			'timeout' => 15,
-		) );
+		$response = wp_remote_post(
+			$token_url,
+			array(
+				'headers' => array(
+					'Content-Type' => 'application/x-www-form-urlencoded',
+				),
+				'body'    => $body,
+				'timeout' => 15,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -174,7 +177,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 			foreach ( $export_data['folders'] as $folder ) {
 				$folder_result = $this->create_or_update_folder( $folder );
 				if ( ! is_wp_error( $folder_result ) ) {
-					$result['folders_synced']++;
+					++$result['folders_synced'];
 				} else {
 					$result['errors'][] = $folder_result->get_error_message();
 				}
@@ -186,7 +189,7 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 			foreach ( $export_data['items'] as $item ) {
 				$item_result = $this->create_or_update_item( $item );
 				if ( ! is_wp_error( $item_result ) ) {
-					$result['items_synced']++;
+					++$result['items_synced'];
 				} else {
 					$result['errors'][] = $item_result->get_error_message();
 				}
@@ -206,12 +209,15 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 	private function fetch_sync_data() {
 		$sync_url = $this->server_url . 'api/sync';
 
-		$response = wp_remote_get( $sync_url, array(
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $this->access_token,
-			),
-			'timeout' => 30,
-		) );
+		$response = wp_remote_get(
+			$sync_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $this->access_token,
+				),
+				'timeout' => 30,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -295,14 +301,17 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 	private function create_or_update_folder( $folder ) {
 		$folders_url = $this->server_url . 'api/folders';
 
-		$response = wp_remote_post( $folders_url, array(
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $this->access_token,
-				'Content-Type'  => 'application/json',
-			),
-			'body'    => wp_json_encode( array( 'name' => $folder['name'] ) ),
-			'timeout' => 15,
-		) );
+		$response = wp_remote_post(
+			$folders_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $this->access_token,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( array( 'name' => $folder['name'] ) ),
+				'timeout' => 15,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -341,14 +350,17 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 			'fields'         => isset( $item['fields'] ) ? $item['fields'] : array(),
 		);
 
-		$response = wp_remote_post( $ciphers_url, array(
-			'headers' => array(
-				'Authorization' => 'Bearer ' . $this->access_token,
-				'Content-Type'  => 'application/json',
-			),
-			'body'    => wp_json_encode( $cipher ),
-			'timeout' => 15,
-		) );
+		$response = wp_remote_post(
+			$ciphers_url,
+			array(
+				'headers' => array(
+					'Authorization' => 'Bearer ' . $this->access_token,
+					'Content-Type'  => 'application/json',
+				),
+				'body'    => wp_json_encode( $cipher ),
+				'timeout' => 15,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -375,9 +387,12 @@ class WP_MCP_AI_Bitwarden_Sync_Service {
 		$server_url = trailingslashit( $server_url );
 		$test_url   = $server_url . 'api/config';
 
-		$response = wp_remote_get( $test_url, array(
-			'timeout' => 10,
-		) );
+		$response = wp_remote_get(
+			$test_url,
+			array(
+				'timeout' => 10,
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			return $response;

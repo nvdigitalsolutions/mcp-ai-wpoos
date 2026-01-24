@@ -35,71 +35,71 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'vault_manage',
-			'description' => 'Manage password vault items (create, update, delete). Create new login credentials, secure notes, payment cards, or identity information. Update existing vault items or delete them. Use for automating credential management.',
-			'category'    => 'password_vault',
-			'input_schema' => array(
+			'name'                => 'vault_manage',
+			'description'         => 'Manage password vault items (create, update, delete). Create new login credentials, secure notes, payment cards, or identity information. Update existing vault items or delete them. Use for automating credential management.',
+			'category'            => 'password_vault',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'action'     => array(
+					'action'        => array(
 						'type'        => 'string',
 						'enum'        => array( 'create', 'update', 'delete' ),
 						'description' => 'Action to perform: create (new item), update (existing item), delete (remove item)',
 					),
-					'item_id'    => array(
+					'item_id'       => array(
 						'type'        => 'integer',
 						'description' => 'Vault item ID (required for update/delete)',
 					),
-					'name'       => array(
+					'name'          => array(
 						'type'        => 'string',
 						'description' => 'Vault item name (required for create, optional for update)',
 					),
-					'item_type'  => array(
+					'item_type'     => array(
 						'type'        => 'string',
 						'enum'        => array( 'login', 'note', 'card', 'identity' ),
 						'description' => 'Vault item type (required for create)',
 					),
-					'folder_id'  => array(
+					'folder_id'     => array(
 						'type'        => 'integer',
 						'description' => 'Folder ID for organization (optional)',
 					),
-					'favorite'   => array(
+					'favorite'      => array(
 						'type'        => 'boolean',
 						'description' => 'Mark as favorite (optional)',
 					),
-					'username'   => array(
+					'username'      => array(
 						'type'        => 'string',
 						'description' => 'Username (for login type)',
 					),
-					'password'   => array(
+					'password'      => array(
 						'type'        => 'string',
 						'description' => 'Password (for login type)',
 					),
-					'uri'        => array(
+					'uri'           => array(
 						'type'        => 'string',
 						'description' => 'Website URI (for login type)',
 					),
-					'totp'       => array(
+					'totp'          => array(
 						'type'        => 'string',
 						'description' => 'TOTP secret (for login type)',
 					),
-					'notes'      => array(
+					'notes'         => array(
 						'type'        => 'string',
 						'description' => 'Secure notes (for any type)',
 					),
-					'cardholder' => array(
+					'cardholder'    => array(
 						'type'        => 'string',
 						'description' => 'Cardholder name (for card type)',
 					),
-					'card_number' => array(
+					'card_number'   => array(
 						'type'        => 'string',
 						'description' => 'Card number (for card type)',
 					),
-					'expiry_month' => array(
+					'expiry_month'  => array(
 						'type'        => 'string',
 						'description' => 'Expiry month MM (for card type)',
 					),
-					'expiry_year' => array(
+					'expiry_year'   => array(
 						'type'        => 'string',
 						'description' => 'Expiry year YYYY (for card type)',
 					),
@@ -107,32 +107,32 @@ class WP_MCP_AI_Pro_Tool_Vault_Manage {
 						'type'        => 'string',
 						'description' => 'CVV/CVC code (for card type)',
 					),
-					'title'      => array(
+					'title'         => array(
 						'type'        => 'string',
 						'description' => 'Title (for identity type)',
 					),
-					'first_name' => array(
+					'first_name'    => array(
 						'type'        => 'string',
 						'description' => 'First name (for identity type)',
 					),
-					'last_name'  => array(
+					'last_name'     => array(
 						'type'        => 'string',
 						'description' => 'Last name (for identity type)',
 					),
-					'email'      => array(
+					'email'         => array(
 						'type'        => 'string',
 						'description' => 'Email address (for identity type)',
 					),
-					'phone'      => array(
+					'phone'         => array(
 						'type'        => 'string',
 						'description' => 'Phone number (for identity type)',
 					),
-					'address'    => array(
+					'address'       => array(
 						'type'        => 'string',
 						'description' => 'Physical address (for identity type)',
 					),
 				),
-				'required' => array( 'action' ),
+				'required'   => array( 'action' ),
 			),
 			'required_capability' => 'edit_posts',
 		);

@@ -143,7 +143,7 @@ class WP_MCP_AI_Vault_Background_Sync {
 				$this->log_sync_event( 'Sync failed: ' . $result->get_error_message(), 'error' );
 			} else {
 				$this->log_sync_event( 'Sync completed successfully' );
-				
+
 				// Update last sync time.
 				update_option( 'wp_mcp_ai_vault_last_sync', time() );
 			}
@@ -225,7 +225,7 @@ class WP_MCP_AI_Vault_Background_Sync {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public function trigger_manual_sync() {
-		$settings = get_option( 'wp_mcp_ai_vault_sync_settings', array() );
+		$settings  = get_option( 'wp_mcp_ai_vault_sync_settings', array() );
 		$direction = ! empty( $settings['sync_direction'] ) ? $settings['sync_direction'] : 'pull';
 
 		try {
