@@ -996,6 +996,27 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				return false;
 			}
 
+			// Check for client-side WebLLM (loaded via CDN, not bundled).
+			// This package is used in embedded-llm-client.js which loads it from CDN at runtime.
+			if ( '@mlc-ai/web-llm' === $package ) {
+				// Check if the client-side embedded LLM JavaScript file exists.
+				$embedded_client_path = WP_MCP_AI_PATH . 'assets/js/embedded-llm-client.js';
+				return file_exists( $embedded_client_path );
+			}
+
+			// Check for qrcode package (Pro addon).
+			// This package is used for QR code generation in Pro features.
+			if ( 'qrcode' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				// Check if it's in Pro addon's node_modules.
+				$qrcode_path = WP_MCP_AI_PRO_PATH . 'node_modules/qrcode';
+				if ( file_exists( $qrcode_path ) ) {
+					return true;
+				}
+				// Check if it's bundled into a Pro script.
+				// QR code functionality is available if Pro addon is active.
+				return defined( 'WP_MCP_AI_PRO_VERSION' );
+			}
+
 			// ===================================================================
 			// PRIORITY 3: Fallback to node_modules (DEVELOPMENT ONLY)
 			// Only check these if vendor files are not found
