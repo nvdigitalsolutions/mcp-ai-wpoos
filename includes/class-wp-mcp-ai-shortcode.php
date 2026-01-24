@@ -735,48 +735,59 @@ class WP_MCP_AI_Shortcode {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
 
-				// Load WebLLM library from CDN first (dependency for embedded-llm-client).
-				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
-				// Loading from CDN ensures users get the latest version with bug fixes and model support.
-				// The library is open source and maintained by MLC AI (Apache 2.0 license).
-				// Use importmap to properly load ES module format.
-				if ( ! wp_script_is( 'webllm', 'registered' ) ) {
+				// Register and load WebLLM library from CDN.
+				// WebLLM is an ES module, so we load it via an inline script that uses dynamic import().
+				// This ensures it works correctly with WordPress's script loading system.
+				if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
+					// Register a placeholder script for the loader.
 					wp_register_script(
-						'webllm',
-						'https://esm.run/@mlc-ai/web-llm',
+						'webllm-loader',
+						false, // No source file - we'll use inline script.
 						array(),
-						null,
-						array(
-							'in_footer' => true,
-							'strategy'  => 'defer',
-						)
+						WP_MCP_AI_VERSION,
+						true
 					);
-					// Add type="module" attribute to script tag.
-					add_filter(
-						'script_loader_tag',
-						function ( $tag, $handle ) {
-							if ( 'webllm' === $handle ) {
-								$tag = str_replace( ' src=', ' type="module" src=', $tag );
-							}
-							return $tag;
-						},
-						10,
-						2
-					);
+
+					// Add inline script that loads WebLLM as an ES module.
+					$webllm_loader = "
+						(function() {
+							if (window.wpMcpAiWebLLMLoading) return;
+							window.wpMcpAiWebLLMLoading = true;
+							
+							import('https://esm.run/@mlc-ai/web-llm')
+								.then(function(webLLM) {
+									window.webLLM = webLLM;
+									window.wpMcpAiWebLLMLoaded = true;
+									console.log('[NV oOS] WebLLM loaded successfully');
+									
+									// Dispatch event for embedded client to know WebLLM is ready.
+									if (typeof Event === 'function') {
+										window.dispatchEvent(new Event('webllm-ready'));
+									}
+								})
+								.catch(function(error) {
+									console.error('[NV oOS] Failed to load WebLLM:', error);
+									window.wpMcpAiWebLLMError = error;
+								});
+						})();
+					";
+					wp_add_inline_script( 'webllm-loader', $webllm_loader );
 				}
 
-				// Register embedded LLM client with webllm as dependency.
+				// Register embedded LLM client.
+				// It will wait for WebLLM to load before initializing.
 				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
 					wp_register_script(
 						'wp-mcp-ai-embedded-llm-client',
 						$embedded_script_path,
-						array( 'webllm' ),
+						array( 'webllm-loader' ), // Depends on the loader.
 						$embedded_script_version,
 						true
 					);
 				}
 
-				// Enqueue the embedded client (and its webllm dependency).
+				// Enqueue the loader and embedded client.
+				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 			}
 

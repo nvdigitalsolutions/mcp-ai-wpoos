@@ -11,11 +11,47 @@
 (function() {
 	'use strict';
 
-	// WebLLM will be loaded via CDN or bundled
+	// WebLLM will be loaded dynamically via import() in the loader script.
 	let webLLM = null;
 	let currentEngine = null;
 	let isInitializing = false;
 	let modelLoaded = false;
+	let webLLMReady = false;
+
+	/**
+	 * Wait for WebLLM to be loaded
+	 * WebLLM is loaded asynchronously via dynamic import()
+	 */
+	function waitForWebLLM() {
+		return new Promise(function(resolve, reject) {
+			// Check if already loaded.
+			if (window.webLLM) {
+				webLLM = window.webLLM;
+				webLLMReady = true;
+				resolve(webLLM);
+				return;
+			}
+
+			// Check if there was an error loading.
+			if (window.wpMcpAiWebLLMError) {
+				reject(new Error('WebLLM failed to load: ' + window.wpMcpAiWebLLMError.message));
+				return;
+			}
+
+			// Wait for the webllm-ready event.
+			var timeoutId = setTimeout(function() {
+				reject(new Error('Timeout waiting for WebLLM to load'));
+			}, 30000); // 30 second timeout.
+
+			window.addEventListener('webllm-ready', function onReady() {
+				clearTimeout(timeoutId);
+				webLLM = window.webLLM;
+				webLLMReady = true;
+				window.removeEventListener('webllm-ready', onReady);
+				resolve(webLLM);
+			});
+		});
+	}
 
 	/**
 	 * Available models for client-side inference
@@ -61,29 +97,19 @@
 
 	/**
 	 * Initialize WebLLM library
+	 * Waits for WebLLM to be loaded via dynamic import
 	 */
 	async function initializeWebLLM() {
-		if (webLLM) {
+		if (webLLMReady && webLLM) {
 			return true;
 		}
 
 		try {
-			// Try to load from global scope (CDN)
-			if (typeof window.webllm !== 'undefined') {
-				webLLM = window.webllm;
-				return true;
-			}
-
-			// Try dynamic import for bundled version
-			if (typeof window.mlcWebLLM !== 'undefined') {
-				webLLM = window.mlcWebLLM;
-				return true;
-			}
-
-			console.error('WebLLM library not found. Please ensure it is loaded.');
-			return false;
+			// Wait for WebLLM to be loaded by the loader script.
+			await waitForWebLLM();
+			return true;
 		} catch (error) {
-			console.error('Error initializing WebLLM:', error);
+			console.error('[NV oOS] Error initializing WebLLM:', error);
 			return false;
 		}
 	}
