@@ -91,6 +91,10 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 			return;
 		}
 
+		// Check if any assistant on this page uses embedded provider.
+		// If so, we need to enqueue embedded LLM scripts before the chat scripts.
+		$this->enqueue_embedded_provider_if_needed();
+
 		// Enqueue shared chat assets.
 		$this->enqueue_chat_assets();
 
@@ -104,6 +108,83 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 */
 	protected function enqueue_page_assets() {
 		// Override in child classes if needed.
+	}
+
+	/**
+	 * Check if any assistant uses embedded provider and enqueue scripts if needed.
+	 * This is required for admin test pages where assistants are loaded dynamically.
+	 */
+	protected function enqueue_embedded_provider_if_needed() {
+		// Skip if WP_MCP_AI_BASE_VERSION is true (embedded provider not available in base version).
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			return;
+		}
+
+		// Check if Assistant CPT class is available.
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return;
+		}
+
+		// Get all published assistants to check if any use embedded provider.
+		$assistants = get_posts(
+			array(
+				'post_type'      => $this->get_post_type(),
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'fields'         => 'ids', // Only need IDs for efficiency.
+			)
+		);
+
+		if ( empty( $assistants ) ) {
+			return;
+		}
+
+		// Check if any assistant uses embedded provider.
+		$needs_embedded = false;
+		foreach ( $assistants as $assistant_id ) {
+			$config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+			if ( isset( $config['provider'] ) && 'embedded' === $config['provider'] ) {
+				$needs_embedded = true;
+				break;
+			}
+		}
+
+		// If no assistant uses embedded provider, we're done.
+		if ( ! $needs_embedded ) {
+			return;
+		}
+
+		// Enqueue embedded LLM client scripts.
+		$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+		$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+		$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+		$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
+
+		// Register WebLLM loader script.
+		if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
+			wp_register_script(
+				'webllm-loader',
+				$webllm_loader_path,
+				array(),
+				$webllm_loader_version,
+				true
+			);
+		}
+
+		// Register embedded LLM client.
+		if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+			wp_register_script(
+				'wp-mcp-ai-embedded-llm-client',
+				$embedded_script_path,
+				array( 'webllm-loader' ),
+				$embedded_script_version,
+				true
+			);
+		}
+
+		// Enqueue the scripts.
+		wp_enqueue_script( 'webllm-loader' );
+		wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 	}
 
 	/**
