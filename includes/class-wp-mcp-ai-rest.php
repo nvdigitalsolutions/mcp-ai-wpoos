@@ -3015,7 +3015,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$error_class = get_class( $e );
 				$error_file  = $e->getFile();
 				$error_line  = $e->getLine();
-				
+
 				WP_MCP_AI_Logger::log_error(
 					'sse_llm_fatal_error',
 					'Fatal error during LLM call in streaming mode',
@@ -3027,17 +3027,17 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 						'trace'       => $e->getTraceAsString(),
 					)
 				);
-				
+
 				// Determine if we can provide a more helpful user-facing message.
 				$user_message = __( 'A fatal error occurred while processing your request.', 'mcp-ai-wpoos' );
-				
+
 				// Provide specific guidance for common error scenarios.
 				if ( strpos( $e->getMessage(), 'Call to a member function' ) !== false ) {
 					$user_message = __( 'The selected AI provider is not properly configured. Please check your provider settings.', 'mcp-ai-wpoos' );
 				} elseif ( strpos( $e->getMessage(), 'Class' ) !== false && strpos( $e->getMessage(), 'not found' ) !== false ) {
 					$user_message = __( 'A required component is missing. This may be due to plugin version mismatch or incomplete installation.', 'mcp-ai-wpoos' );
 				}
-				
+
 				$this->send_sse_event(
 					'error',
 					array(
@@ -3658,20 +3658,20 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'sse_final_message_sending',
 				'Sending final SSE message event to client',
 				array(
-					'assistant_id'           => $assistant_id,
-					'has_data'               => isset( $payload['data'] ),
-					'has_tool_results'       => isset( $payload['tool_results'] ),
-					'has_session_key'        => isset( $payload['sessionKey'] ),
-					'has_cost'               => isset( $payload['cost'] ),
-					'payload_keys'           => array_keys( $payload ),
-					'data_has_choices'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0,
-					'data_has_message'       => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0 && isset( $payload['data']['choices'][0]['message'] ),
-					'endpoint'               => $request->get_route(),
+					'assistant_id'     => $assistant_id,
+					'has_data'         => isset( $payload['data'] ),
+					'has_tool_results' => isset( $payload['tool_results'] ),
+					'has_session_key'  => isset( $payload['sessionKey'] ),
+					'has_cost'         => isset( $payload['cost'] ),
+					'payload_keys'     => array_keys( $payload ),
+					'data_has_choices' => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0,
+					'data_has_message' => isset( $payload['data']['choices'] ) && is_array( $payload['data']['choices'] ) && count( $payload['data']['choices'] ) > 0 && isset( $payload['data']['choices'][0]['message'] ),
+					'endpoint'         => $request->get_route(),
 				)
 			);
 
 			$this->send_sse_event( 'message', $payload );
-			
+
 			// Log that [DONE] marker is being sent.
 			WP_MCP_AI_Logger::log_event(
 				'sse_done_marker_sending',
@@ -3681,7 +3681,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'endpoint'     => $request->get_route(),
 				)
 			);
-			
+
 			$this->send_sse_done();
 
 			exit;
@@ -4946,7 +4946,6 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				);
 			}
 
-
 			// Get driver assistant (optional - for logging/tracking only).
 			$driver_assistant_id = get_post_meta( $team_id, '_wp_mcp_ai_team_driver_assistant', true );
 
@@ -4996,7 +4995,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					'team_id'            => $team_id,
 					'team_name'          => $team_post->post_title,
 					'driver_assistant'   => $driver_assistant_id,
-				'member_count'       => count( $team_members ),
+					'member_count'       => count( $team_members ),
 					'orchestration_mode' => $orchestration_mode,
 					'result_aggregation' => $result_aggregation,
 					'message_count'      => count( $messages ),
@@ -5089,18 +5088,18 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				'rest_unified_team_complete',
 				'Unified team orchestration completed',
 				array(
-					'team_id'             => $team_id,
-					'orchestration_mode'  => $orchestration_mode,
-					'result_aggregation'  => $result_aggregation,
-					'members_responded'   => count( $member_responses ),
-					'response_length'     => strlen( $aggregated_response ),
+					'team_id'            => $team_id,
+					'orchestration_mode' => $orchestration_mode,
+					'result_aggregation' => $result_aggregation,
+					'members_responded'  => count( $member_responses ),
+					'response_length'    => strlen( $aggregated_response ),
 				)
 			);
 
 			// Format response similar to regular assistant response.
 			return array(
-				'role'    => 'assistant',
-				'content' => $aggregated_response,
+				'role'     => 'assistant',
+				'content'  => $aggregated_response,
 				'metadata' => array(
 					'team_id'            => $team_id,
 					'orchestration_mode' => $orchestration_mode,
@@ -5119,7 +5118,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return array|WP_Error Array of member responses or error.
 		 */
 		protected function execute_sequential_orchestration( $team_members, $messages, $request ) {
-			$responses       = array();
+			$responses        = array();
 			$context_messages = $messages;
 
 			foreach ( $team_members as $member_id ) {
@@ -5199,14 +5198,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 			}
 
 			// Add all initial responses to context.
-			$refinement_context = $messages;
+			$refinement_context   = $messages;
 			$refinement_context[] = array(
 				'role'    => 'assistant',
 				'content' => "Initial team responses:\n\n" . implode( "\n\n---\n\n", array_column( $initial_responses, 'content' ) ),
 			);
 
 			// Have first member (critic or leader) refine based on all inputs.
-			$leader_id = $team_members[0];
+			$leader_id        = $team_members[0];
 			$refined_response = $this->invoke_team_member( $leader_id, $refinement_context, $request );
 
 			if ( is_wp_error( $refined_response ) ) {
@@ -5350,7 +5349,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// Combine all responses with clear attribution.
 					$aggregated = "# Team Response (Consensus)\n\n";
 					foreach ( $responses as $index => $response ) {
-						$member_num = $index + 1;
+						$member_num  = $index + 1;
 						$aggregated .= "## Team Member {$member_num}\n\n";
 						$aggregated .= $response['content'] . "\n\n";
 					}
@@ -5377,9 +5376,12 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				case 'best':
 					// Longest response (proxy for most comprehensive).
-					usort( $responses, function( $a, $b ) {
-						return strlen( $b['content'] ) - strlen( $a['content'] );
-					});
+					usort(
+						$responses,
+						function ( $a, $b ) {
+							return strlen( $b['content'] ) - strlen( $a['content'] );
+						}
+					);
 					return $responses[0]['content'];
 
 				default:
@@ -7680,7 +7682,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @return object|WP_Error Provider instance or error.
 		 */
 		protected function get_ai_provider_instance( $provider ) {
-			$provider = sanitize_key( $provider );
+			$provider  = sanitize_key( $provider );
 			$container = wp_mcp_ai_container();
 
 			try {
