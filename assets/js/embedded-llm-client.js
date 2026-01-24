@@ -21,6 +21,9 @@
 	/**
 	 * Wait for WebLLM to be loaded
 	 * WebLLM is loaded asynchronously via dynamic import()
+	 * 
+	 * Best Practice: Use event-based waiting for async module loading.
+	 * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import
 	 */
 	function waitForWebLLM() {
 		return new Promise(function(resolve, reject) {
@@ -38,18 +41,32 @@
 				return;
 			}
 
-			// Wait for the webllm-ready event.
+			// Set up timeout (30 seconds).
 			var timeoutId = setTimeout(function() {
-				reject(new Error('Timeout waiting for WebLLM to load'));
-			}, 30000); // 30 second timeout.
+				reject(new Error('Timeout waiting for WebLLM to load. Check your internet connection and browser console for errors.'));
+			}, 30000);
 
-			window.addEventListener('webllm-ready', function onReady() {
+			// Wait for the webllm-ready event.
+			function onReady() {
 				clearTimeout(timeoutId);
 				webLLM = window.webLLM;
 				webLLMReady = true;
 				window.removeEventListener('webllm-ready', onReady);
+				window.removeEventListener('webllm-error', onError);
 				resolve(webLLM);
-			});
+			}
+
+			// Wait for error event.
+			function onError(event) {
+				clearTimeout(timeoutId);
+				window.removeEventListener('webllm-ready', onReady);
+				window.removeEventListener('webllm-error', onError);
+				var error = event.detail || new Error('Unknown error loading WebLLM');
+				reject(error);
+			}
+
+			window.addEventListener('webllm-ready', onReady);
+			window.addEventListener('webllm-error', onError);
 		});
 	}
 

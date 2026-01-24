@@ -734,44 +734,19 @@ class WP_MCP_AI_Shortcode {
 			if ( $needs_embedded_provider ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+				$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+				$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
 
-				// Register and load WebLLM library from CDN.
-				// WebLLM is an ES module, so we load it via an inline script that uses dynamic import().
-				// This ensures it works correctly with WordPress's script loading system.
+				// Register WebLLM loader script (only once per page).
+				// Best Practice: Use separate JS files instead of inline scripts.
 				if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
-					// Register a placeholder script for the loader.
 					wp_register_script(
 						'webllm-loader',
-						false, // No source file - we'll use inline script.
+						$webllm_loader_path,
 						array(),
-						WP_MCP_AI_VERSION,
+						$webllm_loader_version,
 						true
 					);
-
-					// Add inline script that loads WebLLM as an ES module.
-					$webllm_loader = "
-						(function() {
-							if (window.wpMcpAiWebLLMLoading) return;
-							window.wpMcpAiWebLLMLoading = true;
-							
-							import('https://esm.run/@mlc-ai/web-llm')
-								.then(function(webLLM) {
-									window.webLLM = webLLM;
-									window.wpMcpAiWebLLMLoaded = true;
-									console.log('[NV oOS] WebLLM loaded successfully');
-									
-									// Dispatch event for embedded client to know WebLLM is ready.
-									if (typeof Event === 'function') {
-										window.dispatchEvent(new Event('webllm-ready'));
-									}
-								})
-								.catch(function(error) {
-									console.error('[NV oOS] Failed to load WebLLM:', error);
-									window.wpMcpAiWebLLMError = error;
-								});
-						})();
-					";
-					wp_add_inline_script( 'webllm-loader', $webllm_loader );
 				}
 
 				// Register embedded LLM client.
@@ -787,6 +762,7 @@ class WP_MCP_AI_Shortcode {
 				}
 
 				// Enqueue the loader and embedded client.
+				// WordPress ensures these are only loaded once even if called multiple times.
 				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 			}
