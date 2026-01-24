@@ -673,6 +673,46 @@ class WP_MCP_AI_Shortcode {
 				}
 			}
 
+			// Get assistant provider and model for client-side execution (embedded provider).
+			$assistant_provider = '';
+			$assistant_model    = '';
+			if ( ! $is_profession_test && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $assistant_id ) );
+				$assistant_provider            = isset( $assistant_config_for_provider['provider'] ) ? sanitize_key( $assistant_config_for_provider['provider'] ) : '';
+				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
+			}
+
+			// Enqueue embedded LLM client script if provider is embedded.
+			// Check: provider is embedded AND (base version not defined OR base version is false).
+			// Embedded provider is only available in Pro version (not base version).
+			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
+				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+
+				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+					wp_register_script(
+						'wp-mcp-ai-embedded-llm-client',
+						$embedded_script_path,
+						array(),
+						$embedded_script_version,
+						true
+					);
+				}
+				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
+
+				// Load WebLLM library from CDN.
+				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
+				// Loading from CDN ensures users get the latest version with bug fixes and model support.
+				// The library is open source and maintained by MLC AI (Apache 2.0 license).
+				wp_enqueue_script(
+					'webllm',
+					'https://esm.run/@mlc-ai/web-llm',
+					array(),
+					null,
+					true
+				);
+			}
+
 			// Handle profession attribute to build professional role prompt.
 			$professional_prompt = '';
 			$profession_data     = null;
@@ -715,6 +755,14 @@ class WP_MCP_AI_Shortcode {
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
+
+			// Add provider and model for client-side execution (embedded provider).
+			if ( ! empty( $assistant_provider ) ) {
+				$config['provider'] = $assistant_provider;
+			}
+			if ( ! empty( $assistant_model ) ) {
+				$config['model'] = $assistant_model;
+			}
 
 			// Add team information if team is configured.
 			if ( ! empty( $team_data ) ) {

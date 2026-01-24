@@ -245,8 +245,37 @@ If you were planning to use server-side embedded LLM:
 
 **Just enable it in settings and it works.** 🎉
 
+## Technical Implementation
+
+**Chat Client Execution:**
+
+When an assistant is configured with the `embedded` provider:
+1. Chat client detects provider from assistant configuration
+2. Bypasses server-side REST API completely
+3. Uses `embedded-llm-client.js` for browser-based inference
+4. Streams responses directly from WebLLM engine
+5. No server-side API requests are made at all
+
+This is different from other providers (OpenAI, Gemini, etc.) which make server-side API calls. The embedded provider runs **100% client-side** in the browser using WebGPU/WebAssembly.
+
+**Code Flow:**
+```javascript
+// In chat.js sendChat() function:
+if (state.config.provider === 'embedded') {
+    return sendChatEmbedded(state, messages, finalize, submissionContext);
+}
+// Otherwise, use normal REST API
+```
+
+**Benefits:**
+- Zero server load (no PHP execution for chat completion)
+- Perfect for high-traffic sites
+- No API rate limits or quotas
+- Complete data privacy (never leaves browser)
+- Works even with `shell_exec` disabled
+
 ---
 
-**Last Updated:** January 24, 2026  
+**Last Updated:** January 24, 2026
 **Plugin Version:** 1.1.0+  
 **Recommended for:** Everyone (shared hosting, VPS, dedicated, all users)

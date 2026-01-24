@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-chat-client-to-client-side',
+        'version' => 'dev-copilot/update-chat-client-to-client-side',
+        'reference' => '9afd23505254350a2a548ad154f799aea06fe1ca',
         'pretty_version' => 'dev-copilot/fix-css-js-loading-issues',
         'version' => 'dev-copilot/fix-css-js-loading-issues',
         'reference' => '96c3c72532fc68b140ccb77f23e129a6909b8945',
@@ -47,6 +50,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-chat-client-to-client-side',
+            'version' => 'dev-copilot/update-chat-client-to-client-side',
+            'reference' => '9afd23505254350a2a548ad154f799aea06fe1ca',
             'pretty_version' => 'dev-copilot/fix-css-js-loading-issues',
             'version' => 'dev-copilot/fix-css-js-loading-issues',
             'reference' => '96c3c72532fc68b140ccb77f23e129a6909b8945',
