@@ -13,7 +13,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 	/**
 	 * Set up test.
 	 */
-	public function setUp(): void {
+	public function setUp() {
 		parent::setUp();
 
 		// Clear settings cache.
@@ -27,7 +27,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 	/**
 	 * Tear down test.
 	 */
-	public function tearDown(): void {
+	public function tearDown() {
 		// Clean up settings.
 		delete_option( 'wp_mcp_ai_settings' );
 
