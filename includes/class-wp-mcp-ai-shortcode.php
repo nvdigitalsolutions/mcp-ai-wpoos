@@ -683,7 +683,7 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Enqueue embedded LLM client script if provider is embedded.
-			if ( 'embedded' === $assistant_provider && ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
+			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
 
