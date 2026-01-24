@@ -11437,6 +11437,44 @@
 
         const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
 
+        // Wait for embedded client to be fully initialized (WebLLM loaded)
+        if (!embeddedClient.isReady()) {
+            setStatus(state.container, {
+                message: getString('embeddedClientInitializing', 'Initializing embedded AI client...'),
+                type: 'processing',
+                showTime: false
+            });
+
+            return embeddedClient.waitForReady()
+                .then(function() {
+                    // Client is now ready, proceed with chat
+                    return sendChatEmbeddedInternal(state, messages, finalize, submissionContext);
+                })
+                .catch(function(error) {
+                    handleError(state, {
+                        message: getString('embeddedClientInitError', 'Failed to initialize embedded AI client: ') + error.message
+                    });
+                    restoreSubmissionState(state, submissionContext);
+                    finalize();
+                    throw error;
+                });
+        }
+
+        // Client is ready, proceed immediately
+        return sendChatEmbeddedInternal(state, messages, finalize, submissionContext);
+    }
+
+    /**
+     * Internal function to handle embedded chat after client is ready
+     * 
+     * @param {Object} state Chat state
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     */
+    function sendChatEmbeddedInternal(state, messages, finalize, submissionContext) {
+        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+
         // Get model from config
         const modelId = state.config.model;
         if (!modelId) {
