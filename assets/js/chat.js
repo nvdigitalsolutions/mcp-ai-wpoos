@@ -11673,7 +11673,8 @@
         function updateMessageBubble(content) {
             if (bubble) {
                 if (markdownService && markdownService.renderMarkdown) {
-                    // markdownService.renderMarkdown escapes HTML before processing, making it XSS-safe
+                    // markdownService.renderMarkdown processes markdown and escapes HTML (see line 15798)
+                    // This makes it safe from XSS attacks
                     bubble.innerHTML = markdownService.renderMarkdown(content);
                 } else {
                     // textContent is safe from XSS as it doesn't parse HTML
