@@ -71,9 +71,10 @@ class WP_MCP_AI_Chart_JS_Helper {
 			return;
 		}
 
-		// Only load on NV oOS settings pages.
+		// Only load on NV oOS main dashboard pages.
 		// Hook will be 'toplevel_page_wp-mcp-ai-dashboard' for main settings page.
-		if ( false === strpos( $hook, 'wp-mcp-ai-dashboard' ) ) {
+		// Use exact prefix match to avoid matching other pages like password vault.
+		if ( 'toplevel_page_wp-mcp-ai-dashboard' !== $hook ) {
 			return;
 		}
 

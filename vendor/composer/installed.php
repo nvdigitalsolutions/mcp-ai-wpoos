@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/remove-css-js-from-page',
+        'version' => 'dev-copilot/remove-css-js-from-page',
+        'reference' => '086bf66b36664ef2fb895301d979ca886ef4cae5',
         'pretty_version' => 'dev-copilot/fix-chat-client-fatal-error',
         'version' => 'dev-copilot/fix-chat-client-fatal-error',
         'reference' => 'e7f27eb95a795b630bb06e6e7317f3253f2048c7',
@@ -47,6 +50,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/remove-css-js-from-page',
+            'version' => 'dev-copilot/remove-css-js-from-page',
+            'reference' => '086bf66b36664ef2fb895301d979ca886ef4cae5',
             'pretty_version' => 'dev-copilot/fix-chat-client-fatal-error',
             'version' => 'dev-copilot/fix-chat-client-fatal-error',
             'reference' => 'e7f27eb95a795b630bb06e6e7317f3253f2048c7',
