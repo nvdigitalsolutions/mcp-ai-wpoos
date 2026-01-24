@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-embedded-llm-client-error',
-        'version' => 'dev-copilot/fix-embedded-llm-client-error',
-        'reference' => '0b8233d0a5e54834d04fadbd6d6da39ce4ded4eb',
+        'pretty_version' => 'dev-copilot/fix-embedded-client-error',
+        'version' => 'dev-copilot/fix-embedded-client-error',
+        'reference' => '7d04b9245a76115a54554ab45f0cd3334b6b2e81',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-embedded-llm-client-error',
-            'version' => 'dev-copilot/fix-embedded-llm-client-error',
-            'reference' => '0b8233d0a5e54834d04fadbd6d6da39ce4ded4eb',
+            'pretty_version' => 'dev-copilot/fix-embedded-client-error',
+            'version' => 'dev-copilot/fix-embedded-client-error',
+            'reference' => '7d04b9245a76115a54554ab45f0cd3334b6b2e81',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

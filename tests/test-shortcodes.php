@@ -649,4 +649,131 @@ class Test_Shortcodes extends WP_UnitTestCase {
 			$this->assertStringContainsString( '/tools', $config['toolsEndpoint'], 'toolsEndpoint should point to tools endpoint.' );
 		}
 	}
+
+	/**
+	 * Ensure embedded-llm-client script is enqueued before chat script when provider is embedded.
+	 */
+	public function test_embedded_provider_script_loading_order() {
+		// Skip if base version (embedded provider not available).
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$this->markTestSkipped( 'Embedded provider is only available in Pro version.' );
+		}
+
+		// Create an assistant with embedded provider.
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Embedded Test Assistant',
+			)
+		);
+
+		// Set the assistant to use embedded provider.
+		$config = array(
+			'provider' => 'embedded',
+			'model'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+		);
+		update_post_meta( $assistant_id, '_wp_mcp_ai_assistant_config', $config );
+
+		// Reset scripts to simulate fresh page load.
+		wp_scripts()->reset();
+
+		// Render the shortcode.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		// Verify embedded-llm-client is enqueued.
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'enqueued' ),
+			'embedded-llm-client script should be enqueued when provider is embedded.'
+		);
+
+		// Verify webllm is enqueued (dependency of embedded-llm-client).
+		$this->assertTrue(
+			wp_script_is( 'webllm', 'enqueued' ),
+			'webllm script should be enqueued when provider is embedded.'
+		);
+
+		// Verify chat script is enqueued.
+		$this->assertTrue(
+			wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ),
+			'chat script should be enqueued.'
+		);
+
+		// Verify chat script has embedded-llm-client as a dependency.
+		$chat_script = wp_scripts()->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
+		$this->assertIsObject( $chat_script, 'chat script should be registered.' );
+		$this->assertIsArray( $chat_script->deps, 'chat script should have dependencies.' );
+		$this->assertContains(
+			'wp-mcp-ai-embedded-llm-client',
+			$chat_script->deps,
+			'chat script should depend on embedded-llm-client when provider is embedded.'
+		);
+
+		// Verify embedded-llm-client has webllm as a dependency.
+		$embedded_client_script = wp_scripts()->registered['wp-mcp-ai-embedded-llm-client'];
+		$this->assertIsObject( $embedded_client_script, 'embedded-llm-client script should be registered.' );
+		$this->assertIsArray( $embedded_client_script->deps, 'embedded-llm-client script should have dependencies.' );
+		$this->assertContains(
+			'webllm',
+			$embedded_client_script->deps,
+			'embedded-llm-client should depend on webllm.'
+		);
+	}
+
+	/**
+	 * Ensure chat script does NOT have embedded-llm-client dependency when provider is NOT embedded.
+	 */
+	public function test_non_embedded_provider_script_loading() {
+		// Create an assistant with OpenAI provider (non-embedded).
+		$assistant_id = self::factory()->post->create(
+			array(
+				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'OpenAI Test Assistant',
+			)
+		);
+
+		// Set the assistant to use OpenAI provider.
+		$config = array(
+			'provider' => 'openai',
+			'model'    => 'gpt-4',
+		);
+		update_post_meta( $assistant_id, '_wp_mcp_ai_assistant_config', $config );
+
+		// Reset scripts to simulate fresh page load.
+		wp_scripts()->reset();
+
+		// Render the shortcode.
+		$markup = do_shortcode( sprintf( '[%s assistant="%d"]', WP_MCP_AI_Shortcode::SHORTCODE, $assistant_id ) );
+		$this->assertStringContainsString( 'data-wp-mcp-ai-chat', $markup );
+
+		// Verify embedded-llm-client is NOT enqueued.
+		$this->assertFalse(
+			wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'enqueued' ),
+			'embedded-llm-client script should NOT be enqueued when provider is not embedded.'
+		);
+
+		// Verify webllm is NOT enqueued.
+		$this->assertFalse(
+			wp_script_is( 'webllm', 'enqueued' ),
+			'webllm script should NOT be enqueued when provider is not embedded.'
+		);
+
+		// Verify chat script is enqueued.
+		$this->assertTrue(
+			wp_script_is( WP_MCP_AI_Shortcode::SCRIPT_HANDLE, 'enqueued' ),
+			'chat script should be enqueued.'
+		);
+
+		// Verify chat script does NOT have embedded-llm-client as a dependency.
+		$chat_script = wp_scripts()->registered[ WP_MCP_AI_Shortcode::SCRIPT_HANDLE ];
+		$this->assertIsObject( $chat_script, 'chat script should be registered.' );
+		$this->assertIsArray( $chat_script->deps, 'chat script should have dependencies.' );
+		$this->assertNotContains(
+			'wp-mcp-ai-embedded-llm-client',
+			$chat_script->deps,
+			'chat script should NOT depend on embedded-llm-client when provider is not embedded.'
+		);
+	}
 }

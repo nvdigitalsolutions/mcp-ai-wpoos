@@ -419,6 +419,53 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * Check if embedded provider is available for the assistant.
+	 *
+	 * @param string $provider The provider to check.
+	 * @return bool True if embedded provider is available, false otherwise.
+	 */
+	protected function is_embedded_provider_available( $provider ) {
+		return 'embedded' === $provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+	}
+
+	/**
+	 * Apply script localization to the chat script handle.
+	 * This method centralizes the localization logic to avoid duplication.
+	 *
+	 * @param array $settings Plugin settings array.
+	 * @return void
+	 */
+	protected function apply_script_localization( $settings ) {
+		$show_usage_costs      = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+		$show_usage_costs      = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
+				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
+				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
+				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
+				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
+				'strings'             => $this->get_strings(),
+			)
+		);
+	}
+
+	/**
 	 * Render the chat shortcode.
 	 *
 	 * @param array  $atts    Shortcode attributes.
@@ -632,8 +679,78 @@ class WP_MCP_AI_Shortcode {
 			// won't break the editor when WP_DEBUG is enabled.
 			$is_elementor_editor = $this->is_elementor_editor();
 
+			// Get assistant provider and model for client-side execution (embedded provider).
+			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
+			$assistant_provider = '';
+			$assistant_model    = '';
+			if ( ! $is_profession_test && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $assistant_id ) );
+				$assistant_provider            = isset( $assistant_config_for_provider['provider'] ) ? sanitize_key( $assistant_config_for_provider['provider'] ) : '';
+				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
+			}
+
+			// Enqueue embedded LLM client script if provider is embedded.
+			// Check: provider is embedded AND (base version not defined OR base version is false).
+			// Embedded provider is only available in Pro version (not base version).
+			// This MUST be done before enqueuing chat script to ensure proper loading order.
+			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
+				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+
+				// Load WebLLM library from CDN first (dependency for embedded-llm-client).
+				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
+				// Loading from CDN ensures users get the latest version with bug fixes and model support.
+				// The library is open source and maintained by MLC AI (Apache 2.0 license).
+				if ( ! wp_script_is( 'webllm', 'registered' ) ) {
+					wp_register_script(
+						'webllm',
+						'https://esm.run/@mlc-ai/web-llm',
+						array(),
+						null,
+						true
+					);
+				}
+
+				// Register embedded LLM client with webllm as dependency.
+				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+					wp_register_script(
+						'wp-mcp-ai-embedded-llm-client',
+						$embedded_script_path,
+						array( 'webllm' ),
+						$embedded_script_version,
+						true
+					);
+				}
+
+				// Enqueue the embedded client (and its webllm dependency).
+				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
+			}
+
 			if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
 				$this->register_assets();
+			}
+
+			// If embedded provider is used, the chat script needs to depend on embedded-llm-client.
+			// Re-register the chat script with the proper dependency.
+			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
+				$script_relative = 'assets/js/chat-bundle.min.js';
+				$script_path     = WP_MCP_AI_URL . $script_relative;
+				$script_version  = $this->get_asset_version( $script_relative );
+
+				// Re-register with embedded-llm-client as dependency.
+				wp_deregister_script( self::SCRIPT_HANDLE );
+				wp_register_script(
+					self::SCRIPT_HANDLE,
+					$script_path,
+					array( 'wp-mcp-ai-embedded-llm-client' ),
+					$script_version,
+					true
+				);
+
+				// Re-apply localization since we re-registered the script.
+				if ( ! $is_elementor_editor ) {
+					$this->apply_script_localization( $settings );
+				}
 			}
 
 			wp_enqueue_script( self::SCRIPT_HANDLE );
@@ -671,46 +788,6 @@ class WP_MCP_AI_Shortcode {
 				if ( ! empty( $config_for_tools['tools'] ) && is_array( $config_for_tools['tools'] ) ) {
 					$assistant_tools = array_values( array_filter( array_map( 'sanitize_key', $config_for_tools['tools'] ) ) );
 				}
-			}
-
-			// Get assistant provider and model for client-side execution (embedded provider).
-			$assistant_provider = '';
-			$assistant_model    = '';
-			if ( ! $is_profession_test && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
-				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $assistant_id ) );
-				$assistant_provider            = isset( $assistant_config_for_provider['provider'] ) ? sanitize_key( $assistant_config_for_provider['provider'] ) : '';
-				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
-			}
-
-			// Enqueue embedded LLM client script if provider is embedded.
-			// Check: provider is embedded AND (base version not defined OR base version is false).
-			// Embedded provider is only available in Pro version (not base version).
-			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
-				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
-				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
-
-				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
-					wp_register_script(
-						'wp-mcp-ai-embedded-llm-client',
-						$embedded_script_path,
-						array(),
-						$embedded_script_version,
-						true
-					);
-				}
-				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
-
-				// Load WebLLM library from CDN.
-				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
-				// Loading from CDN ensures users get the latest version with bug fixes and model support.
-				// The library is open source and maintained by MLC AI (Apache 2.0 license).
-				wp_enqueue_script(
-					'webllm',
-					'https://esm.run/@mlc-ai/web-llm',
-					array(),
-					null,
-					true
-				);
 			}
 
 			// Handle profession attribute to build professional role prompt.
