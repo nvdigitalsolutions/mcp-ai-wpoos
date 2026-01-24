@@ -514,6 +514,9 @@ class WP_MCP_AI_Model_Service {
 	/**
 	 * Get embedded models
 	 *
+	 * Returns client-side WebLLM models that run in the browser using WebGPU/WebAssembly.
+	 * These models are loaded from CDN on-demand, not server-side GGUF models.
+	 *
 	 * @param array $settings Settings array.
 	 * @return array Array of model_id => model_name pairs.
 	 */
@@ -528,29 +531,15 @@ class WP_MCP_AI_Model_Service {
 			return array();
 		}
 
-		// Check if embedded client class exists.
-		if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-			return array();
-		}
-
-		$models = array();
-
-		// Get downloaded models from embedded client.
-		$embedded_client   = new WP_MCP_AI_Embedded_Client();
-		$downloaded_models = $embedded_client->get_downloaded_models();
-
-		// Build models array from downloaded models.
-		foreach ( $downloaded_models as $slug => $model_data ) {
-			$models[ $slug ] = $model_data['name'];
-		}
-
-		// If no models are downloaded, return available models list.
-		if ( empty( $models ) ) {
-			$available_models = $embedded_client->get_available_models();
-			foreach ( $available_models as $slug => $model_data ) {
-				$models[ $slug ] = $model_data['name'];
-			}
-		}
+		// Return client-side WebLLM models (run in browser via WebGPU/WebAssembly).
+		// These models are loaded from CDN automatically when first used.
+		$models = array(
+			'Llama-3.2-1B-Instruct-q4f16_1-MLC' => __( 'Llama 3.2 1B Instruct (~800MB) - Recommended', 'mcp-ai-wpoos' ),
+			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' => __( 'Qwen2.5 0.5B Instruct (~400MB) - Ultra-fast', 'mcp-ai-wpoos' ),
+			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC' => __( 'Qwen2.5 1.5B Instruct (~1GB)', 'mcp-ai-wpoos' ),
+			'Llama-3.2-3B-Instruct-q4f16_1-MLC' => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+			'Phi-3.5-mini-instruct-q4f16_1-MLC' => __( 'Phi-3.5 Mini Instruct (~2.5GB)', 'mcp-ai-wpoos' ),
+		);
 
 		return $models;
 	}
@@ -621,6 +610,7 @@ class WP_MCP_AI_Model_Service {
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
 			'cloudflare'  => '@cf/meta/llama-3.2-3b-instruct',
+			'embedded'    => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';
