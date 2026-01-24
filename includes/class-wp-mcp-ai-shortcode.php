@@ -432,6 +432,11 @@ class WP_MCP_AI_Shortcode {
 			'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
 			/* translators: %s: tool name that is temporarily unavailable */
 			'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
+			// Embedded LLM client messages.
+			'embeddedClientMissing'         => __( 'Embedded LLM client not loaded. Please refresh the page.', 'mcp-ai-wpoos' ),
+			'embeddedClientInvalid'         => __( 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.', 'mcp-ai-wpoos' ),
+			'embeddedClientInitializing'    => __( 'Initializing embedded AI client...', 'mcp-ai-wpoos' ),
+			'embeddedClientInitError'       => __( 'Failed to initialize embedded AI client: ', 'mcp-ai-wpoos' ),
 			'roleLabels'                    => array(
 				'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
 				'user'      => __( 'You', 'mcp-ai-wpoos' ),
