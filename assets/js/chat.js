@@ -11655,6 +11655,22 @@
                     bubble.textContent = result.content;
                 }
                 scrollToBottom(state);
+                
+                // Attach usage badges if usage data is available from embedded LLM
+                if (result.usage && typeof result.usage === 'object') {
+                    // Add provider and model info for badge display
+                    const usage = Object.assign({}, result.usage);
+                    if (!usage.provider) {
+                        usage.provider = 'Embedded LLM';
+                    }
+                    // Get model name from state config if available
+                    if (!usage.model && state.config && state.config.model) {
+                        usage.model = state.config.model;
+                    }
+                    
+                    // Attach usage badges to the bubble (no cost data for embedded LLM)
+                    attachUsageBadges(bubble, usage, null);
+                }
             }
             
             // Save to storage

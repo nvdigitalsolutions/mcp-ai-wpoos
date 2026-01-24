@@ -300,8 +300,10 @@
 			});
 
 			let fullContent = '';
+			let lastChunk = null;
 
 			for await (const chunk of asyncChunkGenerator) {
+				lastChunk = chunk; // Keep track of last chunk for usage data
 				const delta = chunk.choices[0]?.delta?.content || '';
 				if (delta) {
 					fullContent += delta;
@@ -323,9 +325,13 @@
 				});
 			}
 
+			// Extract usage data from last chunk if available
+			const usage = lastChunk && lastChunk.usage ? lastChunk.usage : {};
+
 			return {
 				success: true,
-				content: fullContent
+				content: fullContent,
+				usage: usage
 			};
 
 		} catch (error) {
