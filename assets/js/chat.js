@@ -11974,6 +11974,51 @@
                         }
                     }
                     
+                    // BUG FIX: If still no content found, check tool_results for system tool responses
+                    // This matches the SSE streaming handler logic (lines 12634-12660) and ensures
+                    // system tool responses (like get_system_logs, get_user_info) persist correctly
+                    if (!finalContent && streamResult.finalData && streamResult.finalData.tool_results) {
+                        if (Array.isArray(streamResult.finalData.tool_results) && streamResult.finalData.tool_results.length > 0) {
+                            if (window.console && console.log) {
+                                console.log('[NV oOS] No message content found, extracting from tool_results:', {
+                                    toolResultsCount: streamResult.finalData.tool_results.length
+                                });
+                            }
+                            
+                            for (let i = 0; i < streamResult.finalData.tool_results.length; i++) {
+                                const toolResult = streamResult.finalData.tool_results[i];
+                                if (!toolResult || !toolResult.content) {
+                                    continue;
+                                }
+                                
+                                // Parse tool result content
+                                const parsedContent = parseToolResultContent(toolResult.content);
+                                
+                                // Skip async pending results - they'll be handled by waitForAsyncToolResult
+                                if (isAsyncPendingToolResult(parsedContent)) {
+                                    continue;
+                                }
+                                
+                                // Use existing extractTextFromContent helper for consistent text extraction
+                                const toolText = extractTextFromContent(parsedContent);
+                                if (toolText) {
+                                    if (finalContent) {
+                                        finalContent += '\n\n';
+                                    }
+                                    finalContent += toolText;
+                                }
+                            }
+                            
+                            // Log extraction result
+                            if (finalContent && window.console && console.log) {
+                                console.log('[NV oOS] Extracted final content from tool_results:', {
+                                    contentLength: finalContent.length,
+                                    contentSample: finalContent.substring(0, 100)
+                                });
+                            }
+                        }
+                    }
+                    
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
                                                       finalContent &&
