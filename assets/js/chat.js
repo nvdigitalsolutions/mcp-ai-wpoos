@@ -11765,6 +11765,36 @@
                         }
                     }
                     
+                    // If still no content found, check tool_results for system tool responses
+                    // This ensures system tool responses (e.g., get_system_logs, get_user_info) persist correctly
+                    // Mirrors the SSE streaming handler logic (lines 12679-12705)
+                    if (!finalContent && streamResult.finalData && streamResult.finalData.tool_results) {
+                        if (Array.isArray(streamResult.finalData.tool_results) && streamResult.finalData.tool_results.length > 0) {
+                            for (let i = 0; i < streamResult.finalData.tool_results.length; i++) {
+                                const toolResult = streamResult.finalData.tool_results[i];
+                                if (!toolResult || !toolResult.content) continue;
+                                
+                                const parsedContent = parseToolResultContent(toolResult.content);
+                                if (isAsyncPendingToolResult(parsedContent)) continue;
+                                
+                                const toolText = extractTextFromContent(parsedContent);
+                                if (toolText) {
+                                    if (finalContent) finalContent += '\n\n';
+                                    finalContent += toolText;
+                                }
+                            }
+                            
+                            // Log extraction for debugging
+                            if (finalContent && window.console && console.log) {
+                                console.log('[NV oOS] Extracted final content from tool_results:', {
+                                    contentLength: finalContent.length,
+                                    toolResultCount: streamResult.finalData.tool_results.length,
+                                    contentSample: finalContent.substring(0, 100)
+                                });
+                            }
+                        }
+                    }
+                    
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
                                                       finalContent &&
