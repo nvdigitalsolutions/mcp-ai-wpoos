@@ -348,6 +348,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
 		}
 
+		// Load Password Vault Manager (Pro feature - Phase 2.11).
+		// Always enabled - provides secure password storage with AES-256-GCM encryption.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/password-vault-init.php';
+
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/document-generation-toolkit-init.php';

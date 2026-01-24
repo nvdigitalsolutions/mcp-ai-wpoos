@@ -1,6 +1,12 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-pro-feature-addon',
+        'version' => 'dev-copilot/add-pro-feature-addon',
+        'reference' => '96cb7fa9e8aad0e41eb804cab1ffb14160b80050',
+        'pretty_version' => 'dev-copilot/install-dependencies-for-production',
+        'version' => 'dev-copilot/install-dependencies-for-production',
+        'reference' => '845189296b509549cfd206fcbe5879464347d642',
         'pretty_version' => 'dev-copilot/add-embedded-model-test',
         'version' => 'dev-copilot/add-embedded-model-test',
         'reference' => '5d2e863e03c556b0236e46d9397c01fb14ecfb18',
@@ -47,6 +53,12 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-pro-feature-addon',
+            'version' => 'dev-copilot/add-pro-feature-addon',
+            'reference' => '96cb7fa9e8aad0e41eb804cab1ffb14160b80050',
+            'pretty_version' => 'dev-copilot/install-dependencies-for-production',
+            'version' => 'dev-copilot/install-dependencies-for-production',
+            'reference' => '845189296b509549cfd206fcbe5879464347d642',
             'pretty_version' => 'dev-copilot/add-embedded-model-test',
             'version' => 'dev-copilot/add-embedded-model-test',
             'reference' => '5d2e863e03c556b0236e46d9397c01fb14ecfb18',
