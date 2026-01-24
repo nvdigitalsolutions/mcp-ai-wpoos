@@ -11450,6 +11450,21 @@
 
         // Check if model is loaded
         if (!embeddedClient.isModelLoaded()) {
+            // Check model suitability before loading (best practice)
+            if (embeddedClient.checkModelSuitability) {
+                const suitability = embeddedClient.checkModelSuitability(modelId);
+                if (!suitability.suitable && suitability.warning) {
+                    console.warn('Model Suitability Warning:', suitability);
+                    
+                    // Log warning for now. Future enhancement: show user confirmation dialog
+                    // with options to proceed with large model or switch to suggested model.
+                    // This would require UI changes and user preference storage.
+                    if (suitability.suggestedModel) {
+                        console.info('Suggested alternative model:', suitability.suggestedModel);
+                    }
+                }
+            }
+            
             // Model not loaded yet - need to load it first
             setStatus(state.container, {
                 message: getString('embeddedModelLoading', 'Loading AI model in your browser...'),
@@ -11471,9 +11486,22 @@
                 return generateEmbeddedCompletion(state, embeddedClient, messages, finalize);
             })
             .catch(function(error) {
-                handleError(state, {
-                    message: getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message
-                });
+                // Use enhanced error categorization for better user feedback
+                let errorMessage = getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message;
+                
+                if (embeddedClient.categorizeError) {
+                    const categorized = embeddedClient.categorizeError(error);
+                    errorMessage = categorized.message;
+                    
+                    // Log technical details for debugging
+                    console.error('Embedded LLM Error:', {
+                        originalError: error.message,
+                        category: categorized.technicalCategory,
+                        recoverable: categorized.recoverable
+                    });
+                }
+                
+                handleError(state, { message: errorMessage });
                 restoreSubmissionState(state, submissionContext);
                 finalize();
                 throw error;

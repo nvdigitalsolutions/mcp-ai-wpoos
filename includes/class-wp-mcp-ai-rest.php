@@ -2301,6 +2301,31 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 			$assistant_config = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
 
+			// Check if this is an embedded provider - these run 100% client-side in the browser.
+			// Server-side API requests for embedded providers should not proceed to the language model router.
+			if ( isset( $assistant_config['provider'] ) && 'embedded' === $assistant_config['provider'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'embedded_provider_server_request_blocked',
+					'Embedded provider detected in server-side chat request',
+					array(
+						'assistant_id' => $assistant_id,
+						'model'        => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
+						'endpoint'     => $request->get_route(),
+					)
+				);
+
+				return new WP_Error(
+					'wp_mcp_ai_embedded_client_side_only',
+					__( 'This assistant is configured with an embedded LLM provider which runs entirely client-side in the browser. Please ensure your chat interface is properly configured to use client-side execution for embedded providers.', 'mcp-ai-wpoos' ),
+					array(
+						'status'        => 400,
+						'provider'      => 'embedded',
+						'model'         => isset( $assistant_config['model'] ) ? $assistant_config['model'] : '',
+						'documentation' => 'Embedded providers bypass server-side REST APIs and execute using WebLLM in the browser. Check that your chat configuration includes provider and model information.',
+					)
+				);
+			}
+
 			// Debug logging for assistant configuration loading.
 			WP_MCP_AI_Logger::log_event(
 				'rest_chat_assistant_config_loaded',

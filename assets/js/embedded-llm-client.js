@@ -307,6 +307,164 @@
 		}
 	}
 
+	/**
+	 * Enhanced error categorization for better user feedback
+	 * Based on industry best practices for WebLLM error handling
+	 * 
+	 * @param {Error} error Original error object
+	 * @returns {Object} Categorized error with user-friendly message
+	 */
+	function categorizeError(error) {
+		const errorMessage = error.message || error.toString();
+		const errorCategories = {
+			MEMORY_ERROR: {
+				message: 'Your device is running low on memory. Try closing other tabs or using a smaller model.',
+				action: 'Switch to Lightweight Model',
+				recoverable: true,
+				technicalCategory: 'memory'
+			},
+			GPU_UNSUPPORTED: {
+				message: 'Your browser doesn\'t support WebGPU. Please update to the latest version or try Chrome, Edge, or Safari.',
+				action: 'Learn More',
+				recoverable: false,
+				technicalCategory: 'compatibility'
+			},
+			NETWORK_ERROR: {
+				message: 'Model download failed. Check your internet connection and try again.',
+				action: 'Retry Download',
+				recoverable: true,
+				technicalCategory: 'network'
+			},
+			MODEL_LOAD_ERROR: {
+				message: 'Failed to initialize the AI model. This may be a temporary issue.',
+				action: 'Retry',
+				recoverable: true,
+				technicalCategory: 'initialization'
+			},
+			INITIALIZATION_ERROR: {
+				message: 'WebLLM library failed to initialize. Please refresh the page.',
+				action: 'Refresh Page',
+				recoverable: true,
+				technicalCategory: 'initialization'
+			}
+		};
+
+		// Detect error type from message patterns
+		if (/memory|out of memory|OOM|heap/i.test(errorMessage)) {
+			return errorCategories.MEMORY_ERROR;
+		} else if (/gpu|webgpu|adapter|not supported/i.test(errorMessage)) {
+			return errorCategories.GPU_UNSUPPORTED;
+		} else if (/network|fetch|download|connection/i.test(errorMessage)) {
+			return errorCategories.NETWORK_ERROR;
+		} else if (/initialize|init|webllm library/i.test(errorMessage)) {
+			return errorCategories.INITIALIZATION_ERROR;
+		}
+
+		// Default to generic model load error
+		return errorCategories.MODEL_LOAD_ERROR;
+	}
+
+	/**
+	 * Device memory limits for model suitability checks.
+	 * 
+	 * These constants define safe memory usage thresholds to prevent out-of-memory errors.
+	 * Based on industry best practices for in-browser LLM execution.
+	 */
+	const DEVICE_MEMORY_DEFAULTS = {
+		// Conservative default for devices without memory detection API
+		// Most modern devices have at least 2GB RAM, but we default to 4GB
+		// to avoid unnecessary warnings on capable devices
+		DEFAULT_GB: 4,
+		
+		// Mobile devices need more memory headroom due to:
+		// - OS overhead and background apps
+		// - Less aggressive memory management
+		// - More frequent multitasking
+		// Recommends models up to 15% of device RAM
+		MOBILE_THRESHOLD: 0.15,
+		
+		// Desktop devices can handle larger models due to:
+		// - More RAM available
+		// - Better memory management
+		// - Less background pressure
+		// Recommends models up to 25% of device RAM
+		DESKTOP_THRESHOLD: 0.25
+	};
+
+	/**
+	 * Check device capabilities for model suitability
+	 * Helps prevent out-of-memory errors by warning users
+	 * 
+	 * @param {string} modelId Model identifier
+	 * @returns {Object} Suitability assessment
+	 */
+	function checkModelSuitability(modelId) {
+		const model = AVAILABLE_MODELS[modelId];
+		if (!model) {
+			return { suitable: false, warning: 'Unknown model' };
+		}
+
+		// Parse model size (e.g., "~800MB" -> 800)
+		const sizeMatch = model.size.match(/(\d+(?:\.\d+)?)\s*([KMG]B)/i);
+		let sizeInMB = 0;
+		if (sizeMatch) {
+			const value = parseFloat(sizeMatch[1]);
+			const unit = sizeMatch[2].toUpperCase();
+			if (unit === 'GB') {
+				sizeInMB = value * 1024;
+			} else if (unit === 'MB') {
+				sizeInMB = value;
+			}
+		}
+
+		// Check device memory if available (not supported in all browsers)
+		const deviceMemoryGB = navigator.deviceMemory || DEVICE_MEMORY_DEFAULTS.DEFAULT_GB;
+		const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
+		// Use appropriate threshold based on device type
+		const threshold = isMobile ? 
+			DEVICE_MEMORY_DEFAULTS.MOBILE_THRESHOLD : 
+			DEVICE_MEMORY_DEFAULTS.DESKTOP_THRESHOLD;
+		const maxRecommendedSizeMB = (deviceMemoryGB * 1024) * threshold;
+
+		if (sizeInMB > maxRecommendedSizeMB) {
+			// Find a more suitable model
+			let suggestedModel = null;
+			for (const [id, modelData] of Object.entries(AVAILABLE_MODELS)) {
+				const suggestedSizeMatch = modelData.size.match(/(\d+(?:\.\d+)?)\s*([KMG]B)/i);
+				if (suggestedSizeMatch) {
+					const suggestedValue = parseFloat(suggestedSizeMatch[1]);
+					const suggestedUnit = suggestedSizeMatch[2].toUpperCase();
+					let suggestedSizeInMB = 0;
+					if (suggestedUnit === 'GB') {
+						suggestedSizeInMB = suggestedValue * 1024;
+					} else if (suggestedUnit === 'MB') {
+						suggestedSizeInMB = suggestedValue;
+					}
+
+					if (suggestedSizeInMB <= maxRecommendedSizeMB && suggestedSizeInMB > 0) {
+						suggestedModel = { id: id, name: modelData.name, size: modelData.size };
+						break;
+					}
+				}
+			}
+
+			return {
+				suitable: false,
+				warning: 'This model (' + model.size + ') may be too large for your device (' + deviceMemoryGB + 'GB RAM). Consider using a smaller model for better performance.',
+				suggestedModel: suggestedModel,
+				deviceMemoryGB: deviceMemoryGB,
+				isMobile: isMobile
+			};
+		}
+
+		return {
+			suitable: true,
+			deviceMemoryGB: deviceMemoryGB,
+			isMobile: isMobile
+		};
+	}
+
 	// Export public API
 	window.WP_MCP_AI_EmbeddedLLM = {
 		// Model management
@@ -322,7 +480,11 @@
 
 		// Utilities
 		checkWebGPUSupport: checkWebGPUSupport,
-		getRuntimeStats: getRuntimeStats
+		getRuntimeStats: getRuntimeStats,
+		
+		// Enhanced error handling (best practices)
+		categorizeError: categorizeError,
+		checkModelSuitability: checkModelSuitability
 	};
 
 })();
