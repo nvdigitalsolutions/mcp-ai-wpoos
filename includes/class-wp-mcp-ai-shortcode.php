@@ -717,10 +717,12 @@ class WP_MCP_AI_Shortcode {
 
 			// Get assistant provider and model for client-side execution (embedded provider).
 			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
+			// For profession tests, use the permissions_assistant_id to get provider configuration.
 			$assistant_provider = '';
 			$assistant_model    = '';
-			if ( ! $is_profession_test && class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
-				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $assistant_id ) );
+			if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				$provider_check_id             = $is_profession_test && isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
+				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $provider_check_id ) );
 				$assistant_provider            = isset( $assistant_config_for_provider['provider'] ) ? sanitize_key( $assistant_config_for_provider['provider'] ) : '';
 				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
 			}
