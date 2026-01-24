@@ -11975,7 +11975,7 @@
                     }
                     
                     // BUG FIX: If still no content found, check tool_results for system tool responses
-                    // This matches the SSE streaming handler logic (lines 12634-12660) and ensures
+                    // This matches the SSE streaming handler logic (lines 12679-12705) and ensures
                     // system tool responses (like get_system_logs, get_user_info) persist correctly
                     if (!finalContent && streamResult.finalData && streamResult.finalData.tool_results) {
                         if (Array.isArray(streamResult.finalData.tool_results) && streamResult.finalData.tool_results.length > 0) {
