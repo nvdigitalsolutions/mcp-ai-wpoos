@@ -1276,6 +1276,16 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<?php self::render_embedded_llm_section(); ?>
 </div>
 
+<!-- NPM Production: WebGPU/WebAssembly Section -->
+<div style="margin-top: 30px;">
+			<?php self::render_webgpu_webassembly_section(); ?>
+</div>
+
+<!-- Pro Toolkit Features Card -->
+<div style="margin-top: 30px;">
+			<?php self::render_pro_toolkit_features_card(); ?>
+</div>
+
 				<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
 					<h3><?php esc_html_e( 'About This Page', 'mcp-ai-wpoos' ); ?></h3>
 					<p>
@@ -1752,6 +1762,376 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <li><?php esc_html_e( 'When users chat with assistants using "embedded" provider, models download automatically to their browser', 'mcp-ai-wpoos' ); ?></li>
 </ol>
 </div>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render WebGPU/WebAssembly NPM Production section.
+		 *
+		 * Displays production-ready NPM packages for WebGPU/WebAssembly deployment.
+		 *
+		 * @since 1.1.0
+		 * @return void
+		 */
+		private static function render_webgpu_webassembly_section() {
+			?>
+<div class="wp-mcp-ai-settings-card">
+	<h2>
+		<span class="dashicons dashicons-performance"></span>
+		<?php esc_html_e( 'NPM Production: WebGPU/WebAssembly', 'mcp-ai-wpoos' ); ?>
+	</h2>
+
+	<div class="notice notice-info inline" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Production-Ready Browser AI', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Leverage cutting-edge WebGPU and WebAssembly technologies for high-performance AI inference directly in the browser. No server resources required.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'Core NPM Package', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 900px;">
+			<thead>
+				<tr>
+					<th style="width: 30%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 55%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>@mlc-ai/web-llm</code></td>
+					<td><code>^0.2.80</code></td>
+					<td><?php esc_html_e( 'High-performance browser-based LLM inference using WebGPU with automatic WebAssembly fallback', 'mcp-ai-wpoos' ); ?></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'Technology Stack', 'mcp-ai-wpoos' ); ?></h3>
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+			<!-- WebGPU Card -->
+			<div style="border: 1px solid #72aee6; padding: 15px; background: #f0f6fc; border-radius: 4px;">
+				<h4 style="margin: 0 0 10px 0; color: #0073aa;">
+					<span class="dashicons dashicons-performance"></span>
+					<?php esc_html_e( 'WebGPU (Preferred)', 'mcp-ai-wpoos' ); ?>
+				</h4>
+				<ul style="margin: 0 0 0 20px; font-size: 13px;">
+					<li><?php esc_html_e( 'Hardware-accelerated GPU compute', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Up to 100x faster than CPU', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Chrome 113+, Edge 113+, Safari 18+', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Best for real-time inference', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+			</div>
+
+			<!-- WebAssembly Card -->
+			<div style="border: 1px solid #c3c4c7; padding: 15px; background: #f6f7f7; border-radius: 4px;">
+				<h4 style="margin: 0 0 10px 0; color: #50575e;">
+					<span class="dashicons dashicons-admin-generic"></span>
+					<?php esc_html_e( 'WebAssembly (Fallback)', 'mcp-ai-wpoos' ); ?>
+				</h4>
+				<ul style="margin: 0 0 0 20px; font-size: 13px;">
+					<li><?php esc_html_e( 'CPU-based computation', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Automatic fallback if no GPU', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Universal browser support', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Slower but reliable', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #f0b849;">
+		<h4 style="margin-top: 0;">
+			<span class="dashicons dashicons-warning"></span>
+			<?php esc_html_e( 'Production Deployment Notes', 'mcp-ai-wpoos' ); ?>
+		</h4>
+		<ul style="margin: 10px 0 0 20px;">
+			<li><?php esc_html_e( 'WebGPU requires HTTPS in production (security requirement)', 'mcp-ai-wpoos' ); ?></li>
+			<li><?php esc_html_e( 'Models are cached in browser IndexedDB (persistent across sessions)', 'mcp-ai-wpoos' ); ?></li>
+			<li><?php esc_html_e( 'First model download per user takes 30-60s depending on model size', 'mcp-ai-wpoos' ); ?></li>
+			<li><?php esc_html_e( 'Subsequent loads are instant (served from cache)', 'mcp-ai-wpoos' ); ?></li>
+			<li><?php esc_html_e( 'No server resources consumed - all inference runs client-side', 'mcp-ai-wpoos' ); ?></li>
+			<li><?php esc_html_e( 'Fully GDPR compliant - data never leaves user device', 'mcp-ai-wpoos' ); ?></li>
+		</ul>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #d5f4e6; border-left: 4px solid #00a32a;">
+		<h4 style="margin-top: 0;">
+			<span class="dashicons dashicons-yes-alt"></span>
+			<?php esc_html_e( 'Benefits for Production', 'mcp-ai-wpoos' ); ?>
+		</h4>
+		<ul style="margin: 10px 0 0 20px;">
+			<li><strong><?php esc_html_e( 'Zero API Costs:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'No OpenAI/Anthropic charges', 'mcp-ai-wpoos' ); ?></li>
+			<li><strong><?php esc_html_e( 'Infinite Scale:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Each user runs inference on their own device', 'mcp-ai-wpoos' ); ?></li>
+			<li><strong><?php esc_html_e( 'Privacy-First:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Data never transmitted to servers', 'mcp-ai-wpoos' ); ?></li>
+			<li><strong><?php esc_html_e( 'Offline Capable:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'Works without internet after initial download', 'mcp-ai-wpoos' ); ?></li>
+			<li><strong><?php esc_html_e( 'Low Latency:', 'mcp-ai-wpoos' ); ?></strong> <?php esc_html_e( 'No network round-trips for inference', 'mcp-ai-wpoos' ); ?></li>
+		</ul>
+	</div>
+
+	<div style="margin: 20px 0;">
+		<h3><?php esc_html_e( 'Browser Compatibility Matrix', 'mcp-ai-wpoos' ); ?></h3>
+		<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+			<thead>
+				<tr>
+					<th style="width: 25%;"><?php esc_html_e( 'Browser', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 25%;"><?php esc_html_e( 'WebGPU', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 25%;"><?php esc_html_e( 'WebAssembly', 'mcp-ai-wpoos' ); ?></th>
+					<th style="width: 25%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><strong>Chrome 113+</strong></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span class="wp-mcp-ai-status-badge enabled"><?php esc_html_e( 'Fully Supported', 'mcp-ai-wpoos' ); ?></span></td>
+				</tr>
+				<tr>
+					<td><strong>Edge 113+</strong></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span class="wp-mcp-ai-status-badge enabled"><?php esc_html_e( 'Fully Supported', 'mcp-ai-wpoos' ); ?></span></td>
+				</tr>
+				<tr>
+					<td><strong>Safari 18+</strong></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span class="wp-mcp-ai-status-badge enabled"><?php esc_html_e( 'Fully Supported', 'mcp-ai-wpoos' ); ?></span></td>
+				</tr>
+				<tr>
+					<td><strong>Firefox</strong></td>
+					<td><span style="color: #f0b849;">⚠</span></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span class="wp-mcp-ai-status-badge active"><?php esc_html_e( 'WASM Only', 'mcp-ai-wpoos' ); ?></span></td>
+				</tr>
+				<tr>
+					<td><strong>Mobile Browsers</strong></td>
+					<td><span style="color: #f0b849;">⚠</span></td>
+					<td><span style="color: #00a32a;">✓</span></td>
+					<td><span class="wp-mcp-ai-status-badge active"><?php esc_html_e( 'WASM Only', 'mcp-ai-wpoos' ); ?></span></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+			<?php
+		}
+
+		/**
+		 * Render Pro Toolkit Features card.
+		 *
+		 * Displays a summary of all Pro toolkit features and capabilities.
+		 *
+		 * @since 1.1.0
+		 * @return void
+		 */
+		private static function render_pro_toolkit_features_card() {
+			?>
+<div class="wp-mcp-ai-settings-card">
+	<h2>
+		<span class="dashicons dashicons-star-filled" style="color: #f0b849;"></span>
+		<?php esc_html_e( 'Pro Toolkit Features & Capabilities', 'mcp-ai-wpoos' ); ?>
+	</h2>
+
+	<div class="notice notice-success inline" style="margin: 15px 0;">
+		<p>
+			<strong><?php esc_html_e( 'Enterprise-Grade AI Orchestration', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Comprehensive suite of professional toolkits for advanced AI-powered automation, content generation, and business intelligence.', 'mcp-ai-wpoos' ); ?>
+		</p>
+	</div>
+
+	<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin: 20px 0;">
+		
+		<!-- Content & Media Production -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #2271b1; color: #2271b1;">
+				<span class="dashicons dashicons-admin-media"></span>
+				<?php esc_html_e( 'Content & Media', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Media Toolkit', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Image optimization, video processing, SVG vectorization', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Video Production', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Professional video editing with FFmpeg, subtitle generation', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Image Production', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Advanced image generation and manipulation', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Document Generation', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'PDF, Word, Excel document creation with templates', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Business & E-commerce -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #00a32a; color: #00a32a;">
+				<span class="dashicons dashicons-cart"></span>
+				<?php esc_html_e( 'Business & E-commerce', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'E-commerce Toolkit', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'WooCommerce integration, product management, payments', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'CRM & Email Marketing', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Customer relationship management, email campaigns', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Financial Planner', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'QuickBooks integration, financial reports, budgeting', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Advanced Analytics', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Business intelligence, data visualization with D3.js', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Marketing & Social -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #f0b849; color: #f0b849;">
+				<span class="dashicons dashicons-share"></span>
+				<?php esc_html_e( 'Marketing & Social', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Social Media Management', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Twitter, Facebook, LinkedIn, Instagram posting & analytics', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Multilingual Content', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Translation, language detection, localization', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'SEO & Analytics', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Google Analytics integration, SEO optimization', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Project & Task Management -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #9b51e0; color: #9b51e0;">
+				<span class="dashicons dashicons-list-view"></span>
+				<?php esc_html_e( 'Project Management', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Project Management', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Projects, tasks, events, calendar integration', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Calendar Booking', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Scheduling, bookings, Google Calendar sync', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'AI Orchestration', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Autonomous task execution, Ralph pattern implementation', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Specialized Toolkits -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #d63638; color: #d63638;">
+				<span class="dashicons dashicons-hammer"></span>
+				<?php esc_html_e( 'Specialized Tools', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Architectural Design', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Architectural drawing generation and design tools', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'DJ Management', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Music library, playlist management, event planning', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Quiz System', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Interactive quizzes, assessments, learning management', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'AI Tool Builder', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Create custom AI tools and integrations', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+		<!-- Development & Integration -->
+		<div class="pro-feature-category">
+			<h3 style="margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #1d2327; color: #1d2327;">
+				<span class="dashicons dashicons-editor-code"></span>
+				<?php esc_html_e( 'Development & Integration', 'mcp-ai-wpoos' ); ?>
+			</h3>
+			<ul style="margin: 0; list-style: none; padding: 0;">
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Remote Site Connections', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Connect to remote WordPress/WooCommerce sites via REST API', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'GitHub Integration', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Repository operations, Codespace management', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0; border-bottom: 1px solid #f0f0f1;">
+					<strong><?php esc_html_e( 'Code Formatting', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'Prettier integration for code formatting', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+				<li style="padding: 8px 0;">
+					<strong><?php esc_html_e( 'Password Vault', 'mcp-ai-wpoos' ); ?></strong>
+					<br><small><?php esc_html_e( 'AES-256-GCM encrypted credential storage', 'mcp-ai-wpoos' ); ?></small>
+				</li>
+			</ul>
+		</div>
+
+	</div>
+
+	<div style="margin: 20px 0; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+		<h3 style="margin: 0 0 15px 0; color: white;">
+			<span class="dashicons dashicons-chart-line" style="color: white;"></span>
+			<?php esc_html_e( 'Key Statistics', 'mcp-ai-wpoos' ); ?>
+		</h3>
+		<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+			<div style="text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 4px;">
+				<div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;">150+</div>
+				<div style="font-size: 14px; opacity: 0.9;"><?php esc_html_e( 'Pro Tools', 'mcp-ai-wpoos' ); ?></div>
+			</div>
+			<div style="text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 4px;">
+				<div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;">20+</div>
+				<div style="font-size: 14px; opacity: 0.9;"><?php esc_html_e( 'Toolkits', 'mcp-ai-wpoos' ); ?></div>
+			</div>
+			<div style="text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 4px;">
+				<div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;">50+</div>
+				<div style="font-size: 14px; opacity: 0.9;"><?php esc_html_e( 'NPM Packages', 'mcp-ai-wpoos' ); ?></div>
+			</div>
+			<div style="text-align: center; padding: 15px; background: rgba(255, 255, 255, 0.1); border-radius: 4px;">
+				<div style="font-size: 32px; font-weight: bold; margin-bottom: 5px;">10+</div>
+				<div style="font-size: 14px; opacity: 0.9;"><?php esc_html_e( 'AI Providers', 'mcp-ai-wpoos' ); ?></div>
+			</div>
+		</div>
+	</div>
+
+	<div style="margin: 20px 0; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1;">
+		<p style="margin: 0;">
+			<strong><?php esc_html_e( 'Getting Started:', 'mcp-ai-wpoos' ); ?></strong>
+			<?php
+			printf(
+				/* translators: %s: settings page URL */
+				esc_html__( 'Enable individual toolkits in %s to unlock their features and tools.', 'mcp-ai-wpoos' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=advanced' ) ) . '"><strong>' . esc_html__( 'Settings → Advanced', 'mcp-ai-wpoos' ) . '</strong></a>'
+			);
+			?>
+		</p>
+	</div>
 </div>
 			<?php
 		}
