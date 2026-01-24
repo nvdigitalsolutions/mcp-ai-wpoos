@@ -1239,11 +1239,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 						<table class="wp-list-table widefat fixed striped">
 							<thead>
 								<tr>
-									<th scope="col" style="width: 30%;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 35%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Size', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 25%;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 25%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Model Identifier', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Size', 'mcp-ai-wpoos' ); ?></th>
 									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
 								</tr>
 							</thead>
 							<tbody>
@@ -1252,7 +1253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 									$is_downloaded = isset( $downloaded_models[ $slug ] );
 									$status_class  = $is_downloaded ? 'downloaded' : 'not-downloaded';
 									?>
-									<tr class="wp-mcp-ai-model-row" data-model-slug="<?php echo esc_attr( $slug ); ?>">
+									<tr class="wp-mcp-ai-model-row" data-model-slug="<?php echo esc_attr( $slug ); ?>" data-model-name="<?php echo esc_attr( $model['name'] ); ?>">
 										<td>
 											<strong><?php echo esc_html( $model['name'] ); ?></strong>
 											<br>
@@ -1265,6 +1266,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 										</td>
 										<td>
 											<?php echo esc_html( $model['description'] ); ?>
+										</td>
+										<td>
+											<code style="background: #f0f0f1; padding: 2px 6px; font-size: 12px;"><?php echo esc_html( $slug ); ?></code>
+											<?php if ( $is_downloaded ) : ?>
+												<br>
+												<small class="description">
+													<?php esc_html_e( 'Use this in assistants', 'mcp-ai-wpoos' ); ?>
+												</small>
+											<?php endif; ?>
 										</td>
 										<td>
 											<span class="wp-mcp-ai-model-size">
@@ -1296,12 +1306,59 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 											<?php endif; ?>
 										</td>
 									</tr>
+									<?php if ( $is_downloaded ) : ?>
+										<tr class="wp-mcp-ai-model-usage-info">
+											<td colspan="6" style="background: #f8f9fa; border-left: 4px solid #00a32a; padding: 15px;">
+												<div style="display: flex; align-items: start; gap: 10px;">
+													<span class="dashicons dashicons-info" style="color: #00a32a; margin-top: 2px;"></span>
+													<div>
+														<strong><?php esc_html_e( 'How to use this model:', 'mcp-ai-wpoos' ); ?></strong>
+														<ol style="margin: 10px 0 0 0; padding-left: 20px;">
+															<li>
+																<?php
+																printf(
+																	/* translators: %s: model identifier */
+																	esc_html__( 'The model identifier is: %s', 'mcp-ai-wpoos' ),
+																	'<code style="background: #fff; padding: 2px 6px; font-weight: bold;">' . esc_html( $slug ) . '</code>'
+																);
+																?>
+															</li>
+															<li>
+																<?php
+																printf(
+																	/* translators: 1: Settings menu location, 2: Dropdown name */
+																	esc_html__( 'Go to %1$s and select "%2$s" from the %3$s dropdown', 'mcp-ai-wpoos' ),
+																	'<strong>' . esc_html__( 'Settings → Providers → Embedded', 'mcp-ai-wpoos' ) . '</strong>',
+																	esc_html( $model['name'] ),
+																	'<strong>' . esc_html__( 'Default Embedded Model', 'mcp-ai-wpoos' ) . '</strong>'
+																);
+																?>
+															</li>
+															<li>
+																<?php
+																printf(
+																	/* translators: 1: Settings menu location */
+																	esc_html__( 'When creating an assistant, select "%1$s" as the provider and use model identifier: %2$s', 'mcp-ai-wpoos' ),
+																	'<strong>' . esc_html__( 'Embedded', 'mcp-ai-wpoos' ) . '</strong>',
+																	'<code style="background: #fff; padding: 2px 6px;">' . esc_html( $slug ) . '</code>'
+																);
+																?>
+															</li>
+															<li>
+																<?php esc_html_e( 'Note: Requires llama.cpp binary to be installed on your server for inference', 'mcp-ai-wpoos' ); ?>
+															</li>
+														</ol>
+													</div>
+												</div>
+											</td>
+										</tr>
+									<?php endif; ?>
 								<?php endforeach; ?>
 							</tbody>
 						</table>
 						<p class="description" style="margin-top: 10px;">
 							<?php
-							esc_html_e( 'Downloaded models are stored in your WordPress uploads directory and can be used for client-side inference in the browser.', 'mcp-ai-wpoos' );
+							esc_html_e( 'Downloaded models are stored in your WordPress uploads directory. Use the model identifier shown above when configuring assistants.', 'mcp-ai-wpoos' );
 							?>
 						</p>
 					<?php endif; ?>

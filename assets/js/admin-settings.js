@@ -945,18 +945,16 @@ window.wpMcpAiSaveExpandedState = function() {
                 log('Download successful', response);
                 
                 if (response.success) {
-                    // Update UI to show downloaded state
-                    $row.find('.wp-mcp-ai-model-status')
-                        .removeClass('wp-mcp-ai-status-not-downloaded')
-                        .addClass('wp-mcp-ai-status-downloaded')
-                        .html('<span class="dashicons dashicons-yes-alt"></span> Downloaded');
+                    const modelName = $row.data('model-name') || modelSlug;
                     
-                    // Replace download button with delete button
-                    $btn.replaceWith(
-                        '<button type="button" class="button wp-mcp-ai-delete-model" data-model-slug="' + modelSlug + '">Delete</button>'
-                    );
+                    // Show success message with model identifier
+                    alert('Model downloaded successfully!\n\n' +
+                          'Model: ' + modelName + '\n' +
+                          'Model Identifier: ' + modelSlug + '\n\n' +
+                          'Use this identifier when configuring assistants with the Embedded provider.');
                     
-                    alert('Model downloaded successfully!');
+                    // Reload the page to show the updated table with usage instructions
+                    window.location.reload();
                 } else {
                     $btn.prop('disabled', false).text('Download');
                     $row.find('.wp-mcp-ai-model-status')
@@ -1017,18 +1015,10 @@ window.wpMcpAiSaveExpandedState = function() {
                 log('Delete successful', response);
                 
                 if (response.success) {
-                    // Update UI to show not-downloaded state
-                    $row.find('.wp-mcp-ai-model-status')
-                        .removeClass('wp-mcp-ai-status-downloaded')
-                        .addClass('wp-mcp-ai-status-not-downloaded')
-                        .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
-                    
-                    // Replace delete button with download button
-                    $btn.replaceWith(
-                        '<button type="button" class="button button-primary wp-mcp-ai-download-model" data-model-slug="' + modelSlug + '">Download</button>'
-                    );
-                    
                     alert('Model deleted successfully!');
+                    
+                    // Reload the page to show the updated table
+                    window.location.reload();
                 } else {
                     $btn.prop('disabled', false).text('Delete');
                     alert('Delete failed: ' + (response.data || 'Unknown error'));
