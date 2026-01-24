@@ -198,140 +198,7 @@ class WP_MCP_AI_Shortcode {
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
 				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
-				'strings'             => array(
-					'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
-					'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
-					'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
-					'building'                      => __( 'Building assistant…', 'mcp-ai-wpoos' ),
-					'buildSuccess'                  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
-					'buildError'                    => __( 'Failed to create assistant. Please try again.', 'mcp-ai-wpoos' ),
-					'bundlingMessages'              => __( 'Preparing to send…', 'mcp-ai-wpoos' ),
-					'sending'                       => __( 'Sending message…', 'mcp-ai-wpoos' ),
-					'waiting'                       => __( 'Waiting for the assistant…', 'mcp-ai-wpoos' ),
-					'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
-					'missingAssistant'              => __( 'Assistant configuration was not found.', 'mcp-ai-wpoos' ),
-					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name being executed */
-																'toolExecuting' => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
-					'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
-					'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
-					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
-					'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
-					'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool failure error message */
-					'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
-					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
-					/* translators: %s: task name */
-																'toolShortcutLabel' => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
-					'emptyMessage'                  => __( 'Enter a message before sending.', 'mcp-ai-wpoos' ),
-					'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
-					'transcribe'                    => __( 'Transcribe', 'mcp-ai-wpoos' ),
-					'transcribeAudio'               => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
-					'transcribing'                  => __( 'Transcribing audio…', 'mcp-ai-wpoos' ),
-					'recording'                     => __( 'Recording… tap to stop.', 'mcp-ai-wpoos' ),
-					'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
-					'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
-					'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name */
-																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'mcp-ai-wpoos' ),
-					'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
-					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
-					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
-					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
-					'translate'                     => __( 'Translate', 'mcp-ai-wpoos' ),
-					'translateAudio'                => __( 'Translate audio', 'mcp-ai-wpoos' ),
-					'translating'                   => __( 'Translating audio…', 'mcp-ai-wpoos' ),
-					'translationError'              => __( 'The translation request failed. Please try again.', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name */
-																'translationSuccess' => __( 'Inserted translation from "%s".', 'mcp-ai-wpoos' ),
-					'translationFileTooLarge'       => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
-					'translateChooseSource'         => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
-					'translationEndpointNotFound'   => __( 'Translation service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
-					'translationNotConfigured'      => __( 'Translation is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
-					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
-					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
-					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
-					'voiceChatProcessing'           => __( 'Processing your voice message…', 'mcp-ai-wpoos' ),
-					'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
-					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
-					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
-					'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
-					'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
-					'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
-					'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name being uploaded */
-																'uploadingFile' => __( 'Uploading “%s”…', 'mcp-ai-wpoos' ),
-					'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
-					'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
-					'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name with unsupported type */
-																'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
-					'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
-					'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
-					'expandTranscript'              => __( 'Expand conversation', 'mcp-ai-wpoos' ),
-					'collapseTranscript'            => __( 'Collapse conversation', 'mcp-ai-wpoos' ),
-					'newConversation'               => __( 'Start new conversation', 'mcp-ai-wpoos' ),
-					'loadConversation'              => __( 'Load conversation', 'mcp-ai-wpoos' ),
-					'jsonResponse'                  => __( 'JSON response', 'mcp-ai-wpoos' ),
-					'historyToggleShow'             => __( 'Show previous conversations', 'mcp-ai-wpoos' ),
-					'historyToggleHide'             => __( 'Hide previous conversations', 'mcp-ai-wpoos' ),
-					'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
-					'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
-					'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
-					/* translators: %d: number of messages in chat history */
-																'historyMessageCount' => __( '%d messages', 'mcp-ai-wpoos' ),
-					'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
-					/* translators: %s: conversation identifier */
-					'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
-					'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
-					'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
-					'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'mcp-ai-wpoos' ),
-					'savingPost'                    => __( 'Saving post…', 'mcp-ai-wpoos' ),
-					'saveConversation'              => __( 'Save conversation', 'mcp-ai-wpoos' ),
-					'savingConversation'            => __( 'Saving current conversation...', 'mcp-ai-wpoos' ),
-					'conversationSaved'             => __( 'Conversation saved successfully.', 'mcp-ai-wpoos' ),
-					'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'mcp-ai-wpoos' ),
-					'saveFailedProceed'             => __( 'Failed to save conversation: ', 'mcp-ai-wpoos' ),
-					'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'mcp-ai-wpoos' ),
-					'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'mcp-ai-wpoos' ),
-					'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'mcp-ai-wpoos' ),
-					'saveSkipped'                   => __( 'Save not available for this conversation.', 'mcp-ai-wpoos' ),
-					'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'mcp-ai-wpoos' ),
-					'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'mcp-ai-wpoos' ),
-					'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'mcp-ai-wpoos' ),
-					'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'mcp-ai-wpoos' ),
-					'exportFailed'                  => __( 'Export failed: ', 'mcp-ai-wpoos' ),
-					'exportSuccess'                 => __( 'Conversation exported successfully as ', 'mcp-ai-wpoos' ),
-					'deleteConversation'            => __( 'Delete this conversation', 'mcp-ai-wpoos' ),
-					'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'mcp-ai-wpoos' ),
-					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'mcp-ai-wpoos' ),
-					'downloadVideo'                 => __( 'Download video', 'mcp-ai-wpoos' ),
-					'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'mcp-ai-wpoos' ),
-					'videoPending'                  => __( 'Pending • ~5 min', 'mcp-ai-wpoos' ),
-					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'tokensLabel'                   => __( 'Tokens', 'mcp-ai-wpoos' ),
-					'costLabel'                     => __( 'Cost', 'mcp-ai-wpoos' ),
-					'estimatedCostLabel'            => __( 'Est. Cost', 'mcp-ai-wpoos' ),
-					/* translators: %d: number of tokens used */
-					'tokensUsed'                    => __( '%d tokens', 'mcp-ai-wpoos' ),
-					/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
-					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'mcp-ai-wpoos' ),
-					/* translators: %s: cost in USD */
-					'costAmount'                    => __( '$%s', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name that is processing */
-					'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name that is temporarily unavailable */
-					'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
-					'roleLabels'                    => array(
-						'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
-						'user'      => __( 'You', 'mcp-ai-wpoos' ),
-						'system'    => __( 'System', 'mcp-ai-wpoos' ),
-						'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
-					),
-				),
+				'strings'             => $this->get_strings(),
 			)
 		);
 	}
@@ -426,6 +293,148 @@ class WP_MCP_AI_Shortcode {
 	 */
 	protected function is_embedded_provider_available( $provider ) {
 		return 'embedded' === $provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+	}
+
+	/**
+	 * Get localized strings for the chat interface.
+	 *
+	 * @return array Array of localized strings for JavaScript.
+	 */
+	protected function get_strings() {
+		return array(
+			'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
+			'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
+			'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
+			'building'                      => __( 'Building assistant…', 'mcp-ai-wpoos' ),
+			'buildSuccess'                  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
+			'buildError'                    => __( 'Failed to create assistant. Please try again.', 'mcp-ai-wpoos' ),
+			'bundlingMessages'              => __( 'Preparing to send…', 'mcp-ai-wpoos' ),
+			'sending'                       => __( 'Sending message…', 'mcp-ai-wpoos' ),
+			'waiting'                       => __( 'Waiting for the assistant…', 'mcp-ai-wpoos' ),
+			'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
+			'missingAssistant'              => __( 'Assistant configuration was not found.', 'mcp-ai-wpoos' ),
+			'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name being executed */
+			'toolExecuting'                 => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
+			'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
+			'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
+			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
+			'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
+			'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool failure error message */
+			'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
+			'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
+			/* translators: %s: task name */
+			'toolShortcutLabel'             => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
+			'emptyMessage'                  => __( 'Enter a message before sending.', 'mcp-ai-wpoos' ),
+			'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
+			'transcribe'                    => __( 'Transcribe', 'mcp-ai-wpoos' ),
+			'transcribeAudio'               => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
+			'transcribing'                  => __( 'Transcribing audio…', 'mcp-ai-wpoos' ),
+			'recording'                     => __( 'Recording… tap to stop.', 'mcp-ai-wpoos' ),
+			'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
+			'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
+			'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name */
+			'transcriptionSuccess'          => __( 'Inserted transcription from "%s".', 'mcp-ai-wpoos' ),
+			'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+			'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+			'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+			'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+			'translate'                     => __( 'Translate', 'mcp-ai-wpoos' ),
+			'translateAudio'                => __( 'Translate audio', 'mcp-ai-wpoos' ),
+			'translating'                   => __( 'Translating audio…', 'mcp-ai-wpoos' ),
+			'translationError'              => __( 'The translation request failed. Please try again.', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name */
+			'translationSuccess'            => __( 'Inserted translation from "%s".', 'mcp-ai-wpoos' ),
+			'translationFileTooLarge'       => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+			'translateChooseSource'         => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+			'translationEndpointNotFound'   => __( 'Translation service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+			'translationNotConfigured'      => __( 'Translation is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+			'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
+			'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
+			'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
+			'voiceChatProcessing'           => __( 'Processing your voice message…', 'mcp-ai-wpoos' ),
+			'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
+			'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
+			'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
+			'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
+			'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
+			'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
+			'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name being uploaded */
+			'uploadingFile'                 => __( 'Uploading "%s"…', 'mcp-ai-wpoos' ),
+			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
+			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
+			'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name with unsupported type */
+			'unsupportedFileType'           => __( '"%s" is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
+			'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
+			'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
+			'expandTranscript'              => __( 'Expand conversation', 'mcp-ai-wpoos' ),
+			'collapseTranscript'            => __( 'Collapse conversation', 'mcp-ai-wpoos' ),
+			'newConversation'               => __( 'Start new conversation', 'mcp-ai-wpoos' ),
+			'loadConversation'              => __( 'Load conversation', 'mcp-ai-wpoos' ),
+			'jsonResponse'                  => __( 'JSON response', 'mcp-ai-wpoos' ),
+			'historyToggleShow'             => __( 'Show previous conversations', 'mcp-ai-wpoos' ),
+			'historyToggleHide'             => __( 'Hide previous conversations', 'mcp-ai-wpoos' ),
+			'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
+			'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
+			'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
+			/* translators: %d: number of messages in chat history */
+			'historyMessageCount'           => __( '%d messages', 'mcp-ai-wpoos' ),
+			'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
+			/* translators: %s: conversation identifier */
+			'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
+			'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
+			'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
+			'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'mcp-ai-wpoos' ),
+			'savingPost'                    => __( 'Saving post…', 'mcp-ai-wpoos' ),
+			'saveConversation'              => __( 'Save conversation', 'mcp-ai-wpoos' ),
+			'savingConversation'            => __( 'Saving current conversation...', 'mcp-ai-wpoos' ),
+			'conversationSaved'             => __( 'Conversation saved successfully.', 'mcp-ai-wpoos' ),
+			'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'mcp-ai-wpoos' ),
+			'saveFailedProceed'             => __( 'Failed to save conversation: ', 'mcp-ai-wpoos' ),
+			'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'mcp-ai-wpoos' ),
+			'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'mcp-ai-wpoos' ),
+			'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'mcp-ai-wpoos' ),
+			'saveSkipped'                   => __( 'Save not available for this conversation.', 'mcp-ai-wpoos' ),
+			'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'mcp-ai-wpoos' ),
+			'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'mcp-ai-wpoos' ),
+			'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'mcp-ai-wpoos' ),
+			'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'mcp-ai-wpoos' ),
+			'exportFailed'                  => __( 'Export failed: ', 'mcp-ai-wpoos' ),
+			'exportSuccess'                 => __( 'Conversation exported successfully as ', 'mcp-ai-wpoos' ),
+			'deleteConversation'            => __( 'Delete this conversation', 'mcp-ai-wpoos' ),
+			'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'mcp-ai-wpoos' ),
+			'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'videoNotSupported'             => __( 'Your browser does not support video playback.', 'mcp-ai-wpoos' ),
+			'downloadVideo'                 => __( 'Download video', 'mcp-ai-wpoos' ),
+			'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'mcp-ai-wpoos' ),
+			'videoPending'                  => __( 'Pending • ~5 min', 'mcp-ai-wpoos' ),
+			'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'tokensLabel'                   => __( 'Tokens', 'mcp-ai-wpoos' ),
+			'costLabel'                     => __( 'Cost', 'mcp-ai-wpoos' ),
+			'estimatedCostLabel'            => __( 'Est. Cost', 'mcp-ai-wpoos' ),
+			/* translators: %d: number of tokens used */
+			'tokensUsed'                    => __( '%d tokens', 'mcp-ai-wpoos' ),
+			/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
+			'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'mcp-ai-wpoos' ),
+			/* translators: %s: cost in USD */
+			'costAmount'                    => __( '$%s', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name that is processing */
+			'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name that is temporarily unavailable */
+			'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
+			'roleLabels'                    => array(
+				'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
+				'user'      => __( 'You', 'mcp-ai-wpoos' ),
+				'system'    => __( 'System', 'mcp-ai-wpoos' ),
+				'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
+			),
+		);
 	}
 
 	/**
@@ -567,12 +576,12 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Handle team parameter for multi-agent coordination.
-			$team_id = ! empty( $atts['team'] ) ? absint( $atts['team'] ) : 0;
-			$team_data = null;
-			$team_members = array();
-			$orchestration_mode = '';
-			$result_aggregation = '';
-			$multi_agent_enabled = false;
+			$team_id               = ! empty( $atts['team'] ) ? absint( $atts['team'] ) : 0;
+			$team_data             = null;
+			$team_members          = array();
+			$orchestration_mode    = '';
+			$result_aggregation    = '';
+			$multi_agent_enabled   = false;
 			$supports_unified_mode = false;
 
 			if ( $team_id > 0 ) {
@@ -610,10 +619,10 @@ class WP_MCP_AI_Shortcode {
 							'shortcode_team_detected',
 							'Team chat interface initialized',
 							array(
-								'team_id'                => $team_id,
-								'member_count'           => count( $team_members ),
-								'orchestration_mode'     => $orchestration_mode,
-								'supports_unified_mode'  => $supports_unified_mode,
+								'team_id'               => $team_id,
+								'member_count'          => count( $team_members ),
+								'orchestration_mode'    => $orchestration_mode,
+								'supports_unified_mode' => $supports_unified_mode,
 							)
 						);
 					}
