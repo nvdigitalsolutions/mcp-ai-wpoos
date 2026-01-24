@@ -729,64 +729,92 @@ class WP_MCP_AI_Shortcode {
 			// Check: provider is embedded AND (base version not defined OR base version is false).
 			// Embedded provider is only available in Pro version (not base version).
 			// This MUST be done before enqueuing chat script to ensure proper loading order.
-			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
+			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
+
+			if ( $needs_embedded_provider ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+				$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+				$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
 
-				// Load WebLLM library from CDN first (dependency for embedded-llm-client).
-				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
-				// Loading from CDN ensures users get the latest version with bug fixes and model support.
-				// The library is open source and maintained by MLC AI (Apache 2.0 license).
-				if ( ! wp_script_is( 'webllm', 'registered' ) ) {
+				// Register WebLLM loader script (only once per page).
+				// Best Practice: Use separate JS files instead of inline scripts.
+				if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
 					wp_register_script(
-						'webllm',
-						'https://esm.run/@mlc-ai/web-llm',
+						'webllm-loader',
+						$webllm_loader_path,
 						array(),
-						null,
+						$webllm_loader_version,
 						true
 					);
 				}
 
-				// Register embedded LLM client with webllm as dependency.
+				// Register embedded LLM client.
+				// It will wait for WebLLM to load before initializing.
 				if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
 					wp_register_script(
 						'wp-mcp-ai-embedded-llm-client',
 						$embedded_script_path,
-						array( 'webllm' ),
+						array( 'webllm-loader' ), // Depends on the loader.
 						$embedded_script_version,
 						true
 					);
 				}
 
-				// Enqueue the embedded client (and its webllm dependency).
+				// Enqueue the loader and embedded client.
+				// WordPress ensures these are only loaded once even if called multiple times.
+				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 			}
 
-			if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
-				$this->register_assets();
-			}
+			// Register or re-register chat script with proper dependencies.
+			// IMPORTANT: Only re-register if not already registered with embedded provider dependency.
+			$script_relative = 'assets/js/chat-bundle.min.js';
+			$script_path     = WP_MCP_AI_URL . $script_relative;
+			$script_version  = $this->get_asset_version( $script_relative );
 
-			// If embedded provider is used, the chat script needs to depend on embedded-llm-client.
-			// Re-register the chat script with the proper dependency.
-			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
-				$script_relative = 'assets/js/chat-bundle.min.js';
-				$script_path     = WP_MCP_AI_URL . $script_relative;
-				$script_version  = $this->get_asset_version( $script_relative );
+			// Check if we need to register/re-register with embedded provider dependency.
+			$should_register_with_embedded = $needs_embedded_provider;
+			$already_registered            = wp_script_is( self::SCRIPT_HANDLE, 'registered' );
 
-				// Re-register with embedded-llm-client as dependency.
-				wp_deregister_script( self::SCRIPT_HANDLE );
-				wp_register_script(
-					self::SCRIPT_HANDLE,
-					$script_path,
-					array( 'wp-mcp-ai-embedded-llm-client' ),
-					$script_version,
-					true
-				);
+			// Only re-register if:
+			// 1. Not registered yet, OR
+			// 2. Registered without embedded provider dependency but we need it now.
+			if ( ! $already_registered || ( $should_register_with_embedded && $already_registered ) ) {
+				// If already registered, check if it has the embedded provider dependency.
+				if ( $already_registered ) {
+					global $wp_scripts;
+					$has_embedded_dep = isset( $wp_scripts->registered[ self::SCRIPT_HANDLE ] )
+						&& isset( $wp_scripts->registered[ self::SCRIPT_HANDLE ]->deps )
+						&& in_array( 'wp-mcp-ai-embedded-llm-client', $wp_scripts->registered[ self::SCRIPT_HANDLE ]->deps, true );
 
-				// Re-apply localization since we re-registered the script.
-				if ( ! $is_elementor_editor ) {
-					$this->apply_script_localization( $settings );
+					// Only re-register if we need embedded dep but don't have it.
+					if ( $should_register_with_embedded && ! $has_embedded_dep ) {
+						wp_deregister_script( self::SCRIPT_HANDLE );
+						$already_registered = false;
+					}
 				}
+
+				// Register with appropriate dependencies.
+				if ( ! $already_registered ) {
+					$script_deps = $should_register_with_embedded ? array( 'wp-mcp-ai-embedded-llm-client' ) : array();
+
+					wp_register_script(
+						self::SCRIPT_HANDLE,
+						$script_path,
+						$script_deps,
+						$script_version,
+						true
+					);
+
+					// Apply localization after registration (only once per page load).
+					if ( ! $is_elementor_editor && ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) {
+						$this->apply_script_localization( $settings );
+					}
+				}
+			} elseif ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
+				// Fallback: use register_assets() if script is not registered yet.
+				$this->register_assets();
 			}
 
 			wp_enqueue_script( self::SCRIPT_HANDLE );
@@ -1472,7 +1500,7 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		if ( ! empty( $config['disable_prebuilt_shortcuts'] ) ) {
-			// Even with prebuilt shortcuts disabled, ensure fallback shortcut if no custom shortcuts
+			// Even with prebuilt shortcuts disabled, ensure fallback shortcut if no custom shortcuts.
 			if ( empty( $shortcuts ) ) {
 				$fallback_shortcut = array(
 					'tool'    => 'default',
@@ -1513,7 +1541,7 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		if ( empty( $selected_tools ) ) {
-			// Even with no tools selected, ensure fallback shortcut if no custom shortcuts
+			// Even with no tools selected, ensure fallback shortcut if no custom shortcuts.
 			if ( empty( $shortcuts ) ) {
 				$fallback_shortcut = array(
 					'tool'    => 'default',

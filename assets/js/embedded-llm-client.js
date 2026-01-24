@@ -11,11 +11,64 @@
 (function() {
 	'use strict';
 
-	// WebLLM will be loaded via CDN or bundled
+	// WebLLM will be loaded dynamically via import() in the loader script.
 	let webLLM = null;
 	let currentEngine = null;
 	let isInitializing = false;
 	let modelLoaded = false;
+	let webLLMReady = false;
+
+	/**
+	 * Wait for WebLLM to be loaded
+	 * WebLLM is loaded asynchronously via dynamic import()
+	 * 
+	 * Best Practice: Use event-based waiting for async module loading.
+	 * Reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import
+	 */
+	function waitForWebLLM() {
+		return new Promise(function(resolve, reject) {
+			// Check if already loaded.
+			if (window.webLLM) {
+				webLLM = window.webLLM;
+				webLLMReady = true;
+				resolve(webLLM);
+				return;
+			}
+
+			// Check if there was an error loading.
+			if (window.wpMcpAiWebLLMError) {
+				reject(new Error('WebLLM failed to load: ' + window.wpMcpAiWebLLMError.message));
+				return;
+			}
+
+			// Set up timeout (30 seconds).
+			var timeoutId = setTimeout(function() {
+				reject(new Error('Timeout waiting for WebLLM to load. Check your internet connection and browser console for errors.'));
+			}, 30000);
+
+			// Wait for the webllm-ready event.
+			function onReady() {
+				clearTimeout(timeoutId);
+				webLLM = window.webLLM;
+				webLLMReady = true;
+				window.removeEventListener('webllm-ready', onReady);
+				window.removeEventListener('webllm-error', onError);
+				resolve(webLLM);
+			}
+
+			// Wait for error event.
+			function onError(event) {
+				clearTimeout(timeoutId);
+				window.removeEventListener('webllm-ready', onReady);
+				window.removeEventListener('webllm-error', onError);
+				var error = event.detail || new Error('Unknown error loading WebLLM');
+				reject(error);
+			}
+
+			window.addEventListener('webllm-ready', onReady);
+			window.addEventListener('webllm-error', onError);
+		});
+	}
 
 	/**
 	 * Available models for client-side inference
@@ -61,29 +114,19 @@
 
 	/**
 	 * Initialize WebLLM library
+	 * Waits for WebLLM to be loaded via dynamic import
 	 */
 	async function initializeWebLLM() {
-		if (webLLM) {
+		if (webLLMReady && webLLM) {
 			return true;
 		}
 
 		try {
-			// Try to load from global scope (CDN)
-			if (typeof window.webllm !== 'undefined') {
-				webLLM = window.webllm;
-				return true;
-			}
-
-			// Try dynamic import for bundled version
-			if (typeof window.mlcWebLLM !== 'undefined') {
-				webLLM = window.mlcWebLLM;
-				return true;
-			}
-
-			console.error('WebLLM library not found. Please ensure it is loaded.');
-			return false;
+			// Wait for WebLLM to be loaded by the loader script.
+			await waitForWebLLM();
+			return true;
 		} catch (error) {
-			console.error('Error initializing WebLLM:', error);
+			console.error('[NV oOS] Error initializing WebLLM:', error);
 			return false;
 		}
 	}
