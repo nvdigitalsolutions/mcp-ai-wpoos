@@ -11649,11 +11649,16 @@
         state.conversation.push(assistantMessage);
         
         // Create empty message bubble for progressive updates
-        const bubble = appendMessage(state.messagesEl, 'assistant', { text: '' }, true, { state: state });
-        if (bubble) {
-            bubble.setAttribute('data-message-id', assistantMessageId);
-            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
-        }
+        // We can't use appendMessage with empty text as it returns null
+        const bubble = document.createElement('div');
+        bubble.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+        bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
+        bubble.setAttribute('data-message-id', assistantMessageId);
+        state.messagesEl.appendChild(bubble);
+        console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        
+        // Scroll to show the new message
+        scrollBatcher.scrollToBottom(state.messagesEl);
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
