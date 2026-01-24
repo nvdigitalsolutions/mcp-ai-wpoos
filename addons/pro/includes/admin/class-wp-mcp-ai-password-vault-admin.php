@@ -32,10 +32,12 @@ class WP_MCP_AI_Password_Vault_Admin {
 		add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 30 );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
-		add_action( 'admin_post_vault_generate_password', array( $this, 'handle_generate_password' ) );
-		add_action( 'admin_post_vault_generate_totp_secret', array( $this, 'handle_generate_totp_secret' ) );
 
-		// Import/Export/Sync handlers.
+		// AJAX handlers for password and TOTP generation.
+		add_action( 'wp_ajax_vault_generate_password', array( $this, 'handle_generate_password' ) );
+		add_action( 'wp_ajax_vault_generate_totp_secret', array( $this, 'handle_generate_totp_secret' ) );
+
+		// Import/Export/Sync handlers (these use admin_post for form submissions with redirect).
 		add_action( 'admin_post_wp_mcp_ai_vault_import_bitwarden', array( $this, 'handle_import_bitwarden' ) );
 		add_action( 'admin_post_wp_mcp_ai_vault_export_bitwarden', array( $this, 'handle_export_bitwarden' ) );
 		add_action( 'admin_post_wp_mcp_ai_vault_sync_bitwarden', array( $this, 'handle_sync_bitwarden' ) );
@@ -105,7 +107,14 @@ class WP_MCP_AI_Password_Vault_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		if ( 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' !== $hook ) {
+		// Check for password vault page.
+		// Hook format: 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault'
+		// Also check via $_GET for additional safety.
+		$is_vault_page = ( 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' === $hook ) ||
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			( isset( $_GET['page'] ) && 'wp-mcp-ai-password-vault' === $_GET['page'] );
+
+		if ( ! $is_vault_page ) {
 			return;
 		}
 
