@@ -137,6 +137,8 @@
 		});
 
 		// TOTP verification
+		// TODO: Implement server-side TOTP verification endpoint for production use.
+		// Current implementation is client-side simulation for UI demonstration only.
 		$('#verify-totp-code').on('click', function() {
 			const code = $('#totp-test-code').val();
 			const secret = $('#totp-secret').text();
@@ -146,20 +148,36 @@
 				return;
 			}
 
-			// Simple client-side verification (for demo purposes)
-			// In production, this should be verified server-side
-			$('#totp-verification-result').text('Verification sent to server...').removeClass('success error');
+			if (!secret) {
+				alert('No TOTP secret available. Generate a secret first.');
+				return;
+			}
 
-			// Simulate verification (you would do this server-side in production)
-			setTimeout(function() {
-				// This is a placeholder - implement actual server verification
-				const isValid = Math.random() > 0.3; // Simulated result
-				if (isValid) {
-					$('#totp-verification-result').text('✓ Code verified!').addClass('success').removeClass('error');
-				} else {
-					$('#totp-verification-result').text('✗ Invalid code').addClass('error').removeClass('success');
-				}
-			}, 500);
+			// Show verification message
+			$('#totp-verification-result')
+				.text('TOTP verification requires server-side implementation.')
+				.removeClass('success error')
+				.css('color', '#646970');
+
+			// TODO: Replace with actual AJAX call to server endpoint for TOTP verification
+			// Example:
+			// $.ajax({
+			//     url: wpMcpAiVault.ajax_url,
+			//     method: 'POST',
+			//     data: {
+			//         action: 'vault_verify_totp',
+			//         _wpnonce: wpMcpAiVault.nonce,
+			//         code: code,
+			//         secret: secret
+			//     },
+			//     success: function(response) {
+			//         if (response.success) {
+			//             $('#totp-verification-result').text('✓ Code verified!').addClass('success').removeClass('error');
+			//         } else {
+			//             $('#totp-verification-result').text('✗ Invalid code').addClass('error').removeClass('success');
+			//         }
+			//     }
+			// });
 		});
 	}
 
