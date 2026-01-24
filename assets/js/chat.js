@@ -11831,12 +11831,22 @@
                 systemPromptLength: state.config.systemPrompt.length,
                 systemPromptPreview: state.config.systemPrompt.substring(0, 100) + '...'
             });
+        } else {
+            // Log when system prompt is missing or already present
+            console.warn('[NV oOS] System prompt NOT prepended:', {
+                hasSystemPromptInConfig: !!state.config.systemPrompt,
+                systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                alreadyHasSystemMessage: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+                configKeys: Object.keys(state.config || {})
+            });
         }
 
         console.log('[NV oOS] Formatted messages for embedded client:', {
             messageCount: formattedMessages.length,
             hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            lastMessage: formattedMessages[formattedMessages.length - 1]
+            firstMessage: formattedMessages[0],
+            lastMessage: formattedMessages[formattedMessages.length - 1],
+            allMessageRoles: formattedMessages.map(function(m) { return m.role; })
         });
 
         // Use streaming for better UX

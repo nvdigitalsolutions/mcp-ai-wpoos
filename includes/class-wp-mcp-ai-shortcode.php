@@ -879,6 +879,35 @@ class WP_MCP_AI_Shortcode {
 			// This ensures embedded providers have access to the same defaults as server-side providers.
 			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
 				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+				
+				// Log system prompt being passed to embedded provider for debugging.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && 'embedded' === $assistant_provider ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_system_prompt_config',
+						'Embedded provider: System prompt passed to client',
+						array(
+							'assistant_id'          => $assistant_id,
+							'system_prompt_length'  => strlen( $assistant_config_for_provider['system_prompt'] ),
+							'system_prompt_preview' => substr( $assistant_config_for_provider['system_prompt'], 0, 200 ),
+							'has_primary_roles'     => ! empty( get_post_meta( $provider_check_id, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, true ) ),
+						)
+					);
+				}
+			} else {
+				// Log when system prompt is missing for embedded provider.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) && 'embedded' === $assistant_provider ) {
+					WP_MCP_AI_Logger::log_event(
+						'embedded_system_prompt_missing',
+						'Embedded provider: System prompt is empty or not set',
+						array(
+							'assistant_id'      => $assistant_id,
+							'provider_check_id' => $provider_check_id,
+							'has_primary_roles' => ! empty( get_post_meta( $provider_check_id, WP_MCP_AI_Assistant_CPT::META_PRIMARY_ROLES, true ) ),
+							'system_prompt_raw' => isset( $assistant_config_for_provider['system_prompt'] ) ? $assistant_config_for_provider['system_prompt'] : null,
+						),
+						'warning'
+					);
+				}
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
