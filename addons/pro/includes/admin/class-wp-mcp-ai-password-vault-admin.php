@@ -111,7 +111,8 @@ class WP_MCP_AI_Password_Vault_Admin {
 		// Hook format: 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault'
 		// Also check via $_GET for additional safety.
 		$is_vault_page = ( 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' === $hook ) ||
-						 ( isset( $_GET['page'] ) && 'wp-mcp-ai-password-vault' === $_GET['page'] );
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			( isset( $_GET['page'] ) && 'wp-mcp-ai-password-vault' === $_GET['page'] );
 
 		if ( ! $is_vault_page ) {
 			return;
