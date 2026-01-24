@@ -30,7 +30,7 @@ function wp_mcp_ai_init_sitekit_integration() {
 
 	// Load integration class if not already loaded.
 	if ( ! class_exists( 'WP_MCP_AI_SiteKit_Integration' ) ) {
-		require_once WP_MCP_AI_PLUGIN_DIR . 'includes/integrations/class-wp-mcp-ai-sitekit-integration.php';
+		require_once WP_MCP_AI_PATH . 'includes/integrations/class-wp-mcp-ai-sitekit-integration.php';
 	}
 
 	// Initialize integration.

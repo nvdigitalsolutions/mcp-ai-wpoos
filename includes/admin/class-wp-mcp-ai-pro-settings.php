@@ -154,118 +154,118 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			return $toolkit_status;
 		}
 
-	/**
-	 * Get PHP function requirements status grouped by system.
-	 *
-	 * Checks availability of PHP functions needed for Pro features.
-	 * Functions are grouped by the system/feature that requires them.
-	 *
-	 * @return array PHP function status information grouped by system.
-	 */
-	public static function get_php_requirements_status() {
-		// Systems and their required PHP functions.
-		$systems = array(
-			'process_service' => array(
-				'name'        => __( 'Process Service & Node.js Integration', 'mcp-ai-wpoos' ),
-				'description' => __( 'Core service for external process execution, Node.js tools, and NPM package integration.', 'mcp-ai-wpoos' ),
-				'functions'    => array( 'proc_open', 'proc_close', 'proc_terminate' ),
-				'critical'     => true,
-				'tools'        => array(
-					__( 'All Node.js-based tools', 'mcp-ai-wpoos' ),
-					__( 'NPM integration (Prettier, MJML, FFmpeg)', 'mcp-ai-wpoos' ),
-					__( 'Image optimization (Sharp)', 'mcp-ai-wpoos' ),
-					__( 'Video processing', 'mcp-ai-wpoos' ),
-					__( 'Math equation rendering', 'mcp-ai-wpoos' ),
+		/**
+		 * Get PHP function requirements status grouped by system.
+		 *
+		 * Checks availability of PHP functions needed for Pro features.
+		 * Functions are grouped by the system/feature that requires them.
+		 *
+		 * @return array PHP function status information grouped by system.
+		 */
+		public static function get_php_requirements_status() {
+			// Systems and their required PHP functions.
+			$systems = array(
+				'process_service' => array(
+					'name'        => __( 'Process Service & Node.js Integration', 'mcp-ai-wpoos' ),
+					'description' => __( 'Core service for external process execution, Node.js tools, and NPM package integration.', 'mcp-ai-wpoos' ),
+					'functions'   => array( 'proc_open', 'proc_close', 'proc_terminate' ),
+					'critical'    => true,
+					'tools'       => array(
+						__( 'All Node.js-based tools', 'mcp-ai-wpoos' ),
+						__( 'NPM integration (Prettier, MJML, FFmpeg)', 'mcp-ai-wpoos' ),
+						__( 'Image optimization (Sharp)', 'mcp-ai-wpoos' ),
+						__( 'Video processing', 'mcp-ai-wpoos' ),
+						__( 'Math equation rendering', 'mcp-ai-wpoos' ),
+					),
 				),
-			),
-			'wp_cli'         => array(
-				'name'        => __( 'WP-CLI Integration', 'mcp-ai-wpoos' ),
-				'description' => __( 'Command-line interface for WordPress management and automation.', 'mcp-ai-wpoos' ),
-				'functions'    => array( 'proc_open', 'proc_close' ),
-				'critical'     => false,
-				'tools'        => array(
-					__( 'check_wp_cli tool', 'mcp-ai-wpoos' ),
-					__( 'WP-CLI command execution', 'mcp-ai-wpoos' ),
+				'wp_cli'          => array(
+					'name'        => __( 'WP-CLI Integration', 'mcp-ai-wpoos' ),
+					'description' => __( 'Command-line interface for WordPress management and automation.', 'mcp-ai-wpoos' ),
+					'functions'   => array( 'proc_open', 'proc_close' ),
+					'critical'    => false,
+					'tools'       => array(
+						__( 'check_wp_cli tool', 'mcp-ai-wpoos' ),
+						__( 'WP-CLI command execution', 'mcp-ai-wpoos' ),
+					),
 				),
-			),
-			'performance'    => array(
-				'name'        => __( 'Performance Monitoring & Testing', 'mcp-ai-wpoos' ),
-				'description' => __( 'PHPUnit test execution and performance benchmarking from admin interface.', 'mcp-ai-wpoos' ),
-				'functions'    => array( 'exec' ),
-				'critical'     => false,
-				'tools'        => array(
-					__( 'Performance monitoring dashboard', 'mcp-ai-wpoos' ),
-					__( 'PHPUnit test runner', 'mcp-ai-wpoos' ),
-					__( 'Benchmark tests', 'mcp-ai-wpoos' ),
+				'performance'     => array(
+					'name'        => __( 'Performance Monitoring & Testing', 'mcp-ai-wpoos' ),
+					'description' => __( 'PHPUnit test execution and performance benchmarking from admin interface.', 'mcp-ai-wpoos' ),
+					'functions'   => array( 'exec' ),
+					'critical'    => false,
+					'tools'       => array(
+						__( 'Performance monitoring dashboard', 'mcp-ai-wpoos' ),
+						__( 'PHPUnit test runner', 'mcp-ai-wpoos' ),
+						__( 'Benchmark tests', 'mcp-ai-wpoos' ),
+					),
 				),
-			),
-			'documents'      => array(
-				'name'        => __( 'Document Generation', 'mcp-ai-wpoos' ),
-				'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
-				'functions'    => array( 'exec' ),
-				'critical'     => false,
-				'tools'        => array(
-					__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
-					__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
-					__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
+				'documents'       => array(
+					'name'        => __( 'Document Generation', 'mcp-ai-wpoos' ),
+					'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+					'functions'   => array( 'exec' ),
+					'critical'    => false,
+					'tools'       => array(
+						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
+						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
+						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
+					),
 				),
-			),
-		);
+			);
 
-		// Check function availability.
-		$results = array();
-		$all_critical_ok = true;
+			// Check function availability.
+			$results         = array();
+			$all_critical_ok = true;
 
-		foreach ( $systems as $system_id => $system ) {
-			$system_functions = array();
-			$all_available = true;
+			foreach ( $systems as $system_id => $system ) {
+				$system_functions = array();
+				$all_available    = true;
 
-			foreach ( $system['functions'] as $func_name ) {
-				$available = function_exists( $func_name );
-				$system_functions[ $func_name ] = array(
-					'available' => $available,
-					'name'      => $func_name,
-				);
+				foreach ( $system['functions'] as $func_name ) {
+					$available                      = function_exists( $func_name );
+					$system_functions[ $func_name ] = array(
+						'available' => $available,
+						'name'      => $func_name,
+					);
 
-				if ( ! $available ) {
-					$all_available = false;
-					if ( $system['critical'] ) {
-						$all_critical_ok = false;
+					if ( ! $available ) {
+						$all_available = false;
+						if ( $system['critical'] ) {
+							$all_critical_ok = false;
+						}
 					}
 				}
+
+				$results[ $system_id ] = array(
+					'name'          => $system['name'],
+					'description'   => $system['description'],
+					'functions'     => $system_functions,
+					'tools'         => $system['tools'],
+					'critical'      => $system['critical'],
+					'all_available' => $all_available,
+					'status'        => $all_available ? 'ok' : ( $system['critical'] ? 'critical' : 'warning' ),
+				);
 			}
 
-			$results[ $system_id ] = array(
-				'name'         => $system['name'],
-				'description'  => $system['description'],
-				'functions'     => $system_functions,
-				'tools'         => $system['tools'],
-				'critical'      => $system['critical'],
-				'all_available' => $all_available,
-				'status'        => $all_available ? 'ok' : ( $system['critical'] ? 'critical' : 'warning' ),
+			// Get disabled functions list.
+			$disabled_functions = ini_get( 'disable_functions' );
+			$disabled_list      = $disabled_functions ? array_map( 'trim', explode( ',', $disabled_functions ) ) : array();
+
+			// Check if any systems have issues.
+			$systems_with_issues = array_filter(
+				$results,
+				function ( $s ) {
+					return ! $s['all_available'];
+				}
+			);
+			$has_any_issues      = ! $all_critical_ok || count( $systems_with_issues ) > 0;
+
+			return array(
+				'systems'         => $results,
+				'disabled_list'   => $disabled_list,
+				'all_critical_ok' => $all_critical_ok,
+				'has_any_issues'  => $has_any_issues,
 			);
 		}
-
-		// Get disabled functions list.
-		$disabled_functions = ini_get( 'disable_functions' );
-		$disabled_list = $disabled_functions ? array_map( 'trim', explode( ',', $disabled_functions ) ) : array();
-
-		// Check if any systems have issues.
-		$systems_with_issues = array_filter(
-			$results,
-			function( $s ) {
-				return ! $s['all_available'];
-			}
-		);
-		$has_any_issues = ! $all_critical_ok || count( $systems_with_issues ) > 0;
-
-		return array(
-			'systems'          => $results,
-			'disabled_list'    => $disabled_list,
-			'all_critical_ok'  => $all_critical_ok,
-			'has_any_issues'   => $has_any_issues,
-		);
-	}
 
 		/**
 		 * Get comprehensive toolkit details grouped by system.
@@ -279,107 +279,107 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'media_toolkit' => array(
-					'name'        => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_media_toolkit'] ),
-					'category'    => 'specialized',
+				'media_toolkit'                => array(
+					'name'          => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_media_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate' ),
-					'npm_packages' => array( 'sharp', 'fluent-ffmpeg', 'katex', '@neplex/vectorizer' ),
-					'tools_count' => 4,
-					'tools'       => array(
+					'npm_packages'  => array( 'sharp', 'fluent-ffmpeg', 'katex', '@neplex/vectorizer' ),
+					'tools_count'   => 4,
+					'tools'         => array(
 						__( 'optimize_image tool', 'mcp-ai-wpoos' ),
 						__( 'process_video tool', 'mcp-ai-wpoos' ),
 						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
 						__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'document_generation' => array(
-					'name'        => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_document_generation_toolkit'] ),
-					'category'    => 'specialized',
+				'document_generation'          => array(
+					'name'          => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array( 'exec' ),
-					'npm_packages' => array( 'pdfkit', 'docx', 'exceljs' ),
-					'tools_count' => 3,
-					'tools'       => array(
+					'npm_packages'  => array( 'pdfkit', 'docx', 'exceljs' ),
+					'tools_count'   => 3,
+					'tools'         => array(
 						__( 'generate_pdf_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_word_document tool', 'mcp-ai-wpoos' ),
 						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'project_management' => array(
-					'name'        => __( 'Project Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_project_management'] ),
-					'category'    => 'specialized',
+				'project_management'           => array(
+					'name'          => __( 'Project Management', 'mcp-ai-wpoos' ),
+					'description'   => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_project_management'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'ics' ),
-					'tools_count' => 1,
-					'tools'       => array(
+					'npm_packages'  => array( 'ics' ),
+					'tools_count'   => 1,
+					'tools'         => array(
 						__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'places_management' => array(
-					'name'        => __( 'Places Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_places_management'] ),
-					'category'    => 'specialized',
+				'places_management'            => array(
+					'name'          => __( 'Places Management', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_places_management'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( '@turf/turf' ),
-					'tools_count' => 1,
-					'tools'       => array(
+					'npm_packages'  => array( '@turf/turf' ),
+					'tools_count'   => 1,
+					'tools'         => array(
 						__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'health_wellness_management' => array(
-					'name'        => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_health_wellness_management'] ),
-					'category'    => 'specialized',
+				'health_wellness_management'   => array(
+					'name'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_health_wellness_management'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'chart.js' ),
-					'tools_count' => 1,
-					'tools'       => array(
+					'npm_packages'  => array( 'chart.js' ),
+					'tools_count'   => 1,
+					'tools'         => array(
 						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'quiz_system' => array(
-					'name'        => __( 'Quiz System', 'mcp-ai-wpoos' ),
-					'description' => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_quiz_system'] ),
-					'category'    => 'specialized',
+				'quiz_system'                  => array(
+					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_quiz_system'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'katex' ),
-					'tools_count' => 2,
-					'tools'       => array(
+					'npm_packages'  => array( 'katex' ),
+					'tools_count'   => 2,
+					'tools'         => array(
 						__( 'create_quiz tool', 'mcp-ai-wpoos' ),
 						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'eca_management' => array(
-					'name'        => __( 'ECA Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_eca_management'] ),
-					'category'    => 'core',
+				'eca_management'               => array(
+					'name'          => __( 'ECA Management', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_eca_management'] ),
+					'category'      => 'core',
 					'php_functions' => array(),
-					'npm_packages' => array(),
-					'tools_count' => 3,
-					'tools'       => array(
+					'npm_packages'  => array(),
+					'tools_count'   => 3,
+					'tools'         => array(
 						__( 'manage_eca tool', 'mcp-ai-wpoos' ),
 						__( 'track_eca_attendance tool', 'mcp-ai-wpoos' ),
 						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'crm_toolkit' => array(
-					'name'        => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_crm_toolkit'] ),
-					'category'    => 'specialized',
+				'crm_toolkit'                  => array(
+					'name'          => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_crm_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array( 'proc_open', 'proc_close' ),
-					'npm_packages' => array( 'nodemailer', 'validator', 'email-validator', 'libphonenumber-js', 'mailparser', 'csv-parse', 'csv-stringify', 'ical-generator' ),
-					'tools_count' => 12,
-					'tools'       => array(
+					'npm_packages'  => array( 'nodemailer', 'validator', 'email-validator', 'libphonenumber-js', 'mailparser', 'csv-parse', 'csv-stringify', 'ical-generator' ),
+					'tools_count'   => 12,
+					'tools'         => array(
 						__( 'create_contact tool', 'mcp-ai-wpoos' ),
 						__( 'update_contact tool', 'mcp-ai-wpoos' ),
 						__( 'segment_contacts tool', 'mcp-ai-wpoos' ),
@@ -394,28 +394,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'code_formatting' => array(
-					'name'        => __( 'Code Formatting', 'mcp-ai-wpoos' ),
-					'description' => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
-					'enabled'     => true,
-					'category'    => 'infrastructure',
+				'code_formatting'              => array(
+					'name'          => __( 'Code Formatting', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
+					'enabled'       => true,
+					'category'      => 'infrastructure',
 					'php_functions' => array( 'proc_open', 'proc_close' ),
-					'npm_packages' => array( 'prettier', 'mjml' ),
-					'tools_count' => 2,
-					'tools'       => array(
+					'npm_packages'  => array( 'prettier', 'mjml' ),
+					'tools_count'   => 2,
+					'tools'         => array(
 						__( 'format_code tool', 'mcp-ai-wpoos' ),
 						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ecommerce_toolkit' => array(
-					'name'        => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_ecommerce_toolkit'] ),
-					'category'    => 'specialized',
+				'ecommerce_toolkit'            => array(
+					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
-					'tools_count' => 8,
-					'tools'       => array(
+					'npm_packages'  => array( '@woocommerce/woocommerce-rest-api', 'stripe', 'currency.js' ),
+					'tools_count'   => 8,
+					'tools'         => array(
 						__( 'create_product_advanced tool', 'mcp-ai-wpoos' ),
 						__( 'update_product_inventory tool', 'mcp-ai-wpoos' ),
 						__( 'process_payment tool', 'mcp-ai-wpoos' ),
@@ -426,15 +426,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'social_media_toolkit' => array(
-					'name'        => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_social_media_toolkit'] ),
-					'category'    => 'specialized',
+				'social_media_toolkit'         => array(
+					'name'          => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_social_media_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'twitter-api-v2', 'axios', 'facebook-nodejs-business-sdk', 'linkedin-api-client' ),
-					'tools_count' => 12,
-					'tools'       => array(
+					'npm_packages'  => array( 'twitter-api-v2', 'axios', 'facebook-nodejs-business-sdk', 'linkedin-api-client' ),
+					'tools_count'   => 12,
+					'tools'         => array(
 						__( 'post_to_twitter tool', 'mcp-ai-wpoos' ),
 						__( 'post_to_facebook tool', 'mcp-ai-wpoos' ),
 						__( 'post_to_linkedin tool', 'mcp-ai-wpoos' ),
@@ -449,15 +449,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'monitor_trends tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'analytics_toolkit' => array(
-					'name'        => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_analytics_toolkit'] ),
-					'category'    => 'specialized',
+				'analytics_toolkit'            => array(
+					'name'          => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_analytics_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'd3', 'mathjs', 'regression', 'fast-csv' ),
-					'tools_count' => 10,
-					'tools'       => array(
+					'npm_packages'  => array( 'd3', 'mathjs', 'regression', 'fast-csv' ),
+					'tools_count'   => 10,
+					'tools'         => array(
 						__( 'create_dashboard tool', 'mcp-ai-wpoos' ),
 						__( 'visualize_data tool', 'mcp-ai-wpoos' ),
 						__( 'perform_regression_analysis tool', 'mcp-ai-wpoos' ),
@@ -470,15 +470,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_insights tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'multilingual_toolkit' => array(
-					'name'        => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_multilingual_toolkit'] ),
-					'category'    => 'specialized',
+				'multilingual_toolkit'         => array(
+					'name'          => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_multilingual_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'i18next', 'franc', 'google-translate-api-x', 'iso-639-1' ),
-					'tools_count' => 6,
-					'tools'       => array(
+					'npm_packages'  => array( 'i18next', 'franc', 'google-translate-api-x', 'iso-639-1' ),
+					'tools_count'   => 6,
+					'tools'         => array(
 						__( 'translate_content tool', 'mcp-ai-wpoos' ),
 						__( 'detect_language tool', 'mcp-ai-wpoos' ),
 						__( 'manage_translations tool', 'mcp-ai-wpoos' ),
@@ -487,15 +487,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'batch_translate tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'video_production_toolkit' => array(
-					'name'        => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_video_production_toolkit'] ),
-					'category'    => 'specialized',
+				'video_production_toolkit'     => array(
+					'name'          => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_video_production_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array( 'proc_open', 'proc_close', 'proc_terminate', 'exec' ),
-					'npm_packages' => array( 'ffmpeg-static', 'ffprobe-static', 'gif-encoder', 'video-stitch', 'subtitle' ),
-					'tools_count' => 10,
-					'tools'       => array(
+					'npm_packages'  => array( 'ffmpeg-static', 'ffprobe-static', 'gif-encoder', 'video-stitch', 'subtitle' ),
+					'tools_count'   => 10,
+					'tools'         => array(
 						__( 'create_video tool', 'mcp-ai-wpoos' ),
 						__( 'edit_video tool', 'mcp-ai-wpoos' ),
 						__( 'convert_video tool', 'mcp-ai-wpoos' ),
@@ -508,15 +508,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'trim_video tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ai_tool_builder_toolkit' => array(
-					'name'        => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation capabilities.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_ai_tool_builder_toolkit'] ),
-					'category'    => 'infrastructure',
+				'ai_tool_builder_toolkit'      => array(
+					'name'          => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation capabilities.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_ai_tool_builder_toolkit'] ),
+					'category'      => 'infrastructure',
 					'php_functions' => array(),
-					'npm_packages' => array( 'prettier' ),
-					'tools_count' => 5,
-					'tools'       => array(
+					'npm_packages'  => array( 'prettier' ),
+					'tools_count'   => 5,
+					'tools'         => array(
 						__( 'scaffold_tool tool', 'mcp-ai-wpoos' ),
 						__( 'generate_tool_code tool', 'mcp-ai-wpoos' ),
 						__( 'test_tool tool', 'mcp-ai-wpoos' ),
@@ -525,14 +525,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					),
 				),
 				'architectural_design_toolkit' => array(
-					'name'        => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_architectural_design_toolkit'] ),
-					'category'    => 'specialized',
+					'name'          => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_architectural_design_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'd3' ),
-					'tools_count' => 6,
-					'tools'       => array(
+					'npm_packages'  => array( 'd3' ),
+					'tools_count'   => 6,
+					'tools'         => array(
 						__( 'generate_floor_plan tool', 'mcp-ai-wpoos' ),
 						__( 'create_3d_model tool', 'mcp-ai-wpoos' ),
 						__( 'generate_blueprint tool', 'mcp-ai-wpoos' ),
@@ -541,15 +541,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'optimize_layout tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'calendar_booking_toolkit' => array(
-					'name'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Appointment scheduling, availability management, calendar synchronization, booking management, and automated reminder system.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_calendar_booking_toolkit'] ),
-					'category'    => 'specialized',
+				'calendar_booking_toolkit'     => array(
+					'name'          => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Appointment scheduling, availability management, calendar synchronization, booking management, and automated reminder system.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_calendar_booking_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'ics', 'ical-generator' ),
-					'tools_count' => 7,
-					'tools'       => array(
+					'npm_packages'  => array( 'ics', 'ical-generator' ),
+					'tools_count'   => 7,
+					'tools'         => array(
 						__( 'schedule_appointment tool', 'mcp-ai-wpoos' ),
 						__( 'check_availability tool', 'mcp-ai-wpoos' ),
 						__( 'sync_calendar tool', 'mcp-ai-wpoos' ),
@@ -559,15 +559,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'reschedule_appointment tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'dj_management_toolkit' => array(
-					'name'        => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Equipment tracking, playlist management, event scheduling, client management, and music library organization for DJs and event organizers.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_dj_management_toolkit'] ),
-					'category'    => 'specialized',
+				'dj_management_toolkit'        => array(
+					'name'          => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Equipment tracking, playlist management, event scheduling, client management, and music library organization for DJs and event organizers.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_dj_management_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array(),
-					'tools_count' => 8,
-					'tools'       => array(
+					'npm_packages'  => array(),
+					'tools_count'   => 8,
+					'tools'         => array(
 						__( 'track_equipment tool', 'mcp-ai-wpoos' ),
 						__( 'manage_playlists tool', 'mcp-ai-wpoos' ),
 						__( 'schedule_events tool', 'mcp-ai-wpoos' ),
@@ -578,15 +578,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_invoices tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'financial_planner_toolkit' => array(
-					'name'        => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'Retirement planning, budgeting, investment tracking, debt management, and financial goal planning with advanced analytics.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_financial_planner_toolkit'] ),
-					'category'    => 'specialized',
+				'financial_planner_toolkit'    => array(
+					'name'          => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Retirement planning, budgeting, investment tracking, debt management, and financial goal planning with advanced analytics.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_financial_planner_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array(),
-					'npm_packages' => array( 'mathjs', 'regression', 'currency.js' ),
-					'tools_count' => 9,
-					'tools'       => array(
+					'npm_packages'  => array( 'mathjs', 'regression', 'currency.js' ),
+					'tools_count'   => 9,
+					'tools'         => array(
 						__( 'plan_retirement tool', 'mcp-ai-wpoos' ),
 						__( 'create_budget tool', 'mcp-ai-wpoos' ),
 						__( 'track_investments tool', 'mcp-ai-wpoos' ),
@@ -598,15 +598,15 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_financial_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'image_production_toolkit' => array(
-					'name'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
-					'description' => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
-					'enabled'     => ! empty( $settings['enable_image_production_toolkit'] ),
-					'category'    => 'specialized',
+				'image_production_toolkit'     => array(
+					'name'          => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_image_production_toolkit'] ),
+					'category'      => 'specialized',
 					'php_functions' => array( 'proc_open', 'proc_close' ),
-					'npm_packages' => array( 'sharp' ),
-					'tools_count' => 8,
-					'tools'       => array(
+					'npm_packages'  => array( 'sharp' ),
+					'tools_count'   => 8,
+					'tools'         => array(
 						__( 'generate_image tool', 'mcp-ai-wpoos' ),
 						__( 'edit_image tool', 'mcp-ai-wpoos' ),
 						__( 'enhance_image tool', 'mcp-ai-wpoos' ),
@@ -622,10 +622,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			// Check PHP function availability for each toolkit.
 			foreach ( $toolkits as $toolkit_id => &$toolkit ) {
 				$toolkit['php_available'] = true;
-				$toolkit['php_status'] = array();
+				$toolkit['php_status']    = array();
 
 				foreach ( $toolkit['php_functions'] as $func_name ) {
-					$available = function_exists( $func_name );
+					$available                           = function_exists( $func_name );
 					$toolkit['php_status'][ $func_name ] = $available;
 					if ( ! $available ) {
 						$toolkit['php_available'] = false;
@@ -634,10 +634,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				// Check NPM package availability.
 				$toolkit['npm_available'] = true;
-				$toolkit['npm_status'] = array();
+				$toolkit['npm_status']    = array();
 
 				foreach ( $toolkit['npm_packages'] as $package ) {
-					$installed = self::check_package_installed( $package );
+					$installed                         = self::check_package_installed( $package );
 					$toolkit['npm_status'][ $package ] = $installed;
 					if ( ! $installed ) {
 						$toolkit['npm_available'] = false;
@@ -646,7 +646,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 				// Overall status.
 				$toolkit['fully_operational'] = $toolkit['enabled'] && $toolkit['php_available'] && $toolkit['npm_available'];
-				$toolkit['has_issues'] = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
+				$toolkit['has_issues']        = ! $toolkit['php_available'] || ! $toolkit['npm_available'];
 			}
 
 			return $toolkits;
@@ -662,8 +662,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 * @return void
 		 */
 		private static function render_toolkit_card( $toolkit_id, $toolkit ) {
-			$status_class = $toolkit['fully_operational'] ? 'operational' : ( $toolkit['enabled'] ? 'partial' : 'disabled' );
-			$status_text = $toolkit['fully_operational'] ? __( 'Operational', 'mcp-ai-wpoos' ) : ( $toolkit['enabled'] ? __( 'Enabled (Issues)', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) );
+			$status_class   = $toolkit['fully_operational'] ? 'operational' : ( $toolkit['enabled'] ? 'partial' : 'disabled' );
+			$status_text    = $toolkit['fully_operational'] ? __( 'Operational', 'mcp-ai-wpoos' ) : ( $toolkit['enabled'] ? __( 'Enabled (Issues)', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) );
 			$category_badge = $toolkit['category'];
 			?>
 			<div class="wp-mcp-ai-toolkit-card" data-toolkit="<?php echo esc_attr( $toolkit_id ); ?>">
@@ -1153,11 +1153,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos' ) );
 			}
 
-			$packages         = self::get_npm_packages();
-			$pro_status       = self::get_pro_toolkit_status();
-			$toolkit_status   = self::get_individual_toolkit_status();
-			$toolkit_details  = self::get_toolkit_details();
-			$total_packages   = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
+			$packages        = self::get_npm_packages();
+			$pro_status      = self::get_pro_toolkit_status();
+			$toolkit_status  = self::get_individual_toolkit_status();
+			$toolkit_details = self::get_toolkit_details();
+			$total_packages  = count( $packages['dependencies'] ) + count( $packages['devDependencies'] );
 			?>
 			<div class="wrap wp-mcp-ai-pro-settings">
 				<h1>
@@ -1234,6 +1234,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<?php endforeach; ?>
 					</div>
 				</div>
+
+
+<!-- Embedded LLM (Client-Side) Section -->
+<div style="margin-top: 30px;">
+			<?php self::render_embedded_llm_section(); ?>
+</div>
 
 				<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
 					<h3><?php esc_html_e( 'About This Page', 'mcp-ai-wpoos' ); ?></h3>
@@ -1554,6 +1560,167 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 *
 		 * @return void
 		 */
+		/**
+		 * Render Embedded LLM (Client-Side) section.
+		 *
+		 * @return void
+		 */
+		private static function render_embedded_llm_section() {
+			// Get embedded LLM models.
+			$models = array(
+				'Llama-3.2-1B-Instruct-q4f16_1-MLC' => array(
+					'name'        => 'Llama 3.2 1B Instruct',
+					'size'        => '~800MB',
+					'description' => 'Fast, efficient model for general tasks',
+					'context'     => '128K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => true,
+				),
+				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' => array(
+					'name'        => 'Qwen2.5 0.5B Instruct',
+					'size'        => '~400MB',
+					'description' => 'Ultra-fast, minimal resource usage',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC' => array(
+					'name'        => 'Qwen2.5 1.5B Instruct',
+					'size'        => '~1GB',
+					'description' => 'Efficient multilingual model',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Llama-3.2-3B-Instruct-q4f16_1-MLC' => array(
+					'name'        => 'Llama 3.2 3B Instruct',
+					'size'        => '~2GB',
+					'description' => 'Balanced quality and performance',
+					'context'     => '128K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Phi-3.5-mini-instruct-q4f16_1-MLC' => array(
+					'name'        => 'Phi-3.5 Mini Instruct',
+					'size'        => '~2.5GB',
+					'description' => 'Microsoft model with good reasoning',
+					'context'     => '128K tokens',
+					'license'     => 'MIT',
+					'recommended' => false,
+				),
+			);
+			?>
+<div class="wp-mcp-ai-settings-card">
+<h2>
+<span class="dashicons dashicons-smartphone"></span>
+			<?php esc_html_e( 'Embedded LLM (Client-Side) - Pro Feature', 'mcp-ai-wpoos' ); ?>
+</h2>
+
+<div class="notice notice-success inline" style="margin: 15px 0;">
+<p>
+<strong><?php esc_html_e( '✓ Everything Pre-Packaged', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Client-side LLM inference using WebLLM. No server installation required. Runs in user browser with WebGPU/WebAssembly.', 'mcp-ai-wpoos' ); ?>
+</p>
+</div>
+
+<div style="margin: 20px 0;">
+<h3><?php esc_html_e( 'NPM Dependencies', 'mcp-ai-wpoos' ); ?></h3>
+<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+<thead>
+<tr>
+<th style="width: 40%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+<th style="width: 20%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+<th style="width: 40%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@mlc-ai/web-llm</code></td>
+<td>^0.2.80</td>
+<td><?php esc_html_e( 'Core WebLLM library for browser LLM inference', 'mcp-ai-wpoos' ); ?></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div style="margin: 20px 0;">
+<h3><?php esc_html_e( 'Available Models', 'mcp-ai-wpoos' ); ?></h3>
+<p class="description">
+			<?php esc_html_e( 'All models are pre-configured and download automatically to browser cache when first used.', 'mcp-ai-wpoos' ); ?>
+</p>
+
+<div class="wp-mcp-ai-model-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
+			<?php foreach ( $models as $model_id => $model ) : ?>
+<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo $model['recommended'] ? '#00a32a' : '#c3c4c7'; ?>; padding: 15px; background: #fff; border-radius: 4px;">
+<div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 10px;">
+<h4 style="margin: 0; font-size: 14px;">
+				<?php echo esc_html( $model['name'] ); ?>
+				<?php if ( $model['recommended'] ) : ?>
+<span class="dashicons dashicons-star-filled" style="color: #f0b849; font-size: 16px;" title="<?php esc_attr_e( 'Recommended', 'mcp-ai-wpoos' ); ?>"></span>
+<?php endif; ?>
+</h4>
+<span style="background: #f0f0f1; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
+				<?php echo esc_html( $model['size'] ); ?>
+</span>
+</div>
+
+<p style="margin: 10px 0; font-size: 13px; color: #50575e;">
+				<?php echo esc_html( $model['description'] ); ?>
+</p>
+
+<div style="display: flex; gap: 15px; margin-top: 10px; font-size: 12px; color: #646970;">
+<div>
+<strong><?php esc_html_e( 'Context:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php echo esc_html( $model['context'] ); ?>
+</div>
+<div>
+<strong><?php esc_html_e( 'License:', 'mcp-ai-wpoos' ); ?></strong>
+				<?php echo esc_html( $model['license'] ); ?>
+</div>
+</div>
+
+<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f1;">
+<code style="font-size: 11px; background: #f6f7f7; padding: 4px 6px; display: block; word-break: break-all;">
+				<?php echo esc_html( $model_id ); ?>
+</code>
+</div>
+</div>
+<?php endforeach; ?>
+</div>
+</div>
+
+<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa;">
+<h4 style="margin-top: 0;"><?php esc_html_e( 'Browser Requirements', 'mcp-ai-wpoos' ); ?></h4>
+<ul style="margin: 10px 0 0 20px;">
+<li><?php esc_html_e( 'WebGPU support (Chrome 113+, Edge 113+, Safari 18+)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Automatic fallback to WebAssembly (CPU) if GPU unavailable', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Models cached in browser IndexedDB (first load takes time, subsequent loads instant)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'No server resources used - all inference runs in user browser', 'mcp-ai-wpoos' ); ?></li>
+</ul>
+</div>
+
+<div style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
+<h4 style="margin-top: 0;"><?php esc_html_e( 'How to Enable', 'mcp-ai-wpoos' ); ?></h4>
+<ol style="margin: 10px 0 0 20px;">
+<li>
+			<?php
+			printf(
+			/* translators: %s: settings page URL */
+				esc_html__( 'Go to %s', 'mcp-ai-wpoos' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ) . '"><strong>' . esc_html__( 'Settings → Providers → Embedded LLM', 'mcp-ai-wpoos' ) . '</strong></a>'
+			);
+			?>
+</li>
+<li><?php esc_html_e( 'Check "Enable client-side embedded language models (Pro)"', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Select a default model (Llama 3.2 1B recommended)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Save settings', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'When users chat with assistants using "embedded" provider, models download automatically to their browser', 'mcp-ai-wpoos' ); ?></li>
+</ol>
+</div>
+</div>
+			<?php
+		}
+
 		public static function add_menu_page() {
 			add_submenu_page(
 				self::PARENT_SLUG,
