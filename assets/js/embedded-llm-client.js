@@ -359,6 +359,19 @@
 			}
 
 			try {
+				// Diagnostic: Log system prompt configuration (PR #3197)
+				const systemMessage = messages.find(msg => msg.role === 'system');
+				if (systemMessage) {
+					console.log('[NV oOS Embedded Client] System prompt detected:', {
+						hasSystemPrompt: true,
+						systemPromptLength: systemMessage.content.length,
+						systemPromptPreview: systemMessage.content.substring(0, 100) + '...',
+						instanceId: this.instanceId
+					});
+				} else {
+					console.warn('[NV oOS Embedded Client] No system prompt in messages for instance:', this.instanceId);
+				}
+
 				// Build request payload
 				const requestPayload = {
 					messages: messages,
