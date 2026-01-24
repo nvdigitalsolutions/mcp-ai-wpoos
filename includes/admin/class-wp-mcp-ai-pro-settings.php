@@ -1235,6 +1235,12 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					</div>
 				</div>
 
+
+<!-- Embedded LLM (Client-Side) Section -->
+<div style="margin-top: 30px;">
+<?php self::render_embedded_llm_section(); ?>
+</div>
+
 				<div style="margin-top: 20px; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
 					<h3><?php esc_html_e( 'About This Page', 'mcp-ai-wpoos' ); ?></h3>
 					<p>
@@ -1554,6 +1560,167 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 *
 		 * @return void
 		 */
+/**
+ * Render Embedded LLM (Client-Side) section.
+ *
+ * @return void
+ */
+private static function render_embedded_llm_section() {
+// Get embedded LLM models
+$models = array(
+'Llama-3.2-1B-Instruct-q4f16_1-MLC' => array(
+'name' => 'Llama 3.2 1B Instruct',
+'size' => '~800MB',
+'description' => 'Fast, efficient model for general tasks',
+'context' => '128K tokens',
+'license' => 'Apache 2.0',
+'recommended' => true,
+),
+'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' => array(
+'name' => 'Qwen2.5 0.5B Instruct',
+'size' => '~400MB',
+'description' => 'Ultra-fast, minimal resource usage',
+'context' => '32K tokens',
+'license' => 'Apache 2.0',
+'recommended' => false,
+),
+'Qwen2.5-1.5B-Instruct-q4f16_1-MLC' => array(
+'name' => 'Qwen2.5 1.5B Instruct',
+'size' => '~1GB',
+'description' => 'Efficient multilingual model',
+'context' => '32K tokens',
+'license' => 'Apache 2.0',
+'recommended' => false,
+),
+'Llama-3.2-3B-Instruct-q4f16_1-MLC' => array(
+'name' => 'Llama 3.2 3B Instruct',
+'size' => '~2GB',
+'description' => 'Balanced quality and performance',
+'context' => '128K tokens',
+'license' => 'Apache 2.0',
+'recommended' => false,
+),
+'Phi-3.5-mini-instruct-q4f16_1-MLC' => array(
+'name' => 'Phi-3.5 Mini Instruct',
+'size' => '~2.5GB',
+'description' => 'Microsoft model with good reasoning',
+'context' => '128K tokens',
+'license' => 'MIT',
+'recommended' => false,
+),
+);
+?>
+<div class="wp-mcp-ai-settings-card">
+<h2>
+<span class="dashicons dashicons-smartphone"></span>
+<?php esc_html_e( 'Embedded LLM (Client-Side) - Pro Feature', 'mcp-ai-wpoos' ); ?>
+</h2>
+
+<div class="notice notice-success inline" style="margin: 15px 0;">
+<p>
+<strong><?php esc_html_e( '✓ Everything Pre-Packaged', 'mcp-ai-wpoos' ); ?></strong><br>
+<?php esc_html_e( 'Client-side LLM inference using WebLLM. No server installation required. Runs in user browser with WebGPU/WebAssembly.', 'mcp-ai-wpoos' ); ?>
+</p>
+</div>
+
+<div style="margin: 20px 0;">
+<h3><?php esc_html_e( 'NPM Dependencies', 'mcp-ai-wpoos' ); ?></h3>
+<table class="wp-list-table widefat fixed striped" style="max-width: 800px;">
+<thead>
+<tr>
+<th style="width: 40%;"><?php esc_html_e( 'Package', 'mcp-ai-wpoos' ); ?></th>
+<th style="width: 20%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+<th style="width: 40%;"><?php esc_html_e( 'Purpose', 'mcp-ai-wpoos' ); ?></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@mlc-ai/web-llm</code></td>
+<td>^0.2.80</td>
+<td><?php esc_html_e( 'Core WebLLM library for browser LLM inference', 'mcp-ai-wpoos' ); ?></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div style="margin: 20px 0;">
+<h3><?php esc_html_e( 'Available Models', 'mcp-ai-wpoos' ); ?></h3>
+<p class="description">
+<?php esc_html_e( 'All models are pre-configured and download automatically to browser cache when first used.', 'mcp-ai-wpoos' ); ?>
+</p>
+
+<div class="wp-mcp-ai-model-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
+<?php foreach ( $models as $model_id => $model ) : ?>
+<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo $model['recommended'] ? '#00a32a' : '#c3c4c7'; ?>; padding: 15px; background: #fff; border-radius: 4px;">
+<div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 10px;">
+<h4 style="margin: 0; font-size: 14px;">
+<?php echo esc_html( $model['name'] ); ?>
+<?php if ( $model['recommended'] ) : ?>
+<span class="dashicons dashicons-star-filled" style="color: #f0b849; font-size: 16px;" title="<?php esc_attr_e( 'Recommended', 'mcp-ai-wpoos' ); ?>"></span>
+<?php endif; ?>
+</h4>
+<span style="background: #f0f0f1; padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold;">
+<?php echo esc_html( $model['size'] ); ?>
+</span>
+</div>
+
+<p style="margin: 10px 0; font-size: 13px; color: #50575e;">
+<?php echo esc_html( $model['description'] ); ?>
+</p>
+
+<div style="display: flex; gap: 15px; margin-top: 10px; font-size: 12px; color: #646970;">
+<div>
+<strong><?php esc_html_e( 'Context:', 'mcp-ai-wpoos' ); ?></strong>
+<?php echo esc_html( $model['context'] ); ?>
+</div>
+<div>
+<strong><?php esc_html_e( 'License:', 'mcp-ai-wpoos' ); ?></strong>
+<?php echo esc_html( $model['license'] ); ?>
+</div>
+</div>
+
+<div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f1;">
+<code style="font-size: 11px; background: #f6f7f7; padding: 4px 6px; display: block; word-break: break-all;">
+<?php echo esc_html( $model_id ); ?>
+</code>
+</div>
+</div>
+<?php endforeach; ?>
+</div>
+</div>
+
+<div style="margin: 20px 0; padding: 15px; background: #f0f6fc; border-left: 4px solid #0073aa;">
+<h4 style="margin-top: 0;"><?php esc_html_e( 'Browser Requirements', 'mcp-ai-wpoos' ); ?></h4>
+<ul style="margin: 10px 0 0 20px;">
+<li><?php esc_html_e( 'WebGPU support (Chrome 113+, Edge 113+, Safari 18+)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Automatic fallback to WebAssembly (CPU) if GPU unavailable', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Models cached in browser IndexedDB (first load takes time, subsequent loads instant)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'No server resources used - all inference runs in user browser', 'mcp-ai-wpoos' ); ?></li>
+</ul>
+</div>
+
+<div style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #c3c4c7;">
+<h4 style="margin-top: 0;"><?php esc_html_e( 'How to Enable', 'mcp-ai-wpoos' ); ?></h4>
+<ol style="margin: 10px 0 0 20px;">
+<li>
+<?php
+printf(
+/* translators: %s: settings page URL */
+esc_html__( 'Go to %s', 'mcp-ai-wpoos' ),
+'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers&subtab=embedded' ) ) . '"><strong>' . esc_html__( 'Settings → Providers → Embedded LLM', 'mcp-ai-wpoos' ) . '</strong></a>'
+);
+?>
+</li>
+<li><?php esc_html_e( 'Check "Enable client-side embedded language models (Pro)"', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Select a default model (Llama 3.2 1B recommended)', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Save settings', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'When users chat with assistants using "embedded" provider, models download automatically to their browser', 'mcp-ai-wpoos' ); ?></li>
+</ol>
+</div>
+</div>
+<?php
+}
+
 		public static function add_menu_page() {
 			add_submenu_page(
 				self::PARENT_SLUG,
