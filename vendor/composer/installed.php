@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/research-plugin-integration',
+        'version' => 'dev-copilot/research-plugin-integration',
+        'reference' => '76540628cb9b4f78923ce5742d93ab651a910886',
         'pretty_version' => 'dev-copilot/install-composer-no-dev',
         'version' => 'dev-copilot/install-composer-no-dev',
         'reference' => 'facaa5d632feb04426cbbc93dad932822c911164',
@@ -20,6 +23,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/research-plugin-integration',
+            'version' => 'dev-copilot/research-plugin-integration',
+            'reference' => '76540628cb9b4f78923ce5742d93ab651a910886',
             'pretty_version' => 'dev-copilot/install-composer-no-dev',
             'version' => 'dev-copilot/install-composer-no-dev',
             'reference' => 'facaa5d632feb04426cbbc93dad932822c911164',

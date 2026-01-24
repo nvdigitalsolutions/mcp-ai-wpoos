@@ -306,6 +306,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'enable_sitekit_integration'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Google Site Kit Integration', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Google Site Kit integration', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate Google Site Kit integration to access Analytics, Search Console, PageSpeed, and AdSense data through AI assistants. Requires <a href="https://wordpress.org/plugins/google-site-kit/" target="_blank">Google Site Kit plugin</a> to be installed and configured.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 
 				// Features fields.
 				'enable_mesh'                          => array(
@@ -731,6 +738,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_jetengine_tools',
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
+						'enable_sitekit_integration',
 					),
 				),
 				'media'               => array(
@@ -1208,6 +1216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
+			$sitekit_active     = class_exists( 'Google\\Site_Kit\\Plugin' );
 			?>
 			<tr>
 				<th scope="row"></th>
@@ -1240,7 +1249,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</li>
+						<li>
+							<strong><?php esc_html_e( 'Google Site Kit:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $sitekit_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
+								— <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=google+site+kit&tab=search' ) ); ?>"><?php esc_html_e( 'Install Site Kit', 'mcp-ai-wpoos' ); ?></a>
+							<?php endif; ?>
+						</li>
 					</ul>
+					<?php if ( $sitekit_active ) : ?>
+						<p class="description" style="margin-top: 15px;">
+							<strong><?php esc_html_e( 'Google Site Kit provides access to:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul style="list-style: disc; margin-left: 20px; margin-top: 5px;">
+								<li><?php esc_html_e( 'Google Analytics — Traffic, sessions, bounce rate, user demographics', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Google Search Console — Keywords, rankings, impressions, clicks, CTR', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'PageSpeed Insights — Performance scores, Core Web Vitals, optimization tips', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'AdSense — Earnings, RPM, impressions, monetization data', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: %s: link to Site Kit setup */
+									__(
+										'Site Kit is configured and ready! Make sure you\'ve connected your Google account in <a href="%s">Site Kit settings</a>.',
+										'mcp-ai-wpoos'
+									),
+									admin_url( 'admin.php?page=googlesitekit-dashboard' )
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
 					<p class="description">
 						<?php
 						echo wp_kses_post(

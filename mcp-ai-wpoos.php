@@ -617,6 +617,7 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/sitekit-integration-init.php';
 }
 
 // Load Elementor integration for all versions (base and full).
