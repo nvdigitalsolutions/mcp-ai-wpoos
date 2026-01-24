@@ -1005,15 +1005,29 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			}
 
 			// Check for qrcode package (Pro addon).
-			// This package is used for QR code generation in Pro features.
+			// This package should be bundled in Pro addon vendor directory.
 			if ( 'qrcode' === $package && defined( 'WP_MCP_AI_PRO_PATH' ) ) {
-				// Check if it's in Pro addon's node_modules.
-				$qrcode_path = WP_MCP_AI_PRO_PATH . 'node_modules/qrcode';
-				if ( file_exists( $qrcode_path ) ) {
+				// Priority 1: Check if it's in Pro addon's vendor directory (production).
+				$qrcode_vendor_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/qrcode/lib/index.js';
+				if ( file_exists( $qrcode_vendor_path ) ) {
 					return true;
 				}
-				// Check if it's bundled into a Pro script.
-				// QR code functionality is available if Pro addon is active.
+				
+				// Priority 2: Check if it's bundled into a Pro script.
+				// QR code might be bundled into a specific tool bundle.
+				$qrcode_bundle_path = WP_MCP_AI_PRO_PATH . 'bin/generate-qrcode.bundle.js';
+				if ( file_exists( $qrcode_bundle_path ) ) {
+					return true;
+				}
+				
+				// Priority 3: Check Pro addon's node_modules (development only).
+				$qrcode_node_path = WP_MCP_AI_PRO_PATH . 'node_modules/qrcode';
+				if ( file_exists( $qrcode_node_path ) ) {
+					return true;
+				}
+				
+				// If Pro addon is active, assume qrcode is available.
+				// This is more lenient for production deployments.
 				return defined( 'WP_MCP_AI_PRO_VERSION' );
 			}
 
