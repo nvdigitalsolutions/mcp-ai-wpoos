@@ -11663,6 +11663,19 @@
             maxTokens: maxTokens
         });
 
+        // Helper function to update message bubble with content
+        function updateMessageBubble(content) {
+            const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+            if (bubble) {
+                if (markdownService && markdownService.renderMarkdown) {
+                    bubble.innerHTML = markdownService.renderMarkdown(content);
+                } else {
+                    bubble.textContent = content;
+                }
+                scrollToBottom(state);
+            }
+        }
+
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
             {
@@ -11684,15 +11697,7 @@
                     assistantMessage.content[0].text = fullContent;
                     
                     // Update the message bubble with final content
-                    const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
-                    if (bubble) {
-                        if (markdownService && markdownService.renderMarkdown) {
-                            bubble.innerHTML = markdownService.renderMarkdown(fullContent);
-                        } else {
-                            bubble.textContent = fullContent;
-                        }
-                        scrollToBottom(state);
-                    }
+                    updateMessageBubble(fullContent);
                     
                     setStatus(state.container, {
                         message: getString('complete', 'Complete'),
@@ -11713,15 +11718,7 @@
                     assistantMessage.content[0].text = fullContent;
                     
                     // Update the message bubble directly
-                    const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
-                    if (bubble) {
-                        if (markdownService && markdownService.renderMarkdown) {
-                            bubble.innerHTML = markdownService.renderMarkdown(fullContent);
-                        } else {
-                            bubble.textContent = fullContent;
-                        }
-                        scrollToBottom(state);
-                    }
+                    updateMessageBubble(fullContent);
                 }
             }
         )
