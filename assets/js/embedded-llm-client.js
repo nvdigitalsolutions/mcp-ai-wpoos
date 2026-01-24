@@ -359,33 +359,92 @@
 			}
 
 			try {
-				// Log streaming start
-				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
-					instanceId: this.instanceId,
-					messageCount: messages.length,
-					temperature: options.temperature || 0.7,
-					maxTokens: options.max_tokens || 512
-				});
-
-				const asyncChunkGenerator = await this.currentEngine.chat.completions.create({
+				// Build request payload
+				const requestPayload = {
 					messages: messages,
 					temperature: options.temperature || 0.7,
 					max_tokens: options.max_tokens || 512,
 					top_p: options.top_p || 0.9,
 					stream: true
+				};
+
+				// Add tools if provided (Phase 2: Tool Support Implementation)
+				if (options.tools && Array.isArray(options.tools) && options.tools.length > 0) {
+					requestPayload.tools = options.tools;
+
+					if (options.tool_choice) {
+						requestPayload.tool_choice = options.tool_choice;
+					}
+
+					console.log('[NV oOS Embedded Client] Tools enabled for request:', {
+						instanceId: this.instanceId,
+						toolCount: options.tools.length,
+						toolNames: options.tools.map(function(t) {
+							return t.function ? t.function.name : 'unknown';
+						})
+					});
+				}
+
+				// Log streaming start
+				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
+					instanceId: this.instanceId,
+					messageCount: messages.length,
+					temperature: requestPayload.temperature,
+					maxTokens: requestPayload.max_tokens,
+					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0)
 				});
 
+				const asyncChunkGenerator = await this.currentEngine.chat.completions.create(requestPayload);
+
 				let fullContent = '';
+				let toolCalls = []; // NEW: Collect tool calls from streaming response
 				let lastChunk = null;
 				let chunkCount = 0;
 
 				for await (const chunk of asyncChunkGenerator) {
 					lastChunk = chunk; // Keep track of last chunk for usage data
 					const delta = chunk.choices[0]?.delta?.content || '';
+
+					// Handle tool calls (Phase 2: Tool Support Implementation)
+					// WebLLM may stream tool calls incrementally
+					if (chunk.choices[0]?.delta?.tool_calls) {
+						const toolCallDelta = chunk.choices[0].delta.tool_calls;
+
+						toolCallDelta.forEach(function(tc) {
+							const index = tc.index || 0;
+
+							if (!toolCalls[index]) {
+								// Initialize new tool call
+								toolCalls[index] = {
+									id: tc.id || 'call_' + Date.now() + '_' + index,
+									type: 'function',
+									function: {
+										name: tc.function?.name || '',
+										arguments: tc.function?.arguments || ''
+									}
+								};
+							} else {
+								// Append to existing tool call (streaming)
+								if (tc.function?.name) {
+									toolCalls[index].function.name += tc.function.name;
+								}
+								if (tc.function?.arguments) {
+									toolCalls[index].function.arguments += tc.function.arguments;
+								}
+							}
+						});
+
+						console.log('[NV oOS Embedded Client] Tool call delta received:', {
+							instanceId: this.instanceId,
+							toolCallsCount: toolCalls.length
+						});
+					}
+
+					// Handle text content as before
 					if (delta) {
 						chunkCount++;
 						fullContent += delta;
-						
+
 						// Log chunk received at configurable frequency (initial chunks + every Nth)
 						if (chunkCount <= CHUNK_LOG_FREQUENCY || chunkCount % CHUNK_LOG_FREQUENCY === 0) {
 							console.log('[NV oOS Embedded Client] Chunk received for instance:', {
@@ -395,7 +454,7 @@
 								totalLength: fullContent.length
 							});
 						}
-						
+
 						if (onChunk) {
 							onChunk({
 								content: delta,
@@ -411,6 +470,7 @@
 					instanceId: this.instanceId,
 					totalChunks: chunkCount,
 					contentLength: fullContent.length,
+					toolCallsCount: toolCalls.length,
 					hasUsage: !!(lastChunk && lastChunk.usage)
 				});
 
@@ -429,13 +489,17 @@
 				const result = {
 					success: true,
 					content: fullContent,
-					usage: usage
+					tool_calls: toolCalls.length > 0 ? toolCalls : undefined, // NEW: Include tool calls if present
+					usage: usage,
+					done: true
 				};
 
 				console.log('[NV oOS Embedded Client] Returning final result for instance:', {
 					instanceId: this.instanceId,
 					success: result.success,
 					contentLength: result.content.length,
+					hasToolCalls: !!result.tool_calls,
+					toolCallsCount: result.tool_calls ? result.tool_calls.length : 0,
 					usageData: result.usage
 				});
 
