@@ -11679,7 +11679,7 @@
                     // textContent is safe from XSS as it doesn't parse HTML
                     bubble.textContent = content;
                 }
-                scrollToBottom(state);
+                scrollBatcher.scrollToBottom(state.messagesEl);
             }
         }
 
@@ -11751,7 +11751,7 @@
                 } else {
                     bubble.textContent = result.content;
                 }
-                scrollToBottom(state);
+                scrollBatcher.scrollToBottom(state.messagesEl);
                 
                 // Attach usage badges if usage data is available from embedded LLM
                 if (result.usage && typeof result.usage === 'object') {
