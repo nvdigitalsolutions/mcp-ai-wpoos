@@ -85,7 +85,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 			'wp_mcp_ai_settings',
 			array(
 				'enable_embedded' => true,
-				'embedded_model'  => 'qwen2-0.5b-instruct', // A model from the available models list.
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC', // A model from the available WebLLM models list.
 			)
 		);
 
@@ -136,7 +136,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 			'wp_mcp_ai_settings',
 			array(
 				'enable_embedded' => false,
-				'embedded_model'  => 'qwen2-0.5b-instruct',
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			)
 		);
 
@@ -163,7 +163,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 				'enable_openai'   => false,
 				'enable_gemini'   => false,
 				'enable_embedded' => true,
-				'embedded_model'  => 'qwen2-0.5b-instruct',
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			)
 		);
 
@@ -203,7 +203,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 			'wp_mcp_ai_settings',
 			array(
 				'enable_embedded' => true,
-				'embedded_model'  => 'qwen2-0.5b-instruct',
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			)
 		);
 
@@ -227,7 +227,7 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 			'wp_mcp_ai_settings',
 			array(
 				'enable_embedded' => false,
-				'embedded_model'  => 'qwen2-0.5b-instruct',
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 			)
 		);
 

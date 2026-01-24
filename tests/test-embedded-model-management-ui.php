@@ -128,9 +128,9 @@ class Test_Embedded_Model_Management_UI extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that model identifier column is displayed in the table.
+	 * Test that model management UI displays client-side model information.
 	 */
-	public function test_model_identifier_column_displayed() {
+	public function test_model_management_shows_client_side_info() {
 		// Skip if base version.
 		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
 			$this->markTestSkipped( 'Embedded LLM is not available in base version.' );
@@ -144,12 +144,10 @@ class Test_Embedded_Model_Management_UI extends WP_UnitTestCase {
 		$section->render_embedded_model_management( array() );
 		$output = ob_get_clean();
 
-		// Check that output contains Model Identifier column header.
-		$this->assertStringContainsString( 'Model Identifier', $output );
-
-		// Check that model slugs are displayed in code tags.
-		$this->assertStringContainsString( '<code', $output );
-		$this->assertStringContainsString( 'qwen2-0.5b-instruct', $output );
+		// Check that output contains client-side model information.
+		$this->assertStringContainsString( 'Client-Side Models', $output );
+		$this->assertStringContainsString( 'WebGPU/WebAssembly', $output );
+		$this->assertStringContainsString( 'Pro Feature', $output );
 	}
 
 	/**
