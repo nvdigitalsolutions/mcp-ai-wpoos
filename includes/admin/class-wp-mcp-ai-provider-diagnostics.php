@@ -445,7 +445,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Model Type', 'mcp-ai-wpoos' ); ?></th>
-								<td><?php esc_html_e( 'GGUF format (llama.cpp compatible)', 'mcp-ai-wpoos' ); ?></td>
+								<td><?php esc_html_e( 'WebLLM (Client-side, runs in browser using WebGPU/WebAssembly)', 'mcp-ai-wpoos' ); ?></td>
 							</tr>
 						</tbody>
 					</table>
@@ -462,14 +462,14 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 					<?php if ( empty( $settings['enable_embedded'] ) ) : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab and download a model to use local AI without external API calls.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab to use client-side AI models that run directly in the browser.', 'mcp-ai-wpoos' ); ?>
 							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
 								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
 							</a>
 						</p>
 					<?php else : ?>
 						<p class="description" style="margin-top: 10px;">
-							<?php esc_html_e( 'Embedded LLM runs small language models directly on your server using llama.cpp. No external API calls or internet connection required.', 'mcp-ai-wpoos' ); ?>
+							<?php esc_html_e( 'Embedded LLM runs small language models directly in the user\'s browser using WebGPU/WebAssembly. Models are loaded from CDN on-demand. Fully private, no server resources or API calls required.', 'mcp-ai-wpoos' ); ?>
 						</p>
 					<?php endif; ?>
 				</div>
@@ -1198,6 +1198,8 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 		/**
 		 * Test Embedded LLM connection.
 		 *
+		 * Tests configuration for client-side WebLLM models.
+		 *
 		 * @param array $settings Plugin settings.
 		 */
 		private static function test_embedded( $settings ) {
@@ -1212,47 +1214,34 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				return;
 			}
 
-			if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-				wp_send_json_error( array( 'message' => __( 'Embedded client class not found.', 'mcp-ai-wpoos' ) ) );
-				return;
-			}
-
 			try {
-				$client = new WP_MCP_AI_Embedded_Client();
-				$result = $client->test_connection();
+				// Get available WebLLM models (client-side).
+				$available_models = array(
+					'Llama-3.2-1B-Instruct-q4f16_1-MLC' => __( 'Llama 3.2 1B Instruct (~800MB) - Recommended', 'mcp-ai-wpoos' ),
+					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' => __( 'Qwen2.5 0.5B Instruct (~400MB) - Ultra-fast', 'mcp-ai-wpoos' ),
+					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC' => __( 'Qwen2.5 1.5B Instruct (~1GB)', 'mcp-ai-wpoos' ),
+					'Llama-3.2-3B-Instruct-q4f16_1-MLC' => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+					'Phi-3.5-mini-instruct-q4f16_1-MLC' => __( 'Phi-3.5 Mini Instruct (~2.5GB)', 'mcp-ai-wpoos' ),
+				);
 
-				if ( is_wp_error( $result ) ) {
-					$error_data = $result->get_error_data();
-					$error_msg  = $result->get_error_message();
-
-					// Include additional error details if available.
-					if ( is_array( $error_data ) && isset( $error_data['status'] ) ) {
-						$error_msg .= ' ' . sprintf( __( '(Status: %d)', 'mcp-ai-wpoos' ), absint( $error_data['status'] ) );
-					}
-
-					wp_send_json_error( array( 'message' => $error_msg ) );
-					return;
-				}
-
-				// Get downloaded models.
-				$downloaded_models = $client->get_downloaded_models();
-				$model_count       = count( $downloaded_models );
-				$selected_model    = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : '';
+				$model_count    = count( $available_models );
+				$selected_model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : '';
 
 				// Get model name if a model is selected.
 				$selected_model_name = __( 'Not configured', 'mcp-ai-wpoos' );
-				if ( $selected_model && isset( $downloaded_models[ $selected_model ] ) ) {
-					$selected_model_name = $downloaded_models[ $selected_model ]['name'];
+				if ( $selected_model && isset( $available_models[ $selected_model ] ) ) {
+					$selected_model_name = $available_models[ $selected_model ];
 				}
 
 				wp_send_json_success(
 					array(
-						'message' => __( 'Embedded LLM connection successful!', 'mcp-ai-wpoos' ),
+						'message' => __( 'Embedded LLM configuration verified!', 'mcp-ai-wpoos' ),
 						'details' => array(
-							__( 'Downloaded Models', 'mcp-ai-wpoos' ) => $model_count,
+							__( 'Available Models', 'mcp-ai-wpoos' )  => $model_count,
 							__( 'Selected Model', 'mcp-ai-wpoos' )    => $selected_model_name,
 							__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
-							__( 'Inference Binary', 'mcp-ai-wpoos' )  => __( 'Available', 'mcp-ai-wpoos' ),
+							__( 'Model Type', 'mcp-ai-wpoos' )        => __( 'WebLLM (Client-side)', 'mcp-ai-wpoos' ),
+							__( 'Runtime', 'mcp-ai-wpoos' )           => __( 'Browser (WebGPU/WebAssembly)', 'mcp-ai-wpoos' ),
 						),
 					)
 				);
