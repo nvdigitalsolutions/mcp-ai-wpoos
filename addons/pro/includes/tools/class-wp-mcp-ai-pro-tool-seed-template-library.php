@@ -32,8 +32,8 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'seed_template_library',
-			'description' => 'Seeds the template library with pre-built professional templates for common workflows (research, content creation, data analysis, marketing). Only needs to be called once to set up the library.',
+			'name'         => 'seed_template_library',
+			'description'  => 'Seeds the template library with pre-built professional templates for common workflows (research, content creation, data analysis, marketing). Only needs to be called once to set up the library.',
 			'input_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 						'description' => 'Whether to overwrite existing templates with same names (default: false)',
 					),
 				),
-				'required' => array(),
+				'required'   => array(),
 			),
 		);
 	}
@@ -60,9 +60,9 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		// Get pre-built templates.
 		$templates = $this->get_prebuilt_templates();
 
-		$created   = array();
-		$skipped   = array();
-		$errors    = array();
+		$created = array();
+		$skipped = array();
+		$errors  = array();
 
 		foreach ( $templates as $template ) {
 			// Check if template already exists.
@@ -109,14 +109,14 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		}
 
 		return array(
-			'success'        => true,
+			'success'           => true,
 			'templates_created' => count( $created ),
 			'templates_skipped' => count( $skipped ),
 			'templates_errors'  => count( $errors ),
-			'created'        => $created,
-			'skipped'        => $skipped,
-			'errors'         => $errors,
-			'message'        => sprintf(
+			'created'           => $created,
+			'skipped'           => $skipped,
+			'errors'            => $errors,
+			'message'           => sprintf(
 				'Template library seeded: %d created, %d skipped, %d errors',
 				count( $created ),
 				count( $skipped ),

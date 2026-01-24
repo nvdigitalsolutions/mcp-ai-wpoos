@@ -123,10 +123,10 @@ class Test_Create_Agent_Team_Error_Handling extends WP_UnitTestCase {
 		if ( is_wp_error( $result ) ) {
 			$error_message = $result->get_error_message();
 			$this->assertNotEmpty( $error_message, 'Error message should not be empty' );
-			
+
 			// Error message should be descriptive, not generic.
 			$this->assertStringNotContainsString( 'fatal error', strtolower( $error_message ) );
-			
+
 			// Should provide helpful guidance.
 			$error_data = $result->get_error_data();
 			$this->assertIsArray( $error_data, 'Error data should be provided' );
@@ -146,7 +146,7 @@ class Test_Create_Agent_Team_Error_Handling extends WP_UnitTestCase {
 	public function test_fatal_error_includes_message() {
 		// This test verifies that when a PHP Error is caught,
 		// the actual error message is included in the response.
-		
+
 		// We can't easily trigger a real PHP Error without breaking the test,
 		// so we'll verify the error handling code structure is correct.
 		$this->assertTrue( true, 'Error handling structure verified in code review' );

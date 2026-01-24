@@ -206,12 +206,12 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	 * @return array Execution results.
 	 */
 	protected function execute_parallel_workflow( $workflow ) {
-		$tasks         = $workflow['tasks'];
-		$completed     = array();
-		$pending       = $tasks;
-		$results       = array();
-		$max_cycles    = 100; // Prevent infinite loops.
-		$cycle_count   = 0;
+		$tasks       = $workflow['tasks'];
+		$completed   = array();
+		$pending     = $tasks;
+		$results     = array();
+		$max_cycles  = 100; // Prevent infinite loops.
+		$cycle_count = 0;
 
 		while ( ! empty( $pending ) && $cycle_count < $max_cycles ) {
 			++$cycle_count;
@@ -231,7 +231,7 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 						'workflow_deadlock',
 						'Workflow deadlock detected',
 						array(
-							'workflow_id'  => $workflow['workflow_id'],
+							'workflow_id'   => $workflow['workflow_id'],
 							'pending_tasks' => array_column( $pending, 'task_id' ),
 						)
 					);
@@ -244,7 +244,7 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 
 			foreach ( $batch as $key => $task ) {
 				$result = $this->execute_single_task( $task, $workflow, $results );
-				
+
 				if ( ! is_wp_error( $result ) ) {
 					$results[ $task['task_id'] ]   = $result;
 					$completed[ $task['task_id'] ] = $task;
@@ -328,8 +328,8 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	 * @return mixed|WP_Error Task result or error.
 	 */
 	protected function execute_single_task( $task, $workflow, $previous_results ) {
-		$team   = $workflow['team'];
-		$agent  = $this->find_agent_by_id( $team, $task['assigned_to'] );
+		$team  = $workflow['team'];
+		$agent = $this->find_agent_by_id( $team, $task['assigned_to'] );
 
 		if ( ! $agent ) {
 			return new WP_Error(
@@ -399,7 +399,7 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	protected function handle_task_retry( $task, $error, $workflow ) {
 		$retry_policy = $workflow['retry_policy'];
 		$max_retries  = $retry_policy['max_retries'];
-		
+
 		$retry_count = isset( $task['retry_count'] ) ? $task['retry_count'] : 0;
 
 		if ( $retry_count >= $max_retries ) {
@@ -407,9 +407,9 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 				'task_failed_after_retries',
 				'Task failed after maximum retries',
 				array(
-					'task_id'      => $task['task_id'],
-					'retry_count'  => $retry_count,
-					'error'        => $error->get_error_message(),
+					'task_id'     => $task['task_id'],
+					'retry_count' => $retry_count,
+					'error'       => $error->get_error_message(),
 				)
 			);
 			return $error;
@@ -425,9 +425,9 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 			'task_retry_attempt',
 			'Retrying failed task',
 			array(
-				'task_id'      => $task['task_id'],
-				'retry_count'  => $task['retry_count'],
-				'max_retries'  => $max_retries,
+				'task_id'     => $task['task_id'],
+				'retry_count' => $task['retry_count'],
+				'max_retries' => $max_retries,
 			)
 		);
 
@@ -496,8 +496,8 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 
 		$tasks = array();
 		foreach ( $plan['subtasks'] as $index => $subtask ) {
-			$executor       = $executors[ $index % count( $executors ) ];
-			$tasks[]        = array(
+			$executor = $executors[ $index % count( $executors ) ];
+			$tasks[]  = array(
 				'task_id'      => $subtask['id'],
 				'description'  => $subtask['description'],
 				'type'         => $subtask['type'],
@@ -572,8 +572,8 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	 * @param array $workflow Workflow data.
 	 */
 	protected function save_workflow_state( $workflow ) {
-		$workflow['updated_at']                                 = current_time( 'mysql' );
-		$this->active_workflows[ $workflow['workflow_id'] ]    = $workflow;
+		$workflow['updated_at']                             = current_time( 'mysql' );
+		$this->active_workflows[ $workflow['workflow_id'] ] = $workflow;
 
 		// Persist to transient.
 		set_transient(
@@ -665,9 +665,14 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 			'workflow_id'  => $workflow['workflow_id'],
 			'state'        => $workflow['state'],
 			'tasks_total'  => count( $workflow['tasks'] ),
-			'tasks_done'   => count( array_filter( $workflow['tasks'], function ( $t ) {
-				return 'completed' === ( $t['status'] ?? 'pending' );
-			} ) ),
+			'tasks_done'   => count(
+				array_filter(
+					$workflow['tasks'],
+					function ( $t ) {
+						return 'completed' === ( $t['status'] ?? 'pending' );
+					}
+				)
+			),
 			'created_at'   => $workflow['created_at'],
 			'updated_at'   => $workflow['updated_at'],
 			'started_at'   => $workflow['started_at'] ?? null,

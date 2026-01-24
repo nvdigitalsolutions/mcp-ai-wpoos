@@ -97,24 +97,24 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'start_date'         => array(
+				'start_date'          => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for calendar (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'           => array(
+				'end_date'            => array(
 					'type'        => 'string',
 					'description' => __( 'End date for calendar (YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'duration_weeks'     => array(
+				'duration_weeks'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Duration in weeks (alternative to end_date)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 4,
 					'minimum'     => 1,
 					'maximum'     => 52,
 				),
-				'platforms'          => array(
+				'platforms'           => array(
 					'type'        => 'array',
 					'description' => __( 'Social media platforms to plan for', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -123,36 +123,36 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 					),
 					'default'     => array( 'facebook', 'twitter', 'instagram' ),
 				),
-				'posts_per_week'     => array(
+				'posts_per_week'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of posts per week per platform', 'mcp-ai-wpoos-pro' ),
 					'default'     => 3,
 					'minimum'     => 1,
 					'maximum'     => 30,
 				),
-				'content_themes'     => array(
+				'content_themes'      => array(
 					'type'        => 'array',
 					'description' => __( 'Content themes to distribute across calendar', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'timezone'           => array(
+				'timezone'            => array(
 					'type'        => 'string',
 					'description' => __( 'Timezone for calendar (e.g., America/New_York)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'UTC',
 				),
-				'optimize_timing'    => array(
+				'optimize_timing'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use AI to optimize posting times based on platform best practices', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_weekends'   => array(
+				'include_weekends'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include weekend posting in schedule', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'export_format'      => array(
+				'export_format'       => array(
 					'type'        => 'string',
 					'description' => __( 'Export format for calendar', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ics', 'json', 'both' ),
@@ -219,23 +219,23 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 
 		$duration_weeks = isset( $arguments['duration_weeks'] ) ? absint( $arguments['duration_weeks'] ) : 4;
 		$end_date       = isset( $arguments['end_date'] ) ? sanitize_text_field( $arguments['end_date'] ) : '';
-		
+
 		if ( empty( $end_date ) ) {
 			$end_date = gmdate( 'Y-m-d', strtotime( $start_date . " +{$duration_weeks} weeks" ) );
 		}
 
-		$platforms         = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] ) 
+		$platforms        = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
 			? array_map( 'sanitize_text_field', $arguments['platforms'] )
 			: array( 'facebook', 'twitter', 'instagram' );
-		$posts_per_week    = isset( $arguments['posts_per_week'] ) ? absint( $arguments['posts_per_week'] ) : 3;
-		$content_themes    = isset( $arguments['content_themes'] ) && is_array( $arguments['content_themes'] )
+		$posts_per_week   = isset( $arguments['posts_per_week'] ) ? absint( $arguments['posts_per_week'] ) : 3;
+		$content_themes   = isset( $arguments['content_themes'] ) && is_array( $arguments['content_themes'] )
 			? array_map( 'sanitize_text_field', $arguments['content_themes'] )
 			: array();
-		$timezone          = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : 'UTC';
-		$optimize_timing   = isset( $arguments['optimize_timing'] ) ? (bool) $arguments['optimize_timing'] : true;
-		$include_weekends  = isset( $arguments['include_weekends'] ) ? (bool) $arguments['include_weekends'] : true;
-		$export_format     = isset( $arguments['export_format'] ) ? sanitize_text_field( $arguments['export_format'] ) : 'both';
-		$business_hours    = isset( $arguments['business_hours_only'] ) ? (bool) $arguments['business_hours_only'] : false;
+		$timezone         = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : 'UTC';
+		$optimize_timing  = isset( $arguments['optimize_timing'] ) ? (bool) $arguments['optimize_timing'] : true;
+		$include_weekends = isset( $arguments['include_weekends'] ) ? (bool) $arguments['include_weekends'] : true;
+		$export_format    = isset( $arguments['export_format'] ) ? sanitize_text_field( $arguments['export_format'] ) : 'both';
+		$business_hours   = isset( $arguments['business_hours_only'] ) ? (bool) $arguments['business_hours_only'] : false;
 
 		// Generate content calendar.
 		$calendar = $this->generate_calendar(
@@ -305,7 +305,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 
 				// Check if we need to post today.
 				if ( $post_count < $posts_per_week ) {
-					$optimal_time = $optimize_timing 
+					$optimal_time = $optimize_timing
 						? $this->get_optimal_posting_time( $platform, $day_of_week, $business_hours )
 						: '12:00:00';
 
@@ -405,7 +405,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 		);
 
 		foreach ( $platforms as $platform ) {
-			$platform_posts               = array_filter(
+			$platform_posts                      = array_filter(
 				$posts,
 				function ( $post ) use ( $platform ) {
 					return $post['platform'] === $platform;
@@ -416,7 +416,7 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 
 		$days = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
 		foreach ( $days as $day ) {
-			$day_posts                        = array_filter(
+			$day_posts                         = array_filter(
 				$posts,
 				function ( $post ) use ( $day ) {
 					return $post['day_of_week'] === $day;
@@ -474,23 +474,23 @@ class WP_MCP_AI_Tool_Create_Content_Calendar implements WP_MCP_AI_Tool_Interface
 		$ics .= "CALSCALE:GREGORIAN\r\n";
 		$ics .= "METHOD:PUBLISH\r\n";
 		$ics .= "X-WR-CALNAME:Social Media Content Calendar\r\n";
-		$ics .= "X-WR-TIMEZONE:" . $timezone . "\r\n";
+		$ics .= 'X-WR-TIMEZONE:' . $timezone . "\r\n";
 
 		foreach ( $calendar['posts'] as $index => $post ) {
 			$start_time = strtotime( $post['scheduled_at'] );
 			$end_time   = $start_time + ( 30 * 60 ); // 30 minute duration.
 
 			$ics .= "BEGIN:VEVENT\r\n";
-			$ics .= "UID:" . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.com\r\n";
-			$ics .= "DTSTAMP:" . gmdate( 'Ymd\THis\Z' ) . "\r\n";
-			$ics .= "DTSTART:" . gmdate( 'Ymd\THis\Z', $start_time ) . "\r\n";
-			$ics .= "DTEND:" . gmdate( 'Ymd\THis\Z', $end_time ) . "\r\n";
-			$ics .= "SUMMARY:" . $this->escape_ics_string( 'Post to ' . ucfirst( $post['platform'] ) ) . "\r\n";
-			
+			$ics .= 'UID:' . md5( $post['scheduled_at'] . $post['platform'] . $index ) . "@nvoos.com\r\n";
+			$ics .= 'DTSTAMP:' . gmdate( 'Ymd\THis\Z' ) . "\r\n";
+			$ics .= 'DTSTART:' . gmdate( 'Ymd\THis\Z', $start_time ) . "\r\n";
+			$ics .= 'DTEND:' . gmdate( 'Ymd\THis\Z', $end_time ) . "\r\n";
+			$ics .= 'SUMMARY:' . $this->escape_ics_string( 'Post to ' . ucfirst( $post['platform'] ) ) . "\r\n";
+
 			if ( ! empty( $post['theme'] ) ) {
-				$ics .= "DESCRIPTION:" . $this->escape_ics_string( 'Theme: ' . $post['theme'] ) . "\r\n";
+				$ics .= 'DESCRIPTION:' . $this->escape_ics_string( 'Theme: ' . $post['theme'] ) . "\r\n";
 			}
-			
+
 			$ics .= "STATUS:CONFIRMED\r\n";
 			$ics .= "SEQUENCE:0\r\n";
 			$ics .= "END:VEVENT\r\n";

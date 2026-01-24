@@ -49,31 +49,31 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'       => array(
+				'floor_plan'          => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data for cost estimation.', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_area'       => array(
+				'total_area'          => array(
 					'type'        => 'number',
 					'description' => __( 'Total building area in square feet.', 'mcp-ai-wpoos-pro' ),
 				),
-				'location'         => array(
+				'location'            => array(
 					'type'        => 'string',
 					'description' => __( 'Location (city, state or zip code) for regional cost adjustments.', 'mcp-ai-wpoos-pro' ),
 				),
-				'quality_level'    => array(
+				'quality_level'       => array(
 					'type'        => 'string',
 					'description' => __( 'Quality level: "economy", "standard", "custom", "luxury".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'economy', 'standard', 'custom', 'luxury' ),
 					'default'     => 'standard',
 				),
-				'construction_type' => array(
+				'construction_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Construction type: "wood_frame", "steel", "concrete".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wood_frame', 'steel', 'concrete' ),
 					'default'     => 'wood_frame',
 				),
-				'include_breakdown' => array(
+				'include_breakdown'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include detailed cost breakdown by category.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -171,32 +171,72 @@ class WP_MCP_AI_Tool_Estimate_Construction_Cost implements WP_MCP_AI_Tool_Interf
 	protected function estimate_costs( $floor_plan, $total_area, $location, $quality_level, $construction_type, $include_breakdown, $contingency_percent, $context ) {
 		$base_cost_per_sf = $this->get_base_cost( $quality_level, $construction_type );
 		$location_factor  = $this->get_location_factor( $location );
-		
+
 		$subtotal    = $total_area * $base_cost_per_sf * $location_factor;
 		$contingency = $subtotal * ( $contingency_percent / 100 );
 		$total       = $subtotal + $contingency;
 
 		$estimate = array(
-			'total_cost'         => $total,
-			'cost_per_sf'        => $total / $total_area,
-			'subtotal'           => $subtotal,
-			'contingency'        => $contingency,
+			'total_cost'          => $total,
+			'cost_per_sf'         => $total / $total_area,
+			'subtotal'            => $subtotal,
+			'contingency'         => $contingency,
 			'contingency_percent' => $contingency_percent,
-			'location_factor'    => $location_factor,
+			'location_factor'     => $location_factor,
 		);
 
 		if ( $include_breakdown ) {
 			$estimate['breakdown'] = array(
-				array( 'category' => 'Site Work', 'cost' => $total * 0.05, 'percent' => 5 ),
-				array( 'category' => 'Foundation', 'cost' => $total * 0.08, 'percent' => 8 ),
-				array( 'category' => 'Framing', 'cost' => $total * 0.20, 'percent' => 20 ),
-				array( 'category' => 'Roofing', 'cost' => $total * 0.06, 'percent' => 6 ),
-				array( 'category' => 'Exterior Finishes', 'cost' => $total * 0.12, 'percent' => 12 ),
-				array( 'category' => 'Plumbing', 'cost' => $total * 0.10, 'percent' => 10 ),
-				array( 'category' => 'Electrical', 'cost' => $total * 0.08, 'percent' => 8 ),
-				array( 'category' => 'HVAC', 'cost' => $total * 0.08, 'percent' => 8 ),
-				array( 'category' => 'Interior Finishes', 'cost' => $total * 0.18, 'percent' => 18 ),
-				array( 'category' => 'Other', 'cost' => $total * 0.05, 'percent' => 5 ),
+				array(
+					'category' => 'Site Work',
+					'cost'     => $total * 0.05,
+					'percent'  => 5,
+				),
+				array(
+					'category' => 'Foundation',
+					'cost'     => $total * 0.08,
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'Framing',
+					'cost'     => $total * 0.20,
+					'percent'  => 20,
+				),
+				array(
+					'category' => 'Roofing',
+					'cost'     => $total * 0.06,
+					'percent'  => 6,
+				),
+				array(
+					'category' => 'Exterior Finishes',
+					'cost'     => $total * 0.12,
+					'percent'  => 12,
+				),
+				array(
+					'category' => 'Plumbing',
+					'cost'     => $total * 0.10,
+					'percent'  => 10,
+				),
+				array(
+					'category' => 'Electrical',
+					'cost'     => $total * 0.08,
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'HVAC',
+					'cost'     => $total * 0.08,
+					'percent'  => 8,
+				),
+				array(
+					'category' => 'Interior Finishes',
+					'cost'     => $total * 0.18,
+					'percent'  => 18,
+				),
+				array(
+					'category' => 'Other',
+					'cost'     => $total * 0.05,
+					'percent'  => 5,
+				),
 			);
 		}
 

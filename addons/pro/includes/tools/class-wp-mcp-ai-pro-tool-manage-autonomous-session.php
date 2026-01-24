@@ -33,18 +33,18 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'manage_autonomous_session',
-			'description' => 'Manage autonomous orchestration session lifecycle. Use this to start, pause, resume, or stop autonomous workflows with session state tracking.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'manage_autonomous_session',
+			'description'         => 'Manage autonomous orchestration session lifecycle. Use this to start, pause, resume, or stop autonomous workflows with session state tracking.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'action' => array(
+					'action'     => array(
 						'type'        => 'string',
 						'enum'        => array( 'start', 'pause', 'resume', 'stop', 'update' ),
 						'description' => 'Action to perform on the session',
 					),
-					'plan_id' => array(
+					'plan_id'    => array(
 						'type'        => 'integer',
 						'description' => 'Task plan ID to start session for (required for "start" action)',
 					),
@@ -52,7 +52,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 						'type'        => 'string',
 						'description' => 'Session ID (required for pause/resume/stop/update actions)',
 					),
-					'config' => array(
+					'config'     => array(
 						'type'        => 'object',
 						'description' => 'Session configuration (for "start" action)',
 						'properties'  => array(
@@ -61,18 +61,18 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 								'description' => 'Maximum iterations allowed (default: 25)',
 								'default'     => 25,
 							),
-							'token_budget' => array(
+							'token_budget'   => array(
 								'type'        => 'integer',
 								'description' => 'Token budget for session (default: 10000)',
 								'default'     => 10000,
 							),
-							'assistant_id' => array(
+							'assistant_id'   => array(
 								'type'        => 'integer',
 								'description' => 'Assistant ID to use',
 							),
 						),
 					),
-					'metrics' => array(
+					'metrics'    => array(
 						'type'        => 'object',
 						'description' => 'Session metrics to update (for "update" action)',
 						'properties'  => array(
@@ -80,30 +80,30 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 								'type'        => 'integer',
 								'description' => 'Current iteration number',
 							),
-							'token_usage' => array(
+							'token_usage'     => array(
 								'type'        => 'integer',
 								'description' => 'Total tokens used',
 							),
-							'success_rate' => array(
+							'success_rate'    => array(
 								'type'        => 'number',
 								'description' => 'Success rate percentage (0-100)',
 							),
-							'error_count' => array(
+							'error_count'     => array(
 								'type'        => 'integer',
 								'description' => 'Number of errors encountered',
 							),
-							'last_tool' => array(
+							'last_tool'       => array(
 								'type'        => 'string',
 								'description' => 'Last tool executed',
 							),
-							'last_error' => array(
+							'last_error'      => array(
 								'type'        => 'string',
 								'description' => 'Last error message',
 							),
 						),
 					),
 				),
-				'required' => array( 'action' ),
+				'required'   => array( 'action' ),
 			),
 			'required_capability' => 'edit_posts',
 		);

@@ -198,23 +198,38 @@ class WP_MCP_AI_Tool_Check_Building_Code_Compliance implements WP_MCP_AI_Tool_In
 	 * @return array Summary data.
 	 */
 	protected function generate_compliance_summary( $compliance_results ) {
-		$checks = isset( $compliance_results['checks'] ) ? $compliance_results['checks'] : array();
-		$total  = count( $checks );
-		$passed = count( array_filter( $checks, function( $check ) {
-			return 'pass' === $check['status'];
-		} ) );
-		$failed = count( array_filter( $checks, function( $check ) {
-			return 'fail' === $check['status'];
-		} ) );
-		$warnings = count( array_filter( $checks, function( $check ) {
-			return 'warning' === $check['status'];
-		} ) );
+		$checks   = isset( $compliance_results['checks'] ) ? $compliance_results['checks'] : array();
+		$total    = count( $checks );
+		$passed   = count(
+			array_filter(
+				$checks,
+				function ( $check ) {
+					return 'pass' === $check['status'];
+				}
+			)
+		);
+		$failed   = count(
+			array_filter(
+				$checks,
+				function ( $check ) {
+					return 'fail' === $check['status'];
+				}
+			)
+		);
+		$warnings = count(
+			array_filter(
+				$checks,
+				function ( $check ) {
+					return 'warning' === $check['status'];
+				}
+			)
+		);
 
 		return array(
-			'total_checks'  => $total,
-			'passed'        => $passed,
-			'failed'        => $failed,
-			'warnings'      => $warnings,
+			'total_checks'    => $total,
+			'passed'          => $passed,
+			'failed'          => $failed,
+			'warnings'        => $warnings,
 			'compliance_rate' => $total > 0 ? round( ( $passed / $total ) * 100, 1 ) : 0,
 		);
 	}

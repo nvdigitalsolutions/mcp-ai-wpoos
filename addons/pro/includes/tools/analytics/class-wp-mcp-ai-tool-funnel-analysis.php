@@ -105,13 +105,13 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'funnel_type'           => array(
+				'funnel_type'              => array(
 					'type'        => 'string',
 					'description' => 'Type of funnel: checkout, registration, subscription, custom',
 					'enum'        => array( 'checkout', 'registration', 'subscription', 'custom' ),
 					'default'     => 'checkout',
 				),
-				'custom_steps'          => array(
+				'custom_steps'             => array(
 					'type'        => 'array',
 					'description' => 'Custom funnel step definitions (required if funnel_type is custom)',
 					'items'       => array(
@@ -122,21 +122,21 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 						),
 					),
 				),
-				'date_range'            => array(
+				'date_range'               => array(
 					'type'        => 'string',
 					'description' => 'Analysis period: last_7_days, last_30_days, last_90_days, custom',
 					'enum'        => array( 'last_7_days', 'last_30_days', 'last_90_days', 'custom' ),
 					'default'     => 'last_30_days',
 				),
-				'start_date'            => array(
+				'start_date'               => array(
 					'type'        => 'string',
 					'description' => 'Start date for custom range (YYYY-MM-DD)',
 				),
-				'end_date'              => array(
+				'end_date'                 => array(
 					'type'        => 'string',
 					'description' => 'End date for custom range (YYYY-MM-DD)',
 				),
-				'segment_by'            => array(
+				'segment_by'               => array(
 					'type'        => 'string',
 					'description' => 'Segment funnel by: none, device, source, campaign',
 					'enum'        => array( 'none', 'device', 'source', 'campaign' ),
@@ -147,7 +147,7 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 					'description' => 'Analyze and include drop-off reasons',
 					'default'     => true,
 				),
-				'include_recommendations' => array(
+				'include_recommendations'  => array(
 					'type'        => 'boolean',
 					'description' => 'Include optimization recommendations',
 					'default'     => true,
@@ -177,9 +177,9 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'   => true,
-			'conversion'  => true,
-			'funnel'      => true,
+			'analytics'  => true,
+			'conversion' => true,
+			'funnel'     => true,
 		);
 	}
 
@@ -471,11 +471,11 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 		);
 
 		foreach ( $steps as $index => $step ) {
-			$count = isset( $step_counts[ $index ] ) ? $step_counts[ $index ] : 0;
+			$count      = isset( $step_counts[ $index ] ) ? $step_counts[ $index ] : 0;
 			$prev_count = $index > 0 && isset( $step_counts[ $index - 1 ] ) ? $step_counts[ $index - 1 ] : $count;
 
 			$conversion = $prev_count > 0 ? ( $count / $prev_count ) * 100 : 0;
-			$drop_off = $prev_count > 0 ? ( ( $prev_count - $count ) / $prev_count ) * 100 : 0;
+			$drop_off   = $prev_count > 0 ? ( ( $prev_count - $count ) / $prev_count ) * 100 : 0;
 
 			$funnel_data['steps'][] = array(
 				'step'            => $index + 1,
@@ -499,9 +499,9 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return array Metrics.
 	 */
 	private function calculate_funnel_metrics( $funnel_data ) {
-		$steps = $funnel_data['steps'];
+		$steps      = $funnel_data['steps'];
 		$first_step = reset( $steps );
-		$last_step = end( $steps );
+		$last_step  = end( $steps );
 
 		$overall_conversion = $first_step['users'] > 0
 			? ( $last_step['users'] / $first_step['users'] ) * 100
@@ -621,9 +621,9 @@ class WP_MCP_AI_Tool_Funnel_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 		foreach ( $drop_offs as $drop_off ) {
 			if ( 'critical' === $drop_off['severity'] || 'high' === $drop_off['severity'] ) {
 				$recommendations[] = array(
-					'priority' => $drop_off['severity'],
-					'step'     => $drop_off['name'],
-					'action'   => sprintf(
+					'priority'    => $drop_off['severity'],
+					'step'        => $drop_off['name'],
+					'action'      => sprintf(
 						/* translators: 1: step name, 2: drop-off rate */
 						__( 'Optimize %1$s step - currently losing %2$s%% of users', 'mcp-ai-wpoos-pro' ),
 						$drop_off['name'],

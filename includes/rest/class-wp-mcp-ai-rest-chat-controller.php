@@ -190,9 +190,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'assistant_id'      => array(
-							'description'       => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
-							'type'              => array( 'integer', 'string' ),
-							'required'          => true,
+							'description' => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'        => array( 'integer', 'string' ),
+							'required'    => true,
 						),
 						'session_key'       => array(
 							'description'       => __( 'Session key for this conversation.', 'mcp-ai-wpoos' ),
@@ -638,9 +638,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key     = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$session_key      = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id_raw = $request->get_param( 'assistant_id' );
-		
+
 		// Handle both integer and string assistant IDs (for unified teams and team members).
 		if ( is_string( $assistant_id_raw ) && ! empty( $assistant_id_raw ) ) {
 			$assistant_id = sanitize_text_field( $assistant_id_raw );
@@ -775,9 +775,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Check if this is a virtual team assistant ID.
 		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
 		// Format: unified_team_{digits} or team_{digits}_member_{digits}
-		$is_virtual_team_assistant = is_string( $assistant_id_raw ) && 
+		$is_virtual_team_assistant = is_string( $assistant_id_raw ) &&
 			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id_raw );
-		
+
 		// Sanitize assistant_id based on type.
 		if ( $is_virtual_team_assistant ) {
 			// Keep as string for virtual team IDs.

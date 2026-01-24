@@ -109,8 +109,8 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 		// Build Site Kit API request.
 		$endpoint = '/wp-json/google-site-kit/v1/modules/analytics/data/';
 		$api_args = array(
-			'metrics'    => array( $this->map_metric_to_api( $metric ) ),
-			'dateRange'  => $this->map_date_range( $date_range ),
+			'metrics'   => array( $this->map_metric_to_api( $metric ) ),
+			'dateRange' => $this->map_date_range( $date_range ),
 		);
 
 		if ( $url ) {
@@ -142,11 +142,11 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 */
 	private function map_metric_to_api( $metric ) {
 		$metric_map = array(
-			'sessions'              => 'ga:sessions',
-			'pageviews'             => 'ga:pageviews',
-			'bounce_rate'           => 'ga:bounceRate',
-			'avg_session_duration'  => 'ga:avgSessionDuration',
-			'users'                 => 'ga:users',
+			'sessions'             => 'ga:sessions',
+			'pageviews'            => 'ga:pageviews',
+			'bounce_rate'          => 'ga:bounceRate',
+			'avg_session_duration' => 'ga:avgSessionDuration',
+			'users'                => 'ga:users',
 		);
 
 		return isset( $metric_map[ $metric ] ) ? $metric_map[ $metric ] : 'ga:sessions';
@@ -182,7 +182,7 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	private function format_analytics_response( $response, $metric, $date_range, $url = null ) {
 		// Extract data from response (structure depends on Site Kit's actual API).
 		// This is a simplified example - actual implementation would parse Site Kit's response format.
-		
+
 		$formatted = array(
 			'success'    => true,
 			'metric'     => $metric,
@@ -212,9 +212,9 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	private function generate_summary( $data, $metric, $date_range ) {
 		// This is a simplified example.
 		// Real implementation would parse the actual data structure from Site Kit.
-		
+
 		$period = str_replace( '_', ' ', $date_range );
-		
+
 		return sprintf(
 			/* translators: 1: metric name, 2: date range */
 			__( 'Analytics data for %1$s over the %2$s', 'mcp-ai-wpoos' ),

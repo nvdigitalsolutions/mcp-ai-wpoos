@@ -162,11 +162,26 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 				'type'    => 'select',
 				'width'   => '50%',
 				'options' => array(
-					array( 'key' => 'new', 'value' => __( 'New', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'contacted', 'value' => __( 'Contacted', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'qualified', 'value' => __( 'Qualified', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'converted', 'value' => __( 'Converted', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'lost', 'value' => __( 'Lost', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'new',
+						'value' => __( 'New', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'contacted',
+						'value' => __( 'Contacted', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'qualified',
+						'value' => __( 'Qualified', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'converted',
+						'value' => __( 'Converted', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'lost',
+						'value' => __( 'Lost', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			),
 			'email_subscribed' => array(
@@ -194,62 +209,89 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 	 */
 	private function get_campaigns_schema() {
 		return array(
-			'campaign_name'   => array(
+			'campaign_name'    => array(
 				'title'       => __( 'Campaign Name', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'text',
 				'width'       => '100%',
 				'is_required' => true,
 			),
-			'subject_line'    => array(
+			'subject_line'     => array(
 				'title'       => __( 'Subject Line', 'mcp-ai-wpoos-pro' ),
 				'type'        => 'text',
 				'width'       => '100%',
 				'is_required' => true,
 			),
-			'preview_text'    => array(
+			'preview_text'     => array(
 				'title' => __( 'Preview Text', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '100%',
 			),
-			'campaign_type'   => array(
+			'campaign_type'    => array(
 				'title'   => __( 'Campaign Type', 'mcp-ai-wpoos-pro' ),
 				'type'    => 'select',
 				'width'   => '50%',
 				'options' => array(
-					array( 'key' => 'newsletter', 'value' => __( 'Newsletter', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'promotional', 'value' => __( 'Promotional', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'transactional', 'value' => __( 'Transactional', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'drip', 'value' => __( 'Drip Campaign', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'newsletter',
+						'value' => __( 'Newsletter', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'promotional',
+						'value' => __( 'Promotional', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'transactional',
+						'value' => __( 'Transactional', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'drip',
+						'value' => __( 'Drip Campaign', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			),
-			'status'          => array(
+			'status'           => array(
 				'title'   => __( 'Status', 'mcp-ai-wpoos-pro' ),
 				'type'    => 'select',
 				'width'   => '50%',
 				'options' => array(
-					array( 'key' => 'draft', 'value' => __( 'Draft', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'scheduled', 'value' => __( 'Scheduled', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'sending', 'value' => __( 'Sending', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'sent', 'value' => __( 'Sent', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'paused', 'value' => __( 'Paused', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'draft',
+						'value' => __( 'Draft', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'scheduled',
+						'value' => __( 'Scheduled', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'sending',
+						'value' => __( 'Sending', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'sent',
+						'value' => __( 'Sent', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'paused',
+						'value' => __( 'Paused', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			),
-			'send_date'       => array(
+			'send_date'        => array(
 				'title' => __( 'Send Date', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'datetime-local',
 				'width' => '50%',
 			),
-			'total_sent'      => array(
+			'total_sent'       => array(
 				'title' => __( 'Total Sent', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '25%',
 			),
-			'open_rate'       => array(
+			'open_rate'        => array(
 				'title' => __( 'Open Rate (%)', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '25%',
 			),
-			'click_rate'      => array(
+			'click_rate'       => array(
 				'title' => __( 'Click Rate (%)', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'number',
 				'width' => '25%',
@@ -259,7 +301,7 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 				'type'  => 'number',
 				'width' => '25%',
 			),
-			'segment'         => array(
+			'segment'          => array(
 				'title' => __( 'Target Segment', 'mcp-ai-wpoos-pro' ),
 				'type'  => 'text',
 				'width' => '100%',
@@ -301,12 +343,30 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 				'type'    => 'select',
 				'width'   => '50%',
 				'options' => array(
-					array( 'key' => 'website', 'value' => __( 'Website', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'referral', 'value' => __( 'Referral', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'social_media', 'value' => __( 'Social Media', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'email_campaign', 'value' => __( 'Email Campaign', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'paid_ad', 'value' => __( 'Paid Ad', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'other', 'value' => __( 'Other', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'website',
+						'value' => __( 'Website', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'referral',
+						'value' => __( 'Referral', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'social_media',
+						'value' => __( 'Social Media', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'email_campaign',
+						'value' => __( 'Email Campaign', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'paid_ad',
+						'value' => __( 'Paid Ad', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'other',
+						'value' => __( 'Other', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			),
 			'score'       => array(
@@ -319,12 +379,30 @@ class WP_MCP_AI_CRM_Research_Add extends WP_MCP_AI_Research_Add_Base {
 				'type'    => 'select',
 				'width'   => '34%',
 				'options' => array(
-					array( 'key' => 'new', 'value' => __( 'New', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'contacted', 'value' => __( 'Contacted', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'qualified', 'value' => __( 'Qualified', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'nurturing', 'value' => __( 'Nurturing', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'converted', 'value' => __( 'Converted', 'mcp-ai-wpoos-pro' ) ),
-					array( 'key' => 'lost', 'value' => __( 'Lost', 'mcp-ai-wpoos-pro' ) ),
+					array(
+						'key'   => 'new',
+						'value' => __( 'New', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'contacted',
+						'value' => __( 'Contacted', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'qualified',
+						'value' => __( 'Qualified', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'nurturing',
+						'value' => __( 'Nurturing', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'converted',
+						'value' => __( 'Converted', 'mcp-ai-wpoos-pro' ),
+					),
+					array(
+						'key'   => 'lost',
+						'value' => __( 'Lost', 'mcp-ai-wpoos-pro' ),
+					),
 				),
 			),
 			'value'       => array(

@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'platforms'             => array(
+				'platforms'                => array(
 					'type'        => 'array',
 					'description' => __( 'Social media platforms to search (default: all connected)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -116,62 +116,62 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 						'enum' => array( 'twitter', 'instagram', 'youtube', 'tiktok', 'linkedin' ),
 					),
 				),
-				'keywords'              => array(
+				'keywords'                 => array(
 					'type'        => 'array',
 					'description' => __( 'Keywords or topics to match content relevance', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'minItems'    => 1,
 				),
-				'hashtags'              => array(
+				'hashtags'                 => array(
 					'type'        => 'array',
 					'description' => __( 'Hashtags to search for (without # symbol)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'min_followers'         => array(
+				'min_followers'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum follower count', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1000,
 					'minimum'     => 100,
 				),
-				'max_followers'         => array(
+				'max_followers'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum follower count (0 for unlimited)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
 					'minimum'     => 0,
 				),
-				'min_engagement_rate'   => array(
+				'min_engagement_rate'      => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum engagement rate percentage', 'mcp-ai-wpoos-pro' ),
 					'default'     => 2.0,
 					'minimum'     => 0,
 					'maximum'     => 100,
 				),
-				'location'              => array(
+				'location'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Geographic location or region filter', 'mcp-ai-wpoos-pro' ),
 				),
-				'language'              => array(
+				'language'                 => array(
 					'type'        => 'string',
 					'description' => __( 'Primary content language (e.g., en, es, fr)', 'mcp-ai-wpoos-pro' ),
 				),
-				'verified_only'         => array(
+				'verified_only'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'Only include verified accounts', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'influencer_tier'       => array(
+				'influencer_tier'          => array(
 					'type'        => 'string',
 					'description' => __( 'Influencer tier category', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'nano', 'micro', 'mid', 'macro', 'mega', 'all' ),
 					'default'     => 'all',
 				),
-				'sort_by'               => array(
+				'sort_by'                  => array(
 					'type'        => 'string',
 					'description' => __( 'Sort results by metric', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'relevance', 'engagement', 'followers', 'authenticity', 'collaboration_score' ),
 					'default'     => 'relevance',
 				),
-				'include_audience_data' => array(
+				'include_audience_data'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include audience demographics analysis', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -181,7 +181,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 					'description' => __( 'Include content theme and quality analysis', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'limit'                 => array(
+				'limit'                    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of influencers to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 
 		// Clean hashtags.
 		$hashtags = array_map(
-			function( $tag ) {
+			function ( $tag ) {
 				return ltrim( $tag, '#' );
 			},
 			$hashtags
@@ -384,10 +384,10 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 
 		foreach ( $influencers as $influencer ) {
 			// Calculate various scores.
-			$relevance_score      = $this->calculate_relevance_score( $influencer, $criteria );
-			$engagement_score     = $this->calculate_engagement_score( $influencer );
-			$authenticity_score   = $this->calculate_authenticity_score( $influencer );
-			$collaboration_score  = $this->calculate_collaboration_score( $influencer, $criteria );
+			$relevance_score     = $this->calculate_relevance_score( $influencer, $criteria );
+			$engagement_score    = $this->calculate_engagement_score( $influencer );
+			$authenticity_score  = $this->calculate_authenticity_score( $influencer );
+			$collaboration_score = $this->calculate_collaboration_score( $influencer, $criteria );
 
 			// Apply filters.
 			if ( $influencer['followers'] < $criteria['min_followers'] ) {
@@ -458,7 +458,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function calculate_engagement_score( $influencer ) {
 		$engagement_rate = $influencer['engagement_rate'];
-		
+
 		// Normalize to 0-100 scale (10% engagement = 100 score).
 		return min( 100, ( $engagement_rate / 10 ) * 100 );
 	}
@@ -530,11 +530,11 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	protected function get_audience_demographics( $influencer ) {
 		// Mock data - in production, fetch from platform APIs.
 		return array(
-			'age_groups'     => array(),
-			'gender'         => array(),
-			'locations'      => array(),
-			'interests'      => array(),
-			'languages'      => array(),
+			'age_groups' => array(),
+			'gender'     => array(),
+			'locations'  => array(),
+			'interests'  => array(),
+			'languages'  => array(),
 		);
 	}
 
@@ -591,7 +591,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	protected function sort_influencers( $influencers, $sort_by ) {
 		usort(
 			$influencers,
-			function( $a, $b ) use ( $sort_by ) {
+			function ( $a, $b ) use ( $sort_by ) {
 				switch ( $sort_by ) {
 					case 'followers':
 						return $b['followers'] <=> $a['followers'];
@@ -649,11 +649,11 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function generate_collaboration_recommendations( $influencers ) {
 		return array(
-			'top_picks'           => array_slice( $influencers, 0, 5 ),
-			'best_value'          => $this->identify_best_value_influencers( $influencers ),
-			'emerging_talent'     => $this->identify_emerging_talent( $influencers ),
-			'collaboration_tips'  => $this->generate_collaboration_tips( $influencers ),
-			'estimated_reach'     => $this->estimate_campaign_reach( $influencers ),
+			'top_picks'          => array_slice( $influencers, 0, 5 ),
+			'best_value'         => $this->identify_best_value_influencers( $influencers ),
+			'emerging_talent'    => $this->identify_emerging_talent( $influencers ),
+			'collaboration_tips' => $this->generate_collaboration_tips( $influencers ),
+			'estimated_reach'    => $this->estimate_campaign_reach( $influencers ),
 		);
 	}
 
@@ -682,7 +682,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 		// Filter for nano/micro with high engagement.
 		return array_filter(
 			$influencers,
-			function( $influencer ) {
+			function ( $influencer ) {
 				return in_array( $influencer['tier'], array( 'nano', 'micro' ), true )
 					&& $influencer['engagement_rate'] > 5.0;
 			}
@@ -699,10 +699,10 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function generate_collaboration_tips( $influencers ) {
 		return array(
-			'outreach_strategy'   => '',
-			'content_guidelines'  => array(),
-			'best_practices'      => array(),
-			'timing_suggestions'  => array(),
+			'outreach_strategy'  => '',
+			'content_guidelines' => array(),
+			'best_practices'     => array(),
+			'timing_suggestions' => array(),
 		);
 	}
 
@@ -735,7 +735,7 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 	 */
 	protected function prepare_chart_data( $influencers ) {
 		return array(
-			'tier_distribution' => array(
+			'tier_distribution'       => array(
 				'type'     => 'pie',
 				'labels'   => array(),
 				'datasets' => array(),
@@ -744,12 +744,12 @@ class WP_MCP_AI_Tool_Influencer_Identification implements WP_MCP_AI_Tool_Interfa
 				'type'     => 'scatter',
 				'datasets' => array(),
 			),
-			'score_comparison' => array(
+			'score_comparison'        => array(
 				'type'     => 'radar',
 				'labels'   => array(),
 				'datasets' => array(),
 			),
-			'platform_distribution' => array(
+			'platform_distribution'   => array(
 				'type'     => 'bar',
 				'labels'   => array(),
 				'datasets' => array(),

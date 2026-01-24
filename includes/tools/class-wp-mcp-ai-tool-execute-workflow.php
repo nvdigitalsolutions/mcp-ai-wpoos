@@ -47,21 +47,21 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'description'      => array(
+				'description'        => array(
 					'type'        => 'string',
 					'description' => __( 'Description of the workflow and what should be accomplished', 'mcp-ai-wpoos' ),
 				),
-				'task_type'        => array(
+				'task_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Type of workflow', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'research', 'content', 'ecommerce', 'development', 'analysis', 'creative', 'technical', 'generic' ),
 				),
-				'parallel'         => array(
+				'parallel'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to execute tasks in parallel where possible (default: false)', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'requirements'     => array(
+				'requirements'       => array(
 					'type'        => 'object',
 					'description' => __( 'Task requirements and constraints', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -83,14 +83,14 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 						),
 					),
 				),
-				'max_retries'      => array(
+				'max_retries'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum retry attempts per task (default: 2)', 'mcp-ai-wpoos' ),
 					'default'     => 2,
 					'minimum'     => 0,
 					'maximum'     => 5,
 				),
-				'timeout'          => array(
+				'timeout'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Workflow timeout in seconds (default: 600)', 'mcp-ai-wpoos' ),
 					'default'     => 600,
@@ -230,10 +230,10 @@ class WP_MCP_AI_Tool_Execute_Workflow implements WP_MCP_AI_Tool_Interface, WP_MC
 					),
 				),
 				'execution'   => array(
-					'status'         => $result['status'],
-					'tasks_total'    => $result['total'],
+					'status'          => $result['status'],
+					'tasks_total'     => $result['total'],
 					'tasks_completed' => $result['completed'] ?? $result['total'],
-					'parallel'       => $config['parallel'],
+					'parallel'        => $config['parallel'],
 				),
 				'results'     => $result['results'],
 				'message'     => __( 'Workflow executed successfully.', 'mcp-ai-wpoos' ),

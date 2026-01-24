@@ -97,13 +97,13 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'                => array(
+				'action'              => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'trending_topics', 'track_hashtags', 'monitor_keywords', 'sentiment_analysis', 'competitor_tracking' ),
 					'default'     => 'trending_topics',
 				),
-				'platforms'             => array(
+				'platforms'           => array(
 					'type'        => 'array',
 					'description' => __( 'Social media platforms to monitor', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -111,70 +111,70 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 						'enum' => array( 'facebook', 'twitter', 'instagram', 'linkedin', 'pinterest', 'tiktok', 'youtube' ),
 					),
 				),
-				'keywords'              => array(
+				'keywords'            => array(
 					'type'        => 'array',
 					'description' => __( 'Keywords to monitor', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'hashtags'              => array(
+				'hashtags'            => array(
 					'type'        => 'array',
 					'description' => __( 'Hashtags to track', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'competitors'           => array(
+				'competitors'         => array(
 					'type'        => 'array',
 					'description' => __( 'Competitor accounts to monitor', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'industry'              => array(
+				'industry'            => array(
 					'type'        => 'string',
 					'description' => __( 'Industry or niche to focus on', 'mcp-ai-wpoos-pro' ),
 				),
-				'timeframe'             => array(
+				'timeframe'           => array(
 					'type'        => 'string',
 					'description' => __( 'Timeframe for trend analysis', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1hour', '24hours', '7days', '30days' ),
 					'default'     => '24hours',
 				),
-				'min_engagement'        => array(
+				'min_engagement'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Minimum engagement threshold for trends', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
 					'minimum'     => 0,
 				),
-				'include_sentiment'     => array(
+				'include_sentiment'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include sentiment analysis in results', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'location'              => array(
+				'location'            => array(
 					'type'        => 'string',
 					'description' => __( 'Geographic location filter (country, city, or region)', 'mcp-ai-wpoos-pro' ),
 				),
-				'language'              => array(
+				'language'            => array(
 					'type'        => 'string',
 					'description' => __( 'Language filter (e.g., en, es, fr)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'en',
 				),
-				'results_limit'         => array(
+				'results_limit'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 200,
 				),
-				'include_influencers'   => array(
+				'include_influencers' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Identify influencers discussing the topics', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'alert_threshold'       => array(
+				'alert_threshold'     => array(
 					'type'        => 'integer',
 					'description' => __( 'Spike detection threshold percentage', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
@@ -253,14 +253,14 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 * @return array Result.
 	 */
 	protected function get_trending_topics( $arguments ) {
-		$platforms        = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
+		$platforms         = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
 			? array_map( 'sanitize_text_field', $arguments['platforms'] )
 			: array( 'twitter' );
-		$industry         = isset( $arguments['industry'] ) ? sanitize_text_field( $arguments['industry'] ) : '';
-		$timeframe        = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
-		$min_engagement   = isset( $arguments['min_engagement'] ) ? absint( $arguments['min_engagement'] ) : 100;
-		$location         = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
-		$results_limit    = isset( $arguments['results_limit'] ) ? absint( $arguments['results_limit'] ) : 50;
+		$industry          = isset( $arguments['industry'] ) ? sanitize_text_field( $arguments['industry'] ) : '';
+		$timeframe         = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
+		$min_engagement    = isset( $arguments['min_engagement'] ) ? absint( $arguments['min_engagement'] ) : 100;
+		$location          = isset( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
+		$results_limit     = isset( $arguments['results_limit'] ) ? absint( $arguments['results_limit'] ) : 50;
 		$include_sentiment = isset( $arguments['include_sentiment'] ) ? (bool) $arguments['include_sentiment'] : true;
 
 		// In production, this would integrate with social media APIs.
@@ -275,14 +275,14 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success'        => true,
-			'action'         => 'trending_topics',
-			'timeframe'      => $timeframe,
-			'platforms'      => $platforms,
-			'location'       => $location,
-			'total_trends'   => count( $trending ),
+			'success'         => true,
+			'action'          => 'trending_topics',
+			'timeframe'       => $timeframe,
+			'platforms'       => $platforms,
+			'location'        => $location,
+			'total_trends'    => count( $trending ),
 			'trending_topics' => $trending,
-			'message'        => sprintf(
+			'message'         => sprintf(
 				/* translators: %d: Number of trending topics */
 				__( 'Found %d trending topics across selected platforms.', 'mcp-ai-wpoos-pro' ),
 				count( $trending )
@@ -297,13 +297,13 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 * @return array Result.
 	 */
 	protected function track_hashtags( $arguments ) {
-		$hashtags         = isset( $arguments['hashtags'] ) && is_array( $arguments['hashtags'] )
+		$hashtags          = isset( $arguments['hashtags'] ) && is_array( $arguments['hashtags'] )
 			? array_map( 'sanitize_text_field', $arguments['hashtags'] )
 			: array();
-		$platforms        = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
+		$platforms         = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
 			? array_map( 'sanitize_text_field', $arguments['platforms'] )
 			: array( 'twitter', 'instagram' );
-		$timeframe        = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
+		$timeframe         = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
 		$include_sentiment = isset( $arguments['include_sentiment'] ) ? (bool) $arguments['include_sentiment'] : true;
 
 		if ( empty( $hashtags ) ) {
@@ -318,7 +318,7 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 
 		foreach ( $hashtags as $hashtag ) {
 			$performance = $this->generate_hashtag_performance( $hashtag, $platforms, $timeframe );
-			
+
 			if ( $include_sentiment ) {
 				$performance['sentiment'] = $this->analyze_trend_sentiment( $hashtag );
 			}
@@ -327,13 +327,13 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 		}
 
 		return array(
-			'success'      => true,
-			'action'       => 'track_hashtags',
-			'timeframe'    => $timeframe,
-			'platforms'    => $platforms,
+			'success'       => true,
+			'action'        => 'track_hashtags',
+			'timeframe'     => $timeframe,
+			'platforms'     => $platforms,
 			'total_tracked' => count( $hashtag_data ),
-			'hashtags'     => $hashtag_data,
-			'message'      => sprintf(
+			'hashtags'      => $hashtag_data,
+			'message'       => sprintf(
 				/* translators: %d: Number of hashtags tracked */
 				__( 'Successfully tracked %d hashtags.', 'mcp-ai-wpoos-pro' ),
 				count( $hashtag_data )
@@ -348,14 +348,14 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 * @return array Result.
 	 */
 	protected function monitor_keywords( $arguments ) {
-		$keywords         = isset( $arguments['keywords'] ) && is_array( $arguments['keywords'] )
+		$keywords            = isset( $arguments['keywords'] ) && is_array( $arguments['keywords'] )
 			? array_map( 'sanitize_text_field', $arguments['keywords'] )
 			: array();
-		$platforms        = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
+		$platforms           = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] )
 			? array_map( 'sanitize_text_field', $arguments['platforms'] )
 			: array( 'twitter' );
-		$timeframe        = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
-		$alert_threshold  = isset( $arguments['alert_threshold'] ) ? absint( $arguments['alert_threshold'] ) : 50;
+		$timeframe           = isset( $arguments['timeframe'] ) ? sanitize_text_field( $arguments['timeframe'] ) : '24hours';
+		$alert_threshold     = isset( $arguments['alert_threshold'] ) ? absint( $arguments['alert_threshold'] ) : 50;
 		$include_influencers = isset( $arguments['include_influencers'] ) ? (bool) $arguments['include_influencers'] : false;
 
 		if ( empty( $keywords ) ) {
@@ -369,7 +369,7 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 
 		foreach ( $keywords as $keyword ) {
 			$monitoring = $this->generate_keyword_monitoring( $keyword, $platforms, $timeframe, $alert_threshold );
-			
+
 			if ( $include_influencers ) {
 				$monitoring['top_influencers'] = $this->identify_keyword_influencers( $keyword );
 			}
@@ -424,23 +424,23 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 
 		foreach ( $items as $item ) {
 			$sentiment_data[] = array(
-				'item'      => $item,
-				'type'      => strpos( $item, '#' ) === 0 ? 'hashtag' : 'keyword',
-				'sentiment' => $this->analyze_trend_sentiment( $item ),
-				'mentions'  => wp_rand( 100, 10000 ),
+				'item'       => $item,
+				'type'       => strpos( $item, '#' ) === 0 ? 'hashtag' : 'keyword',
+				'sentiment'  => $this->analyze_trend_sentiment( $item ),
+				'mentions'   => wp_rand( 100, 10000 ),
 				'engagement' => wp_rand( 500, 50000 ),
 			);
 		}
 
 		return array(
-			'success'        => true,
-			'action'         => 'sentiment_analysis',
-			'timeframe'      => $timeframe,
-			'platforms'      => $platforms,
-			'total_analyzed' => count( $sentiment_data ),
-			'sentiment_data' => $sentiment_data,
+			'success'           => true,
+			'action'            => 'sentiment_analysis',
+			'timeframe'         => $timeframe,
+			'platforms'         => $platforms,
+			'total_analyzed'    => count( $sentiment_data ),
+			'sentiment_data'    => $sentiment_data,
 			'overall_sentiment' => $this->calculate_overall_sentiment( $sentiment_data ),
-			'message'        => sprintf(
+			'message'           => sprintf(
 				/* translators: %d: Number of items analyzed */
 				__( 'Analyzed sentiment for %d items.', 'mcp-ai-wpoos-pro' ),
 				count( $sentiment_data )
@@ -526,13 +526,13 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 		foreach ( array_slice( $base_trends, 0, $limit ) as $index => $topic ) {
 			$engagement = wp_rand( $min_engagement, 100000 );
 			$trends[]   = array(
-				'rank'           => $index + 1,
-				'topic'          => $topic,
-				'mentions'       => wp_rand( 1000, 50000 ),
-				'engagement'     => $engagement,
-				'growth_rate'    => wp_rand( -20, 300 ) . '%',
-				'peak_time'      => gmdate( 'Y-m-d H:i:s', strtotime( '-' . wp_rand( 1, 24 ) . ' hours' ) ),
-				'platforms'      => $platforms,
+				'rank'             => $index + 1,
+				'topic'            => $topic,
+				'mentions'         => wp_rand( 1000, 50000 ),
+				'engagement'       => $engagement,
+				'growth_rate'      => wp_rand( -20, 300 ) . '%',
+				'peak_time'        => gmdate( 'Y-m-d H:i:s', strtotime( '-' . wp_rand( 1, 24 ) . ' hours' ) ),
+				'platforms'        => $platforms,
 				'popularity_score' => min( 100, ( $engagement / 1000 ) ),
 			);
 		}
@@ -571,15 +571,15 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function generate_hashtag_performance( $hashtag, $platforms, $timeframe ) {
 		return array(
-			'hashtag'         => $hashtag,
-			'total_uses'      => wp_rand( 1000, 100000 ),
-			'unique_users'    => wp_rand( 500, 50000 ),
-			'reach'           => wp_rand( 10000, 1000000 ),
-			'engagement_rate' => wp_rand( 20, 80 ) / 10 . '%',
-			'trending_score'  => wp_rand( 1, 100 ),
-			'growth_trend'    => wp_rand( -20, 200 ) . '%',
-			'platforms'       => $platforms,
-			'timeframe'       => $timeframe,
+			'hashtag'          => $hashtag,
+			'total_uses'       => wp_rand( 1000, 100000 ),
+			'unique_users'     => wp_rand( 500, 50000 ),
+			'reach'            => wp_rand( 10000, 1000000 ),
+			'engagement_rate'  => wp_rand( 20, 80 ) / 10 . '%',
+			'trending_score'   => wp_rand( 1, 100 ),
+			'growth_trend'     => wp_rand( -20, 200 ) . '%',
+			'platforms'        => $platforms,
+			'timeframe'        => $timeframe,
 			'related_hashtags' => $this->generate_related_hashtags( $hashtag ),
 		);
 	}
@@ -614,15 +614,15 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 		$growth = wp_rand( -20, 300 );
 
 		return array(
-			'keyword'          => $keyword,
-			'mentions'         => wp_rand( 500, 50000 ),
-			'unique_authors'   => wp_rand( 100, 10000 ),
-			'avg_sentiment'    => wp_rand( -10, 10 ) / 10,
-			'growth_rate'      => $growth . '%',
-			'spike_detected'   => $growth > $alert_threshold,
-			'platforms'        => $platforms,
-			'timeframe'        => $timeframe,
-			'top_posts'        => $this->generate_top_posts( $keyword ),
+			'keyword'             => $keyword,
+			'mentions'            => wp_rand( 500, 50000 ),
+			'unique_authors'      => wp_rand( 100, 10000 ),
+			'avg_sentiment'       => wp_rand( -10, 10 ) / 10,
+			'growth_rate'         => $growth . '%',
+			'spike_detected'      => $growth > $alert_threshold,
+			'platforms'           => $platforms,
+			'timeframe'           => $timeframe,
+			'top_posts'           => $this->generate_top_posts( $keyword ),
 			'conversation_volume' => wp_rand( 1000, 100000 ),
 		);
 	}
@@ -745,16 +745,16 @@ class WP_MCP_AI_Tool_Social_Listening_Trends implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function generate_competitor_analysis( $competitor, $platforms, $timeframe ) {
 		return array(
-			'competitor'       => $competitor,
-			'platforms'        => $platforms,
-			'total_posts'      => wp_rand( 10, 100 ),
-			'avg_engagement'   => wp_rand( 500, 50000 ),
-			'follower_growth'  => wp_rand( -5, 50 ) . '%',
-			'engagement_rate'  => wp_rand( 10, 80 ) / 10 . '%',
+			'competitor'        => $competitor,
+			'platforms'         => $platforms,
+			'total_posts'       => wp_rand( 10, 100 ),
+			'avg_engagement'    => wp_rand( 500, 50000 ),
+			'follower_growth'   => wp_rand( -5, 50 ) . '%',
+			'engagement_rate'   => wp_rand( 10, 80 ) / 10 . '%',
 			'top_content_types' => array( 'video', 'image', 'text' ),
 			'posting_frequency' => wp_rand( 1, 7 ) . ' posts/day',
-			'best_times'       => array( '09:00', '13:00', '18:00' ),
-			'top_hashtags'     => array( '#business', '#marketing', '#success' ),
+			'best_times'        => array( '09:00', '13:00', '18:00' ),
+			'top_hashtags'      => array( '#business', '#marketing', '#success' ),
 		);
 	}
 

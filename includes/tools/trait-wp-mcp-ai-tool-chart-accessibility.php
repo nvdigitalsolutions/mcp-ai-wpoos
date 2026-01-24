@@ -25,10 +25,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  *     public function execute( $arguments, $context ) {
  *         $chart_html = $this->generate_chart( $data );
- *         
+ *
  *         // Enhance with accessibility features
  *         $chart_html = $this->add_chart_accessibility( $chart_html, $data );
- *         
+ *
  *         return array('message' => $chart_html);
  *     }
  * }
@@ -82,14 +82,14 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 	 */
 	protected function generate_chart_aria_label( $chart_type, $chart_title ) {
 		$type_labels = array(
-			'bar' => __( 'Bar chart', 'mcp-ai-wpoos' ),
-			'line' => __( 'Line chart', 'mcp-ai-wpoos' ),
-			'pie' => __( 'Pie chart', 'mcp-ai-wpoos' ),
-			'doughnut' => __( 'Doughnut chart', 'mcp-ai-wpoos' ),
-			'radar' => __( 'Radar chart', 'mcp-ai-wpoos' ),
+			'bar'       => __( 'Bar chart', 'mcp-ai-wpoos' ),
+			'line'      => __( 'Line chart', 'mcp-ai-wpoos' ),
+			'pie'       => __( 'Pie chart', 'mcp-ai-wpoos' ),
+			'doughnut'  => __( 'Doughnut chart', 'mcp-ai-wpoos' ),
+			'radar'     => __( 'Radar chart', 'mcp-ai-wpoos' ),
 			'polarArea' => __( 'Polar area chart', 'mcp-ai-wpoos' ),
-			'scatter' => __( 'Scatter plot', 'mcp-ai-wpoos' ),
-			'bubble' => __( 'Bubble chart', 'mcp-ai-wpoos' ),
+			'scatter'   => __( 'Scatter plot', 'mcp-ai-wpoos' ),
+			'bubble'    => __( 'Bubble chart', 'mcp-ai-wpoos' ),
 		);
 
 		$type_label = isset( $type_labels[ $chart_type ] ) ? $type_labels[ $chart_type ] : __( 'Chart', 'mcp-ai-wpoos' );
@@ -194,7 +194,7 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 		}
 
 		// Add visually hidden screen reader text after canvas.
-		$sr_html = '<div class="wp-mcp-ai-chart-sr-only" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;">';
+		$sr_html  = '<div class="wp-mcp-ai-chart-sr-only" style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;">';
 		$sr_html .= esc_html( $sr_text );
 		$sr_html .= '</div>';
 
@@ -216,7 +216,7 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 	 * @return string Modified HTML with keyboard hint.
 	 */
 	protected function inject_keyboard_hint( $chart_html ) {
-		$hint = '<div class="wp-mcp-ai-chart-keyboard-hint" style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">';
+		$hint  = '<div class="wp-mcp-ai-chart-keyboard-hint" style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">';
 		$hint .= '<span aria-hidden="true">💡</span> ';
 		$hint .= esc_html__( 'Tip: Use Tab to navigate chart elements, Enter to interact.', 'mcp-ai-wpoos' );
 		$hint .= '</div>';
@@ -243,37 +243,37 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 		$labels   = $chart_data['data']['labels'];
 		$datasets = $chart_data['data']['datasets'];
 
-		$html = '<details class="wp-mcp-ai-chart-data-table" style="margin-top: 15px;">';
+		$html  = '<details class="wp-mcp-ai-chart-data-table" style="margin-top: 15px;">';
 		$html .= '<summary style="cursor: pointer; font-size: 12px; color: #666;">' . esc_html__( 'View data table', 'mcp-ai-wpoos' ) . '</summary>';
 		$html .= '<div style="overflow-x: auto; margin-top: 10px;">';
 		$html .= '<table style="width: 100%; border-collapse: collapse; font-size: 12px;">';
-		
+
 		// Header row.
 		$html .= '<thead><tr style="background: #f5f5f5;">';
 		$html .= '<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">' . esc_html__( 'Label', 'mcp-ai-wpoos' ) . '</th>';
-		
+
 		foreach ( $datasets as $dataset ) {
 			$label = isset( $dataset['label'] ) ? $dataset['label'] : '';
 			$html .= '<th style="border: 1px solid #ddd; padding: 8px; text-align: right;">' . esc_html( $label ) . '</th>';
 		}
-		
+
 		$html .= '</tr></thead>';
-		
+
 		// Data rows.
 		$html .= '<tbody>';
-		
+
 		foreach ( $labels as $index => $label ) {
 			$html .= '<tr>';
 			$html .= '<td style="border: 1px solid #ddd; padding: 8px;">' . esc_html( $label ) . '</td>';
-			
+
 			foreach ( $datasets as $dataset ) {
 				$value = isset( $dataset['data'][ $index ] ) ? $dataset['data'][ $index ] : '';
 				$html .= '<td style="border: 1px solid #ddd; padding: 8px; text-align: right;">' . esc_html( $value ) . '</td>';
 			}
-			
+
 			$html .= '</tr>';
 		}
-		
+
 		$html .= '</tbody>';
 		$html .= '</table>';
 		$html .= '</div>';

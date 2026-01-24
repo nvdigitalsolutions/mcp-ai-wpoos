@@ -625,7 +625,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Architectural Design Toolkit (Phase 2.10).
-				'enable_architectural_design_toolkit' => array(
+				'enable_architectural_design_toolkit'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -866,26 +866,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_toolkit_memory_requirements() {
 			return array(
-				'enable_quiz_system'                   => 32,   // 7 tools, database operations.
-				'enable_media_toolkit'                 => 48,   // Template management, image processing.
-				'enable_document_generation_toolkit'   => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
-				'enable_project_management'            => 64,   // 13 tools, complex data structures.
-				'enable_places_management'             => 56,   // 6+ tools, Google Maps API, geocoding.
-				'enable_ai_cpt_management'             => 24,   // Metabox integration, lightweight.
-				'enable_eca_management'                => 40,   // 5+ tools, iSAMS integration.
-				'enable_health_wellness_management'    => 128,  // 30+ tools, secure health data storage.
-				'enable_cloudways_toolkit'             => 192,  // 58+ tools, extensive server management.
-				'enable_ecommerce_toolkit'             => 80,   // 20 tools, WooCommerce integration.
-				'enable_social_media_toolkit'          => 64,   // 15 tools, multi-platform APIs.
-				'enable_analytics_toolkit'             => 96,   // 12 tools, data warehouse integrations.
-				'enable_multilingual_toolkit'          => 72,   // 10 tools, translation memory.
-				'enable_video_production_toolkit'      => 256,  // 12 tools, FFmpeg, video processing.
-				'enable_financial_planner_toolkit'     => 80,   // 24 tools, Plaid API integration.
-				'enable_calendar_booking_toolkit'      => 64,   // 12-15 tools, calendar sync.
-				'enable_dj_management_toolkit'         => 72,   // 15-18 tools, music APIs, contracts.
-				'enable_image_production_toolkit'      => 192,  // 12-15 tools, AI generation, GPU processing.
-				'enable_ai_tool_builder_toolkit'       => 48,   // 10 meta-tools, code generation.
-				'enable_architectural_design_toolkit'  => 160,  // 16 tools, 3D modeling, rendering.
+				'enable_quiz_system'                  => 32,   // 7 tools, database operations.
+				'enable_media_toolkit'                => 48,   // Template management, image processing.
+				'enable_document_generation_toolkit'  => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
+				'enable_project_management'           => 64,   // 13 tools, complex data structures.
+				'enable_places_management'            => 56,   // 6+ tools, Google Maps API, geocoding.
+				'enable_ai_cpt_management'            => 24,   // Metabox integration, lightweight.
+				'enable_eca_management'               => 40,   // 5+ tools, iSAMS integration.
+				'enable_health_wellness_management'   => 128,  // 30+ tools, secure health data storage.
+				'enable_cloudways_toolkit'            => 192,  // 58+ tools, extensive server management.
+				'enable_ecommerce_toolkit'            => 80,   // 20 tools, WooCommerce integration.
+				'enable_social_media_toolkit'         => 64,   // 15 tools, multi-platform APIs.
+				'enable_analytics_toolkit'            => 96,   // 12 tools, data warehouse integrations.
+				'enable_multilingual_toolkit'         => 72,   // 10 tools, translation memory.
+				'enable_video_production_toolkit'     => 256,  // 12 tools, FFmpeg, video processing.
+				'enable_financial_planner_toolkit'    => 80,   // 24 tools, Plaid API integration.
+				'enable_calendar_booking_toolkit'     => 64,   // 12-15 tools, calendar sync.
+				'enable_dj_management_toolkit'        => 72,   // 15-18 tools, music APIs, contracts.
+				'enable_image_production_toolkit'     => 192,  // 12-15 tools, AI generation, GPU processing.
+				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
+				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
 			);
 		}
 
@@ -898,12 +898,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			$toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
 
-			$enabled_count    = 0;
-			$total_memory_mb  = 0;
+			$enabled_count   = 0;
+			$total_memory_mb = 0;
 
 			foreach ( $toolkit_memory_requirements as $option => $memory_mb ) {
 				if ( ! empty( $settings[ $option ] ) ) {
-					$enabled_count++;
+					++$enabled_count;
 					$total_memory_mb += $memory_mb;
 				}
 			}

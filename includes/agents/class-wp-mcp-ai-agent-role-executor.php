@@ -196,7 +196,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 
 		// Step 1: Search for information.
 		$search_tool = $this->tool_registry->is_tool_registered( 'web_search' ) ? 'web_search' : 'search_content';
-		
+
 		$search_result = $this->execute_tool_with_context(
 			$search_tool,
 			array(
@@ -293,7 +293,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	 * @return string Formatted HTML content.
 	 */
 	protected function format_research_content( $query, $sources ) {
-		$content = '<h2>' . esc_html( sprintf( __( 'Research Results: %s', 'mcp-ai-wpoos' ), $query ) ) . '</h2>';
+		$content  = '<h2>' . esc_html( sprintf( __( 'Research Results: %s', 'mcp-ai-wpoos' ), $query ) ) . '</h2>';
 		$content .= '<p>' . esc_html( sprintf( __( 'Found %d relevant sources:', 'mcp-ai-wpoos' ), count( $sources ) ) ) . '</p>';
 		$content .= '<ol>';
 
@@ -339,7 +339,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 
 		// Step 1: Gather data to analyze.
 		$data_source = isset( $parameters['data_source'] ) ? $parameters['data_source'] : 'get_recent_posts';
-		
+
 		if ( 'get_recent_posts' === $data_source ) {
 			$data_result = $this->execute_tool_with_context(
 				'get_recent_posts',
@@ -375,7 +375,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		}
 
 		// Step 2: Analyze the data.
-		$posts = isset( $data_result['posts'] ) ? $data_result['posts'] : array();
+		$posts    = isset( $data_result['posts'] ) ? $data_result['posts'] : array();
 		$analysis = $this->analyze_data( $posts, $parameters );
 
 		$results['steps'][] = array(
@@ -390,8 +390,8 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 			$chart_result = $this->execute_tool_with_context(
 				'create_chart',
 				array(
-					'type' => isset( $parameters['chart_type'] ) ? $parameters['chart_type'] : 'bar',
-					'data' => $analysis['chart_data'],
+					'type'    => isset( $parameters['chart_type'] ) ? $parameters['chart_type'] : 'bar',
+					'data'    => $analysis['chart_data'],
 					'options' => array(
 						'title' => isset( $parameters['chart_title'] ) ? $parameters['chart_title'] : __( 'Analysis Results', 'mcp-ai-wpoos' ),
 					),
@@ -420,7 +420,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		}
 
 		$results['analysis'] = $analysis;
-		$results['status'] = 'completed';
+		$results['status']   = 'completed';
 		return $results;
 	}
 
@@ -467,7 +467,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 		// Generate summary.
 		$analysis['summary'] = sprintf(
 			/* translators: %d: number of posts */
-			__( 'Analyzed %d posts across %d post types.', 'mcp-ai-wpoos' ),
+			__( 'Analyzed %1$d posts across %2$d post types.', 'mcp-ai-wpoos' ),
 			$analysis['total_posts'],
 			count( $analysis['post_types'] )
 		);

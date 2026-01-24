@@ -52,20 +52,20 @@ class WP_MCP_AI_Tool_Compress_Image extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'quality'      => array(
+					'quality'     => array(
 						'type'        => 'integer',
 						'description' => __( 'Compression quality (1-100). Higher values preserve more quality.', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 1,
 						'maximum'     => 100,
 						'default'     => 85,
 					),
-					'method'       => array(
+					'method'      => array(
 						'type'        => 'string',
 						'description' => __( 'Compression method: "standard", "lossy", "lossless".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'standard', 'lossy', 'lossless' ),
 						'default'     => 'standard',
 					),
-					'max_size_kb'  => array(
+					'max_size_kb' => array(
 						'type'        => 'integer',
 						'description' => __( 'Maximum output file size in KB (optional).', 'mcp-ai-wpoos-pro' ),
 					),
@@ -169,7 +169,7 @@ class WP_MCP_AI_Tool_Compress_Image extends WP_MCP_AI_Tool_Image_Base {
 
 		while ( $current_size > $max_bytes && $attempts < $max_attempts && $quality > 10 ) {
 			$quality -= 5;
-			$editor = wp_get_image_editor( $file_path );
+			$editor   = wp_get_image_editor( $file_path );
 			if ( is_wp_error( $editor ) ) {
 				return $editor;
 			}

@@ -253,8 +253,8 @@ class WP_MCP_AI_Tool_Generate_Image_AI extends WP_MCP_AI_Tool_Image_Base {
 
 		// Parse size.
 		list( $width, $height ) = explode( 'x', $size );
-		$width  = absint( $width );
-		$height = absint( $height );
+		$width                  = absint( $width );
+		$height                 = absint( $height );
 
 		// Make API request.
 		$response = wp_remote_post(

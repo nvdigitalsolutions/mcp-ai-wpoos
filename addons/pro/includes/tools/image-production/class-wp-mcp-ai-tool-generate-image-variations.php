@@ -52,26 +52,26 @@ class WP_MCP_AI_Tool_Generate_Image_Variations extends WP_MCP_AI_Tool_Image_Base
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'n'           => array(
+					'n'          => array(
 						'type'        => 'integer',
 						'description' => __( 'Number of variations to generate (1-10).', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 1,
 						'maximum'     => 10,
 						'default'     => 1,
 					),
-					'size'        => array(
+					'size'       => array(
 						'type'        => 'string',
 						'description' => __( 'Size for the generated variations: "1024x1024", "512x512", "256x256".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( '1024x1024', '512x512', '256x256' ),
 						'default'     => '1024x1024',
 					),
-					'provider'    => array(
+					'provider'   => array(
 						'type'        => 'string',
 						'description' => __( 'AI provider: "openai" (DALL-E), "auto".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'auto', 'openai' ),
 						'default'     => 'auto',
 					),
-					'use_remote'  => array(
+					'use_remote' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Use remote GPU processing if available.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,

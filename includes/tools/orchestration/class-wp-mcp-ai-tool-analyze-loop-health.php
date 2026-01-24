@@ -33,17 +33,17 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'analyze_loop_health',
-			'description' => 'Analyze autonomous loop health to detect runaway behaviors, repeated failures, and circuit breaker conditions. Returns health status and recommendations.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'analyze_loop_health',
+			'description'         => 'Analyze autonomous loop health to detect runaway behaviors, repeated failures, and circuit breaker conditions. Returns health status and recommendations.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'session_id' => array(
+					'session_id'    => array(
 						'type'        => 'string',
 						'description' => 'Session ID to analyze',
 					),
-					'last_actions' => array(
+					'last_actions'  => array(
 						'type'        => 'array',
 						'description' => 'Recent actions/tool calls for pattern detection',
 						'items'       => array(
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 						'description' => 'Current error message to analyze',
 					),
 				),
-				'required' => array( 'session_id' ),
+				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
 		);
@@ -90,9 +90,9 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 			);
 		}
 
-		$session_id     = $arguments['session_id'];
-		$last_actions   = ! empty( $arguments['last_actions'] ) ? $arguments['last_actions'] : array();
-		$current_error  = ! empty( $arguments['current_error'] ) ? $arguments['current_error'] : '';
+		$session_id    = $arguments['session_id'];
+		$last_actions  = ! empty( $arguments['last_actions'] ) ? $arguments['last_actions'] : array();
+		$current_error = ! empty( $arguments['current_error'] ) ? $arguments['current_error'] : '';
 
 		// Get session.
 		$session = $this->get_session( $session_id );
@@ -126,14 +126,14 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 		}
 
 		return array(
-			'success'                => true,
-			'session_id'             => $session_id,
-			'health_status'          => $health_status,
-			'circuit_breaker'        => $circuit_breaker_action['status'],
-			'analysis'               => $analysis,
-			'warnings'               => $this->get_warnings( $analysis ),
-			'recommendations'        => $this->get_recommendations( $analysis, $health_status ),
-			'should_pause'           => $circuit_breaker_action['should_open'],
+			'success'         => true,
+			'session_id'      => $session_id,
+			'health_status'   => $health_status,
+			'circuit_breaker' => $circuit_breaker_action['status'],
+			'analysis'        => $analysis,
+			'warnings'        => $this->get_warnings( $analysis ),
+			'recommendations' => $this->get_recommendations( $analysis, $health_status ),
+			'should_pause'    => $circuit_breaker_action['should_open'],
 		);
 	}
 
@@ -146,9 +146,9 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 	private function detect_repeated_actions( $last_actions ) {
 		if ( empty( $last_actions ) || count( $last_actions ) < 3 ) {
 			return array(
-				'detected'  => false,
-				'pattern'   => null,
-				'count'     => 0,
+				'detected' => false,
+				'pattern'  => null,
+				'count'    => 0,
 			);
 		}
 
@@ -341,11 +341,11 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 		$success_count = 0;
 		foreach ( $last_actions as $action ) {
 			if ( ! empty( $action['success'] ) ) {
-				$success_count++;
+				++$success_count;
 			}
 		}
 
-		$total = count( $last_actions );
+		$total        = count( $last_actions );
 		$success_rate = $total > 0 ? ( $success_count / $total ) * 100 : 0;
 
 		return array(

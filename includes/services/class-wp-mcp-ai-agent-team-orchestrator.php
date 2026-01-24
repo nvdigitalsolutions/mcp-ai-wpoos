@@ -58,7 +58,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Agent_Communication_Service|null $communication_service Communication service.
-	 * @param WP_MCP_AI_Tool_Load_Monitor|null          $load_monitor Load monitor instance.
+	 * @param WP_MCP_AI_Tool_Load_Monitor|null           $load_monitor Load monitor instance.
 	 * @param WP_MCP_AI_Tool_Execution_Orchestrator|null $tool_orchestrator Tool orchestrator instance.
 	 */
 	public function __construct( $communication_service = null, $load_monitor = null, $tool_orchestrator = null ) {
@@ -579,7 +579,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 				$agent_post  = $query->posts[0];
 				$professions = get_post_meta( $agent_post->ID, '_wp_mcp_ai_professions', true );
 				$expertise   = array();
-				
+
 				// Extract expertise from professions if available.
 				if ( is_array( $professions ) && ! empty( $professions ) ) {
 					foreach ( $professions as $profession_slug ) {
@@ -590,7 +590,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 					}
 				}
 
-				$agents[] = array(
+				$agents[]    = array(
 					'id'          => $agent_post->ID,
 					'title'       => $agent_post->post_title,
 					'name'        => $agent_post->post_title,
@@ -605,7 +605,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 				if ( $profession_agent ) {
 					$agents[]    = $profession_agent;
 					$agent_found = true;
-					
+
 					WP_MCP_AI_Logger::log_event(
 						'team_composition_fallback_profession',
 						sprintf( 'No assistant with role "%s" found, using profession-based agent with relevant expertise', $role ),
@@ -621,14 +621,14 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 					if ( $virtual_agent ) {
 						$agents[]    = $virtual_agent;
 						$agent_found = true;
-						
+
 						WP_MCP_AI_Logger::log_event(
 							'team_composition_virtual_agent',
 							sprintf( 'No role-specific assistant or profession found for "%s", creating virtual agent with role-appropriate expertise', $role ),
 							array(
-								'required_role'     => $role,
-								'virtual_agent_id'  => $virtual_agent['id'],
-								'expertise'         => $virtual_agent['expertise'],
+								'required_role'    => $role,
+								'virtual_agent_id' => $virtual_agent['id'],
+								'expertise'        => $virtual_agent['expertise'],
 							)
 						);
 					} else {
@@ -643,8 +643,8 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 						);
 
 						if ( $generic_query->have_posts() ) {
-							$agent_post = $generic_query->posts[0];
-							$agents[]   = array(
+							$agent_post  = $generic_query->posts[0];
+							$agents[]    = array(
 								'id'        => $agent_post->ID,
 								'title'     => $agent_post->post_title,
 								'name'      => $agent_post->post_title,
@@ -652,7 +652,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 								'expertise' => array(),
 							);
 							$agent_found = true;
-							
+
 							WP_MCP_AI_Logger::log_event(
 								'team_composition_fallback_generic',
 								sprintf( 'No suitable agents found for "%s", using random generic assistant as absolute last resort', $role ),
@@ -875,7 +875,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		if ( 'critical' === $system_metrics['health_status'] ) {
 			// Check if this is a critical priority request.
 			$is_critical = isset( $task_requirements['priority'] ) && 'critical' === $task_requirements['priority'];
-			
+
 			if ( ! $is_critical ) {
 				return new WP_Error(
 					'wp_mcp_ai_insufficient_capacity',
@@ -898,9 +898,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			'capacity_check',
 			'Team composition capacity check',
 			array(
-				'task_type'           => isset( $task_requirements['task_type'] ) ? $task_requirements['task_type'] : 'unknown',
-				'health_status'       => $system_metrics['health_status'],
-				'available_capacity'  => $system_metrics['available_capacity'],
+				'task_type'          => isset( $task_requirements['task_type'] ) ? $task_requirements['task_type'] : 'unknown',
+				'health_status'      => $system_metrics['health_status'],
+				'available_capacity' => $system_metrics['available_capacity'],
 			)
 		);
 
@@ -942,7 +942,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		// Get first matching profession.
 		$query->the_post();
 		$post_id = get_the_ID();
-		
+
 		$profession_data = array(
 			'id'         => $post_id,
 			'role'       => $role,
@@ -954,7 +954,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		);
 
 		wp_reset_postdata();
-		
+
 		return $profession_data;
 	}
 
@@ -967,7 +967,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	protected function find_generic_agent_for_role( $role ) {
 		// Get generic agent by role.
 		$agent_role = wp_mcp_ai_get_agent_role( $role );
-		
+
 		if ( ! $agent_role ) {
 			return null;
 		}
@@ -1042,9 +1042,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		if ( $profession_query->have_posts() ) {
 			$profession_post = $profession_query->posts[0];
 			$expertise       = get_post_meta( $profession_post->ID, '_expertise', true );
-			
+
 			wp_reset_postdata();
-			
+
 			return array(
 				'id'        => $profession_post->ID,
 				'slug'      => $profession_slug,

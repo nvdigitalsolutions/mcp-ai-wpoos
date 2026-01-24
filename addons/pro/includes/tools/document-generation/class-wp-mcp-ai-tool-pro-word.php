@@ -59,84 +59,84 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'operation' => array(
-					'type' => 'string',
-					'enum' => array( 'generate', 'structure', 'format', 'template' ),
+			'type'                 => 'object',
+			'properties'           => array(
+				'operation'    => array(
+					'type'        => 'string',
+					'enum'        => array( 'generate', 'structure', 'format', 'template' ),
 					'description' => __( 'Operation to perform: "generate" (create document from description), "structure" (create structured document with sections), "format" (apply rich formatting), "template" (use predefined template).', 'mcp-ai-wpoos' ),
 				),
-				'description' => array(
-					'type' => 'string',
+				'description'  => array(
+					'type'        => 'string',
 					'description' => __( 'Natural language description of the Word document you want to create.', 'mcp-ai-wpoos' ),
 				),
-				'content' => array(
-					'type' => 'string',
+				'content'      => array(
+					'type'        => 'string',
 					'description' => __( 'Content to include in the Word document. Can be plain text or structured data.', 'mcp-ai-wpoos' ),
 				),
-				'title' => array(
-					'type' => 'string',
+				'title'        => array(
+					'type'        => 'string',
 					'description' => __( 'Document title (appears in document properties and optionally on first page).', 'mcp-ai-wpoos' ),
 				),
-				'author' => array(
-					'type' => 'string',
+				'author'       => array(
+					'type'        => 'string',
 					'description' => __( 'Document author (appears in document properties).', 'mcp-ai-wpoos' ),
 				),
-				'sections' => array(
-					'type' => 'array',
-					'items' => array(
-						'type' => 'object',
+				'sections'     => array(
+					'type'        => 'array',
+					'items'       => array(
+						'type'       => 'object',
 						'properties' => array(
 							'heading' => array( 'type' => 'string' ),
 							'content' => array( 'type' => 'string' ),
-							'level' => array( 'type' => 'number' ),
+							'level'   => array( 'type' => 'number' ),
 						),
 					),
 					'description' => __( 'Array of document sections with headings, content, and heading levels (for structure operation).', 'mcp-ai-wpoos' ),
 				),
-				'formatting' => array(
-					'type' => 'object',
-					'properties' => array(
-						'font_size' => array( 'type' => 'number' ),
+				'formatting'   => array(
+					'type'        => 'object',
+					'properties'  => array(
+						'font_size'   => array( 'type' => 'number' ),
 						'font_family' => array( 'type' => 'string' ),
-						'color' => array( 'type' => 'string' ),
-						'bold' => array( 'type' => 'boolean' ),
-						'italic' => array( 'type' => 'boolean' ),
+						'color'       => array( 'type' => 'string' ),
+						'bold'        => array( 'type' => 'boolean' ),
+						'italic'      => array( 'type' => 'boolean' ),
 					),
 					'description' => __( 'Formatting options for the document (font size, family, color, styles).', 'mcp-ai-wpoos' ),
 				),
-				'template' => array(
-					'type' => 'string',
-					'enum' => array( 'business_letter', 'report', 'resume', 'memo', 'proposal' ),
+				'template'     => array(
+					'type'        => 'string',
+					'enum'        => array( 'business_letter', 'report', 'resume', 'memo', 'proposal' ),
 					'description' => __( 'Predefined document template to use (for template operation).', 'mcp-ai-wpoos' ),
 				),
-				'orientation' => array(
-					'type' => 'string',
-					'enum' => array( 'portrait', 'landscape' ),
+				'orientation'  => array(
+					'type'        => 'string',
+					'enum'        => array( 'portrait', 'landscape' ),
 					'description' => __( 'Page orientation. Default: portrait.', 'mcp-ai-wpoos' ),
-					'default' => 'portrait',
+					'default'     => 'portrait',
 				),
 				'page_margins' => array(
-					'type' => 'object',
-					'properties' => array(
-						'top' => array( 'type' => 'number' ),
+					'type'        => 'object',
+					'properties'  => array(
+						'top'    => array( 'type' => 'number' ),
 						'bottom' => array( 'type' => 'number' ),
-						'left' => array( 'type' => 'number' ),
-						'right' => array( 'type' => 'number' ),
+						'left'   => array( 'type' => 'number' ),
+						'right'  => array( 'type' => 'number' ),
 					),
 					'description' => __( 'Page margins in inches. Default: 1 inch on all sides.', 'mcp-ai-wpoos' ),
 				),
-				'model' => array(
-					'type' => 'string',
+				'model'        => array(
+					'type'        => 'string',
 					'description' => __( 'AI model to use for content generation. If not specified, uses assistant default or global default.', 'mcp-ai-wpoos' ),
 				),
-				'upload' => array(
-					'type' => 'boolean',
+				'upload'       => array(
+					'type'        => 'boolean',
 					'description' => __( 'Whether to upload the generated document to WordPress media library. Default: true.', 'mcp-ai-wpoos' ),
-					'default' => true,
+					'default'     => true,
 				),
 			),
-			'required' => array( 'operation' ),
+			'required'             => array( 'operation' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -168,9 +168,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	public function get_definition() {
 		return array(
-			'name' => $this->get_name(),
-			'description' => $this->get_description(),
-			'parameters' => $this->get_parameters_schema(),
+			'name'                => $this->get_name(),
+			'description'         => $this->get_description(),
+			'parameters'          => $this->get_parameters_schema(),
 			'required_capability' => 'upload_files',
 		);
 	}
@@ -292,9 +292,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Generate Word document from AI content.
 		$docx_result = $this->generate_word_document(
 			array(
-				'content' => $ai_response['content'],
-				'title' => $title,
-				'author' => $author,
+				'content'     => $ai_response['content'],
+				'title'       => $title,
+				'author'      => $author,
 				'orientation' => $orientation,
 			),
 			$arguments,
@@ -306,17 +306,17 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		}
 
 		$result = array(
-			'operation' => 'generate',
-			'orientation' => $orientation,
-			'title' => $title,
-			'file_url' => $docx_result['url'],
-			'url' => $docx_result['url'],
-			'file_path' => $docx_result['file'],
-			'file_name' => basename( $docx_result['file'] ),
-			'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-			'bytes' => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
+			'operation'     => 'generate',
+			'orientation'   => $orientation,
+			'title'         => $title,
+			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
+			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
-			'text' => sprintf(
+			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated Word document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -367,9 +367,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Generate Word document with structured content.
 		$docx_result = $this->generate_word_document(
 			array(
-				'sections' => $sections,
-				'title' => $title,
-				'author' => $author,
+				'sections'    => $sections,
+				'title'       => $title,
+				'author'      => $author,
 				'orientation' => $orientation,
 			),
 			$arguments,
@@ -381,18 +381,18 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		}
 
 		$result = array(
-			'operation' => 'structure',
-			'orientation' => $orientation,
-			'title' => $title,
+			'operation'     => 'structure',
+			'orientation'   => $orientation,
+			'title'         => $title,
 			'section_count' => count( $sections ),
-			'file_url' => $docx_result['url'],
-			'url' => $docx_result['url'],
-			'file_path' => $docx_result['file'],
-			'file_name' => basename( $docx_result['file'] ),
-			'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-			'bytes' => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
+			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
+			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
-			'text' => sprintf(
+			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated structured Word document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -443,10 +443,10 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Generate Word document with formatting.
 		$docx_result = $this->generate_word_document(
 			array(
-				'content' => $content,
-				'title' => $title,
-				'author' => $author,
-				'formatting' => $formatting,
+				'content'     => $content,
+				'title'       => $title,
+				'author'      => $author,
+				'formatting'  => $formatting,
 				'orientation' => $orientation,
 			),
 			$arguments,
@@ -458,17 +458,17 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		}
 
 		$result = array(
-			'operation' => 'format',
-			'orientation' => $orientation,
-			'title' => $title,
-			'file_url' => $docx_result['url'],
-			'url' => $docx_result['url'],
-			'file_path' => $docx_result['file'],
-			'file_name' => basename( $docx_result['file'] ),
-			'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-			'bytes' => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
+			'operation'     => 'format',
+			'orientation'   => $orientation,
+			'title'         => $title,
+			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
+			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
-			'text' => sprintf(
+			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated formatted Word document: %s', 'mcp-ai-wpoos' ),
 				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
@@ -520,10 +520,10 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		// Generate Word document with template.
 		$docx_result = $this->generate_word_document(
 			array(
-				'content' => $ai_response['content'],
-				'title' => $title,
-				'author' => $author,
-				'template' => $template,
+				'content'     => $ai_response['content'],
+				'title'       => $title,
+				'author'      => $author,
+				'template'    => $template,
 				'orientation' => $orientation,
 			),
 			$arguments,
@@ -535,18 +535,18 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 		}
 
 		$result = array(
-			'operation' => 'template',
-			'template' => $template,
-			'orientation' => $orientation,
-			'title' => $title,
-			'file_url' => $docx_result['url'],
-			'url' => $docx_result['url'],
-			'file_path' => $docx_result['file'],
-			'file_name' => basename( $docx_result['file'] ),
-			'mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-			'bytes' => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
+			'operation'     => 'template',
+			'template'      => $template,
+			'orientation'   => $orientation,
+			'title'         => $title,
+			'file_url'      => $docx_result['url'],
+			'url'           => $docx_result['url'],
+			'file_path'     => $docx_result['file'],
+			'file_name'     => basename( $docx_result['file'] ),
+			'mime_type'     => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'bytes'         => isset( $docx_result['bytes'] ) ? $docx_result['bytes'] : filesize( $docx_result['file'] ),
 			'attachment_id' => $docx_result['attachment_id'],
-			'text' => sprintf(
+			'text'          => sprintf(
 				/* translators: 1: template type, 2: document title */
 				__( 'Generated %1$s document: %2$s', 'mcp-ai-wpoos' ),
 				str_replace( '_', ' ', $template ),
@@ -663,9 +663,9 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			// Create attachment.
 			$attachment = array(
 				'post_mime_type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-				'post_title' => $title,
-				'post_content' => '',
-				'post_status' => 'inherit',
+				'post_title'     => $title,
+				'post_content'   => '',
+				'post_status'    => 'inherit',
 			);
 
 			$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -686,16 +686,16 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			wp_update_attachment_metadata( $attachment_id, $attachment_data );
 
 			return array(
-				'file' => $final_file,
-				'url' => wp_get_attachment_url( $attachment_id ),
+				'file'          => $final_file,
+				'url'           => wp_get_attachment_url( $attachment_id ),
 				'attachment_id' => $attachment_id,
 			);
 		}
 
 		// Return file path only (no upload).
 		return array(
-			'file' => $docx_file,
-			'url' => '',
+			'file'          => $docx_file,
+			'url'           => '',
 			'attachment_id' => 0,
 		);
 	}
@@ -936,10 +936,10 @@ JAVASCRIPT;
 	protected function build_template_system_prompt( $template ) {
 		$templates = array(
 			'business_letter' => 'Create a professional business letter with proper formatting, greeting, body paragraphs, and closing.',
-			'report' => 'Create a structured business report with executive summary, introduction, findings, and recommendations.',
-			'resume' => 'Create a professional resume with contact information, summary, experience, education, and skills sections.',
-			'memo' => 'Create a business memo with header (To, From, Date, Subject), body, and action items.',
-			'proposal' => 'Create a business proposal with problem statement, proposed solution, benefits, timeline, and costs.',
+			'report'          => 'Create a structured business report with executive summary, introduction, findings, and recommendations.',
+			'resume'          => 'Create a professional resume with contact information, summary, experience, education, and skills sections.',
+			'memo'            => 'Create a business memo with header (To, From, Date, Subject), body, and action items.',
+			'proposal'        => 'Create a business proposal with problem statement, proposed solution, benefits, timeline, and costs.',
 		);
 
 		$prompt  = "You are an expert in creating professional {$template} documents.\n\n";
@@ -982,11 +982,11 @@ JAVASCRIPT;
 		// Prepare messages for AI model.
 		$messages = array(
 			array(
-				'role' => 'system',
+				'role'    => 'system',
 				'content' => $system_prompt,
 			),
 			array(
-				'role' => 'user',
+				'role'    => 'user',
 				'content' => $user_prompt,
 			),
 		);

@@ -100,11 +100,11 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 					<?php
 					$jetengine_active = class_exists( 'Jet_Engine' );
 					$cct_enabled      = false;
-					
+
 					// Check if JetEngine is active and CCT module is enabled.
 					if ( $jetengine_active ) {
 						$engine = jet_engine();
-						
+
 						// Verify engine instance is valid and check if CCT module is active.
 						if ( $engine && isset( $engine->modules ) && method_exists( $engine->modules, 'is_module_active' ) ) {
 							$cct_enabled = $engine->modules->is_module_active( 'custom-content-types' );
@@ -348,21 +348,21 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 			'list_projects'                    => __( 'List Projects', 'mcp-ai-wpoos-pro' ),
 			'get_project'                      => __( 'Get Project Details', 'mcp-ai-wpoos-pro' ),
 			'delete_project'                   => __( 'Delete Project', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Task Tools.
 			'create_task'                      => __( 'Create Task', 'mcp-ai-wpoos-pro' ),
 			'update_task'                      => __( 'Update Task', 'mcp-ai-wpoos-pro' ),
 			'list_tasks'                       => __( 'List Tasks', 'mcp-ai-wpoos-pro' ),
 			'get_task'                         => __( 'Get Task Details', 'mcp-ai-wpoos-pro' ),
 			'delete_task'                      => __( 'Delete Task', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Event Tools.
 			'create_event'                     => __( 'Create Event', 'mcp-ai-wpoos-pro' ),
 			'update_event'                     => __( 'Update Event', 'mcp-ai-wpoos-pro' ),
 			'list_events'                      => __( 'List Events', 'mcp-ai-wpoos-pro' ),
 			'get_event'                        => __( 'Get Event Details', 'mcp-ai-wpoos-pro' ),
 			'delete_event'                     => __( 'Delete Event', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Ralph Loop Orchestration Tools.
 			'create_task_plan'                 => __( 'Create Task Plan', 'mcp-ai-wpoos-pro' ),
 			'update_task_plan'                 => __( 'Update Task Plan', 'mcp-ai-wpoos-pro' ),
@@ -374,13 +374,13 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 			'analyze_loop_health'              => __( 'Analyze Loop Health', 'mcp-ai-wpoos-pro' ),
 			'get_session_status'               => __( 'Get Session Status', 'mcp-ai-wpoos-pro' ),
 			'calculate_orchestration_capacity' => __( 'Calculate Orchestration Capacity', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Task Template Tools.
 			'create_template'                  => __( 'Create Task Template', 'mcp-ai-wpoos-pro' ),
 			'list_templates'                   => __( 'List Task Templates', 'mcp-ai-wpoos-pro' ),
 			'instantiate_template'             => __( 'Instantiate Template', 'mcp-ai-wpoos-pro' ),
 			'seed_template_library'            => __( 'Seed Template Library', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Calendar & View Tools.
 			'get_calendar_view'                => __( 'Get Calendar View', 'mcp-ai-wpoos-pro' ),
 		);
@@ -409,12 +409,12 @@ class WP_MCP_AI_Project_Management_Toolkit_Settings_Page extends WP_MCP_AI_Toolk
 		}
 
 		// Sanitize checkboxes.
-		$sanitized['enable_budget_tracking']     = ! empty( $input['enable_budget_tracking'] );
-		$sanitized['enable_time_tracking']       = ! empty( $input['enable_time_tracking'] );
-		$sanitized['enable_gantt_charts']        = ! empty( $input['enable_gantt_charts'] );
-		$sanitized['auto_generate_task_plans']   = ! empty( $input['auto_generate_task_plans'] );
-		$sanitized['enable_research']            = ! empty( $input['enable_research'] );
-		
+		$sanitized['enable_budget_tracking']   = ! empty( $input['enable_budget_tracking'] );
+		$sanitized['enable_time_tracking']     = ! empty( $input['enable_time_tracking'] );
+		$sanitized['enable_gantt_charts']      = ! empty( $input['enable_gantt_charts'] );
+		$sanitized['auto_generate_task_plans'] = ! empty( $input['auto_generate_task_plans'] );
+		$sanitized['enable_research']          = ! empty( $input['enable_research'] );
+
 		if ( isset( $input['research_assistant_id'] ) ) {
 			$sanitized['research_assistant_id'] = absint( $input['research_assistant_id'] );
 		}

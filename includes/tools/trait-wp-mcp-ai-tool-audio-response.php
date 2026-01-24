@@ -53,10 +53,10 @@ trait WP_MCP_AI_Tool_Audio_Response {
 	protected function add_audio_html_to_response( array $result ) {
 		// Check if we have either attachment_id or direct URL.
 		$audio_url = '';
-		
+
 		if ( ! empty( $result['attachment_id'] ) ) {
 			$attachment_id = absint( $result['attachment_id'] );
-			
+
 			// Verify attachment exists and is audio.
 			if ( wp_attachment_is( 'audio', $attachment_id ) ) {
 				$audio_url = wp_get_attachment_url( $attachment_id );
@@ -112,49 +112,49 @@ trait WP_MCP_AI_Tool_Audio_Response {
 
 		// Build audio tag.
 		$html = '<audio';
-		
+
 		// Add controls for playback.
 		$html .= ' controls';
-		
+
 		// Add preload metadata for faster initial display.
 		$html .= ' preload="metadata"';
-		
+
 		// Add CSS class for styling.
 		$html .= ' class="wp-mcp-ai-generated-audio"';
-		
+
 		// Add title for accessibility and display.
 		if ( ! empty( $title ) ) {
 			$truncated_title = strlen( $title ) > 100 ? substr( $title, 0, 97 ) . '...' : $title;
-			$html .= ' title="' . esc_attr( $truncated_title ) . '"';
+			$html           .= ' title="' . esc_attr( $truncated_title ) . '"';
 		}
-		
+
 		$html .= '>';
-		
+
 		// Add source element with proper MIME type.
 		$mime_type = isset( $result['mime_type'] ) ? $result['mime_type'] : 'audio/mpeg';
-		$html .= '<source src="' . esc_url( $audio_url ) . '" type="' . esc_attr( $mime_type ) . '">';
-		
+		$html     .= '<source src="' . esc_url( $audio_url ) . '" type="' . esc_attr( $mime_type ) . '">';
+
 		// Fallback content for browsers that don't support audio tag.
 		$html .= '<p>' . __( 'Your browser does not support the audio tag.', 'mcp-ai-wpoos' ) . ' ';
 		$html .= '<a href="' . esc_url( $audio_url ) . '">' . __( 'Download audio', 'mcp-ai-wpoos' ) . '</a></p>';
-		
+
 		$html .= '</audio>';
 
 		// Add optional metadata display (voice, model, format).
 		$metadata_parts = array();
-		
+
 		if ( ! empty( $result['voice'] ) ) {
 			$metadata_parts[] = sprintf( __( 'Voice: %s', 'mcp-ai-wpoos' ), esc_html( $result['voice'] ) );
 		}
-		
+
 		if ( ! empty( $result['model'] ) ) {
 			$metadata_parts[] = sprintf( __( 'Model: %s', 'mcp-ai-wpoos' ), esc_html( $result['model'] ) );
 		}
-		
+
 		if ( ! empty( $result['format'] ) ) {
 			$metadata_parts[] = sprintf( __( 'Format: %s', 'mcp-ai-wpoos' ), strtoupper( esc_html( $result['format'] ) ) );
 		}
-		
+
 		if ( ! empty( $metadata_parts ) ) {
 			$html .= '<p class="wp-mcp-ai-audio-metadata" style="font-size: 0.9em; color: #666; margin-top: 0.5em;">';
 			$html .= implode( ' | ', $metadata_parts );

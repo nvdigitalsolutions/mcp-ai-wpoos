@@ -39,14 +39,14 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected $platform_specs = array(
 		'facebook'  => array(
-			'feed'   => array(
+			'feed'  => array(
 				'width'      => 1280,
 				'height'     => 720,
 				'max_size'   => 4294967296, // 4GB.
 				'max_length' => 240,
 				'formats'    => array( 'mp4', 'mov' ),
 			),
-			'story'  => array(
+			'story' => array(
 				'width'      => 1080,
 				'height'     => 1920,
 				'max_size'   => 4294967296,
@@ -55,21 +55,21 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 			),
 		),
 		'instagram' => array(
-			'feed'   => array(
+			'feed'  => array(
 				'width'      => 1080,
 				'height'     => 1080,
 				'max_size'   => 4294967296,
 				'max_length' => 60,
 				'formats'    => array( 'mp4', 'mov' ),
 			),
-			'story'  => array(
+			'story' => array(
 				'width'      => 1080,
 				'height'     => 1920,
 				'max_size'   => 4294967296,
 				'max_length' => 15,
 				'formats'    => array( 'mp4', 'mov' ),
 			),
-			'reels'  => array(
+			'reels' => array(
 				'width'      => 1080,
 				'height'     => 1920,
 				'max_size'   => 4294967296,
@@ -78,7 +78,7 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 			),
 		),
 		'twitter'   => array(
-			'feed'   => array(
+			'feed' => array(
 				'width'      => 1280,
 				'height'     => 720,
 				'max_size'   => 536870912, // 512MB.
@@ -87,7 +87,7 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 			),
 		),
 		'linkedin'  => array(
-			'feed'   => array(
+			'feed' => array(
 				'width'      => 1920,
 				'height'     => 1080,
 				'max_size'   => 5368709120, // 5GB.
@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 			),
 		),
 		'tiktok'    => array(
-			'video'  => array(
+			'video' => array(
 				'width'      => 1080,
 				'height'     => 1920,
 				'max_size'   => 287762841, // 274MB.
@@ -105,7 +105,7 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 			),
 		),
 		'pinterest' => array(
-			'pin'    => array(
+			'pin' => array(
 				'width'      => 1000,
 				'height'     => 1500,
 				'max_size'   => 2147483648, // 2GB.
@@ -505,14 +505,14 @@ class WP_MCP_AI_Tool_Create_Social_Video implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$response = array(
-			'platform'   => $platform,
-			'type'       => $video_type,
-			'width'      => $specs['width'],
-			'height'     => $specs['height'],
-			'format'     => $output_format,
-			'codec'      => $codec,
-			'path'       => $output_path,
-			'url'        => $this->get_video_url( $output_path ),
+			'platform' => $platform,
+			'type'     => $video_type,
+			'width'    => $specs['width'],
+			'height'   => $specs['height'],
+			'format'   => $output_format,
+			'codec'    => $codec,
+			'path'     => $output_path,
+			'url'      => $this->get_video_url( $output_path ),
 		);
 
 		// Generate thumbnail if requested.

@@ -52,13 +52,13 @@ class WP_MCP_AI_Tool_Colorize_Image extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'color_mode'   => array(
+					'color_mode' => array(
 						'type'        => 'string',
 						'description' => __( 'Colorization mode: "auto" (AI decides), "vibrant" (bold colors), "subtle" (muted tones).', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'auto', 'vibrant', 'subtle' ),
 						'default'     => 'auto',
 					),
-					'use_remote'   => array(
+					'use_remote' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Use remote GPU processing for faster colorization.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,

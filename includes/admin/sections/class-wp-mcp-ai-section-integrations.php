@@ -1564,12 +1564,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		 * Render Cloudflare footer content.
 		 */
 		private function render_cloudflare_footer() {
-			$settings              = WP_MCP_AI_Admin_Settings::get_settings();
-			$has_api_token         = ! empty( $settings['cloudflare_api_token'] );
-			$has_zone_id           = ! empty( $settings['cloudflare_zone_id'] );
-			$cloudflare_connected  = ! empty( $settings['cloudflare_connected'] );
-			$pro_toolkit_enabled   = ! empty( $settings['enable_cloudflare_pro_toolkit'] );
-			$is_pro_active         = defined( 'WP_MCP_AI_PRO_VERSION' );
+			$settings             = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_api_token        = ! empty( $settings['cloudflare_api_token'] );
+			$has_zone_id          = ! empty( $settings['cloudflare_zone_id'] );
+			$cloudflare_connected = ! empty( $settings['cloudflare_connected'] );
+			$pro_toolkit_enabled  = ! empty( $settings['enable_cloudflare_pro_toolkit'] );
+			$is_pro_active        = defined( 'WP_MCP_AI_PRO_VERSION' );
 			?>
 			<tr>
 				<th scope="row"><?php esc_html_e( 'Cloudflare Connection', 'mcp-ai-wpoos' ); ?></th>

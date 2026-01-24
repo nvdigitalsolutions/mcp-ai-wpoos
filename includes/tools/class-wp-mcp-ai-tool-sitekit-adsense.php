@@ -239,8 +239,8 @@ class WP_MCP_AI_Tool_SiteKit_AdSense implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 			if ( isset( $totals['EARNINGS'] ) ) {
 				$formatted['data']['earnings'] = array(
-					'value'    => floatval( $totals['EARNINGS'] ),
-					'currency' => isset( $response['currency'] ) ? $response['currency'] : 'USD',
+					'value'     => floatval( $totals['EARNINGS'] ),
+					'currency'  => isset( $response['currency'] ) ? $response['currency'] : 'USD',
 					'formatted' => $this->format_currency( floatval( $totals['EARNINGS'] ), isset( $response['currency'] ) ? $response['currency'] : 'USD' ),
 				);
 			}

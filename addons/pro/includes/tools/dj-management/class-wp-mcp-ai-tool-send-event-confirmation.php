@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Send_Event_Confirmation implements WP_MCP_AI_Tool_Interface
 			$event_name
 		);
 
-/* translators: %s: Client name */
+		/* translators: %s: Client name */
 		$message = sprintf(
 			__( "Dear %s,\n\nThank you for booking our DJ services! We are excited to be part of your special event.\n\n", 'mcp-ai-wpoos-pro' ),
 			$client_name

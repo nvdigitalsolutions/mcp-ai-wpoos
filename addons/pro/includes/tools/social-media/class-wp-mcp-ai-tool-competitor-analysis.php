@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'competitors'           => array(
+				'competitors'              => array(
 					'type'        => 'array',
 					'description' => __( 'List of competitor account handles or IDs by platform', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -131,11 +131,11 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 					),
 					'minItems'    => 1,
 				),
-				'date_from'             => array(
+				'date_from'                => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for analysis (Y-m-d format, default: 30 days ago)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'               => array(
+				'date_to'                  => array(
 					'type'        => 'string',
 					'description' => __( 'End date for analysis (Y-m-d format, default: today)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -144,24 +144,24 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Include content type and topic analysis', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_growth_rate'   => array(
+				'include_growth_rate'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include follower growth rate tracking', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_best_posts'    => array(
+				'include_best_posts'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include competitor best performing posts', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'best_posts_count'      => array(
+				'best_posts_count'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of best posts to return per competitor', 'mcp-ai-wpoos-pro' ),
 					'default'     => 5,
 					'minimum'     => 1,
 					'maximum'     => 20,
 				),
-				'compare_with_own'      => array(
+				'compare_with_own'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include comparison with your own accounts', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -266,7 +266,7 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 
 		// Add comparison with own accounts if requested.
 		if ( isset( $arguments['compare_with_own'] ) && $arguments['compare_with_own'] ) {
-			$analysis['own_performance'] = $this->get_own_performance( $date_from, $date_to );
+			$analysis['own_performance']      = $this->get_own_performance( $date_from, $date_to );
 			$analysis['competitive_position'] = $this->calculate_competitive_position( $analysis );
 		}
 
@@ -367,15 +367,15 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_competitor_profile( $platform, $handle ) {
 		// Mock data - in production, call platform-specific APIs.
 		return array(
-			'username'       => $handle,
-			'display_name'   => $handle,
-			'followers'      => 0,
-			'following'      => 0,
-			'total_posts'    => 0,
-			'verified'       => false,
-			'profile_url'    => '',
-			'avatar_url'     => '',
-			'bio'            => '',
+			'username'     => $handle,
+			'display_name' => $handle,
+			'followers'    => 0,
+			'following'    => 0,
+			'total_posts'  => 0,
+			'verified'     => false,
+			'profile_url'  => '',
+			'avatar_url'   => '',
+			'bio'          => '',
 		);
 	}
 
@@ -393,14 +393,14 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_competitor_metrics( $platform, $handle, $date_from, $date_to ) {
 		// Mock data - in production, call platform-specific APIs.
 		return array(
-			'total_engagement'  => 0,
+			'total_engagement'   => 0,
 			'average_engagement' => 0,
-			'engagement_rate'   => 0,
-			'total_reach'       => 0,
-			'total_impressions' => 0,
-			'total_likes'       => 0,
-			'total_comments'    => 0,
-			'total_shares'      => 0,
+			'engagement_rate'    => 0,
+			'total_reach'        => 0,
+			'total_impressions'  => 0,
+			'total_likes'        => 0,
+			'total_comments'     => 0,
+			'total_shares'       => 0,
 		);
 	}
 
@@ -418,11 +418,11 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	protected function get_posting_stats( $platform, $handle, $date_from, $date_to ) {
 		// Mock data - in production, call platform-specific APIs.
 		return array(
-			'total_posts'      => 0,
-			'posts_per_day'    => 0,
-			'posts_per_week'   => 0,
-			'most_active_day'  => '',
-			'most_active_hour' => '',
+			'total_posts'       => 0,
+			'posts_per_day'     => 0,
+			'posts_per_week'    => 0,
+			'most_active_day'   => '',
+			'most_active_hour'  => '',
 			'consistency_score' => 0,
 		);
 	}
@@ -441,15 +441,15 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	protected function analyze_content_types( $platform, $handle, $date_from, $date_to ) {
 		// Mock data - in production, analyze post types and topics.
 		return array(
-			'by_type'     => array(
+			'by_type'      => array(
 				'text'  => 0,
 				'image' => 0,
 				'video' => 0,
 				'link'  => 0,
 			),
-			'top_topics'  => array(),
+			'top_topics'   => array(),
 			'top_hashtags' => array(),
-			'media_ratio' => 0,
+			'media_ratio'  => 0,
 		);
 	}
 
@@ -467,12 +467,12 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	protected function calculate_growth_rate( $platform, $handle, $date_from, $date_to ) {
 		// Mock data - in production, track historical follower counts.
 		return array(
-			'followers_start'   => 0,
-			'followers_end'     => 0,
-			'net_growth'        => 0,
-			'growth_rate'       => 0,
-			'daily_growth'      => 0,
-			'trend'             => 'stable',
+			'followers_start' => 0,
+			'followers_end'   => 0,
+			'net_growth'      => 0,
+			'growth_rate'     => 0,
+			'daily_growth'    => 0,
+			'trend'           => 'stable',
 		);
 	}
 
@@ -507,20 +507,20 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$comparison = array(
-			'by_followers'       => array(),
-			'by_engagement_rate' => array(),
+			'by_followers'         => array(),
+			'by_engagement_rate'   => array(),
 			'by_posting_frequency' => array(),
-			'by_growth_rate'     => array(),
+			'by_growth_rate'       => array(),
 		);
 
 		// Sort competitors by various metrics.
 		foreach ( $competitors as $competitor ) {
 			$name = $competitor['competitor']['name'];
-			
-			$comparison['by_followers'][ $name ]       = $competitor['profile']['followers'];
-			$comparison['by_engagement_rate'][ $name ] = $competitor['metrics']['engagement_rate'];
+
+			$comparison['by_followers'][ $name ]         = $competitor['profile']['followers'];
+			$comparison['by_engagement_rate'][ $name ]   = $competitor['metrics']['engagement_rate'];
 			$comparison['by_posting_frequency'][ $name ] = $competitor['posting_stats']['posts_per_week'];
-			
+
 			if ( isset( $competitor['growth_rate'] ) ) {
 				$comparison['by_growth_rate'][ $name ] = $competitor['growth_rate']['growth_rate'];
 			}
@@ -546,11 +546,11 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function generate_insights( $competitors, $options ) {
 		return array(
-			'top_performer'        => $this->identify_top_performer( $competitors ),
-			'content_strategies'   => $this->identify_content_strategies( $competitors ),
-			'posting_patterns'     => $this->identify_posting_patterns( $competitors ),
-			'engagement_tactics'   => $this->identify_engagement_tactics( $competitors ),
-			'recommendations'      => $this->generate_recommendations( $competitors ),
+			'top_performer'      => $this->identify_top_performer( $competitors ),
+			'content_strategies' => $this->identify_content_strategies( $competitors ),
+			'posting_patterns'   => $this->identify_posting_patterns( $competitors ),
+			'engagement_tactics' => $this->identify_engagement_tactics( $competitors ),
+			'recommendations'    => $this->generate_recommendations( $competitors ),
 		);
 	}
 
@@ -570,7 +570,7 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 		// Find competitor with highest engagement rate.
 		usort(
 			$competitors,
-			function( $a, $b ) {
+			function ( $a, $b ) {
 				return ( $b['metrics']['engagement_rate'] ?? 0 ) <=> ( $a['metrics']['engagement_rate'] ?? 0 );
 			}
 		);
@@ -620,7 +620,7 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function identify_engagement_tactics( $competitors ) {
 		return array(
-			'common_hashtags'     => array(),
+			'common_hashtags'      => array(),
 			'call_to_action_usage' => array(),
 			'interaction_patterns' => array(),
 		);
@@ -636,9 +636,9 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function generate_recommendations( $competitors ) {
 		return array(
-			'posting_frequency' => '',
-			'content_mix'       => array(),
-			'engagement_tips'   => array(),
+			'posting_frequency'    => '',
+			'content_mix'          => array(),
+			'engagement_tips'      => array(),
 			'growth_opportunities' => array(),
 		);
 	}
@@ -667,12 +667,12 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function calculate_competitive_position( $analysis ) {
 		return array(
-			'rank_by_followers'   => 0,
-			'rank_by_engagement'  => 0,
-			'rank_by_growth'      => 0,
-			'overall_position'    => '',
-			'strengths'           => array(),
-			'weaknesses'          => array(),
+			'rank_by_followers'  => 0,
+			'rank_by_engagement' => 0,
+			'rank_by_growth'     => 0,
+			'overall_position'   => '',
+			'strengths'          => array(),
+			'weaknesses'         => array(),
 		);
 	}
 
@@ -686,22 +686,22 @@ class WP_MCP_AI_Tool_Competitor_Analysis implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function prepare_chart_data( $analysis ) {
 		return array(
-			'followers_chart'    => array(
+			'followers_chart'  => array(
 				'type'     => 'bar',
 				'labels'   => array(),
 				'datasets' => array(),
 			),
-			'engagement_chart'   => array(
+			'engagement_chart' => array(
 				'type'     => 'radar',
 				'labels'   => array(),
 				'datasets' => array(),
 			),
-			'growth_chart'       => array(
+			'growth_chart'     => array(
 				'type'     => 'line',
 				'labels'   => array(),
 				'datasets' => array(),
 			),
-			'posting_chart'      => array(
+			'posting_chart'    => array(
 				'type'     => 'bar',
 				'labels'   => array(),
 				'datasets' => array(),

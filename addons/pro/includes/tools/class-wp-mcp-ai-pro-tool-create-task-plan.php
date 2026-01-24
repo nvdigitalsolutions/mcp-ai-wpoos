@@ -33,27 +33,27 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'create_task_plan',
-			'description' => 'Create a markdown-based task plan with checkboxes for autonomous orchestration. Use this to break down complex projects into manageable tasks with progress tracking.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'create_task_plan',
+			'description'         => 'Create a markdown-based task plan with checkboxes for autonomous orchestration. Use this to break down complex projects into manageable tasks with progress tracking.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'plan_name' => array(
+					'plan_name'   => array(
 						'type'        => 'string',
 						'description' => 'Name of the task plan (e.g., "Market Research Q1 2026")',
 					),
-					'goal' => array(
+					'goal'        => array(
 						'type'        => 'string',
 						'description' => 'Overall objective of the task plan',
 					),
-					'tasks' => array(
+					'tasks'       => array(
 						'type'        => 'array',
 						'description' => 'List of tasks with priorities',
 						'items'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'text' => array(
+								'text'     => array(
 									'type'        => 'string',
 									'description' => 'Task description',
 								),
@@ -63,10 +63,10 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 									'description' => 'Task priority level',
 								),
 							),
-							'required' => array( 'text' ),
+							'required'   => array( 'text' ),
 						),
 					),
-					'project_id' => array(
+					'project_id'  => array(
 						'type'        => 'integer',
 						'description' => 'Optional project ID to link this task plan to',
 					),
@@ -75,7 +75,7 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 						'description' => 'Optional template ID if using a pre-built template',
 					),
 				),
-				'required' => array( 'plan_name', 'goal', 'tasks' ),
+				'required'   => array( 'plan_name', 'goal', 'tasks' ),
 			),
 			'required_capability' => 'edit_posts',
 		);
@@ -137,12 +137,12 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	 * @return string
 	 */
 	private function generate_markdown( $arguments ) {
-		$markdown = "# {$arguments['plan_name']}\n\n";
+		$markdown  = "# {$arguments['plan_name']}\n\n";
 		$markdown .= "## Goal\n{$arguments['goal']}\n\n";
 		$markdown .= "## Tasks\n";
 
 		foreach ( $arguments['tasks'] as $task ) {
-			$priority = ! empty( $task['priority'] ) ? ' (Priority: ' . ucfirst( $task['priority'] ) . ')' : '';
+			$priority  = ! empty( $task['priority'] ) ? ' (Priority: ' . ucfirst( $task['priority'] ) . ')' : '';
 			$markdown .= "- [ ] {$task['text']}{$priority}\n";
 		}
 

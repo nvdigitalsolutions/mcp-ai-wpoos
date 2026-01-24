@@ -308,12 +308,30 @@ class WP_MCP_AI_Tool_Schedule_Social_Post implements WP_MCP_AI_Tool_Interface, W
 		// Analyze historical engagement data per platform.
 		// This is a simplified implementation - real version would analyze actual engagement data.
 		$platform_best_times = array(
-			'facebook'  => array( 'day' => 'Wednesday', 'hour' => 13 ),
-			'instagram' => array( 'day' => 'Wednesday', 'hour' => 11 ),
-			'twitter'   => array( 'day' => 'Wednesday', 'hour' => 12 ),
-			'linkedin'  => array( 'day' => 'Tuesday', 'hour' => 10 ),
-			'tiktok'    => array( 'day' => 'Thursday', 'hour' => 19 ),
-			'pinterest' => array( 'day' => 'Saturday', 'hour' => 20 ),
+			'facebook'  => array(
+				'day'  => 'Wednesday',
+				'hour' => 13,
+			),
+			'instagram' => array(
+				'day'  => 'Wednesday',
+				'hour' => 11,
+			),
+			'twitter'   => array(
+				'day'  => 'Wednesday',
+				'hour' => 12,
+			),
+			'linkedin'  => array(
+				'day'  => 'Tuesday',
+				'hour' => 10,
+			),
+			'tiktok'    => array(
+				'day'  => 'Thursday',
+				'hour' => 19,
+			),
+			'pinterest' => array(
+				'day'  => 'Saturday',
+				'hour' => 20,
+			),
 		);
 
 		$suggestions = array();

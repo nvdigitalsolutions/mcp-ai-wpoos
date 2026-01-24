@@ -116,6 +116,22 @@ const builds = [
 		outfile: 'assets/js/tools-manager.min.js',
 		...commonOptions,
 	},
+	// WebLLM enhancement files (Phase 1)
+	{
+		entryPoints: ['assets/js/webllm-tool-adapter.js'],
+		outfile: 'assets/js/webllm-tool-adapter.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/webllm-function-calling-client.js'],
+		outfile: 'assets/js/webllm-function-calling-client.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/webllm-multimodal-client.js'],
+		outfile: 'assets/js/webllm-multimodal-client.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files

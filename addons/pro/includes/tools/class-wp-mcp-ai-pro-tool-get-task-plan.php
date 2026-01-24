@@ -33,13 +33,13 @@ class WP_MCP_AI_Pro_Tool_Get_Task_Plan {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'get_task_plan',
-			'description' => 'Retrieve a task plan with current completion status. Use this to check progress during autonomous workflows.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'get_task_plan',
+			'description'         => 'Retrieve a task plan with current completion status. Use this to check progress during autonomous workflows.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'plan_id' => array(
+					'plan_id'         => array(
 						'type'        => 'integer',
 						'description' => 'Task plan ID',
 					),
@@ -49,7 +49,7 @@ class WP_MCP_AI_Pro_Tool_Get_Task_Plan {
 						'default'     => false,
 					),
 				),
-				'required' => array( 'plan_id' ),
+				'required'   => array( 'plan_id' ),
 			),
 			'required_capability' => 'read',
 		);

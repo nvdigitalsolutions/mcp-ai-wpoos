@@ -38,27 +38,27 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'calculate_orchestration_capacity',
-			'description' => 'Calculate optimal capacity for autonomous orchestration using Little\'s Law (L = λ × W). Helps determine how many concurrent sessions can run without overload.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'calculate_orchestration_capacity',
+			'description'         => 'Calculate optimal capacity for autonomous orchestration using Little\'s Law (L = λ × W). Helps determine how many concurrent sessions can run without overload.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'mode' => array(
+					'mode'             => array(
 						'type'        => 'string',
 						'enum'        => array( 'calculate_capacity', 'predict_wait_time', 'analyze_current' ),
 						'description' => 'Calculation mode',
 						'default'     => 'analyze_current',
 					),
-					'arrival_rate' => array(
+					'arrival_rate'     => array(
 						'type'        => 'number',
 						'description' => 'Session arrival rate (sessions per hour) - λ',
 					),
-					'service_time' => array(
+					'service_time'     => array(
 						'type'        => 'number',
 						'description' => 'Average service time (hours per session) - W',
 					),
-					'max_concurrent' => array(
+					'max_concurrent'   => array(
 						'type'        => 'integer',
 						'description' => 'Maximum concurrent sessions limit',
 					),
@@ -132,25 +132,25 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		$utilization    = ( $l / $max_concurrent ) * 100;
 
 		// Calculate safety margins.
-		$safe_capacity  = floor( $max_concurrent * 0.8 ); // 80% rule.
+		$safe_capacity     = floor( $max_concurrent * 0.8 ); // 80% rule.
 		$recommended_limit = ceil( $l * 1.5 ); // 50% buffer.
 
 		return array(
-			'success'           => true,
-			'littles_law'       => array(
-				'L' => round( $l, 2 ),
-				'λ' => $lambda,
-				'W' => $w,
+			'success'         => true,
+			'littles_law'     => array(
+				'L'       => round( $l, 2 ),
+				'λ'       => $lambda,
+				'W'       => $w,
 				'formula' => 'L = λ × W',
 			),
-			'capacity'          => array(
+			'capacity'        => array(
 				'expected_queue_length' => round( $l, 2 ),
 				'current_limit'         => $max_concurrent,
 				'utilization_percent'   => round( $utilization, 1 ),
 				'safe_capacity'         => $safe_capacity,
 				'recommended_limit'     => $recommended_limit,
 			),
-			'recommendations'   => $this->get_capacity_recommendations( $l, $max_concurrent, $utilization ),
+			'recommendations' => $this->get_capacity_recommendations( $l, $max_concurrent, $utilization ),
 		);
 	}
 
@@ -167,11 +167,11 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 
 		if ( $current_sessions < $max_concurrent ) {
 			return array(
-				'success'          => true,
-				'wait_time_hours'  => 0,
+				'success'           => true,
+				'wait_time_hours'   => 0,
 				'wait_time_minutes' => 0,
-				'queue_position'   => 0,
-				'message'          => 'Capacity available - session can start immediately',
+				'queue_position'    => 0,
+				'message'           => 'Capacity available - session can start immediately',
 			);
 		}
 
@@ -220,16 +220,16 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		$predicted_l = $lambda * $w;
 
 		// Current vs predicted.
-		$max_concurrent = ! empty( $arguments['max_concurrent'] ) ? intval( $arguments['max_concurrent'] ) : 10;
-		$current_utilization  = ( $active_sessions / $max_concurrent ) * 100;
+		$max_concurrent        = ! empty( $arguments['max_concurrent'] ) ? intval( $arguments['max_concurrent'] ) : 10;
+		$current_utilization   = ( $active_sessions / $max_concurrent ) * 100;
 		$predicted_utilization = ( $predicted_l / $max_concurrent ) * 100;
 
 		return array(
-			'success'           => true,
-			'current_state'     => array(
-				'active_sessions'   => $active_sessions,
-				'max_concurrent'    => $max_concurrent,
-				'utilization'       => round( $current_utilization, 1 ),
+			'success'            => true,
+			'current_state'      => array(
+				'active_sessions' => $active_sessions,
+				'max_concurrent'  => $max_concurrent,
+				'utilization'     => round( $current_utilization, 1 ),
 			),
 			'historical_metrics' => array(
 				'arrival_rate'      => round( $lambda, 2 ),
@@ -237,17 +237,17 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 				'completed_today'   => $metrics['completed_today'],
 				'avg_duration_mins' => $metrics['avg_duration_mins'],
 			),
-			'littles_law'       => array(
+			'littles_law'        => array(
 				'predicted_queue_length' => round( $predicted_l, 2 ),
 				'predicted_utilization'  => round( $predicted_utilization, 1 ),
 				'formula'                => sprintf( 'L = %.2f × %.2f = %.2f', $lambda, $w, $predicted_l ),
 			),
-			'capacity_analysis' => array(
+			'capacity_analysis'  => array(
 				'status'            => $this->get_load_status( $current_utilization ),
 				'headroom_sessions' => max( 0, $max_concurrent - $active_sessions ),
 				'headroom_percent'  => round( ( ( $max_concurrent - $active_sessions ) / $max_concurrent ) * 100, 1 ),
 			),
-			'recommendations'   => $this->get_load_recommendations( $current_utilization, $predicted_utilization, $active_sessions, $max_concurrent ),
+			'recommendations'    => $this->get_load_recommendations( $current_utilization, $predicted_utilization, $active_sessions, $max_concurrent ),
 		);
 	}
 
@@ -260,7 +260,7 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 		global $wpdb;
 
 		// Count transients with session prefix and active status.
-		$count = 0;
+		$count      = 0;
 		$transients = $wpdb->get_col(
 			"SELECT option_name FROM {$wpdb->options} 
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
@@ -268,10 +268,10 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 
 		foreach ( $transients as $transient ) {
 			$session_key = str_replace( '_transient_', '', $transient );
-			$session = get_transient( str_replace( '_transient_mcp_ai_session_', '', $transient ) );
+			$session     = get_transient( str_replace( '_transient_mcp_ai_session_', '', $transient ) );
 
 			if ( $session && isset( $session['status'] ) && 'active' === $session['status'] ) {
-				$count++;
+				++$count;
 			}
 		}
 
@@ -292,21 +292,21 @@ class WP_MCP_AI_Tool_Calculate_Orchestration_Capacity {
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
 		);
 
-		$sessions = array();
+		$sessions        = array();
 		$completed_count = 0;
-		$total_duration = 0;
+		$total_duration  = 0;
 
 		foreach ( $transients as $transient ) {
 			$session_key = str_replace( '_transient_mcp_ai_session_', '', str_replace( '_transient_', '', $transient ) );
-			$session = get_transient( $session_key );
+			$session     = get_transient( $session_key );
 
 			if ( $session ) {
 				$sessions[] = $session;
 
 				if ( 'completed' === $session['status'] && ! empty( $session['completed_at'] ) ) {
-					$completed_count++;
-					$start = strtotime( $session['started_at'] );
-					$end   = strtotime( $session['completed_at'] );
+					++$completed_count;
+					$start           = strtotime( $session['started_at'] );
+					$end             = strtotime( $session['completed_at'] );
 					$total_duration += ( $end - $start );
 				}
 			}

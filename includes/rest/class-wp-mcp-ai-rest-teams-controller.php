@@ -222,9 +222,9 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 		}
 
 		// Get team orchestration settings for multi-agent coordination.
-		$orchestration_mode         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
-		$result_aggregation         = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
-		$enable_multi_agent_teams   = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
+		$orchestration_mode       = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_ORCHESTRATION_MODE, true );
+		$result_aggregation       = get_post_meta( $team_id, WP_MCP_AI_Team_CPT::META_RESULT_AGGREGATION_STRATEGY, true );
+		$enable_multi_agent_teams = WP_MCP_AI_Settings_Registry::get_setting( 'enable_multi_agent_teams', true );
 
 		// Build member data.
 		$members = array();
@@ -288,16 +288,16 @@ class WP_MCP_AI_REST_Teams_Controller extends WP_REST_Controller {
 
 		return new WP_REST_Response(
 			array(
-				'team_id'                  => $team_id,
-				'team_title'               => $team_post ? $team_post->post_title : '',
-				'driver_assistant_id'      => $driver_assistant_id ? absint( $driver_assistant_id ) : 0,
-				'has_driver_assistant'     => (bool) $driver_assistant_id,
-				'members'                  => $members,
-				'count'                    => count( $members ),
-				'orchestration_mode'       => $orchestration_mode ? $orchestration_mode : 'sequential',
-				'result_aggregation'       => $result_aggregation ? $result_aggregation : 'consensus',
-				'multi_agent_enabled'      => $enable_multi_agent_teams,
-				'supports_unified_mode'    => $enable_multi_agent_teams && count( $members ) > 1,
+				'team_id'               => $team_id,
+				'team_title'            => $team_post ? $team_post->post_title : '',
+				'driver_assistant_id'   => $driver_assistant_id ? absint( $driver_assistant_id ) : 0,
+				'has_driver_assistant'  => (bool) $driver_assistant_id,
+				'members'               => $members,
+				'count'                 => count( $members ),
+				'orchestration_mode'    => $orchestration_mode ? $orchestration_mode : 'sequential',
+				'result_aggregation'    => $result_aggregation ? $result_aggregation : 'consensus',
+				'multi_agent_enabled'   => $enable_multi_agent_teams,
+				'supports_unified_mode' => $enable_multi_agent_teams && count( $members ) > 1,
 			),
 			200
 		);

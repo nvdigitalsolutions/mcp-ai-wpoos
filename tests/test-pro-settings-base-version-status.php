@@ -55,8 +55,8 @@ class WP_MCP_AI_Pro_Settings_Base_Version_Status_Test extends WP_UnitTestCase {
 		$status = WP_MCP_AI_Pro_Settings::get_pro_toolkit_status();
 
 		// The status should match Pro plugin activation state.
-		$pro_loaded     = defined( 'WP_MCP_AI_PRO_VERSION' );
-		$is_base_mode   = ! $pro_loaded;
+		$pro_loaded   = defined( 'WP_MCP_AI_PRO_VERSION' );
+		$is_base_mode = ! $pro_loaded;
 
 		$this->assertEquals(
 			$is_base_mode,

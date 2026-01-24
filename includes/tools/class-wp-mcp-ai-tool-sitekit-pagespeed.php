@@ -178,9 +178,9 @@ class WP_MCP_AI_Tool_SiteKit_PageSpeed implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Extract performance score.
 		if ( isset( $response['lighthouseResult']['categories']['performance']['score'] ) ) {
-			$score                      = $response['lighthouseResult']['categories']['performance']['score'];
-			$formatted['score']         = round( $score * 100 );
-			$formatted['score_rating']  = $this->get_score_rating( $formatted['score'] );
+			$score                     = $response['lighthouseResult']['categories']['performance']['score'];
+			$formatted['score']        = round( $score * 100 );
+			$formatted['score_rating'] = $this->get_score_rating( $formatted['score'] );
 		}
 
 		// Extract Core Web Vitals.
