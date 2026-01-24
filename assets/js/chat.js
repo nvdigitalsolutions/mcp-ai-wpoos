@@ -11415,6 +11415,177 @@
         sendChat(state, firstSubmission);
     }
 
+    /**
+     * Send chat using client-side embedded LLM (WebLLM)
+     * Runs entirely in the browser without server-side API requests
+     * 
+     * @param {Object} state Chat state
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     */
+    function sendChatEmbedded(state, messages, finalize, submissionContext) {
+        // Check if embedded LLM client is available
+        if (!window.WP_MCP_AI_EmbeddedLLM) {
+            handleError(state, {
+                message: getString('embeddedClientMissing', 'Embedded LLM client not loaded. Please refresh the page.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client not available'));
+        }
+
+        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+
+        // Get model from config
+        const modelId = state.config.model;
+        if (!modelId) {
+            handleError(state, {
+                message: getString('embeddedModelMissing', 'No embedded model configured for this assistant.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('No embedded model configured'));
+        }
+
+        // Check if model is loaded
+        if (!embeddedClient.isModelLoaded()) {
+            // Model not loaded yet - need to load it first
+            setStatus(state.container, {
+                message: getString('embeddedModelLoading', 'Loading AI model in your browser...'),
+                type: 'processing',
+                showTime: false
+            });
+
+            return embeddedClient.loadModel(modelId, function(progress) {
+                // Update status with progress
+                const progressPercent = Math.round(progress.progress * 100);
+                setStatus(state.container, {
+                    message: getString('embeddedModelLoading', 'Loading AI model...') + ' ' + progressPercent + '%',
+                    type: 'processing',
+                    showTime: false
+                });
+            })
+            .then(function() {
+                // Model loaded, now generate completion
+                return generateEmbeddedCompletion(state, embeddedClient, messages, finalize);
+            })
+            .catch(function(error) {
+                handleError(state, {
+                    message: getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message
+                });
+                restoreSubmissionState(state, submissionContext);
+                finalize();
+                throw error;
+            });
+        }
+
+        // Model already loaded, generate completion
+        return generateEmbeddedCompletion(state, embeddedClient, messages, finalize);
+    }
+
+    /**
+     * Generate completion using embedded LLM client
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} embeddedClient Embedded LLM client instance
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     */
+    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize) {
+        setStatus(state.container, {
+            message: getString('embeddedGenerating', 'Generating response...'),
+            type: 'processing',
+            showTime: true,
+            startTime: Date.now()
+        });
+
+        // Convert messages to format expected by embedded client
+        const formattedMessages = messages.map(function(msg) {
+            // Extract text content from content array if needed
+            let content = msg.content;
+            if (Array.isArray(content)) {
+                content = content
+                    .filter(function(item) { return item.type === 'text'; })
+                    .map(function(item) { return item.text; })
+                    .join('\n');
+            }
+            
+            return {
+                role: msg.role,
+                content: content
+            };
+        });
+
+        // Use streaming for better UX
+        const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        let fullContent = '';
+
+        // Add empty assistant message bubble that will be filled progressively
+        const assistantMessage = {
+            role: 'assistant',
+            content: [{
+                type: 'text',
+                text: ''
+            }],
+            id: assistantMessageId
+        };
+        state.conversation.push(assistantMessage);
+        renderMessage(state, assistantMessage);
+
+        return embeddedClient.generateStreamingCompletion(
+            formattedMessages,
+            {
+                temperature: state.config.temperature || 0.7,
+                max_tokens: 2048
+            },
+            function(chunk) {
+                // Update message with each chunk
+                if (chunk.done) {
+                    // Final chunk - update status
+                    setStatus(state.container, {
+                        message: getString('complete', 'Complete'),
+                        type: 'success',
+                        showTime: false
+                    });
+                } else {
+                    // Progressive update
+                    fullContent = chunk.fullContent;
+                    assistantMessage.content[0].text = fullContent;
+                    
+                    // Update the message bubble
+                    const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+                    if (bubble) {
+                        const textContainer = bubble.querySelector('.wp-mcp-ai-chat__message-text');
+                        if (textContainer && markdownService && markdownService.renderMarkdown) {
+                            textContainer.innerHTML = markdownService.renderMarkdown(fullContent);
+                        } else if (textContainer) {
+                            textContainer.textContent = fullContent;
+                        }
+                        scrollToBottom(state);
+                    }
+                }
+            }
+        )
+        .then(function(result) {
+            // Completion successful
+            assistantMessage.content[0].text = result.content;
+            
+            // Save to storage
+            saveConversationToStorage(state);
+            
+            finalize();
+            return result;
+        })
+        .catch(function(error) {
+            handleError(state, {
+                message: getString('embeddedGenerationError', 'Failed to generate response: ') + error.message
+            });
+            finalize();
+            throw error;
+        });
+    }
+
     function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
@@ -11481,6 +11652,13 @@
         function finalize() {
             state.busy = false;
             disableForm(state, false);
+        }
+
+        // Check if provider is embedded - run LLM client-side in browser
+        const isEmbeddedProvider = state.config.provider === 'embedded';
+        
+        if (isEmbeddedProvider) {
+            return sendChatEmbedded(state, cleanMessages, finalize, submissionContext);
         }
 
         // Check if streaming is enabled
