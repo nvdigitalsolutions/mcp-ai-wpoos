@@ -272,7 +272,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'google_analytics_property_id'      => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789). <strong>Note:</strong> For easier setup, consider using <a href="admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=plugins">Google Site Kit integration</a> instead (available in base plugin).', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder' => '123456789',
 					'disabled'    => ! $is_pro_active,
 				),
@@ -287,7 +287,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'google_analytics_credentials_json' => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Google Analytics 4 Credentials JSON', 'mcp-ai-wpoos' ),
-					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description' => __( 'Service account JSON credentials file for Google Analytics 4 API access. Download from Google Cloud Console → IAM & Admin → Service Accounts. The JSON must be valid and contain type, project_id, private_key, and client_email fields. <strong>Alternatively:</strong> Use <a href="admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=plugins">Google Site Kit integration</a> for easier OAuth-based setup.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder' => '{"type": "service_account", "project_id": "your-project", ...}',
 					'disabled'    => ! $is_pro_active,
 					'rows'        => 8,
