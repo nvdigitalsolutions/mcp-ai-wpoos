@@ -74,15 +74,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 		 * @return array
 		 */
 		public function get_fields() {
-			// Get available providers for dropdown.
-			$provider_options = array(
-				'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
-				'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
-				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
-				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
-				'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
-				'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
-			);
+			// Get available providers for dropdown using dynamic filtering.
+			// This ensures only enabled+configured providers appear in the dropdown.
+			$provider_options = WP_MCP_AI_Admin_Settings::get_available_providers();
+
+			// Fallback to static list if get_available_providers returns empty.
+			if ( empty( $provider_options ) ) {
+				$provider_options = array(
+					'openai'      => __( 'OpenAI', 'mcp-ai-wpoos' ),
+					'gemini'      => __( 'Google Gemini', 'mcp-ai-wpoos' ),
+					'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
+					'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
+					'huggingface' => __( 'Hugging Face', 'mcp-ai-wpoos' ),
+					'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
+					'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+				);
+			}
 
 			// Get available assistants for dropdown.
 			$assistant_options = $this->get_assistant_options();
