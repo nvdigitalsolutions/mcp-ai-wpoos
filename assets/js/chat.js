@@ -11645,6 +11645,18 @@
             // Completion successful
             assistantMessage.content[0].text = result.content;
             
+            // Update the final message bubble in the DOM with the complete content
+            // This ensures the message is visible even if the streaming updates missed the final chunk
+            const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+            if (bubble && result.content) {
+                if (markdownService && markdownService.renderMarkdown) {
+                    bubble.innerHTML = markdownService.renderMarkdown(result.content);
+                } else {
+                    bubble.textContent = result.content;
+                }
+                scrollToBottom(state);
+            }
+            
             // Save to storage
             saveConversationToStorage(state);
             
