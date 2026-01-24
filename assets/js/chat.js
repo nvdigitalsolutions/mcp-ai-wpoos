@@ -11456,8 +11456,9 @@
                 if (!suitability.suitable && suitability.warning) {
                     console.warn('Model Suitability Warning:', suitability);
                     
-                    // Show warning but allow user to proceed
-                    // In a future enhancement, this could show a confirmation dialog
+                    // Log warning for now. Future enhancement: show user confirmation dialog
+                    // with options to proceed with large model or switch to suggested model.
+                    // This would require UI changes and user preference storage.
                     if (suitability.suggestedModel) {
                         console.info('Suggested alternative model:', suitability.suggestedModel);
                     }

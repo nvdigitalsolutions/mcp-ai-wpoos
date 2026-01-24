@@ -365,6 +365,33 @@
 	}
 
 	/**
+	 * Device memory limits for model suitability checks.
+	 * 
+	 * These constants define safe memory usage thresholds to prevent out-of-memory errors.
+	 * Based on industry best practices for in-browser LLM execution.
+	 */
+	const DEVICE_MEMORY_DEFAULTS = {
+		// Conservative default for devices without memory detection API
+		// Most modern devices have at least 2GB RAM, but we default to 4GB
+		// to avoid unnecessary warnings on capable devices
+		DEFAULT_GB: 4,
+		
+		// Mobile devices need more memory headroom due to:
+		// - OS overhead and background apps
+		// - Less aggressive memory management
+		// - More frequent multitasking
+		// Recommends models up to 15% of device RAM
+		MOBILE_THRESHOLD: 0.15,
+		
+		// Desktop devices can handle larger models due to:
+		// - More RAM available
+		// - Better memory management
+		// - Less background pressure
+		// Recommends models up to 25% of device RAM
+		DESKTOP_THRESHOLD: 0.25
+	};
+
+	/**
 	 * Check device capabilities for model suitability
 	 * Helps prevent out-of-memory errors by warning users
 	 * 
@@ -391,12 +418,14 @@
 		}
 
 		// Check device memory if available (not supported in all browsers)
-		const deviceMemoryGB = navigator.deviceMemory || 4; // Default to 4GB if not available
+		const deviceMemoryGB = navigator.deviceMemory || DEVICE_MEMORY_DEFAULTS.DEFAULT_GB;
 		const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
-		// Rule of thumb: model should be < 25% of device RAM
-		// Mobile devices need more headroom
-		const maxRecommendedSizeMB = (deviceMemoryGB * 1024) * (isMobile ? 0.15 : 0.25);
+		// Use appropriate threshold based on device type
+		const threshold = isMobile ? 
+			DEVICE_MEMORY_DEFAULTS.MOBILE_THRESHOLD : 
+			DEVICE_MEMORY_DEFAULTS.DESKTOP_THRESHOLD;
+		const maxRecommendedSizeMB = (deviceMemoryGB * 1024) * threshold;
 
 		if (sizeInMB > maxRecommendedSizeMB) {
 			// Find a more suitable model
