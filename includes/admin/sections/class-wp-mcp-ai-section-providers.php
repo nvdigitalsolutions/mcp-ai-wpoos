@@ -131,20 +131,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
-			// Get downloaded embedded models.
-			$embedded_models = array();
-			if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-				$client = new WP_MCP_AI_Embedded_Client();
-				$downloaded_models = $client->get_downloaded_models();
-				foreach ( $downloaded_models as $slug => $model ) {
-					$embedded_models[ $slug ] = $model['name'];
-				}
-			}
-			
-			// Add placeholder if no models are downloaded.
-			if ( empty( $embedded_models ) ) {
-				$embedded_models[''] = __( '-- Download Model --', 'mcp-ai-wpoos' );
-			}
+			// Get available embedded models (WebLLM client-side models).
+			$embedded_models = array(
+				'Llama-3.2-1B-Instruct-q4f16_1-MLC'    => __( 'Llama 3.2 1B Instruct (~800MB) - Recommended', 'mcp-ai-wpoos' ),
+				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'    => __( 'Qwen2.5 0.5B Instruct (~400MB) - Ultra-fast', 'mcp-ai-wpoos' ),
+				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'    => __( 'Qwen2.5 1.5B Instruct (~1GB)', 'mcp-ai-wpoos' ),
+				'Llama-3.2-3B-Instruct-q4f16_1-MLC'    => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+				'Phi-3.5-mini-instruct-q4f16_1-MLC'    => __( 'Phi-3.5 Mini Instruct (~2.5GB)', 'mcp-ai-wpoos' ),
+			);
 
 			// Get provider list dynamically.
 			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
@@ -603,21 +597,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'enable_embedded'                    => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable on-device embedded language models', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Run language models directly in the browser using WebGPU/WebAssembly. No API keys required, fully private.', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable client-side embedded language models (Pro)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				) : null,
 				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'        => 'select',
 					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
-					'description' => __( 'Select a downloaded model to use for embedded inference. If no models are downloaded, please download one using the Model Management section below.', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select a model for client-side inference. Models are downloaded on-demand to the user\'s browser cache when first used. Smaller models load faster and use less memory. Recommended: Llama 3.2 1B or Qwen2.5 0.5B for best performance.', 'mcp-ai-wpoos' ),
 					'options'     => $embedded_models,
-					'default'     => '',
+					'default'     => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
 				) : null,
 				'embedded_model_management'          => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'        => 'custom',
-					'label'       => __( 'Model Management', 'mcp-ai-wpoos' ),
-					'description' => __( 'Manage embedded models available for client-side inference.', 'mcp-ai-wpoos' ),
+					'label'       => __( 'Available Models', 'mcp-ai-wpoos' ),
+					'description' => __( 'Models available for client-side inference. Models are automatically downloaded to the user\'s browser cache when first used. No server-side storage required.', 'mcp-ai-wpoos' ),
 					'callback'    => array( $this, 'render_embedded_model_management' ),
 				) : null,
 
@@ -1216,156 +1210,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @param array $field_data Field configuration data.
 		 * @return void
 		 */
-		public function render_embedded_model_management( $field_data ) {
-			// Create nonce for AJAX requests.
-			$nonce = wp_create_nonce( 'wp_mcp_ai_embedded_model_management' );
 
-			// Get available and downloaded models.
-			$available_models  = array();
-			$downloaded_models = array();
-
-			if ( class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
-				$client            = new WP_MCP_AI_Embedded_Client();
-				$available_models  = $client->get_available_models();
-				$downloaded_models = $client->get_downloaded_models();
-			}
-			?>
-			<div class="wp-mcp-ai-embedded-model-management" data-nonce="<?php echo esc_attr( $nonce ); ?>">
-				<div class="wp-mcp-ai-model-list">
-					<?php if ( empty( $available_models ) ) : ?>
-						<p class="description">
-							<?php esc_html_e( 'No embedded models are currently available.', 'mcp-ai-wpoos' ); ?>
-						</p>
-					<?php else : ?>
-						<table class="wp-list-table widefat fixed striped">
-							<thead>
-								<tr>
-									<th scope="col" style="width: 25%;"><?php esc_html_e( 'Model', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 25%;"><?php esc_html_e( 'Description', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Model Identifier', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Size', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 10%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
-									<th scope="col" style="width: 15%;"><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
-								</tr>
-							</thead>
-							<tbody>
-								<?php foreach ( $available_models as $slug => $model ) : ?>
-									<?php
-									$is_downloaded = isset( $downloaded_models[ $slug ] );
-									$status_class  = $is_downloaded ? 'downloaded' : 'not-downloaded';
-									?>
-									<tr class="wp-mcp-ai-model-row" data-model-slug="<?php echo esc_attr( $slug ); ?>" data-model-name="<?php echo esc_attr( $model['name'] ); ?>">
-										<td>
-											<strong><?php echo esc_html( $model['name'] ); ?></strong>
-											<br>
-											<small class="description">
-												<?php
-												/* translators: %s: license type */
-												printf( esc_html__( 'License: %s', 'mcp-ai-wpoos' ), esc_html( $model['license'] ) );
-												?>
-											</small>
-										</td>
-										<td>
-											<?php echo esc_html( $model['description'] ); ?>
-										</td>
-										<td>
-											<code style="background: #f0f0f1; padding: 2px 6px; font-size: 12px;"><?php echo esc_html( $slug ); ?></code>
-											<?php if ( $is_downloaded ) : ?>
-												<br>
-												<small class="description">
-													<?php esc_html_e( 'Use this in assistants', 'mcp-ai-wpoos' ); ?>
-												</small>
-											<?php endif; ?>
-										</td>
-										<td>
-											<span class="wp-mcp-ai-model-size">
-												<?php echo esc_html( size_format( (int) $model['size'], 2 ) ); ?>
-											</span>
-										</td>
-										<td>
-											<span class="wp-mcp-ai-model-status wp-mcp-ai-status-<?php echo esc_attr( $status_class ); ?>">
-												<?php
-												if ( $is_downloaded ) {
-													echo '<span class="dashicons dashicons-yes-alt"></span> ';
-													esc_html_e( 'Downloaded', 'mcp-ai-wpoos' );
-												} else {
-													echo '<span class="dashicons dashicons-download"></span> ';
-													esc_html_e( 'Not Downloaded', 'mcp-ai-wpoos' );
-												}
-												?>
-											</span>
-										</td>
-										<td>
-											<?php if ( $is_downloaded ) : ?>
-												<button type="button" class="button wp-mcp-ai-delete-model" data-model-slug="<?php echo esc_attr( $slug ); ?>">
-													<?php esc_html_e( 'Delete', 'mcp-ai-wpoos' ); ?>
-												</button>
-											<?php else : ?>
-												<button type="button" class="button button-primary wp-mcp-ai-download-model" data-model-slug="<?php echo esc_attr( $slug ); ?>">
-													<?php esc_html_e( 'Download', 'mcp-ai-wpoos' ); ?>
-												</button>
-											<?php endif; ?>
-										</td>
-									</tr>
-									<?php if ( $is_downloaded ) : ?>
-										<tr class="wp-mcp-ai-model-usage-info">
-											<td colspan="6" style="background: #f8f9fa; border-left: 4px solid #00a32a; padding: 15px;">
-												<div style="display: flex; align-items: start; gap: 10px;">
-													<span class="dashicons dashicons-info" style="color: #00a32a; margin-top: 2px;"></span>
-													<div>
-														<strong><?php esc_html_e( 'How to use this model:', 'mcp-ai-wpoos' ); ?></strong>
-														<ol style="margin: 10px 0 0 0; padding-left: 20px;">
-															<li>
-																<?php
-																printf(
-																	/* translators: %s: model identifier */
-																	esc_html__( 'The model identifier is: %s', 'mcp-ai-wpoos' ),
-																	'<code style="background: #fff; padding: 2px 6px; font-weight: bold;">' . esc_html( $slug ) . '</code>'
-																);
-																?>
-															</li>
-															<li>
-																<?php
-																printf(
-																	/* translators: 1: Settings menu location, 2: Dropdown name */
-																	esc_html__( 'Go to %1$s and select "%2$s" from the %3$s dropdown', 'mcp-ai-wpoos' ),
-																	'<strong>' . esc_html__( 'Settings → Providers → Embedded', 'mcp-ai-wpoos' ) . '</strong>',
-																	esc_html( $model['name'] ),
-																	'<strong>' . esc_html__( 'Default Embedded Model', 'mcp-ai-wpoos' ) . '</strong>'
-																);
-																?>
-															</li>
-															<li>
-																<?php
-																printf(
-																	/* translators: 1: Settings menu location */
-																	esc_html__( 'When creating an assistant, select "%1$s" as the provider and use model identifier: %2$s', 'mcp-ai-wpoos' ),
-																	'<strong>' . esc_html__( 'Embedded', 'mcp-ai-wpoos' ) . '</strong>',
-																	'<code style="background: #fff; padding: 2px 6px;">' . esc_html( $slug ) . '</code>'
-																);
-																?>
-															</li>
-															<li>
-																<?php esc_html_e( 'Note: Requires llama.cpp binary to be installed on your server for inference', 'mcp-ai-wpoos' ); ?>
-															</li>
-														</ol>
-													</div>
-												</div>
-											</td>
-										</tr>
-									<?php endif; ?>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
-						<p class="description" style="margin-top: 10px;">
-							<?php
-							esc_html_e( 'Downloaded models are stored in your WordPress uploads directory. Use the model identifier shown above when configuring assistants.', 'mcp-ai-wpoos' );
-							?>
-						</p>
-					<?php endif; ?>
-				</div>
-			</div>
-			<?php
-		}
 	}
+}
+public function render_embedded_model_management( $field_data ) {
+?>
+<div class="notice notice-info inline">
+<p>
+<strong><?php esc_html_e( 'Client-Side Models (Pro Feature)', 'mcp-ai-wpoos' ); ?></strong><br>
+<?php esc_html_e( 'Models run in the user browser using WebGPU/WebAssembly. See Pro Settings page for model list and NPM dependencies.', 'mcp-ai-wpoos' ); ?>
+</p>
+</div>
+<?php
 }
