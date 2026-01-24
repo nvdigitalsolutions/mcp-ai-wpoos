@@ -11674,11 +11674,25 @@
                 
                 // Update message with each chunk
                 if (chunk.done) {
-                    // Final chunk - update status
+                    // Final chunk - update status and ensure bubble has final content
                     console.log('[NV oOS] Received done chunk:', {
                         callbackNumber: chunkCallbackCount,
                         finalContentLength: chunk.fullContent.length
                     });
+                    
+                    fullContent = chunk.fullContent;
+                    assistantMessage.content[0].text = fullContent;
+                    
+                    // Update the message bubble with final content
+                    const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+                    if (bubble) {
+                        if (markdownService && markdownService.renderMarkdown) {
+                            bubble.innerHTML = markdownService.renderMarkdown(fullContent);
+                        } else {
+                            bubble.textContent = fullContent;
+                        }
+                        scrollToBottom(state);
+                    }
                     
                     setStatus(state.container, {
                         message: getString('complete', 'Complete'),
