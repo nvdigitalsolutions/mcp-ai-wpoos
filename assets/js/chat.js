@@ -103,6 +103,7 @@
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
+    const EMBEDDED_CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk for embedded client callbacks
     const STREAMING_STATUS_PREVIEW_LENGTH = 100; // Maximum characters to show in status preview during streaming
     
     // Async tool timeout constants (must match PHP constants in WP_MCP_AI_Shortcode)
@@ -10608,6 +10609,7 @@
                 messageBundleTimer: null, // Timer for message bundling delay
                 cptActionsContainer: cptActionsContainer,
                 lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
+                embeddedClient: null, // Instance of embedded LLM client (created when needed for embedded provider)
             };
 
             initialiseExistingSpeechButtons(state);
@@ -11425,7 +11427,9 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function sendChatEmbedded(state, messages, finalize, submissionContext) {
-        // Check if embedded LLM client is available
+        console.log('[NV oOS] sendChatEmbedded called for instance:', state.config.assistantId);
+        
+        // Check if embedded LLM class is available
         if (!window.WP_MCP_AI_EmbeddedLLM) {
             handleError(state, {
                 message: getString('embeddedClientMissing', 'Embedded LLM client not loaded. Please refresh the page.')
@@ -11435,7 +11439,16 @@
             return Promise.reject(new Error('Embedded LLM client not available'));
         }
 
-        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+        // Create embedded client instance for this widget if not already created
+        if (!state.embeddedClient) {
+            // Generate unique instance ID
+            // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
+            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+            state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
+            console.log('[NV oOS] Created new embedded client instance:', instanceId);
+        }
+
+        const embeddedClient = state.embeddedClient;
 
         // Wait for embedded client to be fully initialized (WebLLM loaded)
         if (!embeddedClient.isReady()) {
@@ -11473,7 +11486,9 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function sendChatEmbeddedInternal(state, messages, finalize, submissionContext) {
-        const embeddedClient = window.WP_MCP_AI_EmbeddedLLM;
+        const embeddedClient = state.embeddedClient;
+        
+        console.log('[NV oOS] sendChatEmbeddedInternal called with client instance:', embeddedClient.instanceId);
 
         // Get model from config
         const modelId = state.config.model;
@@ -11489,21 +11504,23 @@
         // Check if model is loaded
         if (!embeddedClient.isModelLoaded()) {
             // Check model suitability before loading (best practice)
-            if (embeddedClient.checkModelSuitability) {
-                const suitability = embeddedClient.checkModelSuitability(modelId);
+            if (window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability) {
+                const suitability = window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability(modelId);
                 if (!suitability.suitable && suitability.warning) {
-                    console.warn('Model Suitability Warning:', suitability);
+                    console.warn('[NV oOS] Model Suitability Warning:', suitability);
                     
                     // Log warning for now. Future enhancement: show user confirmation dialog
                     // with options to proceed with large model or switch to suggested model.
                     // This would require UI changes and user preference storage.
                     if (suitability.suggestedModel) {
-                        console.info('Suggested alternative model:', suitability.suggestedModel);
+                        console.info('[NV oOS] Suggested alternative model:', suitability.suggestedModel);
                     }
                 }
             }
             
             // Model not loaded yet - need to load it first
+            console.log('[NV oOS] Model not loaded, loading model:', modelId);
+            
             setStatus(state.container, {
                 message: getString('embeddedModelLoading', 'Loading AI model in your browser...'),
                 type: 'processing',
@@ -11521,18 +11538,19 @@
             })
             .then(function() {
                 // Model loaded, now generate completion
+                console.log('[NV oOS] Model loaded successfully, generating completion');
                 return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
             })
             .catch(function(error) {
                 // Use enhanced error categorization for better user feedback
                 let errorMessage = getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message;
                 
-                if (embeddedClient.categorizeError) {
-                    const categorized = embeddedClient.categorizeError(error);
+                if (window.WP_MCP_AI_EmbeddedLLM.categorizeError) {
+                    const categorized = window.WP_MCP_AI_EmbeddedLLM.categorizeError(error);
                     errorMessage = categorized.message;
                     
                     // Log technical details for debugging
-                    console.error('Embedded LLM Error:', {
+                    console.error('[NV oOS] Embedded LLM Error:', {
                         originalError: error.message,
                         category: categorized.technicalCategory,
                         recoverable: categorized.recoverable
@@ -11547,6 +11565,7 @@
         }
 
         // Model already loaded, generate completion
+        console.log('[NV oOS] Model already loaded, generating completion');
         return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
     }
 
@@ -11560,6 +11579,8 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext) {
+        console.log('[NV oOS] Starting embedded completion generation');
+        
         setStatus(state.container, {
             message: getString('embeddedGenerating', 'Generating response...'),
             type: 'processing',
@@ -11584,9 +11605,15 @@
             };
         });
 
+        console.log('[NV oOS] Formatted messages for embedded client:', {
+            messageCount: formattedMessages.length,
+            lastMessage: formattedMessages[formattedMessages.length - 1]
+        });
+
         // Use streaming for better UX
         const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
         let fullContent = '';
+        let chunkCallbackCount = 0;
 
         // Add empty assistant message bubble that will be filled progressively
         const assistantMessage = {
@@ -11603,10 +11630,16 @@
         const bubble = appendMessage(state.messagesEl, 'assistant', { text: '' }, true, { state: state });
         if (bubble) {
             bubble.setAttribute('data-message-id', assistantMessageId);
+            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
         }
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+
+        console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
+            temperature: state.config.temperature || 0.7,
+            maxTokens: maxTokens
+        });
 
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
@@ -11615,16 +11648,31 @@
                 max_tokens: maxTokens
             },
             function(chunk) {
+                chunkCallbackCount++;
+                
                 // Update message with each chunk
                 if (chunk.done) {
                     // Final chunk - update status
+                    console.log('[NV oOS] Received done chunk:', {
+                        callbackNumber: chunkCallbackCount,
+                        finalContentLength: chunk.fullContent.length
+                    });
+                    
                     setStatus(state.container, {
                         message: getString('complete', 'Complete'),
                         type: 'success',
                         showTime: false
                     });
                 } else {
-                    // Progressive update
+                    // Progressive update - log at configurable frequency (initial chunks + every Nth)
+                    if (chunkCallbackCount <= EMBEDDED_CHUNK_LOG_FREQUENCY || chunkCallbackCount % EMBEDDED_CHUNK_LOG_FREQUENCY === 0) {
+                        console.log('[NV oOS] Received chunk callback:', {
+                            callbackNumber: chunkCallbackCount,
+                            deltaLength: chunk.content.length,
+                            fullContentLength: chunk.fullContent.length
+                        });
+                    }
+                    
                     fullContent = chunk.fullContent;
                     assistantMessage.content[0].text = fullContent;
                     
@@ -11643,12 +11691,21 @@
         )
         .then(function(result) {
             // Completion successful
+            console.log('[NV oOS] Received final result from generateStreamingCompletion:', {
+                success: result.success,
+                contentLength: result.content ? result.content.length : 0,
+                hasUsage: !!(result.usage),
+                usage: result.usage
+            });
+            
             assistantMessage.content[0].text = result.content;
             
             // Update the final message bubble in the DOM with the complete content
             // This ensures the message is visible even if the streaming updates missed the final chunk
             const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
             if (bubble && result.content) {
+                console.log('[NV oOS] Updating final message bubble in DOM');
+                
                 if (markdownService && markdownService.renderMarkdown) {
                     bubble.innerHTML = markdownService.renderMarkdown(result.content);
                 } else {
@@ -11668,15 +11725,28 @@
                         usage.model = state.config.model;
                     }
                     
+                    console.log('[NV oOS] Attaching usage badges to bubble:', usage);
+                    
                     // Attach usage badges to the bubble (no cost data for embedded LLM)
                     attachUsageBadges(bubble, usage, null);
                 }
+                
+                console.log('[NV oOS] Final message bubble updated successfully');
+            } else {
+                console.warn('[NV oOS] Could not find message bubble or result.content is empty:', {
+                    bubbleFound: !!bubble,
+                    hasContent: !!result.content
+                });
             }
             
             // Save to storage
+            console.log('[NV oOS] Saving conversation to storage');
             saveConversationToStorage(state);
             
+            console.log('[NV oOS] Calling finalize()');
             finalize();
+            
+            console.log('[NV oOS] Embedded completion generation completed successfully');
             return result;
         })
         .catch(function(error) {
