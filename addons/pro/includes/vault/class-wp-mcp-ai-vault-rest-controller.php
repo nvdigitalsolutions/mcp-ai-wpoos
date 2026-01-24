@@ -669,7 +669,7 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	 * @param WP_Post $post Post object.
 	 * @return array
 	 */
-	protected function prepare_item_for_response( $post ) {
+	public function prepare_item_for_response( $post ) {
 		$item_type  = get_post_meta( $post->ID, '_vault_item_type', true );
 		$folder_id  = get_post_meta( $post->ID, '_vault_folder_id', true );
 		$favorite   = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
