@@ -1220,4 +1220,5 @@ class WP_MCP_AI_Section_Providers extends WP_MCP_AI_Settings_Section {
 </div>
 		<?php
 	}
+	}
 }
