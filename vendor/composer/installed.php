@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-plugin-enhancements-again',
-        'version' => 'dev-copilot/review-plugin-enhancements-again',
-        'reference' => '61b692f5c5f7ac5b2c41b1a66ed0c3e0c3236475',
+        'pretty_version' => 'dev-copilot/fix-chat-client-knowledge-access',
+        'version' => 'dev-copilot/fix-chat-client-knowledge-access',
+        'reference' => 'ab14854dc3b0ddf184fc28d0552accc0a3e715cf',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-plugin-enhancements-again',
-            'version' => 'dev-copilot/review-plugin-enhancements-again',
-            'reference' => '61b692f5c5f7ac5b2c41b1a66ed0c3e0c3236475',
+            'pretty_version' => 'dev-copilot/fix-chat-client-knowledge-access',
+            'version' => 'dev-copilot/fix-chat-client-knowledge-access',
+            'reference' => 'ab14854dc3b0ddf184fc28d0552accc0a3e715cf',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -11977,8 +11977,9 @@
             if (result.tool_calls && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
                 console.log('[NV oOS] LLM requested tool calls:', result.tool_calls);
 
-                // Execute tools and continue conversation
-                return handleEmbeddedToolCalls(state, embeddedClient, conversationMessages, result, finalize, submissionContext);
+                // Execute tools and continue conversation.
+                // Pass 'messages' (the formatted conversation with system prompt) to maintain assistant knowledge across tool calls.
+                return handleEmbeddedToolCalls(state, embeddedClient, messages, result, finalize, submissionContext);
             }
 
             // No tool calls - finish the conversation
