@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/block-embedded-chat-client',
+        'version' => 'dev-copilot/block-embedded-chat-client',
+        'reference' => '97716802e8d549682c2ae6f2ecc3abab6e713789',
         'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-again',
         'version' => 'dev-copilot/fix-embedded-chat-client-error-again',
         'reference' => '377fbd04b8b31ba0407f5996214fe083e7b99ccf',
@@ -47,6 +50,9 @@
             'dev_requirement' => true,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/block-embedded-chat-client',
+            'version' => 'dev-copilot/block-embedded-chat-client',
+            'reference' => '97716802e8d549682c2ae6f2ecc3abab6e713789',
             'pretty_version' => 'dev-copilot/fix-embedded-chat-client-error-again',
             'version' => 'dev-copilot/fix-embedded-chat-client-error-again',
             'reference' => '377fbd04b8b31ba0407f5996214fe083e7b99ccf',
