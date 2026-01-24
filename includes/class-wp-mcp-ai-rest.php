@@ -3011,19 +3011,38 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$this->send_sse_done();
 				exit;
 			} catch ( Error $e ) {
+				// Log detailed error information for debugging.
+				$error_class = get_class( $e );
+				$error_file  = $e->getFile();
+				$error_line  = $e->getLine();
+				
 				WP_MCP_AI_Logger::log_error(
 					'sse_llm_fatal_error',
 					'Fatal error during LLM call in streaming mode',
 					array(
-						'error' => $e->getMessage(),
-						'trace' => $e->getTraceAsString(),
+						'error'       => $e->getMessage(),
+						'error_class' => $error_class,
+						'file'        => $error_file,
+						'line'        => $error_line,
+						'trace'       => $e->getTraceAsString(),
 					)
 				);
+				
+				// Determine if we can provide a more helpful user-facing message.
+				$user_message = __( 'A fatal error occurred while processing your request.', 'mcp-ai-wpoos' );
+				
+				// Provide specific guidance for common error scenarios.
+				if ( strpos( $e->getMessage(), 'Call to a member function' ) !== false ) {
+					$user_message = __( 'The selected AI provider is not properly configured. Please check your provider settings.', 'mcp-ai-wpoos' );
+				} elseif ( strpos( $e->getMessage(), 'Class' ) !== false && strpos( $e->getMessage(), 'not found' ) !== false ) {
+					$user_message = __( 'A required component is missing. This may be due to plugin version mismatch or incomplete installation.', 'mcp-ai-wpoos' );
+				}
+				
 				$this->send_sse_event(
 					'error',
 					array(
 						'code'    => 'llm_fatal_error',
-						'message' => __( 'A fatal error occurred while processing your request.', 'mcp-ai-wpoos' ),
+						'message' => $user_message,
 					)
 				);
 				$this->send_sse_done();
