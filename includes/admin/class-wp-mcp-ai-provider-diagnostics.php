@@ -414,9 +414,70 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Embedded LLM (Pro) -->
+				<?php
+				// Only show Embedded LLM section if Pro version is active.
+				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
+					?>
+				<div class="card">
+					<h2><?php esc_html_e( '7. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_embedded'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['embedded_model'] ) ) : ?>
+										<code><?php echo esc_html( $settings['embedded_model'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Not Selected', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Model Type', 'mcp-ai-wpoos' ); ?></th>
+								<td><?php esc_html_e( 'GGUF format (llama.cpp compatible)', 'mcp-ai-wpoos' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="embedded-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="embedded"
+						<?php echo esc_attr( empty( $settings['enable_embedded'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Embedded LLM Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_embedded'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab and download a model to use local AI without external API calls.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Embedded LLM runs small language models directly on your server using llama.cpp. No external API calls or internet connection required.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+				<?php endif; ?>
+
 				<!-- Google Maps Platform -->
 				<div class="card">
-					<h2><?php esc_html_e( '7. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '8. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -463,7 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '8. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '9. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -536,7 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '9. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
 
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>

@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 					return $this->cloudflare_client->create_chat_completion( $messages, $options );
 
 				case 'embedded':
-					if ( isset( $this->embedded_client ) && $this->embedded_client ) {
+					if ( isset( $this->embedded_client ) && $this->embedded_client instanceof WP_MCP_AI_Embedded_Client ) {
 						return $this->embedded_client->create_chat_completion( $messages, $options );
 					}
 					return new WP_Error(
