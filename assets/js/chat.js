@@ -11946,6 +11946,45 @@
                         }
                     }
                     
+                    // BUG FIX: If still no message content, extract from tool_results.
+                    // This handles cases where AI uses system tools (like get_system_logs) without
+                    // generating additional message text. Previously, these responses would not persist
+                    // because finalContent was empty, causing shouldKeepStreamingElement to be false.
+                    // This matches the logic in processSSEStream at lines ~12606-12632.
+                    if (!finalContent && streamResult.finalData && streamResult.finalData.tool_results && Array.isArray(streamResult.finalData.tool_results)) {
+                        for (const toolResult of streamResult.finalData.tool_results) {
+                            if (!toolResult || !toolResult.content) {
+                                continue;
+                            }
+                            
+                            // Parse tool result content
+                            const parsedContent = parseToolResultContent(toolResult.content);
+                            
+                            // Skip async pending results - they'll be handled by waitForAsyncToolResult
+                            if (isAsyncPendingToolResult(parsedContent)) {
+                                continue;
+                            }
+                            
+                            // Use existing extractTextFromContent helper for consistent text extraction
+                            const toolText = extractTextFromContent(parsedContent);
+                            if (toolText) {
+                                if (finalContent) {
+                                    finalContent += '\n\n';
+                                }
+                                finalContent += toolText;
+                            }
+                        }
+                        
+                        // Log tool result extraction for debugging
+                        if (finalContent && window.console && console.log) {
+                            console.log('[NV oOS] Extracted final content from tool_results (no message content):', {
+                                contentLength: finalContent.length,
+                                contentSample: finalContent.substring(0, 100),
+                                toolResultCount: streamResult.finalData.tool_results.length
+                            });
+                        }
+                    }
+                    
                     const shouldKeepStreamingElement = streamingMessageElement && 
                                                       streamingMessageElement.parentNode &&
                                                       finalContent &&
