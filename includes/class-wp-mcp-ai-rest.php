@@ -3032,9 +3032,14 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 				$user_message = __( 'A fatal error occurred while processing your request.', 'mcp-ai-wpoos' );
 
 				// Provide specific guidance for common error scenarios.
-				if ( strpos( $e->getMessage(), 'Call to a member function' ) !== false ) {
+				// Check for common PHP Error types that indicate configuration issues.
+				if ( $e instanceof TypeError ) {
 					$user_message = __( 'The selected AI provider is not properly configured. Please check your provider settings.', 'mcp-ai-wpoos' );
-				} elseif ( strpos( $e->getMessage(), 'Class' ) !== false && strpos( $e->getMessage(), 'not found' ) !== false ) {
+				} elseif ( 'Error' === $error_class && preg_match( '/Call to .+ on (null|bool|int|string|array)/', $e->getMessage() ) ) {
+					// Method call on invalid type (null, scalar, array instead of object).
+					$user_message = __( 'The selected AI provider is not properly configured. Please check your provider settings.', 'mcp-ai-wpoos' );
+				} elseif ( preg_match( "/Class ['\"]?\w+['\"]? not found/", $e->getMessage() ) ) {
+					// Missing class indicates incomplete installation or missing dependencies.
 					$user_message = __( 'A required component is missing. This may be due to plugin version mismatch or incomplete installation.', 'mcp-ai-wpoos' );
 				}
 
