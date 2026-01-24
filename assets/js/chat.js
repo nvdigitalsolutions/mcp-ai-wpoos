@@ -11669,12 +11669,14 @@
         });
 
         // Helper function to update message bubble with content
+        // Uses cached bubble reference for performance (avoids querySelector on every chunk)
         function updateMessageBubble(content) {
-            const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
             if (bubble) {
                 if (markdownService && markdownService.renderMarkdown) {
+                    // markdownService.renderMarkdown escapes HTML before processing, making it XSS-safe
                     bubble.innerHTML = markdownService.renderMarkdown(content);
                 } else {
+                    // textContent is safe from XSS as it doesn't parse HTML
                     bubble.textContent = content;
                 }
                 scrollToBottom(state);
