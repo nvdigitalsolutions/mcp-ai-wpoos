@@ -776,6 +776,7 @@ class WP_MCP_AI_Shortcode {
 			// Check if we need to register/re-register with embedded provider dependency.
 			$should_register_with_embedded = $needs_embedded_provider;
 			$already_registered            = wp_script_is( self::SCRIPT_HANDLE, 'registered' );
+			$was_deregistered              = false;
 
 			// Only re-register if:
 			// 1. Not registered yet, OR
@@ -792,6 +793,7 @@ class WP_MCP_AI_Shortcode {
 					if ( $should_register_with_embedded && ! $has_embedded_dep ) {
 						wp_deregister_script( self::SCRIPT_HANDLE );
 						$already_registered = false;
+						$was_deregistered   = true;
 					}
 				}
 
@@ -807,9 +809,12 @@ class WP_MCP_AI_Shortcode {
 						true
 					);
 
-					// Apply localization after registration (only once per page load).
-					if ( ! $is_elementor_editor && ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) {
-						$this->apply_script_localization( $settings );
+					// Apply localization after registration.
+					// Always reapply if script was deregistered to ensure localization data is not lost.
+					if ( ! $is_elementor_editor ) {
+						if ( $was_deregistered || ! wp_scripts()->get_data( self::SCRIPT_HANDLE, 'data' ) ) {
+							$this->apply_script_localization( $settings );
+						}
 					}
 				}
 			} elseif ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
