@@ -17,6 +17,9 @@
 	let webLLM = null;
 	let webLLMReady = false;
 
+	// Logging configuration
+	const CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk to avoid console spam
+
 	/**
 	 * Wait for WebLLM to be loaded
 	 * WebLLM is loaded asynchronously via dynamic import()
@@ -168,7 +171,15 @@
 	 */
 	class EmbeddedLLMClient {
 		constructor(instanceId) {
-			this.instanceId = instanceId || 'default';
+			// Validate and generate instance ID
+			if (!instanceId || typeof instanceId !== 'string' || instanceId.trim() === '') {
+				// Generate unique ID if not provided or invalid
+				this.instanceId = 'embedded-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+				console.warn('[NV oOS Embedded Client] No valid instanceId provided, generated:', this.instanceId);
+			} else {
+				this.instanceId = instanceId;
+			}
+			
 			this.currentEngine = null;
 			this.isInitializing = false;
 			this.modelLoaded = false;
@@ -374,8 +385,8 @@
 						chunkCount++;
 						fullContent += delta;
 						
-						// Log chunk received (only log every 5th chunk to avoid spam)
-						if (chunkCount % 5 === 0 || chunkCount === 1) {
+						// Log chunk received (configurable frequency to avoid spam)
+						if (chunkCount % CHUNK_LOG_FREQUENCY === 0 || chunkCount === 1) {
 							console.log('[NV oOS Embedded Client] Chunk received for instance:', {
 								instanceId: this.instanceId,
 								chunkNumber: chunkCount,

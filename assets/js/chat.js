@@ -103,6 +103,7 @@
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
+    const EMBEDDED_CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk for embedded client callbacks
     const STREAMING_STATUS_PREVIEW_LENGTH = 100; // Maximum characters to show in status preview during streaming
     
     // Async tool timeout constants (must match PHP constants in WP_MCP_AI_Shortcode)
@@ -11440,7 +11441,8 @@
 
         // Create embedded client instance for this widget if not already created
         if (!state.embeddedClient) {
-            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now();
+            // Generate unique instance ID with timestamp and random component
+            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
             state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
             console.log('[NV oOS] Created new embedded client instance:', instanceId);
         }
@@ -11662,7 +11664,7 @@
                     });
                 } else {
                     // Progressive update
-                    if (chunkCallbackCount % 5 === 0 || chunkCallbackCount === 1) {
+                    if (chunkCallbackCount % EMBEDDED_CHUNK_LOG_FREQUENCY === 0 || chunkCallbackCount === 1) {
                         console.log('[NV oOS] Received chunk callback:', {
                             callbackNumber: chunkCallbackCount,
                             deltaLength: chunk.content.length,
