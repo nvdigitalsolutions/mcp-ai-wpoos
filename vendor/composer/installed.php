@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/install-dependencies-for-production',
-        'version' => 'dev-copilot/install-dependencies-for-production',
-        'reference' => '845189296b509549cfd206fcbe5879464347d642',
+        'pretty_version' => 'dev-copilot/research-plugin-integration',
+        'version' => 'dev-copilot/research-plugin-integration',
+        'reference' => '76540628cb9b4f78923ce5742d93ab651a910886',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/install-dependencies-for-production',
-            'version' => 'dev-copilot/install-dependencies-for-production',
-            'reference' => '845189296b509549cfd206fcbe5879464347d642',
+            'pretty_version' => 'dev-copilot/research-plugin-integration',
+            'version' => 'dev-copilot/research-plugin-integration',
+            'reference' => '76540628cb9b4f78923ce5742d93ab651a910886',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
