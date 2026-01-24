@@ -118,6 +118,37 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
+		// Register embedded LLM client scripts (always register, enqueue conditionally).
+		// This prevents conflicts when multiple widgets with different providers are on the same page.
+		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
+			$embedded_script_path  = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+			$webllm_loader_path    = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+			$webllm_loader_version = $this->get_asset_version( 'assets/js/webllm-loader.js' );
+
+			// Register WebLLM loader (loads WebLLM library dynamically).
+			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
+				wp_register_script(
+					'webllm-loader',
+					$webllm_loader_path,
+					array(),
+					$webllm_loader_version,
+					true
+				);
+			}
+
+			// Register embedded LLM client (depends on WebLLM loader).
+			if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-embedded-llm-client',
+					$embedded_script_path,
+					array( 'webllm-loader' ),
+					$embedded_script_version,
+					true
+				);
+			}
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$color_css = WP_MCP_AI_Admin_Settings::get_chat_color_css();
 
