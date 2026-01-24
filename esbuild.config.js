@@ -127,6 +127,11 @@ const builds = [
 		outfile: 'assets/js/webllm-function-calling-client.min.js',
 		...commonOptions,
 	},
+	{
+		entryPoints: ['assets/js/webllm-multimodal-client.js'],
+		outfile: 'assets/js/webllm-multimodal-client.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files

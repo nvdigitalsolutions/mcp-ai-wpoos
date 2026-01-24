@@ -88,6 +88,15 @@ class WP_MCP_AI_WebLLM_Enqueue {
 			$plugin_version,
 			true
 		);
+		
+		// NEW: Multi-modal client (Phase 1 - thin wrapper, ~3.9KB minified)
+		wp_register_script(
+			'wp-mcp-ai-webllm-multimodal',
+			plugins_url( 'assets/js/webllm-multimodal-client.min.js', $plugin_file ),
+			array( 'wp-mcp-ai-webllm-function-calling' ),
+			$plugin_version,
+			true
+		);
 	}
 	
 	/**
@@ -123,8 +132,23 @@ class WP_MCP_AI_WebLLM_Enqueue {
 			}
 		}
 		
-		// Multi-modal support will be added in future commits
-		// For now, the function calling client is the foundation
+		// Check if multi-modal is enabled
+		$enable_multimodal = get_option( self::OPTION_ENABLE_MULTIMODAL, false );
+		if ( $enable_multimodal ) {
+			// Multi-modal requires tool calling as dependency
+			if ( ! $enable_tool_calling ) {
+				wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
+				wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
+			}
+			
+			// Enqueue multi-modal client
+			wp_enqueue_script( 'wp-mcp-ai-webllm-multimodal' );
+			
+			// Log for debugging
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( '[NV oOS WebLLM] Multi-modal scripts enqueued' );
+			}
+		}
 	}
 	
 	/**
