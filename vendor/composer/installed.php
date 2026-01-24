@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-embedded-llm-error',
         'version' => 'dev-copilot/fix-embedded-llm-error',
-        'reference' => 'a1732702da18f48decd0ed2b66f65eba60b77b68',
+        'reference' => '9f473e3ee4f8c5c703265256fb5e16f683d1e8a6',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-embedded-llm-error',
             'version' => 'dev-copilot/fix-embedded-llm-error',
-            'reference' => 'a1732702da18f48decd0ed2b66f65eba60b77b68',
+            'reference' => '9f473e3ee4f8c5c703265256fb5e16f683d1e8a6',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

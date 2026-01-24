@@ -38,7 +38,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'description' => 'Compact 2B parameter model optimized for instruction following',
 				'size'        => 1200000000, // ~1.2GB
 				'url'         => 'https://huggingface.co/ibm-granite/granite-3.1-2b-instruct-GGUF/resolve/main/granite-3.1-2b-instruct.Q4_K_M.gguf',
-				'checksum'    => '', // To be filled after download verification
+				'checksum'    => '', // To be filled after download verification.
 				'format'      => 'gguf',
 				'license'     => 'Apache 2.0',
 			),
@@ -47,7 +47,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'description' => 'Efficient 3.8B parameter model with 4K context',
 				'size'        => 2300000000, // ~2.3GB
 				'url'         => 'https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-gguf/resolve/main/Phi-3-mini-4k-instruct-q4.gguf',
-				'checksum'    => '', // To be filled after download verification
+				'checksum'    => '', // To be filled after download verification.
 				'format'      => 'gguf',
 				'license'     => 'MIT',
 			),
@@ -56,7 +56,7 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 				'description' => 'Ultra-compact 0.5B parameter model for basic tasks',
 				'size'        => 350000000, // ~350MB
 				'url'         => 'https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/resolve/main/qwen2-0_5b-instruct-q4_k_m.gguf',
-				'checksum'    => '', // To be filled after download verification
+				'checksum'    => '', // To be filled after download verification.
 				'format'      => 'gguf',
 				'license'     => 'Apache 2.0',
 			),
@@ -716,7 +716,6 @@ if ( ! class_exists( 'WP_MCP_AI_Embedded_Client' ) ) {
 					return true;
 				}
 			}
-
 
 			return false;
 		}

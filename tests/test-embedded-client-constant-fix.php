@@ -54,8 +54,8 @@ class Test_Embedded_Client_Constant_Fix extends WP_UnitTestCase {
 		update_option(
 			'wp_mcp_ai_settings',
 			array(
-				'enable_embedded'  => true,
-				'embedded_model'   => 'qwen2-0.5b-instruct',
+				'enable_embedded' => true,
+				'embedded_model'  => 'qwen2-0.5b-instruct',
 			)
 		);
 
