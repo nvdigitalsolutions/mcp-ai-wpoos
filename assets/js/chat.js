@@ -11627,8 +11627,22 @@
             };
         });
 
+        // Prepend system prompt from assistant configuration if available and not already in messages
+        // This ensures embedded providers receive the same system instructions as server-side providers
+        if (state.config.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            formattedMessages.unshift({
+                role: 'system',
+                content: state.config.systemPrompt
+            });
+            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+                systemPromptLength: state.config.systemPrompt.length,
+                systemPromptPreview: state.config.systemPrompt.substring(0, 100) + '...'
+            });
+        }
+
         console.log('[NV oOS] Formatted messages for embedded client:', {
             messageCount: formattedMessages.length,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
             lastMessage: formattedMessages[formattedMessages.length - 1]
         });
 
@@ -11662,10 +11676,17 @@
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+        
+        // Get temperature from config or use default
+        // Use assistant configuration value if available, otherwise default to 0.7
+        const temperature = state.config.temperature !== undefined && state.config.temperature !== null 
+            ? parseFloat(state.config.temperature) 
+            : 0.7;
 
         console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
-            temperature: state.config.temperature || 0.7,
-            maxTokens: maxTokens
+            temperature: temperature,
+            maxTokens: maxTokens,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; })
         });
 
         // Helper function to update message bubble with content
@@ -11687,7 +11708,7 @@
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
             {
-                temperature: state.config.temperature || 0.7,
+                temperature: temperature,
                 max_tokens: maxTokens
             },
             function(chunk) {

@@ -332,6 +332,56 @@ if ( ! empty( $options['system_prompt'] ) ) {
 }
 ```
 
+### Embedded LLM (WebLLM)
+**Files:** 
+- `includes/class-wp-mcp-ai-shortcode.php` (PHP configuration)
+- `assets/js/chat.js` (JavaScript client-side execution)
+- `assets/js/embedded-llm-client.js` (WebLLM wrapper)
+
+**Format:** System messages in messages array (OpenAI-compatible)
+
+The embedded provider runs 100% client-side in the browser using WebLLM. System prompts are passed through the widget configuration and prepended to messages:
+
+**PHP Side (Shortcode):**
+```php
+// Pass assistant configuration to JavaScript
+if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
+    $config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+}
+if ( isset( $assistant_config_for_provider['temperature'] ) ) {
+    $config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+}
+```
+
+**JavaScript Side (chat.js):**
+```javascript
+// Prepend system prompt from assistant configuration if available
+if (state.config.systemPrompt && !formattedMessages.some(msg => msg.role === 'system')) {
+    formattedMessages.unshift({
+        role: 'system',
+        content: state.config.systemPrompt
+    });
+}
+
+// Pass to WebLLM with temperature from config
+embeddedClient.generateStreamingCompletion(
+    formattedMessages,
+    {
+        temperature: state.config.temperature || 0.7,
+        max_tokens: maxTokens
+    },
+    onChunk
+);
+```
+
+**How It Works:**
+1. Assistant configuration is loaded server-side
+2. System prompt and temperature are passed to JavaScript via `wp_localize_script`
+3. Chat widget prepends system prompt to messages array before calling WebLLM
+4. WebLLM processes the system message using the browser-based LLM (e.g., Llama, Phi)
+
+**Note:** Embedded provider never makes server-side API calls. All processing happens in the user's browser using WebGPU/WebAssembly.
+
 ## Verification and Debugging
 
 ### Enable Logging

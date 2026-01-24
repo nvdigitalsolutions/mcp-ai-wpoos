@@ -867,11 +867,21 @@ class WP_MCP_AI_Shortcode {
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
 
 			// Add provider and model for client-side execution (embedded provider).
+			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
 			if ( ! empty( $assistant_provider ) ) {
 				$config['provider'] = $assistant_provider;
 			}
 			if ( ! empty( $assistant_model ) ) {
 				$config['model'] = $assistant_model;
+			}
+
+			// Add assistant defaults (system_prompt, temperature) for client-side execution.
+			// This ensures embedded providers have access to the same defaults as server-side providers.
+			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
+				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+			}
+			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
+				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
 			}
 
 			// Add team information if team is configured.
