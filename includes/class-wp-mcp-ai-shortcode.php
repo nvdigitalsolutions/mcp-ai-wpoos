@@ -419,6 +419,53 @@ class WP_MCP_AI_Shortcode {
 	}
 
 	/**
+	 * Check if embedded provider is available for the assistant.
+	 *
+	 * @param string $provider The provider to check.
+	 * @return bool True if embedded provider is available, false otherwise.
+	 */
+	protected function is_embedded_provider_available( $provider ) {
+		return 'embedded' === $provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+	}
+
+	/**
+	 * Apply script localization to the chat script handle.
+	 * This method centralizes the localization logic to avoid duplication.
+	 *
+	 * @param array $settings Plugin settings array.
+	 * @return void
+	 */
+	protected function apply_script_localization( $settings ) {
+		$show_usage_costs      = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+		$show_usage_costs      = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
+				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
+				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
+				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
+				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
+				'strings'             => $this->get_strings(),
+			)
+		);
+	}
+
+	/**
 	 * Render the chat shortcode.
 	 *
 	 * @param array  $atts    Shortcode attributes.
@@ -646,7 +693,7 @@ class WP_MCP_AI_Shortcode {
 			// Check: provider is embedded AND (base version not defined OR base version is false).
 			// Embedded provider is only available in Pro version (not base version).
 			// This MUST be done before enqueuing chat script to ensure proper loading order.
-			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
+			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
 
@@ -685,7 +732,7 @@ class WP_MCP_AI_Shortcode {
 
 			// If embedded provider is used, the chat script needs to depend on embedded-llm-client.
 			// Re-register the chat script with the proper dependency.
-			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
+			if ( $this->is_embedded_provider_available( $assistant_provider ) ) {
 				$script_relative = 'assets/js/chat-bundle.min.js';
 				$script_path     = WP_MCP_AI_URL . $script_relative;
 				$script_version  = $this->get_asset_version( $script_relative );
@@ -702,33 +749,7 @@ class WP_MCP_AI_Shortcode {
 
 				// Re-apply localization since we re-registered the script.
 				if ( ! $is_elementor_editor ) {
-					$show_usage_costs      = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
-					$show_usage_costs      = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
-					$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
-					$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
-
-					wp_localize_script(
-						self::SCRIPT_HANDLE,
-						'wpMcpAiChat',
-						array(
-							'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
-							'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
-							'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
-							'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
-							'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
-							'historyPerPage'      => 20,
-							'currentUserId'       => get_current_user_id(),
-							'nonce'               => wp_create_nonce( 'wp_rest' ),
-							'showUsageCosts'      => $show_usage_costs,
-							'showCapabilityFlags' => $show_capability_flags,
-							'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
-							'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
-							'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
-							'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
-							'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
-							'strings'             => $this->get_strings(),
-						)
-					);
+					$this->apply_script_localization( $settings );
 				}
 			}
 
