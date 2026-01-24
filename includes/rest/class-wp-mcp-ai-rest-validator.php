@@ -632,30 +632,43 @@ class WP_MCP_AI_REST_Validator {
 			unset( $options['temperature'] );
 		}
 
+		// Track whether system prompt came from request or assistant config for logging.
+		$system_prompt_source = 'none';
+
 		if ( isset( $options['system_prompt'] ) ) {
 			$options['system_prompt'] = wp_kses_post( $options['system_prompt'] );
+			$system_prompt_source     = 'request';
 		}
 
 		if ( empty( $options['system_prompt'] ) && ! empty( $assistant_config['system_prompt'] ) ) {
 			$options['system_prompt'] = wp_kses_post( $assistant_config['system_prompt'] );
+			$system_prompt_source     = 'assistant_config';
 		}
 
-		// Debug logging for Cloudflare system_prompt issues.
-		if ( 'cloudflare' === $provider ) {
+		// Comprehensive debug logging for system_prompt propagation across all providers.
+		// This helps diagnose issues where assistant defaults may not be reaching the LLM.
+		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+			$log_data = array(
+				'provider'                    => $provider,
+				'system_prompt_source'        => $system_prompt_source,
+				'has_system_prompt'           => isset( $options['system_prompt'] ),
+				'system_prompt_empty'         => empty( $options['system_prompt'] ),
+				'system_prompt_length'        => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
+				'system_prompt_preview'       => isset( $options['system_prompt'] ) ? substr( (string) $options['system_prompt'], 0, 150 ) . '...' : '',
+				'assistant_id'                => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
+				'has_assistant_config_prompt' => ! empty( $assistant_config['system_prompt'] ),
+				'config_prompt_length'        => ! empty( $assistant_config['system_prompt'] ) ? strlen( (string) $assistant_config['system_prompt'] ) : 0,
+			);
+
+			// Add warning if system prompt is missing despite assistant config having one.
+			if ( empty( $options['system_prompt'] ) && ! empty( $assistant_config['system_prompt'] ) ) {
+				$log_data['warning'] = 'Assistant config has system_prompt but it was not propagated to options';
+			}
+
 			WP_MCP_AI_Logger::log_event(
-				'cloudflare_sanitize_options_system_prompt',
-				'System prompt after sanitize_options for Cloudflare',
-				array(
-					'assistant_id'                 => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
-					'assistant_title'              => isset( $assistant_config['title'] ) ? $assistant_config['title'] : null,
-					'has_system_prompt_in_options' => isset( $options['system_prompt'] ),
-					'system_prompt_empty'          => empty( $options['system_prompt'] ),
-					'system_prompt_length'         => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
-					'system_prompt_preview'        => isset( $options['system_prompt'] ) ? substr( (string) $options['system_prompt'], 0, 200 ) : '',
-					'has_system_prompt_in_config'  => ! empty( $assistant_config['system_prompt'] ),
-					'config_system_prompt_length'  => ! empty( $assistant_config['system_prompt'] ) ? strlen( (string) $assistant_config['system_prompt'] ) : 0,
-					'config_system_prompt_preview' => ! empty( $assistant_config['system_prompt'] ) ? substr( (string) $assistant_config['system_prompt'], 0, 200 ) : '',
-				)
+				'sanitize_options_system_prompt',
+				'System prompt propagation in sanitize_options',
+				$log_data
 			);
 		}
 
