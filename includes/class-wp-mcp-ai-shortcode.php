@@ -740,9 +740,10 @@ class WP_MCP_AI_Shortcode {
 			// Check: provider is embedded AND (base version not defined OR base version is false).
 			// Embedded provider is only available in Pro version (not base version).
 			// This MUST be done before enqueuing chat script to ensure proper loading order.
+			// Skip embedded provider in Elementor editor to prevent JavaScript conflicts.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
-			if ( $needs_embedded_provider ) {
+			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
 				$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
@@ -785,7 +786,8 @@ class WP_MCP_AI_Shortcode {
 			$script_version  = $this->get_asset_version( $script_relative );
 
 			// Check if we need to register/re-register with embedded provider dependency.
-			$should_register_with_embedded = $needs_embedded_provider;
+			// In Elementor editor, we skip embedded provider so we should not add the dependency.
+			$should_register_with_embedded = $needs_embedded_provider && ! $is_elementor_editor;
 			$already_registered            = wp_script_is( self::SCRIPT_HANDLE, 'registered' );
 			$was_deregistered              = false;
 
