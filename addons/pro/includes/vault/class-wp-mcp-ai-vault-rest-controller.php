@@ -666,10 +666,12 @@ class WP_MCP_AI_Vault_REST_Controller extends WP_REST_Controller {
 	/**
 	 * Prepare item for REST response
 	 *
-	 * @param WP_Post $post Post object.
+	 * @param WP_Post $item Post object.
+	 * @param WP_REST_Request $request Request object.
 	 * @return array
 	 */
-	public function prepare_item_for_response( $post ) {
+	public function prepare_item_for_response( $item, $request ) {
+		$post = $item; // For backward compatibility with existing code
 		$item_type  = get_post_meta( $post->ID, '_vault_item_type', true );
 		$folder_id  = get_post_meta( $post->ID, '_vault_folder_id', true );
 		$favorite   = get_post_meta( $post->ID, '_vault_favorite', true ) === '1';
