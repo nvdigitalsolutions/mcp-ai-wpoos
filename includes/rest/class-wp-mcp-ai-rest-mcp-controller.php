@@ -208,10 +208,10 @@ class WP_MCP_AI_REST_MCP_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'sanitize_callback' => 'wp_kses_post',
 						),
 						'provider'      => array(
-							'description'       => __( 'AI provider (openai, gemini, ollama).', 'mcp-ai-wpoos' ),
+							'description'       => __( 'AI provider (openai, gemini, ollama, anthropic, lm_studio, huggingface, cloudflare, embedded).', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => false,
-							'enum'              => array( 'openai', 'gemini', 'ollama' ),
+							'enum'              => array( 'openai', 'gemini', 'ollama', 'anthropic', 'lm_studio', 'huggingface', 'cloudflare', 'embedded' ),
 							'sanitize_callback' => 'sanitize_key',
 						),
 						'model'         => array(
