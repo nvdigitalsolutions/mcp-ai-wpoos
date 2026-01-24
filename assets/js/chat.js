@@ -11560,6 +11560,8 @@
      * @param {Object} submissionContext Submission context for restore
      */
     function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext) {
+        console.log('[NV oOS] Starting embedded completion generation');
+        
         setStatus(state.container, {
             message: getString('embeddedGenerating', 'Generating response...'),
             type: 'processing',
@@ -11584,9 +11586,15 @@
             };
         });
 
+        console.log('[NV oOS] Formatted messages for embedded client:', {
+            messageCount: formattedMessages.length,
+            lastMessage: formattedMessages[formattedMessages.length - 1]
+        });
+
         // Use streaming for better UX
         const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
         let fullContent = '';
+        let chunkCallbackCount = 0;
 
         // Add empty assistant message bubble that will be filled progressively
         const assistantMessage = {
@@ -11603,10 +11611,16 @@
         const bubble = appendMessage(state.messagesEl, 'assistant', { text: '' }, true, { state: state });
         if (bubble) {
             bubble.setAttribute('data-message-id', assistantMessageId);
+            console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
         }
 
         // Get max_tokens from config or use default
         const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+
+        console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
+            temperature: state.config.temperature || 0.7,
+            maxTokens: maxTokens
+        });
 
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
@@ -11615,9 +11629,16 @@
                 max_tokens: maxTokens
             },
             function(chunk) {
+                chunkCallbackCount++;
+                
                 // Update message with each chunk
                 if (chunk.done) {
                     // Final chunk - update status
+                    console.log('[NV oOS] Received done chunk:', {
+                        callbackNumber: chunkCallbackCount,
+                        finalContentLength: chunk.fullContent.length
+                    });
+                    
                     setStatus(state.container, {
                         message: getString('complete', 'Complete'),
                         type: 'success',
@@ -11625,6 +11646,14 @@
                     });
                 } else {
                     // Progressive update
+                    if (chunkCallbackCount % 5 === 0 || chunkCallbackCount === 1) {
+                        console.log('[NV oOS] Received chunk callback:', {
+                            callbackNumber: chunkCallbackCount,
+                            deltaLength: chunk.content.length,
+                            fullContentLength: chunk.fullContent.length
+                        });
+                    }
+                    
                     fullContent = chunk.fullContent;
                     assistantMessage.content[0].text = fullContent;
                     
@@ -11643,12 +11672,21 @@
         )
         .then(function(result) {
             // Completion successful
+            console.log('[NV oOS] Received final result from generateStreamingCompletion:', {
+                success: result.success,
+                contentLength: result.content ? result.content.length : 0,
+                hasUsage: !!(result.usage),
+                usage: result.usage
+            });
+            
             assistantMessage.content[0].text = result.content;
             
             // Update the final message bubble in the DOM with the complete content
             // This ensures the message is visible even if the streaming updates missed the final chunk
             const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
             if (bubble && result.content) {
+                console.log('[NV oOS] Updating final message bubble in DOM');
+                
                 if (markdownService && markdownService.renderMarkdown) {
                     bubble.innerHTML = markdownService.renderMarkdown(result.content);
                 } else {
@@ -11668,15 +11706,28 @@
                         usage.model = state.config.model;
                     }
                     
+                    console.log('[NV oOS] Attaching usage badges to bubble:', usage);
+                    
                     // Attach usage badges to the bubble (no cost data for embedded LLM)
                     attachUsageBadges(bubble, usage, null);
                 }
+                
+                console.log('[NV oOS] Final message bubble updated successfully');
+            } else {
+                console.warn('[NV oOS] Could not find message bubble or result.content is empty:', {
+                    bubbleFound: !!bubble,
+                    hasContent: !!result.content
+                });
             }
             
             // Save to storage
+            console.log('[NV oOS] Saving conversation to storage');
             saveConversationToStorage(state);
             
+            console.log('[NV oOS] Calling finalize()');
             finalize();
+            
+            console.log('[NV oOS] Embedded completion generation completed successfully');
             return result;
         })
         .catch(function(error) {

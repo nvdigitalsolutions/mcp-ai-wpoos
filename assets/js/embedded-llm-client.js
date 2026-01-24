@@ -291,6 +291,13 @@
 		}
 
 		try {
+			// Log streaming start
+			console.log('[NV oOS Embedded Client] Starting streaming completion:', {
+				messageCount: messages.length,
+				temperature: options.temperature || 0.7,
+				maxTokens: options.max_tokens || 512
+			});
+
 			const asyncChunkGenerator = await currentEngine.chat.completions.create({
 				messages: messages,
 				temperature: options.temperature || 0.7,
@@ -301,12 +308,24 @@
 
 			let fullContent = '';
 			let lastChunk = null;
+			let chunkCount = 0;
 
 			for await (const chunk of asyncChunkGenerator) {
 				lastChunk = chunk; // Keep track of last chunk for usage data
 				const delta = chunk.choices[0]?.delta?.content || '';
 				if (delta) {
+					chunkCount++;
 					fullContent += delta;
+					
+					// Log chunk received (only log every 5th chunk to avoid spam)
+					if (chunkCount % 5 === 0 || chunkCount === 1) {
+						console.log('[NV oOS Embedded Client] Chunk received:', {
+							chunkNumber: chunkCount,
+							deltaLength: delta.length,
+							totalLength: fullContent.length
+						});
+					}
+					
 					if (onChunk) {
 						onChunk({
 							content: delta,
@@ -317,7 +336,15 @@
 				}
 			}
 
+			// Log completion
+			console.log('[NV oOS Embedded Client] Streaming completed:', {
+				totalChunks: chunkCount,
+				contentLength: fullContent.length,
+				hasUsage: !!(lastChunk && lastChunk.usage)
+			});
+
 			if (onChunk) {
+				console.log('[NV oOS Embedded Client] Calling onChunk with done=true');
 				onChunk({
 					content: '',
 					fullContent: fullContent,
@@ -328,13 +355,22 @@
 			// Extract usage data from last chunk if available
 			const usage = lastChunk && lastChunk.usage ? lastChunk.usage : {};
 
-			return {
+			const result = {
 				success: true,
 				content: fullContent,
 				usage: usage
 			};
 
+			console.log('[NV oOS Embedded Client] Returning final result:', {
+				success: result.success,
+				contentLength: result.content.length,
+				usageData: result.usage
+			});
+
+			return result;
+
 		} catch (error) {
+			console.error('[NV oOS Embedded Client] Streaming generation failed:', error);
 			throw new Error('Streaming generation failed: ' + error.message);
 		}
 	}
