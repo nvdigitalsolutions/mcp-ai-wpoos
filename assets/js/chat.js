@@ -11518,7 +11518,7 @@
         });
 
         // Use streaming for better UX
-        const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
         let fullContent = '';
 
         // Add empty assistant message bubble that will be filled progressively
@@ -11533,11 +11533,14 @@
         state.conversation.push(assistantMessage);
         renderMessage(state, assistantMessage);
 
+        // Get max_tokens from config or use default
+        const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+
         return embeddedClient.generateStreamingCompletion(
             formattedMessages,
             {
                 temperature: state.config.temperature || 0.7,
-                max_tokens: 2048
+                max_tokens: maxTokens
             },
             function(chunk) {
                 // Update message with each chunk

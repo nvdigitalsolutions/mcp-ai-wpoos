@@ -683,6 +683,8 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Enqueue embedded LLM client script if provider is embedded.
+			// Check: provider is embedded AND (base version not defined OR base version is false).
+			// Embedded provider is only available in Pro version (not base version).
 			if ( 'embedded' === $assistant_provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) ) {
 				$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
 				$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
@@ -699,6 +701,9 @@ class WP_MCP_AI_Shortcode {
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
 
 				// Load WebLLM library from CDN.
+				// Note: WebLLM is large (~40MB) and updated frequently by MLC AI team.
+				// Loading from CDN ensures users get the latest version with bug fixes and model support.
+				// The library is open source and maintained by MLC AI (Apache 2.0 license).
 				wp_enqueue_script(
 					'webllm',
 					'https://esm.run/@mlc-ai/web-llm',
