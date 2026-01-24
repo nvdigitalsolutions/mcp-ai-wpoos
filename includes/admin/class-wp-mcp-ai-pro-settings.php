@@ -1012,20 +1012,20 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				if ( file_exists( $qrcode_vendor_path ) ) {
 					return true;
 				}
-				
+
 				// Priority 2: Check if it's bundled into a Pro script.
 				// QR code might be bundled into a specific tool bundle.
 				$qrcode_bundle_path = WP_MCP_AI_PRO_PATH . 'bin/generate-qrcode.bundle.js';
 				if ( file_exists( $qrcode_bundle_path ) ) {
 					return true;
 				}
-				
+
 				// Priority 3: Check Pro addon's node_modules (development only).
 				$qrcode_node_path = WP_MCP_AI_PRO_PATH . 'node_modules/qrcode';
 				if ( file_exists( $qrcode_node_path ) ) {
 					return true;
 				}
-				
+
 				// If Pro addon is active, assume qrcode is available.
 				// This is more lenient for production deployments.
 				return defined( 'WP_MCP_AI_PRO_VERSION' );
@@ -1779,7 +1779,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <div class="wp-mcp-ai-settings-card">
 	<h2>
 		<span class="dashicons dashicons-performance"></span>
-		<?php esc_html_e( 'NPM Production: WebGPU/WebAssembly', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'NPM Production: WebGPU/WebAssembly', 'mcp-ai-wpoos' ); ?>
 	</h2>
 
 	<div class="notice notice-info inline" style="margin: 15px 0;">
@@ -1933,7 +1933,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 <div class="wp-mcp-ai-settings-card">
 	<h2>
 		<span class="dashicons dashicons-star-filled" style="color: #f0b849;"></span>
-		<?php esc_html_e( 'Pro Toolkit Features & Capabilities', 'mcp-ai-wpoos' ); ?>
+			<?php esc_html_e( 'Pro Toolkit Features & Capabilities', 'mcp-ai-wpoos' ); ?>
 	</h2>
 
 	<div class="notice notice-success inline" style="margin: 15px 0;">
@@ -2136,6 +2136,14 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<?php
 		}
 
+		/**
+		 * Add Pro Settings submenu page.
+		 *
+		 * Registers the Pro Settings page under the Pro Dashboard menu.
+		 *
+		 * @since 1.1.0
+		 * @return void
+		 */
 		public static function add_menu_page() {
 			add_submenu_page(
 				self::PARENT_SLUG,
