@@ -385,13 +385,18 @@
 					});
 				}
 
-				// Log streaming start
+				// Log streaming start with message details
 				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
 					instanceId: this.instanceId,
 					messageCount: messages.length,
 					temperature: requestPayload.temperature,
 					maxTokens: requestPayload.max_tokens,
-					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0)
+					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0),
+					messageRoles: messages.map(function(m) { return m.role; }),
+					hasSystemMessage: messages.some(function(m) { return m.role === 'system'; }),
+					systemMessagePreview: messages.find(function(m) { return m.role === 'system'; }) 
+						? messages.find(function(m) { return m.role === 'system'; }).content.substring(0, 150) + '...'
+						: 'No system message'
 				});
 
 				const asyncChunkGenerator = await this.currentEngine.chat.completions.create(requestPayload);
