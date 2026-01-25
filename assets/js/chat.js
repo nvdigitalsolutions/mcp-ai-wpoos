@@ -11456,8 +11456,26 @@
             // Generate unique instance ID
             // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
-            state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
-            console.log('[NV oOS] Created new embedded client instance:', instanceId);
+            
+            // Use enhanced WebLLM client if tools or knowledge are available
+            // Enhanced client supports tool calling and maintains system instructions and knowledge context
+            const hasTools = state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0;
+            const hasKnowledge = (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) || 
+                                 state.config.vectorStoreId;
+            const hasSystemPrompt = state.config.systemPrompt;
+            
+            if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
+                state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId);
+                console.log('[NV oOS] Created enhanced WebLLM client with tools/knowledge support:', {
+                    instanceId: instanceId,
+                    hasTools: hasTools,
+                    hasKnowledge: hasKnowledge,
+                    hasSystemPrompt: hasSystemPrompt
+                });
+            } else {
+                state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
+                console.log('[NV oOS] Created basic embedded client instance:', instanceId);
+            }
         }
 
         const embeddedClient = state.embeddedClient;
@@ -11823,13 +11841,31 @@
         // Prepend system prompt from assistant configuration if available and not already in messages
         // This ensures embedded providers receive the same system instructions as server-side providers
         if (state.config.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = state.config.systemPrompt;
+            
+            // Enhance system prompt with base knowledge context if available
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+            if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
+                var knowledgeContext = '\n\n## Base Knowledge\n\n';
+                knowledgeContext += 'You have access to the following knowledge base files:\n';
+                knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
+                knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+                systemPromptContent += knowledgeContext;
+                
+                console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
+                    memoryFileCount: state.config.memoryFiles.length,
+                    vectorStoreId: state.config.vectorStoreId || 'none'
+                });
+            }
+            
             formattedMessages.unshift({
                 role: 'system',
-                content: state.config.systemPrompt
+                content: systemPromptContent
             });
             console.log('[NV oOS] Prepended system prompt from assistant config:', {
-                systemPromptLength: state.config.systemPrompt.length,
-                systemPromptPreview: state.config.systemPrompt.substring(0, 100) + '...'
+                systemPromptLength: systemPromptContent.length,
+                systemPromptPreview: systemPromptContent.substring(0, 100) + '...',
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0)
             });
         }
 

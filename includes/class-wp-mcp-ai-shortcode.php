@@ -781,8 +781,9 @@ class WP_MCP_AI_Shortcode {
 			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
 			// For profession tests, use the permissions_assistant_id to get the associated assistant's provider.
 			// If permissions_assistant_id is not set, fall back to assistant_id (though this is rare).
-			$assistant_provider = '';
-			$assistant_model    = '';
+			$assistant_provider            = '';
+			$assistant_model               = '';
+			$assistant_config_for_provider = array(); // Initialize to empty array to prevent undefined variable errors.
 			if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				// Determine which assistant ID to use for provider check.
 				if ( $is_profession_test && isset( $permissions_assistant_id ) ) {
@@ -813,8 +814,9 @@ class WP_MCP_AI_Shortcode {
 				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
 				$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
 				$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+				$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
-				if ( $has_tools || $has_system_prompt ) {
+				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
 					// Enqueue tool adapter and function calling client for enhanced capabilities.
 					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
 					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
@@ -919,6 +921,15 @@ class WP_MCP_AI_Shortcode {
 			}
 			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
 				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+			}
+
+			// Add base knowledge (memory files and vector store) for embedded provider.
+			// This enables the embedded client to access the same knowledge base as server-side providers.
+			if ( ! empty( $assistant_config_for_provider['memory_files'] ) && is_array( $assistant_config_for_provider['memory_files'] ) ) {
+				$config['memoryFiles'] = $assistant_config_for_provider['memory_files'];
+			}
+			if ( ! empty( $assistant_config_for_provider['vector_store_id'] ) ) {
+				$config['vectorStoreId'] = $assistant_config_for_provider['vector_store_id'];
 			}
 
 			// Add tool definitions for embedded provider (Phase 1: Tool Support Implementation).
