@@ -23,7 +23,7 @@ Added a new `initializeModelContext()` method to the `EmbeddedLLMClient` class t
 2. **Sends initialization message**: Sends a non-streaming message with system prompt + base knowledge
 3. **Primes the model**: Ensures the model internalizes its instructions before any user interaction
 4. **Non-fatal**: Gracefully handles failures without breaking the model load process
-5. **Efficient**: Uses low temperature (0.3) and minimal tokens (50) for consistent initialization
+5. **Efficient**: Uses configurable settings (low temperature, minimal tokens) for consistent initialization
 
 ## Implementation Details
 
@@ -31,9 +31,66 @@ Added a new `initializeModelContext()` method to the `EmbeddedLLMClient` class t
 
 - `assets/js/embedded-llm-client.js`
 
+### Configuration Constants
+
+Added `MODEL_INIT_CONFIG` for initialization parameters:
+
+```javascript
+const MODEL_INIT_CONFIG = {
+    // Temperature for initialization message
+    // Lower temperature ensures consistent, predictable initialization
+    TEMPERATURE: 0.3,
+    
+    // Maximum tokens for initialization response
+    // Kept low since we only need a brief acknowledgment
+    MAX_TOKENS: 50,
+    
+    // User message that triggers model to process system prompt
+    // This message is intentionally generic and brief
+    TRIGGER_MESSAGE: 'Understood. I am ready to assist.'
+};
+```
+
 ### Key Changes
 
-#### 1. Added `initializeModelContext()` Method
+#### 1. Configuration Constants
+
+Added `MODEL_INIT_CONFIG` to make initialization parameters configurable:
+
+```javascript
+const MODEL_INIT_CONFIG = {
+    TEMPERATURE: 0.3,  // Lower temperature for consistent initialization
+    MAX_TOKENS: 50,    // Brief acknowledgment only
+    TRIGGER_MESSAGE: 'Understood. I am ready to assist.'
+};
+```
+
+#### 2. Knowledge Context Helper Method
+
+Added `_buildKnowledgeContext()` to extract knowledge template building:
+
+```javascript
+_buildKnowledgeContext() {
+    var knowledgeContext = '\n\n## Base Knowledge\n\n';
+    knowledgeContext += 'You have access to the following knowledge base:\n';
+    
+    if (this.memoryFiles && this.memoryFiles.length > 0) {
+        knowledgeContext += '- ' + this.memoryFiles.length + ' file(s) in your knowledge base\n';
+    }
+    
+    if (this.vectorStoreId) {
+        knowledgeContext += '- Vector store ID: ' + this.vectorStoreId + '\n';
+    }
+    
+    knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+    
+    return knowledgeContext;
+}
+```
+
+#### 3. Model Context Initialization Method
+
+Added `initializeModelContext()` method:
 
 ```javascript
 /**
@@ -62,18 +119,7 @@ async initializeModelContext() {
             
             // Enhance system prompt with base knowledge context if available
             if (this.hasKnowledge) {
-                var knowledgeContext = '\n\n## Base Knowledge\n\n';
-                knowledgeContext += 'You have access to the following knowledge base:\n';
-                
-                if (this.memoryFiles && this.memoryFiles.length > 0) {
-                    knowledgeContext += '- ' + this.memoryFiles.length + ' file(s) in your knowledge base\n';
-                }
-                
-                if (this.vectorStoreId) {
-                    knowledgeContext += '- Vector store ID: ' + this.vectorStoreId + '\n';
-                }
-                
-                knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+                var knowledgeContext = this._buildKnowledgeContext();
                 systemPromptContent += knowledgeContext;
             }
             
@@ -86,14 +132,14 @@ async initializeModelContext() {
         // Add a minimal user message to trigger model processing
         initMessages.push({
             role: 'user',
-            content: 'Understood. I am ready to assist.'
+            content: MODEL_INIT_CONFIG.TRIGGER_MESSAGE
         });
         
         // Send initialization message (non-streaming for efficiency)
         const initResponse = await this.currentEngine.chat.completions.create({
             messages: initMessages,
-            temperature: 0.3, // Lower temperature for consistent initialization
-            max_tokens: 50,   // Short response needed
+            temperature: MODEL_INIT_CONFIG.TEMPERATURE,
+            max_tokens: MODEL_INIT_CONFIG.MAX_TOKENS,
             stream: false
         });
         
@@ -112,7 +158,7 @@ async initializeModelContext() {
 }
 ```
 
-#### 2. Integration with `loadModel()`
+#### 4. Integration with `loadModel()`
 
 Modified the `loadModel()` method to call `initializeModelContext()` after successful model loading:
 
