@@ -170,7 +170,7 @@
 	 * Instance-based client that can be created per chat widget
 	 */
 	class EmbeddedLLMClient {
-		constructor(instanceId, config) {
+		constructor(instanceId, config = {}) {
 			// Validate and generate instance ID
 			if (!instanceId || typeof instanceId !== 'string' || instanceId.trim() === '') {
 				// Generate unique ID if not provided or invalid
@@ -188,16 +188,34 @@
 			
 			// Store assistant configuration (system prompt, tools, knowledge)
 			// This ensures the instance has access to its configuration throughout the session
-			config = config || {};
 			this.systemPrompt = config.systemPrompt || null;
 			this.tools = config.tools || [];
 			this.memoryFiles = config.memoryFiles || [];
 			this.vectorStoreId = config.vectorStoreId || null;
-			this.hasTools = !!(config.tools && Array.isArray(config.tools) && config.tools.length > 0);
-			this.hasKnowledge = !!(config.memoryFiles && Array.isArray(config.memoryFiles) && config.memoryFiles.length > 0) || !!config.vectorStoreId;
+			
+			// Computed configuration flags for easy checking
+			this.hasTools = this._hasValidTools(config.tools);
+			this.hasKnowledge = this._hasValidKnowledge(config.memoryFiles, config.vectorStoreId);
 			this.hasSystemPrompt = !!config.systemPrompt;
 			
 			console.log('[NV oOS Embedded Client] Created new instance:', this.instanceId);
+		}
+		
+		/**
+		 * Check if tools configuration is valid and non-empty
+		 * @private
+		 */
+		_hasValidTools(tools) {
+			return !!(tools && Array.isArray(tools) && tools.length > 0);
+		}
+		
+		/**
+		 * Check if knowledge configuration is valid and non-empty
+		 * @private
+		 */
+		_hasValidKnowledge(memoryFiles, vectorStoreId) {
+			const hasMemoryFiles = !!(memoryFiles && Array.isArray(memoryFiles) && memoryFiles.length > 0);
+			return hasMemoryFiles || !!vectorStoreId;
 		}
 
 		/**
