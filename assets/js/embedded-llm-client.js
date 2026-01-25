@@ -315,6 +315,32 @@
 		}
 
 		/**
+		 * Build knowledge context message for system prompt enhancement
+		 * 
+		 * Creates a formatted message that informs the model about available
+		 * knowledge base resources.
+		 * 
+		 * @private
+		 * @returns {string} Formatted knowledge context message
+		 */
+		_buildKnowledgeContext() {
+			var knowledgeContext = '\n\n## Base Knowledge\n\n';
+			knowledgeContext += 'You have access to the following knowledge base:\n';
+			
+			if (this.memoryFiles && this.memoryFiles.length > 0) {
+				knowledgeContext += '- ' + this.memoryFiles.length + ' file(s) in your knowledge base\n';
+			}
+			
+			if (this.vectorStoreId) {
+				knowledgeContext += '- Vector store ID: ' + this.vectorStoreId + '\n';
+			}
+			
+			knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+			
+			return knowledgeContext;
+		}
+
+		/**
 		 * Initialize model context with system prompt and base knowledge
 		 * 
 		 * This method sends an initialization message to the model after loading
@@ -340,18 +366,7 @@
 					
 					// Enhance system prompt with base knowledge context if available
 					if (this.hasKnowledge) {
-						var knowledgeContext = '\n\n## Base Knowledge\n\n';
-						knowledgeContext += 'You have access to the following knowledge base:\n';
-						
-						if (this.memoryFiles && this.memoryFiles.length > 0) {
-							knowledgeContext += '- ' + this.memoryFiles.length + ' file(s) in your knowledge base\n';
-						}
-						
-						if (this.vectorStoreId) {
-							knowledgeContext += '- Vector store ID: ' + this.vectorStoreId + '\n';
-						}
-						
-						knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+						var knowledgeContext = this._buildKnowledgeContext();
 						systemPromptContent += knowledgeContext;
 						
 						console.log('[NV oOS Embedded Client] Enhanced system prompt with base knowledge:', {
@@ -371,7 +386,7 @@
 				// This helps the model internalize the system prompt
 				initMessages.push({
 					role: 'user',
-					content: 'Understood. I am ready to assist.'
+					content: MODEL_INIT_CONFIG.TRIGGER_MESSAGE
 				});
 				
 				console.log('[NV oOS Embedded Client] Initializing model context for instance:', {
@@ -384,8 +399,8 @@
 				// Send initialization message (non-streaming for efficiency)
 				const initResponse = await this.currentEngine.chat.completions.create({
 					messages: initMessages,
-					temperature: 0.3, // Lower temperature for consistent initialization
-					max_tokens: 50,   // Short response needed
+					temperature: MODEL_INIT_CONFIG.TEMPERATURE,
+					max_tokens: MODEL_INIT_CONFIG.MAX_TOKENS,
 					stream: false
 				});
 				
@@ -748,6 +763,26 @@
 		// - Less background pressure
 		// Recommends models up to 25% of device RAM
 		DESKTOP_THRESHOLD: 0.25
+	};
+
+	/**
+	 * Model context initialization configuration.
+	 * 
+	 * These constants control how the model is primed with system instructions
+	 * and base knowledge after initial loading.
+	 */
+	const MODEL_INIT_CONFIG = {
+		// Temperature for initialization message
+		// Lower temperature ensures consistent, predictable initialization
+		TEMPERATURE: 0.3,
+		
+		// Maximum tokens for initialization response
+		// Kept low since we only need a brief acknowledgment
+		MAX_TOKENS: 50,
+		
+		// User message that triggers model to process system prompt
+		// This message is intentionally generic and brief
+		TRIGGER_MESSAGE: 'Understood. I am ready to assist.'
 	};
 
 	/**
