@@ -71,6 +71,11 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 				continue;
 			}
 
+			// Ensure the create_template tool class is loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Template' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php';
+			}
+
 			// Create template using create_template tool.
 			$create_tool = new WP_MCP_AI_Pro_Tool_Create_Template();
 			$result      = $create_tool->execute( $template, $context );
@@ -135,6 +140,15 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		$use_cct = $this->should_use_cct();
 
 		if ( $use_cct ) {
+			// Ensure CCT class is loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+				if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+				} else {
+					return false;
+				}
+			}
+
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
 			if ( ! $handler ) {
 				return false;
@@ -388,7 +402,14 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 			return false;
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
-			return false;
+			// Try to load the CCT class.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+			}
+			// Check again after attempting to load.
+			if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+				return false;
+			}
 		}
 		$settings = get_option( 'wp_mcp_ai_project_settings', array() );
 		return ! empty( $settings['use_cct_storage'] );
