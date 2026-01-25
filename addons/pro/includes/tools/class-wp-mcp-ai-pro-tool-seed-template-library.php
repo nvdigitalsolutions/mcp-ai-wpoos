@@ -86,9 +86,18 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 				$use_cct     = 'cct' === $result['storage_type'];
 
 				if ( $use_cct ) {
-					$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
-					if ( $handler ) {
-						$handler->update_item( $template_id, array( 'status' => 'published' ) );
+					// Ensure CCT class is loaded.
+					if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+						if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+							require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+						}
+					}
+
+					if ( class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+						$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
+						if ( $handler ) {
+							$handler->update_item( $template_id, array( 'status' => 'published' ) );
+						}
 					}
 				} else {
 					wp_update_post(
