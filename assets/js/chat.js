@@ -11823,13 +11823,31 @@
         // Prepend system prompt from assistant configuration if available and not already in messages
         // This ensures embedded providers receive the same system instructions as server-side providers
         if (state.config.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = state.config.systemPrompt;
+            
+            // Enhance system prompt with base knowledge context if available
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+            if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
+                var knowledgeContext = '\n\n## Base Knowledge\n\n';
+                knowledgeContext += 'You have access to the following knowledge base files:\n';
+                knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
+                knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+                systemPromptContent += knowledgeContext;
+                
+                console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
+                    memoryFileCount: state.config.memoryFiles.length,
+                    vectorStoreId: state.config.vectorStoreId || 'none'
+                });
+            }
+            
             formattedMessages.unshift({
                 role: 'system',
-                content: state.config.systemPrompt
+                content: systemPromptContent
             });
             console.log('[NV oOS] Prepended system prompt from assistant config:', {
-                systemPromptLength: state.config.systemPrompt.length,
-                systemPromptPreview: state.config.systemPrompt.substring(0, 100) + '...'
+                systemPromptLength: systemPromptContent.length,
+                systemPromptPreview: systemPromptContent.substring(0, 100) + '...',
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0)
             });
         }
 
