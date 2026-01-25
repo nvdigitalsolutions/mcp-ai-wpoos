@@ -298,7 +298,11 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 	 */
 	private function get_task_plan( $plan_id ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Task_Plan' ) ) {
-			return null;
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php';
+			} else {
+				return null;
+			}
 		}
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Get_Task_Plan();
