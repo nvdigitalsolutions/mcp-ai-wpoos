@@ -782,6 +782,17 @@ class WP_MCP_AI_Shortcode {
 				// WordPress ensures these are only loaded once even if called multiple times.
 				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
+
+				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
+				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
+				$has_tools          = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+				$has_system_prompt  = ! empty( $assistant_config_for_provider['system_prompt'] );
+				
+				if ( $has_tools || $has_system_prompt ) {
+					// Enqueue tool adapter and function calling client for enhanced capabilities.
+					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
+					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
+				}
 			}
 
 			// Enqueue chat script (always with same dependencies - no conditional changes).
