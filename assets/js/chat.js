@@ -11457,6 +11457,15 @@
             // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
             
+            // Prepare assistant configuration for embedded client
+            // This includes system prompt, tools, and knowledge base information
+            const assistantConfig = {
+                systemPrompt: state.config.systemPrompt,
+                tools: state.config.tools || [],
+                memoryFiles: state.config.memoryFiles || [],
+                vectorStoreId: state.config.vectorStoreId
+            };
+            
             // Use enhanced WebLLM client if tools or knowledge are available
             // Enhanced client supports tool calling and maintains system instructions and knowledge context
             const hasTools = state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0;
@@ -11465,15 +11474,15 @@
             const hasSystemPrompt = state.config.systemPrompt;
             
             if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
-                state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId);
+                state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId, assistantConfig);
                 console.log('[NV oOS] Created enhanced WebLLM client with tools/knowledge support:', {
                     instanceId: instanceId,
-                    hasTools: hasTools,
-                    hasKnowledge: hasKnowledge,
-                    hasSystemPrompt: hasSystemPrompt
+                    hasTools: state.embeddedClient.hasTools,
+                    hasKnowledge: state.embeddedClient.hasKnowledge,
+                    hasSystemPrompt: state.embeddedClient.hasSystemPrompt
                 });
             } else {
-                state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
+                state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId, assistantConfig);
                 console.log('[NV oOS] Created basic embedded client instance:', instanceId);
             }
         }

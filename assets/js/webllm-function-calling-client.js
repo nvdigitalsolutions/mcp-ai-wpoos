@@ -38,8 +38,9 @@
 	 * Extends existing EmbeddedLLMClient
 	 */
 	class WebLLMFunctionCallingClient extends window.WP_MCP_AI_EmbeddedLLM {
-		constructor( instanceId ) {
-			super( instanceId );
+		constructor( instanceId, config = {} ) {
+			// Pass config to parent constructor to store assistant configuration
+			super( instanceId, config );
 			this.toolAdapter = window.WP_MCP_AI_ToolAdapter;
 			this.availableTools = [];
 			console.log( '[NV oOS WebLLM Function Calling] Client created:', instanceId );
