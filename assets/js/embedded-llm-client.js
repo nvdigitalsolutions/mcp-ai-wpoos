@@ -170,7 +170,7 @@
 	 * Instance-based client that can be created per chat widget
 	 */
 	class EmbeddedLLMClient {
-		constructor(instanceId) {
+		constructor(instanceId, config) {
 			// Validate and generate instance ID
 			if (!instanceId || typeof instanceId !== 'string' || instanceId.trim() === '') {
 				// Generate unique ID if not provided or invalid
@@ -185,6 +185,17 @@
 			this.isInitializing = false;
 			this.modelLoaded = false;
 			this.currentModelId = null;
+			
+			// Store assistant configuration (system prompt, tools, knowledge)
+			// This ensures the instance has access to its configuration throughout the session
+			config = config || {};
+			this.systemPrompt = config.systemPrompt || null;
+			this.tools = config.tools || [];
+			this.memoryFiles = config.memoryFiles || [];
+			this.vectorStoreId = config.vectorStoreId || null;
+			this.hasTools = !!(config.tools && Array.isArray(config.tools) && config.tools.length > 0);
+			this.hasKnowledge = !!(config.memoryFiles && Array.isArray(config.memoryFiles) && config.memoryFiles.length > 0) || !!config.vectorStoreId;
+			this.hasSystemPrompt = !!config.systemPrompt;
 			
 			console.log('[NV oOS Embedded Client] Created new instance:', this.instanceId);
 		}
