@@ -39,7 +39,7 @@ import DOMPurify from 'dompurify';
 		const language = token.lang || '';
 		const escapedLang = language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
 		const className = escapedLang ? ' class="language-' + escapedLang + '"' : '';
-		return '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + code + '</code></pre>';
+		return '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(code) + '</code></pre>';
 	};
 
 	// Override image rendering to add our CSS class and lazy loading
