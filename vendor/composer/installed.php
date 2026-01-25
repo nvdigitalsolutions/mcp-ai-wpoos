@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-enhanced-webllm-scripts',
-        'version' => 'dev-copilot/add-enhanced-webllm-scripts',
-        'reference' => '2f6da9e55c42041023571c8fafe392e49ab23b52',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-yet-again',
+        'version' => 'dev-copilot/rebuild-all-zips-yet-again',
+        'reference' => '7112a2b595900e8b82c4b9d06d71884fb7cfb336',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-enhanced-webllm-scripts',
-            'version' => 'dev-copilot/add-enhanced-webllm-scripts',
-            'reference' => '2f6da9e55c42041023571c8fafe392e49ab23b52',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-yet-again',
+            'version' => 'dev-copilot/rebuild-all-zips-yet-again',
+            'reference' => '7112a2b595900e8b82c4b9d06d71884fb7cfb336',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
