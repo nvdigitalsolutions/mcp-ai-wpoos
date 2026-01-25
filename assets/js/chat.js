@@ -11456,8 +11456,26 @@
             // Generate unique instance ID
             // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
-            state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
-            console.log('[NV oOS] Created new embedded client instance:', instanceId);
+            
+            // Use enhanced WebLLM client if tools or knowledge are available
+            // Enhanced client supports tool calling and maintains system instructions and knowledge context
+            const hasTools = state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0;
+            const hasKnowledge = (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) || 
+                                 state.config.vectorStoreId;
+            const hasSystemPrompt = state.config.systemPrompt;
+            
+            if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
+                state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId);
+                console.log('[NV oOS] Created enhanced WebLLM client with tools/knowledge support:', {
+                    instanceId: instanceId,
+                    hasTools: hasTools,
+                    hasKnowledge: hasKnowledge,
+                    hasSystemPrompt: hasSystemPrompt
+                });
+            } else {
+                state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId);
+                console.log('[NV oOS] Created basic embedded client instance:', instanceId);
+            }
         }
 
         const embeddedClient = state.embeddedClient;
