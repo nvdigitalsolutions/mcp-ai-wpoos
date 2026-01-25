@@ -177,6 +177,15 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	 * @return array|null
 	 */
 	private function check_plan_completion( $plan_id ) {
+		// Ensure Get Task Plan tool is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Task_Plan' ) ) {
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php';
+			} else {
+				return null;
+			}
+		}
+
 		// Get task plan using existing tool.
 		$tool   = new WP_MCP_AI_Pro_Tool_Get_Task_Plan();
 		$result = $tool->execute(
