@@ -228,4 +228,93 @@ class Test_Embedded_Client_Knowledge_Tools extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'model', $config, 'Config should have model' );
 		$this->assertEquals( 'Llama-3.2-1B-Instruct-q4f16_1-MLC', $config['model'], 'Model should match' );
 	}
+
+	/**
+	 * Test that enhanced WebLLM scripts are enqueued when assistant has tools.
+	 *
+	 * This verifies that the tool adapter and function calling scripts are
+	 * enqueued to enable tool calling in the embedded client.
+	 */
+	public function test_enhanced_scripts_enqueued_with_tools() {
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		// Capture the output to trigger script enqueuing.
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant' => $this->test_data['assistant_id'],
+			)
+		);
+		$output = ob_get_clean();
+
+		// Get the global scripts registry.
+		global $wp_scripts;
+
+		// Verify base embedded scripts are enqueued.
+		$this->assertTrue(
+			wp_script_is( 'webllm-loader', 'enqueued' ),
+			'WebLLM loader should be enqueued'
+		);
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'enqueued' ),
+			'Embedded LLM client should be enqueued'
+		);
+
+		// Verify enhanced scripts are enqueued for tool support.
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'enqueued' ),
+			'WebLLM tool adapter should be enqueued when assistant has tools'
+		);
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'enqueued' ),
+			'WebLLM function calling client should be enqueued when assistant has tools'
+		);
+	}
+
+	/**
+	 * Test that enhanced WebLLM scripts are enqueued when assistant has system prompt.
+	 *
+	 * Even if assistant doesn't have tools, the enhanced scripts should be enqueued
+	 * if it has a system prompt to ensure knowledge is maintained properly.
+	 */
+	public function test_enhanced_scripts_enqueued_with_system_prompt() {
+		// Create assistant with only system prompt (no tools).
+		$assistant_id = wp_insert_post(
+			array(
+				'post_type'    => 'mcp_ai_assistant',
+				'post_title'   => 'Knowledge Only Assistant',
+				'post_status'  => 'publish',
+				'post_content' => 'Test assistant with only knowledge',
+			)
+		);
+
+		update_post_meta( $assistant_id, '_wp_mcp_ai_provider', 'embedded' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_model', 'Llama-3.2-1B-Instruct-q4f16_1-MLC' );
+		update_post_meta( $assistant_id, '_wp_mcp_ai_system_prompt', 'You are a helpful assistant.' );
+		// No tools set.
+
+		$shortcode = new WP_MCP_AI_Shortcode();
+
+		// Capture the output to trigger script enqueuing.
+		ob_start();
+		$shortcode->render(
+			array(
+				'assistant' => $assistant_id,
+			)
+		);
+		$output = ob_get_clean();
+
+		// Verify enhanced scripts are still enqueued for knowledge support.
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'enqueued' ),
+			'WebLLM tool adapter should be enqueued when assistant has system prompt'
+		);
+		$this->assertTrue(
+			wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'enqueued' ),
+			'WebLLM function calling client should be enqueued when assistant has system prompt'
+		);
+
+		// Clean up.
+		wp_delete_post( $assistant_id, true );
+	}
 }

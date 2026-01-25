@@ -147,6 +147,32 @@ class WP_MCP_AI_Shortcode {
 					true
 				);
 			}
+
+			// Register enhanced WebLLM scripts for tool calling and knowledge support.
+			$tool_adapter_path    = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
+			$tool_adapter_version = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
+			$function_calling_path    = WP_MCP_AI_URL . 'assets/js/webllm-function-calling-client.min.js';
+			$function_calling_version = $this->get_asset_version( 'assets/js/webllm-function-calling-client.min.js' );
+
+			if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-webllm-tool-adapter',
+					$tool_adapter_path,
+					array(),
+					$tool_adapter_version,
+					true
+				);
+			}
+
+			if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-webllm-function-calling',
+					$function_calling_path,
+					array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
+					$function_calling_version,
+					true
+				);
+			}
 		}
 
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
@@ -782,6 +808,17 @@ class WP_MCP_AI_Shortcode {
 				// WordPress ensures these are only loaded once even if called multiple times.
 				wp_enqueue_script( 'webllm-loader' );
 				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
+
+				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
+				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
+				$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+				$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+
+				if ( $has_tools || $has_system_prompt ) {
+					// Enqueue tool adapter and function calling client for enhanced capabilities.
+					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
+					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
+				}
 			}
 
 			// Enqueue chat script (always with same dependencies - no conditional changes).
