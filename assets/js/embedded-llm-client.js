@@ -296,6 +296,10 @@
 					modelId: modelId
 				});
 
+				// Initialize model context with system prompt and base knowledge if available
+				// This primes the model with instructions before any user interaction
+				await this.initializeModelContext();
+
 				return {
 					success: true,
 					model: modelId,
@@ -307,6 +311,96 @@
 				this.modelLoaded = false;
 				console.error('[NV oOS Embedded Client] Model load failed for instance:', this.instanceId, error);
 				throw error;
+			}
+		}
+
+		/**
+		 * Initialize model context with system prompt and base knowledge
+		 * 
+		 * This method sends an initialization message to the model after loading
+		 * to prime it with system instructions and knowledge base information.
+		 * This ensures the model is aware of its role and available knowledge
+		 * from the very first user interaction.
+		 * 
+		 * @private
+		 */
+		async initializeModelContext() {
+			// Only initialize if we have system prompt or knowledge
+			if (!this.hasSystemPrompt && !this.hasKnowledge) {
+				console.log('[NV oOS Embedded Client] No system prompt or knowledge to initialize for instance:', this.instanceId);
+				return;
+			}
+
+			try {
+				// Build initialization message with system prompt and knowledge context
+				var initMessages = [];
+				
+				if (this.systemPrompt) {
+					var systemPromptContent = this.systemPrompt;
+					
+					// Enhance system prompt with base knowledge context if available
+					if (this.hasKnowledge) {
+						var knowledgeContext = '\n\n## Base Knowledge\n\n';
+						knowledgeContext += 'You have access to the following knowledge base:\n';
+						
+						if (this.memoryFiles && this.memoryFiles.length > 0) {
+							knowledgeContext += '- ' + this.memoryFiles.length + ' file(s) in your knowledge base\n';
+						}
+						
+						if (this.vectorStoreId) {
+							knowledgeContext += '- Vector store ID: ' + this.vectorStoreId + '\n';
+						}
+						
+						knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+						systemPromptContent += knowledgeContext;
+						
+						console.log('[NV oOS Embedded Client] Enhanced system prompt with base knowledge:', {
+							instanceId: this.instanceId,
+							memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
+							hasVectorStore: !!this.vectorStoreId
+						});
+					}
+					
+					initMessages.push({
+						role: 'system',
+						content: systemPromptContent
+					});
+				}
+				
+				// Add a minimal user message to trigger model processing
+				// This helps the model internalize the system prompt
+				initMessages.push({
+					role: 'user',
+					content: 'Understood. I am ready to assist.'
+				});
+				
+				console.log('[NV oOS Embedded Client] Initializing model context for instance:', {
+					instanceId: this.instanceId,
+					hasSystemPrompt: this.hasSystemPrompt,
+					hasKnowledge: this.hasKnowledge,
+					systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0
+				});
+				
+				// Send initialization message (non-streaming for efficiency)
+				const initResponse = await this.currentEngine.chat.completions.create({
+					messages: initMessages,
+					temperature: 0.3, // Lower temperature for consistent initialization
+					max_tokens: 50,   // Short response needed
+					stream: false
+				});
+				
+				console.log('[NV oOS Embedded Client] Model context initialized successfully for instance:', {
+					instanceId: this.instanceId,
+					responseLength: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.length : 0
+				});
+				
+			} catch (error) {
+				// Don't fail the entire model load if context initialization fails
+				// Log the error and continue - the system prompt will still be sent with each message
+				console.warn('[NV oOS Embedded Client] Model context initialization failed (non-fatal):', {
+					instanceId: this.instanceId,
+					error: error.message
+				});
 			}
 		}
 
