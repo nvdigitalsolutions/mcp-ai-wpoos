@@ -57,7 +57,7 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * Register Transformers.js scripts
 	 */
 	public function register_scripts() {
-		// Transformers Tasks Client
+		// Transformers Tasks Client.
 		wp_register_script(
 			'wp-mcp-ai-transformers-tasks',
 			plugins_url( 'assets/js/transformers-tasks-client.min.js', WP_MCP_AI_FILE ),
@@ -66,7 +66,7 @@ class WP_MCP_AI_Transformers_Enqueue {
 			true
 		);
 
-		// Client Vector Store
+		// Client Vector Store.
 		wp_register_script(
 			'wp-mcp-ai-client-vector-store',
 			plugins_url( 'assets/js/client-vector-store.min.js', WP_MCP_AI_FILE ),
@@ -75,7 +75,7 @@ class WP_MCP_AI_Transformers_Enqueue {
 			true
 		);
 
-		// Tools Integration
+		// Tools Integration.
 		wp_register_script(
 			'wp-mcp-ai-transformers-tools',
 			plugins_url( 'assets/js/transformers-tools-integration.min.js', WP_MCP_AI_FILE ),
@@ -89,17 +89,17 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * Maybe enqueue scripts on frontend
 	 */
 	public function maybe_enqueue_scripts() {
-		// Check if Transformers.js is enabled
+		// Check if Transformers.js is enabled.
 		if ( ! $this->is_transformers_enabled() ) {
 			return;
 		}
 
-		// Only load on pages with chat interface
+		// Only load on pages with chat interface.
 		if ( ! $this->is_chat_page() ) {
 			return;
 		}
 
-		// Enqueue scripts
+		// Enqueue scripts.
 		$this->enqueue_transformers_scripts();
 	}
 
@@ -107,13 +107,13 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * Maybe enqueue scripts in admin
 	 */
 	public function maybe_enqueue_admin_scripts() {
-		// Check if we're on a relevant admin page
+		// Check if we're on a relevant admin page.
 		$screen = get_current_screen();
 		if ( ! $screen ) {
 			return;
 		}
 
-		// Only on specific admin pages
+		// Only on specific admin pages.
 		$allowed_pages = array(
 			'toplevel_page_wp-mcp-ai-settings',
 			'nv-oos_page_wp-mcp-ai-test-page',
@@ -124,12 +124,12 @@ class WP_MCP_AI_Transformers_Enqueue {
 			return;
 		}
 
-		// Check if Transformers.js is enabled
+		// Check if Transformers.js is enabled.
 		if ( ! $this->is_transformers_enabled() ) {
 			return;
 		}
 
-		// Enqueue scripts
+		// Enqueue scripts.
 		$this->enqueue_transformers_scripts();
 	}
 
@@ -137,35 +137,35 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * Enqueue Transformers.js scripts
 	 */
 	private function enqueue_transformers_scripts() {
-		// Enqueue tasks client
+		// Enqueue tasks client.
 		wp_enqueue_script( 'wp-mcp-ai-transformers-tasks' );
 
-		// Enqueue vector store if semantic search is enabled
+		// Enqueue vector store if semantic search is enabled.
 		if ( $this->is_semantic_search_enabled() ) {
 			wp_enqueue_script( 'wp-mcp-ai-client-vector-store' );
 		}
 
-		// Enqueue tools integration
+		// Enqueue tools integration.
 		wp_enqueue_script( 'wp-mcp-ai-transformers-tools' );
 
-		// Localize script with configuration
+		// Localize script with configuration.
 		wp_localize_script(
 			'wp-mcp-ai-transformers-tasks',
 			'wpMcpAiTransformers',
 			array(
-				'enabled'              => true,
-				'autoInit'             => apply_filters( 'wp_mcp_ai_transformers_auto_init', true ),
-				'autoInitVectorStore'  => $this->is_semantic_search_enabled(),
-				'debug'                => defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG,
+				'enabled'               => true,
+				'autoInit'              => apply_filters( 'wp_mcp_ai_transformers_auto_init', true ),
+				'autoInitVectorStore'   => $this->is_semantic_search_enabled(),
+				'debug'                 => defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG,
 				'semanticSearchEnabled' => $this->is_semantic_search_enabled(),
-				'features'             => array(
-					'summarization'      => true,
-					'sentiment'          => true,
-					'ner'                => true,
-					'embedding'          => $this->is_semantic_search_enabled(),
-					'translation'        => $this->is_translation_enabled(),
-					'questionAnswering'  => true,
-					'zeroShot'           => true,
+				'features'              => array(
+					'summarization'     => true,
+					'sentiment'         => true,
+					'ner'               => true,
+					'embedding'         => $this->is_semantic_search_enabled(),
+					'translation'       => $this->is_translation_enabled(),
+					'questionAnswering' => true,
+					'zeroShot'          => true,
 				),
 			)
 		);
@@ -177,12 +177,12 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * @return bool
 	 */
 	private function is_transformers_enabled() {
-		// Check constant
+		// Check constant.
 		if ( defined( 'WP_MCP_AI_TRANSFORMERS_ENABLED' ) ) {
 			return WP_MCP_AI_TRANSFORMERS_ENABLED;
 		}
 
-		// Check option
+		// Check option.
 		return (bool) get_option( 'wp_mcp_ai_enable_transformers', false );
 	}
 
@@ -196,12 +196,12 @@ class WP_MCP_AI_Transformers_Enqueue {
 			return false;
 		}
 
-		// Check constant
+		// Check constant.
 		if ( defined( 'WP_MCP_AI_SEMANTIC_SEARCH_ENABLED' ) ) {
 			return WP_MCP_AI_SEMANTIC_SEARCH_ENABLED;
 		}
 
-		// Check option
+		// Check option.
 		return (bool) get_option( 'wp_mcp_ai_enable_semantic_search', true );
 	}
 
@@ -215,12 +215,12 @@ class WP_MCP_AI_Transformers_Enqueue {
 			return false;
 		}
 
-		// Check constant
+		// Check constant.
 		if ( defined( 'WP_MCP_AI_TRANSLATION_ENABLED' ) ) {
 			return WP_MCP_AI_TRANSLATION_ENABLED;
 		}
 
-		// Check option
+		// Check option.
 		return (bool) get_option( 'wp_mcp_ai_enable_translation', true );
 	}
 
@@ -230,17 +230,17 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * @return bool
 	 */
 	private function is_chat_page() {
-		// Check for shortcode
+		// Check for shortcode.
 		if ( has_shortcode( get_post_field( 'post_content', get_the_ID() ), 'mcp_ai_chat' ) ) {
 			return true;
 		}
 
-		// Check for Elementor widget
+		// Check for Elementor widget.
 		if ( $this->has_elementor_chat_widget() ) {
 			return true;
 		}
 
-		// Allow filtering
+		// Allow filtering.
 		return apply_filters( 'wp_mcp_ai_is_chat_page', false );
 	}
 
@@ -250,18 +250,18 @@ class WP_MCP_AI_Transformers_Enqueue {
 	 * @return bool
 	 */
 	private function has_elementor_chat_widget() {
-		// Check if Elementor is active
+		// Check if Elementor is active.
 		if ( ! did_action( 'elementor/loaded' ) ) {
 			return false;
 		}
 
-		// Get Elementor document
+		// Get Elementor document.
 		$document = \Elementor\Plugin::$instance->documents->get( get_the_ID() );
 		if ( ! $document ) {
 			return false;
 		}
 
-		// Check if document has chat widget
+		// Check if document has chat widget.
 		$elements_data = $document->get_elements_data();
 		return strpos( wp_json_encode( $elements_data ), 'mcp-ai-chat' ) !== false;
 	}
@@ -312,5 +312,5 @@ class WP_MCP_AI_Transformers_Enqueue {
 	}
 }
 
-// Initialize
+// Initialize.
 WP_MCP_AI_Transformers_Enqueue::get_instance();
