@@ -11521,10 +11521,11 @@
             
             // Use enhanced WebLLM client if tools or knowledge are available
             // Enhanced client supports tool calling and maintains system instructions and knowledge context
-            const hasTools = state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0;
-            const hasKnowledge = (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) || 
-                                 state.config.vectorStoreId;
-            const hasSystemPrompt = state.config.systemPrompt || state.config.professionalPrompt;
+            // Check assistantConfig values (which include combined system prompt) instead of state.config
+            const hasTools = assistantConfig.tools && Array.isArray(assistantConfig.tools) && assistantConfig.tools.length > 0;
+            const hasKnowledge = (assistantConfig.memoryFiles && Array.isArray(assistantConfig.memoryFiles) && assistantConfig.memoryFiles.length > 0) || 
+                                 assistantConfig.vectorStoreId;
+            const hasSystemPrompt = !!(assistantConfig.systemPrompt && assistantConfig.systemPrompt.trim());
             
             if (DEBUG_MODE) {
                 console.log('[NV oOS] Embedded client capability flags before creation:', {
