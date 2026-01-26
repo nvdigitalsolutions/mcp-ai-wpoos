@@ -142,7 +142,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		// Gmail OAuth connect handler removed - button now links directly to Google.
 		// OAuth state and connection ID are stored in transient when button is rendered.
-		
+
 		// Handle Gmail OAuth callback action.
 		if ( 'gmail_oauth_callback' === $oauth_handler ) {
 			$this->handle_gmail_oauth_callback();
@@ -1112,12 +1112,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php
 							// Generate Google OAuth URL directly without intermediate handler.
 							$has_required_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
-							
+
 							if ( $has_required_credentials ) {
 								// Generate OAuth state and store connection ID.
 								$state         = wp_generate_uuid4();
 								$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
-								
+
 								set_transient(
 									$transient_key,
 									array(
@@ -1127,7 +1127,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									),
 									10 * MINUTE_IN_SECONDS
 								);
-								
+
 								// Build redirect URI (where Google will send user after authorization).
 								$redirect_uri = add_query_arg(
 									array(
@@ -1136,23 +1136,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									),
 									admin_url( 'admin.php' )
 								);
-								
+
 								// Build Google OAuth authorization URL.
 								$oauth_params = array(
-									'client_id'              => $connection['client_id'],
-									'redirect_uri'           => $redirect_uri,
-									'response_type'          => 'code',
-									'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
-									'access_type'            => 'offline',
+									'client_id'     => $connection['client_id'],
+									'redirect_uri'  => $redirect_uri,
+									'response_type' => 'code',
+									'scope'         => 'https://www.googleapis.com/auth/gmail.readonly',
+									'access_type'   => 'offline',
 									'include_granted_scopes' => 'true',
-									'prompt'                 => 'consent',
-									'state'                  => $state,
+									'prompt'        => 'consent',
+									'state'         => $state,
 								);
-								
+
 								if ( ! empty( $connection['user_email'] ) && 'me' !== strtolower( $connection['user_email'] ) ) {
 									$oauth_params['login_hint'] = $connection['user_email'];
 								}
-								
+
 								$oauth_url = add_query_arg( $oauth_params, 'https://accounts.google.com/o/oauth2/v2/auth' );
 							} else {
 								// If credentials not set, link to edit page with error.
