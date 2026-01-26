@@ -935,13 +935,36 @@ class WP_MCP_AI_Shortcode {
 			// Add tool definitions for embedded provider (Phase 1: Tool Support Implementation).
 			// This enables client-side LLM to know which tools are available and call them.
 			// Tools will be executed server-side via the existing orchestration layer.
+			$tool_slugs_to_include = array();
+			
+			// Start with assistant's configured tools.
 			if ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) {
+				$tool_slugs_to_include = $assistant_config_for_provider['tools'];
+			}
+			
+			// Automatically add semantic_content_search if assistant has knowledge files (RAG pattern).
+			// This enables embedded client to retrieve knowledge content server-side when needed.
+			if ( $has_knowledge && ! in_array( 'semantic_content_search', $tool_slugs_to_include, true ) ) {
+				$tool_slugs_to_include[] = 'semantic_content_search';
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log(
+						sprintf(
+							'[WP_MCP_AI] Auto-adding semantic_content_search tool for assistant %d (has knowledge files)',
+							$assistant_id
+						)
+					);
+				}
+			}
+			
+			// Build tool definitions for embedded client.
+			if ( ! empty( $tool_slugs_to_include ) ) {
 				$tool_definitions = array();
 
 				if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 					$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-					foreach ( $assistant_config_for_provider['tools'] as $tool_slug ) {
+					foreach ( $tool_slugs_to_include as $tool_slug ) {
 						$tool = $registry->get_tool( $tool_slug );
 						if ( $tool && method_exists( $tool, 'get_definition' ) ) {
 							$definition = $tool->get_definition();
@@ -963,9 +986,11 @@ class WP_MCP_AI_Shortcode {
 							'embedded_tools_config',
 							'Embedded provider: Tool definitions passed to client',
 							array(
-								'assistant_id' => $assistant_id,
-								'tool_count'   => count( $tool_definitions ),
-								'tool_names'   => array_map(
+								'assistant_id'       => $assistant_id,
+								'tool_count'         => count( $tool_definitions ),
+								'has_knowledge'      => $has_knowledge,
+								'auto_added_search'  => $has_knowledge && in_array( 'semantic_content_search', $tool_slugs_to_include, true ),
+								'tool_names'         => array_map(
 									function ( $def ) {
 										return isset( $def['function']['name'] ) ? $def['function']['name'] : 'unknown';
 									},

@@ -127,10 +127,21 @@ async initializeModelContext() {
 
 2. **Retrieval**: Model uses tools to retrieve knowledge when needed
    - Tool: `semantic_content_search` - searches WordPress content using embeddings
+   - **Automatically included** when assistant has `memoryFiles` or `vectorStoreId` configured
    - Tool executes server-side and returns relevant content
    - Model receives the content and incorporates it into its response
 
 3. **Response**: Model generates answer using retrieved knowledge
+
+### Automatic Tool Inclusion
+
+When an assistant has knowledge files (`memoryFiles`) or a vector store (`vectorStoreId`) configured, the `semantic_content_search` tool is **automatically added** to the embedded client's available tools. This ensures the RAG pattern works seamlessly without manual configuration.
+
+**What this means:**
+- You don't need to manually add `semantic_content_search` to the assistant's tools
+- If knowledge exists, the tool is automatically available
+- The embedded client can retrieve knowledge content on-demand
+- Works for both memory files and vector stores
 
 ### Example Flow
 
@@ -191,7 +202,8 @@ Set in WordPress Admin → Assistants → Edit Assistant → Memory Files
 - Upload files or select existing files
 - File IDs are stored in `_wp_mcp_ai_memory_files` post meta
 - File IDs are passed to client as `memoryFiles` array
-- Model uses `semantic_content_search` tool to retrieve content
+- **`semantic_content_search` tool is automatically added** when knowledge files are configured
+- Model uses `semantic_content_search` tool to retrieve content when needed (RAG pattern)
 
 ### 5. Vector Store (Advanced Knowledge)
 
@@ -199,6 +211,7 @@ Set in WordPress Admin → Assistants → Edit Assistant → Vector Store ID
 
 - Create vector store using OpenAI API or WordPress tools
 - Store ID is passed to client as `vectorStoreId` string
+- **`semantic_content_search` tool is automatically added** when vector store is configured
 - Model can use vector search tools to query the store
 
 ## Troubleshooting

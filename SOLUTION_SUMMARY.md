@@ -194,14 +194,17 @@ Final combined prompt sent to model.
 
 **Important**: Embedded client (browser-based) cannot directly access server-side files.
 
-Instead, it uses **RAG pattern**:
+Instead, it uses **RAG pattern** with automatic tool inclusion:
 1. System prompt: "You have 3 files in your knowledge base"
-2. User asks question
-3. Model calls tool: `semantic_content_search(query: "...")`
-4. Tool runs on server, searches files, returns relevant content
-5. Model uses content to generate answer
+2. **`semantic_content_search` tool automatically added** when knowledge files exist
+3. User asks question
+4. Model calls tool: `semantic_content_search(query: "...")`
+5. Tool runs on server, searches files, returns relevant content
+6. Model uses content to generate answer
 
 This is why the logs show file COUNT but not file CONTENT - the content is retrieved on-demand via tools.
+
+**New in this implementation**: The `semantic_content_search` tool is now automatically included for assistants with `memoryFiles` or `vectorStoreId`, ensuring RAG works seamlessly.
 
 ## What the Logs Will Tell You
 

@@ -219,13 +219,16 @@ This will show you EXACTLY what values are present (counts only, not full conten
 **Important**: Embedded clients can't directly access file content (security). Instead:
 
 1. System prompt tells model: "You have 3 files in your knowledge base"
-2. User asks question
-3. Model thinks: "I should search the knowledge base"
-4. Model calls tool: `semantic_content_search(query: "user question")`
-5. Tool runs on server, searches files, returns relevant content
-6. Model uses content to answer question
+2. **`semantic_content_search` tool automatically added** when knowledge exists
+3. User asks question
+4. Model thinks: "I should search the knowledge base"
+5. Model calls tool: `semantic_content_search(query: "user question")`
+6. Tool runs on server, searches files, returns relevant content
+7. Model uses content to answer question
 
 This is called **RAG** (Retrieval Augmented Generation).
+
+**Important**: As of this update, the `semantic_content_search` tool is automatically included when an assistant has memory files or a vector store configured. You don't need to manually add it!
 
 ## Quick Decision Tree
 
