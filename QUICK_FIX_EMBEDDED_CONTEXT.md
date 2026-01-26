@@ -1,0 +1,233 @@
+# Quick Fix Guide - Embedded Client Context Issue
+
+## The Issue
+
+Your logs show:
+```
+hasKnowledge: false
+memoryFileCount: 0
+systemPromptLength: 16 ("Your name is bob")
+```
+
+This means the embedded client is not receiving knowledge files or a complete system prompt.
+
+## Most Likely Causes (in order of probability)
+
+### 1. Assistant Has No Knowledge Files Configured ⭐ MOST LIKELY
+
+**Check:**
+1. Go to WordPress Admin → Assistants
+2. Edit the assistant (ID 1704 based on your logs)
+3. Scroll to "Memory Files" or "Base Knowledge" section
+4. Are there any files selected?
+
+**Fix:**
+- Add memory files to the assistant
+- OR if you don't need knowledge files, this is expected behavior
+
+### 2. Shortcode Missing Profession Attribute
+
+**Check:**
+Look at your shortcode:
+```
+[mcp_ai_chat assistant_id="1704" ...]
+```
+
+**Fix:**
+If you want a professional prompt, add:
+```
+[mcp_ai_chat assistant_id="1704" profession="123"]
+```
+where 123 is the ID of a profession post.
+
+### 3. System Prompt Is Actually That Short
+
+**Check:**
+1. Go to WordPress Admin → Assistants  
+2. Edit assistant (ID 1704)
+3. Check "System Prompt" field
+4. Is it just "Your name is bob"?
+
+**Fix:**
+- Add more detailed instructions
+- OR this is expected if you want a minimal system prompt
+
+## Quick Test - Verify Configuration
+
+### Step 1: Rebuild JavaScript
+
+You made changes to chat.js which needs to be bundled:
+
+```bash
+cd /path/to/mcp-ai-wpoos
+npm run build
+# or for production:
+npm run build:pro
+```
+
+### Step 2: Check Assistant Configuration
+
+Open browser console and run:
+
+```javascript
+// Get the config for your assistant
+const config = window.wpMcpAiChatInstances['wp-mcp-ai-chat-1704']; // Adjust ID
+
+console.log('System Prompt:', config.systemPrompt);
+console.log('Professional Prompt:', config.professionalPrompt);
+console.log('Memory Files:', config.memoryFiles);
+console.log('Vector Store ID:', config.vectorStoreId);
+console.log('Tools:', config.tools);
+```
+
+### Step 3: Look for New Diagnostic Logs
+
+After rebuilding, refresh the page and look for these logs in console:
+
+```
+[NV oOS] Creating embedded client with state.config:
+```
+
+This will show you EXACTLY what values are present.
+
+## What Each Component Does
+
+### System Prompt (Required for meaningful responses)
+- **Where**: WordPress Admin → Edit Assistant → System Prompt
+- **Purpose**: Base instructions for the AI
+- **Example**: "You are a helpful customer service assistant..."
+- **In logs**: `systemPromptLength` should be > 100 characters typically
+
+### Professional Prompt (Optional - from shortcode attribute)
+- **Where**: Shortcode attribute `profession="123"`
+- **Purpose**: Adds professional role on top of system prompt
+- **Example**: "# Role: Technical Support Specialist..."
+- **In logs**: `professionalPromptLength` should show if present
+
+### Memory Files (Optional - for knowledge base)
+- **Where**: WordPress Admin → Edit Assistant → Memory Files
+- **Purpose**: Tell model it can access knowledge via tools
+- **Example**: 3 uploaded documents about products
+- **In logs**: `memoryFilesLength` should be > 0, `hasKnowledge: true`
+
+### Vector Store (Optional - advanced knowledge)
+- **Where**: WordPress Admin → Edit Assistant → Vector Store ID
+- **Purpose**: Advanced knowledge storage with OpenAI
+- **Example**: "vs_abc123xyz"
+- **In logs**: `vectorStoreIdValue` should show the ID
+
+## Expected Log Output
+
+### Good Configuration (All Context Present)
+
+```javascript
+[NV oOS] Creating embedded client with state.config: {
+    hasSystemPrompt: true,
+    systemPromptLength: 250,
+    hasProfessionalPrompt: true,
+    professionalPromptLength: 150,
+    hasMemoryFiles: true,
+    memoryFilesLength: 3,
+    memoryFilesValue: [123, 456, 789],
+    hasVectorStoreId: true,
+    vectorStoreIdValue: "vs_abc123"
+}
+```
+
+### Minimal Configuration (No Knowledge, No Professional Prompt)
+
+```javascript
+[NV oOS] Creating embedded client with state.config: {
+    hasSystemPrompt: true,
+    systemPromptLength: 50,
+    hasProfessionalPrompt: false,
+    hasMemoryFiles: false,
+    memoryFilesLength: 0,
+    memoryFilesValue: [],
+    hasVectorStoreId: false,
+    vectorStoreIdValue: null
+}
+```
+
+### Your Current Configuration (From Logs)
+
+```javascript
+{
+    hasSystemPrompt: true,
+    systemPromptLength: 16,  // ⚠️ Very short!
+    // Professional prompt: NOT SHOWN (probably false)
+    // Memory files: NOT SHOWN (probably [])
+    hasKnowledge: false,     // ⚠️ No knowledge configured
+    memoryFileCount: 0       // ⚠️ No files
+}
+```
+
+## Action Items
+
+1. ✅ **Rebuild JavaScript** - Already done with the new logging
+2. ⬜ **Check Assistant Configuration** - Do you have knowledge files added?
+3. ⬜ **Test and Share Logs** - Run with rebuilt code and share console logs
+4. ⬜ **Based on logs, we'll identify exact issue**
+
+## Understanding Knowledge Files
+
+**Important**: Embedded clients can't directly access file content (security). Instead:
+
+1. System prompt tells model: "You have 3 files in your knowledge base"
+2. User asks question
+3. Model thinks: "I should search the knowledge base"
+4. Model calls tool: `semantic_content_search(query: "user question")`
+5. Tool runs on server, searches files, returns relevant content
+6. Model uses content to answer question
+
+This is called **RAG** (Retrieval Augmented Generation).
+
+## Quick Decision Tree
+
+```
+Is systemPromptLength > 50 characters?
+├─ NO → Check WordPress Admin → Edit Assistant → System Prompt field
+│       Add more detailed instructions
+│
+└─ YES → Is hasKnowledge: true?
+    ├─ NO → Do you NEED knowledge files?
+    │   ├─ YES → Add files in WordPress Admin → Edit Assistant → Memory Files
+    │   └─ NO → This is expected, no action needed
+    │
+    └─ YES → Is professionalPrompt shown in logs?
+        ├─ NO → Do you NEED professional prompt?
+        │   ├─ YES → Add profession="123" to shortcode
+        │   └─ NO → This is expected, no action needed
+        │
+        └─ YES → Everything looks good! ✅
+```
+
+## Still Stuck?
+
+Share these from your browser console:
+
+1. The full output of:
+   ```javascript
+   console.log(window.wpMcpAiChatInstances);
+   ```
+
+2. Look for and copy:
+   ```
+   [NV oOS] Creating embedded client with state.config:
+   [NV oOS] Prepared assistantConfig for embedded client:
+   [NV oOS Embedded Client] Created new instance:
+   ```
+
+3. Assistant ID and shortcode you're using
+
+## Reference
+
+- **Full Guide**: `docs/EMBEDDED_CLIENT_CONTEXT_GUIDE.md`
+- **Changed Files**: `assets/js/chat.js` (added diagnostic logging)
+- **PR**: Review the changes in the pull request for details
+
+---
+
+Last updated: 2026-01-26  
+Issue: Embedded client context initialization  
+Status: Diagnostic logging added, awaiting user test
