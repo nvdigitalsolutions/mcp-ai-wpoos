@@ -36,7 +36,7 @@
 		}
 		
 		// Create a temporary DOM element to leverage browser's built-in HTML entity decoding
-		var textarea = document.createElement('textarea');
+		const textarea = document.createElement('textarea');
 		textarea.innerHTML = text;
 		return textarea.value;
 	}

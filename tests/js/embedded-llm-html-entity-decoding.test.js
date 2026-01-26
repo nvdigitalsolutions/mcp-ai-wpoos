@@ -8,7 +8,10 @@
  */
 
 describe( 'Embedded LLM Client - HTML Entity Decoding', () => {
-	// Mock the decodeHtmlEntities function behavior
+	// Note: The decodeHtmlEntities function is internal to embedded-llm-client.js (IIFE)
+	// and not exported. We duplicate the implementation here to test the behavior.
+	// This ensures the logic works correctly and documents the expected behavior.
+	// Any changes to the actual implementation should be reflected here.
 	function decodeHtmlEntities( text ) {
 		if ( ! text || typeof text !== 'string' ) {
 			return text;
