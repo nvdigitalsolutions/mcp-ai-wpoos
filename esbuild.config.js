@@ -132,6 +132,17 @@ const builds = [
 		outfile: 'assets/js/webllm-multimodal-client.min.js',
 		...commonOptions,
 	},
+	// Transformers.js enhancement files (Phase 2)
+	{
+		entryPoints: ['assets/js/transformers-tasks-client.js'],
+		outfile: 'assets/js/transformers-tasks-client.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/client-vector-store.js'],
+		outfile: 'assets/js/client-vector-store.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files
