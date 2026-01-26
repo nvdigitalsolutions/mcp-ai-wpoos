@@ -37,9 +37,14 @@ class WP_MCP_AI_Validator_Service {
 	/**
 	 * Get singleton instance.
 	 *
-	 * @return WP_MCP_AI_Validator_Service
+	 * @return WP_MCP_AI_Validator_Service|null
 	 */
 	public static function get_instance() {
+		// Check if Symfony Validator is available.
+		if ( ! class_exists( 'Symfony\Component\Validator\Validation' ) ) {
+			return null;
+		}
+
 		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}

@@ -33,6 +33,12 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 	 */
 	public function __construct() {
 		$this->validator_service = \WP_MCP_AI\Validators\WP_MCP_AI_Validator_Service::get_instance();
+
+		// If validator service is not available, this tool cannot function.
+		if ( null === $this->validator_service ) {
+			// This should be caught by the registration check, but we add defense in depth.
+			return;
+		}
 	}
 
 	/**
@@ -67,6 +73,18 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 	 * @return array|\WP_Error Tool results or error.
 	 */
 	final public function execute( $arguments = array(), $context = array() ) {
+		// Check if validator service is available.
+		if ( null === $this->validator_service ) {
+			return new \WP_Error(
+				'validator_unavailable',
+				__( 'Symfony Validator dependencies are not available. Please ensure the plugin is properly installed with all required dependencies, or use the non-validated version of this tool.', 'mcp-ai-wpoos' ),
+				array(
+					'tool_slug' => $this->get_slug(),
+					'php_version' => PHP_VERSION,
+				)
+			);
+		}
+
 		// Check PHP version - attributes require PHP 8.0+.
 		if ( version_compare( PHP_VERSION, '8.0.0', '<' ) ) {
 			return new \WP_Error(
