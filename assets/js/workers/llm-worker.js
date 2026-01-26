@@ -9,7 +9,7 @@
  * @version 1.0.0
  */
 
-/* global self, WebAssembly */
+/* global self */
 
 /**
  * Web Worker for LLM operations
