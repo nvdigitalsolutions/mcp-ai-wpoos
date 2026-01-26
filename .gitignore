@@ -69,6 +69,9 @@ composer.phar
 /vendor/*/*/.gitattributes
 /vendor/*/*/*/.gitattributes
 
+# Exclude Symfony translations (saves ~2MB)
+/vendor/symfony/*/Resources/translations/
+
 # Pro addon dependencies
 # Exclude node_modules (development only)
 /addons/pro/node_modules/
@@ -120,4 +123,3 @@ test-transcript-routes.php
 /assets/js/vendor/neplex-vectorizer/*/node_modules/
 /assets/js/vendor/neplex-vectorizer/**/*.node
 test-modal-fix.html
-vendor/
