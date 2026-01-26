@@ -21,6 +21,27 @@
 	const CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk to avoid console spam
 
 	/**
+	 * Decode HTML entities in a string
+	 * 
+	 * This is needed because WordPress sanitizes meta fields with wp_kses_post()
+	 * which converts characters like & to &amp;. When passed via wp_json_encode()
+	 * to JavaScript, these HTML entities need to be decoded back to plain text.
+	 * 
+	 * @param {string} text - Text with potential HTML entities
+	 * @return {string} Decoded text
+	 */
+	function decodeHtmlEntities(text) {
+		if (!text || typeof text !== 'string') {
+			return text;
+		}
+		
+		// Create a temporary DOM element to leverage browser's built-in HTML entity decoding
+		const textarea = document.createElement('textarea');
+		textarea.innerHTML = text;
+		return textarea.value;
+	}
+
+	/**
 	 * Wait for WebLLM to be loaded
 	 * WebLLM is loaded asynchronously via dynamic import()
 	 * 
@@ -188,7 +209,8 @@
 			
 			// Store assistant configuration (system prompt, tools, knowledge)
 			// This ensures the instance has access to its configuration throughout the session
-			this.systemPrompt = config.systemPrompt || null;
+			// Decode HTML entities that may have been added by WordPress sanitization (wp_kses_post)
+			this.systemPrompt = config.systemPrompt ? decodeHtmlEntities(config.systemPrompt) : null;
 			this.tools = config.tools || [];
 			this.memoryFiles = config.memoryFiles || [];
 			this.vectorStoreId = config.vectorStoreId || null;
@@ -827,8 +849,9 @@
 		TEMPERATURE: 0.3,
 		
 		// Maximum tokens for initialization response
-		// Kept low since we only need a brief acknowledgment
-		MAX_TOKENS: 50,
+		// Increased to allow for proper acknowledgment of system prompt
+		// Previous value of 50 was too low and caused "exceeding max_tokens" errors
+		MAX_TOKENS: 256,
 		
 		// User message that triggers model to process system prompt
 		// This message is intentionally generic and brief
