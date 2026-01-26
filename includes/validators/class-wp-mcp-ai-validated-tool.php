@@ -79,7 +79,7 @@ abstract class WP_MCP_AI_Validated_Tool implements WP_MCP_AI_Tool_Interface {
 				'validator_unavailable',
 				__( 'Symfony Validator dependencies are not available. Please ensure the plugin is properly installed with all required dependencies, or use the non-validated version of this tool.', 'mcp-ai-wpoos' ),
 				array(
-					'tool_slug' => $this->get_slug(),
+					'tool_slug'   => $this->get_slug(),
 					'php_version' => PHP_VERSION,
 				)
 			);
