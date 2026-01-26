@@ -219,10 +219,36 @@ Located in root `composer.json`:
 }
 ```
 
+### Installation and Distribution
+
 PHP dependencies are:
-- Installed via `composer install`
-- Located in `vendor/` (included in distribution)
-- Used for validation, HTTP clients, caching, etc.
+- **Installed via**: `composer install --no-dev --prefer-dist --classmap-authoritative`
+- **Located in**: `vendor/` directory at plugin root
+- **Included in distribution**: YES - The `vendor/` directory is automatically included when building plugin ZIPs
+- **Used for**: Validation (Symfony Validator), HTTP clients, caching, file operations, etc.
+
+### Critical: Symfony Validator Dependency
+
+**Symfony Validator is REQUIRED for validated tools to function.** The plugin includes defensive checks to gracefully handle missing dependencies:
+
+1. If `vendor/autoload.php` is missing → Plugin still loads, but validated tools are skipped
+2. If Symfony Validator class is not available → Validated tools return a helpful error message
+3. Non-validated versions of tools continue to work normally
+
+**For Production Deployments:**
+- The `vendor/` directory MUST be included in your deployment
+- Build the plugin using `./bin/build-plugin-zip.sh` which automatically includes vendor
+- Do NOT manually copy files - use the build script to ensure all dependencies are included
+- The `.distignore` file does NOT exclude `vendor/` - only `vendor-dev/` is excluded
+
+**Checking Vendor Availability:**
+```bash
+# Verify vendor directory exists in your deployment
+ls -la /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/vendor/
+
+# Verify Symfony Validator is present
+ls -la /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/vendor/symfony/validator/
+```
 
 ## Git Strategy
 
@@ -278,6 +304,35 @@ public function is_available() {
 ```
 
 ## Troubleshooting
+
+### Fatal Error: Symfony\Component\Validator\Validation Not Found
+
+**Symptoms:**
+```
+Fatal error: Class "Symfony\Component\Validator\Validation" not found
+```
+
+**Cause:** The `vendor/` directory is missing from your plugin installation.
+
+**Solution:**
+1. **If deploying from source:** Use the build script to create a proper distribution:
+   ```bash
+   ./bin/build-plugin-zip.sh --combined
+   # Upload build/mcp-ai-wpoos-X.Y.Z.zip to your site
+   ```
+
+2. **If already deployed:** Manually install production dependencies on the server:
+   ```bash
+   cd /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos
+   composer install --no-dev --prefer-dist --classmap-authoritative
+   ```
+
+3. **If using Git deployment:** Make sure `vendor/` is NOT in `.gitignore` for production branches.
+
+**Prevention:** 
+- Always use `./bin/build-plugin-zip.sh` to create distributions
+- The build script automatically runs `composer install --no-dev` and includes vendor
+- Do NOT use `.distignore` patterns that would exclude the `vendor/` directory
 
 ### Package Not Found in Production
 
