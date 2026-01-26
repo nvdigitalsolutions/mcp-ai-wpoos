@@ -138,6 +138,17 @@ const builds = [
 		outfile: 'assets/js/transformers-tasks-client.min.js',
 		...commonOptions,
 	},
+	// LangChain.js files (Phase 3)
+	{
+		entryPoints: ['assets/js/langchain-tool-adapter.js'],
+		outfile: 'assets/js/langchain-tool-adapter.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/langchain-orchestration.js'],
+		outfile: 'assets/js/langchain-orchestration.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files
