@@ -216,8 +216,10 @@
 			this.vectorStoreId = config.vectorStoreId || null;
 			
 			// Computed configuration flags for easy checking
-			this.hasTools = this._hasValidTools(config.tools);
-			this.hasKnowledge = this._hasValidKnowledge(config.memoryFiles, config.vectorStoreId);
+			// Use stored values (this.*) instead of config values for consistency
+			// This ensures flags reflect the actual values that will be used later
+			this.hasTools = this._hasValidTools(this.tools);
+			this.hasKnowledge = this._hasValidKnowledge(this.memoryFiles, this.vectorStoreId);
 			// Check decoded systemPrompt, not the original config value
 			// This ensures we detect system prompts even after HTML entity decoding
 			this.hasSystemPrompt = !!(this.systemPrompt && this.systemPrompt.trim());

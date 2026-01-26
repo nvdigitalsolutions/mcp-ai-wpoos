@@ -11,7 +11,7 @@
  * @package WP_MCP_AI
  */
 
-describe( 'Embedded LLM Client - hasSystemPrompt Flag', () => {
+describe( 'Embedded LLM Client - Configuration Flags', () => {
 	// Duplicate the decodeHtmlEntities function for testing
 	// (same as in embedded-llm-html-entity-decoding.test.js)
 	function decodeHtmlEntities( text ) {
@@ -187,6 +187,174 @@ describe( 'Embedded LLM Client - hasSystemPrompt Flag', () => {
 			// New approach would be false (correct)
 			const newApproach = calculateHasSystemPrompt( config );
 			expect( newApproach ).toBe( false );
+		} );
+	} );
+
+	describe( 'hasTools flag calculation', () => {
+		// Simulate the logic from the embedded-llm-client.js constructor
+		function calculateHasTools( config ) {
+			const tools = config.tools || [];
+			return !! ( tools && Array.isArray( tools ) && tools.length > 0 );
+		}
+
+		it( 'should be true for valid tools array', () => {
+			const config = {
+				tools: [ { name: 'search' }, { name: 'calculator' } ],
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( true );
+		} );
+
+		it( 'should be true for single tool', () => {
+			const config = {
+				tools: [ { name: 'search' } ],
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( true );
+		} );
+
+		it( 'should be false for empty tools array', () => {
+			const config = {
+				tools: [],
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( false );
+		} );
+
+		it( 'should be false for null tools', () => {
+			const config = {
+				tools: null,
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( false );
+		} );
+
+		it( 'should be false for undefined tools', () => {
+			const config = {
+				tools: undefined,
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( false );
+		} );
+
+		it( 'should be false for non-array tools', () => {
+			const config = {
+				tools: 'not an array',
+			};
+
+			const hasTools = calculateHasTools( config );
+
+			expect( hasTools ).toBe( false );
+		} );
+
+		it( 'should use stored value after normalization', () => {
+			// When config.tools is undefined, it becomes [] after normalization
+			const config = {
+				tools: undefined,
+			};
+
+			// Simulate stored value normalization
+			const storedTools = config.tools || [];
+			const hasToolsOld = !! ( config.tools && Array.isArray( config.tools ) && config.tools.length > 0 );
+			const hasToolsNew = !! ( storedTools && Array.isArray( storedTools ) && storedTools.length > 0 );
+
+			// Both should be false (empty array)
+			expect( hasToolsOld ).toBe( false );
+			expect( hasToolsNew ).toBe( false );
+		} );
+	} );
+
+	describe( 'hasKnowledge flag calculation', () => {
+		// Simulate the logic from the embedded-llm-client.js constructor
+		function calculateHasKnowledge( config ) {
+			const memoryFiles = config.memoryFiles || [];
+			const vectorStoreId = config.vectorStoreId || null;
+			const hasMemoryFiles = !! ( memoryFiles && Array.isArray( memoryFiles ) && memoryFiles.length > 0 );
+			return hasMemoryFiles || !! vectorStoreId;
+		}
+
+		it( 'should be true for valid memory files', () => {
+			const config = {
+				memoryFiles: [ { id: 1, name: 'doc1.pdf' } ],
+				vectorStoreId: null,
+			};
+
+			const hasKnowledge = calculateHasKnowledge( config );
+
+			expect( hasKnowledge ).toBe( true );
+		} );
+
+		it( 'should be true for vector store ID', () => {
+			const config = {
+				memoryFiles: [],
+				vectorStoreId: 'vs_123',
+			};
+
+			const hasKnowledge = calculateHasKnowledge( config );
+
+			expect( hasKnowledge ).toBe( true );
+		} );
+
+		it( 'should be true for both memory files and vector store', () => {
+			const config = {
+				memoryFiles: [ { id: 1, name: 'doc1.pdf' } ],
+				vectorStoreId: 'vs_123',
+			};
+
+			const hasKnowledge = calculateHasKnowledge( config );
+
+			expect( hasKnowledge ).toBe( true );
+		} );
+
+		it( 'should be false for empty memory files and no vector store', () => {
+			const config = {
+				memoryFiles: [],
+				vectorStoreId: null,
+			};
+
+			const hasKnowledge = calculateHasKnowledge( config );
+
+			expect( hasKnowledge ).toBe( false );
+		} );
+
+		it( 'should be false for null/undefined memory files and vector store', () => {
+			const config = {
+				memoryFiles: null,
+				vectorStoreId: undefined,
+			};
+
+			const hasKnowledge = calculateHasKnowledge( config );
+
+			expect( hasKnowledge ).toBe( false );
+		} );
+
+		it( 'should use stored values after normalization', () => {
+			// When config values are undefined, they become normalized
+			const config = {
+				memoryFiles: undefined,
+				vectorStoreId: undefined,
+			};
+
+			// Simulate stored value normalization
+			const storedMemoryFiles = config.memoryFiles || [];
+			const storedVectorStoreId = config.vectorStoreId || null;
+			
+			const hasKnowledgeOld = !! ( ( config.memoryFiles && Array.isArray( config.memoryFiles ) && config.memoryFiles.length > 0 ) || config.vectorStoreId );
+			const hasKnowledgeNew = !! ( ( storedMemoryFiles && Array.isArray( storedMemoryFiles ) && storedMemoryFiles.length > 0 ) || storedVectorStoreId );
+
+			// Both should be false
+			expect( hasKnowledgeOld ).toBe( false );
+			expect( hasKnowledgeNew ).toBe( false );
 		} );
 	} );
 } );
