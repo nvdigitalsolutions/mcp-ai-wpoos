@@ -16,6 +16,22 @@
 
 describe( 'Embedded Client - Configuration Flag Checks', () => {
 	/**
+	 * Helper function to build complete system prompt from state config
+	 * This mirrors the logic in chat.js lines 11482-11496
+	 */
+	function buildCompleteSystemPrompt( stateConfig ) {
+		let completeSystemPrompt = stateConfig.systemPrompt || '';
+		if ( stateConfig.professionalPrompt ) {
+			if ( completeSystemPrompt ) {
+				completeSystemPrompt = completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt;
+			} else {
+				completeSystemPrompt = stateConfig.professionalPrompt;
+			}
+		}
+		return completeSystemPrompt;
+	}
+
+	/**
 	 * Simulate the logic from chat.js sendChatEmbedded function
 	 * This is the NEW (correct) behavior after the fix
 	 */
@@ -23,6 +39,7 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 		const hasTools = assistantConfig.tools && Array.isArray( assistantConfig.tools ) && assistantConfig.tools.length > 0;
 		const hasKnowledge = ( assistantConfig.memoryFiles && Array.isArray( assistantConfig.memoryFiles ) && assistantConfig.memoryFiles.length > 0 ) ||
 			assistantConfig.vectorStoreId;
+		// Note: Using !! here to ensure boolean return type for test assertions
 		const hasSystemPrompt = !! ( assistantConfig.systemPrompt && assistantConfig.systemPrompt.trim() );
 
 		return { hasTools, hasKnowledge, hasSystemPrompt };
@@ -53,15 +70,8 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 				vectorStoreId: null,
 			};
 
-			// Build combined system prompt (as done in chat.js lines 11482-11495)
-			let completeSystemPrompt = stateConfig.systemPrompt || '';
-			if ( stateConfig.professionalPrompt ) {
-				if ( completeSystemPrompt ) {
-					completeSystemPrompt = completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt;
-				} else {
-					completeSystemPrompt = stateConfig.professionalPrompt;
-				}
-			}
+			// Build combined system prompt using helper
+			const completeSystemPrompt = buildCompleteSystemPrompt( stateConfig );
 
 			const assistantConfig = {
 				systemPrompt: completeSystemPrompt,
@@ -94,15 +104,8 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 				vectorStoreId: null,
 			};
 
-			// Build combined system prompt
-			let completeSystemPrompt = stateConfig.systemPrompt || '';
-			if ( stateConfig.professionalPrompt ) {
-				if ( completeSystemPrompt ) {
-					completeSystemPrompt = completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt;
-				} else {
-					completeSystemPrompt = stateConfig.professionalPrompt;
-				}
-			}
+			// Build combined system prompt using helper
+			const completeSystemPrompt = buildCompleteSystemPrompt( stateConfig );
 
 			const assistantConfig = {
 				systemPrompt: completeSystemPrompt,
@@ -134,15 +137,8 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 				vectorStoreId: null,
 			};
 
-			// Build combined system prompt
-			let completeSystemPrompt = stateConfig.systemPrompt || '';
-			if ( stateConfig.professionalPrompt ) {
-				if ( completeSystemPrompt ) {
-					completeSystemPrompt = completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt;
-				} else {
-					completeSystemPrompt = stateConfig.professionalPrompt;
-				}
-			}
+			// Build combined system prompt using helper
+			const completeSystemPrompt = buildCompleteSystemPrompt( stateConfig );
 
 			const assistantConfig = {
 				systemPrompt: completeSystemPrompt,
@@ -288,10 +284,7 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 				vectorStoreId: null,
 			};
 
-			let completeSystemPrompt = stateConfig.systemPrompt || '';
-			if ( stateConfig.professionalPrompt ) {
-				completeSystemPrompt = completeSystemPrompt ? completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt : stateConfig.professionalPrompt;
-			}
+			const completeSystemPrompt = buildCompleteSystemPrompt( stateConfig );
 
 			const assistantConfig = {
 				systemPrompt: completeSystemPrompt,
@@ -360,10 +353,7 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 				vectorStoreId: null,
 			};
 
-			let completeSystemPrompt = stateConfig.systemPrompt || '';
-			if ( stateConfig.professionalPrompt ) {
-				completeSystemPrompt = completeSystemPrompt ? completeSystemPrompt + '\n\n' + stateConfig.professionalPrompt : stateConfig.professionalPrompt;
-			}
+			const completeSystemPrompt = buildCompleteSystemPrompt( stateConfig );
 
 			const assistantConfig = {
 				systemPrompt: completeSystemPrompt,
