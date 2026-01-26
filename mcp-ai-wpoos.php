@@ -524,6 +524,9 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-sh
 
 // Load WebLLM enqueue manager (Phase 1: Advanced WebLLM Integration).
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
+
+// Load Transformers.js enqueue manager (Phase 2: Browser-Native AI Tasks).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 
 // Load Pro addon early so it can register tool hooks before tool registry initializes.

@@ -883,6 +883,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Generate_OpenAI_Speech'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-speech.php',
 				'WP_MCP_AI_Tool_Transcribe_OpenAI_Audio'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-transcribe-openai-audio.php',
 				'WP_MCP_AI_Tool_Moderate_Content'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-moderate-content.php',
+				// Browser-Native AI Tools (Phase 2: Transformers.js Integration).
+				'WP_MCP_AI_Tool_Client_Summarize_Text'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-summarize-text.php',
+				'WP_MCP_AI_Tool_Client_Analyze_Sentiment'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-analyze-sentiment.php',
+				'WP_MCP_AI_Tool_Client_Extract_Entities'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-extract-entities.php',
+				'WP_MCP_AI_Tool_Client_Translate_Text'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-translate-text.php',
+				'WP_MCP_AI_Tool_Client_Question_Answering' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-question-answering.php',
+				'WP_MCP_AI_Tool_Client_Semantic_Search'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-client-semantic-search.php',
 				'WP_MCP_AI_Tool_Generate_OpenAI_Image'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php',
 				'WP_MCP_AI_Tool_Generate_Sora_Video'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-sora-video.php',
 				'WP_MCP_AI_Tool_Generate_Gemini_Image'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-gemini-image.php',
