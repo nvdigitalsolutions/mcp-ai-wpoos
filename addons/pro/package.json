@@ -9,6 +9,7 @@
 		"prepare-dist": "npm install && npm run build"
 	},
 	"dependencies": {
+		"@huggingface/transformers": "^3.4.0",
 		"@turf/turf": "^7.3.2",
 		"@types/pdfkit": "^0.17.4",
 		"@woocommerce/woocommerce-rest-api": "^1.0.1",

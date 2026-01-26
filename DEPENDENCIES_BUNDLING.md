@@ -46,6 +46,7 @@ Located in `addons/pro/package.json`:
 ```json
 {
   "dependencies": {
+    "@huggingface/transformers": "^3.4.0",        // Browser-native AI models (44.8 MB)
     "@turf/turf": "^7.3.2",                       // Geospatial analysis
     "@types/pdfkit": "^0.17.4",                   // TypeScript types
     "@woocommerce/woocommerce-rest-api": "^1.0.1", // E-commerce API
@@ -109,7 +110,12 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
-All 39 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+All 40 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
+
+**AI/ML Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| @huggingface/transformers | 44.8 MB | dist/ (web, node, WASM), types/ |
 
 **Core Toolkits:**
 | Package | Size | Files Copied |
@@ -174,7 +180,7 @@ All 39 Pro addon packages are automatically copied from `node_modules` to `asset
 | video-stitch | 8.6 KB | index.js, lib/ |
 | subtitle | 43.3 KB | dist/ |
 
-**Total**: ~46.9 MB (39 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
+**Total**: ~91.7 MB (40 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
 
 #### Special Cases
 

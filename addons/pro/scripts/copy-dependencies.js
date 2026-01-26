@@ -91,6 +91,16 @@ if (!fs.existsSync(vendorPath)) {
 // Dependencies to copy with their configurations
 const dependencies = [
 	{
+		name: '@huggingface/transformers',
+		dirs: [
+			{ src: 'dist', dest: '@huggingface/transformers/dist' },
+			{ src: 'types', dest: '@huggingface/transformers/types' },
+		],
+		files: [
+			{ src: 'package.json', dest: '@huggingface/transformers/package.json' },
+		],
+	},
+	{
 		name: '@turf/turf',
 		dirs: [
 			{ src: 'dist', dest: 'turf/dist' }, // Include both cjs and esm
