@@ -1612,43 +1612,28 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 */
 		private static function render_embedded_llm_section() {
 			// Get embedded LLM models.
+			// Only models with function calling support.
 			$models = array(
-				'Llama-3.2-1B-Instruct-q4f16_1-MLC' => array(
-					'name'        => 'Llama 3.2 1B Instruct',
-					'size'        => '~800MB',
-					'description' => 'Fast, efficient model for general tasks',
-					'context'     => '128K tokens',
+				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => array(
+					'name'        => 'Hermes 2 Pro Llama 3 8B',
+					'size'        => '~4.5GB',
+					'description' => 'Best for function calling and tool use',
+					'context'     => '8K tokens',
 					'license'     => 'Apache 2.0',
 					'recommended' => true,
 				),
-				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC' => array(
-					'name'        => 'Qwen2.5 0.5B Instruct',
-					'size'        => '~400MB',
-					'description' => 'Ultra-fast, minimal resource usage',
+				'Qwen2.5-7B-Instruct-q4f16_1-MLC' => array(
+					'name'        => 'Qwen2.5 7B Instruct',
+					'size'        => '~4.5GB',
+					'description' => 'Advanced multilingual model with function calling',
 					'context'     => '32K tokens',
-					'license'     => 'Apache 2.0',
-					'recommended' => false,
-				),
-				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC' => array(
-					'name'        => 'Qwen2.5 1.5B Instruct',
-					'size'        => '~1GB',
-					'description' => 'Efficient multilingual model',
-					'context'     => '32K tokens',
-					'license'     => 'Apache 2.0',
-					'recommended' => false,
-				),
-				'Llama-3.2-3B-Instruct-q4f16_1-MLC' => array(
-					'name'        => 'Llama 3.2 3B Instruct',
-					'size'        => '~2GB',
-					'description' => 'Balanced quality and performance',
-					'context'     => '128K tokens',
 					'license'     => 'Apache 2.0',
 					'recommended' => false,
 				),
 				'Phi-3.5-mini-instruct-q4f16_1-MLC' => array(
 					'name'        => 'Phi-3.5 Mini Instruct',
 					'size'        => '~2.5GB',
-					'description' => 'Microsoft model with good reasoning',
+					'description' => 'Smaller Microsoft model, supports function calling',
 					'context'     => '128K tokens',
 					'license'     => 'MIT',
 					'recommended' => false,
