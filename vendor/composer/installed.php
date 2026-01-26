@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-huggingface-dependency',
-        'version' => 'dev-copilot/add-huggingface-dependency',
-        'reference' => 'dc4a8ebb45a5150cf9c3e28698d3e8a6d9af33dc',
+        'pretty_version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
+        'version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
+        'reference' => '63492d60ecf478f77ec31aad79edde25f6659145',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-huggingface-dependency',
-            'version' => 'dev-copilot/add-huggingface-dependency',
-            'reference' => 'dc4a8ebb45a5150cf9c3e28698d3e8a6d9af33dc',
+            'pretty_version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
+            'version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
+            'reference' => '63492d60ecf478f77ec31aad79edde25f6659145',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
