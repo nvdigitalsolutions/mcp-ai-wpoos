@@ -1,55 +1,55 @@
 /**
- * Tests for embedded LLM client system message filtering
+ * Tests for embedded LLM client OpenAI compatibility
  *
- * This test verifies that system messages are properly filtered out
- * from messages array when calling generateStreamingCompletion,
- * since WebLLM maintains stateful chat history and system prompt
- * is already set during initialization.
+ * This test verifies that the embedded LLM client follows OpenAI API patterns
+ * where system messages MUST be included in every request, not filtered out.
+ *
+ * Web-LLM is stateless like OpenAI - the full conversation history including
+ * system prompt must be sent with each chat.completions.create() call.
  *
  * Also tests that instance tools are used when options.tools is not provided.
  *
- * Related issue: Embedded chat client not aware of system instructions
- * and tools not being passed to completion requests.
+ * Reference: https://github.com/mlc-ai/web-llm?tab=readme-ov-file#full-openai-compatibility
  *
  * @package WP_MCP_AI
  */
 
-describe( 'Embedded LLM Client - System Message Filtering', () => {
-	describe( 'filterSystemMessages', () => {
-		// Simulate the filtering logic from generateStreamingCompletion
-		function filterSystemMessages( messages ) {
-			return messages.filter( function( msg ) {
-				return msg.role !== 'system';
-			} );
+describe( 'Embedded LLM Client - OpenAI Compatibility', () => {
+	describe( 'System Message Handling (OpenAI Pattern)', () => {
+		// System messages should NOT be filtered - they're required for every request
+		function processMessages( messages ) {
+			// OpenAI-compatible: return all messages including system
+			return messages;
 		}
 
-		it( 'should filter out system messages', () => {
+		it( 'should include system messages in every request', () => {
 			const messages = [
 				{ role: 'system', content: 'You are a helpful assistant.' },
 				{ role: 'user', content: 'Hello' },
 				{ role: 'assistant', content: 'Hi there!' },
 			];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 2 );
-			expect( filtered[ 0 ].role ).toBe( 'user' );
-			expect( filtered[ 1 ].role ).toBe( 'assistant' );
+			expect( processed ).toHaveLength( 3 );
+			expect( processed[ 0 ].role ).toBe( 'system' );
+			expect( processed[ 1 ].role ).toBe( 'user' );
+			expect( processed[ 2 ].role ).toBe( 'assistant' );
 		} );
 
-		it( 'should return all messages when no system messages present', () => {
+		it( 'should preserve all messages when no system messages present', () => {
 			const messages = [
 				{ role: 'user', content: 'Hello' },
 				{ role: 'assistant', content: 'Hi there!' },
 			];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 2 );
-			expect( filtered ).toEqual( messages );
+			expect( processed ).toHaveLength( 2 );
+			expect( processed ).toEqual( messages );
 		} );
 
-		it( 'should handle multiple system messages', () => {
+		it( 'should preserve multiple system messages if present', () => {
 			const messages = [
 				{ role: 'system', content: 'You are helpful.' },
 				{ role: 'user', content: 'Hello' },
@@ -57,25 +57,29 @@ describe( 'Embedded LLM Client - System Message Filtering', () => {
 				{ role: 'assistant', content: 'Hi!' },
 			];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 2 );
-			expect( filtered[ 0 ].role ).toBe( 'user' );
-			expect( filtered[ 1 ].role ).toBe( 'assistant' );
+			// All messages preserved, including both system messages
+			expect( processed ).toHaveLength( 4 );
+			expect( processed[ 0 ].role ).toBe( 'system' );
+			expect( processed[ 2 ].role ).toBe( 'system' );
 		} );
 
-		it( 'should return empty array when only system messages', () => {
+		it( 'should handle only system messages correctly', () => {
 			const messages = [
 				{ role: 'system', content: 'You are helpful.' },
 				{ role: 'system', content: 'Additional instructions.' },
 			];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 0 );
+			// System messages are preserved
+			expect( processed ).toHaveLength( 2 );
+			expect( processed[ 0 ].role ).toBe( 'system' );
+			expect( processed[ 1 ].role ).toBe( 'system' );
 		} );
 
-		it( 'should preserve message order', () => {
+		it( 'should preserve message order including system messages', () => {
 			const messages = [
 				{ role: 'system', content: 'System prompt' },
 				{ role: 'user', content: 'First user message' },
@@ -83,20 +87,21 @@ describe( 'Embedded LLM Client - System Message Filtering', () => {
 				{ role: 'user', content: 'Second user message' },
 			];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 3 );
-			expect( filtered[ 0 ].content ).toBe( 'First user message' );
-			expect( filtered[ 1 ].content ).toBe( 'First assistant response' );
-			expect( filtered[ 2 ].content ).toBe( 'Second user message' );
+			expect( processed ).toHaveLength( 4 );
+			expect( processed[ 0 ].content ).toBe( 'System prompt' );
+			expect( processed[ 1 ].content ).toBe( 'First user message' );
+			expect( processed[ 2 ].content ).toBe( 'First assistant response' );
+			expect( processed[ 3 ].content ).toBe( 'Second user message' );
 		} );
 
 		it( 'should handle empty messages array', () => {
 			const messages = [];
 
-			const filtered = filterSystemMessages( messages );
+			const processed = processMessages( messages );
 
-			expect( filtered ).toHaveLength( 0 );
+			expect( processed ).toHaveLength( 0 );
 		} );
 	} );
 
@@ -193,12 +198,12 @@ describe( 'Embedded LLM Client - System Message Filtering', () => {
 		} );
 	} );
 
-	describe( 'Integration: message filtering with tools', () => {
-		it( 'should handle real-world scenario from issue logs', () => {
-			// From the logs, we see:
-			// - System prompt with 5242 chars
-			// - hasTools: false (but tools should be available)
-			// - Messages include system prompt each time
+	describe( 'Integration: OpenAI-compatible message handling with tools', () => {
+		it( 'should handle real-world scenario following OpenAI pattern', () => {
+			// Following OpenAI/Web-LLM pattern:
+			// - System prompt INCLUDED in every request
+			// - Tools passed via options (or from instance)
+			// - Full conversation history maintained
 
 			const instanceTools = [
 				{ function: { name: 'web_search' } },
@@ -220,51 +225,57 @@ describe( 'Embedded LLM Client - System Message Filtering', () => {
 				// tools not provided in options
 			};
 
-			// Apply fixes
-			const filteredMessages = messages.filter( function( msg ) {
-				return msg.role !== 'system';
-			} );
+			// OpenAI-compatible approach: include ALL messages
+			const processedMessages = messages; // No filtering!
 			
 			const toolsToUse = ( options.tools && Array.isArray( options.tools ) && options.tools.length > 0 )
 				? options.tools
 				: instanceTools;
 
-			// Verify fix results
-			expect( filteredMessages ).toHaveLength( 3 );
-			expect( filteredMessages.some( ( msg ) => msg.role === 'system' ) ).toBe( false );
+			// Verify OpenAI-compatible results
+			expect( processedMessages ).toHaveLength( 4 );
+			expect( processedMessages[ 0 ].role ).toBe( 'system' );
+			expect( processedMessages.some( ( msg ) => msg.role === 'system' ) ).toBe( true );
 			expect( toolsToUse ).toBe( instanceTools );
 			expect( toolsToUse ).toHaveLength( 1 );
 			expect( toolsToUse[ 0 ].function.name ).toBe( 'web_search' );
 		} );
 
-		it( 'should preserve system prompt during initialization phase', () => {
-			// During initialization, system prompt IS needed
-			const initMessages = [
-				{ role: 'system', content: 'You are a helpful assistant.' },
-				{ role: 'user', content: 'Understood. I am ready to assist.' },
-			];
-
-			// During initialization, we DON'T filter (this happens in initializeModelContext)
-			// This test just confirms we understand the difference
-			expect( initMessages ).toHaveLength( 2 );
-			expect( initMessages[ 0 ].role ).toBe( 'system' );
-		} );
-
-		it( 'should filter system prompt during chat completion phase', () => {
-			// After initialization, subsequent messages should NOT include system prompt
+		it( 'should include system prompt in every chat completion request', () => {
+			// OpenAI pattern: system prompt must be in every request
 			const chatMessages = [
 				{ role: 'system', content: 'You are a helpful assistant.' },
 				{ role: 'user', content: 'What is 2+2?' },
 			];
 
-			// During chat completion, we DO filter
-			const filtered = chatMessages.filter( function( msg ) {
-				return msg.role !== 'system';
-			} );
+			// No filtering - send all messages
+			const processed = chatMessages;
 
-			expect( filtered ).toHaveLength( 1 );
-			expect( filtered[ 0 ].role ).toBe( 'user' );
-			expect( filtered[ 0 ].content ).toBe( 'What is 2+2?' );
+			expect( processed ).toHaveLength( 2 );
+			expect( processed[ 0 ].role ).toBe( 'system' );
+			expect( processed[ 1 ].role ).toBe( 'user' );
+			expect( processed[ 1 ].content ).toBe( 'What is 2+2?' );
+		} );
+
+		it( 'should maintain full conversation context', () => {
+			// Multi-turn conversation with system prompt
+			const conversation = [
+				{ role: 'system', content: 'You are a math tutor.' },
+				{ role: 'user', content: 'What is 2+2?' },
+				{ role: 'assistant', content: '2+2 equals 4.' },
+				{ role: 'user', content: 'What about 3+3?' },
+			];
+
+			// All messages sent to API
+			const processed = conversation;
+
+			expect( processed ).toHaveLength( 4 );
+			expect( processed[ 0 ].role ).toBe( 'system' );
+			// System prompt persists throughout conversation
+			expect( processed.filter( ( m ) => m.role === 'system' ) ).toHaveLength( 1 );
+			// All conversation turns preserved
+			expect( processed.filter( ( m ) => m.role === 'user' ) ).toHaveLength( 2 );
+			expect( processed.filter( ( m ) => m.role === 'assistant' ) ).toHaveLength( 1 );
 		} );
 	} );
 } );
