@@ -14,36 +14,29 @@
 	 * Initialize copy-to-clipboard functionality.
 	 */
 	function initCopyToClipboard() {
-		$('.wp-mcp-ai-copy-redirect-uri').on('click', function(e) {
+		$('.wp-mcp-ai-copy-redirect-uri').on('click', async function(e) {
 			e.preventDefault();
 			
-			var $button = $(this);
-			var textToCopy = $button.data('clipboard-text');
-			var $dashicon = $button.find('.dashicons');
-			var originalIcon = $dashicon.attr('class');
+			const $button = $(this);
+			const textToCopy = $button.data('clipboard-text');
+			const $dashicon = $button.find('.dashicons');
+			const originalIcon = $dashicon.attr('class');
+			const originalText = getButtonText($button);
 			
 			// Try to copy to clipboard.
-			if (copyToClipboard(textToCopy)) {
+			const success = await copyToClipboard(textToCopy);
+			
+			if (success) {
 				// Show success feedback.
 				$dashicon.removeClass('dashicons-clipboard').addClass('dashicons-yes');
 				$button.addClass('button-primary');
-				
-				// Show temporary "Copied!" message.
-				var originalText = $button.contents().filter(function() {
-					return this.nodeType === 3; // Text node
-				}).text();
-				
-				$button.contents().filter(function() {
-					return this.nodeType === 3;
-				}).replaceWith(' ' + wpMcpAiRemoteSites.copiedText);
+				setButtonText($button, wpMcpAiRemoteSites.copiedText);
 				
 				// Reset after 2 seconds.
 				setTimeout(function() {
 					$dashicon.attr('class', originalIcon);
 					$button.removeClass('button-primary');
-					$button.contents().filter(function() {
-						return this.nodeType === 3;
-					}).replaceWith(' ' + originalText);
+					setButtonText($button, originalText);
 				}, 2000);
 			} else {
 				// Show error feedback.
@@ -56,7 +49,7 @@
 				}, 2000);
 				
 				// Select the text input as fallback.
-				var $input = $button.closest('td').find('.wp-mcp-ai-oauth-redirect-uri');
+				const $input = $button.closest('td').find('.wp-mcp-ai-oauth-redirect-uri');
 				$input.select();
 			}
 		});
@@ -68,22 +61,23 @@
 	 * Uses modern Clipboard API if available, falls back to legacy method.
 	 *
 	 * @param {string} text Text to copy.
-	 * @return {boolean} True if successful, false otherwise.
+	 * @return {Promise<boolean>} Promise that resolves to true if successful, false otherwise.
 	 */
-	function copyToClipboard(text) {
+	async function copyToClipboard(text) {
 		// Try modern Clipboard API first.
 		if (navigator.clipboard && window.isSecureContext) {
 			try {
-				navigator.clipboard.writeText(text);
+				await navigator.clipboard.writeText(text);
 				return true;
 			} catch (err) {
+				// eslint-disable-next-line no-console
 				console.error('Clipboard API failed:', err);
 			}
 		}
 		
 		// Fallback to legacy method.
 		try {
-			var textArea = document.createElement('textarea');
+			const textArea = document.createElement('textarea');
 			textArea.value = text;
 			textArea.style.position = 'fixed';
 			textArea.style.left = '-999999px';
@@ -92,14 +86,39 @@
 			textArea.focus();
 			textArea.select();
 			
-			var successful = document.execCommand('copy');
+			const successful = document.execCommand('copy');
 			document.body.removeChild(textArea);
 			
 			return successful;
 		} catch (err) {
+			// eslint-disable-next-line no-console
 			console.error('Legacy copy method failed:', err);
 			return false;
 		}
+	}
+
+	/**
+	 * Get text node content from button.
+	 *
+	 * @param {jQuery} $button Button element.
+	 * @return {string} Text node content.
+	 */
+	function getButtonText($button) {
+		return $button.contents().filter(function() {
+			return this.nodeType === 3; // Text node
+		}).text();
+	}
+
+	/**
+	 * Set text node content for button.
+	 *
+	 * @param {jQuery} $button Button element.
+	 * @param {string} text    New text content.
+	 */
+	function setButtonText($button, text) {
+		$button.contents().filter(function() {
+			return this.nodeType === 3;
+		}).replaceWith(' ' + text);
 	}
 
 	/**
