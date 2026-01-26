@@ -198,7 +198,17 @@
 			this.hasKnowledge = this._hasValidKnowledge(config.memoryFiles, config.vectorStoreId);
 			this.hasSystemPrompt = !!config.systemPrompt;
 			
-			console.log('[NV oOS Embedded Client] Created new instance:', this.instanceId);
+			console.log('[NV oOS Embedded Client] Created new instance:', {
+				instanceId: this.instanceId,
+				hasSystemPrompt: this.hasSystemPrompt,
+				systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
+				systemPromptPreview: this.systemPrompt && this.systemPrompt.length > 150 ? this.systemPrompt.substring(0, 150) + '...' : this.systemPrompt || 'none',
+				hasTools: this.hasTools,
+				toolCount: this.tools ? this.tools.length : 0,
+				hasKnowledge: this.hasKnowledge,
+				memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
+				hasVectorStore: !!this.vectorStoreId
+			});
 		}
 		
 		/**
@@ -353,9 +363,19 @@
 		async initializeModelContext() {
 			// Only initialize if we have system prompt or knowledge
 			if (!this.hasSystemPrompt && !this.hasKnowledge) {
-				console.log('[NV oOS Embedded Client] No system prompt or knowledge to initialize for instance:', this.instanceId);
+				console.log('[NV oOS Embedded Client] Skipping context initialization - no system prompt or knowledge:', this.instanceId);
 				return;
 			}
+
+			console.log('[NV oOS Embedded Client] ===== STARTING MODEL CONTEXT INITIALIZATION =====');
+			console.log('[NV oOS Embedded Client] Initializing model context for instance:', {
+				instanceId: this.instanceId,
+				hasSystemPrompt: this.hasSystemPrompt,
+				systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
+				hasKnowledge: this.hasKnowledge,
+				memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
+				hasVectorStore: !!this.vectorStoreId
+			});
 
 			try {
 				// Build initialization message with system prompt and knowledge context
@@ -372,9 +392,17 @@
 						console.log('[NV oOS Embedded Client] Enhanced system prompt with base knowledge:', {
 							instanceId: this.instanceId,
 							memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
-							hasVectorStore: !!this.vectorStoreId
+							hasVectorStore: !!this.vectorStoreId,
+							knowledgeContextLength: knowledgeContext.length
 						});
 					}
+					
+					console.log('[NV oOS Embedded Client] Full system prompt for initialization:', {
+						instanceId: this.instanceId,
+						systemPromptLength: systemPromptContent.length,
+						systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+						systemPromptFull: systemPromptContent
+					});
 					
 					initMessages.push({
 						role: 'system',
@@ -389,11 +417,13 @@
 					content: MODEL_INIT_CONFIG.TRIGGER_MESSAGE
 				});
 				
-				console.log('[NV oOS Embedded Client] Initializing model context for instance:', {
+				console.log('[NV oOS Embedded Client] Sending initialization messages to model:', {
 					instanceId: this.instanceId,
-					hasSystemPrompt: this.hasSystemPrompt,
-					hasKnowledge: this.hasKnowledge,
-					systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0
+					messageCount: initMessages.length,
+					hasSystemMessage: initMessages.some(function(msg) { return msg.role === 'system'; }),
+					triggerMessage: MODEL_INIT_CONFIG.TRIGGER_MESSAGE,
+					temperature: MODEL_INIT_CONFIG.TEMPERATURE,
+					maxTokens: MODEL_INIT_CONFIG.MAX_TOKENS
 				});
 				
 				// Send initialization message (non-streaming for efficiency)
@@ -404,9 +434,11 @@
 					stream: false
 				});
 				
+				console.log('[NV oOS Embedded Client] ===== MODEL CONTEXT INITIALIZATION COMPLETE =====');
 				console.log('[NV oOS Embedded Client] Model context initialized successfully for instance:', {
 					instanceId: this.instanceId,
-					responseLength: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.length : 0
+					responseLength: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.length : 0,
+					responsePreview: initResponse.choices && initResponse.choices[0] && initResponse.choices[0].message.content.length > 100 ? initResponse.choices[0].message.content.substring(0, 100) + '...' : initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content : 'none'
 				});
 				
 			} catch (error) {
@@ -497,17 +529,35 @@
 			}
 
 			try {
+				console.log('[NV oOS Embedded Client] ===== STARTING STREAMING COMPLETION =====');
+				console.log('[NV oOS Embedded Client] Request details:', {
+					instanceId: this.instanceId,
+					messageCount: messages.length,
+					messageRoles: messages.map(function(m) { return m.role; }),
+					temperature: options.temperature || 0.7,
+					maxTokens: options.max_tokens || 512,
+					hasTools: !!(options.tools && options.tools.length > 0)
+				});
+				
 				// Diagnostic: Log system prompt configuration (PR #3197)
 				const systemMessage = messages.find(msg => msg.role === 'system');
 				if (systemMessage) {
-					console.log('[NV oOS Embedded Client] System prompt detected:', {
+					console.log('[NV oOS Embedded Client] System prompt detected in messages:', {
 						hasSystemPrompt: true,
 						systemPromptLength: systemMessage.content.length,
-						systemPromptPreview: systemMessage.content.substring(0, 100) + '...',
-						instanceId: this.instanceId
+						systemPromptPreview: systemMessage.content.length > 200 ? systemMessage.content.substring(0, 200) + '...' : systemMessage.content,
+						systemPromptFull: systemMessage.content,
+						instanceId: this.instanceId,
+						matchesStoredPrompt: this.systemPrompt === systemMessage.content,
+						storedPromptLength: this.systemPrompt ? this.systemPrompt.length : 0
 					});
 				} else {
-					console.warn('[NV oOS Embedded Client] No system prompt in messages for instance:', this.instanceId);
+					console.warn('[NV oOS Embedded Client] WARNING: No system prompt in messages for instance:', {
+						instanceId: this.instanceId,
+						hasStoredPrompt: !!this.systemPrompt,
+						storedPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
+						messageCount: messages.length
+					});
 				}
 
 				// Build request payload

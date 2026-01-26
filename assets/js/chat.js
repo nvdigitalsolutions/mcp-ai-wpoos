@@ -11902,17 +11902,26 @@
                 role: 'system',
                 content: systemPromptContent
             });
+            
+            console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
             console.log('[NV oOS] Prepended system prompt from assistant config:', {
                 systemPromptLength: systemPromptContent.length,
-                systemPromptPreview: systemPromptContent.substring(0, 100) + '...',
-                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0)
+                systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+                systemPromptFull: systemPromptContent,
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                assistantId: state.config.assistantId
             });
         }
 
+        console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
         console.log('[NV oOS] Formatted messages for embedded client:', {
             messageCount: formattedMessages.length,
             hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
-            lastMessage: formattedMessages[formattedMessages.length - 1]
+            systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
+            messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
+            lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
+            lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
         });
 
         // Use streaming for better UX
