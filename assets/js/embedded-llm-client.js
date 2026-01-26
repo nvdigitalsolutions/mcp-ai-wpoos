@@ -454,9 +454,13 @@
 					stream: false
 				});
 
+				const choice = response.choices[0];
 				return {
 					success: true,
-					content: response.choices[0].message.content,
+					role: choice.message.role || 'assistant', // OpenAI-compatible
+					content: choice.message.content,
+					tool_calls: choice.message.tool_calls, // OpenAI-compatible: tool calls if present
+					finish_reason: choice.finish_reason || 'stop', // OpenAI-compatible: why generation stopped
 					usage: response.usage || {}
 				};
 
@@ -519,6 +523,15 @@
 					top_p: options.top_p || 0.9,
 					stream: true
 				};
+				
+				// Add stream_options for usage data (OpenAI-compatible)
+				// This ensures usage stats are included in the final chunk
+				if (options.stream_options) {
+					requestPayload.stream_options = options.stream_options;
+				} else {
+					// Default: include usage in streaming responses
+					requestPayload.stream_options = { include_usage: true };
+				}
 
 				// Add tools if provided (Phase 2: Tool Support Implementation)
 				// Use instance tools if not provided in options (TOOL FIX)
@@ -641,13 +654,21 @@
 					});
 				}
 
-				// Extract usage data from last chunk if available
+				// Extract usage data from last chunk if available (OpenAI-compatible)
 				const usage = lastChunk && lastChunk.usage ? lastChunk.usage : {};
+				
+				// Extract finish_reason from last chunk (OpenAI-compatible)
+				// Possible values: 'stop', 'length', 'tool_calls', 'content_filter'
+				const finishReason = lastChunk && lastChunk.choices && lastChunk.choices[0] && lastChunk.choices[0].finish_reason
+					? lastChunk.choices[0].finish_reason
+					: (toolCalls.length > 0 ? 'tool_calls' : 'stop');
 
 				const result = {
 					success: true,
+					role: 'assistant', // OpenAI-compatible: always 'assistant' for completions
 					content: fullContent,
 					tool_calls: toolCalls.length > 0 ? toolCalls : undefined, // NEW: Include tool calls if present
+					finish_reason: finishReason, // OpenAI-compatible: why generation stopped
 					usage: usage,
 					done: true
 				};
@@ -655,9 +676,11 @@
 				console.log('[NV oOS Embedded Client] Returning final result for instance:', {
 					instanceId: this.instanceId,
 					success: result.success,
+					role: result.role,
 					contentLength: result.content.length,
 					hasToolCalls: !!result.tool_calls,
 					toolCallsCount: result.tool_calls ? result.tool_calls.length : 0,
+					finishReason: result.finish_reason,
 					usageData: result.usage
 				});
 

@@ -75,6 +75,63 @@ const requestPayload = {
 - Updated inline comments to explain stateless pattern
 - Deprecated old initialization config constants
 
+#### 4. Enhanced OpenAI Compatibility (New)
+Added missing OpenAI-compatible response fields and options:
+
+**Response Fields:**
+```javascript
+const result = {
+    success: true,
+    role: 'assistant',              // NEW: OpenAI-compatible role
+    content: fullContent,
+    tool_calls: toolCalls,           // Already supported
+    finish_reason: finishReason,     // NEW: 'stop', 'length', 'tool_calls', etc.
+    usage: usage,                    // Already supported
+    done: true
+};
+```
+
+**Request Options:**
+```javascript
+const requestPayload = {
+    messages: messages,
+    temperature: options.temperature || 0.7,
+    max_tokens: options.max_tokens || 512,
+    top_p: options.top_p || 0.9,
+    stream: true,
+    stream_options: { include_usage: true }  // NEW: Ensures usage stats in streaming
+};
+```
+
+**Benefits:**
+- `role`: Properly identifies response as 'assistant' (OpenAI standard)
+- `finish_reason`: Indicates why generation stopped (important for debugging)
+- `stream_options.include_usage`: Ensures token usage data in streaming responses
+- Full compatibility with OpenAI response format
+
+#### 5. Tools Handling (Already Correct)
+Our implementation already correctly handles tools following the OpenAI pattern:
+
+```javascript
+// Tools are added to EACH request, not configured once
+const toolsToUse = (options.tools && Array.isArray(options.tools) && options.tools.length > 0) 
+    ? options.tools 
+    : this.tools;
+
+if (toolsToUse && Array.isArray(toolsToUse) && toolsToUse.length > 0) {
+    requestPayload.tools = toolsToUse;
+    if (options.tool_choice) {
+        requestPayload.tool_choice = options.tool_choice;
+    }
+}
+```
+
+This ensures:
+- Tools are sent with every request (OpenAI-compatible)
+- Instance tools are used as fallback when options.tools not provided
+- `tool_choice` parameter is respected
+- Compatible with Web-LLM's preliminary function calling support
+
 ### OpenAI API Pattern (Stateless)
 
 According to OpenAI and Web-LLM documentation:
@@ -90,17 +147,38 @@ According to OpenAI and Web-LLM documentation:
 3. **Tools and options are per-request**
    - Specified with each `chat.completions.create()` call
    - Not configured once at initialization
+   - Tools are sent using OpenAI-compatible `tools` and `tool_choice` fields
+   - Function calling is supported (preliminary/WIP in Web-LLM)
 
 ### Reference
 - [Web-LLM Full OpenAI Compatibility](https://github.com/mlc-ai/web-llm?tab=readme-ov-file#full-openai-compatibility)
+- [Web-LLM Function Calling Examples](https://github.com/mlc-ai/web-llm/tree/main/examples/function-calling)
+- [MLC-LLM Project](https://github.com/mlc-ai/mlc-llm)
 - [OpenAI Chat Completions API](https://platform.openai.com/docs/api-reference/chat/create)
+
+### Function Calling Support
+
+Web-LLM supports function calling in two ways:
+
+1. **OpenAI-style (used in this implementation)**
+   - Uses `tools` and `tool_choice` fields
+   - More usable, follows OpenAI API conventions
+   - Status: Preliminary/WIP support in Web-LLM
+   - Our implementation correctly passes tools with each request
+
+2. **Manual function calling**
+   - Most flexible approach
+   - Requires custom parsing based on model format
+   - Model-specific (e.g., Hermes2 uses `<tool_call>` tags)
 
 ## Files Changed
 
 ### `assets/js/embedded-llm-client.js`
 - **Line 380-401**: Converted `initializeModelContext()` to no-op with documentation
-- **Line 491-521**: Removed system message filtering, include all messages
+- **Line 491-528**: Removed system message filtering, include all messages + added `stream_options`
 - **Line 557-558**: Changed `toolCalls` from `let` to `const` (ESLint fix)
+- **Line 651-670**: Added `role`, `finish_reason` to streaming response (OpenAI-compatible)
+- **Line 443-467**: Added `role`, `finish_reason`, `tool_calls` to non-streaming response
 - **Line 68-88**: Changed `var` to `const` for timeoutId and error (ESLint fix)
 - **Line 363**: Changed `var` to `let` for knowledgeContext (ESLint fix)
 - **Removed**: MODEL_INIT_CONFIG constant (no longer needed)
