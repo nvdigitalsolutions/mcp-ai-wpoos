@@ -1928,6 +1928,54 @@
         return attemptSave(0);
     }
 
+    /**
+     * Track embedded LLM usage server-side.
+     * 
+     * Sends usage data to REST API for:
+     * - Cost estimation and tracking
+     * - Orchestration dashboard visibility
+     * - JetEngine usage logs (if enabled)
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} result Completion result with usage data
+     */
+    function trackEmbeddedUsage(state, result) {
+        if (!result.usage || !state.config.assistantId || !state.config.model) {
+            return;
+        }
+
+        // Build tracking endpoint URL
+        const baseUrl = state.config.restUrl || '/wp-json/mcp-ai/v1';
+        const trackingUrl = baseUrl.replace(/\/$/, '') + '/track-embedded-usage';
+
+        const payload = {
+            assistant_id: state.config.assistantId,
+            model: state.config.model,
+            usage: result.usage,
+            finish_reason: result.finish_reason || 'stop'
+        };
+
+        // Send tracking request (non-blocking, fire-and-forget)
+        postJson(
+            trackingUrl,
+            payload,
+            buildJsonHeaders(state),
+            { timeout: 5000, state: state }
+        )
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.success) {
+                    console.log('[NV oOS] Embedded usage tracked successfully');
+                }
+            })
+            .catch(function(error) {
+                // Log but don't fail - usage tracking is optional
+                console.warn('[NV oOS] Failed to track embedded usage:', error);
+            });
+    }
+
     function registerObjectUrl(url) {
         if (audioService && audioService.registerObjectUrl) {
             return audioService.registerObjectUrl(url);
@@ -12154,9 +12202,30 @@
                 });
             }
             
-            // Save to storage
-            console.log('[NV oOS] Saving conversation to storage');
+            // Save to storage (localStorage)
+            console.log('[NV oOS] Saving conversation to localStorage');
             saveConversationToStorage(state);
+            
+            // Track usage server-side (for cost estimation and orchestration dashboard)
+            if (result.usage && state.config.assistantId && state.config.model) {
+                console.log('[NV oOS] Tracking embedded LLM usage server-side');
+                trackEmbeddedUsage(state, result);
+            }
+            
+            // Save to server-side transcript CCT (if configured)
+            if (state.config.transcriptsEndpoint) {
+                console.log('[NV oOS] Saving embedded chat transcript to server');
+                saveConversationToCCT(state, { silent: true })
+                    .then(function(saveResult) {
+                        if (saveResult && !saveResult.skipped) {
+                            console.log('[NV oOS] Embedded chat transcript saved to server successfully');
+                        }
+                    })
+                    .catch(function(saveError) {
+                        console.warn('[NV oOS] Failed to save embedded chat transcript to server:', saveError);
+                        // Non-fatal - transcript is still in localStorage
+                    });
+            }
             
             console.log('[NV oOS] Calling finalize()');
             finalize();

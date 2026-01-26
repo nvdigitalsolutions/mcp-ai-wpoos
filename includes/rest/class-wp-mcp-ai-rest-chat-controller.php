@@ -288,6 +288,53 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				),
 			)
 		);
+
+		// /track-embedded-usage - Track usage from embedded LLM (client-side).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/track-embedded-usage',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'callback'            => array( $this, 'handle_track_embedded_usage' ),
+				'args'                => array(
+					'assistant_id' => array(
+						'description'       => __( 'ID of the assistant that generated the response.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'model'        => array(
+						'description'       => __( 'Model identifier used for generation.', 'mcp-ai-wpoos' ),
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'usage'        => array(
+						'description' => __( 'Usage statistics object.', 'mcp-ai-wpoos' ),
+						'type'        => 'object',
+						'required'    => true,
+						'properties'  => array(
+							'prompt_tokens'     => array(
+								'type' => 'integer',
+							),
+							'completion_tokens' => array(
+								'type' => 'integer',
+							),
+							'total_tokens'      => array(
+								'type' => 'integer',
+							),
+						),
+					),
+					'finish_reason' => array(
+						'description'       => __( 'Why generation stopped.', 'mcp-ai-wpoos' ),
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -1429,5 +1476,88 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return __( 'Transcript persistence is unavailable. Transcripts will be stored in browser only (24 hours). Check the error logs for more details.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Handle /track-embedded-usage request.
+	 *
+	 * Tracks usage from embedded LLM (client-side WebLLM) for cost monitoring
+	 * and orchestration dashboard visibility.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_track_embedded_usage( WP_REST_Request $request ) {
+		$assistant_id  = $request->get_param( 'assistant_id' );
+		$model         = $request->get_param( 'model' );
+		$usage         = $request->get_param( 'usage' );
+		$finish_reason = $request->get_param( 'finish_reason' );
+
+		// Get current user.
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return $this->error(
+				'wp_mcp_ai_no_user',
+				__( 'User must be authenticated to track usage.', 'mcp-ai-wpoos' ),
+				401
+			);
+		}
+
+		// Validate usage data.
+		if ( empty( $usage ) || ! is_array( $usage ) ) {
+			return $this->error(
+				'wp_mcp_ai_invalid_usage',
+				__( 'Invalid usage data provided.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		// Prepare response object for usage tracker.
+		// Format matches what server-side chat responses provide.
+		$response = array(
+			'usage'    => $usage,
+			'provider' => 'embedded',
+			'model'    => $model,
+		);
+
+		// Prepare options for usage tracker.
+		$options = array(
+			'provider' => 'embedded',
+			'model'    => $model,
+		);
+
+		// Record usage via standard usage tracker.
+		// This integrates with existing cost estimation and reporting.
+		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+			WP_MCP_AI_Usage_Tracker::record_chat_usage(
+				$user_id,
+				$assistant_id,
+				$options,
+				$response
+			);
+		}
+
+		// Optional: Log to JetEngine CCT for detailed usage history.
+		// This provides queryable usage logs with timestamps.
+		/**
+		 * Fires after embedded LLM usage is tracked.
+		 *
+		 * Extensions can use this to log detailed usage history to JetEngine CCT
+		 * or other storage systems.
+		 *
+		 * @param int    $user_id       User who generated the completion.
+		 * @param int    $assistant_id  Assistant used.
+		 * @param string $model         Model identifier.
+		 * @param array  $usage         Usage statistics.
+		 * @param string $finish_reason Why generation stopped.
+		 */
+		do_action( 'wp_mcp_ai_embedded_usage_tracked', $user_id, $assistant_id, $model, $usage, $finish_reason );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'Usage tracked successfully.', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 }
