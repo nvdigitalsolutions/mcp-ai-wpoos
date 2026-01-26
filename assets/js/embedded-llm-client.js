@@ -586,9 +586,26 @@
 					});
 				}
 
+				// CRITICAL FIX: WebLLM maintains stateful chat history
+				// System prompt was already set during initializeModelContext()
+				// Sending it again with each message overrides the original context
+				// Filter out system messages from the messages array to preserve initialized context
+				const filteredMessages = messages.filter(function(msg) {
+					return msg.role !== 'system';
+				});
+				
+				if (systemMessage) {
+					console.log('[NV oOS Embedded Client] Filtered out system message from request:', {
+						originalCount: messages.length,
+						filteredCount: filteredMessages.length,
+						reason: 'WebLLM is stateful - system prompt already initialized',
+						instanceId: this.instanceId
+					});
+				}
+
 				// Build request payload
 				const requestPayload = {
-					messages: messages,
+					messages: filteredMessages,
 					temperature: options.temperature || 0.7,
 					max_tokens: options.max_tokens || 512,
 					top_p: options.top_p || 0.9,
@@ -596,8 +613,13 @@
 				};
 
 				// Add tools if provided (Phase 2: Tool Support Implementation)
-				if (options.tools && Array.isArray(options.tools) && options.tools.length > 0) {
-					requestPayload.tools = options.tools;
+				// Use instance tools if not provided in options (TOOL FIX)
+				const toolsToUse = (options.tools && Array.isArray(options.tools) && options.tools.length > 0) 
+					? options.tools 
+					: this.tools;
+				
+				if (toolsToUse && Array.isArray(toolsToUse) && toolsToUse.length > 0) {
+					requestPayload.tools = toolsToUse;
 
 					if (options.tool_choice) {
 						requestPayload.tool_choice = options.tool_choice;
@@ -605,17 +627,18 @@
 
 					console.log('[NV oOS Embedded Client] Tools enabled for request:', {
 						instanceId: this.instanceId,
-						toolCount: options.tools.length,
-						toolNames: options.tools.map(function(t) {
+						toolCount: toolsToUse.length,
+						toolNames: toolsToUse.map(function(t) {
 							return t.function ? t.function.name : 'unknown';
-						})
+						}),
+						source: options.tools ? 'options' : 'instance'
 					});
 				}
 
 				// Log streaming start
 				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
 					instanceId: this.instanceId,
-					messageCount: messages.length,
+					messageCount: filteredMessages.length,
 					temperature: requestPayload.temperature,
 					maxTokens: requestPayload.max_tokens,
 					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0)
