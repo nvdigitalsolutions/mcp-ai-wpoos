@@ -11457,10 +11457,28 @@
             // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
             
+            // Build complete system prompt by combining assistant system prompt with professional prompt
+            // This ensures embedded client receives both the assistant's instructions and professional role
+            var completeSystemPrompt = state.config.systemPrompt || '';
+            if (state.config.professionalPrompt) {
+                if (completeSystemPrompt) {
+                    // Combine: assistant system prompt + professional role prompt
+                    completeSystemPrompt = completeSystemPrompt + '\n\n' + state.config.professionalPrompt;
+                } else {
+                    // Use professional prompt as the system prompt if no assistant prompt exists
+                    completeSystemPrompt = state.config.professionalPrompt;
+                }
+                console.log('[NV oOS] Combined system prompt with professional prompt:', {
+                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                    professionalPromptLength: state.config.professionalPrompt.length,
+                    combinedLength: completeSystemPrompt.length
+                });
+            }
+            
             // Prepare assistant configuration for embedded client
-            // This includes system prompt, tools, and knowledge base information
+            // This includes complete system prompt (assistant + professional), tools, and knowledge base information
             const assistantConfig = {
-                systemPrompt: state.config.systemPrompt,
+                systemPrompt: completeSystemPrompt,
                 tools: state.config.tools || [],
                 memoryFiles: state.config.memoryFiles || [],
                 vectorStoreId: state.config.vectorStoreId
@@ -11847,10 +11865,23 @@
             };
         });
 
-        // Prepend system prompt from assistant configuration if available and not already in messages
+        // Build complete system prompt combining assistant prompt, professional prompt, and knowledge context
         // This ensures embedded providers receive the same system instructions as server-side providers
-        if (state.config.systemPrompt && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
-            var systemPromptContent = state.config.systemPrompt;
+        if ((state.config.systemPrompt || state.config.professionalPrompt) && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = state.config.systemPrompt || '';
+            
+            // Add professional prompt if provided (for profession-based assistants)
+            if (state.config.professionalPrompt) {
+                if (systemPromptContent) {
+                    systemPromptContent = systemPromptContent + '\n\n' + state.config.professionalPrompt;
+                } else {
+                    systemPromptContent = state.config.professionalPrompt;
+                }
+                console.log('[NV oOS] Added professional prompt to message system prompt:', {
+                    professionalPromptLength: state.config.professionalPrompt.length,
+                    professionalPromptPreview: state.config.professionalPrompt.substring(0, 100) + '...'
+                });
+            }
             
             // Enhance system prompt with base knowledge context if available
             // This ensures embedded WebLLM has access to the same knowledge as server-side providers
