@@ -149,6 +149,17 @@ const builds = [
 		outfile: 'assets/js/langchain-orchestration.min.js',
 		...commonOptions,
 	},
+	// Web Workers files (Phase 4)
+	{
+		entryPoints: ['assets/js/llm-worker-manager.js'],
+		outfile: 'assets/js/llm-worker-manager.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/workers/llm-worker.js'],
+		outfile: 'assets/js/workers/llm-worker.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files

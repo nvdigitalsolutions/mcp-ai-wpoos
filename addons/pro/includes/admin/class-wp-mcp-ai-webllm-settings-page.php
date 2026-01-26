@@ -107,6 +107,14 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			'webllm_features'
 		);
 
+		add_settings_field(
+			'enable_web_workers',
+			__( 'Enable Web Workers (Phase 4)', 'mcp-ai-wpoos' ),
+			array( $this, 'render_web_workers_field' ),
+			self::PAGE_SLUG,
+			'webllm_features'
+		);
+
 		// Performance Section.
 		add_settings_section(
 			'webllm_performance',
@@ -158,6 +166,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			'enable_tool_calling' => false,
 			'enable_multimodal'   => false,
 			'enable_langchain'    => false,
+			'enable_web_workers'  => false,
 			'cache_models'        => true,
 			'max_tools'           => 20,
 			'enable_console_logs' => false,
@@ -176,6 +185,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		$sanitized['enable_tool_calling'] = ! empty( $input['enable_tool_calling'] );
 		$sanitized['enable_multimodal']   = ! empty( $input['enable_multimodal'] );
 		$sanitized['enable_langchain']    = ! empty( $input['enable_langchain'] );
+		$sanitized['enable_web_workers']  = ! empty( $input['enable_web_workers'] );
 		$sanitized['cache_models']        = ! empty( $input['cache_models'] );
 		$sanitized['max_tools']           = absint( $input['max_tools'] ?? 20 );
 		$sanitized['enable_console_logs'] = ! empty( $input['enable_console_logs'] );
@@ -191,6 +201,7 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 		update_option( 'wp_mcp_ai_enable_webllm_tools', $sanitized['enable_tool_calling'] );
 		update_option( 'wp_mcp_ai_enable_webllm_vision', $sanitized['enable_multimodal'] );
 		update_option( 'wp_mcp_ai_enable_langchain_orchestration', $sanitized['enable_langchain'] );
+		update_option( 'wp_mcp_ai_enable_web_workers', $sanitized['enable_web_workers'] );
 
 		return $sanitized;
 	}
@@ -353,6 +364,34 @@ class WP_MCP_AI_WebLLM_Settings_Page {
 			<strong><?php esc_html_e( 'Bundle Impact:', 'mcp-ai-wpoos' ); ?></strong> +9.7KB minified (orchestration client + tool adapter), +~800KB lazy-loaded from CDN
 			<br>
 			<em><?php esc_html_e( 'Note: Requires tool calling to be enabled. LangChain libraries are loaded from CDN on-demand.', 'mcp-ai-wpoos' ); ?></em>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render Web Workers field
+	 */
+	public function render_web_workers_field() {
+		$settings = get_option( self::OPTION_NAME, $this->get_default_settings() );
+		$checked  = ! empty( $settings['enable_web_workers'] );
+		?>
+		<label>
+			<input type="checkbox" 
+					name="<?php echo esc_attr( self::OPTION_NAME ); ?>[enable_web_workers]" 
+					value="1" 
+					<?php checked( $checked ); ?>>
+			<?php esc_html_e( 'Enable Web Workers for non-blocking UI (Phase 4 - Experimental)', 'mcp-ai-wpoos' ); ?>
+		</label>
+		<p class="description">
+			<?php esc_html_e( 'Offloads AI computation to Web Workers, preventing UI blocking during model loading and inference. Ensures smooth 60fps performance.', 'mcp-ai-wpoos' ); ?>
+			<br>
+			<strong><?php esc_html_e( 'Features:', 'mcp-ai-wpoos' ); ?></strong> Non-blocking UI, background model loading, smooth animations, better mobile performance
+			<br>
+			<strong><?php esc_html_e( 'Bundle Impact:', 'mcp-ai-wpoos' ); ?></strong> +8.3KB minified (worker manager + worker script)
+			<br>
+			<strong><?php esc_html_e( 'Browser Support:', 'mcp-ai-wpoos' ); ?></strong> Chrome 4+, Firefox 3.5+, Safari 4+, Edge (all versions)
+			<br>
+			<em><?php esc_html_e( 'Note: Automatically falls back to main thread if Web Workers are not supported.', 'mcp-ai-wpoos' ); ?></em>
 		</p>
 		<?php
 	}
