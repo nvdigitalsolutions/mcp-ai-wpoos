@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-embedded-chat-model-list',
-        'version' => 'dev-copilot/update-embedded-chat-model-list',
-        'reference' => 'ae84ce6b5dcd076ed138c1b3053d3d10186602b4',
+        'pretty_version' => 'dev-copilot/update-embedded-llm-model-list',
+        'version' => 'dev-copilot/update-embedded-llm-model-list',
+        'reference' => '12da3d502160812e7c067fc9f61d802d51814de2',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-embedded-chat-model-list',
-            'version' => 'dev-copilot/update-embedded-chat-model-list',
-            'reference' => 'ae84ce6b5dcd076ed138c1b3053d3d10186602b4',
+            'pretty_version' => 'dev-copilot/update-embedded-llm-model-list',
+            'version' => 'dev-copilot/update-embedded-llm-model-list',
+            'reference' => '12da3d502160812e7c067fc9f61d802d51814de2',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
