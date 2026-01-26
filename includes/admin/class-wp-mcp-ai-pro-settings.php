@@ -1612,7 +1612,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 		 */
 		private static function render_embedded_llm_section() {
 			// Get embedded LLM models.
-			// Only models with function calling support.
+			// All available models are listed. Some models support function calling, others are for general chat.
 			$models = array(
 				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => array(
 					'name'        => 'Hermes 2 Pro Llama 3 8B',
@@ -1622,7 +1622,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Apache 2.0',
 					'recommended' => true,
 				),
-				'Qwen2.5-7B-Instruct-q4f16_1-MLC' => array(
+				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => array(
 					'name'        => 'Qwen2.5 7B Instruct',
 					'size'        => '~4.5GB',
 					'description' => 'Advanced multilingual model with function calling',
@@ -1630,12 +1630,44 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					'license'     => 'Apache 2.0',
 					'recommended' => false,
 				),
-				'Phi-3.5-mini-instruct-q4f16_1-MLC' => array(
+				'Phi-3.5-mini-instruct-q4f16_1-MLC'   => array(
 					'name'        => 'Phi-3.5 Mini Instruct',
 					'size'        => '~2.5GB',
 					'description' => 'Smaller Microsoft model, supports function calling',
 					'context'     => '128K tokens',
 					'license'     => 'MIT',
+					'recommended' => false,
+				),
+				'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => array(
+					'name'        => 'Llama 3.2 3B Instruct',
+					'size'        => '~2GB',
+					'description' => 'Balanced model for general chat (does not support function calling)',
+					'context'     => '128K tokens',
+					'license'     => 'Llama 3.2 Community License',
+					'recommended' => false,
+				),
+				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => array(
+					'name'        => 'Qwen2.5 1.5B Instruct',
+					'size'        => '~1GB',
+					'description' => 'Compact multilingual model with function calling support',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
+					'recommended' => false,
+				),
+				'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => array(
+					'name'        => 'Llama 3.2 1B Instruct',
+					'size'        => '~800MB',
+					'description' => 'Fast, lightweight model for basic chat (does not support function calling)',
+					'context'     => '128K tokens',
+					'license'     => 'Llama 3.2 Community License',
+					'recommended' => false,
+				),
+				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => array(
+					'name'        => 'Qwen2.5 0.5B Instruct',
+					'size'        => '~400MB',
+					'description' => 'Ultra-compact model for simple responses (does not support function calling)',
+					'context'     => '32K tokens',
+					'license'     => 'Apache 2.0',
 					'recommended' => false,
 				),
 			);

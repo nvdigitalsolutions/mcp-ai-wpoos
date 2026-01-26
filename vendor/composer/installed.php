@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-function-calling-to-chat-client',
-        'version' => 'dev-copilot/add-function-calling-to-chat-client',
-        'reference' => '355aa1a5111e2f1d83c21de43073e7464b83ece2',
+        'pretty_version' => 'dev-copilot/update-embedded-chat-model-list',
+        'version' => 'dev-copilot/update-embedded-chat-model-list',
+        'reference' => 'ae84ce6b5dcd076ed138c1b3053d3d10186602b4',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-function-calling-to-chat-client',
-            'version' => 'dev-copilot/add-function-calling-to-chat-client',
-            'reference' => '355aa1a5111e2f1d83c21de43073e7464b83ece2',
+            'pretty_version' => 'dev-copilot/update-embedded-chat-model-list',
+            'version' => 'dev-copilot/update-embedded-chat-model-list',
+            'reference' => 'ae84ce6b5dcd076ed138c1b3053d3d10186602b4',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
