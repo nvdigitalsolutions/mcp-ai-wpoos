@@ -11457,6 +11457,26 @@
             // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
             
+            // Diagnostic: Log complete state.config to understand what's available
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Creating embedded client with state.config:', {
+                    hasSystemPrompt: !!state.config.systemPrompt,
+                    systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                    systemPromptPreview: state.config.systemPrompt ? state.config.systemPrompt.substring(0, 100) + '...' : 'none',
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    professionalPromptLength: state.config.professionalPrompt ? state.config.professionalPrompt.length : 0,
+                    professionalPromptPreview: state.config.professionalPrompt ? state.config.professionalPrompt.substring(0, 100) + '...' : 'none',
+                    hasMemoryFiles: !!state.config.memoryFiles,
+                    memoryFilesIsArray: Array.isArray(state.config.memoryFiles),
+                    memoryFilesLength: state.config.memoryFiles ? state.config.memoryFiles.length : 0,
+                    memoryFilesCount: state.config.memoryFiles ? state.config.memoryFiles.length : 0, // Don't log IDs
+                    hasVectorStoreId: !!state.config.vectorStoreId,
+                    hasTools: !!(state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0),
+                    toolsCount: state.config.tools ? state.config.tools.length : 0
+                });
+            }
+            
             // Build complete system prompt by combining assistant system prompt with professional prompt
             // This ensures embedded client receives both the assistant's instructions and professional role
             var completeSystemPrompt = state.config.systemPrompt || '';
@@ -11484,12 +11504,36 @@
                 vectorStoreId: state.config.vectorStoreId
             };
             
+            // Diagnostic: Log the assistantConfig being passed to the embedded client
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Prepared assistantConfig for embedded client:', {
+                    hasSystemPrompt: !!assistantConfig.systemPrompt,
+                    systemPromptLength: assistantConfig.systemPrompt ? assistantConfig.systemPrompt.length : 0,
+                    systemPromptPreview: assistantConfig.systemPrompt && assistantConfig.systemPrompt.length > 200 ? assistantConfig.systemPrompt.substring(0, 200) + '...' : assistantConfig.systemPrompt || 'none',
+                    hasTools: !!(assistantConfig.tools && assistantConfig.tools.length > 0),
+                    toolsCount: assistantConfig.tools ? assistantConfig.tools.length : 0,
+                    hasMemoryFiles: !!(assistantConfig.memoryFiles && assistantConfig.memoryFiles.length > 0),
+                    memoryFilesCount: assistantConfig.memoryFiles ? assistantConfig.memoryFiles.length : 0,
+                    hasVectorStoreId: !!assistantConfig.vectorStoreId
+                });
+            }
+            
             // Use enhanced WebLLM client if tools or knowledge are available
             // Enhanced client supports tool calling and maintains system instructions and knowledge context
             const hasTools = state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0;
             const hasKnowledge = (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) || 
                                  state.config.vectorStoreId;
-            const hasSystemPrompt = state.config.systemPrompt;
+            const hasSystemPrompt = state.config.systemPrompt || state.config.professionalPrompt;
+            
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Embedded client capability flags before creation:', {
+                    hasTools: hasTools,
+                    hasKnowledge: hasKnowledge,
+                    hasSystemPrompt: hasSystemPrompt,
+                    willUseEnhancedClient: !!(hasTools || hasKnowledge || hasSystemPrompt) && !!window.WP_MCP_AI_WebLLM_FunctionCalling
+                });
+            }
             
             if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
                 state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId, assistantConfig);
