@@ -74,15 +74,41 @@ describe('TransformersToolsIntegration', () => {
 	});
 
 	beforeEach(() => {
-		// Clear mocks
+		// Clear mocks and re-set implementations
 		jest.clearAllMocks();
+		
+		// Re-set mock implementations after clearing
+		mockClient.summarize.mockResolvedValue({
+			summary: 'Test summary',
+			originalLength: 100,
+			summaryLength: 20,
+		});
+		mockClient.analyzeSentiment.mockResolvedValue({
+			label: 'positive',
+			score: 0.95,
+			confidence: '95.00%',
+		});
+		mockClient.extractEntities.mockResolvedValue({
+			PER: [{ text: 'John Doe', score: 0.98 }],
+			ORG: [{ text: 'Acme Corp', score: 0.97 }],
+		});
+		mockClient.translate.mockResolvedValue('Bonjour');
+		mockClient.answerQuestion.mockResolvedValue({
+			answer: 'Paris',
+			score: 0.98,
+			confidence: '98.00%',
+		});
+		mockClient.classify.mockResolvedValue([
+			{ label: 'positive', score: 0.9, confidence: '90.00%' },
+			{ label: 'negative', score: 0.1, confidence: '10.00%' },
+		]);
+		mockVectorStore.search.mockResolvedValue([
+			{ text: 'Doc 1', score: 0.95, similarity: '95.00%' },
+			{ text: 'Doc 2', score: 0.85, similarity: '85.00%' },
+		]);
 
 		// Get the integration instance
 		integration = global.WP_MCP_AI_TransformersTools;
-		
-		// Initialize before each test
-		if (!integration.isInitialized) {
-		}
 	});
 
 	describe('Initialization', () => {
