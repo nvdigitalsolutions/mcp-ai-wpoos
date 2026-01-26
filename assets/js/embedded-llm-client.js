@@ -65,7 +65,7 @@
 			}
 
 			// Set up timeout (30 seconds).
-			var timeoutId = setTimeout(function() {
+			const timeoutId = setTimeout(function() {
 				reject(new Error('Timeout waiting for WebLLM to load. Check your internet connection and browser console for errors.'));
 			}, 30000);
 
@@ -84,7 +84,7 @@
 				clearTimeout(timeoutId);
 				window.removeEventListener('webllm-ready', onReady);
 				window.removeEventListener('webllm-error', onError);
-				var error = event.detail || new Error('Unknown error loading WebLLM');
+				const error = event.detail || new Error('Unknown error loading WebLLM');
 				reject(error);
 			}
 
@@ -360,7 +360,7 @@
 		 * @returns {string} Formatted knowledge context message
 		 */
 		_buildKnowledgeContext() {
-			var knowledgeContext = '\n\n## Base Knowledge\n\n';
+			let knowledgeContext = '\n\n## Base Knowledge\n\n';
 			knowledgeContext += 'You have access to the following knowledge base:\n';
 			
 			if (this.memoryFiles && this.memoryFiles.length > 0) {
@@ -377,104 +377,27 @@
 		}
 
 		/**
-		 * Initialize model context with system prompt and base knowledge
+		 * DEPRECATED: This method is no longer needed.
 		 * 
-		 * This method sends an initialization message to the model after loading
-		 * to prime it with system instructions and knowledge base information.
-		 * This ensures the model is aware of its role and available knowledge
-		 * from the very first user interaction.
+		 * Web-LLM follows OpenAI API patterns where system prompts must be sent
+		 * with EVERY request, not initialized once. The API is stateless regarding
+		 * system context - each chat.completions.create() call should include the
+		 * full conversation history including system prompt.
+		 * 
+		 * Reference: https://github.com/mlc-ai/web-llm?tab=readme-ov-file#full-openai-compatibility
 		 * 
 		 * @private
+		 * @deprecated This method is kept for backwards compatibility but does nothing
 		 */
 		async initializeModelContext() {
-			// Only initialize if we have system prompt or knowledge
-			if (!this.hasSystemPrompt && !this.hasKnowledge) {
-				console.log('[NV oOS Embedded Client] Skipping context initialization - no system prompt or knowledge:', this.instanceId);
-				return;
-			}
-
-			console.log('[NV oOS Embedded Client] ===== STARTING MODEL CONTEXT INITIALIZATION =====');
-			console.log('[NV oOS Embedded Client] Initializing model context for instance:', {
+			console.log('[NV oOS Embedded Client] Model loaded - no initialization needed (OpenAI-compatible API):', {
 				instanceId: this.instanceId,
 				hasSystemPrompt: this.hasSystemPrompt,
-				systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
+				hasTools: this.hasTools,
 				hasKnowledge: this.hasKnowledge,
-				memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
-				hasVectorStore: !!this.vectorStoreId
+				note: 'System prompt, tools, and knowledge will be included with each request'
 			});
-
-			try {
-				// Build initialization message with system prompt and knowledge context
-				var initMessages = [];
-				
-				if (this.systemPrompt) {
-					var systemPromptContent = this.systemPrompt;
-					
-					// Enhance system prompt with base knowledge context if available
-					if (this.hasKnowledge) {
-						var knowledgeContext = this._buildKnowledgeContext();
-						systemPromptContent += knowledgeContext;
-						
-						console.log('[NV oOS Embedded Client] Enhanced system prompt with base knowledge:', {
-							instanceId: this.instanceId,
-							memoryFileCount: this.memoryFiles ? this.memoryFiles.length : 0,
-							hasVectorStore: !!this.vectorStoreId,
-							knowledgeContextLength: knowledgeContext.length
-						});
-					}
-					
-					console.log('[NV oOS Embedded Client] Full system prompt for initialization:', {
-						instanceId: this.instanceId,
-						systemPromptLength: systemPromptContent.length,
-						systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
-						systemPromptFull: systemPromptContent
-					});
-					
-					initMessages.push({
-						role: 'system',
-						content: systemPromptContent
-					});
-				}
-				
-				// Add a minimal user message to trigger model processing
-				// This helps the model internalize the system prompt
-				initMessages.push({
-					role: 'user',
-					content: MODEL_INIT_CONFIG.TRIGGER_MESSAGE
-				});
-				
-				console.log('[NV oOS Embedded Client] Sending initialization messages to model:', {
-					instanceId: this.instanceId,
-					messageCount: initMessages.length,
-					hasSystemMessage: initMessages.some(function(msg) { return msg.role === 'system'; }),
-					triggerMessage: MODEL_INIT_CONFIG.TRIGGER_MESSAGE,
-					temperature: MODEL_INIT_CONFIG.TEMPERATURE,
-					maxTokens: MODEL_INIT_CONFIG.MAX_TOKENS
-				});
-				
-				// Send initialization message (non-streaming for efficiency)
-				const initResponse = await this.currentEngine.chat.completions.create({
-					messages: initMessages,
-					temperature: MODEL_INIT_CONFIG.TEMPERATURE,
-					max_tokens: MODEL_INIT_CONFIG.MAX_TOKENS,
-					stream: false
-				});
-				
-				console.log('[NV oOS Embedded Client] ===== MODEL CONTEXT INITIALIZATION COMPLETE =====');
-				console.log('[NV oOS Embedded Client] Model context initialized successfully for instance:', {
-					instanceId: this.instanceId,
-					responseLength: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.length : 0,
-					responsePreview: initResponse.choices && initResponse.choices[0] && initResponse.choices[0].message.content.length > 100 ? initResponse.choices[0].message.content.substring(0, 100) + '...' : initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content : 'none'
-				});
-				
-			} catch (error) {
-				// Don't fail the entire model load if context initialization fails
-				// Log the error and continue - the system prompt will still be sent with each message
-				console.warn('[NV oOS Embedded Client] Model context initialization failed (non-fatal):', {
-					instanceId: this.instanceId,
-					error: error.message
-				});
-			}
+			// No-op: System prompts are sent with each request, not initialized once
 		}
 
 		/**
@@ -565,47 +488,32 @@
 					hasTools: !!(options.tools && options.tools.length > 0)
 				});
 				
-				// Diagnostic: Log system prompt configuration (PR #3197)
+				// Diagnostic: Log system prompt configuration
 				const systemMessage = messages.find(msg => msg.role === 'system');
 				if (systemMessage) {
-					console.log('[NV oOS Embedded Client] System prompt detected in messages:', {
+					console.log('[NV oOS Embedded Client] System prompt included in request (OpenAI-compatible):', {
 						hasSystemPrompt: true,
 						systemPromptLength: systemMessage.content.length,
 						systemPromptPreview: systemMessage.content.length > 200 ? systemMessage.content.substring(0, 200) + '...' : systemMessage.content,
-						systemPromptFull: systemMessage.content,
 						instanceId: this.instanceId,
-						matchesStoredPrompt: this.systemPrompt === systemMessage.content,
-						storedPromptLength: this.systemPrompt ? this.systemPrompt.length : 0
+						note: 'System prompt must be sent with every request per OpenAI API pattern'
 					});
 				} else {
 					console.warn('[NV oOS Embedded Client] WARNING: No system prompt in messages for instance:', {
 						instanceId: this.instanceId,
-						hasStoredPrompt: !!this.systemPrompt,
-						storedPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
-						messageCount: messages.length
+						messageCount: messages.length,
+						note: 'System prompt should be included in messages array for each request'
 					});
 				}
 
-				// CRITICAL FIX: WebLLM maintains stateful chat history
-				// System prompt was already set during initializeModelContext()
-				// Sending it again with each message overrides the original context
-				// Filter out system messages from the messages array to preserve initialized context
-				const filteredMessages = messages.filter(function(msg) {
-					return msg.role !== 'system';
-				});
+				// IMPORTANT: Web-LLM follows OpenAI API patterns - it is STATELESS
+				// System prompts, tools, and conversation history must be sent with EVERY request
+				// DO NOT filter out system messages - they are required for proper context
+				// Reference: https://github.com/mlc-ai/web-llm?tab=readme-ov-file#full-openai-compatibility
 				
-				if (systemMessage) {
-					console.log('[NV oOS Embedded Client] Filtered out system message from request:', {
-						originalCount: messages.length,
-						filteredCount: filteredMessages.length,
-						reason: 'WebLLM is stateful - system prompt already initialized',
-						instanceId: this.instanceId
-					});
-				}
-
-				// Build request payload
+				// Build request payload with ALL messages (including system)
 				const requestPayload = {
-					messages: filteredMessages,
+					messages: messages,
 					temperature: options.temperature || 0.7,
 					max_tokens: options.max_tokens || 512,
 					top_p: options.top_p || 0.9,
@@ -638,7 +546,7 @@
 				// Log streaming start
 				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
 					instanceId: this.instanceId,
-					messageCount: filteredMessages.length,
+					messageCount: messages.length,
 					temperature: requestPayload.temperature,
 					maxTokens: requestPayload.max_tokens,
 					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0)
@@ -647,7 +555,7 @@
 				const asyncChunkGenerator = await this.currentEngine.chat.completions.create(requestPayload);
 
 				let fullContent = '';
-				let toolCalls = []; // NEW: Collect tool calls from streaming response
+				const toolCalls = []; // NEW: Collect tool calls from streaming response
 				let lastChunk = null;
 				let chunkCount = 0;
 
@@ -862,27 +770,6 @@
 		// - Less background pressure
 		// Recommends models up to 25% of device RAM
 		DESKTOP_THRESHOLD: 0.25
-	};
-
-	/**
-	 * Model context initialization configuration.
-	 * 
-	 * These constants control how the model is primed with system instructions
-	 * and base knowledge after initial loading.
-	 */
-	const MODEL_INIT_CONFIG = {
-		// Temperature for initialization message
-		// Lower temperature ensures consistent, predictable initialization
-		TEMPERATURE: 0.3,
-		
-		// Maximum tokens for initialization response
-		// Increased to allow for proper acknowledgment of system prompt
-		// Previous value of 50 was too low and caused "exceeding max_tokens" errors
-		MAX_TOKENS: 256,
-		
-		// User message that triggers model to process system prompt
-		// This message is intentionally generic and brief
-		TRIGGER_MESSAGE: 'Understood. I am ready to assist.'
 	};
 
 	/**
