@@ -140,18 +140,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			exit;
 		}
 
-		// Handle Gmail OAuth connect action.
-		if ( 'gmail_oauth_connect' === $oauth_handler && isset( $_GET['connection_id'] ) && isset( $_GET['_wpnonce'] ) ) {
-			$nonce         = isset( $_GET['_wpnonce'] ) ? wp_unslash( $_GET['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
-
-			if ( ! wp_verify_nonce( $nonce, 'gmail_oauth_connect_' . $connection_id ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
-			}
-
-			$this->handle_gmail_oauth_start( $connection_id );
-		}
-
+		// Gmail OAuth connect handler removed - button now links directly to Google.
+		// OAuth state and connection ID are stored in transient when button is rendered.
+		
 		// Handle Gmail OAuth callback action.
 		if ( 'gmail_oauth_callback' === $oauth_handler ) {
 			$this->handle_gmail_oauth_callback();
@@ -1119,19 +1110,63 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</th>
 						<td>
 							<?php
-							$oauth_url = wp_nonce_url(
-								add_query_arg(
+							// Generate Google OAuth URL directly without intermediate handler.
+							$has_required_credentials = ! empty( $connection['client_id'] ) && ! empty( $connection['client_secret'] );
+							
+							if ( $has_required_credentials ) {
+								// Generate OAuth state and store connection ID.
+								$state         = wp_generate_uuid4();
+								$transient_key = 'wp_mcp_ai_gmail_oauth_state_' . md5( $state );
+								
+								set_transient(
+									$transient_key,
+									array(
+										'user_id'       => get_current_user_id(),
+										'connection_id' => $connection['id'],
+										'time'          => time(),
+									),
+									10 * MINUTE_IN_SECONDS
+								);
+								
+								// Build redirect URI (where Google will send user after authorization).
+								$redirect_uri = add_query_arg(
 									array(
 										'page'          => 'wp-mcp-ai-remote-sites',
-										'oauth_handler' => 'gmail_oauth_connect',
-										'connection_id' => $connection['id'],
+										'oauth_handler' => 'gmail_oauth_callback',
 									),
 									admin_url( 'admin.php' )
-								),
-								'gmail_oauth_connect_' . $connection['id']
-							);
+								);
+								
+								// Build Google OAuth authorization URL.
+								$oauth_params = array(
+									'client_id'              => $connection['client_id'],
+									'redirect_uri'           => $redirect_uri,
+									'response_type'          => 'code',
+									'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
+									'access_type'            => 'offline',
+									'include_granted_scopes' => 'true',
+									'prompt'                 => 'consent',
+									'state'                  => $state,
+								);
+								
+								if ( ! empty( $connection['user_email'] ) && 'me' !== strtolower( $connection['user_email'] ) ) {
+									$oauth_params['login_hint'] = $connection['user_email'];
+								}
+								
+								$oauth_url = add_query_arg( $oauth_params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+							} else {
+								// If credentials not set, link to edit page with error.
+								$oauth_url = add_query_arg(
+									array(
+										'page'  => 'wp-mcp-ai-remote-sites',
+										'edit'  => $connection['id'],
+										'error' => rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'wp-mcp-ai-pro' ) ),
+									),
+									admin_url( 'admin.php' )
+								);
+							}
 							?>
-							<a href="<?php echo esc_url( $oauth_url ); ?>" class="button button-secondary">
+							<a href="<?php echo esc_url( $oauth_url ); ?>" class="button button-secondary" <?php echo $has_required_credentials ? '' : 'onclick="return false;" style="opacity: 0.5; cursor: not-allowed;"'; ?>>
 								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
 								<?php esc_html_e( 'Connect to Gmail', 'wp-mcp-ai-pro' ); ?>
 							</a>
@@ -1406,6 +1441,9 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 	/**
 	 * Handle Gmail OAuth start for a remote connection.
+	 *
+	 * @deprecated No longer used in production code. Button now links directly to Google OAuth.
+	 *             Kept for backward compatibility and test support only.
 	 *
 	 * @since 1.0.0
 	 *
