@@ -207,7 +207,7 @@ describe( 'Embedded LLM Client - System Message Filtering', () => {
 			const messages = [
 				{ 
 					role: 'system', 
-					content: '🔧 JV\'s Core Personality & Role - NV Digital Solutions...',
+					content: 'You are JV, a helpful assistant for NV Digital Solutions. Help with coding, email services, CMS management, and hosting.',
 				},
 				{ role: 'user', content: 'Hello' },
 				{ role: 'assistant', content: 'Hi there!' },

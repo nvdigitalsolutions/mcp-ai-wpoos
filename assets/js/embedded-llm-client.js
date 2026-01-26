@@ -594,7 +594,7 @@
 					return msg.role !== 'system';
 				});
 				
-				if (systemMessage && filteredMessages.length !== messages.length) {
+				if (systemMessage) {
 					console.log('[NV oOS Embedded Client] Filtered out system message from request:', {
 						originalCount: messages.length,
 						filteredCount: filteredMessages.length,
@@ -638,7 +638,7 @@
 				// Log streaming start
 				console.log('[NV oOS Embedded Client] Starting streaming completion for instance:', {
 					instanceId: this.instanceId,
-					messageCount: messages.length,
+					messageCount: filteredMessages.length,
 					temperature: requestPayload.temperature,
 					maxTokens: requestPayload.max_tokens,
 					hasTools: !!(requestPayload.tools && requestPayload.tools.length > 0)
