@@ -12206,6 +12206,12 @@
             console.log('[NV oOS] Saving conversation to localStorage');
             saveConversationToStorage(state);
             
+            // Track usage server-side (for cost estimation and orchestration dashboard)
+            if (result.usage && state.config.assistantId && state.config.model) {
+                console.log('[NV oOS] Tracking embedded LLM usage server-side');
+                trackEmbeddedUsage(state, result);
+            }
+            
             // Save to server-side transcript CCT (if configured)
             if (state.config.transcriptsEndpoint) {
                 console.log('[NV oOS] Saving embedded chat transcript to server');
