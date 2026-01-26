@@ -218,7 +218,9 @@
 			// Computed configuration flags for easy checking
 			this.hasTools = this._hasValidTools(config.tools);
 			this.hasKnowledge = this._hasValidKnowledge(config.memoryFiles, config.vectorStoreId);
-			this.hasSystemPrompt = !!config.systemPrompt;
+			// Check decoded systemPrompt, not the original config value
+			// This ensures we detect system prompts even after HTML entity decoding
+			this.hasSystemPrompt = !!(this.systemPrompt && this.systemPrompt.trim());
 			
 			console.log('[NV oOS Embedded Client] Created new instance:', {
 				instanceId: this.instanceId,
