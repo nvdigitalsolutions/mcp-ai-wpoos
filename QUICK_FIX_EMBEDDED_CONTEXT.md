@@ -161,15 +161,21 @@ This will show you EXACTLY what values are present (counts only, not full conten
 [NV oOS] Creating embedded client with state.config: {
     hasSystemPrompt: true,
     systemPromptLength: 250,
+    systemPromptPreview: "You are a helpful...",  // First 100 chars
     hasProfessionalPrompt: true,
     professionalPromptLength: 150,
+    professionalPromptPreview: "# Role: Technical...",  // First 100 chars
     hasMemoryFiles: true,
     memoryFilesLength: 3,
-    memoryFilesValue: [123, 456, 789],
+    memoryFilesCount: 3,  // Count only, IDs not logged for security
     hasVectorStoreId: true,
-    vectorStoreIdValue: "vs_abc123"
+    // Vector store ID not logged for security
+    hasTools: true,
+    toolsCount: 5  // Count only, definitions not logged for security
 }
 ```
+
+**Note**: With debug mode enabled, you'll see counts and truncated previews, not full sensitive values.
 
 ### Minimal Configuration (No Knowledge, No Professional Prompt)
 
@@ -177,12 +183,14 @@ This will show you EXACTLY what values are present (counts only, not full conten
 [NV oOS] Creating embedded client with state.config: {
     hasSystemPrompt: true,
     systemPromptLength: 50,
+    systemPromptPreview: "Your name is bob",
     hasProfessionalPrompt: false,
     hasMemoryFiles: false,
     memoryFilesLength: 0,
-    memoryFilesValue: [],
+    memoryFilesCount: 0,
     hasVectorStoreId: false,
-    vectorStoreIdValue: null
+    hasTools: false,
+    toolsCount: 0
 }
 ```
 

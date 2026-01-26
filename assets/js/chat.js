@@ -11526,12 +11526,14 @@
                                  state.config.vectorStoreId;
             const hasSystemPrompt = state.config.systemPrompt || state.config.professionalPrompt;
             
-            console.log('[NV oOS] Embedded client capability flags before creation:', {
-                hasTools: hasTools,
-                hasKnowledge: hasKnowledge,
-                hasSystemPrompt: hasSystemPrompt,
-                willUseEnhancedClient: !!(hasTools || hasKnowledge || hasSystemPrompt) && !!window.WP_MCP_AI_WebLLM_FunctionCalling
-            });
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Embedded client capability flags before creation:', {
+                    hasTools: hasTools,
+                    hasKnowledge: hasKnowledge,
+                    hasSystemPrompt: hasSystemPrompt,
+                    willUseEnhancedClient: !!(hasTools || hasKnowledge || hasSystemPrompt) && !!window.WP_MCP_AI_WebLLM_FunctionCalling
+                });
+            }
             
             if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
                 state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId, assistantConfig);

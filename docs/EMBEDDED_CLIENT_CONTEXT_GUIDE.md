@@ -232,8 +232,6 @@ Set in WordPress Admin → Assistants → Edit Assistant → Vector Store ID
 
 ## Diagnostic Logging
 
-## Diagnostic Logging
-
 ### Enable Debug Mode
 
 Diagnostic logs are only shown when debug mode is enabled to avoid exposing configuration details in production.
