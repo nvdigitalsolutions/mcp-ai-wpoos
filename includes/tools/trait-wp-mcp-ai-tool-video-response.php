@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Video_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Video_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         // Generate video and get attachment_id, url, etc.
  *         $result = array(
  *             'attachment_id' => $attachment_id,

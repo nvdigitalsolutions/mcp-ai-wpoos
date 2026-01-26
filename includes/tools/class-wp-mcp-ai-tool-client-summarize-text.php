@@ -93,10 +93,10 @@ class WP_MCP_AI_Tool_Client_Summarize_Text implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if Transformers.js is enabled.
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||
-		     ! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
+			! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
 			return array(
 				'success' => false,
 				'error'   => __( 'Browser-native AI tasks are not enabled. Please enable Transformers.js in settings.', 'mcp-ai-wpoos' ),

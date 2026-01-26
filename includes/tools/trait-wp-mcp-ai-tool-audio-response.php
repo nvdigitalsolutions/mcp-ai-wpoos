@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Audio_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Audio_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         // Generate audio and get attachment_id, url, etc.
  *         $result = array(
  *             'attachment_id' => $attachment_id,
