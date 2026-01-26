@@ -143,6 +143,11 @@ const builds = [
 		outfile: 'assets/js/client-vector-store.min.js',
 		...commonOptions,
 	},
+	{
+		entryPoints: ['assets/js/transformers-tools-integration.js'],
+		outfile: 'assets/js/transformers-tools-integration.min.js',
+		...commonOptions,
+	},
 ];
 
 // Build all files

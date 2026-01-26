@@ -74,6 +74,15 @@ class WP_MCP_AI_Transformers_Enqueue {
 			WP_MCP_AI_VERSION,
 			true
 		);
+
+		// Tools Integration
+		wp_register_script(
+			'wp-mcp-ai-transformers-tools',
+			plugins_url( 'assets/js/transformers-tools-integration.min.js', WP_MCP_AI_FILE ),
+			array( 'wp-mcp-ai-transformers-tasks', 'wp-mcp-ai-client-vector-store' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
 	}
 
 	/**
@@ -135,6 +144,9 @@ class WP_MCP_AI_Transformers_Enqueue {
 		if ( $this->is_semantic_search_enabled() ) {
 			wp_enqueue_script( 'wp-mcp-ai-client-vector-store' );
 		}
+
+		// Enqueue tools integration
+		wp_enqueue_script( 'wp-mcp-ai-transformers-tools' );
 
 		// Localize script with configuration
 		wp_localize_script(
