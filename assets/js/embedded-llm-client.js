@@ -95,43 +95,33 @@
 
 	/**
 	 * Available models for client-side inference
-	 * Optimized for browser performance (quantized, small models)
+	 * All models listed here support function calling / tool use
+	 * Optimized for browser performance (quantized models)
 	 */
 	const AVAILABLE_MODELS = {
-		'Llama-3.2-1B-Instruct-q4f16_1-MLC': {
-			name: 'Llama 3.2 1B Instruct',
-			size: '~800MB',
-			description: 'Fast, efficient model for general tasks',
-			contextWindow: 128000,
-			recommended: true
+		'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC': {
+			name: 'Hermes 2 Pro Llama 3 8B',
+			size: '~4.5GB',
+			description: 'Best for function calling and tool use',
+			contextWindow: 8192,
+			recommended: true,
+			functionCalling: true
 		},
-		'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
-			name: 'Llama 3.2 3B Instruct',
-			size: '~2GB',
-			description: 'Balanced quality and performance',
-			contextWindow: 128000,
-			recommended: false
+		'Qwen2.5-7B-Instruct-q4f16_1-MLC': {
+			name: 'Qwen2.5 7B Instruct',
+			size: '~4.5GB',
+			description: 'Advanced multilingual model with function calling',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true
 		},
 		'Phi-3.5-mini-instruct-q4f16_1-MLC': {
 			name: 'Phi-3.5 Mini Instruct',
 			size: '~2.5GB',
-			description: 'Microsoft model, good reasoning',
+			description: 'Smaller Microsoft model, supports function calling',
 			contextWindow: 128000,
-			recommended: false
-		},
-		'Qwen2.5-0.5B-Instruct-q4f16_1-MLC': {
-			name: 'Qwen2.5 0.5B Instruct',
-			size: '~400MB',
-			description: 'Ultra-fast, minimal resource usage',
-			contextWindow: 32768,
-			recommended: false
-		},
-		'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
-			name: 'Qwen2.5 1.5B Instruct',
-			size: '~1GB',
-			description: 'Efficient multilingual model',
-			contextWindow: 32768,
-			recommended: false
+			recommended: false,
+			functionCalling: true
 		}
 	};
 
