@@ -618,6 +618,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'callback'    => array( $this, 'render_embedded_model_management' ),
 				) : null,
 
+				// Transformers.js Settings (Phase 2: Browser-Native AI Tasks).
+				'enable_transformers'                => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Transformers.js', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable browser-native AI tasks (Phase 2 - Experimental)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 7 instant AI tasks in browser: summarization, sentiment analysis, named entity recognition, semantic search, translation, question answering, and zero-shot classification. No server round-trip required. Models (20MB-60MB each) are downloaded on-demand to browser cache.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				) : null,
+				'enable_semantic_search'             => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Semantic Search', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable client-side vector store for semantic search', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables browser-based semantic search using text embeddings. Documents and embeddings are stored in IndexedDB. Requires Transformers.js to be enabled.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				) : null,
+				'enable_translation'                 => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Translation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable browser-based translation', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables translation between multiple languages in the browser. Requires Transformers.js to be enabled.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				) : null,
+
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
 					'type'           => 'checkbox',
@@ -868,7 +891,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'embedded',
 					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-smartphone',
-					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
+					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management', 'enable_transformers', 'enable_semantic_search', 'enable_translation' ),
 				) : null,
 				'huggingface'          => array(
 					'id'     => 'huggingface',
