@@ -232,12 +232,45 @@ Set in WordPress Admin → Assistants → Edit Assistant → Vector Store ID
 
 ## Diagnostic Logging
 
+## Diagnostic Logging
+
+### Enable Debug Mode
+
+Diagnostic logs are only shown when debug mode is enabled to avoid exposing configuration details in production.
+
+**Option 1: Add to page HTML**
+```html
+<script>
+window.wpMcpAiChatDebugMode = true;
+</script>
+<!-- Chat widget here -->
+```
+
+**Option 2: Add to theme functions.php**
+```php
+add_action( 'wp_footer', function() {
+    ?>
+    <script>
+    window.wpMcpAiChatDebugMode = true;
+    </script>
+    <?php
+}, 5 ); // Priority 5 ensures it runs before chat scripts
+```
+
+**Option 3: Browser console**
+```javascript
+window.wpMcpAiChatDebugMode = true;
+// Then reload the page
+```
+
+**Security Note**: Debug mode exposes system configuration details (prompt lengths, file counts, etc.) in browser console. Only enable for troubleshooting, then disable.
+
 ### Enable Diagnostic Logs
 
-The latest version includes comprehensive diagnostic logging. Look for these logs in browser console:
+The latest version includes comprehensive diagnostic logging. **Enable debug mode first** (see above), then look for these logs in browser console:
 
 ```javascript
-// When creating embedded client
+// When creating embedded client (with debug mode enabled)
 [NV oOS] Creating embedded client with state.config: {
     hasSystemPrompt: true,
     systemPromptLength: 250,
@@ -246,28 +279,25 @@ The latest version includes comprehensive diagnostic logging. Look for these log
     professionalPromptLength: 150,
     hasMemoryFiles: true,
     memoryFilesLength: 3,
-    memoryFilesValue: [123, 456, 789],
+    memoryFilesCount: 3,  // File IDs not logged for security
     hasVectorStoreId: true,
-    vectorStoreIdValue: "vs_abc123",
     hasTools: true,
     toolsCount: 5
 }
 
-// After preparing config
+// After preparing config (with debug mode enabled)
 [NV oOS] Prepared assistantConfig for embedded client: {
     hasSystemPrompt: true,
     systemPromptLength: 450,  // Combined: assistant + professional + knowledge
-    systemPromptFull: "You are a helpful...\n\n# Professional Role...\n\n## Base Knowledge...",
+    systemPromptPreview: "You are a helpful...\n\n# Professional Role...",
     hasMemoryFiles: true,
     memoryFilesCount: 3,
-    memoryFilesList: [123, 456, 789],
     hasVectorStoreId: true,
-    vectorStoreId: "vs_abc123",
     hasTools: true,
     toolsCount: 5
 }
 
-// Client creation
+// Client creation (always logged)
 [NV oOS Embedded Client] Created new instance: {
     instanceId: "chat-1704-...",
     hasSystemPrompt: true,
@@ -278,6 +308,8 @@ The latest version includes comprehensive diagnostic logging. Look for these log
     memoryFileCount: 3
 }
 ```
+
+**Note**: For security reasons, full system prompts, file IDs, vector store IDs, and tool definitions are only logged in debug mode. Production logs show counts and flags only.
 
 ### What to Check
 

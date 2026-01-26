@@ -11458,22 +11458,24 @@
             const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
             
             // Diagnostic: Log complete state.config to understand what's available
-            console.log('[NV oOS] Creating embedded client with state.config:', {
-                hasSystemPrompt: !!state.config.systemPrompt,
-                systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
-                systemPromptPreview: state.config.systemPrompt ? state.config.systemPrompt.substring(0, 100) + '...' : 'none',
-                hasProfessionalPrompt: !!state.config.professionalPrompt,
-                professionalPromptLength: state.config.professionalPrompt ? state.config.professionalPrompt.length : 0,
-                professionalPromptPreview: state.config.professionalPrompt ? state.config.professionalPrompt.substring(0, 100) + '...' : 'none',
-                hasMemoryFiles: !!state.config.memoryFiles,
-                memoryFilesIsArray: Array.isArray(state.config.memoryFiles),
-                memoryFilesLength: state.config.memoryFiles ? state.config.memoryFiles.length : 0,
-                memoryFilesValue: state.config.memoryFiles,
-                hasVectorStoreId: !!state.config.vectorStoreId,
-                vectorStoreIdValue: state.config.vectorStoreId,
-                hasTools: !!(state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0),
-                toolsCount: state.config.tools ? state.config.tools.length : 0
-            });
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Creating embedded client with state.config:', {
+                    hasSystemPrompt: !!state.config.systemPrompt,
+                    systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                    systemPromptPreview: state.config.systemPrompt ? state.config.systemPrompt.substring(0, 100) + '...' : 'none',
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    professionalPromptLength: state.config.professionalPrompt ? state.config.professionalPrompt.length : 0,
+                    professionalPromptPreview: state.config.professionalPrompt ? state.config.professionalPrompt.substring(0, 100) + '...' : 'none',
+                    hasMemoryFiles: !!state.config.memoryFiles,
+                    memoryFilesIsArray: Array.isArray(state.config.memoryFiles),
+                    memoryFilesLength: state.config.memoryFiles ? state.config.memoryFiles.length : 0,
+                    memoryFilesCount: state.config.memoryFiles ? state.config.memoryFiles.length : 0, // Don't log IDs
+                    hasVectorStoreId: !!state.config.vectorStoreId,
+                    hasTools: !!(state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0),
+                    toolsCount: state.config.tools ? state.config.tools.length : 0
+                });
+            }
             
             // Build complete system prompt by combining assistant system prompt with professional prompt
             // This ensures embedded client receives both the assistant's instructions and professional role
@@ -11503,19 +11505,19 @@
             };
             
             // Diagnostic: Log the assistantConfig being passed to the embedded client
-            console.log('[NV oOS] Prepared assistantConfig for embedded client:', {
-                hasSystemPrompt: !!assistantConfig.systemPrompt,
-                systemPromptLength: assistantConfig.systemPrompt ? assistantConfig.systemPrompt.length : 0,
-                systemPromptFull: assistantConfig.systemPrompt,
-                hasTools: !!(assistantConfig.tools && assistantConfig.tools.length > 0),
-                toolsCount: assistantConfig.tools ? assistantConfig.tools.length : 0,
-                toolsList: assistantConfig.tools,
-                hasMemoryFiles: !!(assistantConfig.memoryFiles && assistantConfig.memoryFiles.length > 0),
-                memoryFilesCount: assistantConfig.memoryFiles ? assistantConfig.memoryFiles.length : 0,
-                memoryFilesList: assistantConfig.memoryFiles,
-                hasVectorStoreId: !!assistantConfig.vectorStoreId,
-                vectorStoreId: assistantConfig.vectorStoreId
-            });
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Prepared assistantConfig for embedded client:', {
+                    hasSystemPrompt: !!assistantConfig.systemPrompt,
+                    systemPromptLength: assistantConfig.systemPrompt ? assistantConfig.systemPrompt.length : 0,
+                    systemPromptPreview: assistantConfig.systemPrompt && assistantConfig.systemPrompt.length > 200 ? assistantConfig.systemPrompt.substring(0, 200) + '...' : assistantConfig.systemPrompt || 'none',
+                    hasTools: !!(assistantConfig.tools && assistantConfig.tools.length > 0),
+                    toolsCount: assistantConfig.tools ? assistantConfig.tools.length : 0,
+                    hasMemoryFiles: !!(assistantConfig.memoryFiles && assistantConfig.memoryFiles.length > 0),
+                    memoryFilesCount: assistantConfig.memoryFiles ? assistantConfig.memoryFiles.length : 0,
+                    hasVectorStoreId: !!assistantConfig.vectorStoreId
+                });
+            }
             
             // Use enhanced WebLLM client if tools or knowledge are available
             // Enhanced client supports tool calling and maintains system instructions and knowledge context

@@ -54,6 +54,30 @@ where 123 is the ID of a profession post.
 
 ## Quick Test - Verify Configuration
 
+### Step 0: Enable Debug Mode (Required for Diagnostic Logs)
+
+Add this to your page **before** the chat widget loads:
+
+```html
+<script>
+window.wpMcpAiChatDebugMode = true;
+</script>
+```
+
+Or add to your theme's `functions.php`:
+
+```php
+add_action( 'wp_footer', function() {
+    ?>
+    <script>
+    window.wpMcpAiChatDebugMode = true;
+    </script>
+    <?php
+}, 5 );
+```
+
+**Note**: Debug mode exposes configuration details in browser console. Only enable for troubleshooting, then remove.
+
 ### Step 1: Rebuild JavaScript
 
 You made changes to chat.js which needs to be bundled:
@@ -65,7 +89,18 @@ npm run build
 npm run build:pro
 ```
 
-### Step 2: Check Assistant Configuration
+### Step 2: Rebuild and Test
+
+You made changes to chat.js which needs to be bundled:
+
+```bash
+cd /path/to/mcp-ai-wpoos
+npm run build
+# or for production:
+npm run build:pro
+```
+
+### Step 3: Check Assistant Configuration
 
 Open browser console and run:
 
@@ -80,15 +115,17 @@ console.log('Vector Store ID:', config.vectorStoreId);
 console.log('Tools:', config.tools);
 ```
 
-### Step 3: Look for New Diagnostic Logs
+### Step 4: Look for New Diagnostic Logs
 
-After rebuilding, refresh the page and look for these logs in console:
+After rebuilding and enabling debug mode, refresh the page and look for these logs in console:
+
+**Important**: Logs only appear when `window.wpMcpAiChatDebugMode = true` is set.
 
 ```
 [NV oOS] Creating embedded client with state.config:
 ```
 
-This will show you EXACTLY what values are present.
+This will show you EXACTLY what values are present (counts only, not full content for security).
 
 ## What Each Component Does
 
