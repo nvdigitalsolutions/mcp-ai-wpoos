@@ -963,7 +963,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<?php
-						$gmail_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' );
+						$gmail_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'gmail_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
 						?>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
@@ -1046,7 +1052,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					</th>
 					<td>
 						<?php
-						$google_drive_redirect_uri = admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' );
+						$google_drive_redirect_uri = add_query_arg(
+							array(
+								'page'          => 'wp-mcp-ai-remote-sites',
+								'oauth_handler' => 'google_drive_oauth_callback',
+							),
+							admin_url( 'admin.php' )
+						);
 						?>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
@@ -1108,7 +1120,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<td>
 							<?php
 							$oauth_url = wp_nonce_url(
-								admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_connect&connection_id=' . $connection['id'] ),
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'gmail_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
 								'gmail_oauth_connect_' . $connection['id']
 							);
 							?>
@@ -1138,7 +1157,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						<td>
 							<?php
 							$oauth_url = wp_nonce_url(
-								admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_connect&connection_id=' . $connection['id'] ),
+								add_query_arg(
+									array(
+										'page'          => 'wp-mcp-ai-remote-sites',
+										'oauth_handler' => 'google_drive_oauth_connect',
+										'connection_id' => $connection['id'],
+									),
+									admin_url( 'admin.php' )
+								),
 								'google_drive_oauth_connect_' . $connection['id']
 							);
 							?>
@@ -1422,7 +1448,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' ),
+			'redirect_uri'           => add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'gmail_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			),
 			'response_type'          => 'code',
 			'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
 			'access_type'            => 'offline',
@@ -1495,7 +1527,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					'code'          => $code,
 					'client_id'     => $connection['client_id'],
 					'client_secret' => $client_secret,
-					'redirect_uri'  => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=gmail_oauth_callback' ),
+					'redirect_uri'  => add_query_arg(
+						array(
+							'page'          => 'wp-mcp-ai-remote-sites',
+							'oauth_handler' => 'gmail_oauth_callback',
+						),
+						admin_url( 'admin.php' )
+					),
 					'grant_type'    => 'authorization_code',
 				),
 				'headers' => array(
@@ -1640,7 +1678,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 		$params = array(
 			'client_id'              => $connection['client_id'],
-			'redirect_uri'           => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' ),
+			'redirect_uri'           => add_query_arg(
+				array(
+					'page'          => 'wp-mcp-ai-remote-sites',
+					'oauth_handler' => 'google_drive_oauth_callback',
+				),
+				admin_url( 'admin.php' )
+			),
 			'response_type'          => 'code',
 			'scope'                  => 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly',
 			'access_type'            => 'offline',
@@ -1713,7 +1757,13 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					'code'          => $code,
 					'client_id'     => $connection['client_id'],
 					'client_secret' => $client_secret,
-					'redirect_uri'  => admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&oauth_handler=google_drive_oauth_callback' ),
+					'redirect_uri'  => add_query_arg(
+						array(
+							'page'          => 'wp-mcp-ai-remote-sites',
+							'oauth_handler' => 'google_drive_oauth_callback',
+						),
+						admin_url( 'admin.php' )
+					),
 					'grant_type'    => 'authorization_code',
 				),
 				'headers' => array(
