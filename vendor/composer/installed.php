@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-oauth-redirect-uri-error',
         'version' => 'dev-copilot/fix-oauth-redirect-uri-error',
-        'reference' => '4695bccc95d5b55523fe484c940b31e6751b4bd2',
+        'reference' => 'b942ac11279f7c5fdf9cfdfffa3a1b4af9e4d179',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-oauth-redirect-uri-error',
             'version' => 'dev-copilot/fix-oauth-redirect-uri-error',
-            'reference' => '4695bccc95d5b55523fe484c940b31e6751b4bd2',
+            'reference' => 'b942ac11279f7c5fdf9cfdfffa3a1b4af9e4d179',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
