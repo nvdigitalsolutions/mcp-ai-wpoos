@@ -11511,10 +11511,10 @@
                 console.log('[NV oOS] Creating embedded client with state.config:', {
                     hasSystemPrompt: !!state.config.systemPrompt,
                     systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
-                    systemPromptPreview: state.config.systemPrompt ? state.config.systemPrompt.substring(0, 100) + '...' : 'none',
+                    systemPromptPreview: state.config.systemPrompt ? (state.config.systemPrompt.length > 100 ? state.config.systemPrompt.substring(0, 100) + '...' : state.config.systemPrompt) : 'none',
                     hasProfessionalPrompt: !!state.config.professionalPrompt,
                     professionalPromptLength: state.config.professionalPrompt ? state.config.professionalPrompt.length : 0,
-                    professionalPromptPreview: state.config.professionalPrompt ? state.config.professionalPrompt.substring(0, 100) + '...' : 'none',
+                    professionalPromptPreview: state.config.professionalPrompt ? (state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt) : 'none',
                     hasMemoryFiles: !!state.config.memoryFiles,
                     memoryFilesIsArray: Array.isArray(state.config.memoryFiles),
                     memoryFilesLength: state.config.memoryFiles ? state.config.memoryFiles.length : 0,
@@ -11972,7 +11972,7 @@
                 }
                 console.log('[NV oOS] Added professional prompt to message system prompt:', {
                     professionalPromptLength: state.config.professionalPrompt.length,
-                    professionalPromptPreview: state.config.professionalPrompt.substring(0, 100) + '...'
+                    professionalPromptPreview: state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt
                 });
             }
             
