@@ -95,8 +95,10 @@
 
 	/**
 	 * Available models for client-side inference
-	 * All models listed here support function calling / tool use
 	 * Optimized for browser performance (quantized models)
+	 * 
+	 * Models with functionCalling: true support tool use and function calling
+	 * Models with functionCalling: false are suitable for basic chat only
 	 */
 	const AVAILABLE_MODELS = {
 		'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC': {
@@ -122,6 +124,38 @@
 			contextWindow: 128000,
 			recommended: false,
 			functionCalling: true
+		},
+		'Llama-3.2-3B-Instruct-q4f16_1-MLC': {
+			name: 'Llama 3.2 3B Instruct',
+			size: '~2GB',
+			description: 'Balanced model for general chat (does not support function calling)',
+			contextWindow: 131072,
+			recommended: false,
+			functionCalling: false
+		},
+		'Qwen2.5-1.5B-Instruct-q4f16_1-MLC': {
+			name: 'Qwen2.5 1.5B Instruct',
+			size: '~1GB',
+			description: 'Compact multilingual model with function calling support',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: true
+		},
+		'Llama-3.2-1B-Instruct-q4f16_1-MLC': {
+			name: 'Llama 3.2 1B Instruct',
+			size: '~800MB',
+			description: 'Fast, lightweight model for basic chat (does not support function calling)',
+			contextWindow: 131072,
+			recommended: false,
+			functionCalling: false
+		},
+		'Qwen2.5-0.5B-Instruct-q4f16_1-MLC': {
+			name: 'Qwen2.5 0.5B Instruct',
+			size: '~400MB',
+			description: 'Ultra-compact model for simple responses (does not support function calling)',
+			contextWindow: 32768,
+			recommended: false,
+			functionCalling: false
 		}
 	};
 
