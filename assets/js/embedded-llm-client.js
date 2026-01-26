@@ -202,7 +202,7 @@
 				instanceId: this.instanceId,
 				hasSystemPrompt: this.hasSystemPrompt,
 				systemPromptLength: this.systemPrompt ? this.systemPrompt.length : 0,
-				systemPromptPreview: this.systemPrompt ? this.systemPrompt.substring(0, 150) + '...' : 'none',
+				systemPromptPreview: this.systemPrompt && this.systemPrompt.length > 150 ? this.systemPrompt.substring(0, 150) + '...' : this.systemPrompt || 'none',
 				hasTools: this.hasTools,
 				toolCount: this.tools ? this.tools.length : 0,
 				hasKnowledge: this.hasKnowledge,
@@ -400,7 +400,7 @@
 					console.log('[NV oOS Embedded Client] Full system prompt for initialization:', {
 						instanceId: this.instanceId,
 						systemPromptLength: systemPromptContent.length,
-						systemPromptPreview: systemPromptContent.substring(0, 200) + '...',
+						systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
 						systemPromptFull: systemPromptContent
 					});
 					
@@ -438,7 +438,7 @@
 				console.log('[NV oOS Embedded Client] Model context initialized successfully for instance:', {
 					instanceId: this.instanceId,
 					responseLength: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.length : 0,
-					responsePreview: initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content.substring(0, 100) + '...' : 'none'
+					responsePreview: initResponse.choices && initResponse.choices[0] && initResponse.choices[0].message.content.length > 100 ? initResponse.choices[0].message.content.substring(0, 100) + '...' : initResponse.choices && initResponse.choices[0] ? initResponse.choices[0].message.content : 'none'
 				});
 				
 			} catch (error) {
@@ -545,7 +545,7 @@
 					console.log('[NV oOS Embedded Client] System prompt detected in messages:', {
 						hasSystemPrompt: true,
 						systemPromptLength: systemMessage.content.length,
-						systemPromptPreview: systemMessage.content.substring(0, 200) + '...',
+						systemPromptPreview: systemMessage.content.length > 200 ? systemMessage.content.substring(0, 200) + '...' : systemMessage.content,
 						systemPromptFull: systemMessage.content,
 						instanceId: this.instanceId,
 						matchesStoredPrompt: this.systemPrompt === systemMessage.content,
