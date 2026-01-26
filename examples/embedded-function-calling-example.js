@@ -11,6 +11,8 @@
  * @since 1.2.0
  */
 
+/* eslint-disable no-console */
+
 // Note: This assumes @mlc-ai/web-llm is loaded via CDN or bundler
 // For the HTML example, see embedded-function-calling-example.html
 
@@ -114,8 +116,7 @@ async function functionCallingExample() {
     const asyncChunkGenerator = await engine.chat.completions.create(request);
     
     let message = "";
-    let toolCalls = [];
-    let lastChunk;
+    const toolCalls = [];
     let usageChunk;
     
     // Process each chunk
@@ -154,11 +155,10 @@ async function functionCallingExample() {
             });
         }
         
-        // Track last chunk for metadata
-        if (!chunk.usage) {
-            lastChunk = chunk;
+        // Track usage chunk
+        if (chunk.usage) {
+            usageChunk = chunk;
         }
-        usageChunk = chunk;
     }
     
     console.log('[Function Calling] Stream completed');
@@ -191,7 +191,7 @@ async function functionCallingExample() {
         // Execute tool (mock implementation)
         let result;
         if (toolCall.function.name === 'get_current_weather') {
-            result = get_current_weather(args.location, args.unit);
+            result = getCurrentWeather(args.location, args.unit);
         } else {
             result = { error: 'Unknown function: ' + toolCall.function.name };
         }
@@ -253,8 +253,12 @@ async function functionCallingExample() {
 /**
  * Mock weather function
  * In a real application, this would call a weather API
+ * 
+ * @param {string} location - Location to get weather for
+ * @param {string} unit - Temperature unit (celsius or fahrenheit)
+ * @returns {Object} Weather data
  */
-function get_current_weather(location, unit = 'celsius') {
+function getCurrentWeather(location, unit = 'celsius') {
     console.log('[Weather API] Getting weather for', location, 'in', unit);
     
     // Mock response
@@ -406,7 +410,7 @@ if (typeof module !== 'undefined' && module.exports) {
         functionCallingExample,
         wordpressPluginExample,
         enhancedFunctionCallingExample,
-        get_current_weather
+        getCurrentWeather
     };
 }
 
@@ -416,7 +420,7 @@ if (typeof window !== 'undefined') {
         functionCallingExample,
         wordpressPluginExample,
         enhancedFunctionCallingExample,
-        get_current_weather
+        getCurrentWeather
     };
 }
 
