@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Email_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Email_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         $result = array(
  *             'html' => '<html>...</html>',
  *             'subject' => 'Newsletter Title',

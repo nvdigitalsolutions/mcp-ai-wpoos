@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Chat_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         $data = $this->do_something();
  *
  *         // Ensure response has displayable message

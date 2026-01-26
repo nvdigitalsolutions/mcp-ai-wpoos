@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Math_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Math_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         $result = array(
  *             'latex' => 'E = mc^2',
  *             'text' => 'Energy-mass equivalence formula',

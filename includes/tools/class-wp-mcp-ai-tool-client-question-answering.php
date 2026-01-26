@@ -81,9 +81,9 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||
-		     ! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
+			! WP_MCP_AI_Transformers_Enqueue::is_transformers_enabled() ) {
 			return array(
 				'success' => false,
 				'error'   => __( 'Browser-native AI tasks are not enabled.', 'mcp-ai-wpoos' ),

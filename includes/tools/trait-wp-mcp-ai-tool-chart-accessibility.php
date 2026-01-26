@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Chart_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Chart_Accessibility;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         $chart_html = $this->generate_chart( $data );
  *
  *         // Enhance with accessibility features
