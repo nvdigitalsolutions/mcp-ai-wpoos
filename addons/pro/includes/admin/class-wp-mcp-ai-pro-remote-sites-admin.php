@@ -78,6 +78,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			array(),
 			WP_MCP_AI_PRO_VERSION
 		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-pro-remote-sites',
+			WP_MCP_AI_PRO_URL . 'assets/js/remote-sites-admin.js',
+			array( 'jquery' ),
+			WP_MCP_AI_PRO_VERSION,
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-pro-remote-sites',
+			'wpMcpAiRemoteSites',
+			array(
+				'copiedText' => __( 'Copied!', 'wp-mcp-ai-pro' ),
+				'copyText'   => __( 'Copy to Clipboard', 'wp-mcp-ai-pro' ),
+				'copyError'  => __( 'Failed to copy. Please select and copy manually.', 'wp-mcp-ai-pro' ),
+			)
+		);
 	}
 
 	/**
@@ -971,13 +989,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							admin_url( 'admin.php' )
 						);
 						?>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description">
-							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
-							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
-							<br>
-							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
-								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+						<div style="display: flex; gap: 10px; align-items: flex-start;">
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $gmail_redirect_uri ); ?>" class="large-text code wp-mcp-ai-oauth-redirect-uri" onclick="this.select();" style="background-color: #f0f0f0; flex: 1;">
+							<button type="button" class="button button-secondary wp-mcp-ai-copy-redirect-uri" data-clipboard-text="<?php echo esc_attr( $gmail_redirect_uri ); ?>" style="white-space: nowrap;">
+								<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Copy', 'wp-mcp-ai-pro' ); ?>
+							</button>
+						</div>
+						<p class="description" style="margin-top: 8px;">
+							<strong style="color: #d63638;"><?php esc_html_e( '⚠️ IMPORTANT:', 'wp-mcp-ai-pro' ); ?></strong>
+							<?php esc_html_e( 'Click the "Copy" button above and paste this EXACT URL (including all parameters) into the "Authorized redirect URIs" field in your Google Cloud Console OAuth 2.0 credentials.', 'wp-mcp-ai-pro' ); ?>
+							<br><br>
+							<strong><?php esc_html_e( 'The URL must include:', 'wp-mcp-ai-pro' ); ?></strong>
+							<ul style="margin: 5px 0 10px 20px; list-style: disc;">
+								<li><code>page=wp-mcp-ai-remote-sites</code></li>
+								<li><code>oauth_handler=gmail_oauth_callback</code></li>
+							</ul>
+							<?php esc_html_e( 'If these parameters are missing, you will get a "redirect_uri_mismatch" error.', 'wp-mcp-ai-pro' ); ?>
+							<br><br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="button button-small">
+								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 12px; vertical-align: middle;"></span>
 							</a>
 						</p>
 					</td>
@@ -1060,13 +1091,26 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							admin_url( 'admin.php' )
 						);
 						?>
-						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
-						<p class="description">
-							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
-							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
-							<br>
-							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
-								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+						<div style="display: flex; gap: 10px; align-items: flex-start;">
+							<input type="text" readonly="readonly" value="<?php echo esc_url( $google_drive_redirect_uri ); ?>" class="large-text code wp-mcp-ai-oauth-redirect-uri" onclick="this.select();" style="background-color: #f0f0f0; flex: 1;">
+							<button type="button" class="button button-secondary wp-mcp-ai-copy-redirect-uri" data-clipboard-text="<?php echo esc_attr( $google_drive_redirect_uri ); ?>" style="white-space: nowrap;">
+								<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Copy', 'wp-mcp-ai-pro' ); ?>
+							</button>
+						</div>
+						<p class="description" style="margin-top: 8px;">
+							<strong style="color: #d63638;"><?php esc_html_e( '⚠️ IMPORTANT:', 'wp-mcp-ai-pro' ); ?></strong>
+							<?php esc_html_e( 'Click the "Copy" button above and paste this EXACT URL (including all parameters) into the "Authorized redirect URIs" field in your Google Cloud Console OAuth 2.0 credentials.', 'wp-mcp-ai-pro' ); ?>
+							<br><br>
+							<strong><?php esc_html_e( 'The URL must include:', 'wp-mcp-ai-pro' ); ?></strong>
+							<ul style="margin: 5px 0 10px 20px; list-style: disc;">
+								<li><code>page=wp-mcp-ai-remote-sites</code></li>
+								<li><code>oauth_handler=google_drive_oauth_callback</code></li>
+							</ul>
+							<?php esc_html_e( 'If these parameters are missing, you will get a "redirect_uri_mismatch" error.', 'wp-mcp-ai-pro' ); ?>
+							<br><br>
+							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer" class="button button-small">
+								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 12px; vertical-align: middle;"></span>
 							</a>
 						</p>
 					</td>

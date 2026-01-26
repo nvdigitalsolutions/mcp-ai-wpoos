@@ -16,3 +16,20 @@
 .wp-mcp-ai-remote-sites .notice {
 	margin: 20px 0;
 }
+
+/* OAuth Redirect URI Styles */
+.wp-mcp-ai-oauth-redirect-uri {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 13px;
+}
+
+.wp-mcp-ai-copy-redirect-uri {
+	min-width: 80px;
+}
+
+.wp-mcp-ai-copy-redirect-uri .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: middle;
+}
