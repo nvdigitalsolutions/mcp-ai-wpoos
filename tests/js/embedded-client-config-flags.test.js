@@ -36,10 +36,10 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 	 * This is the NEW (correct) behavior after the fix
 	 */
 	function calculateCapabilityFlags( assistantConfig ) {
-		const hasTools = assistantConfig.tools && Array.isArray( assistantConfig.tools ) && assistantConfig.tools.length > 0;
-		const hasKnowledge = ( assistantConfig.memoryFiles && Array.isArray( assistantConfig.memoryFiles ) && assistantConfig.memoryFiles.length > 0 ) ||
-			assistantConfig.vectorStoreId;
-		// Note: Using !! here to ensure boolean return type for test assertions
+		// Note: Using !! to ensure boolean return type for test assertions
+		const hasTools = !! ( assistantConfig.tools && Array.isArray( assistantConfig.tools ) && assistantConfig.tools.length > 0 );
+		const hasKnowledge = !! ( ( assistantConfig.memoryFiles && Array.isArray( assistantConfig.memoryFiles ) && assistantConfig.memoryFiles.length > 0 ) ||
+			assistantConfig.vectorStoreId );
 		const hasSystemPrompt = !! ( assistantConfig.systemPrompt && assistantConfig.systemPrompt.trim() );
 
 		return { hasTools, hasKnowledge, hasSystemPrompt };
@@ -49,10 +49,11 @@ describe( 'Embedded Client - Configuration Flag Checks', () => {
 	 * Simulate the OLD (incorrect) behavior before the fix
 	 */
 	function calculateCapabilityFlagsOld( stateConfig ) {
-		const hasTools = stateConfig.tools && Array.isArray( stateConfig.tools ) && stateConfig.tools.length > 0;
-		const hasKnowledge = ( stateConfig.memoryFiles && Array.isArray( stateConfig.memoryFiles ) && stateConfig.memoryFiles.length > 0 ) ||
-			stateConfig.vectorStoreId;
-		const hasSystemPrompt = stateConfig.systemPrompt || stateConfig.professionalPrompt;
+		// Note: Using !! to ensure boolean return type for test assertions
+		const hasTools = !! ( stateConfig.tools && Array.isArray( stateConfig.tools ) && stateConfig.tools.length > 0 );
+		const hasKnowledge = !! ( ( stateConfig.memoryFiles && Array.isArray( stateConfig.memoryFiles ) && stateConfig.memoryFiles.length > 0 ) ||
+			stateConfig.vectorStoreId );
+		const hasSystemPrompt = !! ( stateConfig.systemPrompt || stateConfig.professionalPrompt );
 
 		return { hasTools, hasKnowledge, hasSystemPrompt };
 	}
