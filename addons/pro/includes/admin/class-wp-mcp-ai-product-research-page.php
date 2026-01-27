@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
 
 /**
  * Product Research Admin Page
@@ -21,6 +22,10 @@ require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
  */
 class WP_MCP_AI_Product_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
 
 	/**
 	 * Page slug.
@@ -36,6 +41,7 @@ class WP_MCP_AI_Product_Research_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_product', array( __CLASS__, 'ajax_handle_import' ) );
 	}
 
 	/**
@@ -86,8 +92,8 @@ class WP_MCP_AI_Product_Research_Page {
 
 		// Enqueue research page script.
 		wp_enqueue_script(
-			'wp-mcp-ai-product-research-page',
-			WP_MCP_AI_PRO_URL . 'assets/js/product-research-page.js',
+			'wp-mcp-ai-research-page',
+			WP_MCP_AI_PRO_URL . 'assets/js/research-page.js',
 			array( 'jquery', 'wp-api', WP_MCP_AI_Shortcode::SCRIPT_HANDLE ),
 			WP_MCP_AI_PRO_VERSION,
 			true
@@ -95,8 +101,8 @@ class WP_MCP_AI_Product_Research_Page {
 
 		// Localize script.
 		wp_localize_script(
-			'wp-mcp-ai-product-research-page',
-			'wpMcpAiProductResearchPage',
+			'wp-mcp-ai-research-page',
+			'wpMcpAiResearchPage',
 			array(
 				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
 				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_product' ),
@@ -117,6 +123,8 @@ class WP_MCP_AI_Product_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		$mode = self::get_current_mode();
+
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_product_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -143,6 +151,32 @@ class WP_MCP_AI_Product_Research_Page {
 			</h1>
 
 			<hr class="wp-header-end">
+
+			<?php self::render_mode_tabs( $mode ); ?>
+
+			<?php
+			switch ( $mode ) {
+				case 'import':
+					self::render_import_section();
+					break;
+				case 'consolidate':
+					self::render_consolidation_dashboard();
+					break;
+				default: // 'chat'
+					self::render_chat_interface( $assistant_id );
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		?>
 
 			<div class="wp-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
@@ -249,7 +283,6 @@ class WP_MCP_AI_Product_Research_Page {
 					<?php endif; ?>
 				</div>
 			</div>
-		</div>
 		<?php
 	}
 
@@ -302,6 +335,182 @@ class WP_MCP_AI_Product_Research_Page {
 				'product_id' => $product_id,
 				'edit_url'   => $edit_url,
 			)
+		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Import formats.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'csv'  => 'CSV',
+			'xml'  => 'XML',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data.
+	 *
+	 * @param string $data   Import data.
+	 * @param string $format Data format.
+	 * @return array|WP_Error Result or error.
+	 */
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
+		return new WP_Error( 'not_implemented', __( 'Product import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema.
+	 *
+	 * @return array Validation schema.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'sku'   => __( 'SKU', 'mcp-ai-wpoos-pro' ),
+				'name'  => __( 'Product Name', 'mcp-ai-wpoos-pro' ),
+				'price' => __( 'Price', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+				'category'    => __( 'Category', 'mcp-ai-wpoos-pro' ),
+				'image'       => __( 'Product Image', 'mcp-ai-wpoos-pro' ),
+				'stock'       => __( 'Stock Quantity', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'price' => array(
+					'type'      => 'numeric',
+					'min_value' => 0,
+				),
+				'stock' => array(
+					'type'      => 'numeric',
+					'min_value' => 0,
+				),
+				'sku'   => array( 'max_length' => 100 ),
+			),
+			'quality_dimensions' => array(
+				'accuracy',
+				'completeness',
+				'consistency',
+				'uniqueness',
+			),
+		);
+	}
+
+	/**
+	 * Calculate completeness.
+	 *
+	 * @return array Completeness data.
+	 */
+	protected static function calculate_completeness() {
+		$products = get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $products );
+		$complete = 0;
+
+		foreach ( $products as $product ) {
+			$product_obj = wc_get_product( $product->ID );
+			if ( $product_obj && $product_obj->get_sku() && $product_obj->get_price() && ! empty( $product->post_content ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Ensure all products have unique SKUs', 'mcp-ai-wpoos-pro' ),
+				__( 'Add detailed descriptions and images', 'mcp-ai-wpoos-pro' ),
+				__( 'Set prices and stock levels', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Items.
+	 */
+	protected static function get_items_for_review() {
+		$products = get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $products as $product ) {
+			$product_obj = wc_get_product( $product->ID );
+			$items[]     = array(
+				'id'    => $product->ID,
+				'title' => $product->post_title,
+				'meta'  => array(
+					'sku'   => $product_obj ? $product_obj->get_sku() : '',
+					'price' => $product_obj ? $product_obj->get_price() : '',
+					'stock' => $product_obj ? $product_obj->get_stock_quantity() : '',
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for item.
+	 *
+	 * @param array $item Item data.
+	 * @return array Quality data.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['sku'] ) ) {
+			$score += 25;
+		} else {
+			$issues[] = __( 'Missing SKU', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['price'] ) ) {
+			$score += 25;
+		} else {
+			$issues[] = __( 'Missing price', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['stock'] ) ) {
+			$score += 25;
+		} else {
+			$issues[] = __( 'Missing stock level', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 10 ) {
+			$score += 25;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = $score >= 80 ? 'high' : ( $score >= 50 ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
 		);
 	}
 }
