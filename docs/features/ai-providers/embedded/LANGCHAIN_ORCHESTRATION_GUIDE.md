@@ -1,21 +1,24 @@
-# LangChain.js Orchestration Guide
+# LangChain.js Orchestration Guide (Pro Feature)
 ## Advanced Multi-Step Reasoning with WordPress Integration
 
 **Phase:** 3 of 8 (WebLLM Enhancement Roadmap)  
 **Status:** ✅ Complete - January 2026  
-**Version:** 1.0.0
+**Version:** 1.0.0  
+**License:** Pro Add-on (Proprietary)
 
 ---
 
 ## Overview
 
-Phase 3 adds sophisticated AI orchestration capabilities to NV oOS using LangChain.js, enabling:
+Phase 3 adds sophisticated AI orchestration capabilities to NV oOS Pro using LangChain.js, enabling:
 
 - **Multi-step reasoning chains** - Break complex tasks into sequential steps
 - **Agent-based workflows** - AI agents that can plan and use tools autonomously
 - **Conversation memory** - Maintain context across multiple interactions
 - **Self-reflection** - Agents can evaluate and correct their own outputs
 - **Hybrid execution** - Mix client-side and server-side tool execution
+
+**Note:** LangChain orchestration is a **Pro feature** as it requires the embedded LLM provider (WebLLM), which is part of the Pro add-on.
 
 ---
 
@@ -106,24 +109,25 @@ console.log(`Loaded ${tools.length} tools for orchestration`);
 
 ### For Plugin Developers
 
-The LangChain libraries are automatically bundled when you run `npm install`:
+The LangChain libraries are automatically bundled in the **Pro addon** when you run `npm install`:
 
 ```bash
-# Install dependencies (includes LangChain bundling)
-npm install
+# From repository root
+npm install  # This triggers Pro addon postinstall
 
-# Or manually rebuild LangChain bundles
+# Or manually rebuild LangChain bundles in Pro addon
+cd addons/pro
 npm run build:langchain
 ```
 
-This creates 6 bundle files in `assets/js/vendor/`:
+This creates 6 bundle files in `addons/pro/assets/js/vendor/`:
 - `langchain-core.bundle.js` + `.min.js` (616KB minified)
 - `langchain.bundle.js` + `.min.js` (1.3MB minified)
 - `langchain-community.bundle.js` + `.min.js` (1.2MB minified)
 
 ### For End Users
 
-LangChain bundles are **pre-packaged** in the plugin ZIP file - no build step required!
+LangChain bundles are **pre-packaged** in the Pro plugin ZIP file - no build step required!
 
 Simply:
 1. Install the plugin via WordPress admin or upload ZIP
@@ -428,9 +432,9 @@ wpMcpAiLangChain = {
     maxIterations: 10,  // Max agent iterations
     verbose: false,     // Console logging
     localUrls: {
-        core: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain-core.bundle.min.js',
-        langchain: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain.bundle.min.js',
-        community: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain-community.bundle.min.js'
+        core: '/wp-content/plugins/mcp-ai-wpoos/addons/pro/assets/js/vendor/langchain-core.bundle.min.js',
+        langchain: '/wp-content/plugins/mcp-ai-wpoos/addons/pro/assets/js/vendor/langchain.bundle.min.js',
+        community: '/wp-content/plugins/mcp-ai-wpoos/addons/pro/assets/js/vendor/langchain-community.bundle.min.js'
     }
 };
 ```
