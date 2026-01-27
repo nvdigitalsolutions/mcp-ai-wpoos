@@ -34,6 +34,8 @@ import DOMPurify from 'dompurify';
 	
 	// Override code block rendering to add our CSS class
 	// Note: marked v9.x uses separate arguments: code, language, escaped
+	// The 'escaped' parameter is part of the marked API signature but not used in this implementation
+	// as we perform our own HTML escaping via escapeHtml()
 	renderer.code = function(code, language, escaped) {
 		const safeCode = code || '';
 		const lang = language || '';
