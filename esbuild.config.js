@@ -176,6 +176,12 @@ const builds = [
 		outfile: 'assets/js/workers/llm-worker.min.js',
 		...commonOptions,
 	},
+	// Browser-native AI tools (Phase 7)
+	{
+		entryPoints: ['assets/js/client-tools.js'],
+		outfile: 'assets/js/client-tools.min.js',
+		...commonOptions,
+	},
 	// Modern bundles with code splitting (Phase 6)
 	// Note: Commented out until source files are created
 	// {
