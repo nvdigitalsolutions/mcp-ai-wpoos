@@ -216,7 +216,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$image_config = array();
 
-			if ( '' !== $aspect_ratio ) {
+			// Only set aspectRatio if it's not "auto" (let AI decide).
+			if ( '' !== $aspect_ratio && 'auto' !== $aspect_ratio ) {
 				$image_config['aspectRatio'] = $aspect_ratio;
 			}
 
@@ -465,7 +466,8 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 
 			$image_config = array();
 
-			if ( '' !== $aspect_ratio ) {
+			// Only set aspectRatio if it's not "auto" (let AI decide).
+			if ( '' !== $aspect_ratio && 'auto' !== $aspect_ratio ) {
 				$image_config['aspectRatio'] = $aspect_ratio;
 			}
 
@@ -2706,8 +2708,15 @@ if ( ! class_exists( 'WP_MCP_AI_Gemini_Client' ) ) {
 		 * @return string
 		 */
 		protected function normalise_aspect_ratio( $aspect_ratio ) {
-			$aspect_ratio = strtoupper( (string) $aspect_ratio );
+			$aspect_ratio = strtolower( (string) $aspect_ratio );
 			$aspect_ratio = str_replace( ' ', '', $aspect_ratio );
+
+			// Special case: "auto" means let the AI decide (no aspectRatio sent to API).
+			if ( 'auto' === $aspect_ratio ) {
+				return 'auto';
+			}
+
+			$aspect_ratio = strtoupper( $aspect_ratio );
 
 			if ( preg_match( '/^(\d+):(\d+)$/', $aspect_ratio, $matches ) ) {
 				$left  = ltrim( $matches[1], '0' );

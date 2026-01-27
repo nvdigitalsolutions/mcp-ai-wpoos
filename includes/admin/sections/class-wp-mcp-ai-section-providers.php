@@ -448,13 +448,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Gemini Image Aspect Ratio', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default aspect ratio for Gemini-generated images. Square (1:1) works for most purposes. Portrait (3:4, 9:16) and landscape (4:3, 16:9) offer creative flexibility.', 'mcp-ai-wpoos' ),
 					'options'     => array(
+						'auto' => 'Auto (Let AI decide)',
 						'1:1'  => '1:1 (Square)',
 						'3:4'  => '3:4 (Portrait)',
 						'4:3'  => '4:3 (Landscape)',
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-					'default'     => '1:1',
+					'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
