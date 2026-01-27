@@ -19,6 +19,9 @@
 
 		// Bulk import functionality.
 		initBulkImport();
+
+		// Guided entry functionality.
+		initGuidedEntry();
 	}
 
 	/**
@@ -351,6 +354,132 @@
 				},
 			} );
 		} );
+	}
+
+	/**
+	 * Initialize guided entry functionality.
+	 */
+	function initGuidedEntry() {
+		const recordTypeBtns = $( '.record-type-btn' );
+		const guidedFormContainer = $( '#guided-form-container' );
+		const memberSelect = $( '#wp-mcp-ai-member-select' );
+
+		if ( ! recordTypeBtns.length ) {
+			return;
+		}
+
+		// Handle record type button clicks.
+		recordTypeBtns.on( 'click', function() {
+			const recordType = $( this ).data( 'type' );
+			const memberId = memberSelect.val();
+
+			// Check if a member is selected.
+			if ( ! memberId ) {
+				alert( wpMcpAiHealthConsolidate.strings.selectMember );
+				memberSelect.focus();
+				// Switch to the sidebar workflow for member selection.
+				$( '.workflow-option[data-workflow="review"]' ).trigger( 'click' );
+				return;
+			}
+
+			// Highlight the clicked button.
+			recordTypeBtns.removeClass( 'active' );
+			$( this ).addClass( 'active' );
+
+			// Show the form container with a loading message.
+			guidedFormContainer.html(
+				'<div class="notice notice-info inline"><p>' + wpMcpAiHealthConsolidate.strings.aiAssisting + '</p></div>'
+			).show();
+
+			// Scroll to the AI assistant section and trigger guidance.
+			scrollToAIAssistant();
+			triggerAIGuidance( recordType, memberId );
+		} );
+
+		/**
+		 * Scroll to the AI assistant section.
+		 */
+		function scrollToAIAssistant() {
+			const aiSection = $( '.wp-mcp-ai-consolidate-ai-section' );
+			if ( aiSection.length ) {
+				$( 'html, body' ).animate( {
+					scrollTop: aiSection.offset().top - 50
+				}, 500 );
+			}
+		}
+
+		/**
+		 * Trigger AI guidance for record creation.
+		 *
+		 * @param {string} recordType Type of record to create.
+		 * @param {number} memberId   Member ID.
+		 */
+		function triggerAIGuidance( recordType, memberId ) {
+			// Get member name for context.
+			const memberName = memberSelect.find( 'option:selected' ).text();
+
+			// Map record types to friendly names.
+			const recordTypeNames = {
+				'medical_record': 'medical record',
+				'checkup': 'checkup/appointment',
+				'prescription': 'prescription',
+				'policy': 'insurance policy',
+				'allergy': 'allergy'
+			};
+
+			const recordTypeName = recordTypeNames[ recordType ] || recordType;
+
+			// Build the AI prompt.
+			const prompt = 'Please help me add a new ' + recordTypeName + ' for ' + memberName + ' (member ID: ' + memberId + '). Guide me through the required fields step by step.';
+
+			// Try to send the message to the chat interface.
+			const chatTextarea = $( '.wp-mcp-ai-chat textarea[name="message"]' );
+			const chatSubmitBtn = $( '.wp-mcp-ai-chat button[type="submit"]' );
+
+			if ( chatTextarea.length && chatSubmitBtn.length ) {
+				// Pre-fill the chat with the guidance request.
+				chatTextarea.val( prompt ).focus();
+				
+				// Optionally auto-submit the message.
+				setTimeout( function() {
+					chatSubmitBtn.trigger( 'click' );
+				}, 500 );
+
+				// Update the guided form container with instructions.
+				guidedFormContainer.html(
+					'<div class="notice notice-success inline">' +
+					'<p><strong>' + wpMcpAiHealthConsolidate.strings.aiAssisting + '</strong></p>' +
+					'<p>The AI assistant below will guide you through creating a ' + recordTypeName + ' for ' + memberName + '.</p>' +
+					'</div>'
+				).show();
+			} else {
+				// Fallback: Show a message with a link to the manual entry page.
+				const addUrl = getAddUrl( recordType );
+				guidedFormContainer.html(
+					'<div class="notice notice-warning inline">' +
+					'<p>AI assistant not available. <a href="' + addUrl + '" class="button">Create ' + recordTypeName + ' manually</a></p>' +
+					'</div>'
+				).show();
+			}
+		}
+
+		/**
+		 * Get the URL for manually adding a record.
+		 *
+		 * @param {string} recordType Record type.
+		 * @return {string} Add URL.
+		 */
+		function getAddUrl( recordType ) {
+			const urlMap = {
+				'medical_record': wpMcpAiHealthConsolidate.addRecordUrl,
+				'checkup': wpMcpAiHealthConsolidate.addCheckupUrl,
+				'prescription': wpMcpAiHealthConsolidate.addPrescUrl,
+				'policy': wpMcpAiHealthConsolidate.addRecordUrl, // Assuming same as medical record for now.
+				'allergy': wpMcpAiHealthConsolidate.addAllergyUrl
+			};
+
+			return urlMap[ recordType ] || wpMcpAiHealthConsolidate.addRecordUrl;
+		}
 	}
 
 	// Add CSS for spinning icon.
