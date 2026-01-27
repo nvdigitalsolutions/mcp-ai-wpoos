@@ -77,39 +77,31 @@ class WP_MCP_AI_ECA_Research_Page {
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
 
-		// Enqueue research page specific styles.
+		// Enqueue enhanced research page styles.
 		wp_enqueue_style(
-			'wp-mcp-ai-research-page',
-			WP_MCP_AI_PRO_URL . 'assets/css/research-page.css',
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
 			array(),
-			WP_MCP_AI_PRO_VERSION
+			WP_MCP_AI_VERSION
 		);
 
-		// Enqueue research page script.
+		// Enqueue enhanced research page script.
 		wp_enqueue_script(
-			'wp-mcp-ai-research-page',
-			WP_MCP_AI_PRO_URL . 'assets/js/research-page.js',
-			array( 'jquery', 'wp-api', WP_MCP_AI_Shortcode::SCRIPT_HANDLE ),
-			WP_MCP_AI_PRO_VERSION,
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
 			true
 		);
 
 		// Localize script.
 		wp_localize_script(
-			'wp-mcp-ai-research-page',
+			'wp-mcp-ai-enhanced-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_eca' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=mcp_ai_eca' ),
-				'researchTool' => 'research_eca',
-				'strings'      => array(
-					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating ECA...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'ECA created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create an ECA with the researched information?', 'mcp-ai-wpoos-pro' ),
-				),
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_eca' ),
+				'entityType' => 'eca',
 			)
 		);
 	}
