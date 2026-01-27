@@ -129,9 +129,6 @@ class WP_MCP_AI_Task_Research_Page {
 			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
 		}
 
-		// Get current mode
-		$current_mode = self::get_current_mode();
-
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
@@ -140,21 +137,7 @@ class WP_MCP_AI_Task_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_mode_tabs( $current_mode ); ?>
-
-			<div class="wp-mcp-ai-research-content">
-				<div id="research-mode" class="research-mode-content <?php echo 'chat' === $current_mode ? 'active' : ''; ?>">
-					<?php self::render_chat_interface( $assistant_id ); ?>
-				</div>
-
-				<div id="import-mode" class="research-mode-content <?php echo 'import' === $current_mode ? 'active' : ''; ?>">
-					<?php self::render_import_section(); ?>
-				</div>
-
-				<div id="consolidate-mode" class="research-mode-content <?php echo 'consolidate' === $current_mode ? 'active' : ''; ?>">
-					<?php self::render_consolidation_section(); ?>
-				</div>
-			</div>
+			<?php self::render_chat_interface( $assistant_id ); ?>
 		</div>
 		<?php
 	}
@@ -166,41 +149,122 @@ class WP_MCP_AI_Task_Research_Page {
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
 		?>
-		<div class="wp-mcp-ai-research-chat-container">
-			<?php if ( ! $assistant_id ) : ?>
-				<div class="notice notice-warning">
-					<p><?php esc_html_e( 'No assistant configured. Please configure an assistant in Settings or create one in the Assistants menu.', 'mcp-ai-wpoos-pro' ); ?></p>
-				</div>
-			<?php else : ?>
-				<div class="chat-instructions">
-					<h2><?php esc_html_e( '🤖 AI Task Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
-					<p><?php esc_html_e( 'Describe the task you want to create, and the AI will help you research, plan, and add it with all relevant details including priorities, due dates, and project associations.', 'mcp-ai-wpoos-pro' ); ?></p>
-					
-					<details class="chat-tips">
-						<summary><?php esc_html_e( 'Tips for better results', 'mcp-ai-wpoos-pro' ); ?></summary>
+			<div class="wp-mcp-ai-research-container">
+				<div class="wp-mcp-ai-research-sidebar">
+					<div class="wp-mcp-ai-research-intro">
+						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
+						<ol>
+							<li><?php esc_html_e( 'Search existing tasks or brainstorm new ones', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Use AI to break down complex tasks into subtasks', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Set priorities, due dates, and project associations', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create tasks directly or save for later editing', 'mcp-ai-wpoos-pro' ); ?></li>
+						</ol>
+					</div>
+
+					<div class="wp-mcp-ai-research-tips">
+						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><?php esc_html_e( '✅ Be specific about task objectives and deliverables', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( '✅ Mention priority levels (low, medium, high, urgent)', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( '✅ Include due dates or deadlines if known', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( '✅ Specify project associations if applicable', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( '✅ Ask for task breakdowns or subtasks for complex work', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( '✅ Request task dependencies if tasks are related', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'List existing tasks to avoid duplicates', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Be specific:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Define clear objectives and deliverables', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Set priorities:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Specify low, medium, high, or urgent', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Add context:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include project associations and dependencies', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
-					</details>
+					</div>
+
+					<div class="wp-mcp-ai-research-examples">
+						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<ul class="wp-mcp-ai-example-list">
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="List all existing tasks">
+								<?php esc_html_e( '"List existing tasks"', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Create a high priority task for website redesign with subtasks">
+								<?php esc_html_e( '"Create website redesign task..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Break down content strategy task into smaller tasks">
+								<?php esc_html_e( '"Break down content strategy..."', 'mcp-ai-wpoos-pro' ); ?>
+							</button></li>
+						</ul>
+					</div>
+
+					<div class="wp-mcp-ai-research-actions">
+						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_task' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Tasks', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_task' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add Task Manually', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
+					</div>
 				</div>
 
-				<?php
-				// Render the chat UI using shortcode functionality.
-				$chat_id = 'task-research-' . wp_generate_password( 8, false );
-				?>
-				<div id="<?php echo esc_attr( $chat_id ); ?>" 
-					 class="wp-mcp-ai-chat-widget" 
-					 data-assistant-id="<?php echo esc_attr( $assistant_id ); ?>"
-					 data-context="task_research"
-					 data-initial-message="<?php esc_attr_e( 'Hello! I can help you research and create tasks. What task would you like to create today?', 'mcp-ai-wpoos-pro' ); ?>">
+				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create tasks with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import task data', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View task quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
+					<?php if ( $assistant_id > 0 ) : ?>
+						<div class="wp-mcp-ai-research-chat">
+							<?php
+							// Render chat interface with comprehensive task tools.
+							// Includes task creation, management, and project association tools.
+							echo do_shortcode(
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_task,list_tasks,update_task,delete_task,create_project,list_projects,web_search,search_content"]'
+							);
+							?>
+						</div>
+
+					<?php else : ?>
+						<div class="notice notice-error">
+							<p>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: Link to create assistant */
+										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos-pro' ),
+										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+									)
+								);
+								?>
+							</p>
+						</div>
+					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
-			<?php endif; ?>
-		</div>
+			</div>
 		<?php
 	}
 
@@ -461,6 +525,372 @@ class WP_MCP_AI_Task_Research_Page {
 	 */
 	protected static function get_file_accept_attribute() {
 		return '.csv,.json';
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Task Data', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import tasks from CSV, JSON, or paste structured data. The AI will automatically parse and organize the task information.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include task title and description', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify priority (low, medium, high, urgent) and status', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Add due dates and project associations', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Include assignee information when available', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_tasks', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, TXT', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nTitle: Update website homepage\nDescription: Redesign and update homepage layout\nPriority: high\nStatus: todo\nDue Date: 2024-02-15\n\nTitle: Write blog post\nDescription: Create content for product launch\nPriority: medium\nStatus: in-progress', 'mcp-ai-wpoos-pro' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create tasks (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		// Get task statistics.
+		$total_tasks = wp_count_posts( 'mcp_ai_task' );
+		$published_count = isset( $total_tasks->publish ) ? $total_tasks->publish : 0;
+		
+		// Calculate data quality metrics.
+		$tasks = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_priority = 0;
+		$with_status = 0;
+
+		foreach ( $tasks as $task ) {
+			$priority = get_post_meta( $task->ID, 'priority', true );
+			$status   = get_post_meta( $task->ID, 'status', true );
+			$has_desc = ! empty( $task->post_content );
+			
+			if ( ! empty( $priority ) ) {
+				$with_priority++;
+			}
+			if ( ! empty( $status ) ) {
+				$with_status++;
+			}
+			if ( ! empty( $priority ) && ! empty( $status ) && $has_desc ) {
+				$complete_count++;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Task Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Tasks', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_priority ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Priority', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_status ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Status', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Task completeness is %d%%. Consider adding priorities, statuses, and descriptions to improve quality.', 'mcp-ai-wpoos-pro' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php self::render_quality_table(); ?>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_task' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Tasks', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_task' ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Task', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Import formats.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'csv'  => 'CSV',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data.
+	 *
+	 * @param string $data   Import data.
+	 * @param string $format Data format.
+	 * @return array|WP_Error Result or error.
+	 */
+	protected static function process_import_data( $data, $format ) {
+		return self::parse_import_data( $data, $format );
+	}
+
+	/**
+	 * Get validation schema.
+	 *
+	 * @return array Validation schema.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'title'       => __( 'Title', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'priority' => __( 'Priority', 'mcp-ai-wpoos-pro' ),
+				'status'   => __( 'Status', 'mcp-ai-wpoos-pro' ),
+				'due_date' => __( 'Due Date', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'priority' => array(
+					'type'   => 'enum',
+					'values' => array( 'low', 'medium', 'high', 'urgent' ),
+				),
+				'status'   => array(
+					'type'   => 'enum',
+					'values' => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
+				),
+			),
+			'quality_dimensions' => array(
+				'completeness',
+				'priority_assignment',
+				'status_tracking',
+			),
+		);
+	}
+
+	/**
+	 * Calculate completeness.
+	 *
+	 * @return array Completeness data.
+	 */
+	protected static function calculate_completeness() {
+		$tasks = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total_tasks     = count( $tasks );
+		$complete_tasks  = 0;
+		$missing         = array();
+
+		foreach ( $tasks as $task ) {
+			$priority = get_post_meta( $task->ID, 'priority', true );
+			$status   = get_post_meta( $task->ID, 'status', true );
+			if ( ! empty( $priority ) && ! empty( $status ) && ! empty( $task->post_content ) ) {
+				$complete_tasks++;
+			}
+		}
+
+		$percentage = $total_tasks > 0 ? round( ( $complete_tasks / $total_tasks ) * 100 ) : 0;
+
+		if ( $complete_tasks < $total_tasks ) {
+			$missing[] = sprintf(
+				/* translators: %d: Number of incomplete tasks */
+				__( '%d tasks missing descriptions, priority, or status', 'mcp-ai-wpoos-pro' ),
+				$total_tasks - $complete_tasks
+			);
+		}
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => $missing,
+			'suggestions' => array(
+				__( 'Add descriptions to all tasks', 'mcp-ai-wpoos-pro' ),
+				__( 'Set priority levels for all tasks', 'mcp-ai-wpoos-pro' ),
+				__( 'Define status for task tracking', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Items.
+	 */
+	protected static function get_items_for_review() {
+		$tasks = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_task',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $tasks as $task ) {
+			$items[] = array(
+				'id'    => $task->ID,
+				'title' => $task->post_title,
+				'meta'  => array(
+					'priority' => get_post_meta( $task->ID, 'priority', true ),
+					'status'   => get_post_meta( $task->ID, 'status', true ),
+					'due_date' => get_post_meta( $task->ID, 'due_date', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for item.
+	 *
+	 * @param array $item Item data.
+	 * @return array Quality data.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		// Check priority (30 points).
+		if ( ! empty( $item['meta']['priority'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing priority', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Check status (30 points).
+		if ( ! empty( $item['meta']['status'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing status', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Check due date (20 points).
+		if ( ! empty( $item['meta']['due_date'] ) ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Missing due date', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Check title (20 points).
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 5 ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		// Determine level.
+		if ( $score >= 80 ) {
+			$level = 'high';
+		} elseif ( $score >= 50 ) {
+			$level = 'medium';
+		} else {
+			$level = 'low';
+		}
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => $level === 'high' ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
 	}
 
 	/**

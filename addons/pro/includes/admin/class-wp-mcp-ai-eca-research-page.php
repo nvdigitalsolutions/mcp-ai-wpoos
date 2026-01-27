@@ -118,8 +118,6 @@ class WP_MCP_AI_ECA_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
-		$mode = self::get_current_mode();
-
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_eca_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -147,20 +145,7 @@ class WP_MCP_AI_ECA_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_mode_tabs( $mode ); ?>
-
-			<?php
-			switch ( $mode ) {
-				case 'import':
-					self::render_import_section();
-					break;
-				case 'consolidate':
-					self::render_consolidation_dashboard();
-					break;
-				default: // 'chat'
-					self::render_chat_interface( $assistant_id );
-			}
-			?>
+			<?php self::render_chat_interface( $assistant_id ); ?>
 		</div>
 		<?php
 	}
@@ -172,8 +157,8 @@ class WP_MCP_AI_ECA_Research_Page {
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
 		?>
-		<div class="wp-mcp-ai-research-container">
-			<div class="wp-mcp-ai-research-sidebar">
+			<div class="wp-mcp-ai-research-container">
+				<div class="wp-mcp-ai-research-sidebar">
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
@@ -225,6 +210,30 @@ class WP_MCP_AI_ECA_Research_Page {
 				</div>
 
 				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create ECAs with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import ECA data', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View ECA quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
@@ -251,6 +260,17 @@ class WP_MCP_AI_ECA_Research_Page {
 							</p>
 						</div>
 					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
 			</div>
 		<?php
