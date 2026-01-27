@@ -289,7 +289,6 @@ class WP_MCP_AI_Page_Research_Page {
 					</div>
 				</div>
 			</div>
-		</div>
 		<?php
 	}
 
