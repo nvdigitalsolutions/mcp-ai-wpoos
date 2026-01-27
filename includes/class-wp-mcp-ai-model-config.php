@@ -2188,8 +2188,10 @@ class WP_MCP_AI_Model_Config {
 
 		// Check enable_embedded setting (defaults to false if not set).
 		// Embedded LLM runs in the browser, so no API key is required - just check if enabled and a model is selected.
+		// Note: Embedded LLM is not available in base-only version, but IS available when Pro addon is active.
 		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : false;
-		if ( $enable_embedded && ! empty( $settings['embedded_model'] ) ) {
+		$is_base_only    = defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION && ! defined( 'WP_MCP_AI_PRO_VERSION' );
+		if ( $enable_embedded && ! empty( $settings['embedded_model'] ) && ! $is_base_only ) {
 			$providers['embedded'] = __( 'Embedded LLM', 'mcp-ai-wpoos' );
 		}
 

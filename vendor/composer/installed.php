@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue',
-        'version' => 'dev-copilot/fix-js-css-rendering-issue',
-        'reference' => '3d1f5f72b8dcb83ed0156ecab4b6aa0aac493ee5',
+        'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
+        'version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
+        'reference' => '13d0a555e4a7b5b7b901d8f7a6f6b38f98ea045b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue',
-            'version' => 'dev-copilot/fix-js-css-rendering-issue',
-            'reference' => '3d1f5f72b8dcb83ed0156ecab4b6aa0aac493ee5',
+            'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
+            'version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
+            'reference' => '13d0a555e4a7b5b7b901d8f7a6f6b38f98ea045b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

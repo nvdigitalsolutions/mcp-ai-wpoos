@@ -240,4 +240,47 @@ class Test_Embedded_Provider_Dropdown extends WP_UnitTestCase {
 		$providers = WP_MCP_AI_Model_Config::get_available_providers();
 		$this->assertArrayNotHasKey( 'embedded', $providers, 'Embedded should NOT appear when settings not set' );
 	}
+
+	/**
+	 * Test that embedded provider appears when base+pro are both active.
+	 *
+	 * This test verifies that when WP_MCP_AI_BASE_VERSION is true but
+	 * WP_MCP_AI_PRO_VERSION is also defined, the embedded provider is available.
+	 */
+	public function test_embedded_appears_in_base_plus_pro_mode() {
+		// This test only makes sense when Pro is actually active.
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			$this->markTestSkipped( 'This test requires Pro addon to be active.' );
+		}
+
+		// Configure embedded provider with enable flag and model selected.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_embedded' => true,
+				'embedded_model'  => 'Llama-3.2-1B-Instruct-q4f16_1-MLC',
+			)
+		);
+
+		// Test Model_Config::get_available_providers().
+		$providers = WP_MCP_AI_Model_Config::get_available_providers();
+		$this->assertArrayHasKey(
+			'embedded',
+			$providers,
+			'Embedded provider should appear when base+pro are active (get_available_providers)'
+		);
+
+		// Test Model_Service::get_models_for_provider().
+		$model_service = new WP_MCP_AI_Model_Service();
+		$models        = $model_service->get_models_for_provider( 'embedded' );
+		$this->assertNotEmpty(
+			$models,
+			'Embedded provider should return models when base+pro are active (get_models_for_provider)'
+		);
+		$this->assertArrayHasKey(
+			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+			$models,
+			'Embedded provider should include Hermes model when base+pro are active'
+		);
+	}
 }
