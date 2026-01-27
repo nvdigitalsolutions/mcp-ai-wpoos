@@ -526,8 +526,9 @@ class WP_MCP_AI_Model_Service {
 			return array();
 		}
 
-		// Check if in base version (embedded not available).
-		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+		// Check if in base-only version (embedded not available).
+		// Embedded IS available when Pro addon is active (base + pro).
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return array();
 		}
 
