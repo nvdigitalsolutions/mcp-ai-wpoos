@@ -59,6 +59,9 @@ class WP_MCP_AI_Admin_Test_Model {
 		}
 
 		// Enqueue chat shortcode assets (required dependency for professional selector).
+		// Note: The professional selector script declares wp-mcp-ai-chat as a dependency
+		// during registration, but we explicitly enqueue it here to ensure it's loaded
+		// in admin context where the shortcode's normal enqueue hooks may not fire.
 		$dependencies = array();
 		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
 			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
