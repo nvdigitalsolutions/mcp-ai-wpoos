@@ -25,6 +25,24 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 	const PAGE_SLUG = 'health-records-consolidate';
 
 	/**
+	 * Default tools for health consolidation chat interface.
+	 *
+	 * @var array
+	 */
+	const CHAT_TOOLS = array(
+		'get_member_health_summary',
+		'create_medical_record',
+		'create_checkup',
+		'create_prescription',
+		'create_allergy',
+		'list_members',
+		'update_medical_record',
+		'update_checkup',
+		'update_prescription',
+		'update_allergy',
+	);
+
+	/**
 	 * Initialize the page.
 	 */
 	public static function init() {
@@ -99,12 +117,14 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'addPrescUrl'   => admin_url( 'post-new.php?post_type=mcp_ai_prescription' ),
 				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
 				'strings'       => array(
-					'loading'        => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
-					'error'          => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'selectMember'   => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
-					'noRecords'      => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
-					'analyzing'      => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
-					'aiAssisting'    => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
+					'loading'          => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
+					'loadMember'       => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
+					'error'            => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'selectMember'     => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
+					'noRecords'        => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
+					'analyzing'        => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
+					'aiAssisting'      => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
+					'enterHealthInfo'  => __( 'Please enter health information to import.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -370,7 +390,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 								<?php
 								// Render chat interface with comprehensive health management tools.
 								echo do_shortcode(
-									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="get_member_health_summary,create_medical_record,create_checkup,create_prescription,create_allergy,list_members,update_medical_record,update_checkup,update_prescription,update_allergy"]'
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', self::CHAT_TOOLS ) ) . '"]'
 								);
 								?>
 							</div>
@@ -710,15 +730,18 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			<h3><?php esc_html_e( 'Profile Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<div class="completeness-bar">
 				<?php
-				$total_sections   = 6; // Policies, Allergies, Prescriptions, Checkups, Medical Records, Demographics.
-				$filled_sections  = 0;
-				$filled_sections += ! empty( $data['policies'] ) ? 1 : 0;
-				$filled_sections += ! empty( $data['allergies'] ) ? 1 : 0;
-				$filled_sections += ! empty( $data['active_prescriptions'] ) ? 1 : 0;
-				$filled_sections += ! empty( $data['upcoming_checkups'] ) ? 1 : 0;
-				$filled_sections += ! empty( $data['recent_medical_records'] ) ? 1 : 0;
-				$filled_sections += ( ! empty( $member['date_of_birth'] ) && ! empty( $member['gender'] ) ) ? 1 : 0;
+				// Calculate completeness based on actual sections.
+				$sections = array(
+					'policies'             => ! empty( $data['policies'] ),
+					'allergies'            => ! empty( $data['allergies'] ),
+					'active_prescriptions' => ! empty( $data['active_prescriptions'] ),
+					'upcoming_checkups'    => ! empty( $data['upcoming_checkups'] ),
+					'recent_medical_records' => ! empty( $data['recent_medical_records'] ),
+					'demographics'         => ( ! empty( $member['date_of_birth'] ) && ! empty( $member['gender'] ) ),
+				);
 
+				$filled_sections         = count( array_filter( $sections ) );
+				$total_sections          = count( $sections );
 				$completeness_percentage = ( $filled_sections / $total_sections ) * 100;
 				?>
 				<div class="completeness-progress" style="width: <?php echo esc_attr( $completeness_percentage ); ?>%;"></div>

@@ -109,7 +109,7 @@
 					previewContainer.html( '<div class="notice notice-error inline"><p>' + wpMcpAiHealthConsolidate.strings.error + '</p></div>' ).show();
 				},
 				complete: function() {
-					loadButton.prop( 'disabled', false ).text( loadButton.data( 'original-text' ) || wpMcpAiHealthConsolidate.strings.loadMember || 'Load Member Records' );
+					loadButton.prop( 'disabled', false ).text( loadButton.data( 'original-text' ) || wpMcpAiHealthConsolidate.strings.loadMember );
 				},
 			} );
 		}
@@ -195,7 +195,7 @@
 			}
 
 			if ( ! rawText ) {
-				alert( 'Please enter health information to import.' );
+				alert( wpMcpAiHealthConsolidate.strings.enterHealthInfo );
 				textarea.focus();
 				return;
 			}

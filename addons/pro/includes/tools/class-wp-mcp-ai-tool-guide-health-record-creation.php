@@ -395,12 +395,18 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 	/**
 	 * Analyze prescriptions.
 	 *
+	 * Note: We don't flag missing prescriptions as a gap since not everyone needs them.
+	 * This method is reserved for future enhancements such as checking for
+	 * medication adherence, refill reminders, or interaction warnings.
+	 *
 	 * @param int $member_id Member ID.
-	 * @return array Gaps found.
+	 * @return array Gaps found (currently always empty).
 	 */
 	private function analyze_prescriptions( $member_id ) {
-		// We don't flag missing prescriptions as a gap since not everyone needs them.
-		// This is here for consistency and potential future enhancements.
+		// Future enhancements could include:
+		// - Checking for expired prescriptions that need renewal.
+		// - Identifying prescriptions without dosage information.
+		// - Flagging potential drug interactions.
 		return array();
 	}
 

@@ -77,6 +77,13 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
+	 * Supported record types.
+	 *
+	 * @var array
+	 */
+	const RECORD_TYPES = array( 'medical_records', 'checkups', 'prescriptions', 'policies', 'allergies' );
+
+	/**
 	 * Check if the tool is available.
 	 *
 	 * @return bool
@@ -226,9 +233,15 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		$parsed['metadata']['completeness'] = $this->calculate_completeness( $parsed );
 
 		// If no structured data was detected, create a general medical record.
-		if ( empty( $parsed['medical_records'] ) && empty( $parsed['checkups'] ) &&
-			 empty( $parsed['prescriptions'] ) && empty( $parsed['policies'] ) &&
-			 empty( $parsed['allergies'] ) ) {
+		$has_data = false;
+		foreach ( self::RECORD_TYPES as $type ) {
+			if ( ! empty( $parsed[ $type ] ) ) {
+				$has_data = true;
+				break;
+			}
+		}
+
+		if ( ! $has_data ) {
 			$parsed['medical_records'][] = array(
 				'title'       => __( 'Imported Health Information', 'mcp-ai-wpoos-pro' ),
 				'content'     => $raw_text,
@@ -643,7 +656,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			'low'    => 0,
 		);
 
-		foreach ( array( 'medical_records', 'checkups', 'prescriptions', 'policies', 'allergies' ) as $type ) {
+		foreach ( self::RECORD_TYPES as $type ) {
 			if ( ! empty( $parsed[ $type ] ) ) {
 				foreach ( $parsed[ $type ] as $record ) {
 					if ( isset( $record['data_quality']['score'] ) ) {
@@ -679,16 +692,15 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * @return int Completeness percentage (0-100).
 	 */
 	private function calculate_completeness( $parsed ) {
-		$required_sections = array( 'medical_records', 'checkups', 'prescriptions', 'policies', 'allergies' );
-		$filled_sections   = 0;
+		$filled_sections = 0;
 
-		foreach ( $required_sections as $section ) {
+		foreach ( self::RECORD_TYPES as $section ) {
 			if ( ! empty( $parsed[ $section ] ) ) {
 				$filled_sections++;
 			}
 		}
 
-		return round( ( $filled_sections / count( $required_sections ) ) * 100 );
+		return round( ( $filled_sections / count( self::RECORD_TYPES ) ) * 100 );
 	}
 
 	/**
