@@ -134,8 +134,6 @@ class WP_MCP_AI_Page_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
-		$mode = self::get_current_mode();
-
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_page_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -163,20 +161,7 @@ class WP_MCP_AI_Page_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_mode_tabs( $mode ); ?>
-
-			<?php
-			switch ( $mode ) {
-				case 'import':
-					self::render_import_section();
-					break;
-				case 'consolidate':
-					self::render_consolidation_dashboard();
-					break;
-				default: // 'chat'
-					self::render_chat_interface( $assistant_id );
-			}
-			?>
+			<?php self::render_chat_interface( $assistant_id ); ?>
 		</div>
 		<?php
 	}
