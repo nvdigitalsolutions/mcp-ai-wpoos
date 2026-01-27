@@ -1312,7 +1312,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
 									<p style="margin: 0;">
 										<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
-										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment.', 'mcp-ai-wpoos' ); ?>
+										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment. The "CDN Cache" column shows if the package is available via jsdelivr or unpkg CDNs (based on package.json metadata).', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
 							<?php endif; ?>
