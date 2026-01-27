@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-        'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-        'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
+        'pretty_version' => 'dev-copilot/update-quiz-tracking-system',
+        'version' => 'dev-copilot/update-quiz-tracking-system',
+        'reference' => '2eca3c6f7c8a38e9fab8bd1c9b07cc76d13626ab',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-            'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-            'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
+            'pretty_version' => 'dev-copilot/update-quiz-tracking-system',
+            'version' => 'dev-copilot/update-quiz-tracking-system',
+            'reference' => '2eca3c6f7c8a38e9fab8bd1c9b07cc76d13626ab',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -22,6 +22,9 @@ $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_bas
 // Only load if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
 
+	// Load Appointment Custom Post Type.
+	require_once WP_MCP_AI_PRO_PATH . 'includes/calendar-booking/class-wp-mcp-ai-appointment-cpt.php';
+
 	// Load Calendar Booking admin pages.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-calendar-booking-settings-page.php';
