@@ -71,81 +71,32 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
 
-		// Enqueue inline styles (no separate CSS file needed).
-		wp_add_inline_style(
-			WP_MCP_AI_Shortcode::STYLE_HANDLE,
-			'
-			.wp-mcp-ai-research-page {
-				max-width: 100%;
-			}
-			.wp-mcp-ai-research-container {
-				display: flex;
-				gap: 20px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar {
-				flex: 0 0 300px;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-main {
-				flex: 1;
-				min-width: 0;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-sidebar h2,
-			.wp-mcp-ai-research-sidebar h3 {
-				margin-top: 0;
-				font-size: 16px;
-				font-weight: 600;
-			}
-			.wp-mcp-ai-research-sidebar h3 {
-				font-size: 14px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar ol,
-			.wp-mcp-ai-research-sidebar ul {
-				margin: 10px 0;
-				padding-left: 20px;
-			}
-			.wp-mcp-ai-research-sidebar li {
-				margin-bottom: 8px;
-			}
-			.wp-mcp-ai-example-list {
-				list-style: none;
-				padding: 0;
-			}
-			.wp-mcp-ai-example-list li {
-				margin-bottom: 10px;
-			}
-			.wp-mcp-ai-example-query {
-				width: 100%;
-				text-align: left;
-				white-space: normal;
-				height: auto;
-				padding: 8px 12px;
-			}
-			.wp-mcp-ai-research-actions p {
-				margin: 10px 0;
-			}
-			.wp-mcp-ai-research-actions .button {
-				width: 100%;
-				text-align: center;
-			}
-			@media (max-width: 782px) {
-				.wp-mcp-ai-research-container {
-					flex-direction: column;
-				}
-				.wp-mcp-ai-research-sidebar {
-					flex: 1 1 auto;
-				}
-			}
-			'
+		// Enqueue enhanced research page styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue enhanced research page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-enhanced-research-page',
+			'wpMcpAiResearchPage',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType' => 'team',
+			)
 		);
 	}
 
@@ -245,33 +196,246 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 				</div>
 
 				<div class="wp-mcp-ai-research-main">
-					<?php if ( $assistant_id > 0 ) : ?>
-						<div class="wp-mcp-ai-research-chat">
-							<?php
-							// Render chat interface with team-related tools.
-							// Includes search, web research, and content management tools.
-							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools"]'
-							);
-							?>
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Research teams with AI assistance', 'mcp-ai-wpoos' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import team configurations', 'mcp-ai-wpoos' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'View data quality and completeness', 'mcp-ai-wpoos' ); ?></p>
+							</button>
 						</div>
+					</div>
 
-					<?php else : ?>
-						<div class="notice notice-error">
-							<p>
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
+						<?php if ( $assistant_id > 0 ) : ?>
+							<div class="wp-mcp-ai-research-chat">
 								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to create assistant */
-										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos' ),
-										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
-									)
+								// Render chat interface with team-related tools.
+								// Includes search, web research, and content management tools.
+								echo do_shortcode(
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools,create_agent_team"]'
 								);
 								?>
-							</p>
-						</div>
-					<?php endif; ?>
+							</div>
+						<?php else : ?>
+							<div class="notice notice-error">
+								<p>
+									<?php
+									echo wp_kses_post(
+										sprintf(
+											/* translators: %s: Link to create assistant */
+											__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos' ),
+											admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+										)
+									);
+									?>
+								</p>
+							</div>
+						<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Team Data', 'mcp-ai-wpoos' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import team configurations from CSV, JSON, or paste structured data. The AI will automatically parse and organize the team information.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include team name, description, and orchestration mode', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ List team members (profession IDs or names)', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify orchestration mode (sequential, parallel, swarm)', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ Define aggregation strategy if needed', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_teams', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, TXT', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nTeam Name: Software Development Team\nDescription: Full-stack development team\nOrchestration Mode: sequential\nMembers: Senior Software Engineer, QA Engineer, UI/UX Designer\nAggregation: consensus\n\nTeam Name: Content Creation Team\nDescription: Content writers and editors\nOrchestration Mode: parallel\nMembers: Content Writer, Editor, SEO Specialist', 'mcp-ai-wpoos' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create teams (recommended)', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
+		
+		// Get team statistics.
+		$total_teams     = wp_count_posts( $post_type );
+		$published_count = isset( $total_teams->publish ) ? $total_teams->publish : 0;
+		
+		// Calculate data quality metrics.
+		$teams = get_posts(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count      = 0;
+		$with_members        = 0;
+		$with_orchestration  = 0;
+		$with_driver         = 0;
+
+		foreach ( $teams as $team ) {
+			$members       = get_post_meta( $team->ID, '_wp_mcp_ai_team_members', true );
+			$orchestration = get_post_meta( $team->ID, '_wp_mcp_ai_team_orchestration_mode', true );
+			$driver        = get_post_meta( $team->ID, '_wp_mcp_ai_team_driver_assistant_id', true );
+			
+			if ( ! empty( $members ) && is_array( $members ) ) {
+				$with_members++;
+			}
+			if ( ! empty( $orchestration ) ) {
+				$with_orchestration++;
+			}
+			if ( ! empty( $driver ) ) {
+				$with_driver++;
+			}
+			if ( ! empty( $members ) && ! empty( $orchestration ) && ! empty( $driver ) ) {
+				$complete_count++;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Team Data Quality', 'mcp-ai-wpoos' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Teams', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_members ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Members', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_orchestration ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Orchestration', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Data completeness is %d%%. Consider adding team members and orchestration modes for better team performance.', 'mcp-ai-wpoos' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Teams', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Team', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</p>
 			</div>
 		</div>
 		<?php

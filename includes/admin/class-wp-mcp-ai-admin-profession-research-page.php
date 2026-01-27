@@ -71,81 +71,32 @@ class WP_MCP_AI_Admin_Profession_Research_Page {
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
 
-		// Enqueue inline styles (no separate CSS file needed).
-		wp_add_inline_style(
-			WP_MCP_AI_Shortcode::STYLE_HANDLE,
-			'
-			.wp-mcp-ai-research-page {
-				max-width: 100%;
-			}
-			.wp-mcp-ai-research-container {
-				display: flex;
-				gap: 20px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar {
-				flex: 0 0 300px;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-main {
-				flex: 1;
-				min-width: 0;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-sidebar h2,
-			.wp-mcp-ai-research-sidebar h3 {
-				margin-top: 0;
-				font-size: 16px;
-				font-weight: 600;
-			}
-			.wp-mcp-ai-research-sidebar h3 {
-				font-size: 14px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar ol,
-			.wp-mcp-ai-research-sidebar ul {
-				margin: 10px 0;
-				padding-left: 20px;
-			}
-			.wp-mcp-ai-research-sidebar li {
-				margin-bottom: 8px;
-			}
-			.wp-mcp-ai-example-list {
-				list-style: none;
-				padding: 0;
-			}
-			.wp-mcp-ai-example-list li {
-				margin-bottom: 10px;
-			}
-			.wp-mcp-ai-example-query {
-				width: 100%;
-				text-align: left;
-				white-space: normal;
-				height: auto;
-				padding: 8px 12px;
-			}
-			.wp-mcp-ai-research-actions p {
-				margin: 10px 0;
-			}
-			.wp-mcp-ai-research-actions .button {
-				width: 100%;
-				text-align: center;
-			}
-			@media (max-width: 782px) {
-				.wp-mcp-ai-research-container {
-					flex-direction: column;
-				}
-				.wp-mcp-ai-research-sidebar {
-					flex: 1 1 auto;
-				}
-			}
-			'
+		// Enqueue enhanced research page styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue enhanced research page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-enhanced-research-page',
+			'wpMcpAiResearchPage',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType' => 'profession',
+			)
 		);
 	}
 
@@ -240,33 +191,246 @@ class WP_MCP_AI_Admin_Profession_Research_Page {
 				</div>
 
 				<div class="wp-mcp-ai-research-main">
-					<?php if ( $assistant_id > 0 ) : ?>
-						<div class="wp-mcp-ai-research-chat">
-							<?php
-							// Render chat interface with profession-related tools.
-							// Includes search, web research, and content management tools.
-							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools"]'
-							);
-							?>
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Research professions with AI assistance', 'mcp-ai-wpoos' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import profession profiles', 'mcp-ai-wpoos' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos' ); ?></strong>
+								<p><?php esc_html_e( 'View data quality and completeness', 'mcp-ai-wpoos' ); ?></p>
+							</button>
 						</div>
+					</div>
 
-					<?php else : ?>
-						<div class="notice notice-error">
-							<p>
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
+						<?php if ( $assistant_id > 0 ) : ?>
+							<div class="wp-mcp-ai-research-chat">
 								<?php
-								echo wp_kses_post(
-									sprintf(
-										/* translators: %s: Link to create assistant */
-										__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos' ),
-										admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
-									)
+								// Render chat interface with profession-related tools.
+								// Includes search, web research, and content management tools.
+								echo do_shortcode(
+									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools,list_professions,get_profession,save_profession"]'
 								);
 								?>
-							</p>
-						</div>
-					<?php endif; ?>
+							</div>
+						<?php else : ?>
+							<div class="notice notice-error">
+								<p>
+									<?php
+									echo wp_kses_post(
+										sprintf(
+											/* translators: %s: Link to create assistant */
+											__( 'No AI assistant found. Please <a href="%s">create an assistant</a> first.', 'mcp-ai-wpoos' ),
+											admin_url( 'post-new.php?post_type=mcp_ai_assistant' )
+										)
+									);
+									?>
+								</p>
+							</div>
+						<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Profession Data', 'mcp-ai-wpoos' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import profession profiles from CSV, JSON, or paste structured data. The AI will automatically parse and organize the information.', 'mcp-ai-wpoos' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include profession title, category, and expertise areas', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify agent roles (planner, executor, critic, specialist, generalist)', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ List default tools for each profession', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( '✓ Separate different professions with blank lines', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_professions', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, TXT', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nTitle: Senior Software Engineer\nCategory: Technology\nExpertise: Backend development, API design, Code review\nAgent Role: Executor\nDefault Tools: search_content, web_search, code_analyzer\n\nTitle: UX Designer\nCategory: Design\nExpertise: User research, Wireframing, Prototyping\nAgent Role: Specialist\nDefault Tools: graphic_editor_plus, search_attachments', 'mcp-ai-wpoos' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create professions (recommended)', 'mcp-ai-wpoos' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		$post_type = class_exists( 'WP_MCP_AI_Profession_CPT' ) ? WP_MCP_AI_Profession_CPT::POST_TYPE : 'mcp_ai_profession';
+		
+		// Get profession statistics.
+		$total_professions = wp_count_posts( $post_type );
+		$published_count   = isset( $total_professions->publish ) ? $total_professions->publish : 0;
+		
+		// Calculate data quality metrics.
+		$professions = get_posts(
+			array(
+				'post_type'      => $post_type,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_expertise = 0;
+		$with_role      = 0;
+		$with_tools     = 0;
+
+		foreach ( $professions as $profession ) {
+			$expertise = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_expertise', true );
+			$role      = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_agent_role', true );
+			$tools     = get_post_meta( $profession->ID, '_wp_mcp_ai_profession_default_tools', true );
+			
+			if ( ! empty( $expertise ) ) {
+				$with_expertise++;
+			}
+			if ( ! empty( $role ) ) {
+				$with_role++;
+			}
+			if ( ! empty( $tools ) ) {
+				$with_tools++;
+			}
+			if ( ! empty( $expertise ) && ! empty( $role ) && ! empty( $tools ) ) {
+				$complete_count++;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Profession Data Quality', 'mcp-ai-wpoos' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Professions', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_expertise ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Expertise', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_role ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Agent Role', 'mcp-ai-wpoos' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Data completeness is %d%%. Consider adding expertise areas and agent roles to professions for better AI performance.', 'mcp-ai-wpoos' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . $post_type ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Professions', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=' . $post_type ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Profession', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'mcp-ai-wpoos' ); ?>
+					</button>
+				</p>
 			</div>
 		</div>
 		<?php
