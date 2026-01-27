@@ -61,17 +61,17 @@ class WP_MCP_AI_LangChain_Enqueue {
 			true
 		);
 
-		// LangChain libraries from CDN (loaded on-demand).
+		// LangChain libraries from local bundles (loaded on-demand).
 		// Note: These are loaded via import() in the orchestration client for lazy loading.
 		// We register them here for dependency management only.
 		$langchain_version = '0.3.6';
 		$langchain_core_version = '0.3.20';
 		$langchain_community_version = '0.3.14';
 
-		// Register CDN scripts (for reference, not directly enqueued).
+		// Register local bundled scripts (for reference, not directly enqueued).
 		wp_register_script(
 			'langchain-core',
-			"https://cdn.jsdelivr.net/npm/@langchain/core@{$langchain_core_version}/+esm",
+			plugins_url( 'assets/js/vendor/langchain-core.bundle.min.js', WP_MCP_AI_FILE ),
 			array(),
 			$langchain_core_version,
 			true
@@ -79,7 +79,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain',
-			"https://cdn.jsdelivr.net/npm/langchain@{$langchain_version}/+esm",
+			plugins_url( 'assets/js/vendor/langchain.bundle.min.js', WP_MCP_AI_FILE ),
 			array( 'langchain-core' ),
 			$langchain_version,
 			true
@@ -87,7 +87,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		wp_register_script(
 			'langchain-community',
-			"https://cdn.jsdelivr.net/npm/@langchain/community@{$langchain_community_version}/+esm",
+			plugins_url( 'assets/js/vendor/langchain-community.bundle.min.js', WP_MCP_AI_FILE ),
 			array( 'langchain-core' ),
 			$langchain_community_version,
 			true
@@ -129,10 +129,10 @@ class WP_MCP_AI_LangChain_Enqueue {
 				'enabled' => true,
 				'maxIterations' => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
 				'verbose' => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'cdnUrls' => array(
-					'core' => 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
-					'langchain' => 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
-					'community' => 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm',
+				'localUrls' => array(
+					'core' => plugins_url( 'assets/js/vendor/langchain-core.bundle.min.js', WP_MCP_AI_FILE ),
+					'langchain' => plugins_url( 'assets/js/vendor/langchain.bundle.min.js', WP_MCP_AI_FILE ),
+					'community' => plugins_url( 'assets/js/vendor/langchain-community.bundle.min.js', WP_MCP_AI_FILE ),
 				),
 			)
 		);
