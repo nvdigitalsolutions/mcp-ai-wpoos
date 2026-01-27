@@ -17350,7 +17350,7 @@ class Parser {
    * Parses an "expression", which is a list of atoms.
    *
    * `breakOnInfix`: Should the parsing stop when we hit infix nodes? This
-   *                 happens when functions have higher precedence han infix
+   *                 happens when functions have higher precedence than infix
    *                 nodes in implicit parses.
    *
    * `breakOnTokenText`: The text of the token that the expression should end
@@ -18443,7 +18443,7 @@ var renderToHTMLTree = function renderToHTMLTree(expression, options) {
   }
 };
 
-var version = "0.16.27";
+var version = "0.16.28";
 var __domTree = {
   Span,
   Anchor,
