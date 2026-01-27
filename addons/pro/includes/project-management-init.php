@@ -274,3 +274,107 @@ function wp_mcp_ai_register_project_management_post_types() {
 	);
 }
 add_action( 'init', 'wp_mcp_ai_register_project_management_post_types' );
+
+/**
+ * Register project management taxonomies.
+ */
+function wp_mcp_ai_register_project_management_taxonomies() {
+	// Only register if project management is enabled and not base version, unless Pro addon is active.
+	if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+		return;
+	}
+
+	// Check if project management is enabled in settings.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_project_management'] ) ) {
+		return;
+	}
+
+	// Register Project Category taxonomy.
+	register_taxonomy(
+		'mcp_ai_project_category',
+		'mcp_ai_project',
+		array(
+			'labels'            => array(
+				'name'          => __( 'Project Categories', 'mcp-ai-wpoos-pro' ),
+				'singular_name' => __( 'Project Category', 'mcp-ai-wpoos-pro' ),
+				'search_items'  => __( 'Search Project Categories', 'mcp-ai-wpoos-pro' ),
+				'all_items'     => __( 'All Project Categories', 'mcp-ai-wpoos-pro' ),
+				'edit_item'     => __( 'Edit Project Category', 'mcp-ai-wpoos-pro' ),
+				'update_item'   => __( 'Update Project Category', 'mcp-ai-wpoos-pro' ),
+				'add_new_item'  => __( 'Add New Project Category', 'mcp-ai-wpoos-pro' ),
+				'new_item_name' => __( 'New Project Category Name', 'mcp-ai-wpoos-pro' ),
+				'menu_name'     => __( 'Categories', 'mcp-ai-wpoos-pro' ),
+			),
+			'hierarchical'      => true,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'show_in_rest'      => true,
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'project-category' ),
+		)
+	);
+
+	// Register default Project categories.
+	$default_project_categories = array(
+		'development'     => __( 'Development', 'mcp-ai-wpoos-pro' ),
+		'design'          => __( 'Design', 'mcp-ai-wpoos-pro' ),
+		'marketing'       => __( 'Marketing', 'mcp-ai-wpoos-pro' ),
+		'research'        => __( 'Research', 'mcp-ai-wpoos-pro' ),
+		'health-wellness' => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+		'infrastructure'  => __( 'Infrastructure', 'mcp-ai-wpoos-pro' ),
+		'content'         => __( 'Content', 'mcp-ai-wpoos-pro' ),
+		'other'           => __( 'Other', 'mcp-ai-wpoos-pro' ),
+	);
+
+	foreach ( $default_project_categories as $slug => $name ) {
+		if ( ! term_exists( $slug, 'mcp_ai_project_category' ) ) {
+			wp_insert_term( $name, 'mcp_ai_project_category', array( 'slug' => $slug ) );
+		}
+	}
+
+	// Register Task Category taxonomy.
+	register_taxonomy(
+		'mcp_ai_task_category',
+		'mcp_ai_task',
+		array(
+			'labels'            => array(
+				'name'          => __( 'Task Categories', 'mcp-ai-wpoos-pro' ),
+				'singular_name' => __( 'Task Category', 'mcp-ai-wpoos-pro' ),
+				'search_items'  => __( 'Search Task Categories', 'mcp-ai-wpoos-pro' ),
+				'all_items'     => __( 'All Task Categories', 'mcp-ai-wpoos-pro' ),
+				'edit_item'     => __( 'Edit Task Category', 'mcp-ai-wpoos-pro' ),
+				'update_item'   => __( 'Update Task Category', 'mcp-ai-wpoos-pro' ),
+				'add_new_item'  => __( 'Add New Task Category', 'mcp-ai-wpoos-pro' ),
+				'new_item_name' => __( 'New Task Category Name', 'mcp-ai-wpoos-pro' ),
+				'menu_name'     => __( 'Categories', 'mcp-ai-wpoos-pro' ),
+			),
+			'hierarchical'      => true,
+			'show_ui'           => true,
+			'show_admin_column' => true,
+			'show_in_rest'      => true,
+			'query_var'         => true,
+			'rewrite'           => array( 'slug' => 'task-category' ),
+		)
+	);
+
+	// Register default Task categories.
+	$default_task_categories = array(
+		'development'     => __( 'Development', 'mcp-ai-wpoos-pro' ),
+		'design'          => __( 'Design', 'mcp-ai-wpoos-pro' ),
+		'documentation'   => __( 'Documentation', 'mcp-ai-wpoos-pro' ),
+		'testing'         => __( 'Testing', 'mcp-ai-wpoos-pro' ),
+		'review'          => __( 'Review', 'mcp-ai-wpoos-pro' ),
+		'health-wellness' => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+		'meeting'         => __( 'Meeting', 'mcp-ai-wpoos-pro' ),
+		'administrative'  => __( 'Administrative', 'mcp-ai-wpoos-pro' ),
+		'other'           => __( 'Other', 'mcp-ai-wpoos-pro' ),
+	);
+
+	foreach ( $default_task_categories as $slug => $name ) {
+		if ( ! term_exists( $slug, 'mcp_ai_task_category' ) ) {
+			wp_insert_term( $name, 'mcp_ai_task_category', array( 'slug' => $slug ) );
+		}
+	}
+}
+add_action( 'init', 'wp_mcp_ai_register_project_management_taxonomies' );
