@@ -51,6 +51,22 @@ const bundledOptions = {
 	logLevel: 'info',
 };
 
+// Modern build options for ES2020+ with code splitting (Phase 6)
+const modernOptions = {
+	bundle: true,
+	minify: true,
+	sourcemap: true,
+	target: ['es2020', 'chrome113', 'safari18'],
+	format: 'esm', // ES modules for better tree shaking
+	splitting: true, // Enable code splitting
+	logLevel: 'info',
+	loader: {
+		'.wasm': 'file',
+		'.data': 'file',
+	},
+	chunkNames: 'chunks/[name]-[hash]',
+};
+
 // Build configurations for each file
 const builds = [
 	{
@@ -160,6 +176,24 @@ const builds = [
 		outfile: 'assets/js/workers/llm-worker.min.js',
 		...commonOptions,
 	},
+	// Modern bundles with code splitting (Phase 6)
+	// Note: Commented out until source files are created
+	// {
+	// 	entryPoints: ['assets/js/src/chat-modern.ts'],
+	// 	outfile: 'assets/js/dist/chat-modern.min.js',
+	// 	...modernOptions,
+	// },
+	// {
+	// 	entryPoints: ['assets/js/src/webllm-modern.ts'],
+	// 	outfile: 'assets/js/dist/webllm.min.js',
+	// 	...modernOptions,
+	// 	external: ['@mlc-ai/web-llm'], // Load from CDN
+	// },
+	// {
+	// 	entryPoints: ['assets/js/src/transformers-client.ts'],
+	// 	outfile: 'assets/js/dist/transformers.min.js',
+	// 	...modernOptions,
+	// },
 ];
 
 // Build all files
