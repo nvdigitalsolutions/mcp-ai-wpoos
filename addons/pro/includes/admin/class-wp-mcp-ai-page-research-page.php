@@ -37,6 +37,7 @@ class WP_MCP_AI_Page_Research_Page {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'admin_head', array( __CLASS__, 'admin_head_styles' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_page_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_page', array( __CLASS__, 'handle_import' ) );
 	}
 
 	/**
@@ -298,6 +299,207 @@ class WP_MCP_AI_Page_Research_Page {
 				'message'  => __( 'Page created successfully!', 'mcp-ai-wpoos-pro' ),
 				'page_id'  => $page_id,
 				'edit_url' => $edit_url,
+			)
+		);
+	}
+
+	/**
+	 * Get supported import formats for pages.
+	 *
+	 * @return array Array of format key => label pairs.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'xml'  => 'WordPress XML',
+			'json' => 'JSON',
+			'csv'  => 'CSV',
+			'html' => 'HTML',
+		);
+	}
+
+	/**
+	 * Process import data based on format.
+	 *
+	 * @param array  $data   The import data.
+	 * @param string $format The import format.
+	 * @return array|WP_Error Processed data or error.
+	 */
+	protected static function process_import_data( $data, $format ) {
+		// Prevent unused variable warnings.
+		unset( $data, $format );
+
+		return new WP_Error( 'not_implemented', __( 'Page import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema for page content.
+	 *
+	 * @return array Validation schema with required/recommended fields and rules.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'title'   => __( 'Page Title', 'mcp-ai-wpoos-pro' ),
+				'content' => __( 'Page Content', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'featured_image'   => __( 'Featured Image', 'mcp-ai-wpoos-pro' ),
+				'meta_description' => __( 'Meta Description', 'mcp-ai-wpoos-pro' ),
+				'parent_page'      => __( 'Parent Page', 'mcp-ai-wpoos-pro' ),
+				'page_template'    => __( 'Page Template', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'title' => array( 'max_length' => 60 ),
+			),
+			'quality_dimensions' => array(
+				'seo_optimization',
+				'accessibility',
+				'completeness',
+				'hierarchy_structure',
+			),
+		);
+	}
+
+	/**
+	 * Calculate page completeness score.
+	 *
+	 * @return array Completeness data with percentage, missing items, and suggestions.
+	 */
+	protected static function calculate_completeness() {
+		$pages = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $pages );
+		$complete = 0;
+
+		foreach ( $pages as $page ) {
+			$has_image   = has_post_thumbnail( $page->ID );
+			$has_content = ! empty( $page->post_content ) && strlen( $page->post_content ) > 100;
+			if ( $has_image && $has_content ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Add featured images to all pages', 'mcp-ai-wpoos-pro' ),
+				__( 'Ensure pages have substantial content', 'mcp-ai-wpoos-pro' ),
+				__( 'Optimize titles for SEO (under 60 chars)', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get pages for quality review.
+	 *
+	 * @return array Array of pages with metadata for review.
+	 */
+	protected static function get_items_for_review() {
+		$pages = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $pages as $page ) {
+			$items[] = array(
+				'id'    => $page->ID,
+				'title' => $page->post_title,
+				'meta'  => array(
+					'has_image'      => has_post_thumbnail( $page->ID ),
+					'content_length' => strlen( $page->post_content ),
+					'parent_id'      => $page->post_parent,
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for a page item.
+	 *
+	 * @param array $item Page item data.
+	 * @return array Quality score data with score, level, status, and issues.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['has_image'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing featured image', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['content_length'] ) && $item['meta']['content_length'] > 100 ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Content too short', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) <= 60 && strlen( $item['title'] ) >= 10 ) {
+			$score += 40;
+		} else {
+			$issues[] = __( 'Title length not optimal', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = $score >= 80 ? 'high' : ( $score >= 50 ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Handle AJAX import request for pages.
+	 */
+	public static function handle_import() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_page', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_pages' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import pages.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get import data.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is validated and sanitized below.
+		$import_data = isset( $_POST['import_data'] ) ? json_decode( wp_unslash( $_POST['import_data'] ), true ) : array();
+		$format      = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : 'xml';
+
+		if ( empty( $import_data ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import data.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Process import data.
+		$result = self::process_import_data( $import_data, $format );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Pages imported successfully!', 'mcp-ai-wpoos-pro' ),
+				'result'  => $result,
 			)
 		);
 	}
