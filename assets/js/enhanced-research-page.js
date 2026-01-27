@@ -97,9 +97,7 @@
 						$('.import-file-selected').text('').hide();
 						
 						// Refresh the review tab if available
-						if (typeof refreshReviewData === 'function') {
-							refreshReviewData();
-						}
+						refreshReviewData();
 					} else {
 						$('.import-result').html(
 							'<div class="notice notice-error"><p>' + response.data.message + '</p></div>'
