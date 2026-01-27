@@ -563,7 +563,12 @@ trait WP_MCP_AI_Research_Page_Mode_Tabs {
 	 *
 	 * @param string $current_mode Current active mode.
 	 */
-	protected static function render_mode_tabs( $current_mode = 'chat' ) {
+	protected static function render_mode_tabs( $current_mode = '' ) {
+		// Get current mode from query string if not provided
+		if ( empty( $current_mode ) ) {
+			$current_mode = self::get_current_mode();
+		}
+		
 		$modes = array(
 			'chat'        => array(
 				'icon'  => '💬',
@@ -592,43 +597,6 @@ trait WP_MCP_AI_Research_Page_Mode_Tabs {
 				</a>
 			<?php endforeach; ?>
 		</div>
-
-		<style>
-			.wp-mcp-ai-mode-tabs {
-				display: flex;
-				gap: 0;
-				border-bottom: 1px solid #ccd0d4;
-				margin: 20px 0;
-			}
-			.mode-tab {
-				flex: 1;
-				padding: 15px 20px;
-				text-align: center;
-				text-decoration: none;
-				color: #50575e;
-				background: #f6f7f7;
-				border: 1px solid #ccd0d4;
-				border-bottom: none;
-				margin-bottom: -1px;
-				transition: all 0.2s;
-			}
-			.mode-tab:hover {
-				background: #fff;
-			}
-			.mode-tab.active {
-				background: #fff;
-				color: #2271b1;
-				border-bottom: 2px solid #2271b1;
-			}
-			.mode-icon {
-				font-size: 20px;
-				display: block;
-				margin-bottom: 5px;
-			}
-			.mode-label {
-				font-weight: 600;
-			}
-		</style>
 		<?php
 	}
 
