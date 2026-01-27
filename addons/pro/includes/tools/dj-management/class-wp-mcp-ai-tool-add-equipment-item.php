@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Adds a new DJ equipment item to the inventory system. Tracks equipment details, purchase information, and current status.', 'mcp-ai-wpoos-pro' );
+		return __( 'Add a new equipment item or update an existing equipment item. If equipment_id is provided, updates the existing equipment item instead of creating a new one. Tracks equipment details, purchase information, and current status in the inventory system. Use this tool for both adding new equipment items and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,6 +45,10 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'equipment_id'   => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional equipment ID. If provided, updates the existing equipment item instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'           => array(
 					'type'        => 'string',
 					'description' => __( 'Equipment name (required)', 'mcp-ai-wpoos-pro' ),
@@ -118,6 +122,37 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		// Check if this is an update operation.
+		$equipment_id       = isset( $arguments['equipment_id'] ) ? absint( $arguments['equipment_id'] ) : 0;
+		$is_update          = false;
+		$existing_equipment = null;
+
+		if ( $equipment_id ) {
+			// Verify equipment exists and user has permission to update it.
+			$existing_equipment = get_post( $equipment_id );
+
+			if ( ! $existing_equipment || 'dj_equipment' !== $existing_equipment->post_type ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Equipment item not found.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$is_author       = absint( $existing_equipment->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'You do not have permission to update this equipment item.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$is_update = true;
+		}
+
 		// Sanitize inputs.
 		$name           = sanitize_text_field( $arguments['name'] );
 		$type           = sanitize_text_field( $arguments['type'] );
@@ -130,21 +165,39 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 		$location       = ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '';
 		$notes          = ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '';
 
-		// Create equipment post.
-		$post_data = array(
-			'post_title'   => $name,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_type'    => 'dj_equipment',
-		);
-
-		$equipment_id = wp_insert_post( $post_data );
-
-		if ( is_wp_error( $equipment_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $equipment_id->get_error_message(),
+		if ( $is_update ) {
+			// Update existing equipment post.
+			$post_data = array(
+				'ID'           => $equipment_id,
+				'post_title'   => $name,
+				'post_content' => $notes,
 			);
+
+			$result = wp_update_post( $post_data );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success' => false,
+					'error'   => $result->get_error_message(),
+				);
+			}
+		} else {
+			// Create equipment post.
+			$post_data = array(
+				'post_title'   => $name,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_type'    => 'dj_equipment',
+			);
+
+			$equipment_id = wp_insert_post( $post_data );
+
+			if ( is_wp_error( $equipment_id ) ) {
+				return array(
+					'success' => false,
+					'error'   => $equipment_id->get_error_message(),
+				);
+			}
 		}
 
 		// Store equipment metadata.
@@ -160,9 +213,10 @@ class WP_MCP_AI_Tool_Add_Equipment_Item implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'      => true,
 			'equipment_id' => $equipment_id,
+			'updated'      => $is_update,
 			'message'      => sprintf(
 				/* translators: %s: equipment name */
-				__( 'Equipment item "%s" added successfully to inventory.', 'mcp-ai-wpoos-pro' ),
+				$is_update ? __( 'Equipment item "%s" updated successfully.', 'mcp-ai-wpoos-pro' ) : __( 'Equipment item "%s" added successfully to inventory.', 'mcp-ai-wpoos-pro' ),
 				$name
 			),
 			'equipment'    => array(
