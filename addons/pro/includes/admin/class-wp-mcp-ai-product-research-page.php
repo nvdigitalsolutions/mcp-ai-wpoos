@@ -105,7 +105,7 @@ class WP_MCP_AI_Product_Research_Page {
 			'wpMcpAiResearchPage',
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_product' ),
 				'entityType' => 'product',
 			)
 		);
@@ -618,10 +618,16 @@ class WP_MCP_AI_Product_Research_Page {
 		$with_price = 0;
 
 		foreach ( $products as $product ) {
-			$product_obj = wc_get_product( $product->ID );
-			$has_sku   = $product_obj && $product_obj->get_sku();
-			$has_price = $product_obj && $product_obj->get_price();
-			$has_desc  = ! empty( $product->post_content );
+			// Check if WooCommerce is active before using WC functions.
+			if ( class_exists( 'WooCommerce' ) && function_exists( 'wc_get_product' ) ) {
+				$product_obj = wc_get_product( $product->ID );
+				$has_sku     = $product_obj && is_a( $product_obj, 'WC_Product' ) && $product_obj->get_sku();
+				$has_price   = $product_obj && is_a( $product_obj, 'WC_Product' ) && $product_obj->get_price();
+			} else {
+				$has_sku   = false;
+				$has_price = false;
+			}
+			$has_desc = ! empty( $product->post_content );
 			
 			if ( $has_sku ) {
 				$with_sku++;

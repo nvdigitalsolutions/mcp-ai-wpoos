@@ -102,7 +102,7 @@ class WP_MCP_AI_Page_Research_Page {
 			'wpMcpAiResearchPage',
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page_entity' ),
 				'entityType' => 'page',
 			)
 		);
