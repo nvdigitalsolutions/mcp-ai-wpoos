@@ -9,6 +9,13 @@
 (function($) {
 	'use strict';
 
+	// Mode to content ID mapping (shared constant)
+	const MODE_TO_CONTENT_ID = {
+		'chat': 'research-mode',
+		'import': 'import-mode',
+		'consolidate': 'consolidate-mode'
+	};
+
 	/**
 	 * Initialize enhanced research page functionality.
 	 */
@@ -41,7 +48,8 @@
 			
 			// Get the target mode from the href
 			const href = $(this).attr('href');
-			const urlParams = new URLSearchParams(href.split('?')[1]);
+			const queryString = href.indexOf('?') !== -1 ? href.split('?')[1] : '';
+			const urlParams = new URLSearchParams(queryString);
 			const mode = urlParams.get('mode') || 'chat';
 			
 			// Update active state on tabs
@@ -51,14 +59,7 @@
 			// Show corresponding content
 			$('.research-mode-content').removeClass('active').hide();
 			
-			// Map mode to content ID
-			const modeToId = {
-				'chat': 'research-mode',
-				'import': 'import-mode',
-				'consolidate': 'consolidate-mode'
-			};
-			
-			const contentId = modeToId[mode] || 'research-mode';
+			const contentId = MODE_TO_CONTENT_ID[mode] || 'research-mode';
 			$('#' + contentId).addClass('active').show();
 			
 			// Update URL without page reload
@@ -173,13 +174,7 @@
 		// Show the correct content
 		$('.research-mode-content').removeClass('active').hide();
 		
-		const modeToId = {
-			'chat': 'research-mode',
-			'import': 'import-mode',
-			'consolidate': 'consolidate-mode'
-		};
-		
-		const contentId = modeToId[mode] || 'research-mode';
+		const contentId = MODE_TO_CONTENT_ID[mode] || 'research-mode';
 		$('#' + contentId).addClass('active').show();
 	}
 
