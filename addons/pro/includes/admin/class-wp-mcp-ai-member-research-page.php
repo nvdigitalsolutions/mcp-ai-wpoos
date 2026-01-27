@@ -31,7 +31,18 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 		$this->capability     = 'edit_posts';
 		$this->research_title = __( 'Family Member & Pet Research', 'mcp-ai-wpoos-pro' );
 
-		parent::__construct();
+		parent::__construct( 'health' );
+	}
+
+	/**
+	 * Get entity types for this toolkit.
+	 *
+	 * @return array Entity types.
+	 */
+	protected function get_entity_types() {
+		return array(
+			'members' => __( 'Members', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
