@@ -165,43 +165,41 @@ class WP_MCP_AI_Task_Research_Page {
 	 * @param int $assistant_id Assistant ID.
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
-		if ( ! $assistant_id ) {
-			?>
-			<div class="notice notice-warning">
-				<p><?php esc_html_e( 'No assistant configured. Please configure an assistant in Settings or create one in the Assistants menu.', 'mcp-ai-wpoos-pro' ); ?></p>
-			</div>
-			<?php
-			return;
-		}
-
-		// Render the chat UI using shortcode functionality.
-		$chat_id = 'task-research-' . wp_generate_password( 8, false );
-
 		?>
 		<div class="wp-mcp-ai-research-chat-container">
-			<div class="chat-instructions">
-				<h2><?php esc_html_e( '🤖 AI Task Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
-				<p><?php esc_html_e( 'Describe the task you want to create, and the AI will help you research, plan, and add it with all relevant details including priorities, due dates, and project associations.', 'mcp-ai-wpoos-pro' ); ?></p>
-				
-				<details class="chat-tips">
-					<summary><?php esc_html_e( 'Tips for better results', 'mcp-ai-wpoos-pro' ); ?></summary>
-					<ul>
-						<li><?php esc_html_e( '✅ Be specific about task objectives and deliverables', 'mcp-ai-wpoos-pro' ); ?></li>
-						<li><?php esc_html_e( '✅ Mention priority levels (low, medium, high, urgent)', 'mcp-ai-wpoos-pro' ); ?></li>
-						<li><?php esc_html_e( '✅ Include due dates or deadlines if known', 'mcp-ai-wpoos-pro' ); ?></li>
-						<li><?php esc_html_e( '✅ Specify project associations if applicable', 'mcp-ai-wpoos-pro' ); ?></li>
-						<li><?php esc_html_e( '✅ Ask for task breakdowns or subtasks for complex work', 'mcp-ai-wpoos-pro' ); ?></li>
-						<li><?php esc_html_e( '✅ Request task dependencies if tasks are related', 'mcp-ai-wpoos-pro' ); ?></li>
-					</ul>
-				</details>
-			</div>
+			<?php if ( ! $assistant_id ) : ?>
+				<div class="notice notice-warning">
+					<p><?php esc_html_e( 'No assistant configured. Please configure an assistant in Settings or create one in the Assistants menu.', 'mcp-ai-wpoos-pro' ); ?></p>
+				</div>
+			<?php else : ?>
+				<div class="chat-instructions">
+					<h2><?php esc_html_e( '🤖 AI Task Assistant', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<p><?php esc_html_e( 'Describe the task you want to create, and the AI will help you research, plan, and add it with all relevant details including priorities, due dates, and project associations.', 'mcp-ai-wpoos-pro' ); ?></p>
+					
+					<details class="chat-tips">
+						<summary><?php esc_html_e( 'Tips for better results', 'mcp-ai-wpoos-pro' ); ?></summary>
+						<ul>
+							<li><?php esc_html_e( '✅ Be specific about task objectives and deliverables', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( '✅ Mention priority levels (low, medium, high, urgent)', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( '✅ Include due dates or deadlines if known', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( '✅ Specify project associations if applicable', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( '✅ Ask for task breakdowns or subtasks for complex work', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( '✅ Request task dependencies if tasks are related', 'mcp-ai-wpoos-pro' ); ?></li>
+						</ul>
+					</details>
+				</div>
 
-			<div id="<?php echo esc_attr( $chat_id ); ?>" 
-				 class="wp-mcp-ai-chat-widget" 
-				 data-assistant-id="<?php echo esc_attr( $assistant_id ); ?>"
-				 data-context="task_research"
-				 data-initial-message="<?php esc_attr_e( 'Hello! I can help you research and create tasks. What task would you like to create today?', 'mcp-ai-wpoos-pro' ); ?>">
-			</div>
+				<?php
+				// Render the chat UI using shortcode functionality.
+				$chat_id = 'task-research-' . wp_generate_password( 8, false );
+				?>
+				<div id="<?php echo esc_attr( $chat_id ); ?>" 
+					 class="wp-mcp-ai-chat-widget" 
+					 data-assistant-id="<?php echo esc_attr( $assistant_id ); ?>"
+					 data-context="task_research"
+					 data-initial-message="<?php esc_attr_e( 'Hello! I can help you research and create tasks. What task would you like to create today?', 'mcp-ai-wpoos-pro' ); ?>">
+				</div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
@@ -490,7 +488,7 @@ class WP_MCP_AI_Task_Research_Page {
 	protected static function render_consolidation_section() {
 		?>
 		<div class="wp-mcp-ai-consolidation-container">
-			<div class="consolidation-header">
+			<div class="wp-mcp-ai-consolidation-header">
 				<h2><?php esc_html_e( '🔄 Consolidate & Organize Tasks', 'mcp-ai-wpoos-pro' ); ?></h2>
 				<p><?php esc_html_e( 'Review, merge, and organize existing tasks with AI assistance.', 'mcp-ai-wpoos-pro' ); ?></p>
 			</div>
