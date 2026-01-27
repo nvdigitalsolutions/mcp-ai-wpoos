@@ -51,6 +51,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		add_action( 'wp_ajax_wp_mcp_ai_get_member_records_preview', array( __CLASS__, 'handle_get_member_preview' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_check_record_completeness', array( __CLASS__, 'handle_check_completeness' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_bulk_import_health_info', array( __CLASS__, 'handle_bulk_import' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_upload_health_document', array( __CLASS__, 'handle_document_upload' ) );
 	}
 
 	/**
@@ -278,7 +279,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 						<div class="wp-mcp-ai-bulk-import-section">
 							<h2><?php esc_html_e( 'Quick Import - Dump Everything Here', 'mcp-ai-wpoos-pro' ); ?></h2>
 							<p class="description">
-								<?php esc_html_e( 'Paste or type all your health information below. The AI will automatically parse, categorize, and organize it into structured records. Don\'t worry about formatting - just dump everything in!', 'mcp-ai-wpoos-pro' ); ?>
+								<?php esc_html_e( 'Paste or type all your health information below, or upload documents (PDFs, images, scans). The AI will automatically parse, categorize, and organize it into structured records. Original files are preserved in the media library for future validation and auditing.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 							
 							<div class="bulk-import-tips">
@@ -288,10 +289,35 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 									<li><?php esc_html_e( '✓ Mention record type keywords: allergy, prescription, checkup, diagnosis, policy', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( '✓ Add doctor/provider names when known (e.g., "Dr. Smith")', 'mcp-ai-wpoos-pro' ); ?></li>
 									<li><?php esc_html_e( '✓ Separate different items with blank lines', 'mcp-ai-wpoos-pro' ); ?></li>
+									<li><?php esc_html_e( '✓ Upload original documents - they will be kept as attachments', 'mcp-ai-wpoos-pro' ); ?></li>
 								</ul>
 							</div>
 
 							<div class="bulk-import-form">
+								<!-- File Upload Section -->
+								<div class="bulk-import-file-section">
+									<h3><?php esc_html_e( 'Upload Documents (Optional)', 'mcp-ai-wpoos-pro' ); ?></h3>
+									<p class="description">
+										<?php esc_html_e( 'Upload medical records, test results, prescription images, insurance cards, etc. Original files are preserved in your media library for compliance and future reference.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+									<div class="file-upload-area">
+										<input type="file" id="wp-mcp-ai-file-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.txt" style="display: none;">
+										<button type="button" id="wp-mcp-ai-file-upload-btn" class="button">
+											<span class="dashicons dashicons-upload"></span>
+											<?php esc_html_e( 'Choose Files to Upload', 'mcp-ai-wpoos-pro' ); ?>
+										</button>
+										<span class="file-upload-note"><?php esc_html_e( 'Accepted: PDF, JPG, PNG, DOC, DOCX, TXT', 'mcp-ai-wpoos-pro' ); ?></span>
+									</div>
+									<div id="wp-mcp-ai-file-list" class="file-upload-list" style="display: none;">
+										<h4><?php esc_html_e( 'Files to Upload:', 'mcp-ai-wpoos-pro' ); ?></h4>
+										<ul id="wp-mcp-ai-file-items"></ul>
+									</div>
+								</div>
+
+								<hr class="form-section-divider">
+
+								<!-- Text Import Section -->
+								<h3><?php esc_html_e( 'Or Paste/Type Health Information', 'mcp-ai-wpoos-pro' ); ?></h3>
 								<textarea 
 									id="wp-mcp-ai-bulk-import-text" 
 									class="widefat" 
@@ -882,13 +908,14 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$raw_information       = isset( $_POST['raw_information'] ) ? wp_kses_post( wp_unslash( $_POST['raw_information'] ) ) : '';
 		$auto_create           = isset( $_POST['auto_create'] ) ? (bool) $_POST['auto_create'] : true;
 		$confirmation_required = isset( $_POST['require_confirmation'] ) ? (bool) $_POST['require_confirmation'] : false;
+		$attachment_ids        = isset( $_POST['attachment_ids'] ) ? array_map( 'absint', (array) $_POST['attachment_ids'] ) : array();
 
 		if ( ! $member_id ) {
 			wp_send_json_error( array( 'message' => __( 'Please select a member first.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		if ( empty( $raw_information ) ) {
-			wp_send_json_error( array( 'message' => __( 'Please provide health information to import.', 'mcp-ai-wpoos-pro' ) ) );
+		if ( empty( $raw_information ) && empty( $attachment_ids ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide health information or upload documents to import.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Use the parse_health_information tool.
@@ -903,6 +930,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'raw_information'        => $raw_information,
 				'auto_create_records'    => $auto_create,
 				'confirmation_required'  => $confirmation_required,
+				'attachment_ids'         => $attachment_ids,
 			),
 			array( 'user_id' => get_current_user_id() )
 		);

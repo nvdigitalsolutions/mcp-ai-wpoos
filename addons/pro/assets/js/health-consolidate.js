@@ -170,15 +170,120 @@
 		const memberSelect = $( '#wp-mcp-ai-member-select' );
 		const autoCreateCheckbox = $( '#wp-mcp-ai-bulk-auto-create' );
 		const confirmationCheckbox = $( '#wp-mcp-ai-bulk-require-confirmation' );
+		
+		// File upload elements.
+		const fileInput = $( '#wp-mcp-ai-file-upload' );
+		const fileUploadBtn = $( '#wp-mcp-ai-file-upload-btn' );
+		const fileList = $( '#wp-mcp-ai-file-list' );
+		const fileItems = $( '#wp-mcp-ai-file-items' );
+		
+		let uploadedFiles = [];
+		let uploadedAttachmentIds = [];
 
 		if ( ! importButton.length ) {
 			return;
 		}
 
+		// File upload button click.
+		fileUploadBtn.on( 'click', function() {
+			fileInput.click();
+		} );
+
+		// Handle file selection.
+		fileInput.on( 'change', function( e ) {
+			const files = e.target.files;
+			if ( files.length > 0 ) {
+				uploadFiles( files );
+			}
+		} );
+
+		/**
+		 * Upload files to WordPress media library.
+		 *
+		 * @param {FileList} files Files to upload.
+		 */
+		function uploadFiles( files ) {
+			const memberId = memberSelect.val();
+			
+			if ( ! memberId ) {
+				alert( wpMcpAiHealthConsolidate.strings.selectMember );
+				memberSelect.focus();
+				return;
+			}
+
+			Array.from( files ).forEach( function( file ) {
+				const formData = new FormData();
+				formData.append( 'action', 'wp_mcp_ai_upload_health_document' );
+				formData.append( 'nonce', wpMcpAiHealthConsolidate.nonce );
+				formData.append( 'member_id', memberId );
+				formData.append( 'file', file );
+
+				$.ajax( {
+					url: wpMcpAiHealthConsolidate.ajaxUrl,
+					type: 'POST',
+					data: formData,
+					processData: false,
+					contentType: false,
+					success: function( response ) {
+						if ( response.success && response.data.attachment_id ) {
+							uploadedFiles.push( {
+								name: response.data.file_name,
+								id: response.data.attachment_id,
+								url: response.data.file_url
+							} );
+							uploadedAttachmentIds.push( response.data.attachment_id );
+							updateFileList();
+						} else {
+							const errorMessage = response.data && response.data.message ? response.data.message : wpMcpAiHealthConsolidate.strings.error;
+							alert( errorMessage );
+						}
+					},
+					error: function() {
+						alert( wpMcpAiHealthConsolidate.strings.error );
+					}
+				} );
+			} );
+		}
+
+		/**
+		 * Update the file list UI.
+		 */
+		function updateFileList() {
+			if ( uploadedFiles.length === 0 ) {
+				fileList.hide();
+				return;
+			}
+
+			fileItems.empty();
+			uploadedFiles.forEach( function( file, index ) {
+				const li = $( '<li>' );
+				li.html(
+					'<span class="dashicons dashicons-media-document"></span>' +
+					'<span class="file-name">' + file.name + '</span>' +
+					'<span class="dashicons dashicons-no file-remove" data-index="' + index + '"></span>'
+				);
+				fileItems.append( li );
+			} );
+
+			fileList.show();
+		}
+
+		// Remove file from list.
+		fileItems.on( 'click', '.file-remove', function() {
+			const index = $( this ).data( 'index' );
+			uploadedFiles.splice( index, 1 );
+			uploadedAttachmentIds.splice( index, 1 );
+			updateFileList();
+		} );
+
 		// Clear button.
 		clearButton.on( 'click', function() {
 			textarea.val( '' );
 			resultContainer.hide().html( '' );
+			uploadedFiles = [];
+			uploadedAttachmentIds = [];
+			fileInput.val( '' );
+			updateFileList();
 		} );
 
 		// Import button.
@@ -194,7 +299,7 @@
 				return;
 			}
 
-			if ( ! rawText ) {
+			if ( ! rawText && uploadedAttachmentIds.length === 0 ) {
 				alert( wpMcpAiHealthConsolidate.strings.enterHealthInfo );
 				textarea.focus();
 				return;
@@ -216,14 +321,19 @@
 					raw_information: rawText,
 					auto_create: autoCreate,
 					require_confirmation: requireConfirmation,
+					attachment_ids: uploadedAttachmentIds
 				},
 				success: function( response ) {
 					if ( response.success && response.data.summary_html ) {
 						resultContainer.html( response.data.summary_html ).show();
 
-						// Clear textarea on success if auto-created.
+						// Clear inputs on success if auto-created.
 						if ( autoCreate && ! requireConfirmation ) {
 							textarea.val( '' );
+							uploadedFiles = [];
+							uploadedAttachmentIds = [];
+							fileInput.val( '' );
+							updateFileList();
 						}
 
 						// Trigger custom event.

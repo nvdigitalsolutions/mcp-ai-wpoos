@@ -51,7 +51,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				),
 				'raw_information'      => array(
 					'type'        => 'string',
-					'description' => __( 'Raw, unstructured health information text to parse and organize (required). Can include medical records, prescriptions, allergies, checkup notes, policy details, etc.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'Raw, unstructured health information text to parse and organize. Can include medical records, prescriptions, allergies, checkup notes, policy details, etc.', 'mcp-ai-wpoos-pro' ),
 				),
 				'auto_create_records'  => array(
 					'type'        => 'boolean',
@@ -63,8 +63,15 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Require user confirmation before creating records (default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
+				'attachment_ids'        => array(
+					'type'        => 'array',
+					'description' => __( 'Array of WordPress attachment IDs to attach as source documents to created records', 'mcp-ai-wpoos-pro' ),
+					'items'       => array(
+						'type' => 'integer',
+					),
+				),
 			),
-			'required'             => array( 'member_id', 'raw_information' ),
+			'required'             => array( 'member_id' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -116,13 +123,14 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		$raw_information       = isset( $arguments['raw_information'] ) ? wp_kses_post( $arguments['raw_information'] ) : '';
 		$auto_create           = isset( $arguments['auto_create_records'] ) ? (bool) $arguments['auto_create_records'] : true;
 		$confirmation_required = isset( $arguments['confirmation_required'] ) ? (bool) $arguments['confirmation_required'] : false;
+		$attachment_ids        = isset( $arguments['attachment_ids'] ) ? array_map( 'absint', (array) $arguments['attachment_ids'] ) : array();
 
 		if ( ! $member_id ) {
 			return new WP_Error( 'wp_mcp_ai_missing_member_id', __( 'Member ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( empty( $raw_information ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_information', __( 'Raw health information is required.', 'mcp-ai-wpoos-pro' ) );
+		if ( empty( $raw_information ) && empty( $attachment_ids ) ) {
+			return new WP_Error( 'wp_mcp_ai_missing_information', __( 'Raw health information or document attachments are required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Verify member exists.
@@ -141,7 +149,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		// Create records if auto_create is enabled and confirmation not required.
 		$created_records = array();
 		if ( $auto_create && ! $confirmation_required ) {
-			$created_records = $this->create_parsed_records( $parsed_data, $member_id, $current_user_id );
+			$created_records = $this->create_parsed_records( $parsed_data, $member_id, $current_user_id, $attachment_ids );
 		}
 
 		return array(
@@ -152,7 +160,9 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			'records_created'         => $auto_create && ! $confirmation_required,
 			'created_records'         => $created_records,
 			'confirmation_required'   => $confirmation_required,
-			'parsing_summary'         => $this->generate_parsing_summary( $parsed_data, $created_records ),
+			'attachment_ids'          => $attachment_ids,
+			'source_documents_kept'   => ! empty( $attachment_ids ),
+			'parsing_summary'         => $this->generate_parsing_summary( $parsed_data, $created_records, $attachment_ids ),
 		);
 	}
 
@@ -333,12 +343,13 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Create actual WordPress posts from parsed data.
 	 *
-	 * @param array $parsed_data    Parsed health data.
-	 * @param int   $member_id      Member ID.
+	 * @param array $parsed_data     Parsed health data.
+	 * @param int   $member_id       Member ID.
 	 * @param int   $current_user_id Current user ID.
+	 * @param array $attachment_ids  Array of attachment IDs to link to records.
 	 * @return array Created record IDs and details.
 	 */
-	private function create_parsed_records( $parsed_data, $member_id, $current_user_id ) {
+	private function create_parsed_records( $parsed_data, $member_id, $current_user_id, $attachment_ids = array() ) {
 		$created = array(
 			'medical_records' => array(),
 			'checkups'        => array(),
@@ -370,6 +381,25 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				if ( isset( $record_data['record_type'] ) ) {
 					wp_set_object_terms( $post_id, $record_data['record_type'], 'mcp_ai_record_type' );
 				}
+
+				// Attach source documents for audit trail and compliance.
+				if ( ! empty( $attachment_ids ) ) {
+					foreach ( $attachment_ids as $attachment_id ) {
+						// Link attachment to this record.
+						wp_update_post(
+							array(
+								'ID'          => $attachment_id,
+								'post_parent' => $post_id,
+							)
+						);
+						// Add relationship metadata.
+						update_post_meta( $attachment_id, '_wp_mcp_ai_linked_record_id', $post_id );
+						update_post_meta( $attachment_id, '_wp_mcp_ai_linked_record_type', 'mcp_ai_med_record' );
+					}
+					// Store attachment count for quick reference.
+					update_post_meta( $post_id, '_wp_mcp_ai_source_documents_count', count( $attachment_ids ) );
+				}
+
 				$created['medical_records'][] = $post_id;
 			}
 		}
@@ -476,11 +506,12 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Generate summary of parsing results.
 	 *
-	 * @param array $parsed_data    Parsed data.
+	 * @param array $parsed_data     Parsed data.
 	 * @param array $created_records Created record IDs.
+	 * @param array $attachment_ids  Attachment IDs.
 	 * @return string Summary message.
 	 */
-	private function generate_parsing_summary( $parsed_data, $created_records ) {
+	private function generate_parsing_summary( $parsed_data, $created_records, $attachment_ids = array() ) {
 		$summary = __( 'Health Information Parsing Results:', 'mcp-ai-wpoos-pro' ) . "\n\n";
 
 		$summary .= __( 'Identified and processed:', 'mcp-ai-wpoos-pro' ) . "\n";
@@ -498,6 +529,16 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				__( '✓ Successfully created %d health record(s) in the system!', 'mcp-ai-wpoos-pro' ),
 				$total_created
 			) . "\n";
+
+			if ( ! empty( $attachment_ids ) ) {
+				$summary .= "\n";
+				$summary .= sprintf(
+					/* translators: %d: number of source documents */
+					__( '✓ %d original source document(s) preserved in media library', 'mcp-ai-wpoos-pro' ),
+					count( $attachment_ids )
+				) . "\n";
+				$summary .= __( '✓ Documents attached to records for compliance and future validation', 'mcp-ai-wpoos-pro' ) . "\n";
+			}
 
 			$summary .= "\n" . __( 'You can now view and edit these records in the WordPress admin.', 'mcp-ai-wpoos-pro' );
 		}
