@@ -35,7 +35,7 @@ class WP_MCP_AI_Health_Wellness_CPT {
 	 *
 	 * @var string
 	 */
-	const MEDICAL_RECORD_POST_TYPE = 'mcp_ai_medical_record';
+	const MEDICAL_RECORD_POST_TYPE = 'mcp_ai_med_record';
 
 	/**
 	 * Checkup post type slug.

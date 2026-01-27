@@ -13,6 +13,30 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load migration class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/migrations/class-wp-mcp-ai-migrate-medical-record-post-type.php';
+
+// Run migration on admin init (only once).
+add_action(
+	'admin_init',
+	function() {
+		// Only run migration if needed.
+		$status = WP_MCP_AI_Migrate_Medical_Record_Post_Type::get_status();
+		if ( $status['needs_migration'] && ! $status['migration_completed'] ) {
+			// Run migration automatically.
+			$result = WP_MCP_AI_Migrate_Medical_Record_Post_Type::run();
+			
+			// Log result.
+			if ( 'success' === $result['status'] && function_exists( 'wp_mcp_ai_log_activity' ) ) {
+				wp_mcp_ai_log_activity(
+					'migration_medical_record_post_type',
+					sprintf( 'Migrated %d medical records from mcp_ai_medical_record to mcp_ai_med_record', $result['migrated'] )
+				);
+			}
+		}
+	}
+);
+
 // Load Health and Wellness CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-health-wellness-cpt.php';
 
@@ -43,7 +67,7 @@ if ( is_admin() ) {
 function wp_mcp_ai_enqueue_health_wellness_management_admin_styles( $hook ) {
 	// Only load on health and wellness management edit screens.
 	$screen = get_current_screen();
-	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_member', 'mcp_ai_policy', 'mcp_ai_medical_record', 'mcp_ai_checkup', 'mcp_ai_prescription', 'mcp_ai_allergy' ), true ) ) {
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_member', 'mcp_ai_policy', 'mcp_ai_med_record', 'mcp_ai_checkup', 'mcp_ai_prescription', 'mcp_ai_allergy' ), true ) ) {
 		return;
 	}
 
