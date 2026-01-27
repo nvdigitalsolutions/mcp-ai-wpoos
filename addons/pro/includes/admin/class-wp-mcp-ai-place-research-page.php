@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
 
 /**
  * Place Research Admin Page
@@ -21,6 +22,10 @@ require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
  */
 class WP_MCP_AI_Place_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
 
 	/**
 	 * Page slug.
@@ -36,6 +41,7 @@ class WP_MCP_AI_Place_Research_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_place_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_place', array( __CLASS__, 'handle_import_request' ) );
 	}
 
 	/**
@@ -112,6 +118,8 @@ class WP_MCP_AI_Place_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		$mode = self::get_current_mode();
+
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_place_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -138,6 +146,33 @@ class WP_MCP_AI_Place_Research_Page {
 			</h1>
 
 			<hr class="wp-header-end">
+
+			<?php self::render_mode_tabs( $mode ); ?>
+
+			<?php
+			switch ( $mode ) {
+				case 'import':
+					self::render_import_section();
+					break;
+				case 'consolidate':
+					self::render_consolidation_dashboard();
+					break;
+				default: // 'chat'
+					self::render_chat_interface( $assistant_id );
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		?>
+			<div class="wp-mcp-ai-research-container">
 
 			<div class="wp-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
@@ -273,6 +308,216 @@ class WP_MCP_AI_Place_Research_Page {
 				'edit_url' => $edit_url,
 			)
 		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Associative array of format keys and labels.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'geojson' => 'GeoJSON',
+			'kml'     => 'KML',
+			'csv'     => 'CSV',
+			'json'    => 'JSON',
+		);
+	}
+
+	/**
+	 * Process import data based on format.
+	 *
+	 * @param mixed  $data   The import data.
+	 * @param string $format The data format (geojson, kml, csv, json).
+	 * @return array|WP_Error Processed data array or error.
+	 */
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		return new WP_Error( 'not_implemented', __( 'Place import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema for place data.
+	 *
+	 * @return array Validation schema with required fields, recommended fields, and rules.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'name'      => __( 'Place Name', 'mcp-ai-wpoos-pro' ),
+				'latitude'  => __( 'Latitude', 'mcp-ai-wpoos-pro' ),
+				'longitude' => __( 'Longitude', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'address'     => __( 'Address', 'mcp-ai-wpoos-pro' ),
+				'city'        => __( 'City', 'mcp-ai-wpoos-pro' ),
+				'country'     => __( 'Country', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'latitude'  => array(
+					'type'      => 'numeric',
+					'min_value' => -90,
+					'max_value' => 90,
+				),
+				'longitude' => array(
+					'type'      => 'numeric',
+					'min_value' => -180,
+					'max_value' => 180,
+				),
+			),
+			'quality_dimensions' => array(
+				'geospatial_accuracy',
+				'completeness',
+				'consistency',
+				'format_compliance',
+			),
+		);
+	}
+
+	/**
+	 * Calculate data completeness percentage.
+	 *
+	 * @return array Completeness information with percentage, missing fields, and suggestions.
+	 */
+	protected static function calculate_completeness() {
+		$places = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_place',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $places );
+		$complete = 0;
+
+		foreach ( $places as $place ) {
+			$latitude  = get_post_meta( $place->ID, 'latitude', true );
+			$longitude = get_post_meta( $place->ID, 'longitude', true );
+			$address   = get_post_meta( $place->ID, 'address', true );
+			if ( ! empty( $latitude ) && ! empty( $longitude ) && ! empty( $address ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Add coordinates to all places', 'mcp-ai-wpoos-pro' ),
+				__( 'Include complete addresses', 'mcp-ai-wpoos-pro' ),
+				__( 'Verify geospatial accuracy', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array List of items with ID, title, and metadata.
+	 */
+	protected static function get_items_for_review() {
+		$places = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_place',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $places as $place ) {
+			$items[] = array(
+				'id'    => $place->ID,
+				'title' => $place->post_title,
+				'meta'  => array(
+					'latitude'  => get_post_meta( $place->ID, 'latitude', true ),
+					'longitude' => get_post_meta( $place->ID, 'longitude', true ),
+					'address'   => get_post_meta( $place->ID, 'address', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for an item.
+	 *
+	 * @param array $item The item data to score.
+	 * @return array Quality score information with score, level, status, and issues.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['latitude'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing latitude', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['longitude'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing longitude', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['address'] ) ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Missing address', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 5 ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = 80 <= $score ? 'high' : ( 50 <= $score ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Handle AJAX import request.
+	 */
+	public static function handle_import_request() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_place', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import places.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get import data and format.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
+		$import_data = isset( $_POST['import_data'] ) ? wp_unslash( $_POST['import_data'] ) : '';
+		$format      = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : '';
+
+		if ( empty( $import_data ) || empty( $format ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import data or format.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Process import.
+		$result = self::process_import_data( $import_data, $format );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Import processed successfully.', 'mcp-ai-wpoos-pro' ) ) );
 	}
 }
 

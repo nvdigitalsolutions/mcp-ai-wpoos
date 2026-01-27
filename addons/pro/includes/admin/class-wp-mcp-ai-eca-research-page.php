@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
 
 /**
  * ECA Research Admin Page
@@ -21,6 +22,10 @@ require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
  */
 class WP_MCP_AI_ECA_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
 
 	/**
 	 * Page slug.
@@ -36,6 +41,7 @@ class WP_MCP_AI_ECA_Research_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_eca_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_eca', array( __CLASS__, 'handle_import' ) );
 	}
 
 	/**
@@ -112,6 +118,8 @@ class WP_MCP_AI_ECA_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		$mode = self::get_current_mode();
+
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_eca_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -138,6 +146,33 @@ class WP_MCP_AI_ECA_Research_Page {
 			</h1>
 
 			<hr class="wp-header-end">
+
+			<?php self::render_mode_tabs( $mode ); ?>
+
+			<?php
+			switch ( $mode ) {
+				case 'import':
+					self::render_import_section();
+					break;
+				case 'consolidate':
+					self::render_consolidation_dashboard();
+					break;
+				default: // 'chat'
+					self::render_chat_interface( $assistant_id );
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		?>
+			<div class="wp-mcp-ai-research-container">
 
 			<div class="wp-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
@@ -273,6 +308,197 @@ class WP_MCP_AI_ECA_Research_Page {
 				'edit_url' => $edit_url,
 			)
 		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Array of format slug => label pairs.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'pdf'  => 'PDF',
+			'docx' => 'DOCX',
+			'csv'  => 'CSV',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process import data.
+	 *
+	 * @param mixed  $data   Data to import.
+	 * @param string $format File format.
+	 * @return array|WP_Error Array of processed items or WP_Error on failure.
+	 */
+	protected static function process_import_data( $data, $format ) {
+		return new WP_Error( 'not_implemented', __( 'ECA import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema for ECA data.
+	 *
+	 * @return array Validation schema configuration.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'title'   => __( 'ECA Title', 'mcp-ai-wpoos-pro' ),
+				'content' => __( 'ECA Content', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'category'    => __( 'Category', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+				'tags'        => __( 'Tags', 'mcp-ai-wpoos-pro' ),
+				'date'        => __( 'Date', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'date' => array( 'type' => 'datetime' ),
+			),
+			'quality_dimensions' => array(
+				'completeness',
+				'accuracy',
+				'accessibility',
+				'organization',
+			),
+		);
+	}
+
+	/**
+	 * Calculate completeness score for ECAs.
+	 *
+	 * @return array Completeness data with percentage and suggestions.
+	 */
+	protected static function calculate_completeness() {
+		$ecas = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_eca',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $ecas );
+		$complete = 0;
+
+		foreach ( $ecas as $eca ) {
+			$category = get_post_meta( $eca->ID, 'category', true );
+			if ( ! empty( $category ) && ! empty( $eca->post_content ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Categorize all ECA items', 'mcp-ai-wpoos-pro' ),
+				__( 'Add detailed descriptions', 'mcp-ai-wpoos-pro' ),
+				__( 'Include relevant tags', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Array of ECA items for review.
+	 */
+	protected static function get_items_for_review() {
+		$ecas = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_eca',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $ecas as $eca ) {
+			$items[] = array(
+				'id'    => $eca->ID,
+				'title' => $eca->post_title,
+				'meta'  => array(
+					'category' => get_post_meta( $eca->ID, 'category', true ),
+					'date'     => get_post_meta( $eca->ID, 'date', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for an item.
+	 *
+	 * @param array $item Item data to score.
+	 * @return array Quality score data with score, level, status, and issues.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['category'] ) ) {
+			$score += 40;
+		} else {
+			$issues[] = __( 'Missing category', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['date'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing date', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 10 ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = $score >= 80 ? 'high' : ( $score >= 50 ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Handle import AJAX request.
+	 */
+	public static function handle_import() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_eca', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import ECAs.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get import data from request.
+		$format = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized in process_import_data.
+		$data = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+
+		if ( empty( $format ) || empty( $data ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid import data.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Process import.
+		$result = self::process_import_data( $data, $format );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success( $result );
 	}
 }
 
