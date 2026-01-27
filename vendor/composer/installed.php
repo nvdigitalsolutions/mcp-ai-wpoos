@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/add-applied-statistician-role',
         'version' => 'dev-copilot/add-applied-statistician-role',
-        'reference' => 'c7c162f4aae843ee9cbcfdb6662e172a7327a15f',
+        'reference' => '17f1cd39c384e038cc2e5f097b7e2247d3070a00',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/add-applied-statistician-role',
             'version' => 'dev-copilot/add-applied-statistician-role',
-            'reference' => 'c7c162f4aae843ee9cbcfdb6662e172a7327a15f',
+            'reference' => '17f1cd39c384e038cc2e5f097b7e2247d3070a00',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
