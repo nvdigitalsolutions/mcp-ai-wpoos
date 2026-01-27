@@ -32,7 +32,7 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Create a new media template for the Graphic Editor Plus tool. Templates store reusable operation configurations for consistent image processing. Returns the created template ID and details.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new media template or update an existing template. If template_id is provided, updates the existing template instead of creating a new one. Templates are used for the Graphic Editor Plus tool and store reusable operation configurations for consistent image processing. Returns the template ID and details. Use this tool for both creating new templates and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -42,6 +42,10 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
+				'template_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional template ID. If provided, updates the existing template instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Template title', 'mcp-ai-wpoos-pro' ),
@@ -116,6 +120,37 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 		$operation  = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
 		$parameters = isset( $arguments['parameters'] ) ? $arguments['parameters'] : array();
 
+		// Check if this is an update operation.
+		$template_id       = isset( $arguments['template_id'] ) ? absint( $arguments['template_id'] ) : 0;
+		$is_update         = false;
+		$existing_template = null;
+
+		if ( $template_id ) {
+			// Verify template exists and user has permission to update it.
+			$existing_template = get_post( $template_id );
+
+			if ( ! $existing_template || 'mcp_ai_media_tpl' !== $existing_template->post_type ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Media template not found.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$is_author       = absint( $existing_template->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'You do not have permission to update this template.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$is_update = true;
+		}
+
 		if ( empty( $title ) ) {
 			return array(
 				'success' => false,
@@ -164,33 +199,57 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Create the template post.
-		$post_data = array(
-			'post_type'    => 'mcp_ai_media_tpl',
-			'post_title'   => $title,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => $user_id,
-		);
-
-		$template_id = wp_insert_post( $post_data, true );
-
-		if ( is_wp_error( $template_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => sprintf(
-					/* translators: %s: error message */
-					__( 'Failed to create template: %s', 'mcp-ai-wpoos-pro' ),
-					$template_id->get_error_message()
-				),
+		if ( $is_update ) {
+			// Update existing template.
+			$post_data = array(
+				'ID'           => $template_id,
+				'post_title'   => $title,
+				'post_content' => $description,
 			);
+
+			$result = wp_update_post( $post_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success' => false,
+					'error'   => sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to update template: %s', 'mcp-ai-wpoos-pro' ),
+						$result->get_error_message()
+					),
+				);
+			}
+		} else {
+			// Create the template post.
+			$post_data = array(
+				'post_type'    => 'mcp_ai_media_tpl',
+				'post_title'   => $title,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => $user_id,
+			);
+
+			$template_id = wp_insert_post( $post_data, true );
+
+			if ( is_wp_error( $template_id ) ) {
+				return array(
+					'success' => false,
+					'error'   => sprintf(
+						/* translators: %s: error message */
+						__( 'Failed to create template: %s', 'mcp-ai-wpoos-pro' ),
+						$template_id->get_error_message()
+					),
+				);
+			}
+
+			// Initialize usage tracking for new templates.
+			update_post_meta( $template_id, '_mcp_ai_template_usage_count', 0 );
+			update_post_meta( $template_id, '_mcp_ai_template_last_used', '' );
 		}
 
-		// Save template meta.
+		// Save/update template meta.
 		update_post_meta( $template_id, '_mcp_ai_template_operation', $operation );
 		update_post_meta( $template_id, '_mcp_ai_template_parameters', wp_json_encode( $parameters ) );
-		update_post_meta( $template_id, '_mcp_ai_template_usage_count', 0 );
-		update_post_meta( $template_id, '_mcp_ai_template_last_used', '' );
 
 		// Assign categories.
 		if ( ! empty( $categories ) ) {
@@ -240,15 +299,22 @@ class WP_MCP_AI_Tool_Create_Media_Template implements WP_MCP_AI_Tool_Interface, 
 				'operation'   => $operation,
 				'parameters'  => $parameters,
 				'categories'  => $assigned_categories,
-				'usage_count' => 0,
-				'last_used'   => null,
+				'usage_count' => $is_update ? get_post_meta( $template_id, '_mcp_ai_template_usage_count', true ) : 0,
+				'last_used'   => $is_update ? get_post_meta( $template_id, '_mcp_ai_template_last_used', true ) : null,
 				'created'     => get_the_date( 'c', $template_id ),
 			),
-			'message'     => sprintf(
-				/* translators: %s: template title */
-				__( 'Media template "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
-				$title
-			),
+			'updated'     => $is_update,
+			'message'     => $is_update
+				? sprintf(
+					/* translators: %s: template title */
+					__( 'Media template "%s" updated successfully.', 'mcp-ai-wpoos-pro' ),
+					$title
+				)
+				: sprintf(
+					/* translators: %s: template title */
+					__( 'Media template "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
+					$title
+				),
 		);
 	}
 }

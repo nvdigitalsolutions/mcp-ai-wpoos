@@ -32,7 +32,7 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Create a new media collection for grouping images and applying templates in batch. Collections can contain multiple images and have templates assigned for consistent processing. Returns the created collection ID and details.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new media collection or update an existing collection. If collection_id is provided, updates the existing collection instead of creating a new one. Collections are used for grouping images and applying templates in batch. Collections can contain multiple images and have templates assigned for consistent processing. Returns the collection ID and details. Use this tool for both creating new collections and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -42,6 +42,10 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
+				'collection_id' => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional collection ID. If provided, updates the existing collection instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'title'        => array(
 					'type'        => 'string',
 					'description' => __( 'Collection title', 'mcp-ai-wpoos-pro' ),
@@ -126,23 +130,63 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 			);
 		}
 
+		// Check if this is an update operation.
+		$collection_id       = isset( $arguments['collection_id'] ) ? absint( $arguments['collection_id'] ) : 0;
+		$is_update           = false;
+		$existing_collection = null;
+
+		if ( $collection_id ) {
+			// Verify collection exists and user has permission to update it.
+			$existing_collection = get_post( $collection_id );
+
+			if ( ! $existing_collection || 'mcp_ai_media_coll' !== $existing_collection->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_collection_not_found', __( 'Media collection not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have upload_files capability.
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$is_author       = absint( $existing_collection->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this collection.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Sanitize title and description.
 		$title       = sanitize_text_field( $arguments['title'] );
 		$description = ! empty( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
 
-		// Create the collection post.
-		$collection_data = array(
-			'post_type'    => 'mcp_ai_media_coll',
-			'post_title'   => $title,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_author'  => ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id(),
-		);
+		if ( $is_update ) {
+			// Update existing collection.
+			$collection_data = array(
+				'ID'           => $collection_id,
+				'post_title'   => $title,
+				'post_content' => $description,
+			);
 
-		$collection_id = wp_insert_post( $collection_data, true );
+			$result = wp_update_post( $collection_data, true );
 
-		if ( is_wp_error( $collection_id ) ) {
-			return $collection_id;
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		} else {
+			// Create the collection post.
+			$collection_data = array(
+				'post_type'    => 'mcp_ai_media_coll',
+				'post_title'   => $title,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_author'  => ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id(),
+			);
+
+			$collection_id = wp_insert_post( $collection_data, true );
+
+			if ( is_wp_error( $collection_id ) ) {
+				return $collection_id;
+			}
 		}
 
 		// Add items (attachment IDs) if provided.
@@ -203,11 +247,18 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 			'items'         => is_array( $items ) ? $items : array(),
 			'template_ids'  => is_array( $templates ) ? $templates : array(),
 			'edit_url'      => admin_url( 'post.php?post=' . $collection_id . '&action=edit' ),
-			'message'       => sprintf(
-				/* translators: %s: Collection title */
-				__( 'Media collection "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
-				$title
-			),
+			'updated'       => $is_update,
+			'message'       => $is_update
+				? sprintf(
+					/* translators: %s: Collection title */
+					__( 'Media collection "%s" updated successfully.', 'mcp-ai-wpoos-pro' ),
+					$title
+				)
+				: sprintf(
+					/* translators: %s: Collection title */
+					__( 'Media collection "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
+					$title
+				),
 		);
 	}
 }

@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new client profile for DJ business management. Stores contact information, preferences, and booking history.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new client profile or update an existing client profile. If client_id is provided, updates the existing client profile instead of creating a new one. Stores contact information, preferences, and booking history. Use this tool for both creating new client profiles and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,6 +45,10 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'client_id'        => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional client ID. If provided, updates the existing client profile instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'             => array(
 					'type'        => 'string',
 					'description' => __( 'Client name (required)', 'mcp-ai-wpoos-pro' ),
@@ -117,22 +121,53 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		// Check for existing client with same email.
-		$existing = get_posts(
-			array(
-				'post_type'   => 'dj_client',
-				'meta_key'    => '_email',
-				'meta_value'  => $email,
-				'numberposts' => 1,
-			)
-		);
+		// Check if this is an update operation.
+		$client_id       = isset( $arguments['client_id'] ) ? absint( $arguments['client_id'] ) : 0;
+		$is_update       = false;
+		$existing_client = null;
 
-		if ( ! empty( $existing ) ) {
-			return array(
-				'success'   => false,
-				'error'     => __( 'Client with this email already exists.', 'mcp-ai-wpoos-pro' ),
-				'client_id' => $existing[0]->ID,
+		if ( $client_id ) {
+			// Verify client exists and user has permission to update it.
+			$existing_client = get_post( $client_id );
+
+			if ( ! $existing_client || 'dj_client' !== $existing_client->post_type ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Client profile not found.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$is_author       = absint( $existing_client->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'You do not have permission to update this client profile.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$is_update = true;
+		} else {
+			// Check for existing client with same email (only during create).
+			$existing = get_posts(
+				array(
+					'post_type'   => 'dj_client',
+					'meta_key'    => '_email',
+					'meta_value'  => $email,
+					'numberposts' => 1,
+				)
 			);
+
+			if ( ! empty( $existing ) ) {
+				return array(
+					'success'   => false,
+					'error'     => __( 'Client with this email already exists.', 'mcp-ai-wpoos-pro' ),
+					'client_id' => $existing[0]->ID,
+				);
+			}
 		}
 
 		$phone            = ! empty( $arguments['phone'] ) ? sanitize_text_field( $arguments['phone'] ) : '';
@@ -142,21 +177,39 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 		$budget_range     = ! empty( $arguments['budget_range'] ) ? sanitize_text_field( $arguments['budget_range'] ) : '';
 		$notes            = ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '';
 
-		// Create client post.
-		$post_data = array(
-			'post_title'   => $name,
-			'post_content' => $notes,
-			'post_status'  => 'publish',
-			'post_type'    => 'dj_client',
-		);
-
-		$client_id = wp_insert_post( $post_data );
-
-		if ( is_wp_error( $client_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $client_id->get_error_message(),
+		if ( $is_update ) {
+			// Update existing client post.
+			$post_data = array(
+				'ID'           => $client_id,
+				'post_title'   => $name,
+				'post_content' => $notes,
 			);
+
+			$result = wp_update_post( $post_data );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success' => false,
+					'error'   => $result->get_error_message(),
+				);
+			}
+		} else {
+			// Create client post.
+			$post_data = array(
+				'post_title'   => $name,
+				'post_content' => $notes,
+				'post_status'  => 'publish',
+				'post_type'    => 'dj_client',
+			);
+
+			$client_id = wp_insert_post( $post_data );
+
+			if ( is_wp_error( $client_id ) ) {
+				return array(
+					'success' => false,
+					'error'   => $client_id->get_error_message(),
+				);
+			}
 		}
 
 		// Store client metadata.
@@ -166,14 +219,17 @@ class WP_MCP_AI_Tool_Create_Client_Profile implements WP_MCP_AI_Tool_Interface, 
 		update_post_meta( $client_id, '_address', $address );
 		update_post_meta( $client_id, '_preferred_genres', $preferred_genres );
 		update_post_meta( $client_id, '_budget_range', $budget_range );
-		update_post_meta( $client_id, '_created_date', current_time( 'mysql' ) );
+		if ( ! $is_update ) {
+			update_post_meta( $client_id, '_created_date', current_time( 'mysql' ) );
+		}
 
 		return array(
 			'success'   => true,
 			'client_id' => $client_id,
+			'updated'   => $is_update,
 			'message'   => sprintf(
 				/* translators: %s: client name */
-				__( 'Client profile "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
+				$is_update ? __( 'Client profile "%s" updated successfully.', 'mcp-ai-wpoos-pro' ) : __( 'Client profile "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
 				$name
 			),
 			'client'    => array(
