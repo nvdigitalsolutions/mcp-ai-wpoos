@@ -59,7 +59,7 @@
     - **Use Case:** Research insurance policy templates and requirements
     - **Priority:** Low
 
-14. **mcp_ai_medical_record** - Medical Records
+14. **mcp_ai_med_record** - Medical Records
     - **Research Needed?** No - Personal health data entry
 
 15. **mcp_ai_checkup** - Checkups/Appointments

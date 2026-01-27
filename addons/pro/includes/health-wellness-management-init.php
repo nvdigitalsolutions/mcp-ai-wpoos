@@ -43,7 +43,7 @@ if ( is_admin() ) {
 function wp_mcp_ai_enqueue_health_wellness_management_admin_styles( $hook ) {
 	// Only load on health and wellness management edit screens.
 	$screen = get_current_screen();
-	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_member', 'mcp_ai_policy', 'mcp_ai_medical_record', 'mcp_ai_checkup', 'mcp_ai_prescription', 'mcp_ai_allergy' ), true ) ) {
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_member', 'mcp_ai_policy', 'mcp_ai_med_record', 'mcp_ai_checkup', 'mcp_ai_prescription', 'mcp_ai_allergy' ), true ) ) {
 		return;
 	}
 

@@ -256,7 +256,7 @@ class WP_MCP_AI_Tool_Get_Member_Health_Summary implements WP_MCP_AI_Tool_Interfa
 		if ( $include_records ) {
 			$records_query = new WP_Query(
 				array(
-					'post_type'      => 'mcp_ai_medical_record',
+					'post_type'      => 'mcp_ai_med_record',
 					'post_status'    => 'publish',
 					'meta_key'       => '_record_member_id',
 					'meta_value'     => $member_id,

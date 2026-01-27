@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Get_Medical_Record implements WP_MCP_AI_Tool_Interface, WP_
 		// Get record.
 		$record = get_post( $record_id );
 
-		if ( ! $record || 'mcp_ai_medical_record' !== $record->post_type ) {
+		if ( ! $record || 'mcp_ai_med_record' !== $record->post_type ) {
 			return new WP_Error( 'wp_mcp_ai_not_found', __( 'Medical record not found.', 'mcp-ai-wpoos-pro' ) );
 		}
 
