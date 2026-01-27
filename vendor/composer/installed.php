@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-gmail-connection-link',
+        'version' => 'dev-copilot/fix-gmail-connection-link',
+        'reference' => 'adf955deb286502ae77c80ec43b1118af7ceee02',
         'pretty_version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
         'version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
         'reference' => '63492d60ecf478f77ec31aad79edde25f6659145',
@@ -11,6 +14,9 @@
     ),
     'versions' => array(
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-gmail-connection-link',
+            'version' => 'dev-copilot/fix-gmail-connection-link',
+            'reference' => 'adf955deb286502ae77c80ec43b1118af7ceee02',
             'pretty_version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
             'version' => 'dev-copilot/move-to-next-phase-advanced-webllm',
             'reference' => '63492d60ecf478f77ec31aad79edde25f6659145',
