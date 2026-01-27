@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
-        'version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
-        'reference' => '13d0a555e4a7b5b7b901d8f7a6f6b38f98ea045b',
+        'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
+        'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
+        'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
-            'version' => 'dev-copilot/fix-embedded-llm-provider-visibility',
-            'reference' => '13d0a555e4a7b5b7b901d8f7a6f6b38f98ea045b',
+            'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
+            'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
+            'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

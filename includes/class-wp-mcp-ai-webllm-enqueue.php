@@ -94,9 +94,10 @@ class WP_MCP_AI_WebLLM_Enqueue {
 	 * Enqueue scripts only when embedded provider is active and on appropriate pages
 	 */
 	public static function maybe_enqueue_scripts() {
-		// Only load if embedded provider is enabled globally.
-		$embedded_enabled = get_option( 'wp_mcp_ai_enable_embedded_llm', false );
-		if ( ! $embedded_enabled ) {
+		// Only load if Pro plugin is present (embedded provider is Pro-only feature).
+		// Check for Pro constant OR that BASE_VERSION is false (full version).
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		if ( ! $is_pro_available ) {
 			return;
 		}
 
