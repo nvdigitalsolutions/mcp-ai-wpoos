@@ -182,6 +182,17 @@ const builds = [
 		outfile: 'assets/js/client-tools.min.js',
 		...commonOptions,
 	},
+	// UX improvements (Phase 8)
+	{
+		entryPoints: ['assets/js/progressive-model-loader.js'],
+		outfile: 'assets/js/progressive-model-loader.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/offline-chat-manager.js'],
+		outfile: 'assets/js/offline-chat-manager.min.js',
+		...commonOptions,
+	},
 	// Modern bundles with code splitting (Phase 6)
 	// Note: Commented out until source files are created
 	// {
