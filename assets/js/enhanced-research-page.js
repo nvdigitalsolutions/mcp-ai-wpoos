@@ -94,68 +94,181 @@
 		});
 
 		// Handle file upload for import
-		$('#wp-mcp-ai-import-file-input').on('change', function() {
+		$('#import-file').on('change', function() {
 			const files = this.files;
 			if (files.length > 0) {
-				$('.import-file-selected').text(files.length + ' file(s) selected').show();
+				$('.selected-file-name').text(files[0].name).show();
 			} else {
-				$('.import-file-selected').text('').hide();
+				$('.selected-file-name').text('').hide();
 			}
 		});
 
-		// Handle import form submission
-		$('#wp-mcp-ai-import-form').on('submit', function(e) {
+		// Handle import button click
+		$('#wp-mcp-ai-import-btn').on('click', function(e) {
 			e.preventDefault();
 			
-			const $form = $(this);
-			const $submitBtn = $form.find('button[type="submit"]');
-			const formData = new FormData(this);
+			const $btn = $(this);
+			const $results = $('#wp-mcp-ai-import-results');
+			const $spinner = $('.wp-mcp-ai-import-actions .spinner');
 			
-			// Disable submit button
-			$submitBtn.prop('disabled', true).text('Importing...');
+			// Get import data from textarea or file
+			let importData = $('#import-data-paste').val();
+			const fileInput = document.getElementById('import-file');
 			
-			// Show loading indicator
-			$('.import-result').html('<p>Processing import...</p>').show();
+			// Determine format
+			let format = 'csv';
+			
+			if (fileInput && fileInput.files.length > 0) {
+				// File upload
+				const file = fileInput.files[0];
+				const fileName = file.name.toLowerCase();
+				
+				if (fileName.endsWith('.json')) {
+					format = 'json';
+				}
+				
+				// Read file content
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					importData = e.target.result;
+					processImport(importData, format, $btn, $results, $spinner);
+				};
+				reader.onerror = function() {
+					$results.html('<div class="notice notice-error"><p>Failed to read file.</p></div>').show();
+				};
+				reader.readAsText(file);
+				return;
+			}
+			
+			// Process from textarea
+			if (!importData) {
+				$results.html('<div class="notice notice-error"><p>Please provide data to import.</p></div>').show();
+				return;
+			}
+			
+			// Try to detect format from content
+			try {
+				JSON.parse(importData);
+				format = 'json';
+			} catch (e) {
+				format = 'csv';
+			}
+			
+			processImport(importData, format, $btn, $results, $spinner);
+		});
+		
+		// Process import helper function
+		function processImport(importData, format, $btn, $results, $spinner) {
+			// Disable button
+			$btn.prop('disabled', true).text('Importing...');
+			$spinner.addClass('is-active');
+			
+			// Show processing message
+			$results.html('<p>Processing import...</p>').show();
 			
 			$.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
-				data: formData,
-				processData: false,
-				contentType: false,
+				data: {
+					action: 'wp_mcp_ai_import_task',
+					nonce: wpMcpAiResearchPage.nonce,
+					import_data: importData,
+					format: format
+				},
 				success: function(response) {
 					if (response.success) {
-						$('.import-result').html(
+						$results.html(
 							'<div class="notice notice-success"><p>' + response.data.message + '</p></div>'
 						);
 						
 						// Clear form
-						$form[0].reset();
-						$('.import-file-selected').text('').hide();
-						
-						// Refresh the review tab if available
-						refreshReviewData();
+						$('#import-data-paste').val('');
+						$('#import-file').val('');
+						$('.selected-file-name').text('').hide();
 					} else {
-						$('.import-result').html(
-							'<div class="notice notice-error"><p>' + response.data.message + '</p></div>'
+						$results.html(
+							'<div class="notice notice-error"><p>' + (response.data.message || 'Import failed.') + '</p></div>'
 						);
 					}
 				},
-				error: function() {
-					$('.import-result').html(
-						'<div class="notice notice-error"><p>Import failed. Please try again.</p></div>'
+				error: function(xhr, status, error) {
+					$results.html(
+						'<div class="notice notice-error"><p>Import failed: ' + error + '</p></div>'
 					);
 				},
 				complete: function() {
-					$submitBtn.prop('disabled', false).text('Import & Process');
+					$btn.prop('disabled', false).text('Import & Process');
+					$spinner.removeClass('is-active');
 				}
 			});
-		});
+		}
 
 		// Handle refresh button in review tab
 		$('.refresh-quality-data').on('click', function(e) {
 			e.preventDefault();
 			refreshReviewData();
+		});
+		
+		// Handle consolidation action buttons
+		$('#find-duplicate-tasks, #organize-by-priority, #group-by-project').on('click', function(e) {
+			e.preventDefault();
+			
+			const $btn = $(this);
+			const action = $btn.attr('id');
+			const $results = $('#consolidation-results');
+			
+			// Disable button
+			$btn.prop('disabled', true);
+			const originalText = $btn.text();
+			$btn.text('Processing...');
+			
+			// Show processing message
+			$results.html('<p>AI is analyzing tasks...</p>').show();
+			
+			// Map button IDs to action names
+			const actionMap = {
+				'find-duplicate-tasks': 'find_duplicates',
+				'organize-by-priority': 'organize_priority',
+				'group-by-project': 'suggest_grouping'
+			};
+			
+			$.ajax({
+				url: wpMcpAiResearchPage.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_consolidate_tasks',
+					nonce: wpMcpAiResearchPage.nonce,
+					consolidation_action: actionMap[action] || action,
+					entity_type: wpMcpAiResearchPage.entityType
+				},
+				success: function(response) {
+					if (response.success) {
+						let html = '<div class="notice notice-success"><p>' + response.data.message + '</p></div>';
+						
+						if (response.data.results && response.data.results.length > 0) {
+							html += '<div class="consolidation-results-list"><h4>Results:</h4><ul>';
+							response.data.results.forEach(function(result) {
+								html += '<li>' + result + '</li>';
+							});
+							html += '</ul></div>';
+						}
+						
+						$results.html(html);
+					} else {
+						$results.html(
+							'<div class="notice notice-error"><p>' + (response.data.message || 'Action failed.') + '</p></div>'
+						);
+					}
+				},
+				error: function(xhr, status, error) {
+					$results.html(
+						'<div class="notice notice-error"><p>Action failed: ' + error + '</p></div>'
+					);
+				},
+				complete: function() {
+					$btn.prop('disabled', false).text(originalText);
+				}
+			});
 		});
 	}
 
