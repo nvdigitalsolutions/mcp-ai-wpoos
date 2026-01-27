@@ -9,11 +9,17 @@
 (function($) {
 	'use strict';
 
-	// Mode to content ID mapping (shared constant)
+	// Constants
+	const DEFAULT_FORMAT = 'csv';
 	const MODE_TO_CONTENT_ID = {
 		'chat': 'research-mode',
 		'import': 'import-mode',
 		'consolidate': 'consolidate-mode'
+	};
+	const CONSOLIDATION_ACTION_MAP = {
+		'find-duplicate-tasks': 'find_duplicates',
+		'organize-by-priority': 'organize_priority',
+		'group-by-project': 'suggest_grouping'
 	};
 
 	/**
@@ -116,7 +122,7 @@
 			const fileInput = document.getElementById('import-file');
 			
 			// Determine format
-			let format = 'csv';
+			let format = DEFAULT_FORMAT;
 			
 			if (fileInput && fileInput.files.length > 0) {
 				// File upload
@@ -146,12 +152,10 @@
 				return;
 			}
 			
-			// Try to detect format from content
-			try {
-				JSON.parse(importData);
+			// Try to detect format from content - lightweight check
+			const trimmedData = importData.trim();
+			if (trimmedData.charAt(0) === '{' || trimmedData.charAt(0) === '[') {
 				format = 'json';
-			} catch (e) {
-				format = 'csv';
 			}
 			
 			processImport(importData, format, $btn, $results, $spinner);
@@ -225,20 +229,13 @@
 			// Show processing message
 			$results.html('<p>AI is analyzing tasks...</p>').show();
 			
-			// Map button IDs to action names
-			const actionMap = {
-				'find-duplicate-tasks': 'find_duplicates',
-				'organize-by-priority': 'organize_priority',
-				'group-by-project': 'suggest_grouping'
-			};
-			
 			$.ajax({
 				url: wpMcpAiResearchPage.ajaxUrl,
 				type: 'POST',
 				data: {
 					action: 'wp_mcp_ai_consolidate_tasks',
 					nonce: wpMcpAiResearchPage.nonce,
-					consolidation_action: actionMap[action] || action,
+					consolidation_action: CONSOLIDATION_ACTION_MAP[action] || action,
 					entity_type: wpMcpAiResearchPage.entityType
 				},
 				success: function(response) {
