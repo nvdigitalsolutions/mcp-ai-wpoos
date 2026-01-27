@@ -154,6 +154,81 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			return $toolkit_status;
 		}
 
+		/**
+		 * Get CDN information for a package by reading its package.json.
+		 *
+		 * Checks for jsdelivr and unpkg URLs in the package's package.json file.
+		 *
+		 * @param string $package Package name.
+		 * @return array Array of CDN name => URL pairs, empty if no CDN info found.
+		 */
+		private static function get_package_cdn_info( $package ) {
+			$cdn_info = array();
+
+			// Try to find package.json in vendor directory first (production).
+			$package_json_paths = array();
+
+			// Check Pro vendor directory.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) ) {
+				$vendor_package_path = WP_MCP_AI_PRO_PATH . 'assets/vendor/' . $package . '/package.json';
+				if ( file_exists( $vendor_package_path ) ) {
+					$package_json_paths[] = $vendor_package_path;
+				}
+
+				// Check Pro node_modules (development).
+				$pro_node_package_path = WP_MCP_AI_PRO_PATH . 'node_modules/' . $package . '/package.json';
+				if ( file_exists( $pro_node_package_path ) ) {
+					$package_json_paths[] = $pro_node_package_path;
+				}
+			}
+
+			// Check base vendor directory.
+			$base_vendor_package_path = WP_MCP_AI_PATH . 'assets/js/vendor/' . $package . '/package.json';
+			 if ( file_exists( $base_vendor_package_path ) ) {
+				$package_json_paths[] = $base_vendor_package_path;
+			}
+
+			// Check base node_modules.
+			$base_node_package_path = WP_MCP_AI_PATH . 'node_modules/' . $package . '/package.json';
+			if ( file_exists( $base_node_package_path ) ) {
+				$package_json_paths[] = $base_node_package_path;
+			}
+
+			// Read the first package.json found.
+			foreach ( $package_json_paths as $package_json_path ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				$package_json_content = file_get_contents( $package_json_path );
+				if ( false === $package_json_content ) {
+					continue;
+				}
+
+				$package_data = json_decode( $package_json_content, true );
+				if ( ! is_array( $package_data ) ) {
+					continue;
+				}
+
+				// Check for jsdelivr field.
+				if ( isset( $package_data['jsdelivr'] ) && is_string( $package_data['jsdelivr'] ) ) {
+					$cdn_info['jsdelivr'] = $package_data['jsdelivr'];
+				}
+
+				// Check for unpkg field.
+				if ( isset( $package_data['unpkg'] ) && is_string( $package_data['unpkg'] ) ) {
+					$cdn_info['unpkg'] = $package_data['unpkg'];
+				}
+
+				// If we found CDN info, break.
+				if ( ! empty( $cdn_info ) ) {
+					break;
+				}
+			}
+
+			return $cdn_info;
+		}
+
+
+
+
 	/**
 	 * Get PHP function requirements status grouped by system.
 	 *
@@ -818,9 +893,10 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
-						<th style="width: 40%;"><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
-						<th style="width: 20%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 35%;"><?php esc_html_e( 'Package Name', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 15%;"><?php esc_html_e( 'Version', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 20%;"><?php esc_html_e( 'Status', 'mcp-ai-wpoos' ); ?></th>
+						<th style="width: 30%;"><?php esc_html_e( 'CDN Cache', 'mcp-ai-wpoos' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -832,6 +908,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						$package_installed = self::check_package_installed( $package );
 						$status_class      = $package_installed ? 'installed' : 'not-installed';
 						$status_text       = $package_installed ? __( 'Installed', 'mcp-ai-wpoos' ) : __( 'Not Found', 'mcp-ai-wpoos' );
+						
+						// Check for CDN availability.
+						$cdn_info = self::get_package_cdn_info( $package );
 						?>
 						<tr>
 							<td><code><?php echo esc_html( $package ); ?></code></td>
@@ -840,6 +919,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status_class ); ?>">
 									<?php echo esc_html( $status_text ); ?>
 								</span>
+							</td>
+							<td>
+								<?php if ( ! empty( $cdn_info ) ) : ?>
+									<div style="font-size: 11px;">
+										<?php foreach ( $cdn_info as $cdn_name => $cdn_url ) : ?>
+											<div style="margin-bottom: 3px;">
+												<span style="font-weight: 600; text-transform: uppercase; color: #2271b1;">
+													<?php echo esc_html( $cdn_name ); ?>:
+												</span>
+												<span style="color: #646970;">
+													<?php echo esc_html( basename( $cdn_url ) ); ?>
+												</span>
+											</div>
+										<?php endforeach; ?>
+									</div>
+								<?php else : ?>
+									<span style="color: #646970; font-style: italic;">
+										<?php esc_html_e( 'N/A', 'mcp-ai-wpoos' ); ?>
+									</span>
+								<?php endif; ?>
 							</td>
 						</tr>
 					<?php endforeach; ?>
@@ -1213,7 +1312,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 								<div style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #72aee6;">
 									<p style="margin: 0;">
 										<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
-										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment.', 'mcp-ai-wpoos' ); ?>
+										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment. The "CDN Cache" column shows if the package is available via jsdelivr or unpkg CDNs (based on package.json metadata).', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
 							<?php endif; ?>
