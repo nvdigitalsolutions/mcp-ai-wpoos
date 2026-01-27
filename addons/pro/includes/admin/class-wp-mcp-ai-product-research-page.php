@@ -82,39 +82,31 @@ class WP_MCP_AI_Product_Research_Page {
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
 
-		// Enqueue research page specific styles.
+		// Enqueue enhanced research page styles.
 		wp_enqueue_style(
-			'wp-mcp-ai-research-page',
-			WP_MCP_AI_PRO_URL . 'assets/css/research-page.css',
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
 			array(),
-			WP_MCP_AI_PRO_VERSION
+			WP_MCP_AI_VERSION
 		);
 
-		// Enqueue research page script.
+		// Enqueue enhanced research page script.
 		wp_enqueue_script(
-			'wp-mcp-ai-research-page',
-			WP_MCP_AI_PRO_URL . 'assets/js/research-page.js',
-			array( 'jquery', 'wp-api', WP_MCP_AI_Shortcode::SCRIPT_HANDLE ),
-			WP_MCP_AI_PRO_VERSION,
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
 			true
 		);
 
 		// Localize script.
 		wp_localize_script(
-			'wp-mcp-ai-research-page',
+			'wp-mcp-ai-enhanced-research-page',
 			'wpMcpAiResearchPage',
 			array(
-				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-				'nonce'        => wp_create_nonce( 'wp_mcp_ai_research_product' ),
-				'addNewUrl'    => admin_url( 'post-new.php?post_type=product' ),
-				'researchTool' => 'research_product',
-				'strings'      => array(
-					'researching'   => __( 'Researching...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'creating'      => __( 'Creating product...', 'mcp-ai-wpoos-pro' ),
-					'created'       => __( 'Product created successfully!', 'mcp-ai-wpoos-pro' ),
-					'confirmCreate' => __( 'Create a product with the researched information?', 'mcp-ai-wpoos-pro' ),
-				),
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType' => 'product',
 			)
 		);
 	}
@@ -255,6 +247,30 @@ class WP_MCP_AI_Product_Research_Page {
 				</div>
 
 				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create products with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import product data', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View product quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
@@ -281,6 +297,17 @@ class WP_MCP_AI_Product_Research_Page {
 							</p>
 						</div>
 					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
 			</div>
 		<?php
@@ -512,6 +539,180 @@ class WP_MCP_AI_Product_Research_Page {
 			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
 			'issues' => $issues,
 		);
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Product Data', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import products from CSV, JSON, XML, or paste structured data. The AI will automatically parse and organize the product information.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include product name, SKU, price, and description', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify stock quantities and product categories', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Add product image URLs or generate with AI', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Include product variations and attributes if applicable', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_products', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.xml,.txt" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: CSV, JSON, XML, TXT', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nProduct Name: Wireless Headphones\nSKU: WH-001\nPrice: 79.99\nStock: 50\nDescription: Premium wireless headphones with noise cancellation\nCategory: Electronics\n\nProduct Name: Running Shoes\nSKU: RS-201\nPrice: 89.99\nStock: 30\nCategory: Sports', 'mcp-ai-wpoos-pro' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create products (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		// Get product statistics.
+		$total_products = wp_count_posts( 'product' );
+		$published_count = isset( $total_products->publish ) ? $total_products->publish : 0;
+		
+		// Calculate data quality metrics.
+		$products = get_posts(
+			array(
+				'post_type'      => 'product',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_sku = 0;
+		$with_price = 0;
+
+		foreach ( $products as $product ) {
+			$product_obj = wc_get_product( $product->ID );
+			$has_sku   = $product_obj && $product_obj->get_sku();
+			$has_price = $product_obj && $product_obj->get_price();
+			$has_desc  = ! empty( $product->post_content );
+			
+			if ( $has_sku ) {
+				$with_sku++;
+			}
+			if ( $has_price ) {
+				$with_price++;
+			}
+			if ( $has_sku && $has_price && $has_desc ) {
+				$complete_count++;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Product Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Products', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_sku ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With SKU', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_price ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Price', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Product completeness is %d%%. Ensure all products have SKUs, prices, and descriptions for best results.', 'mcp-ai-wpoos-pro' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=product' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Products', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=product' ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Product', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</p>
+			</div>
+		</div>
+		<?php
 	}
 }
 
