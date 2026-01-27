@@ -11,6 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load CPT classes.
+require_once __DIR__ . '/class-wp-mcp-ai-project-cpt.php';
+require_once __DIR__ . '/class-wp-mcp-ai-task-cpt.php';
+require_once __DIR__ . '/class-wp-mcp-ai-event-cpt.php';
+
 // Load Research & Add and Settings pages for admin.
 if ( is_admin() ) {
 	// Check if project management is enabled and not in base version (unless Pro addon is active).
@@ -114,7 +119,10 @@ function wp_mcp_ai_enqueue_project_management_admin_styles( $hook ) {
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_project_management_admin_styles' );
 
 /**
- * Register project management custom post types.
+ * Register auxiliary project management custom post types.
+ *
+ * Task Plans and Task Templates are registered here for autonomous orchestration.
+ * Main CPTs (Project, Task, Event) are registered in their respective CPT classes.
  */
 function wp_mcp_ai_register_project_management_post_types() {
 	// Only register if project management is enabled and not base version, unless Pro addon is active.
@@ -127,93 +135,6 @@ function wp_mcp_ai_register_project_management_post_types() {
 	if ( empty( $settings['enable_project_management'] ) ) {
 		return;
 	}
-
-	// Register Project CPT.
-	register_post_type(
-		'mcp_ai_project',
-		array(
-			'labels'             => array(
-				'name'               => __( 'Projects', 'mcp-ai-wpoos-pro' ),
-				'singular_name'      => __( 'Project', 'mcp-ai-wpoos-pro' ),
-				'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
-				'add_new_item'       => __( 'Add New Project', 'mcp-ai-wpoos-pro' ),
-				'edit_item'          => __( 'Edit Project', 'mcp-ai-wpoos-pro' ),
-				'new_item'           => __( 'New Project', 'mcp-ai-wpoos-pro' ),
-				'view_item'          => __( 'View Project', 'mcp-ai-wpoos-pro' ),
-				'search_items'       => __( 'Search Projects', 'mcp-ai-wpoos-pro' ),
-				'not_found'          => __( 'No projects found', 'mcp-ai-wpoos-pro' ),
-				'not_found_in_trash' => __( 'No projects found in trash', 'mcp-ai-wpoos-pro' ),
-			),
-			'public'             => false,
-			'publicly_queryable' => false,
-			'show_ui'            => true,
-			'show_in_menu'       => true,
-			'show_in_rest'       => true,
-			'has_archive'        => false,
-			'rewrite'            => false,
-			'capability_type'    => 'post',
-			'supports'           => array( 'title', 'editor', 'author' ),
-			'menu_icon'          => 'dashicons-portfolio',
-		)
-	);
-
-	// Register Task CPT.
-	register_post_type(
-		'mcp_ai_task',
-		array(
-			'labels'             => array(
-				'name'               => __( 'Tasks', 'mcp-ai-wpoos-pro' ),
-				'singular_name'      => __( 'Task', 'mcp-ai-wpoos-pro' ),
-				'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
-				'add_new_item'       => __( 'Add New Task', 'mcp-ai-wpoos-pro' ),
-				'edit_item'          => __( 'Edit Task', 'mcp-ai-wpoos-pro' ),
-				'new_item'           => __( 'New Task', 'mcp-ai-wpoos-pro' ),
-				'view_item'          => __( 'View Task', 'mcp-ai-wpoos-pro' ),
-				'search_items'       => __( 'Search Tasks', 'mcp-ai-wpoos-pro' ),
-				'not_found'          => __( 'No tasks found', 'mcp-ai-wpoos-pro' ),
-				'not_found_in_trash' => __( 'No tasks found in trash', 'mcp-ai-wpoos-pro' ),
-			),
-			'public'             => false,
-			'publicly_queryable' => false,
-			'show_ui'            => true,
-			'show_in_menu'       => true,
-			'show_in_rest'       => true,
-			'has_archive'        => false,
-			'rewrite'            => false,
-			'capability_type'    => 'post',
-			'supports'           => array( 'title', 'editor', 'author' ),
-			'menu_icon'          => 'dashicons-list-view',
-		)
-	);
-
-	// Register Event CPT.
-	register_post_type(
-		'mcp_ai_event',
-		array(
-			'labels'             => array(
-				'name'               => __( 'Events', 'mcp-ai-wpoos-pro' ),
-				'singular_name'      => __( 'Event', 'mcp-ai-wpoos-pro' ),
-				'add_new'            => __( 'Add New', 'mcp-ai-wpoos-pro' ),
-				'add_new_item'       => __( 'Add New Event', 'mcp-ai-wpoos-pro' ),
-				'edit_item'          => __( 'Edit Event', 'mcp-ai-wpoos-pro' ),
-				'new_item'           => __( 'New Event', 'mcp-ai-wpoos-pro' ),
-				'view_item'          => __( 'View Event', 'mcp-ai-wpoos-pro' ),
-				'search_items'       => __( 'Search Events', 'mcp-ai-wpoos-pro' ),
-				'not_found'          => __( 'No events found', 'mcp-ai-wpoos-pro' ),
-				'not_found_in_trash' => __( 'No events found in trash', 'mcp-ai-wpoos-pro' ),
-			),
-			'public'             => false,
-			'publicly_queryable' => false,
-			'show_ui'            => true,
-			'show_in_menu'       => true,
-			'show_in_rest'       => true,
-			'has_archive'        => false,
-			'rewrite'            => false,
-			'capability_type'    => 'post',
-			'supports'           => array( 'title', 'editor', 'author' ),
-			'menu_icon'          => 'dashicons-calendar-alt',
-		)
-	);
 
 	// Register Task Plan CPT (for autonomous orchestration).
 	register_post_type(
