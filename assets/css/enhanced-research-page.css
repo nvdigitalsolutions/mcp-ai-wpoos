@@ -1,0 +1,434 @@
+/**
+ * Enhanced Research Page Styles
+ *
+ * Shared styles for Research & Add pages with workflow tabs.
+ * Based on the Health Consolidation page design pattern.
+ *
+ * @package WP_MCP_AI
+ */
+
+/* Page Container */
+.wp-mcp-ai-research-page {
+	max-width: 100%;
+	margin-top: 20px;
+}
+
+/* Layout Structure */
+.wp-mcp-ai-research-container {
+	display: flex;
+	gap: 30px;
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-sidebar {
+	flex: 0 0 300px;
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-research-main {
+	flex: 1;
+	min-width: 0;
+}
+
+/* Sidebar Sections */
+.wp-mcp-ai-research-sidebar h2,
+.wp-mcp-ai-research-sidebar h3 {
+	margin-top: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.wp-mcp-ai-research-sidebar h3 {
+	font-size: 14px;
+	margin-top: 20px;
+}
+
+.wp-mcp-ai-research-sidebar ol,
+.wp-mcp-ai-research-sidebar ul {
+	margin: 10px 0;
+	padding-left: 20px;
+}
+
+.wp-mcp-ai-research-sidebar li {
+	margin-bottom: 8px;
+	line-height: 1.5;
+}
+
+.wp-mcp-ai-research-intro,
+.wp-mcp-ai-research-tips,
+.wp-mcp-ai-research-examples,
+.wp-mcp-ai-research-actions {
+	margin-bottom: 25px;
+}
+
+/* Example Query Buttons */
+.wp-mcp-ai-example-list {
+	list-style: none;
+	padding: 0;
+}
+
+.wp-mcp-ai-example-list li {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-example-query {
+	width: 100%;
+	text-align: left;
+	white-space: normal;
+	height: auto;
+	padding: 8px 12px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+/* Quick Actions */
+.wp-mcp-ai-research-actions p {
+	margin: 10px 0;
+}
+
+.wp-mcp-ai-research-actions .button {
+	width: 100%;
+	text-align: center;
+}
+
+/* Workflow Selector Tabs */
+.wp-mcp-ai-workflow-selector {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 20px;
+	margin-bottom: 30px;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-workflow-selector h2 {
+	margin: 0 0 15px 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.workflow-options {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 15px;
+}
+
+.workflow-option {
+	background: #f6f7f7;
+	border: 2px solid #dcdcde;
+	padding: 20px 15px;
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s;
+	border-radius: 4px;
+}
+
+.workflow-option:hover {
+	border-color: #2271b1;
+	background: #f0f6fc;
+}
+
+.workflow-option.active {
+	border-color: #2271b1;
+	background: #f0f6fc;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.workflow-option .dashicons {
+	font-size: 32px;
+	width: 32px;
+	height: 32px;
+	color: #2271b1;
+	margin-bottom: 10px;
+}
+
+.workflow-option strong {
+	display: block;
+	margin-bottom: 5px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.workflow-option p {
+	margin: 0;
+	font-size: 12px;
+	color: #646970;
+	line-height: 1.4;
+}
+
+/* Workflow Content Sections */
+.workflow-content {
+	display: none;
+}
+
+.workflow-content.active {
+	display: block;
+}
+
+/* AI Research Tab (Chat Interface) */
+.wp-mcp-ai-research-chat {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 20px;
+	border-radius: 4px;
+}
+
+/* Import Data Tab */
+.wp-mcp-ai-import-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 20px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-import-section h2 {
+	margin: 0 0 10px 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+.import-file-section {
+	background: #f0f6fc;
+	border: 1px solid #c3e4f5;
+	padding: 15px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+}
+
+.import-file-section h3 {
+	margin: 0 0 10px 0;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.file-upload-area {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	margin: 15px 0;
+}
+
+.file-upload-note {
+	font-size: 12px;
+	color: #646970;
+	font-style: italic;
+}
+
+.import-tips {
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	padding: 12px 15px;
+	margin: 15px 0;
+	border-radius: 0 4px 4px 0;
+}
+
+.import-tips h4 {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	color: #1d2327;
+}
+
+.import-tips ul {
+	margin: 0;
+	padding-left: 0;
+	list-style: none;
+}
+
+.import-tips li {
+	margin-bottom: 5px;
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+.import-form textarea {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 13px;
+	line-height: 1.5;
+	margin-bottom: 15px;
+}
+
+.import-options {
+	margin-bottom: 15px;
+}
+
+.import-options label {
+	display: block;
+	margin-bottom: 8px;
+	font-size: 13px;
+}
+
+.import-options input[type="checkbox"] {
+	margin-right: 6px;
+}
+
+/* Review & Consolidate Tab */
+.wp-mcp-ai-consolidate-section {
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	padding: 20px;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-consolidate-section h2 {
+	margin: 0 0 15px 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+/* Data Quality Indicators */
+.quality-dashboard {
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	padding: 20px;
+	margin-bottom: 20px;
+	border-radius: 4px;
+}
+
+.quality-dashboard h3 {
+	margin: 0 0 15px 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.completeness-indicator {
+	background: #f0f0f1;
+	border-radius: 4px;
+	height: 30px;
+	margin: 10px 0 20px 0;
+	position: relative;
+	overflow: hidden;
+}
+
+.completeness-bar {
+	background: linear-gradient(90deg, #00a32a, #4ab866);
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.completeness-percentage {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	font-weight: 600;
+	color: #1d2327;
+	font-size: 14px;
+}
+
+.quality-metrics {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 15px;
+	margin-top: 15px;
+}
+
+.quality-metric {
+	text-align: center;
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.quality-metric-value {
+	font-size: 28px;
+	font-weight: 700;
+	color: #2271b1;
+	display: block;
+	margin-bottom: 5px;
+}
+
+.quality-metric-label {
+	font-size: 12px;
+	color: #646970;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Items List Table */
+.items-list-table {
+	margin-top: 20px;
+}
+
+.items-list-table table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.items-list-table th,
+.items-list-table td {
+	padding: 12px;
+	text-align: left;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.items-list-table th {
+	background: #f6f7f7;
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.items-list-table td {
+	font-size: 13px;
+}
+
+.quality-score {
+	display: inline-block;
+	padding: 4px 8px;
+	border-radius: 3px;
+	font-weight: 600;
+	font-size: 12px;
+}
+
+.quality-score.high {
+	background: #d5f4de;
+	color: #00751f;
+}
+
+.quality-score.medium {
+	background: #fcf3cf;
+	color: #996800;
+}
+
+.quality-score.low {
+	background: #f7dede;
+	color: #b91c1c;
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+	.wp-mcp-ai-research-container {
+		flex-direction: column;
+	}
+	
+	.wp-mcp-ai-research-sidebar {
+		flex: 1 1 auto;
+	}
+	
+	.workflow-options {
+		grid-template-columns: 1fr;
+	}
+	
+	.quality-metrics {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 600px) {
+	.workflow-option {
+		padding: 15px 10px;
+	}
+	
+	.workflow-option .dashicons {
+		font-size: 24px;
+		width: 24px;
+		height: 24px;
+	}
+	
+	.workflow-option strong {
+		font-size: 13px;
+	}
+}

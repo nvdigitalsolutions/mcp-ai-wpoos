@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-admin-add-page-enhancements',
-        'version' => 'dev-copilot/review-admin-add-page-enhancements',
-        'reference' => '5d99d6bd9c40dcd021d7ff9ae72424fb920d6064',
+        'pretty_version' => 'dev-copilot/update-tab-system-and-styling',
+        'version' => 'dev-copilot/update-tab-system-and-styling',
+        'reference' => 'd33fb503615fc74f18bef171d51206cb89392049',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-admin-add-page-enhancements',
-            'version' => 'dev-copilot/review-admin-add-page-enhancements',
-            'reference' => '5d99d6bd9c40dcd021d7ff9ae72424fb920d6064',
+            'pretty_version' => 'dev-copilot/update-tab-system-and-styling',
+            'version' => 'dev-copilot/update-tab-system-and-styling',
+            'reference' => 'd33fb503615fc74f18bef171d51206cb89392049',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
