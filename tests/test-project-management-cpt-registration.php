@@ -26,7 +26,7 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Unregister any existing post types to start fresh.
-		global $wp_post_types;
+		global $wp_post_types, $wp_taxonomies;
 		if ( isset( $wp_post_types['mcp_ai_project'] ) ) {
 			unset( $wp_post_types['mcp_ai_project'] );
 		}
@@ -35,6 +35,12 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 		}
 		if ( isset( $wp_post_types['mcp_ai_event'] ) ) {
 			unset( $wp_post_types['mcp_ai_event'] );
+		}
+		if ( isset( $wp_taxonomies['mcp_ai_project_category'] ) ) {
+			unset( $wp_taxonomies['mcp_ai_project_category'] );
+		}
+		if ( isset( $wp_taxonomies['mcp_ai_task_category'] ) ) {
+			unset( $wp_taxonomies['mcp_ai_task_category'] );
 		}
 	}
 
@@ -195,5 +201,171 @@ class WP_MCP_AI_Project_Management_CPT_Registration_Test extends WP_UnitTestCase
 			$this->assertTrue( $post_type->show_in_rest, "$post_type_name should show in REST API" );
 			$this->assertFalse( $post_type->has_archive, "$post_type_name should not have archive" );
 		}
+	}
+
+	/**
+	 * Test that project category taxonomy is registered correctly.
+	 */
+	public function test_project_category_taxonomy_registered() {
+		// Enable project management.
+		$settings                              = $this->original_settings;
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Register post types and taxonomies.
+		wp_mcp_ai_register_project_management_post_types();
+		wp_mcp_ai_register_project_management_taxonomies();
+
+		// Check taxonomy is registered.
+		$this->assertTrue( taxonomy_exists( 'mcp_ai_project_category' ) );
+
+		// Get taxonomy object.
+		$taxonomy = get_taxonomy( 'mcp_ai_project_category' );
+
+		// Verify taxonomy settings.
+		$this->assertEquals( 'Project Categories', $taxonomy->labels->name );
+		$this->assertTrue( $taxonomy->hierarchical );
+		$this->assertTrue( $taxonomy->show_ui );
+		$this->assertTrue( $taxonomy->show_admin_column );
+
+		// Verify default categories exist.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_project_category' );
+		$this->assertNotFalse( $health_wellness );
+		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+
+		$development = get_term_by( 'slug', 'development', 'mcp_ai_project_category' );
+		$this->assertNotFalse( $development );
+		$this->assertEquals( 'Development', $development->name );
+
+		$design = get_term_by( 'slug', 'design', 'mcp_ai_project_category' );
+		$this->assertNotFalse( $design );
+		$this->assertEquals( 'Design', $design->name );
+	}
+
+	/**
+	 * Test that project can be assigned to category.
+	 */
+	public function test_project_can_be_assigned_to_category() {
+		// Enable project management.
+		$settings                              = $this->original_settings;
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Register post types and taxonomies.
+		wp_mcp_ai_register_project_management_post_types();
+		wp_mcp_ai_register_project_management_taxonomies();
+
+		// Create a project post.
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_project',
+				'post_title'  => 'Wellness Initiative',
+				'post_status' => 'publish',
+			)
+		);
+
+		$this->assertIsInt( $post_id );
+		$this->assertGreaterThan( 0, $post_id );
+
+		// Get health wellness category.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_project_category' );
+		$this->assertNotFalse( $health_wellness );
+
+		// Assign category to project.
+		$result = wp_set_object_terms( $post_id, $health_wellness->term_id, 'mcp_ai_project_category' );
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result );
+
+		// Verify category is assigned.
+		$terms = wp_get_object_terms( $post_id, 'mcp_ai_project_category' );
+		$this->assertIsArray( $terms );
+		$this->assertCount( 1, $terms );
+		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
+
+	/**
+	 * Test that task category taxonomy is registered correctly.
+	 */
+	public function test_task_category_taxonomy_registered() {
+		// Enable project management.
+		$settings                              = $this->original_settings;
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Register post types and taxonomies.
+		wp_mcp_ai_register_project_management_post_types();
+		wp_mcp_ai_register_project_management_taxonomies();
+
+		// Check taxonomy is registered.
+		$this->assertTrue( taxonomy_exists( 'mcp_ai_task_category' ) );
+
+		// Get taxonomy object.
+		$taxonomy = get_taxonomy( 'mcp_ai_task_category' );
+
+		// Verify taxonomy settings.
+		$this->assertEquals( 'Task Categories', $taxonomy->labels->name );
+		$this->assertTrue( $taxonomy->hierarchical );
+		$this->assertTrue( $taxonomy->show_ui );
+		$this->assertTrue( $taxonomy->show_admin_column );
+
+		// Verify default categories exist.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_task_category' );
+		$this->assertNotFalse( $health_wellness );
+		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+
+		$development = get_term_by( 'slug', 'development', 'mcp_ai_task_category' );
+		$this->assertNotFalse( $development );
+		$this->assertEquals( 'Development', $development->name );
+
+		$testing = get_term_by( 'slug', 'testing', 'mcp_ai_task_category' );
+		$this->assertNotFalse( $testing );
+		$this->assertEquals( 'Testing', $testing->name );
+	}
+
+	/**
+	 * Test that task can be assigned to category.
+	 */
+	public function test_task_can_be_assigned_to_category() {
+		// Enable project management.
+		$settings                              = $this->original_settings;
+		$settings['enable_project_management'] = true;
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Register post types and taxonomies.
+		wp_mcp_ai_register_project_management_post_types();
+		wp_mcp_ai_register_project_management_taxonomies();
+
+		// Create a task post.
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_task',
+				'post_title'  => 'Review wellness program',
+				'post_status' => 'publish',
+			)
+		);
+
+		$this->assertIsInt( $post_id );
+		$this->assertGreaterThan( 0, $post_id );
+
+		// Get health wellness category.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_task_category' );
+		$this->assertNotFalse( $health_wellness );
+
+		// Assign category to task.
+		$result = wp_set_object_terms( $post_id, $health_wellness->term_id, 'mcp_ai_task_category' );
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result );
+
+		// Verify category is assigned.
+		$terms = wp_get_object_terms( $post_id, 'mcp_ai_task_category' );
+		$this->assertIsArray( $terms );
+		$this->assertCount( 1, $terms );
+		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
 	}
 }
