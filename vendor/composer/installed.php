@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-quiz-tracking-system',
-        'version' => 'dev-copilot/update-quiz-tracking-system',
-        'reference' => '2eca3c6f7c8a38e9fab8bd1c9b07cc76d13626ab',
+        'pretty_version' => 'dev-copilot/update-gemini-image-settings',
+        'version' => 'dev-copilot/update-gemini-image-settings',
+        'reference' => '684d33e52e04d11a91bd8e6139959a2003107b50',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-quiz-tracking-system',
-            'version' => 'dev-copilot/update-quiz-tracking-system',
-            'reference' => '2eca3c6f7c8a38e9fab8bd1c9b07cc76d13626ab',
+            'pretty_version' => 'dev-copilot/update-gemini-image-settings',
+            'version' => 'dev-copilot/update-gemini-image-settings',
+            'reference' => '684d33e52e04d11a91bd8e6139959a2003107b50',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

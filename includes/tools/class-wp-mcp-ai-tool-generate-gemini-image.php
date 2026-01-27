@@ -28,7 +28,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
-	const DEFAULT_ASPECT_RATIO = '1:1';
+	const DEFAULT_ASPECT_RATIO = '4:3';
 
 	/**
 	 * {@inheritdoc}
@@ -507,6 +507,7 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 */
 	protected function get_allowed_aspect_ratios() {
 		$ratios = array(
+			'auto' => __( 'Auto (Let AI decide)', 'mcp-ai-wpoos' ),
 			'1:1'  => __( 'Square (1:1)', 'mcp-ai-wpoos' ),
 			'3:4'  => __( 'Portrait (3:4)', 'mcp-ai-wpoos' ),
 			'4:3'  => __( 'Landscape (4:3)', 'mcp-ai-wpoos' ),
@@ -579,8 +580,15 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 	 * @return string
 	 */
 	protected function normalise_aspect_ratio_value( $aspect_ratio ) {
-		$aspect_ratio = strtoupper( (string) $aspect_ratio );
+		$aspect_ratio = strtolower( (string) $aspect_ratio );
 		$aspect_ratio = str_replace( ' ', '', $aspect_ratio );
+
+		// Special case: "auto" means let the AI decide (no aspectRatio sent to API).
+		if ( 'auto' === $aspect_ratio ) {
+			return 'auto';
+		}
+
+		$aspect_ratio = strtoupper( $aspect_ratio );
 
 		if ( preg_match( '/^(\d+):(\d+)$/', $aspect_ratio, $matches ) ) {
 			$left  = ltrim( $matches[1], '0' );

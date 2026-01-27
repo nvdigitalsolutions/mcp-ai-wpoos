@@ -32,7 +32,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 
 	const DEFAULT_MODEL        = 'gemini-2.5-flash-image';
 	const DEFAULT_MIME_TYPE    = 'image/png';
-	const DEFAULT_ASPECT_RATIO = '1:1';
+	const DEFAULT_ASPECT_RATIO = '4:3';
 
 	/**
 	 * Instruction for LLMs on how to extract URL from attached images.
@@ -950,6 +950,7 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 */
 	protected function get_allowed_aspect_ratios() {
 		return array(
+			'auto' => 'Auto (Let AI decide)',
 			'1:1'  => '1:1',
 			'3:4'  => '3:4',
 			'4:3'  => '4:3',
@@ -977,7 +978,15 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return string
 	 */
 	protected function normalise_aspect_ratio_value( $value ) {
-		$value   = sanitize_text_field( $value );
+		$value = strtolower( sanitize_text_field( $value ) );
+		$value = str_replace( ' ', '', $value );
+
+		// Special case: "auto" means let the AI decide (no aspectRatio sent to API).
+		if ( 'auto' === $value ) {
+			return 'auto';
+		}
+
+		$value   = strtoupper( $value );
 		$allowed = $this->get_allowed_aspect_ratios();
 
 		return isset( $allowed[ $value ] ) ? $value : '';
