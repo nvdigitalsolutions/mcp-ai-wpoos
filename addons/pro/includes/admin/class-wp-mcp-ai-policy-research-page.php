@@ -118,8 +118,6 @@ class WP_MCP_AI_Policy_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
-		$mode = self::get_current_mode();
-
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_policy_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -147,20 +145,7 @@ class WP_MCP_AI_Policy_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_mode_tabs( $mode ); ?>
-
-			<?php
-			switch ( $mode ) {
-				case 'import':
-					self::render_import_section();
-					break;
-				case 'consolidate':
-					self::render_consolidation_dashboard();
-					break;
-				default: // 'chat'
-					self::render_chat_interface( $assistant_id );
-			}
-			?>
+			<?php self::render_chat_interface( $assistant_id ); ?>
 		</div>
 		<?php
 	}
@@ -172,8 +157,8 @@ class WP_MCP_AI_Policy_Research_Page {
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
 		?>
-		<div class="wp-mcp-ai-research-container">
-			<div class="wp-mcp-ai-research-sidebar">
+			<div class="wp-mcp-ai-research-container">
+				<div class="wp-mcp-ai-research-sidebar">
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
@@ -225,6 +210,30 @@ class WP_MCP_AI_Policy_Research_Page {
 				</div>
 
 				<div class="wp-mcp-ai-research-main">
+					<!-- Workflow Mode Selector -->
+					<div class="wp-mcp-ai-workflow-selector">
+						<h2><?php esc_html_e( 'Choose Your Workflow', 'mcp-ai-wpoos-pro' ); ?></h2>
+						<div class="workflow-options">
+							<button type="button" class="workflow-option active" data-workflow="research">
+								<span class="dashicons dashicons-format-chat"></span>
+								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Research and create policies with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="import">
+								<span class="dashicons dashicons-upload"></span>
+								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'Bulk import policy data', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+							<button type="button" class="workflow-option" data-workflow="review">
+								<span class="dashicons dashicons-analytics"></span>
+								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View policy quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+							</button>
+						</div>
+					</div>
+
+					<!-- AI Research Workflow (Default) -->
+					<div id="workflow-research" class="workflow-content active">
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
@@ -251,6 +260,17 @@ class WP_MCP_AI_Policy_Research_Page {
 							</p>
 						</div>
 					<?php endif; ?>
+					</div>
+
+					<!-- Import Data Workflow -->
+					<div id="workflow-import" class="workflow-content">
+						<?php self::render_import_workflow(); ?>
+					</div>
+
+					<!-- Review & Quality Workflow -->
+					<div id="workflow-review" class="workflow-content">
+						<?php self::render_review_workflow(); ?>
+					</div>
 				</div>
 			</div>
 		<?php
@@ -514,6 +534,181 @@ class WP_MCP_AI_Policy_Research_Page {
 				'edit_url'  => $edit_url,
 			)
 		);
+	}
+
+	/**
+	 * Render import workflow.
+	 */
+	protected static function render_import_workflow() {
+		?>
+		<div class="wp-mcp-ai-import-section">
+			<h2><?php esc_html_e( 'Import Policy Data', 'mcp-ai-wpoos-pro' ); ?></h2>
+			<p class="description">
+				<?php esc_html_e( 'Import policies from PDF, DOCX, HTML, or paste structured data. The AI will automatically parse and organize the policy information.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+			
+			<div class="import-tips">
+				<h4><?php esc_html_e( 'Tips for better results:', 'mcp-ai-wpoos-pro' ); ?></h4>
+				<ul>
+					<li><?php esc_html_e( '✓ Include policy title, content, and effective date', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Specify category and version number', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Add review dates and compliance tags', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( '✓ Ensure WCAG compliance and readability', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+			</div>
+
+			<div class="import-form">
+				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
+					<?php wp_nonce_field( 'wp_mcp_ai_import_policies', 'import_nonce' ); ?>
+					
+					<div class="import-file-section">
+						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".pdf,.docx,.html,.txt,.json" style="display: none;">
+						<button type="button" class="button" onclick="document.getElementById('wp-mcp-ai-import-file-input').click();">
+							<span class="dashicons dashicons-upload"></span>
+							<?php esc_html_e( 'Choose File', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<span class="import-file-selected" style="margin-left: 10px; display: none;"></span>
+						<p class="description"><?php esc_html_e( 'Supported: PDF, DOCX, HTML, TXT, JSON', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<p><strong><?php esc_html_e( 'OR', 'mcp-ai-wpoos-pro' ); ?></strong></p>
+
+					<textarea 
+						id="wp-mcp-ai-import-text" 
+						name="import_data" 
+						class="widefat" 
+						rows="12" 
+						placeholder="<?php esc_attr_e( 'Example:\n\nTitle: Privacy Policy\nContent: This privacy policy explains...\nEffective Date: 2024-01-01\nCategory: Legal\nVersion: 1.0\n\nTitle: Terms of Service\nContent: By using this service...\nEffective Date: 2024-01-01\nCategory: Legal\nVersion: 1.0', 'mcp-ai-wpoos-pro' ); ?>"
+					></textarea>
+					
+					<div class="import-options">
+						<label>
+							<input type="checkbox" name="auto_create" value="1" checked>
+							<?php esc_html_e( 'Automatically create policies (recommended)', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<label>
+							<input type="checkbox" name="validate_data" value="1" checked>
+							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+					</div>
+
+					<p>
+						<button type="submit" class="button button-primary button-large">
+							<span class="dashicons dashicons-update"></span>
+							<?php esc_html_e( 'Import & Process', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+					</p>
+					<div class="import-result" style="display: none;"></div>
+				</form>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render review workflow.
+	 */
+	protected static function render_review_workflow() {
+		// Get policy statistics.
+		$total_policies = wp_count_posts( 'mcp_ai_policy' );
+		$published_count = isset( $total_policies->publish ) ? $total_policies->publish : 0;
+		
+		// Calculate data quality metrics.
+		$policies = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_policy',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$complete_count = 0;
+		$with_effective_date = 0;
+		$with_category = 0;
+
+		foreach ( $policies as $policy ) {
+			$effective_date = get_post_meta( $policy->ID, 'effective_date', true );
+			$category       = get_post_meta( $policy->ID, 'category', true );
+			$has_content    = ! empty( $policy->post_content );
+			
+			if ( ! empty( $effective_date ) ) {
+				$with_effective_date++;
+			}
+			if ( ! empty( $category ) ) {
+				$with_category++;
+			}
+			if ( ! empty( $effective_date ) && ! empty( $category ) && $has_content ) {
+				$complete_count++;
+			}
+		}
+
+		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		
+		?>
+		<div class="wp-mcp-ai-consolidate-section">
+			<h2><?php esc_html_e( 'Policy Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="quality-dashboard">
+				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Policies', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_effective_date ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Effective Date', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_category ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Category', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Policy completeness is %d%%. Consider adding effective dates, categories, and content to improve quality.', 'mcp-ai-wpoos-pro' ),
+								esc_html( $completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php self::render_quality_table(); ?>
+
+			<div class="items-list-table">
+				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_policy' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Policies', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_policy' ) ); ?>" class="button">
+						<?php esc_html_e( 'Add New Policy', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<button type="button" class="button refresh-quality-data">
+						<span class="dashicons dashicons-update"></span>
+						<?php esc_html_e( 'Refresh Data', 'mcp-ai-wpoos-pro' ); ?>
+					</button>
+				</p>
+			</div>
+		</div>
+		<?php
 	}
 }
 
