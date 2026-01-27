@@ -99,40 +99,6 @@ trait WP_MCP_AI_Research_Page_Import_Handler {
 
 			<?php static::render_import_tips(); ?>
 		</div>
-
-		<style>
-			.wp-mcp-ai-import-container {
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #ccd0d4;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-import-methods {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				gap: 20px;
-				margin: 20px 0;
-			}
-			.import-method {
-				background: #f8f9fa;
-				padding: 15px;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-import-options {
-				margin: 20px 0;
-			}
-			.wp-mcp-ai-import-options label {
-				display: block;
-				margin: 10px 0;
-			}
-			.wp-mcp-ai-import-results {
-				margin-top: 20px;
-				padding: 15px;
-				background: #f0f6fc;
-				border: 1px solid #0073aa;
-				border-radius: 4px;
-			}
-		</style>
 		<?php
 	}
 
@@ -219,62 +185,6 @@ trait WP_MCP_AI_Research_Page_Consolidation {
 			<?php static::render_completeness_widget(); ?>
 			<?php static::render_quality_table(); ?>
 		</div>
-
-		<style>
-			.wp-mcp-ai-consolidation-container {
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #ccd0d4;
-				border-radius: 4px;
-			}
-			.completeness-widget {
-				background: #f8f9fa;
-				padding: 20px;
-				border-radius: 4px;
-				margin: 20px 0;
-			}
-			.completeness-meter {
-				background: #e0e0e0;
-				height: 30px;
-				border-radius: 15px;
-				overflow: hidden;
-				position: relative;
-				margin: 15px 0;
-			}
-			.completeness-bar {
-				background: linear-gradient(90deg, #00a32a, #4ab866);
-				height: 100%;
-				transition: width 0.3s ease;
-			}
-			.completeness-percentage {
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				font-weight: 600;
-				color: #1d2327;
-			}
-			.quality-table {
-				margin-top: 30px;
-			}
-			.quality-score {
-				font-weight: 600;
-				padding: 4px 8px;
-				border-radius: 3px;
-			}
-			.quality-score.quality-high {
-				background: #d4edda;
-				color: #155724;
-			}
-			.quality-score.quality-medium {
-				background: #fff3cd;
-				color: #856404;
-			}
-			.quality-score.quality-low {
-				background: #f8d7da;
-				color: #721c24;
-			}
-		</style>
 		<?php
 	}
 
