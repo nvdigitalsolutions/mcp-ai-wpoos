@@ -36,6 +36,7 @@ class WP_MCP_AI_Project_Research_Page {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 20 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_create_project_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_project', array( __CLASS__, 'handle_import' ) );
 	}
 
 	/**
@@ -282,6 +283,216 @@ class WP_MCP_AI_Project_Research_Page {
 				'message'    => __( 'Project created successfully!', 'mcp-ai-wpoos-pro' ),
 				'project_id' => $project_id,
 				'edit_url'   => $edit_url,
+			)
+		);
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array Format key => label pairs.
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'xml'  => 'MS Project XML',
+			'csv'  => 'CSV',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data.
+	 *
+	 * @param mixed  $data   Data to process.
+	 * @param string $format Import format.
+	 * @return array|WP_Error Processed data or error.
+	 */
+	protected static function process_import_data( $data, $format ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Parameters reserved for future implementation.
+		return new WP_Error( 'not_implemented', __( 'Project import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema for projects.
+	 *
+	 * @return array Validation schema with required and recommended fields.
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'name'       => __( 'Project Name', 'mcp-ai-wpoos-pro' ),
+				'start_date' => __( 'Start Date', 'mcp-ai-wpoos-pro' ),
+				'duration'   => __( 'Duration', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'end_date'    => __( 'End Date', 'mcp-ai-wpoos-pro' ),
+				'budget'      => __( 'Budget', 'mcp-ai-wpoos-pro' ),
+				'status'      => __( 'Status', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'start_date' => array( 'type' => 'datetime' ),
+				'end_date'   => array( 'type' => 'datetime' ),
+				'budget'     => array(
+					'type'      => 'numeric',
+					'min_value' => 0,
+				),
+			),
+			'quality_dimensions' => array(
+				'completeness',
+				'accuracy',
+				'constraint_validation',
+				'dependency_integrity',
+			),
+		);
+	}
+
+	/**
+	 * Calculate completeness metrics for projects.
+	 *
+	 * @return array Completeness percentage and suggestions.
+	 */
+	protected static function calculate_completeness() {
+		$projects = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_project',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $projects );
+		$complete = 0;
+
+		foreach ( $projects as $project ) {
+			$start_date = get_post_meta( $project->ID, 'start_date', true );
+			$status     = get_post_meta( $project->ID, 'status', true );
+			if ( ! empty( $start_date ) && ! empty( $status ) && ! empty( $project->post_content ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Set start and end dates for all projects', 'mcp-ai-wpoos-pro' ),
+				__( 'Define project budgets and milestones', 'mcp-ai-wpoos-pro' ),
+				__( 'Add detailed project descriptions', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for review.
+	 *
+	 * @return array Array of project items with metadata.
+	 */
+	protected static function get_items_for_review() {
+		$projects = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_project',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $projects as $project ) {
+			$items[] = array(
+				'id'    => $project->ID,
+				'title' => $project->post_title,
+				'meta'  => array(
+					'start_date' => get_post_meta( $project->ID, 'start_date', true ),
+					'end_date'   => get_post_meta( $project->ID, 'end_date', true ),
+					'status'     => get_post_meta( $project->ID, 'status', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for a project item.
+	 *
+	 * @param array $item Project item data.
+	 * @return array Quality score with level, status, and issues.
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['start_date'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing start date', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['end_date'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing end date', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['status'] ) ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Missing status', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 10 ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Title needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = $score >= 80 ? 'high' : ( $score >= 50 ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
+	}
+
+	/**
+	 * Handle AJAX import request.
+	 */
+	public static function handle_import() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_research_project', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to import projects.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get import data from request.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
+		$import_data_raw = isset( $_POST['import_data'] ) ? wp_unslash( $_POST['import_data'] ) : '';
+		$format          = isset( $_POST['format'] ) ? sanitize_text_field( wp_unslash( $_POST['format'] ) ) : '';
+
+		if ( empty( $import_data_raw ) || empty( $format ) ) {
+			wp_send_json_error( array( 'message' => __( 'Import data and format are required.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Process import.
+		$result = self::process_import_data( $import_data_raw, $format );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Import completed successfully!', 'mcp-ai-wpoos-pro' ),
+				'result'  => $result,
 			)
 		);
 	}
