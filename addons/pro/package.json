@@ -4,11 +4,14 @@
 	"description": "Pro Add-on for NV Digital Open Operator System (oOS) - Enhanced Toolkits with Document Generation, Image Processing, Math Rendering, Calendar Export, Data Visualization, Code Formatting, Email Templates, CRM & Email Marketing, Contact Management, Geospatial Analysis, Video Processing, E-commerce, Social Media, Analytics, Multilingual Content, and Video Production",
 	"private": true,
 	"scripts": {
-		"postinstall": "node scripts/copy-dependencies.js",
-		"build": "node scripts/copy-dependencies.js",
+		"postinstall": "node scripts/copy-dependencies.js && node scripts/bundle-langchain.js",
+		"build": "node scripts/copy-dependencies.js && node scripts/bundle-langchain.js",
+		"build:langchain": "node scripts/bundle-langchain.js",
 		"prepare-dist": "npm install && npm run build"
 	},
 	"dependencies": {
+		"@langchain/community": "^0.3.14",
+		"@langchain/core": "^0.3.20",
 		"@turf/turf": "^7.3.2",
 		"@types/pdfkit": "^0.17.4",
 		"@woocommerce/woocommerce-rest-api": "^1.0.1",
@@ -35,6 +38,7 @@
 		"ics": "^3.8.1",
 		"iso-639-1": "^3.1.0",
 		"katex": "^0.16.11",
+		"langchain": "^0.3.6",
 		"libphonenumber-js": "^1.11.21",
 		"linkedin-api-client": "^0.3.0",
 		"mailparser": "^3.7.1",

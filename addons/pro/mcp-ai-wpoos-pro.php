@@ -223,6 +223,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load WebLLM Advanced Features settings page (Phase 1).
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
 
+			// Load LangChain.js Orchestration enqueue manager (Phase 3 - Pro Feature).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';

@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-plugin-dependencies',
+        'version' => 'dev-copilot/update-plugin-dependencies',
+        'reference' => '152cba725b5e638fce607056892ebe277c1df124',
         'pretty_version' => 'dev-copilot/update-shelljs-dependency',
         'version' => 'dev-copilot/update-shelljs-dependency',
         'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
@@ -74,6 +77,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-plugin-dependencies',
+            'version' => 'dev-copilot/update-plugin-dependencies',
+            'reference' => '152cba725b5e638fce607056892ebe277c1df124',
             'pretty_version' => 'dev-copilot/update-shelljs-dependency',
             'version' => 'dev-copilot/update-shelljs-dependency',
             'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
