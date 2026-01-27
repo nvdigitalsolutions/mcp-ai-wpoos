@@ -154,7 +154,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			return $toolkit_status;
 		}
 
-	/**
+		/**
 		 * Get CDN information for a package by reading its package.json.
 		 *
 		 * Checks for jsdelivr and unpkg URLs in the package's package.json file.
