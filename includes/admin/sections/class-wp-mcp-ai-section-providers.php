@@ -827,7 +827,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
-			return array(
+			$groups = array(
 				'priority'             => array(
 					'id'     => 'priority',
 					'label'  => __( 'Priority Order', 'mcp-ai-wpoos' ),
@@ -895,6 +895,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'fields' => array( 'google_maps_api_key' ),
 				),
 			);
+
+			// Filter out null values (e.g., embedded provider in base version).
+			return array_filter( $groups );
 		}
 
 		/**
