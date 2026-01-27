@@ -336,6 +336,12 @@
 	background: #f0f6fc;
 }
 
+.record-type-btn.active {
+	border-color: #2271b1;
+	background: #f0f6fc;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
 .record-type-btn .dashicons {
 	display: block;
 	font-size: 32px;

@@ -117,6 +117,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'addCheckupUrl' => admin_url( 'post-new.php?post_type=mcp_ai_checkup' ),
 				'addPrescUrl'   => admin_url( 'post-new.php?post_type=mcp_ai_prescription' ),
 				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
+				'addPolicyUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
 				'strings'       => array(
 					'loading'          => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
 					'loadMember'       => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
