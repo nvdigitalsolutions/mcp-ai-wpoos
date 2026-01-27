@@ -274,8 +274,6 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * @return string|null Record type or null.
 	 */
 	private function detect_record_type( $line ) {
-		$line_lower = strtolower( $line );
-
 		// Allergy detection (high priority).
 		if ( preg_match( '/\b(allerg(y|ies|ic)|allergic to|allergen)\b/i', $line ) ) {
 			return 'allergies';

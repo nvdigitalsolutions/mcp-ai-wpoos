@@ -1090,6 +1090,88 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		</div>
 		<?php
 	}
+
+	/**
+	 * Handle AJAX request to upload health documents.
+	 *
+	 * Uploads files to WordPress media library and stores metadata about
+	 * the original source for compliance and audit trail purposes.
+	 */
+	public static function handle_document_upload() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_health_consolidate', 'nonce' );
+
+		// Check user capability.
+		if ( ! current_user_can( 'upload_files' ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to upload files.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Get member ID.
+		$member_id = isset( $_POST['member_id'] ) ? absint( $_POST['member_id'] ) : 0;
+
+		if ( ! $member_id ) {
+			wp_send_json_error( array( 'message' => __( 'Please select a member first.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Verify member exists.
+		$member = get_post( $member_id );
+		if ( ! $member || 'mcp_ai_member' !== $member->post_type ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid member.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Check if file was uploaded.
+		if ( empty( $_FILES['file'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No file was uploaded.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Validate file type.
+		$allowed_types = array(
+			'application/pdf',
+			'image/jpeg',
+			'image/jpg',
+			'image/png',
+			'application/msword',
+			'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+			'text/plain',
+		);
+
+		$file_type = $_FILES['file']['type'];
+		if ( ! in_array( $file_type, $allowed_types, true ) ) {
+			wp_send_json_error( array( 'message' => __( 'File type not allowed. Please upload PDF, JPG, PNG, DOC, DOCX, or TXT files.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Handle the upload using WordPress functions.
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$attachment_id = media_handle_upload( 'file', 0 );
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_send_json_error( array( 'message' => $attachment_id->get_error_message() ) );
+		}
+
+		// Add metadata to track this as a health document source.
+		update_post_meta( $attachment_id, '_wp_mcp_ai_health_document', true );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_member_id', $member_id );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_upload_date', current_time( 'mysql' ) );
+		update_post_meta( $attachment_id, '_wp_mcp_ai_upload_user', get_current_user_id() );
+
+		// Get file details.
+		$attachment = get_post( $attachment_id );
+		$file_url   = wp_get_attachment_url( $attachment_id );
+		$file_name  = basename( get_attached_file( $attachment_id ) );
+
+		wp_send_json_success(
+			array(
+				'message'       => __( 'File uploaded successfully!', 'mcp-ai-wpoos-pro' ),
+				'attachment_id' => $attachment_id,
+				'file_name'     => $file_name,
+				'file_url'      => $file_url,
+				'file_type'     => $file_type,
+			)
+		);
+	}
 }
 
 // Initialize.

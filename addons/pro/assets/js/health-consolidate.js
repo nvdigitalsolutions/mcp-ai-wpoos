@@ -257,11 +257,10 @@
 			fileItems.empty();
 			uploadedFiles.forEach( function( file, index ) {
 				const li = $( '<li>' );
-				li.html(
-					'<span class="dashicons dashicons-media-document"></span>' +
-					'<span class="file-name">' + file.name + '</span>' +
-					'<span class="dashicons dashicons-no file-remove" data-index="' + index + '"></span>'
-				);
+				const fileName = $( '<span class="file-name"></span>' ).text( file.name );
+				li.append( '<span class="dashicons dashicons-media-document"></span>' )
+					.append( fileName )
+					.append( '<span class="dashicons dashicons-no file-remove" data-index="' + index + '"></span>' );
 				fileItems.append( li );
 			} );
 
