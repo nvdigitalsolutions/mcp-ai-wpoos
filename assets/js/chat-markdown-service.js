@@ -33,23 +33,23 @@ import DOMPurify from 'dompurify';
 	const renderer = new marked.Renderer();
 	
 	// Override code block rendering to add our CSS class
-	// Note: marked v17+ uses token-based API where renderers receive an object parameter
-	renderer.code = function(token) {
-		const code = token.text || '';
-		const language = token.lang || '';
-		const escapedLang = language.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
+	// Note: marked v9.x uses separate arguments: code, language, escaped
+	renderer.code = function(code, language, escaped) {
+		const safeCode = code || '';
+		const lang = language || '';
+		const escapedLang = lang.replace(/[^a-z0-9+#.-]/gi, '').toLowerCase();
 		const className = escapedLang ? ' class="language-' + escapedLang + '"' : '';
-		return '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(code) + '</code></pre>';
+		return '<pre class="wp-mcp-ai-chat__code-block"><code' + className + '>' + escapeHtml(safeCode) + '</code></pre>';
 	};
 
 	// Override image rendering to add our CSS class and lazy loading
-	// Note: marked v17+ uses token-based API where renderers receive an object parameter
-	renderer.image = function(token) {
-		const href = token.href || '';
-		const title = token.title || '';
-		const text = token.text || '';
-		const titleAttr = title ? ' title="' + title + '"' : '';
-		return '<img src="' + href + '" alt="' + text + '"' + titleAttr + ' class="wp-mcp-ai-chat__image" loading="lazy" />';
+	// Note: marked v9.x uses separate arguments: href, title, text
+	renderer.image = function(href, title, text) {
+		const safeHref = href || '';
+		const safeTitle = title || '';
+		const safeText = text || '';
+		const titleAttr = safeTitle ? ' title="' + safeTitle + '"' : '';
+		return '<img src="' + safeHref + '" alt="' + safeText + '"' + titleAttr + ' class="wp-mcp-ai-chat__image" loading="lazy" />';
 	};
 
 	// Use custom renderer
