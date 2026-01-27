@@ -474,7 +474,7 @@
 				'medical_record': wpMcpAiHealthConsolidate.addRecordUrl,
 				'checkup': wpMcpAiHealthConsolidate.addCheckupUrl,
 				'prescription': wpMcpAiHealthConsolidate.addPrescUrl,
-				'policy': wpMcpAiHealthConsolidate.addRecordUrl, // Assuming same as medical record for now.
+				'policy': wpMcpAiHealthConsolidate.addPolicyUrl,
 				'allergy': wpMcpAiHealthConsolidate.addAllergyUrl
 			};
 
