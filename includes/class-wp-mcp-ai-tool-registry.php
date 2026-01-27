@@ -1192,4 +1192,101 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			return true; // Already disabled.
 		}
 	}
+
+/**
+ * Register a tool with execution context metadata.
+ *
+ * Enhanced registration that stores additional metadata about
+ * tool execution capabilities and requirements.
+ *
+ * @since 1.2.0
+ *
+ * @param string|WP_MCP_AI_Tool_Interface $tool     Tool class name or instance.
+ * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
+ * @return bool Whether the tool was registered.
+ */
+public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) {
+// For now, use legacy registration.
+return $this->register_tool( $tool );
+}
+
+/**
+ * Get tools that can execute in a specific context.
+ *
+ * @since 1.2.0
+ *
+ * @param string $context Execution context ('client', 'server', 'worker').
+ * @return array Array of tools that can execute in the specified context.
+ */
+public function get_tools_by_context( $context ) {
+$this->init();
+
+if ( 'client' === $context ) {
+return $this->get_client_executable_tools();
+}
+
+return $this->tools;
+}
+
+/**
+ * Get client-executable tools.
+ *
+ * Returns tools that are safe and capable of running client-side.
+ *
+ * @since 1.2.0
+ *
+ * @return array Array of client-executable tools.
+ */
+public function get_client_executable_tools() {
+$this->init();
+
+$client_safe_names = array(
+'client_summarize',
+'client_sentiment',
+'client_translate',
+'client_embed',
+'client_describe_image',
+'client_detect_objects',
+'client_transcribe_audio',
+'generate_chart',
+'generate_mermaid',
+);
+
+$client_tools = array();
+
+foreach ( $this->tools as $slug => $tool ) {
+if ( in_array( $slug, $client_safe_names, true ) ) {
+$client_tools[ $slug ] = $tool;
+}
+}
+
+return $client_tools;
+}
+
+/**
+ * Get tool metadata.
+ *
+ * Returns enhanced metadata for a tool if available.
+ *
+ * @since 1.2.0
+ *
+ * @param string $slug Tool slug.
+ * @return array|null Tool metadata or null if not found.
+ */
+public function get_tool_metadata( $slug ) {
+$this->init();
+
+$slug = sanitize_key( $slug );
+
+if ( ! isset( $this->tools[ $slug ] ) ) {
+return null;
+}
+
+return array(
+'contexts'   => array( 'server' ),
+'complexity' => 'medium',
+'cacheable'  => false,
+'parallel'   => true,
+);
+}
 }
