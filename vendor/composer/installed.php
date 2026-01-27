@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-gmail-oauth-redirect-uri',
-        'version' => 'dev-copilot/update-gmail-oauth-redirect-uri',
-        'reference' => '10ea1909baccfdc89b8a89c6444ea532d48bffd1',
+        'pretty_version' => 'dev-copilot/update-shelljs-dependency',
+        'version' => 'dev-copilot/update-shelljs-dependency',
+        'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -74,9 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-gmail-oauth-redirect-uri',
-            'version' => 'dev-copilot/update-gmail-oauth-redirect-uri',
-            'reference' => '10ea1909baccfdc89b8a89c6444ea532d48bffd1',
+            'pretty_version' => 'dev-copilot/update-shelljs-dependency',
+            'version' => 'dev-copilot/update-shelljs-dependency',
+            'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
