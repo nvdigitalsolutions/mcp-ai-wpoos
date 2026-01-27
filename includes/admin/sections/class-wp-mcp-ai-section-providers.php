@@ -596,13 +596,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => '',
 				),
 
-				// Embedded LLM Settings (Pro version only).
+				// Embedded LLM Settings (Pro version only - auto-enabled when Pro is present).
 				'enable_embedded'                    => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable client-side embedded language models (Pro)', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache.', 'mcp-ai-wpoos' ),
-					'default'        => false,
+					'checkbox_label' => __( 'Enable client-side embedded language models (Pro - Auto-enabled)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache. This feature is automatically enabled when the Pro plugin is present.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'disabled'       => true, // Read-only since it's auto-enabled with Pro.
 				) : null,
 				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
 					'type'        => 'select',

@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
         'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-        'reference' => 'd8de12b529863492e93f6da4747c2cde94f246ab',
+        'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
             'version' => 'dev-copilot/fix-embedded-llm-provider-visibility-again',
-            'reference' => 'd8de12b529863492e93f6da4747c2cde94f246ab',
+            'reference' => '20946d87cfd90e0df2d00d5a2b008476a85db064',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

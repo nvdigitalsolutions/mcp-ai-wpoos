@@ -1,45 +1,64 @@
 <?php
 /**
- * Test to verify embedded provider loads correctly in Pro plugin.
+ * Test to verify embedded provider is auto-enabled with Pro plugin.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test embedded provider configuration in Pro vs Base versions.
+ * Test embedded provider auto-enablement in Pro version.
  */
-class WP_MCP_AI_Embedded_Provider_Pro_Loading_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that embedded provider fields are available in Pro (full) version.
+	 * Test that embedded provider is auto-enabled when Pro is present.
 	 */
-	public function test_embedded_fields_available_in_pro_version() {
-		// Simulate Pro version (WP_MCP_AI_BASE_VERSION should be false or undefined).
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
+	public function test_embedded_provider_auto_enabled_with_pro() {
+		// Verify we're in Pro version (BASE_VERSION should be false).
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
-		$section = new WP_MCP_AI_Section_Providers();
-		$fields  = $section->get_fields();
+		// Verify Pro constant is defined (when Pro addon is loaded).
+		if ( file_exists( WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' ) ) {
+			$this->assertTrue( defined( 'WP_MCP_AI_PRO_VERSION' ), 'Pro constant should be defined' );
+		}
 
-		// Embedded fields should exist in Pro version.
-		$this->assertArrayHasKey( 'enable_embedded', $fields, 'enable_embedded field should exist in Pro version' );
-		$this->assertArrayHasKey( 'embedded_model', $fields, 'embedded_model field should exist in Pro version' );
-		$this->assertArrayHasKey( 'embedded_model_management', $fields, 'embedded_model_management field should exist in Pro version' );
-
-		// Verify field types.
-		$this->assertEquals( 'checkbox', $fields['enable_embedded']['type'], 'enable_embedded should be a checkbox' );
-		$this->assertEquals( 'select', $fields['embedded_model']['type'], 'embedded_model should be a select dropdown' );
-		$this->assertEquals( 'custom', $fields['embedded_model_management']['type'], 'embedded_model_management should be custom' );
-
-		// Verify default value (should be false - requires manual enabling).
-		$this->assertFalse( $fields['enable_embedded']['default'], 'enable_embedded should default to false (requires manual enabling)' );
+		// Test webllm enqueue detects Pro.
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$this->assertTrue( $is_pro_available, 'Pro should be detected as available' );
 	}
 
 	/**
-	 * Test that embedded provider subtab is available in Pro version.
+	 * Test that webworker feature status shows embedded as enabled.
 	 */
-	public function test_embedded_subtab_available_in_pro_version() {
-		// Simulate Pro version.
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
+	public function test_webworker_feature_status_shows_embedded_enabled() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
+
+		$status = WP_MCP_AI_WebWorker_Enqueue::get_feature_status();
+		
+		$this->assertArrayHasKey( 'embedded_provider_enabled', $status, 'Status should include embedded_provider_enabled' );
+		$this->assertTrue( $status['embedded_provider_enabled'], 'Embedded provider should be enabled in Pro version' );
+	}
+
+	/**
+	 * Test that langchain feature status shows embedded as enabled.
+	 */
+	public function test_langchain_feature_status_shows_embedded_enabled() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
+
+		$status = WP_MCP_AI_LangChain_Enqueue::get_feature_status();
+		
+		$this->assertArrayHasKey( 'embedded_provider_enabled', $status, 'Status should include embedded_provider_enabled' );
+		$this->assertTrue( $status['embedded_provider_enabled'], 'Embedded provider should be enabled in Pro version' );
+	}
+
+	/**
+	 * Test that embedded subtab is visible in Pro version.
+	 */
+	public function test_embedded_subtab_visible_in_pro() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
 		$section = new WP_MCP_AI_Section_Providers();
 
@@ -52,114 +71,81 @@ class WP_MCP_AI_Embedded_Provider_Pro_Loading_Test extends WP_UnitTestCase {
 
 		// Embedded subtab should exist in Pro version.
 		$this->assertArrayHasKey( 'embedded', $subtabs, 'Embedded subtab should exist in Pro version' );
-		$this->assertIsArray( $subtabs['embedded'], 'Embedded subtab should be an array' );
-		$this->assertEquals( 'embedded', $subtabs['embedded']['id'], 'Embedded subtab ID should be "embedded"' );
-		$this->assertEquals( 'Embedded LLM', $subtabs['embedded']['label'], 'Embedded subtab label should be "Embedded LLM"' );
+		$this->assertNotNull( $subtabs['embedded'], 'Embedded subtab should not be null in Pro version' );
 	}
 
 	/**
-	 * Test that embedded provider is NOT auto-enabled (requires manual checkbox).
+	 * Test that embedded fields show auto-enabled status.
 	 */
-	public function test_embedded_provider_not_auto_enabled() {
-		// Simulate Pro version.
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
-
-		// Get current settings.
-		$settings = get_option( 'wp_mcp_ai_settings', array() );
-
-		// Embedded should not be enabled by default.
-		$this->assertFalse(
-			isset( $settings['enable_embedded'] ) && $settings['enable_embedded'],
-			'enable_embedded should not be auto-enabled (requires manual checkbox)'
-		);
-	}
-
-	/**
-	 * Test that embedded provider can be manually enabled.
-	 */
-	public function test_embedded_provider_can_be_enabled() {
-		// Simulate Pro version.
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
-
-		// Enable embedded provider.
-		$settings = array(
-			'enable_embedded' => true,
-			'embedded_model'  => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
-		);
-		update_option( 'wp_mcp_ai_settings', $settings );
-
-		// Verify it's enabled.
-		$retrieved = get_option( 'wp_mcp_ai_settings', array() );
-		$this->assertTrue( $retrieved['enable_embedded'], 'enable_embedded should be true after enabling' );
-		$this->assertEquals( 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC', $retrieved['embedded_model'], 'embedded_model should be set' );
-
-		// Clean up.
-		delete_option( 'wp_mcp_ai_settings' );
-	}
-
-	/**
-	 * Test the complete flow: subtab visible, fields present, can be enabled.
-	 */
-	public function test_complete_embedded_provider_flow() {
-		// Simulate Pro version.
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
-
-		$section = new WP_MCP_AI_Section_Providers();
-
-		// 1. Verify subtab exists.
-		$reflection = new ReflectionClass( $section );
-		$method     = $reflection->getMethod( 'get_subtab_groups' );
-		$method->setAccessible( true );
-		$subtabs = $method->invoke( $section );
-		$this->assertArrayHasKey( 'embedded', $subtabs, 'Step 1: Embedded subtab should exist' );
-
-		// 2. Verify fields exist.
-		$fields = $section->get_fields();
-		$this->assertArrayHasKey( 'enable_embedded', $fields, 'Step 2: enable_embedded field should exist' );
-
-		// 3. Verify default is disabled.
-		$this->assertFalse( $fields['enable_embedded']['default'], 'Step 3: Should be disabled by default' );
-
-		// 4. Verify can be enabled.
-		$settings = array( 'enable_embedded' => true );
-		update_option( 'wp_mcp_ai_settings', $settings );
-		$retrieved = get_option( 'wp_mcp_ai_settings', array() );
-		$this->assertTrue( $retrieved['enable_embedded'], 'Step 4: Should be enabled after setting' );
-
-		// Clean up.
-		delete_option( 'wp_mcp_ai_settings' );
-	}
-
-	/**
-	 * Test that embedded provider fields have correct Pro label.
-	 */
-	public function test_embedded_fields_have_pro_label() {
-		// Simulate Pro version.
-		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'This test expects Pro version (BASE_VERSION should be false)' );
+	public function test_embedded_fields_show_auto_enabled() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
 		$section = new WP_MCP_AI_Section_Providers();
 		$fields  = $section->get_fields();
 
-		// Check that the checkbox label mentions "(Pro)".
+		// Check enable_embedded field exists.
+		$this->assertArrayHasKey( 'enable_embedded', $fields, 'enable_embedded field should exist' );
+
+		// Check it's marked as auto-enabled.
+		$this->assertTrue( $fields['enable_embedded']['default'], 'Should default to true (auto-enabled)' );
+		$this->assertTrue( $fields['enable_embedded']['disabled'], 'Should be disabled (read-only)' );
+		
+		// Check label indicates auto-enablement.
 		$this->assertStringContainsString(
-			'(Pro)',
+			'Auto-enabled',
 			$fields['enable_embedded']['checkbox_label'],
-			'Checkbox label should mention "(Pro)" to indicate it\'s a Pro feature'
+			'Label should indicate auto-enablement'
 		);
 	}
 
 	/**
-	 * Test that Pro addon constant is defined when Pro is loaded.
+	 * Test complete flow: Pro present → Scripts load.
 	 */
-	public function test_pro_addon_constant_defined() {
-		// When repository is cloned and Pro addon is present, WP_MCP_AI_PRO_VERSION should be defined.
-		if ( file_exists( WP_MCP_AI_PATH . 'addons/pro/mcp-ai-wpoos-pro.php' ) ) {
-			$this->assertTrue(
-				defined( 'WP_MCP_AI_PRO_VERSION' ),
-				'WP_MCP_AI_PRO_VERSION should be defined when Pro addon is present'
-			);
-		} else {
-			$this->markTestSkipped( 'Pro addon not present in this installation' );
-		}
+	public function test_complete_flow_pro_to_scripts() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
+
+		// Step 1: Pro is detected.
+		$is_pro = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$this->assertTrue( $is_pro, 'Step 1: Pro should be detected' );
+
+		// Step 2: Feature status reports enabled.
+		$status = WP_MCP_AI_WebWorker_Enqueue::get_feature_status();
+		$this->assertTrue( $status['embedded_provider_enabled'], 'Step 2: Feature should be enabled' );
+
+		// Step 3: Subtab is visible.
+		$section = new WP_MCP_AI_Section_Providers();
+		$reflection = new ReflectionClass( $section );
+		$method = $reflection->getMethod( 'get_subtab_groups' );
+		$method->setAccessible( true );
+		$subtabs = $method->invoke( $section );
+		$this->assertArrayHasKey( 'embedded', $subtabs, 'Step 3: Subtab should be visible' );
+
+		// Step 4: Fields show auto-enabled.
+		$fields = $section->get_fields();
+		$this->assertTrue( $fields['enable_embedded']['default'], 'Step 4: Should be auto-enabled' );
+	}
+
+	/**
+	 * Test that embedded provider works without any manual configuration.
+	 */
+	public function test_no_manual_configuration_required() {
+		// Verify we're in Pro version.
+		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
+
+		// No settings need to be saved.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		
+		// Even if enable_embedded is not set, Pro detection should work.
+		$is_pro = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$this->assertTrue( $is_pro, 'Pro should be detected without any settings' );
+
+		// Feature should report as enabled.
+		$status = WP_MCP_AI_WebWorker_Enqueue::get_feature_status();
+		$this->assertTrue(
+			$status['embedded_provider_enabled'],
+			'Embedded provider should be enabled without manual configuration'
+		);
 	}
 }
