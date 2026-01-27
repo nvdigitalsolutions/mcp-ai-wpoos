@@ -34,10 +34,17 @@ composer.phar
 # But keep production dependencies only (negation)
 !/vendor/autoload.php
 !/vendor/composer/
+!/vendor/firebase/
+!/vendor/google/
+!/vendor/guzzlehttp/
+!/vendor/monolog/
 !/vendor/nyholm/
+!/vendor/paragonie/
 !/vendor/php-http/
+!/vendor/phpseclib/
 !/vendor/psr/
 !/vendor/rahul900day/
+!/vendor/ralouphie/
 !/vendor/symfony/
 
 # Ignore composer temporary files
