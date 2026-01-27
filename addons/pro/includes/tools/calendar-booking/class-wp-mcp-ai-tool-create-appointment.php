@@ -100,6 +100,10 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'       => 'object',
 			'properties' => array(
+				'appointment_id'    => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional appointment ID. If provided, updates the existing appointment instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'client_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Client full name (required)', 'mcp-ai-wpoos-pro' ),
@@ -197,6 +201,30 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			);
 		}
 
+		// Check if this is an update operation.
+		$appointment_id       = isset( $arguments['appointment_id'] ) ? absint( $arguments['appointment_id'] ) : 0;
+		$is_update            = false;
+		$existing_appointment = null;
+
+		if ( $appointment_id ) {
+			// Verify appointment exists and user has permission to update it.
+			$existing_appointment = get_post( $appointment_id );
+
+			if ( ! $existing_appointment || 'mcp_appointment' !== $existing_appointment->post_type ) {
+				return new WP_Error( 'wp_mcp_ai_appointment_not_found', __( 'Appointment not found.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			// Check permissions: must be author or have manage_options capability.
+			$is_author       = absint( $existing_appointment->post_author ) === $current_user_id;
+			$can_manage      = user_can( $current_user_id, 'manage_options' );
+
+			if ( ! $is_author && ! $can_manage ) {
+				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this appointment.', 'mcp-ai-wpoos-pro' ) );
+			}
+
+			$is_update = true;
+		}
+
 		// Validate required fields.
 		if ( empty( $arguments['client_name'] ) ) {
 			return new WP_Error(
@@ -251,7 +279,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check for conflicts if requested.
 		if ( ! empty( $arguments['check_conflicts'] ) ) {
-			$conflicts = $this->check_time_slot_conflicts( $start_time, $end_time );
+			$conflicts = $this->check_time_slot_conflicts( $start_time, $end_time, $appointment_id );
 			if ( ! empty( $conflicts ) ) {
 				return new WP_Error(
 					'scheduling_conflict',
@@ -263,6 +291,68 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 					array( 'conflicts' => $conflicts )
 				);
 			}
+		}
+
+		if ( $is_update ) {
+			// Update existing appointment.
+			$appointment_data = array(
+				'ID'           => $appointment_id,
+				'post_title'   => sprintf(
+					/* translators: 1: Client name, 2: Start time */
+					__( 'Appointment: %1$s - %2$s', 'mcp-ai-wpoos-pro' ),
+					$client_name,
+					$start_time
+				),
+				'post_content' => ! empty( $arguments['notes'] ) ? sanitize_textarea_field( $arguments['notes'] ) : '',
+			);
+
+			$result = wp_update_post( $appointment_data, true );
+
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+
+			// Update appointment metadata.
+			update_post_meta( $appointment_id, '_client_name', $client_name );
+			update_post_meta( $appointment_id, '_client_email', $client_email );
+			update_post_meta( $appointment_id, '_client_phone', $client_phone );
+			update_post_meta( $appointment_id, '_appointment_type', ! empty( $arguments['appointment_type'] ) ? sanitize_text_field( $arguments['appointment_type'] ) : 'general' );
+			update_post_meta( $appointment_id, '_start_time', $start_time );
+			update_post_meta( $appointment_id, '_end_time', $end_time );
+			update_post_meta( $appointment_id, '_location', ! empty( $arguments['location'] ) ? sanitize_text_field( $arguments['location'] ) : '' );
+
+			// Store custom metadata if provided.
+			if ( ! empty( $arguments['metadata'] ) && is_array( $arguments['metadata'] ) ) {
+				foreach ( $arguments['metadata'] as $key => $value ) {
+					$meta_key = '_custom_' . sanitize_key( $key );
+					update_post_meta( $appointment_id, $meta_key, sanitize_text_field( $value ) );
+				}
+			}
+
+			// Send notification if requested.
+			$notification_sent = false;
+			if ( ! empty( $arguments['send_notification'] ) ) {
+				$notification_sent = $this->send_confirmation_email(
+					$appointment_id,
+					$client_email,
+					$client_name,
+					$start_time,
+					$end_time
+				);
+			}
+
+			return array(
+				'success'           => true,
+				'appointment_id'    => $appointment_id,
+				'appointment_title' => get_the_title( $appointment_id ),
+				'client_name'       => $client_name,
+				'start_time'        => $start_time,
+				'end_time'          => $end_time,
+				'status'            => 'confirmed',
+				'notification_sent' => $notification_sent,
+				'updated'           => true,
+				'message'           => __( 'Appointment updated successfully.', 'mcp-ai-wpoos-pro' ),
+			);
 		}
 
 		// Create appointment post.
@@ -325,6 +415,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			'end_time'          => $end_time,
 			'status'            => 'confirmed',
 			'notification_sent' => $notification_sent,
+			'updated'           => false,
 			'message'           => __( 'Appointment created successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
@@ -332,11 +423,12 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 	 * Check for time slot conflicts.
 	 *
-	 * @param string $start_time Start time.
-	 * @param string $end_time   End time.
+	 * @param string $start_time     Start time.
+	 * @param string $end_time       End time.
+	 * @param int    $exclude_post_id Optional post ID to exclude from conflict check (for updates).
 	 * @return array Array of conflicting appointment IDs.
 	 */
-	private function check_time_slot_conflicts( $start_time, $end_time ) {
+	private function check_time_slot_conflicts( $start_time, $end_time, $exclude_post_id = 0 ) {
 		$conflicts = array();
 
 		$args = array(
