@@ -172,10 +172,8 @@ class WP_MCP_AI_Place_Research_Page {
 	 */
 	protected static function render_chat_interface( $assistant_id ) {
 		?>
-			<div class="wp-mcp-ai-research-container">
-
-			<div class="wp-mcp-ai-research-container">
-				<div class="wp-mcp-ai-research-sidebar">
+		<div class="wp-mcp-ai-research-container">
+			<div class="wp-mcp-ai-research-sidebar">
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
@@ -255,7 +253,6 @@ class WP_MCP_AI_Place_Research_Page {
 					<?php endif; ?>
 				</div>
 			</div>
-		</div>
 		<?php
 	}
 
