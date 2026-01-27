@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-post-type-name-length',
-        'version' => 'dev-copilot/fix-post-type-name-length',
-        'reference' => '8a1c33e9b4043384aeca75868a78a34fa72160f6',
+        'pretty_version' => 'dev-copilot/fix-85486977-1080917120-400c04c8-a0cc-4459-bb3f-3d5082cc6359',
+        'version' => 'dev-copilot/fix-85486977-1080917120-400c04c8-a0cc-4459-bb3f-3d5082cc6359',
+        'reference' => '5025f6021579b3dc772557e6ca07415d5ccbb75a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-post-type-name-length',
-            'version' => 'dev-copilot/fix-post-type-name-length',
-            'reference' => '8a1c33e9b4043384aeca75868a78a34fa72160f6',
+            'pretty_version' => 'dev-copilot/fix-85486977-1080917120-400c04c8-a0cc-4459-bb3f-3d5082cc6359',
+            'version' => 'dev-copilot/fix-85486977-1080917120-400c04c8-a0cc-4459-bb3f-3d5082cc6359',
+            'reference' => '5025f6021579b3dc772557e6ca07415d5ccbb75a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
