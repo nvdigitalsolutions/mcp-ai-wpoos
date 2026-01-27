@@ -71,81 +71,32 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
 		}
 
-		// Enqueue inline styles (no separate CSS file needed).
-		wp_add_inline_style(
-			WP_MCP_AI_Shortcode::STYLE_HANDLE,
-			'
-			.wp-mcp-ai-research-page {
-				max-width: 100%;
-			}
-			.wp-mcp-ai-research-container {
-				display: flex;
-				gap: 20px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar {
-				flex: 0 0 300px;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-main {
-				flex: 1;
-				min-width: 0;
-				background: #fff;
-				padding: 20px;
-				border: 1px solid #c3c4c7;
-				border-radius: 4px;
-			}
-			.wp-mcp-ai-research-sidebar h2,
-			.wp-mcp-ai-research-sidebar h3 {
-				margin-top: 0;
-				font-size: 16px;
-				font-weight: 600;
-			}
-			.wp-mcp-ai-research-sidebar h3 {
-				font-size: 14px;
-				margin-top: 20px;
-			}
-			.wp-mcp-ai-research-sidebar ol,
-			.wp-mcp-ai-research-sidebar ul {
-				margin: 10px 0;
-				padding-left: 20px;
-			}
-			.wp-mcp-ai-research-sidebar li {
-				margin-bottom: 8px;
-			}
-			.wp-mcp-ai-example-list {
-				list-style: none;
-				padding: 0;
-			}
-			.wp-mcp-ai-example-list li {
-				margin-bottom: 10px;
-			}
-			.wp-mcp-ai-example-query {
-				width: 100%;
-				text-align: left;
-				white-space: normal;
-				height: auto;
-				padding: 8px 12px;
-			}
-			.wp-mcp-ai-research-actions p {
-				margin: 10px 0;
-			}
-			.wp-mcp-ai-research-actions .button {
-				width: 100%;
-				text-align: center;
-			}
-			@media (max-width: 782px) {
-				.wp-mcp-ai-research-container {
-					flex-direction: column;
-				}
-				.wp-mcp-ai-research-sidebar {
-					flex: 1 1 auto;
-				}
-			}
-			'
+		// Enqueue enhanced research page styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/css/enhanced-research-page.css',
+			array(),
+			WP_MCP_AI_VERSION
+		);
+
+		// Enqueue enhanced research page script.
+		wp_enqueue_script(
+			'wp-mcp-ai-enhanced-research-page',
+			WP_MCP_AI_URL . 'assets/js/enhanced-research-page.js',
+			array( 'jquery' ),
+			WP_MCP_AI_VERSION,
+			true
+		);
+
+		// Localize script.
+		wp_localize_script(
+			'wp-mcp-ai-enhanced-research-page',
+			'wpMcpAiResearchPage',
+			array(
+				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_page' ),
+				'entityType' => 'team',
+			)
 		);
 	}
 
