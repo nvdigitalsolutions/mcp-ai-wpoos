@@ -673,6 +673,8 @@ class WP_MCP_AI_Event_Research_Page {
 				<?php endif; ?>
 			</div>
 
+			<?php self::render_quality_table(); ?>
+
 			<div class="items-list-table">
 				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<p>
