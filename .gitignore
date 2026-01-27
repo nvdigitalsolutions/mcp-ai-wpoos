@@ -97,6 +97,21 @@ composer.phar
 !assets/js/chat-bundle.min.js
 !assets/js/chat-bundle.min.js.map
 
+# Keep LangChain bundles (bundled from npm packages) which are required for orchestration features.
+# These bundle @langchain/core, @langchain/community, and langchain for browser use.
+!assets/js/vendor/langchain-core.bundle.js
+!assets/js/vendor/langchain-core.bundle.js.map
+!assets/js/vendor/langchain-core.bundle.min.js
+!assets/js/vendor/langchain-core.bundle.min.js.map
+!assets/js/vendor/langchain.bundle.js
+!assets/js/vendor/langchain.bundle.js.map
+!assets/js/vendor/langchain.bundle.min.js
+!assets/js/vendor/langchain.bundle.min.js.map
+!assets/js/vendor/langchain-community.bundle.js
+!assets/js/vendor/langchain-community.bundle.js.map
+!assets/js/vendor/langchain-community.bundle.min.js
+!assets/js/vendor/langchain-community.bundle.min.js.map
+
 # Keep Pro addon bundles (orchestration and research) which are required for the plugin to work.
 # These bundle external npm dependencies (p-queue, cheerio, turndown) for browser use.
 !addons/pro/assets/js/orchestration-bundle.min.js

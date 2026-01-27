@@ -64,8 +64,8 @@ class WP_MCP_AI_LangChain_Enqueue {
 		// LangChain libraries from local bundles (loaded on-demand).
 		// Note: These are loaded via import() in the orchestration client for lazy loading.
 		// We register them here for dependency management only.
-		$langchain_version = '0.3.6';
-		$langchain_core_version = '0.3.20';
+		$langchain_version           = '0.3.6';
+		$langchain_core_version      = '0.3.20';
 		$langchain_community_version = '0.3.14';
 
 		// Register local bundled scripts (for reference, not directly enqueued).
@@ -126,11 +126,11 @@ class WP_MCP_AI_LangChain_Enqueue {
 			'wp-mcp-ai-langchain-orchestration',
 			'wpMcpAiLangChain',
 			array(
-				'enabled' => true,
+				'enabled'       => true,
 				'maxIterations' => apply_filters( 'wp_mcp_ai_langchain_max_iterations', 10 ),
-				'verbose' => defined( 'WP_DEBUG' ) && WP_DEBUG,
-				'localUrls' => array(
-					'core' => plugins_url( 'assets/js/vendor/langchain-core.bundle.min.js', WP_MCP_AI_FILE ),
+				'verbose'       => defined( 'WP_DEBUG' ) && WP_DEBUG,
+				'localUrls'     => array(
+					'core'      => plugins_url( 'assets/js/vendor/langchain-core.bundle.min.js', WP_MCP_AI_FILE ),
 					'langchain' => plugins_url( 'assets/js/vendor/langchain.bundle.min.js', WP_MCP_AI_FILE ),
 					'community' => plugins_url( 'assets/js/vendor/langchain-community.bundle.min.js', WP_MCP_AI_FILE ),
 				),
@@ -188,10 +188,10 @@ class WP_MCP_AI_LangChain_Enqueue {
 
 		// Check if page has mcp-ai-chat widget.
 		$elements_data = $document->get_elements_data();
-		$json_data = wp_json_encode( $elements_data );
+		$json_data     = wp_json_encode( $elements_data );
 
 		return ( false !== strpos( $json_data, 'mcp-ai-chat' ) ||
-		         false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
+				false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
 	}
 
 	/**
@@ -201,10 +201,10 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 */
 	public static function get_feature_status() {
 		return array(
-			'enabled' => get_option( 'wp_mcp_ai_enable_langchain_orchestration', false ),
+			'enabled'                   => get_option( 'wp_mcp_ai_enable_langchain_orchestration', false ),
 			'embedded_provider_enabled' => get_option( 'wp_mcp_ai_enable_embedded_llm', false ),
-			'has_transformers' => defined( 'WP_MCP_AI_TRANSFORMERS_VERSION' ),
-			'has_webllm' => class_exists( 'WP_MCP_AI_WebLLM_Enqueue' ),
+			'has_transformers'          => defined( 'WP_MCP_AI_TRANSFORMERS_VERSION' ),
+			'has_webllm'                => class_exists( 'WP_MCP_AI_WebLLM_Enqueue' ),
 		);
 	}
 

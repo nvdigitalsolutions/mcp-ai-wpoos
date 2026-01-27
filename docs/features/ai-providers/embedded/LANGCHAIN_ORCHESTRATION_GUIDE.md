@@ -36,10 +36,10 @@ Browser (Client-Side)
 │   ├── Client-side tool execution
 │   └── Server-side tool proxy
 │
-└── LangChain libraries (CDN, lazy-loaded)
-    ├── @langchain/core (~400KB)
-    ├── langchain (~300KB)
-    └── @langchain/community (~100KB)
+└── LangChain libraries (bundled locally)
+    ├── langchain-core.bundle.min.js (~616KB)
+    ├── langchain.bundle.min.js (~1.3MB)
+    └── langchain-community.bundle.min.js (~1.2MB)
 
 WordPress (Server-Side)
 └── class-wp-mcp-ai-langchain-enqueue.php
@@ -99,6 +99,38 @@ orchestrator.setTools(tools);
 
 console.log(`Loaded ${tools.length} tools for orchestration`);
 ```
+
+---
+
+## Building & Installation
+
+### For Plugin Developers
+
+The LangChain libraries are automatically bundled when you run `npm install`:
+
+```bash
+# Install dependencies (includes LangChain bundling)
+npm install
+
+# Or manually rebuild LangChain bundles
+npm run build:langchain
+```
+
+This creates 6 bundle files in `assets/js/vendor/`:
+- `langchain-core.bundle.js` + `.min.js` (616KB minified)
+- `langchain.bundle.js` + `.min.js` (1.3MB minified)
+- `langchain-community.bundle.js` + `.min.js` (1.2MB minified)
+
+### For End Users
+
+LangChain bundles are **pre-packaged** in the plugin ZIP file - no build step required!
+
+Simply:
+1. Install the plugin via WordPress admin or upload ZIP
+2. Activate the plugin
+3. Enable LangChain orchestration in settings
+
+The bundled libraries are distributed with the plugin and loaded from local files.
 
 ---
 
@@ -395,10 +427,10 @@ wpMcpAiLangChain = {
     enabled: true,
     maxIterations: 10,  // Max agent iterations
     verbose: false,     // Console logging
-    cdnUrls: {
-        core: 'https://cdn.jsdelivr.net/npm/@langchain/core@0.3.20/+esm',
-        langchain: 'https://cdn.jsdelivr.net/npm/langchain@0.3.6/+esm',
-        community: 'https://cdn.jsdelivr.net/npm/@langchain/community@0.3.14/+esm'
+    localUrls: {
+        core: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain-core.bundle.min.js',
+        langchain: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain.bundle.min.js',
+        community: '/wp-content/plugins/mcp-ai-wpoos/assets/js/vendor/langchain-community.bundle.min.js'
     }
 };
 ```
@@ -428,18 +460,19 @@ add_filter('wp_mcp_ai_is_chat_page', function($is_chat_page) {
 |-----------|------|-------------|
 | langchain-orchestration.js | 5.9KB | Bundled (minified) |
 | langchain-tool-adapter.js | 3.8KB | Bundled (minified) |
-| @langchain/core | ~400KB | CDN (lazy-loaded) |
-| langchain | ~300KB | CDN (lazy-loaded) |
-| @langchain/community | ~100KB | CDN (lazy-loaded) |
-| **Total Plugin Impact** | **9.7KB** | Minified & gzipped |
-| **Total Runtime (first load)** | **~810KB** | Cached after first load |
+| langchain-core.bundle.min.js | 616KB | Pre-bundled, local |
+| langchain.bundle.min.js | 1.3MB | Pre-bundled, local |
+| langchain-community.bundle.min.js | 1.2MB | Pre-bundled, local |
+| **Total Plugin Impact** | **3.1MB** | Pre-bundled in plugin |
+| **Total Runtime (first load)** | **3.1MB** | Cached after first load |
 
 ### Optimization Strategies
 
-1. **Lazy Loading**: LangChain libraries only load when feature is enabled and used
-2. **CDN Caching**: Libraries cached in browser after first load
+1. **Pre-bundled**: LangChain libraries are bundled during npm install, no CDN dependency
+2. **Browser Caching**: Libraries cached in browser after first load
 3. **Code Splitting**: Orchestration code separate from main chat bundle
 4. **Conditional Enqueue**: Only loads on pages with chat interface
+5. **Lazy Loading**: Only loaded when LangChain orchestration feature is enabled
 
 ### Performance Benchmarks
 
