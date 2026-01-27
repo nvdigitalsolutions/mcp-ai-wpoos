@@ -528,8 +528,8 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
 // Load Transformers.js enqueue manager (Phase 2: Browser-Native AI Tasks).
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
 
-// Note: LangChain.js enqueue manager (Phase 3) is now loaded by Pro addon
-// as embedded chat and LangChain orchestration are Pro features.
+// Load LangChain.js enqueue manager (Phase 3: Orchestration & Agents).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
 
 // Load Web Worker enqueue manager (Phase 4: Performance & Non-Blocking UI).
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php';

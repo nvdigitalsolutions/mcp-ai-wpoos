@@ -104,21 +104,6 @@ composer.phar
 !addons/pro/assets/js/research-bundle.min.js
 !addons/pro/assets/js/research-bundle.min.js.map
 
-# Keep LangChain bundles in Pro addon (bundled from npm packages) for orchestration features.
-# These bundle @langchain/core, @langchain/community, and langchain for browser use.
-!addons/pro/assets/js/vendor/langchain-core.bundle.js
-!addons/pro/assets/js/vendor/langchain-core.bundle.js.map
-!addons/pro/assets/js/vendor/langchain-core.bundle.min.js
-!addons/pro/assets/js/vendor/langchain-core.bundle.min.js.map
-!addons/pro/assets/js/vendor/langchain.bundle.js
-!addons/pro/assets/js/vendor/langchain.bundle.js.map
-!addons/pro/assets/js/vendor/langchain.bundle.min.js
-!addons/pro/assets/js/vendor/langchain.bundle.min.js.map
-!addons/pro/assets/js/vendor/langchain-community.bundle.js
-!addons/pro/assets/js/vendor/langchain-community.bundle.js.map
-!addons/pro/assets/js/vendor/langchain-community.bundle.min.js
-!addons/pro/assets/js/vendor/langchain-community.bundle.min.js.map
-
 # Keep vendor production files (pre-built from npm packages)
 !addons/pro/assets/vendor/**/*.min.js
 !addons/pro/assets/vendor/**/*.min.css
