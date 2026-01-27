@@ -450,9 +450,13 @@ class WP_MCP_AI_Media_Design_Page {
 	protected static function render_review_workflow() {
 		// Get template statistics.
 		$total_templates = wp_count_posts( 'mcp_ai_media_tpl' );
-		$published_count = isset( $total_templates->publish ) ? $total_templates->publish : 0;
+		$template_published_count = isset( $total_templates->publish ) ? $total_templates->publish : 0;
 		
-		// Calculate data quality metrics.
+		// Get collection statistics.
+		$total_collections = wp_count_posts( 'mcp_ai_media_coll' );
+		$collection_published_count = isset( $total_collections->publish ) ? $total_collections->publish : 0;
+		
+		// Calculate template quality metrics.
 		$templates = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_media_tpl',
@@ -461,7 +465,7 @@ class WP_MCP_AI_Media_Design_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$template_complete_count = 0;
 		$with_operation = 0;
 		$with_params    = 0;
 
@@ -476,30 +480,60 @@ class WP_MCP_AI_Media_Design_Page {
 				$with_params++;
 			}
 			if ( ! empty( $operation ) && ! empty( $parameters ) ) {
-				$complete_count++;
+				$template_complete_count++;
 			}
 		}
 
-		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
+		// Calculate collection quality metrics.
+		$collections = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_media_coll',
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$collection_complete_count = 0;
+		$with_images = 0;
+		$with_template = 0;
+
+		foreach ( $collections as $collection ) {
+			$images = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_images', true );
+			$template_id = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_template', true );
+			
+			if ( ! empty( $images ) && is_array( $images ) && count( $images ) > 0 ) {
+				$with_images++;
+			}
+			if ( ! empty( $template_id ) ) {
+				$with_template++;
+			}
+			if ( ! empty( $images ) && is_array( $images ) && count( $images ) > 0 ) {
+				$collection_complete_count++;
+			}
+		}
+
+		$template_completeness = $template_published_count > 0 ? round( ( $template_complete_count / $template_published_count ) * 100 ) : 0;
+		$collection_completeness = $collection_published_count > 0 ? round( ( $collection_complete_count / $collection_published_count ) * 100 ) : 0;
 		
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Media Template Quality', 'mcp-ai-wpoos-pro' ); ?></h2>
 			
-			<div class="quality-dashboard">
-				<h3><?php esc_html_e( 'Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<!-- Templates Section -->
+			<div class="quality-dashboard" style="margin-bottom: 30px;">
+				<h3><?php esc_html_e( 'Templates - Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<div class="completeness-indicator">
-					<div class="completeness-bar" style="width: <?php echo esc_attr( $completeness ); ?>%;"></div>
-					<span class="completeness-percentage"><?php echo esc_html( $completeness ); ?>%</span>
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $template_completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $template_completeness ); ?>%</span>
 				</div>
 
 				<div class="quality-metrics">
 					<div class="quality-metric">
-						<span class="quality-metric-value"><?php echo esc_html( $published_count ); ?></span>
+						<span class="quality-metric-value"><?php echo esc_html( $template_published_count ); ?></span>
 						<span class="quality-metric-label"><?php esc_html_e( 'Total Templates', 'mcp-ai-wpoos-pro' ); ?></span>
 					</div>
 					<div class="quality-metric">
-						<span class="quality-metric-value"><?php echo esc_html( $complete_count ); ?></span>
+						<span class="quality-metric-value"><?php echo esc_html( $template_complete_count ); ?></span>
 						<span class="quality-metric-label"><?php esc_html_e( 'Fully Complete', 'mcp-ai-wpoos-pro' ); ?></span>
 					</div>
 					<div class="quality-metric">
@@ -512,14 +546,56 @@ class WP_MCP_AI_Media_Design_Page {
 					</div>
 				</div>
 
-				<?php if ( $completeness < 80 ) : ?>
+				<?php if ( $template_completeness < 80 ) : ?>
 					<div class="notice notice-warning inline">
 						<p>
 							<?php
 							printf(
 								/* translators: %d: Completeness percentage */
 								esc_html__( 'Template completeness is %d%%. Consider defining operations and parameters for better template functionality.', 'mcp-ai-wpoos-pro' ),
-								esc_html( $completeness )
+								esc_html( $template_completeness )
+							);
+							?>
+						</p>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<!-- Collections Section -->
+			<div class="quality-dashboard" style="margin-bottom: 30px;">
+				<h3><?php esc_html_e( 'Collections - Overall Completeness', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<div class="completeness-indicator">
+					<div class="completeness-bar" style="width: <?php echo esc_attr( $collection_completeness ); ?>%;"></div>
+					<span class="completeness-percentage"><?php echo esc_html( $collection_completeness ); ?>%</span>
+				</div>
+
+				<div class="quality-metrics">
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $collection_published_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Total Collections', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $collection_complete_count ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Images', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_images ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'Non-Empty', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+					<div class="quality-metric">
+						<span class="quality-metric-value"><?php echo esc_html( $with_template ); ?></span>
+						<span class="quality-metric-label"><?php esc_html_e( 'With Template', 'mcp-ai-wpoos-pro' ); ?></span>
+					</div>
+				</div>
+
+				<?php if ( $collection_completeness < 80 ) : ?>
+					<div class="notice notice-warning inline">
+						<p>
+							<?php
+							printf(
+								/* translators: %d: Completeness percentage */
+								esc_html__( 'Collection completeness is %d%%. Add images to collections for better organization.', 'mcp-ai-wpoos-pro' ),
+								esc_html( $collection_completeness )
 							);
 							?>
 						</p>
@@ -532,6 +608,9 @@ class WP_MCP_AI_Media_Design_Page {
 				<p>
 					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_tpl' ) ); ?>" class="button button-primary">
 						<?php esc_html_e( 'View All Templates', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+					<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_media_coll' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'View All Collections', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 					<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_media_tpl' ) ); ?>" class="button">
 						<?php esc_html_e( 'Add New Template', 'mcp-ai-wpoos-pro' ); ?>
