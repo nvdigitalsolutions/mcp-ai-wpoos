@@ -13,6 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
+require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
 
 /**
  * Project Research Admin Page
@@ -21,6 +22,10 @@ require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
  */
 class WP_MCP_AI_Project_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
+	use WP_MCP_AI_Research_Page_Import_Handler;
+	use WP_MCP_AI_Research_Page_Consolidation;
+	use WP_MCP_AI_Research_Page_Data_Validation;
+	use WP_MCP_AI_Research_Page_Mode_Tabs;
 
 	/**
 	 * Page slug.
@@ -113,6 +118,8 @@ class WP_MCP_AI_Project_Research_Page {
 	 * Render the research page.
 	 */
 	public static function render_page() {
+		$mode = self::get_current_mode();
+
 		// Get assistant from settings.
 		$settings     = get_option( 'wp_mcp_ai_project_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
@@ -140,6 +147,31 @@ class WP_MCP_AI_Project_Research_Page {
 
 			<hr class="wp-header-end">
 
+			<?php self::render_mode_tabs( $mode ); ?>
+
+			<?php
+			switch ( $mode ) {
+				case 'import':
+					self::render_import_section();
+					break;
+				case 'consolidate':
+					self::render_consolidation_dashboard();
+					break;
+				default: // 'chat'
+					self::render_chat_interface( $assistant_id );
+			}
+			?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the chat interface.
+	 *
+	 * @param int $assistant_id Assistant ID.
+	 */
+	protected static function render_chat_interface( $assistant_id ) {
+		?>
 			<div class="wp-mcp-ai-research-container">
 				<div class="wp-mcp-ai-research-sidebar">
 					<div class="wp-mcp-ai-research-intro">
