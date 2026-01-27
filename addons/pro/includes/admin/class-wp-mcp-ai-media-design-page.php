@@ -603,6 +603,12 @@ class WP_MCP_AI_Media_Design_Page {
 				<?php endif; ?>
 			</div>
 
+			<!-- Templates List Table -->
+			<?php self::render_templates_table(); ?>
+
+			<!-- Collections List Table -->
+			<?php self::render_collections_table(); ?>
+
 			<div class="items-list-table">
 				<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<p>
@@ -624,6 +630,181 @@ class WP_MCP_AI_Media_Design_Page {
 					</button>
 				</p>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render templates list table.
+	 */
+	protected static function render_templates_table() {
+		$templates = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_media_tpl',
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		?>
+		<div class="templates-table" style="margin-bottom: 30px;">
+			<h3><?php esc_html_e( 'Recent Templates', 'mcp-ai-wpoos-pro' ); ?></h3>
+			
+			<?php if ( empty( $templates ) ) : ?>
+				<p><?php esc_html_e( 'No templates found. Create one using the AI Design workflow above.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Template Name', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Operation', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Parameters', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Created', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $templates as $template ) : ?>
+							<?php
+							$operation  = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_operation', true );
+							$parameters = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_parameters', true );
+							$param_count = is_array( $parameters ) ? count( $parameters ) : 0;
+							$edit_url   = admin_url( 'post.php?post=' . $template->ID . '&action=edit' );
+							?>
+							<tr>
+								<td>
+									<strong>
+										<a href="<?php echo esc_url( $edit_url ); ?>">
+											<?php echo esc_html( $template->post_title ); ?>
+										</a>
+									</strong>
+								</td>
+								<td>
+									<?php if ( ! empty( $operation ) ) : ?>
+										<code><?php echo esc_html( $operation ); ?></code>
+									<?php else : ?>
+										<span style="color: #999;"><?php esc_html_e( 'Not set', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( $param_count > 0 ) : ?>
+										<span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span>
+										<?php
+										printf(
+											/* translators: %d: Number of parameters */
+											esc_html( _n( '%d parameter', '%d parameters', $param_count, 'mcp-ai-wpoos-pro' ) ),
+											esc_html( $param_count )
+										);
+										?>
+									<?php else : ?>
+										<span style="color: #999;"><?php esc_html_e( 'None', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( get_the_date( '', $template ) ); ?></td>
+								<td>
+									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
+										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									</a>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render collections list table.
+	 */
+	protected static function render_collections_table() {
+		$collections = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_media_coll',
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		?>
+		<div class="collections-table" style="margin-bottom: 30px;">
+			<h3><?php esc_html_e( 'Recent Collections', 'mcp-ai-wpoos-pro' ); ?></h3>
+			
+			<?php if ( empty( $collections ) ) : ?>
+				<p><?php esc_html_e( 'No collections found. Create one using the AI Design workflow above.', 'mcp-ai-wpoos-pro' ); ?></p>
+			<?php else : ?>
+				<table class="wp-list-table widefat fixed striped">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Collection Name', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Images', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Template', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Created', 'mcp-ai-wpoos-pro' ); ?></th>
+							<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $collections as $collection ) : ?>
+							<?php
+							$images      = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_images', true );
+							$template_id = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_template', true );
+							$image_count = is_array( $images ) ? count( $images ) : 0;
+							$edit_url    = admin_url( 'post.php?post=' . $collection->ID . '&action=edit' );
+							?>
+							<tr>
+								<td>
+									<strong>
+										<a href="<?php echo esc_url( $edit_url ); ?>">
+											<?php echo esc_html( $collection->post_title ); ?>
+										</a>
+									</strong>
+								</td>
+								<td>
+									<?php if ( $image_count > 0 ) : ?>
+										<span class="dashicons dashicons-images-alt2" style="color: #00a32a;"></span>
+										<?php
+										printf(
+											/* translators: %d: Number of images */
+											esc_html( _n( '%d image', '%d images', $image_count, 'mcp-ai-wpoos-pro' ) ),
+											esc_html( $image_count )
+										);
+										?>
+									<?php else : ?>
+										<span style="color: #999;"><?php esc_html_e( 'Empty', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td>
+									<?php if ( ! empty( $template_id ) ) : ?>
+										<?php
+										$template = get_post( $template_id );
+										if ( $template ) :
+											?>
+											<a href="<?php echo esc_url( admin_url( 'post.php?post=' . $template_id . '&action=edit' ) ); ?>">
+												<?php echo esc_html( $template->post_title ); ?>
+											</a>
+										<?php else : ?>
+											<span style="color: #999;"><?php esc_html_e( 'Deleted', 'mcp-ai-wpoos-pro' ); ?></span>
+										<?php endif; ?>
+									<?php else : ?>
+										<span style="color: #999;"><?php esc_html_e( 'None', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php endif; ?>
+								</td>
+								<td><?php echo esc_html( get_the_date( '', $collection ) ); ?></td>
+								<td>
+									<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
+										<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
+									</a>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
