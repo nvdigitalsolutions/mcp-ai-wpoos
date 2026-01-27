@@ -398,6 +398,60 @@
 	color: #b91c1c;
 }
 
+/* Mode Tabs (for task/project/etc research pages) */
+.wp-mcp-ai-mode-tabs {
+	display: flex;
+	gap: 0;
+	border-bottom: 1px solid #ccd0d4;
+	margin: 20px 0;
+}
+
+.mode-tab {
+	flex: 1;
+	padding: 15px 20px;
+	text-align: center;
+	text-decoration: none;
+	color: #50575e;
+	background: #f6f7f7;
+	border: 1px solid #ccd0d4;
+	border-bottom: none;
+	margin-bottom: -1px;
+	transition: all 0.2s;
+}
+
+.mode-tab:hover {
+	background: #fff;
+}
+
+.mode-tab.active {
+	background: #fff;
+	color: #2271b1;
+	border-bottom: 2px solid #2271b1;
+}
+
+.mode-icon {
+	font-size: 20px;
+	display: block;
+	margin-bottom: 5px;
+}
+
+.mode-label {
+	font-weight: 600;
+}
+
+/* Mode Content Sections */
+.wp-mcp-ai-research-content {
+	margin-top: 20px;
+}
+
+.research-mode-content {
+	display: none;
+}
+
+.research-mode-content.active {
+	display: block;
+}
+
 /* Responsive Design */
 @media (max-width: 782px) {
 	.wp-mcp-ai-research-container {
@@ -415,6 +469,20 @@
 	.quality-metrics {
 		grid-template-columns: 1fr;
 	}
+	
+	.wp-mcp-ai-mode-tabs {
+		flex-direction: column;
+	}
+	
+	.mode-tab {
+		border-bottom: 1px solid #ccd0d4;
+		margin-bottom: 0;
+	}
+	
+	.mode-tab.active {
+		border-left: 3px solid #2271b1;
+		border-bottom: 1px solid #ccd0d4;
+	}
 }
 
 @media (max-width: 600px) {
@@ -429,6 +497,14 @@
 	}
 	
 	.workflow-option strong {
+		font-size: 13px;
+	}
+	
+	.mode-icon {
+		font-size: 18px;
+	}
+	
+	.mode-label {
 		font-size: 13px;
 	}
 }

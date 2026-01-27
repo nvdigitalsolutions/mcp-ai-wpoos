@@ -13,7 +13,7 @@
 	 * Initialize enhanced research page functionality.
 	 */
 	function initEnhancedResearchPage() {
-		// Handle workflow tab switching
+		// Handle workflow tab switching (for quiz research page)
 		$('.workflow-option').on('click', function() {
 			const workflow = $(this).data('workflow');
 			
@@ -34,6 +34,42 @@
 		if (savedWorkflow) {
 			$('.workflow-option[data-workflow="' + savedWorkflow + '"]').trigger('click');
 		}
+
+		// Handle mode tab switching (for task/project/etc research pages)
+		$('.mode-tab').on('click', function(e) {
+			e.preventDefault();
+			
+			// Get the target mode from the href
+			const href = $(this).attr('href');
+			const urlParams = new URLSearchParams(href.split('?')[1]);
+			const mode = urlParams.get('mode') || 'chat';
+			
+			// Update active state on tabs
+			$('.mode-tab').removeClass('active');
+			$(this).addClass('active');
+			
+			// Show corresponding content
+			$('.research-mode-content').removeClass('active').hide();
+			
+			// Map mode to content ID
+			const modeToId = {
+				'chat': 'research-mode',
+				'import': 'import-mode',
+				'consolidate': 'consolidate-mode'
+			};
+			
+			const contentId = modeToId[mode] || 'research-mode';
+			$('#' + contentId).addClass('active').show();
+			
+			// Update URL without page reload
+			if (history.pushState) {
+				const newUrl = href;
+				history.pushState(null, '', newUrl);
+			}
+		});
+
+		// Initialize correct tab based on URL on page load
+		initializeActiveTab();
 
 		// Handle example query buttons
 		$(document).on('click', '.wp-mcp-ai-example-query', function(e) {
@@ -120,6 +156,31 @@
 			e.preventDefault();
 			refreshReviewData();
 		});
+	}
+
+	/**
+	 * Initialize the correct active tab based on URL parameter.
+	 */
+	function initializeActiveTab() {
+		// Get mode from URL
+		const urlParams = new URLSearchParams(window.location.search);
+		const mode = urlParams.get('mode') || 'chat';
+		
+		// Activate the correct tab
+		$('.mode-tab').removeClass('active');
+		$('.mode-tab[href*="mode=' + mode + '"]').addClass('active');
+		
+		// Show the correct content
+		$('.research-mode-content').removeClass('active').hide();
+		
+		const modeToId = {
+			'chat': 'research-mode',
+			'import': 'import-mode',
+			'consolidate': 'consolidate-mode'
+		};
+		
+		const contentId = modeToId[mode] || 'research-mode';
+		$('#' + contentId).addClass('active').show();
 	}
 
 	/**

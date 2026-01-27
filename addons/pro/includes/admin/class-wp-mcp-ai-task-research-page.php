@@ -129,6 +129,9 @@ class WP_MCP_AI_Task_Research_Page {
 			$assistant_id = ! empty( $assistants ) ? $assistants[0]->ID : 0;
 		}
 
+		// Get current mode
+		$current_mode = self::get_current_mode();
+
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
@@ -137,18 +140,18 @@ class WP_MCP_AI_Task_Research_Page {
 
 			<hr class="wp-header-end">
 
-			<?php self::render_mode_tabs(); ?>
+			<?php self::render_mode_tabs( $current_mode ); ?>
 
 			<div class="wp-mcp-ai-research-content">
-				<div id="research-mode" class="research-mode-content active">
+				<div id="research-mode" class="research-mode-content <?php echo 'chat' === $current_mode ? 'active' : ''; ?>">
 					<?php self::render_chat_interface( $assistant_id ); ?>
 				</div>
 
-				<div id="import-mode" class="research-mode-content">
+				<div id="import-mode" class="research-mode-content <?php echo 'import' === $current_mode ? 'active' : ''; ?>">
 					<?php self::render_import_section(); ?>
 				</div>
 
-				<div id="consolidate-mode" class="research-mode-content">
+				<div id="consolidate-mode" class="research-mode-content <?php echo 'consolidate' === $current_mode ? 'active' : ''; ?>">
 					<?php self::render_consolidation_section(); ?>
 				</div>
 			</div>
