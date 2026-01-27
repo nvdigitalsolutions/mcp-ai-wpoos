@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-applied-statistician-role',
-        'version' => 'dev-copilot/add-applied-statistician-role',
-        'reference' => 'd4e3de08c32906a8cf7b6512cea4a83dd9e3286f',
+        'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue',
+        'version' => 'dev-copilot/fix-js-css-rendering-issue',
+        'reference' => '3d1f5f72b8dcb83ed0156ecab4b6aa0aac493ee5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-applied-statistician-role',
-            'version' => 'dev-copilot/add-applied-statistician-role',
-            'reference' => 'd4e3de08c32906a8cf7b6512cea4a83dd9e3286f',
+            'pretty_version' => 'dev-copilot/fix-js-css-rendering-issue',
+            'version' => 'dev-copilot/fix-js-css-rendering-issue',
+            'reference' => '3d1f5f72b8dcb83ed0156ecab4b6aa0aac493ee5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
