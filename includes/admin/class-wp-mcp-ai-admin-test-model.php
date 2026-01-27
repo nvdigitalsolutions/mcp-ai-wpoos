@@ -58,8 +58,14 @@ class WP_MCP_AI_Admin_Test_Model {
 			return;
 		}
 
-		// Enqueue professional selector shortcode assets.
+		// Enqueue chat shortcode assets (required dependency for professional selector).
 		$dependencies = array();
+		if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			wp_enqueue_style( WP_MCP_AI_Shortcode::STYLE_HANDLE );
+			wp_enqueue_script( WP_MCP_AI_Shortcode::SCRIPT_HANDLE );
+		}
+
+		// Enqueue professional selector shortcode assets.
 		if ( class_exists( 'WP_MCP_AI_Professional_Selector_Shortcode' ) ) {
 			wp_enqueue_style( WP_MCP_AI_Professional_Selector_Shortcode::STYLE_HANDLE );
 			wp_enqueue_script( WP_MCP_AI_Professional_Selector_Shortcode::SCRIPT_HANDLE );
