@@ -21,10 +21,11 @@ class WP_MCP_AI_JetEngine_CCT {
 	public static function bootstrap() {
 		// Run after JetEngine initialises the Custom Content Types module but before.
 		// the manager registers existing instances (priority 10).
-		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
+		// We use priority 100 to ensure JetEngine is fully loaded first.
+		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 
 		// Ensure data stores module is enabled when JetEngine is active.
-		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 100 );
 	}
 
 	/**
