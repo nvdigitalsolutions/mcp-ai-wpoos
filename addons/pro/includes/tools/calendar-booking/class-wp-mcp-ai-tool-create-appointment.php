@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Create new appointments with client details, time slots, and booking information. Supports conflict detection and automatic notifications.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new appointment or update an existing appointment. If appointment_id is provided, updates the existing appointment instead of creating a new one. Supports client details, time slots, booking information, conflict detection and automatic notifications. Use this tool for both creating new appointments and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
