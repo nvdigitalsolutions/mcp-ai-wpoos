@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-shelljs-dependency',
-        'version' => 'dev-copilot/update-shelljs-dependency',
-        'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
+        'pretty_version' => 'dev-copilot/rebuild-all-zips-script-e2d6e967-c414-43dd-a21d-4d4242dcf97d',
+        'version' => 'dev-copilot/rebuild-all-zips-script-e2d6e967-c414-43dd-a21d-4d4242dcf97d',
+        'reference' => '9a73c144b9c81152f4b630ce12b510490f2c7753',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -74,9 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-shelljs-dependency',
-            'version' => 'dev-copilot/update-shelljs-dependency',
-            'reference' => '1480480e6cd5c0573f3ee430a785d21cd0ef2d75',
+            'pretty_version' => 'dev-copilot/rebuild-all-zips-script-e2d6e967-c414-43dd-a21d-4d4242dcf97d',
+            'version' => 'dev-copilot/rebuild-all-zips-script-e2d6e967-c414-43dd-a21d-4d4242dcf97d',
+            'reference' => '9a73c144b9c81152f4b630ce12b510490f2c7753',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
