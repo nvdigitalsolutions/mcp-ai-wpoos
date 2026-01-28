@@ -265,7 +265,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 												echo '</small>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 											}
 										} else {
-											echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML with escaped content.
+											echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 										}
 										?>
 									</td>

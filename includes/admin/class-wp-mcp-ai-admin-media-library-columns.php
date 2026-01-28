@@ -166,7 +166,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 			);
 		}
 
-		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Closing HTML tag.
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**
