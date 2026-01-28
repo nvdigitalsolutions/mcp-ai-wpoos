@@ -48,7 +48,14 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' !== $hook ) {
+		// Check for orchestration page.
+		// Hook format: 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro'
+		// Also check via $_GET for additional safety.
+		$is_orchestration_page = ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' === $hook ) ||
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
+
+		if ( ! $is_orchestration_page ) {
 			return;
 		}
 
