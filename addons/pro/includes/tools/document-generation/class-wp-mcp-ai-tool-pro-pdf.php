@@ -16,6 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
 
+// Load HTML formatter class.
+require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
+
 /**
  * Pro PDF tool for AI-powered PDF document generation.
  *
@@ -32,6 +35,20 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-resp
 class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+
+	/**
+	 * HTML formatter instance.
+	 *
+	 * @var WP_MCP_AI_HTML_Formatter
+	 */
+	protected $html_formatter;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->html_formatter = new WP_MCP_AI_HTML_Formatter();
+	}
 
 	/**
 	 * {@inheritdoc}
@@ -480,6 +497,62 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	}
 
 	/**
+	 * Convert document data to well-formatted HTML.
+	 *
+	 * @param array $document_data Document data with content/sections.
+	 * @return string Formatted HTML content.
+	 */
+	protected function convert_to_html( array $document_data ) {
+		$html_content = '';
+
+		// Handle sections if provided.
+		if ( ! empty( $document_data['sections'] ) && is_array( $document_data['sections'] ) ) {
+			$html_content = $this->html_formatter->sections_to_html( $document_data['sections'] );
+		} elseif ( ! empty( $document_data['content'] ) ) {
+			// Convert plain text content to HTML.
+			$html_content = $this->html_formatter->text_to_html( $document_data['content'] );
+		}
+
+		// Wrap in a complete HTML document with proper structure.
+		$options = array(
+			'title'       => ! empty( $document_data['title'] ) ? $document_data['title'] : 'Document',
+			'author'      => ! empty( $document_data['author'] ) ? $document_data['author'] : '',
+			'orientation' => ! empty( $document_data['orientation'] ) ? $document_data['orientation'] : 'portrait',
+			'page_width'  => ! empty( $document_data['page_size'] ) ? $this->get_page_width( $document_data['page_size'] ) : '816px',
+		);
+
+		// Apply formatting options if provided.
+		if ( ! empty( $document_data['formatting'] ) ) {
+			if ( isset( $document_data['formatting']['font_family'] ) ) {
+				$options['font_family'] = $document_data['formatting']['font_family'];
+			}
+			if ( isset( $document_data['formatting']['font_size'] ) ) {
+				$options['font_size'] = $document_data['formatting']['font_size'];
+			}
+		}
+
+		return $this->html_formatter->create_document( $html_content, $options );
+	}
+
+	/**
+	 * Get page width in pixels based on page size.
+	 *
+	 * @param string $page_size Page size (A4, Letter, Legal, A3, A5).
+	 * @return string Width in pixels.
+	 */
+	protected function get_page_width( $page_size ) {
+		$widths = array(
+			'A4'     => '816px',  // Approximation (actual A4 is 8.27", using Letter width for consistency).
+			'Letter' => '816px',  // 8.5 inches at 96 DPI.
+			'Legal'  => '816px',  // 8.5 inches at 96 DPI.
+			'A3'     => '1123px', // Approximation (actual A3 is 11.69", ~1122px at 96 DPI).
+			'A5'     => '559px',  // Approximation (actual A5 is 5.83", ~560px at 96 DPI).
+		);
+
+		return isset( $widths[ $page_size ] ) ? $widths[ $page_size ] : $widths['A4'];
+	}
+
+	/**
 	 * Generate PDF document.
 	 *
 	 * This method creates a PDF using Node.js/pdfkit via a shell command.
@@ -491,6 +564,10 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * @return array|WP_Error Array with file, url, attachment_id or WP_Error.
 	 */
 	protected function generate_pdf_document( array $document_data, array $arguments, array $context ) {
+		// Convert content to HTML for improved formatting.
+		$html_content = $this->convert_to_html( $document_data );
+		$document_data['html_content'] = $html_content;
+
 		// Create temporary file for PDF output.
 		$upload_dir = wp_upload_dir();
 		$temp_file  = wp_tempnam( 'pdf-' . time() );
