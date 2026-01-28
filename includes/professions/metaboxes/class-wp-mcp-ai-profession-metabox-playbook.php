@@ -220,6 +220,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 					data: {
 						action: 'wp_mcp_ai_regenerate_playbook',
 						profession_id: professionId,
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_regenerate_playbook' ) ); ?>
 					},
 					success: function(response) {
@@ -227,6 +228,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 							$message
 								.removeClass('notice-error notice-warning')
 								.addClass('notice-success')
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Playbook regenerated successfully!', 'mcp-ai-wpoos' ) ); ?>);
 							$message.show();
 
@@ -238,6 +240,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 							$message
 								.removeClass('notice-success notice-warning')
 								.addClass('notice-error')
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'Failed to regenerate playbook.', 'mcp-ai-wpoos' ) ); ?>);
 							$message.show();
 
@@ -248,6 +251,7 @@ class WP_MCP_AI_Profession_Metabox_Playbook extends WP_MCP_AI_Profession_Metabox
 						$message
 							.removeClass('notice-success notice-warning')
 							.addClass('notice-error')
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 						$message.show();
 
