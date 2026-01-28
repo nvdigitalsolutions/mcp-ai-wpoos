@@ -76,12 +76,18 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 	 */
 	public static function add_create_button( $views ) {
 		?>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Create Team button positioning on this admin page only.
+		?>
 		<style>
 			.wp-mcp-ai-create-team-btn {
 				margin-left: 10px;
 				vertical-align: middle;
 			}
 		</style>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script to dynamically add Create Team button after Create Assistant button.
+		?>
 		<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				// Add button after the Create AI Assistant button.

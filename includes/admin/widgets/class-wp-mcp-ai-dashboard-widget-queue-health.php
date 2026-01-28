@@ -47,6 +47,7 @@ class WP_MCP_AI_Dashboard_Widget_Queue_Health {
 	 */
 	public function render_widget() {
 		?>
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for queue health dashboard widget layout and styling on this admin page only
 		<style>
 			#wp_mcp_ai_queue_health .wp-mcp-ai-widget-stat {
 				display: flex;

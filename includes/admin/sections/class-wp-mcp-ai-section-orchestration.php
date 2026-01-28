@@ -508,6 +508,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-performance-dashboard {
 						background: #fff;
@@ -708,6 +711,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-load-monitoring {
 						background: #fff;
@@ -901,6 +907,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-performance-stats {
 						background: #fff;
@@ -1585,6 +1594,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 
 				<!-- Chart Initialization -->
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				/* <![CDATA[ */
 				jQuery(document).ready(function($) {
@@ -1664,6 +1676,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				</script>
 
 				<!-- Enhanced Styling -->
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 				.executive-header {
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -2441,6 +2456,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-agents-grid {
 					display: grid;
@@ -2750,6 +2768,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</style>
 			
 			<!-- Chart.js Initialization -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			/* <![CDATA[ */
 			jQuery(document).ready(function($) {
@@ -3239,6 +3260,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				/* Enhanced Orchestration Styles */
 				.wp-mcp-ai-orchestration-header {
@@ -3676,6 +3700,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</style>
 			
 			<!-- Chart.js Initialization for Professions -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			/* <![CDATA[ */
 			jQuery(document).ready(function($) {
@@ -4001,6 +4028,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				/* Enhanced Orchestration Styles */
 				.wp-mcp-ai-orchestration-header {

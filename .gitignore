@@ -58,9 +58,11 @@ composer.phar
 #!/vendor/composer/installed.json
 
 # Exclude test and development files from vendor packages
+/vendor/*/*/test/
 /vendor/*/*/tests/
 /vendor/*/*/Tests/
 /vendor/*/*/Test/
+/vendor/*/*/*/test/
 /vendor/*/*/*/tests/
 /vendor/*/*/*/Tests/
 /vendor/*/*/*/Test/
@@ -68,17 +70,58 @@ composer.phar
 /vendor/*/*/*/.github/
 /vendor/*/*/phpunit.xml*
 /vendor/*/*/*/phpunit.xml*
-/vendor/*/*/phpstan.neon*
-/vendor/*/*/*/phpstan.neon*
+/vendor/*/*/phpstan*.neon*
+/vendor/*/*/*/phpstan*.neon*
+/vendor/*/*/phpstan*.php
+/vendor/*/*/*/phpstan*.php
+/vendor/*/*/psalm*.xml
+/vendor/*/*/*/psalm*.xml
+/vendor/*/*/psalm*.php
+/vendor/*/*/*/psalm*.php
+/vendor/*/*/.php-cs-fixer*
+/vendor/*/*/*/.php-cs-fixer*
 /vendor/*/*/.editorconfig
 /vendor/*/*/*/.editorconfig
 /vendor/*/*/.gitignore
 /vendor/*/*/*/.gitignore
 /vendor/*/*/.gitattributes
 /vendor/*/*/*/.gitattributes
+/vendor/*/*/Makefile
+/vendor/*/*/*/Makefile
+/vendor/*/*/Dockerfile
+/vendor/*/*/*/Dockerfile
+/vendor/*/*/docs/
+/vendor/*/*/*/docs/
+/vendor/*/*/doc/
+/vendor/*/*/*/doc/
+/vendor/*/*/vendor-bin/
+/vendor/*/*/*/vendor-bin/
+/vendor/*/*/spec/
+/vendor/*/*/*/spec/
+/vendor/*/*/*.md
+/vendor/*/*/*/*.md
+/vendor/*/*/CHANGELOG*
+/vendor/*/*/*/CHANGELOG*
+/vendor/*/*/CODE_OF_CONDUCT*
+/vendor/*/*/*/CODE_OF_CONDUCT*
+/vendor/*/*/CONTRIBUTING*
+/vendor/*/*/*/CONTRIBUTING*
+/vendor/*/*/CREDITS*
+/vendor/*/*/*/CREDITS*
+/vendor/*/*/codecov.yml
+/vendor/*/*/*/codecov.yml
+/vendor/*/*/.travis.yml
+/vendor/*/*/*/.travis.yml
+/vendor/*/*/.pullapprove.yml
+/vendor/*/*/*/.pullapprove.yml
+/vendor/*/*/phpspec*.yml*
+/vendor/*/*/*/phpspec*.yml*
+/vendor/*/*/rector.php
+/vendor/*/*/*/rector.php
 
 # Exclude Symfony translations (saves ~2MB)
 /vendor/symfony/*/Resources/translations/
+/vendor/symfony/*/Resources/bin/
 
 # Pro addon dependencies
 # Exclude node_modules (development only)

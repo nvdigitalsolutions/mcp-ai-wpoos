@@ -259,6 +259,9 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		ob_start();
 		?>
+<?php
+// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor assistant tools widget layout and styling
+?>
 <style>
 .wp-mcp-ai-assistant-tools__copy-button {
 	background: none;
@@ -409,6 +412,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		// Fallback for older WordPress versions.
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript output is static content above.
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor assistant tools widget functionality with dynamic data
 		echo '<script>' . $script . '</script>';
 	}
 
