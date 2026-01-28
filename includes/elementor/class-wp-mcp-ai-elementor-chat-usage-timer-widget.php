@@ -360,7 +360,8 @@ class WP_MCP_AI_Elementor_Chat_Usage_Timer_Widget extends \Elementor\Widget_Base
 		if ( function_exists( 'wp_print_inline_script_tag' ) ) {
 			wp_print_inline_script_tag( $script );
 		} else {
-			echo '<script>' . $script . '</script>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Fallback for WordPress < 5.7, script content is generated above
+			echo '<script>' . $script . '</script>';
 		}
 	}
 
