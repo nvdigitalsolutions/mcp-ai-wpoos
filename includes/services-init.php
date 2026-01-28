@@ -89,6 +89,12 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-enhanced-wo
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
+// Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-balancer.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-chain-predictor.php';
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-efficiency-monitor.php';
+
 // Initialize video generation service (registers async polling hooks).
 WP_MCP_AI_Gemini_Video_Generation_Service::init();
 
