@@ -37,7 +37,7 @@
 		"@neplex/vectorizer": "^0.0.5",
 		"chart.js": "^4.4.7",
 		"dompurify": "^3.3.0",
-		"ky": "^1.14.0",
+		"ky": "^1.14.3",
 		"langchain": "^0.3.6",
 		"marked": "^9.1.6"
 	},
