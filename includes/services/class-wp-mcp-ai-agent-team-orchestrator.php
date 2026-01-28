@@ -152,6 +152,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		// Store team configuration.
 		$this->store_team( $team );
 
+		// Also store as workflow for orchestration dashboard tracking.
+		$this->save_team_as_workflow( $team );
+
 		$this->log_team_action( $team['team_id'], 'composed', array( 'member_count' => count( $team_members ) ) );
 
 		return $team;
@@ -1377,6 +1380,62 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		
 		// Store workflow data for 7 days.
 		return set_transient( $transient_key, $workflow_data, 7 * DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Save team as workflow for dashboard tracking
+	 *
+	 * Converts a team composition into a workflow record so it appears
+	 * on the orchestration dashboard even before workflow execution begins.
+	 *
+	 * @param array $team Team configuration.
+	 * @return bool True on success, false on failure.
+	 */
+	protected function save_team_as_workflow( $team ) {
+		if ( empty( $team['team_id'] ) ) {
+			return false;
+		}
+
+		// Create workflow tasks from team members and workflow steps.
+		$tasks = array();
+		
+		// Add team composition as initial task.
+		$tasks[] = array(
+			'task_id'      => 'compose_' . $team['team_id'],
+			'name'         => __( 'Team Composition', 'mcp-ai-wpoos' ),
+			'type'         => 'composition',
+			'status'       => 'completed',
+			'completed_at' => $team['created_at'],
+		);
+
+		// Add workflow steps as pending tasks.
+		if ( isset( $team['workflow'] ) && is_array( $team['workflow'] ) ) {
+			foreach ( $team['workflow'] as $index => $step ) {
+				$tasks[] = array(
+					'task_id' => 'step_' . $index . '_' . $team['team_id'],
+					'name'    => $step['name'],
+					'type'    => $step['type'],
+					'role'    => isset( $step['role'] ) ? $step['role'] : null,
+					'status'  => 'pending',
+				);
+			}
+		}
+
+		// Build workflow data structure.
+		$workflow_data = array(
+			'workflow_id'  => 'wf_' . $team['team_id'],
+			'team_id'      => $team['team_id'],
+			'task_type'    => $team['task_type'],
+			'state'        => 'initialized',
+			'tasks'        => $tasks,
+			'members'      => $team['members'],
+			'created_at'   => $team['created_at'],
+			'updated_at'   => $team['created_at'],
+			'started_at'   => null,
+			'completed_at' => null,
+		);
+
+		return $this->save_workflow_to_dashboard( $workflow_data['workflow_id'], $workflow_data );
 	}
 }
 
