@@ -281,34 +281,34 @@ class WP_MCP_AI_Task_Templates_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'              => array(
+				'_ID'           => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'template_name'    => array(
+				'template_name' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'category'         => array(
+				'category'      => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'status'           => array(
+				'status'        => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'usage_count'      => array(
+				'usage_count'   => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'version'          => array(
+				'version'       => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'cct_created'      => array(
+				'cct_created'   => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),

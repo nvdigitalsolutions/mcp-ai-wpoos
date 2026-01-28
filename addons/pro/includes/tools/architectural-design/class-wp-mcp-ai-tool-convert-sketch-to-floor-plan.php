@@ -49,34 +49,34 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'sketch_image' => array(
-					'type' => 'string',
+			'type'                 => 'object',
+			'properties'           => array(
+				'sketch_image'   => array(
+					'type'        => 'string',
 					'description' => __( 'Sketch image URL or attachment ID.', 'mcp-ai-wpoos-pro' ),
 				),
-				'scale' => array(
-					'type' => 'number',
+				'scale'          => array(
+					'type'        => 'number',
 					'description' => __( 'Scale factor (e.g., 1 inch = X feet). Optional if scale is marked on sketch.', 'mcp-ai-wpoos-pro' ),
 				),
 				'recognize_text' => array(
-					'type' => 'boolean',
+					'type'        => 'boolean',
 					'description' => __( 'Recognize text labels and dimensions on sketch.', 'mcp-ai-wpoos-pro' ),
-					'default' => true,
+					'default'     => true,
 				),
-				'output_format' => array(
-					'type' => 'string',
+				'output_format'  => array(
+					'type'        => 'string',
 					'description' => __( 'Output format: "svg", "dxf", "json".', 'mcp-ai-wpoos-pro' ),
-					'enum' => array( 'svg', 'dxf', 'json' ),
-					'default' => 'svg',
+					'enum'        => array( 'svg', 'dxf', 'json' ),
+					'default'     => 'svg',
 				),
-				'auto_correct' => array(
-					'type' => 'boolean',
+				'auto_correct'   => array(
+					'type'        => 'boolean',
 					'description' => __( 'Automatically correct and straighten walls.', 'mcp-ai-wpoos-pro' ),
-					'default' => true,
+					'default'     => true,
 				),
 			),
-			'required' => array( 'sketch_image' ),
+			'required'             => array( 'sketch_image' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -152,20 +152,20 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 
 		// Return structured conversion results.
 		$result = array(
-			'success' => true,
-			'url' => isset( $floor_plan['image_url'] ) ? $floor_plan['image_url'] : '',
-			'prompt' => 'Converted sketch to CAD-ready floor plan',
-			'floor_plan' => $floor_plan,
-			'source_image' => $sketch_image,
-			'scale' => $scale,
-			'format' => $output_format,
+			'success'             => true,
+			'url'                 => isset( $floor_plan['image_url'] ) ? $floor_plan['image_url'] : '',
+			'prompt'              => 'Converted sketch to CAD-ready floor plan',
+			'floor_plan'          => $floor_plan,
+			'source_image'        => $sketch_image,
+			'scale'               => $scale,
+			'format'              => $output_format,
 			'recognized_elements' => array(
-				'rooms' => 5,
-				'walls' => 12,
-				'doors' => 4,
+				'rooms'   => 5,
+				'walls'   => 12,
+				'doors'   => 4,
 				'windows' => 6,
 			),
-			'text' => __( 'Successfully converted sketch to floor plan.', 'mcp-ai-wpoos-pro' ),
+			'text'                => __( 'Successfully converted sketch to floor plan.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		return $this->add_image_html_to_response( $result );
@@ -224,19 +224,19 @@ class WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan implements WP_MCP_AI_Tool_Inte
 	protected function process_sketch( $image_path, $scale, $recognize_text, $auto_correct, $output_format, $context ) {
 		// Mock implementation - real version would use vision AI to analyze sketch.
 		return array(
-			'format' => $output_format,
-			'data' => array(
-				'rooms' => array(),
-				'walls' => array(),
-				'doors' => array(),
-				'windows' => array(),
+			'format'   => $output_format,
+			'data'     => array(
+				'rooms'      => array(),
+				'walls'      => array(),
+				'doors'      => array(),
+				'windows'    => array(),
 				'dimensions' => array(),
 			),
 			'metadata' => array(
-				'source' => 'sketch_conversion',
-				'scale' => $scale,
+				'source'         => 'sketch_conversion',
+				'scale'          => $scale,
 				'auto_corrected' => $auto_correct,
-				'generated_at' => current_time( 'mysql' ),
+				'generated_at'   => current_time( 'mysql' ),
 			),
 		);
 	}

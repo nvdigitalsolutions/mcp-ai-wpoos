@@ -21,12 +21,12 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 * Constructor
 	 */
 	public function __construct() {
-		$this->toolkit_slug     = 'document-generation';
+		$this->toolkit_slug     = 'document_generation';
 		$this->toolkit_name     = __( 'Document Generation Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_document_generation_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-document-generation-toolkit-settings';
 		$this->has_research     = true;
-		$this->has_remote_sites = false;
+		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-media-document';
 
 		parent::__construct();
@@ -212,16 +212,16 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_pdf'          => __( 'Generate PDF Document', 'mcp-ai-wpoos-pro' ),
-			'generate_word'         => __( 'Generate Word Document', 'mcp-ai-wpoos-pro' ),
-			'generate_excel'        => __( 'Generate Excel Spreadsheet', 'mcp-ai-wpoos-pro' ),
-			'html_to_pdf'           => __( 'Convert HTML to PDF', 'mcp-ai-wpoos-pro' ),
-			'merge_pdfs'            => __( 'Merge Multiple PDFs', 'mcp-ai-wpoos-pro' ),
-			'add_watermark_to_pdf'  => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
-			'extract_pdf_text'      => __( 'Extract Text from PDF', 'mcp-ai-wpoos-pro' ),
-			'excel_data_import'     => __( 'Import Data from Excel', 'mcp-ai-wpoos-pro' ),
-			'excel_data_export'     => __( 'Export Data to Excel', 'mcp-ai-wpoos-pro' ),
-			'generate_invoice_pdf'  => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
+			'generate_pdf'         => __( 'Generate PDF Document', 'mcp-ai-wpoos-pro' ),
+			'generate_word'        => __( 'Generate Word Document', 'mcp-ai-wpoos-pro' ),
+			'generate_excel'       => __( 'Generate Excel Spreadsheet', 'mcp-ai-wpoos-pro' ),
+			'html_to_pdf'          => __( 'Convert HTML to PDF', 'mcp-ai-wpoos-pro' ),
+			'merge_pdfs'           => __( 'Merge Multiple PDFs', 'mcp-ai-wpoos-pro' ),
+			'add_watermark_to_pdf' => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
+			'extract_pdf_text'     => __( 'Extract Text from PDF', 'mcp-ai-wpoos-pro' ),
+			'excel_data_import'    => __( 'Import Data from Excel', 'mcp-ai-wpoos-pro' ),
+			'excel_data_export'    => __( 'Export Data to Excel', 'mcp-ai-wpoos-pro' ),
+			'generate_invoice_pdf' => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -243,9 +243,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_Toolkit_Sett
 	 */
 	private function check_npm_packages_installed() {
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
-		return is_dir( $node_modules . '/pdfkit' ) && 
-		       is_dir( $node_modules . '/docx' ) && 
-		       is_dir( $node_modules . '/exceljs' );
+		return is_dir( $node_modules . '/pdfkit' ) &&
+				is_dir( $node_modules . '/docx' ) &&
+				is_dir( $node_modules . '/exceljs' );
 	}
 }
 

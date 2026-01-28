@@ -145,7 +145,7 @@ class WP_MCP_AI_Tool_Search_Medical_Records implements WP_MCP_AI_Tool_Interface,
 
 		// Build query args.
 		$query_args = array(
-			'post_type'      => 'mcp_ai_medical_record',
+			'post_type'      => 'mcp_ai_med_record',
 			'post_status'    => 'publish',
 			'posts_per_page' => $per_page,
 			'paged'          => $page,

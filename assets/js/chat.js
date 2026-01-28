@@ -103,6 +103,7 @@
     const STORAGE_KEY_PREFIX = 'wp_mcp_ai_chat_';
     const STORAGE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
     const CRAWL4AI_MAX_CONTENT_LENGTH = 5000; // Maximum characters to display per crawled page
+    const EMBEDDED_CHUNK_LOG_FREQUENCY = 5; // Log every Nth chunk for embedded client callbacks
     const STREAMING_STATUS_PREVIEW_LENGTH = 100; // Maximum characters to show in status preview during streaming
     
     // Async tool timeout constants (must match PHP constants in WP_MCP_AI_Shortcode)
@@ -1925,6 +1926,54 @@
         }
 
         return attemptSave(0);
+    }
+
+    /**
+     * Track embedded LLM usage server-side.
+     * 
+     * Sends usage data to REST API for:
+     * - Cost estimation and tracking
+     * - Orchestration dashboard visibility
+     * - JetEngine usage logs (if enabled)
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} result Completion result with usage data
+     */
+    function trackEmbeddedUsage(state, result) {
+        if (!result.usage || !state.config.assistantId || !state.config.model) {
+            return;
+        }
+
+        // Build tracking endpoint URL
+        const baseUrl = state.config.restUrl || '/wp-json/mcp-ai/v1';
+        const trackingUrl = baseUrl.replace(/\/$/, '') + '/track-embedded-usage';
+
+        const payload = {
+            assistant_id: state.config.assistantId,
+            model: state.config.model,
+            usage: result.usage,
+            finish_reason: result.finish_reason || 'stop'
+        };
+
+        // Send tracking request (non-blocking, fire-and-forget)
+        postJson(
+            trackingUrl,
+            payload,
+            buildJsonHeaders(state),
+            { timeout: 5000, state: state }
+        )
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.success) {
+                    console.log('[NV oOS] Embedded usage tracked successfully');
+                }
+            })
+            .catch(function(error) {
+                // Log but don't fail - usage tracking is optional
+                console.warn('[NV oOS] Failed to track embedded usage:', error);
+            });
     }
 
     function registerObjectUrl(url) {
@@ -10608,6 +10657,7 @@
                 messageBundleTimer: null, // Timer for message bundling delay
                 cptActionsContainer: cptActionsContainer,
                 lastToolResults: Object.create(null), // Store last results from each tool for CPT actions
+                embeddedClient: null, // Instance of embedded LLM client (created when needed for embedded provider)
             };
 
             initialiseExistingSpeechButtons(state);
@@ -11415,6 +11465,784 @@
         sendChat(state, firstSubmission);
     }
 
+    /**
+     * Send chat using client-side embedded LLM (WebLLM)
+     * Runs entirely in the browser without server-side API requests
+     * 
+     * @param {Object} state Chat state
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     */
+    function sendChatEmbedded(state, messages, finalize, submissionContext) {
+        console.log('[NV oOS] sendChatEmbedded called for instance:', state.config.assistantId);
+        
+        // Check if embedded LLM class is available
+        if (!window.WP_MCP_AI_EmbeddedLLM) {
+            console.error('[NV oOS] Embedded LLM class not found. window.WP_MCP_AI_EmbeddedLLM is:', window.WP_MCP_AI_EmbeddedLLM);
+            handleError(state, {
+                message: getString('embeddedClientMissing', 'Embedded LLM client not loaded. Please refresh the page.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client not available'));
+        }
+
+        // Verify it's a constructor function/class
+        if (typeof window.WP_MCP_AI_EmbeddedLLM !== 'function') {
+            console.error('[NV oOS] WP_MCP_AI_EmbeddedLLM is not a constructor. Type:', typeof window.WP_MCP_AI_EmbeddedLLM, 'Value:', window.WP_MCP_AI_EmbeddedLLM);
+            handleError(state, {
+                message: getString('embeddedClientInvalid', 'Embedded LLM client is invalid. Please refresh the page and clear your browser cache.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client is not a constructor'));
+        }
+
+        // Create embedded client instance for this widget if not already created
+        if (!state.embeddedClient) {
+            // Generate unique instance ID
+            // Format: chat-{assistantId}-{timestamp}-{random9chars} - consistent with embedded-llm-client.js
+            const instanceId = 'chat-' + state.config.assistantId + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+            
+            // Diagnostic: Log complete state.config to understand what's available
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Creating embedded client with state.config:', {
+                    hasSystemPrompt: !!state.config.systemPrompt,
+                    systemPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                    systemPromptPreview: state.config.systemPrompt ? (state.config.systemPrompt.length > 100 ? state.config.systemPrompt.substring(0, 100) + '...' : state.config.systemPrompt) : 'none',
+                    hasProfessionalPrompt: !!state.config.professionalPrompt,
+                    professionalPromptLength: state.config.professionalPrompt ? state.config.professionalPrompt.length : 0,
+                    professionalPromptPreview: state.config.professionalPrompt ? (state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt) : 'none',
+                    hasMemoryFiles: !!state.config.memoryFiles,
+                    memoryFilesIsArray: Array.isArray(state.config.memoryFiles),
+                    memoryFilesLength: state.config.memoryFiles ? state.config.memoryFiles.length : 0,
+                    memoryFilesCount: state.config.memoryFiles ? state.config.memoryFiles.length : 0, // Don't log IDs
+                    hasVectorStoreId: !!state.config.vectorStoreId,
+                    hasTools: !!(state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0),
+                    toolsCount: state.config.tools ? state.config.tools.length : 0
+                });
+            }
+            
+            // Build complete system prompt by combining assistant system prompt with professional prompt
+            // This ensures embedded client receives both the assistant's instructions and professional role
+            var completeSystemPrompt = state.config.systemPrompt || '';
+            if (state.config.professionalPrompt) {
+                if (completeSystemPrompt) {
+                    // Combine: assistant system prompt + professional role prompt
+                    completeSystemPrompt = completeSystemPrompt + '\n\n' + state.config.professionalPrompt;
+                } else {
+                    // Use professional prompt as the system prompt if no assistant prompt exists
+                    completeSystemPrompt = state.config.professionalPrompt;
+                }
+                console.log('[NV oOS] Combined system prompt with professional prompt:', {
+                    assistantPromptLength: state.config.systemPrompt ? state.config.systemPrompt.length : 0,
+                    professionalPromptLength: state.config.professionalPrompt.length,
+                    combinedLength: completeSystemPrompt.length
+                });
+            }
+            
+            // Prepare assistant configuration for embedded client
+            // This includes complete system prompt (assistant + professional), tools, and knowledge base information
+            const assistantConfig = {
+                systemPrompt: completeSystemPrompt,
+                tools: state.config.tools || [],
+                memoryFiles: state.config.memoryFiles || [],
+                vectorStoreId: state.config.vectorStoreId
+            };
+            
+            // Diagnostic: Log the assistantConfig being passed to the embedded client
+            // Only log in debug mode to avoid exposing sensitive configuration
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Prepared assistantConfig for embedded client:', {
+                    hasSystemPrompt: !!assistantConfig.systemPrompt,
+                    systemPromptLength: assistantConfig.systemPrompt ? assistantConfig.systemPrompt.length : 0,
+                    systemPromptPreview: assistantConfig.systemPrompt && assistantConfig.systemPrompt.length > 200 ? assistantConfig.systemPrompt.substring(0, 200) + '...' : assistantConfig.systemPrompt || 'none',
+                    hasTools: !!(assistantConfig.tools && assistantConfig.tools.length > 0),
+                    toolsCount: assistantConfig.tools ? assistantConfig.tools.length : 0,
+                    hasMemoryFiles: !!(assistantConfig.memoryFiles && assistantConfig.memoryFiles.length > 0),
+                    memoryFilesCount: assistantConfig.memoryFiles ? assistantConfig.memoryFiles.length : 0,
+                    hasVectorStoreId: !!assistantConfig.vectorStoreId
+                });
+            }
+            
+            // Use enhanced WebLLM client if tools or knowledge are available
+            // Enhanced client supports tool calling and maintains system instructions and knowledge context
+            // Check assistantConfig values (which include combined system prompt) instead of state.config
+            const hasTools = assistantConfig.tools && Array.isArray(assistantConfig.tools) && assistantConfig.tools.length > 0;
+            const hasKnowledge = (assistantConfig.memoryFiles && Array.isArray(assistantConfig.memoryFiles) && assistantConfig.memoryFiles.length > 0) || 
+                                 assistantConfig.vectorStoreId;
+            const hasSystemPrompt = !!(assistantConfig.systemPrompt && assistantConfig.systemPrompt.trim());
+            
+            if (DEBUG_MODE) {
+                console.log('[NV oOS] Embedded client capability flags before creation:', {
+                    hasTools: hasTools,
+                    hasKnowledge: hasKnowledge,
+                    hasSystemPrompt: hasSystemPrompt,
+                    willUseEnhancedClient: !!(hasTools || hasKnowledge || hasSystemPrompt) && !!window.WP_MCP_AI_WebLLM_FunctionCalling
+                });
+            }
+            
+            if ((hasTools || hasKnowledge || hasSystemPrompt) && window.WP_MCP_AI_WebLLM_FunctionCalling) {
+                state.embeddedClient = new window.WP_MCP_AI_WebLLM_FunctionCalling(instanceId, assistantConfig);
+                console.log('[NV oOS] Created enhanced WebLLM client with tools/knowledge support:', {
+                    instanceId: instanceId,
+                    hasTools: state.embeddedClient.hasTools,
+                    hasKnowledge: state.embeddedClient.hasKnowledge,
+                    hasSystemPrompt: state.embeddedClient.hasSystemPrompt
+                });
+            } else {
+                state.embeddedClient = new window.WP_MCP_AI_EmbeddedLLM(instanceId, assistantConfig);
+                console.log('[NV oOS] Created basic embedded client instance:', instanceId);
+            }
+        }
+
+        const embeddedClient = state.embeddedClient;
+
+        // Verify embedded client has required methods
+        if (!embeddedClient || typeof embeddedClient.isReady !== 'function' || typeof embeddedClient.waitForReady !== 'function') {
+            handleError(state, {
+                message: getString('embeddedClientInvalid', 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('Embedded LLM client instance is invalid or outdated'));
+        }
+
+        // Wait for embedded client to be fully initialized (WebLLM loaded)
+        if (!embeddedClient.isReady()) {
+            setStatus(state.container, {
+                message: getString('embeddedClientInitializing', 'Initializing embedded AI client...'),
+                type: 'processing',
+                showTime: false
+            });
+
+            return embeddedClient.waitForReady()
+                .then(function() {
+                    // Client is now ready, proceed with chat
+                    return sendChatEmbeddedInternal(state, messages, finalize, submissionContext);
+                })
+                .catch(function(error) {
+                    handleError(state, {
+                        message: getString('embeddedClientInitError', 'Failed to initialize embedded AI client: ') + error.message
+                    });
+                    restoreSubmissionState(state, submissionContext);
+                    finalize();
+                    throw error;
+                });
+        }
+
+        // Client is ready, proceed immediately
+        return sendChatEmbeddedInternal(state, messages, finalize, submissionContext);
+    }
+
+    /**
+     * Internal function to handle embedded chat after client is ready
+     * 
+     * @param {Object} state Chat state
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     */
+    function sendChatEmbeddedInternal(state, messages, finalize, submissionContext) {
+        const embeddedClient = state.embeddedClient;
+        
+        console.log('[NV oOS] sendChatEmbeddedInternal called with client instance:', embeddedClient.instanceId);
+
+        // Get model from config
+        const modelId = state.config.model;
+        if (!modelId) {
+            handleError(state, {
+                message: getString('embeddedModelMissing', 'No embedded model configured for this assistant.')
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            return Promise.reject(new Error('No embedded model configured'));
+        }
+
+        // Check if model is loaded
+        if (!embeddedClient.isModelLoaded()) {
+            // Check model suitability before loading (best practice)
+            if (window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability) {
+                const suitability = window.WP_MCP_AI_EmbeddedLLM.checkModelSuitability(modelId);
+                if (!suitability.suitable && suitability.warning) {
+                    console.warn('[NV oOS] Model Suitability Warning:', suitability);
+                    
+                    // Log warning for now. Future enhancement: show user confirmation dialog
+                    // with options to proceed with large model or switch to suggested model.
+                    // This would require UI changes and user preference storage.
+                    if (suitability.suggestedModel) {
+                        console.info('[NV oOS] Suggested alternative model:', suitability.suggestedModel);
+                    }
+                }
+            }
+            
+            // Model not loaded yet - need to load it first
+            console.log('[NV oOS] Model not loaded, loading model:', modelId);
+            
+            setStatus(state.container, {
+                message: getString('embeddedModelLoading', 'Loading AI model in your browser...'),
+                type: 'processing',
+                showTime: false
+            });
+
+            return embeddedClient.loadModel(modelId, function(progress) {
+                // Update status with progress
+                const progressPercent = Math.round(progress.progress * 100);
+                setStatus(state.container, {
+                    message: getString('embeddedModelLoading', 'Loading AI model...') + ' ' + progressPercent + '%',
+                    type: 'processing',
+                    showTime: false
+                });
+            })
+            .then(function() {
+                // Model loaded, now generate completion
+                console.log('[NV oOS] Model loaded successfully, generating completion');
+                return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
+            })
+            .catch(function(error) {
+                // Use enhanced error categorization for better user feedback
+                let errorMessage = getString('embeddedModelLoadError', 'Failed to load AI model: ') + error.message;
+                
+                if (window.WP_MCP_AI_EmbeddedLLM.categorizeError) {
+                    const categorized = window.WP_MCP_AI_EmbeddedLLM.categorizeError(error);
+                    errorMessage = categorized.message;
+                    
+                    // Log technical details for debugging
+                    console.error('[NV oOS] Embedded LLM Error:', {
+                        originalError: error.message,
+                        category: categorized.technicalCategory,
+                        recoverable: categorized.recoverable
+                    });
+                }
+                
+                handleError(state, { message: errorMessage });
+                restoreSubmissionState(state, submissionContext);
+                finalize();
+                throw error;
+            });
+        }
+
+        // Model already loaded, generate completion
+        console.log('[NV oOS] Model already loaded, generating completion');
+        return generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext);
+    }
+
+    /**
+     * Handle tool calls from embedded LLM response (Phase 3: Tool Execution)
+     * Executes tools via WordPress REST API using existing orchestration layer
+     * and continues conversation with results
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} embeddedClient Embedded LLM client instance
+     * @param {Array} conversationMessages Current conversation
+     * @param {Object} llmResult LLM response with tool_calls
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     * @param {Number} iterationCount Current iteration (for max iteration check)
+     */
+    function handleEmbeddedToolCalls(state, embeddedClient, conversationMessages, llmResult, finalize, submissionContext, iterationCount) {
+        iterationCount = iterationCount || 0;
+        const MAX_ITERATIONS = 5; // Prevent infinite loops
+
+        if (iterationCount >= MAX_ITERATIONS) {
+            console.warn('[NV oOS] Max tool iterations reached:', MAX_ITERATIONS);
+
+            // Add warning message
+            appendMessage(state, 'system',
+                getString('maxIterationsReached', 'Maximum tool iterations reached. Conversation may be incomplete.'),
+                { isWarning: true }
+            );
+
+            finalize();
+            return Promise.resolve();
+        }
+
+        console.log('[NV oOS] Executing tools for embedded provider (iteration ' + (iterationCount + 1) + '):', llmResult.tool_calls);
+
+        // Display assistant's tool-calling message if there's content
+        if (llmResult.content) {
+            // The message bubble already exists from streaming, just ensure it's visible
+            console.log('[NV oOS] Assistant message with tool calls already displayed');
+        }
+
+        // Add assistant message to conversation
+        const assistantMessage = {
+            role: 'assistant',
+            content: llmResult.content || '',
+            tool_calls: llmResult.tool_calls
+        };
+        conversationMessages.push(assistantMessage);
+
+        // Execute each tool call using existing orchestration
+        const toolExecutionPromises = llmResult.tool_calls.map(function(toolCall) {
+            return executeToolViaOrchestrator(state, toolCall);
+        });
+
+        return Promise.all(toolExecutionPromises)
+            .then(function(toolResults) {
+                // Add tool results to conversation
+                toolResults.forEach(function(result, index) {
+                    const toolMessage = {
+                        role: 'tool',
+                        tool_call_id: llmResult.tool_calls[index].id,
+                        name: llmResult.tool_calls[index].function.name,
+                        content: JSON.stringify(result)
+                    };
+
+                    conversationMessages.push(toolMessage);
+
+                    // Display tool result (reuse existing display logic)
+                    displayToolResult(state, llmResult.tool_calls[index].function.name, result);
+                });
+
+                // Continue conversation with tool results (recursive call)
+                return generateEmbeddedCompletion(
+                    state,
+                    embeddedClient,
+                    conversationMessages,
+                    finalize,
+                    submissionContext,
+                    iterationCount + 1
+                );
+            })
+            .catch(function(error) {
+                console.error('[NV oOS] Tool execution failed:', error);
+                handleError(state, {
+                    message: getString('toolExecutionFailed', 'Tool execution failed: ') + error.message
+                });
+                restoreSubmissionState(state, submissionContext);
+                finalize();
+            });
+    }
+
+    /**
+     * Execute a single tool via WordPress REST API (Phase 3: Tool Execution)
+     * Uses the EXISTING /tools endpoint which routes through Tool_Execution_Orchestrator
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} toolCall Tool call object from LLM
+     * @returns {Promise} Tool result
+     */
+    function executeToolViaOrchestrator(state, toolCall) {
+        console.log('[NV oOS] Executing tool via orchestrator:', toolCall.function.name);
+
+        // Parse tool arguments
+        let toolArgs = {};
+        try {
+            toolArgs = JSON.parse(toolCall.function.arguments);
+        } catch (e) {
+            console.error('[NV oOS] Failed to parse tool arguments:', e);
+            return Promise.resolve({
+                error: 'Failed to parse tool arguments',
+                raw_arguments: toolCall.function.arguments
+            });
+        }
+
+        // Call the EXISTING WordPress REST API tools endpoint
+        const payload = {
+            tool: toolCall.function.name,
+            arguments: toolArgs,
+            assistant_id: state.config.assistantId
+        };
+
+        // Show loading indicator
+        const loadingIndicator = showToolLoadingIndicator(state, toolCall.function.name);
+
+        return postJson(
+            state.config.toolsEndpoint,
+            payload,
+            buildJsonHeaders(state),
+            { state: state }
+        )
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            // Remove loading indicator
+            hideToolLoadingIndicator(loadingIndicator);
+
+            console.log('[NV oOS] Tool result from orchestrator:', {
+                tool: toolCall.function.name,
+                success: !data.error,
+                wasAsync: data.async || false,
+                hasCachedResult: data.cached || false
+            });
+
+            return data;
+        })
+        .catch(function(error) {
+            // Remove loading indicator
+            hideToolLoadingIndicator(loadingIndicator);
+
+            console.error('[NV oOS] Tool execution error:', error);
+            return {
+                error: 'Tool execution failed: ' + error.message
+            };
+        });
+    }
+
+    /**
+     * Display tool execution result in chat
+     */
+    function displayToolResult(state, toolName, result) {
+        if (result && result.async) {
+            // Tool was queued for async execution
+            const asyncMsg = getString('toolProcessing', '%s is temporarily processing your request. The assistant will continue using available information.').replace('%s', toolName);
+            appendMessage(state, 'system', asyncMsg, { toolName: toolName, isAsync: true });
+        } else if (result && result.error) {
+            // Tool execution error
+            appendMessage(state, 'system', 'Tool "' + toolName + '" error: ' + result.error, { toolName: toolName, isError: true });
+        } else {
+            // Generic success
+            appendMessage(state, 'system', 'Tool "' + toolName + '" completed', { toolName: toolName });
+        }
+    }
+
+    /**
+     * Show loading indicator for tool execution
+     */
+    function showToolLoadingIndicator(state, toolName) {
+        const loadingMsg = appendMessage(state, 'system',
+            getString('toolProcessing', '%s is processing...').replace('%s', toolName),
+            { isLoading: true, toolName: toolName }
+        );
+        return loadingMsg;
+    }
+
+    /**
+     * Hide loading indicator
+     */
+    function hideToolLoadingIndicator(element) {
+        if (element && element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }
+
+    /**
+     * Generate completion using embedded LLM client
+     * 
+     * @param {Object} state Chat state
+     * @param {Object} embeddedClient Embedded LLM client instance
+     * @param {Array} messages Messages array
+     * @param {Function} finalize Cleanup function
+     * @param {Object} submissionContext Submission context for restore
+     * @param {Number} iterationCount Current iteration count for tool calling
+     */
+    function generateEmbeddedCompletion(state, embeddedClient, messages, finalize, submissionContext, iterationCount) {
+        iterationCount = iterationCount || 0;
+        console.log('[NV oOS] Starting embedded completion generation (iteration ' + iterationCount + ')');
+        
+        setStatus(state.container, {
+            message: getString('embeddedGenerating', 'Generating response...'),
+            type: 'processing',
+            showTime: true,
+            startTime: Date.now()
+        });
+
+        // Convert messages to format expected by embedded client
+        const formattedMessages = messages.map(function(msg) {
+            // Extract text content from content array if needed
+            let content = msg.content;
+            if (Array.isArray(content)) {
+                content = content
+                    .filter(function(item) { return item.type === 'text'; })
+                    .map(function(item) { return item.text; })
+                    .join('\n');
+            }
+            
+            return {
+                role: msg.role,
+                content: content
+            };
+        });
+
+        // Build complete system prompt combining assistant prompt, professional prompt, and knowledge context
+        // This ensures embedded providers receive the same system instructions as server-side providers
+        if ((state.config.systemPrompt || state.config.professionalPrompt) && !formattedMessages.some(function(msg) { return msg.role === 'system'; })) {
+            var systemPromptContent = state.config.systemPrompt || '';
+            
+            // Add professional prompt if provided (for profession-based assistants)
+            if (state.config.professionalPrompt) {
+                if (systemPromptContent) {
+                    systemPromptContent = systemPromptContent + '\n\n' + state.config.professionalPrompt;
+                } else {
+                    systemPromptContent = state.config.professionalPrompt;
+                }
+                console.log('[NV oOS] Added professional prompt to message system prompt:', {
+                    professionalPromptLength: state.config.professionalPrompt.length,
+                    professionalPromptPreview: state.config.professionalPrompt.length > 100 ? state.config.professionalPrompt.substring(0, 100) + '...' : state.config.professionalPrompt
+                });
+            }
+            
+            // Enhance system prompt with base knowledge context if available
+            // This ensures embedded WebLLM has access to the same knowledge as server-side providers
+            if (state.config.memoryFiles && Array.isArray(state.config.memoryFiles) && state.config.memoryFiles.length > 0) {
+                var knowledgeContext = '\n\n## Base Knowledge\n\n';
+                knowledgeContext += 'You have access to the following knowledge base files:\n';
+                knowledgeContext += '- ' + state.config.memoryFiles.length + ' file(s) in your knowledge base\n';
+                knowledgeContext += 'Use this knowledge to provide accurate and contextual responses.\n';
+                systemPromptContent += knowledgeContext;
+                
+                console.log('[NV oOS] Enhanced system prompt with base knowledge:', {
+                    memoryFileCount: state.config.memoryFiles.length,
+                    vectorStoreId: state.config.vectorStoreId || 'none'
+                });
+            }
+            
+            formattedMessages.unshift({
+                role: 'system',
+                content: systemPromptContent
+            });
+            
+            console.log('[NV oOS] ===== PREPARING SYSTEM PROMPT FOR EMBEDDED CLIENT =====');
+            console.log('[NV oOS] Prepended system prompt from assistant config:', {
+                systemPromptLength: systemPromptContent.length,
+                systemPromptPreview: systemPromptContent.length > 200 ? systemPromptContent.substring(0, 200) + '...' : systemPromptContent,
+                systemPromptFull: systemPromptContent,
+                hasKnowledgeContext: !!(state.config.memoryFiles && state.config.memoryFiles.length > 0),
+                hasProfessionalPrompt: !!state.config.professionalPrompt,
+                assistantId: state.config.assistantId
+            });
+        }
+
+        console.log('[NV oOS] ===== FORMATTED MESSAGES FOR EMBEDDED CLIENT =====');
+        console.log('[NV oOS] Formatted messages for embedded client:', {
+            messageCount: formattedMessages.length,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+            systemPromptLength: formattedMessages[0] && formattedMessages[0].role === 'system' ? formattedMessages[0].content.length : 0,
+            messageRoles: formattedMessages.map(function(msg) { return msg.role; }),
+            lastMessageRole: formattedMessages[formattedMessages.length - 1].role,
+            lastMessagePreview: formattedMessages[formattedMessages.length - 1].content && formattedMessages[formattedMessages.length - 1].content.length > 100 ? formattedMessages[formattedMessages.length - 1].content.substring(0, 100) + '...' : formattedMessages[formattedMessages.length - 1].content
+        });
+
+        // Use streaming for better UX
+        const assistantMessageId = 'msg-' + Date.now() + '-' + Math.random().toString(36).slice(2, 11);
+        let fullContent = '';
+        let chunkCallbackCount = 0;
+
+        // Add empty assistant message bubble that will be filled progressively
+        const assistantMessage = {
+            role: 'assistant',
+            content: [{
+                type: 'text',
+                text: ''
+            }],
+            id: assistantMessageId
+        };
+        state.conversation.push(assistantMessage);
+        
+        // Create empty message bubble for progressive updates
+        // We can't use appendMessage with empty text as it returns null
+        const bubble = document.createElement('div');
+        bubble.className = 'wp-mcp-ai-chat__message wp-mcp-ai-chat__bubble wp-mcp-ai-chat__bubble--assistant';
+        bubble.textContent = ''; // Empty initially, will be filled as chunks arrive
+        bubble.setAttribute('data-message-id', assistantMessageId);
+        state.messagesEl.appendChild(bubble);
+        console.log('[NV oOS] Created assistant message bubble with ID:', assistantMessageId);
+        
+        // Scroll to show the new message
+        scrollBatcher.scrollToBottom(state.messagesEl);
+
+        // Get max_tokens from config or use default
+        const maxTokens = state.config.max_tokens || state.config.maxTokens || 2048;
+        
+        // Get temperature from config or use default
+        // Use assistant configuration value if available, otherwise default to 0.7
+        const temperature = state.config.temperature !== undefined && state.config.temperature !== null 
+            ? parseFloat(state.config.temperature) 
+            : 0.7;
+
+        console.log('[NV oOS] Calling generateStreamingCompletion with options:', {
+            temperature: temperature,
+            maxTokens: maxTokens,
+            hasSystemPrompt: formattedMessages.some(function(msg) { return msg.role === 'system'; }),
+            hasTools: !!(state.config.tools && state.config.tools.length > 0),
+            toolCount: state.config.tools ? state.config.tools.length : 0
+        });
+
+        // Build request options (Phase 2: Tool Support)
+        const requestOptions = {
+            temperature: temperature,
+            max_tokens: maxTokens
+        };
+
+        // Add tools if available (Phase 2: Tool Support Implementation)
+        if (state.config.tools && Array.isArray(state.config.tools) && state.config.tools.length > 0) {
+            requestOptions.tools = state.config.tools;
+            requestOptions.tool_choice = 'auto'; // Let model decide when to use tools
+
+            console.log('[NV oOS] Passing tools to WebLLM:', {
+                toolCount: state.config.tools.length,
+                toolNames: state.config.tools.map(function(t) {
+                    return t.function ? t.function.name : 'unknown';
+                })
+            });
+        }
+
+        // Helper function to update message bubble with content
+        // Uses cached bubble reference for performance (avoids querySelector on every chunk)
+        function updateMessageBubble(content) {
+            if (bubble) {
+                if (markdownService && markdownService.renderMarkdown) {
+                    // markdownService.renderMarkdown processes markdown and escapes HTML (see line 15798)
+                    // This makes it safe from XSS attacks
+                    bubble.innerHTML = markdownService.renderMarkdown(content);
+                } else {
+                    // textContent is safe from XSS as it doesn't parse HTML
+                    bubble.textContent = content;
+                }
+                scrollBatcher.scrollToBottom(state.messagesEl);
+            }
+        }
+
+        return embeddedClient.generateStreamingCompletion(
+            formattedMessages,
+            requestOptions,
+            function(chunk) {
+                chunkCallbackCount++;
+                
+                // Update message with each chunk
+                if (chunk.done) {
+                    // Final chunk - update status and ensure bubble has final content
+                    console.log('[NV oOS] Received done chunk:', {
+                        callbackNumber: chunkCallbackCount,
+                        finalContentLength: chunk.fullContent.length
+                    });
+                    
+                    fullContent = chunk.fullContent;
+                    assistantMessage.content[0].text = fullContent;
+                    
+                    // Update the message bubble with final content
+                    updateMessageBubble(fullContent);
+                    
+                    setStatus(state.container, {
+                        message: getString('complete', 'Complete'),
+                        type: 'success',
+                        showTime: false
+                    });
+                } else {
+                    // Progressive update - log at configurable frequency (initial chunks + every Nth)
+                    if (chunkCallbackCount <= EMBEDDED_CHUNK_LOG_FREQUENCY || chunkCallbackCount % EMBEDDED_CHUNK_LOG_FREQUENCY === 0) {
+                        console.log('[NV oOS] Received chunk callback:', {
+                            callbackNumber: chunkCallbackCount,
+                            deltaLength: chunk.content.length,
+                            fullContentLength: chunk.fullContent.length
+                        });
+                    }
+                    
+                    fullContent = chunk.fullContent;
+                    assistantMessage.content[0].text = fullContent;
+                    
+                    // Update the message bubble directly
+                    updateMessageBubble(fullContent);
+                }
+            }
+        )
+        .then(function(result) {
+            // Completion successful
+            console.log('[NV oOS] Received final result from generateStreamingCompletion:', {
+                success: result.success,
+                contentLength: result.content ? result.content.length : 0,
+                hasUsage: !!(result.usage),
+                hasToolCalls: !!(result.tool_calls),
+                toolCallsCount: result.tool_calls ? result.tool_calls.length : 0,
+                usage: result.usage
+            });
+
+            // Check if response includes tool_calls (Phase 3: Tool Execution)
+            if (result.tool_calls && Array.isArray(result.tool_calls) && result.tool_calls.length > 0) {
+                console.log('[NV oOS] LLM requested tool calls:', result.tool_calls);
+
+                // Execute tools and continue conversation.
+                // Pass 'messages' (the formatted conversation with system prompt) to maintain assistant knowledge across tool calls.
+                return handleEmbeddedToolCalls(state, embeddedClient, messages, result, finalize, submissionContext);
+            }
+
+            // No tool calls - finish the conversation
+            assistantMessage.content[0].text = result.content;
+            
+            // Update the final message bubble in the DOM with the complete content
+            // This ensures the message is visible even if the streaming updates missed the final chunk
+            const bubble = state.messagesEl.querySelector('[data-message-id="' + assistantMessageId + '"]');
+            if (bubble && result.content) {
+                console.log('[NV oOS] Updating final message bubble in DOM');
+                
+                if (markdownService && markdownService.renderMarkdown) {
+                    bubble.innerHTML = markdownService.renderMarkdown(result.content);
+                } else {
+                    bubble.textContent = result.content;
+                }
+                scrollBatcher.scrollToBottom(state.messagesEl);
+                
+                // Attach usage badges if usage data is available from embedded LLM
+                if (result.usage && typeof result.usage === 'object') {
+                    // Add provider and model info for badge display
+                    const usage = Object.assign({}, result.usage);
+                    if (!usage.provider) {
+                        usage.provider = 'Embedded LLM';
+                    }
+                    // Get model name from state config if available
+                    if (!usage.model && state.config && state.config.model) {
+                        usage.model = state.config.model;
+                    }
+                    
+                    console.log('[NV oOS] Attaching usage badges to bubble:', usage);
+                    
+                    // Attach usage badges to the bubble (no cost data for embedded LLM)
+                    attachUsageBadges(bubble, usage, null);
+                }
+                
+                console.log('[NV oOS] Final message bubble updated successfully');
+            } else {
+                console.warn('[NV oOS] Could not find message bubble or result.content is empty:', {
+                    bubbleFound: !!bubble,
+                    hasContent: !!result.content
+                });
+            }
+            
+            // Save to storage (localStorage)
+            console.log('[NV oOS] Saving conversation to localStorage');
+            saveConversationToStorage(state);
+            
+            // Track usage server-side (for cost estimation and orchestration dashboard)
+            if (result.usage && state.config.assistantId && state.config.model) {
+                console.log('[NV oOS] Tracking embedded LLM usage server-side');
+                trackEmbeddedUsage(state, result);
+            }
+            
+            // Save to server-side transcript CCT (if configured)
+            if (state.config.transcriptsEndpoint) {
+                console.log('[NV oOS] Saving embedded chat transcript to server');
+                saveConversationToCCT(state, { silent: true })
+                    .then(function(saveResult) {
+                        if (saveResult && !saveResult.skipped) {
+                            console.log('[NV oOS] Embedded chat transcript saved to server successfully');
+                        }
+                    })
+                    .catch(function(saveError) {
+                        console.warn('[NV oOS] Failed to save embedded chat transcript to server:', saveError);
+                        // Non-fatal - transcript is still in localStorage
+                    });
+            }
+            
+            console.log('[NV oOS] Calling finalize()');
+            finalize();
+            
+            console.log('[NV oOS] Embedded completion generation completed successfully');
+            return result;
+        })
+        .catch(function(error) {
+            handleError(state, {
+                message: getString('embeddedGenerationError', 'Failed to generate response: ') + error.message
+            });
+            restoreSubmissionState(state, submissionContext);
+            finalize();
+            throw error;
+        });
+    }
+
     function sendChat(state, submissionContext) {
         state.busy = true;
         disableForm(state, true);
@@ -11481,6 +12309,13 @@
         function finalize() {
             state.busy = false;
             disableForm(state, false);
+        }
+
+        // Check if provider is embedded - run LLM client-side in browser
+        const isEmbeddedProvider = state.config.provider === 'embedded';
+        
+        if (isEmbeddedProvider) {
+            return sendChatEmbedded(state, cleanMessages, finalize, submissionContext);
         }
 
         // Check if streaming is enabled

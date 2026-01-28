@@ -1314,3 +1314,74 @@
 		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 }
+
+/* ===========================
+   Embedded Model Management
+   =========================== */
+
+.wp-mcp-ai-embedded-model-management {
+	margin-top: 10px;
+}
+
+.wp-mcp-ai-model-list table.wp-list-table {
+	margin-top: 10px;
+	border: 1px solid var(--wp-mcp-ai-table-border-color, #c3c4c7);
+}
+
+.wp-mcp-ai-model-list table.wp-list-table thead th {
+	background-color: var(--wp-mcp-ai-table-header-bg, #f8f9ff);
+	font-weight: 600;
+	border-bottom: 2px solid var(--wp-mcp-ai-table-border-color, #c3c4c7);
+}
+
+.wp-mcp-ai-model-list table.wp-list-table tbody tr:hover {
+	background-color: var(--wp-mcp-ai-table-hover-bg, #f9f9f9);
+}
+
+.wp-mcp-ai-model-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-status-downloaded {
+	color: #00a32a;
+}
+
+.wp-mcp-ai-status-not-downloaded {
+	color: #646970;
+}
+
+.wp-mcp-ai-model-status .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.wp-mcp-ai-model-status .dashicons-spin {
+	animation: dashicons-spin 1s infinite linear;
+}
+
+@keyframes dashicons-spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.wp-mcp-ai-download-model,
+.wp-mcp-ai-delete-model {
+	white-space: nowrap;
+}
+
+.wp-mcp-ai-model-row td {
+	vertical-align: middle;
+}
+
+.wp-mcp-ai-model-size {
+	font-family: monospace;
+	font-size: 0.95em;
+}

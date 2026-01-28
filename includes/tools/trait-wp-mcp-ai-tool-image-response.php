@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Image_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Image_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         // Generate image and get attachment_id, url, etc.
  *         $result = array(
  *             'attachment_id' => $attachment_id,
@@ -121,7 +121,7 @@ trait WP_MCP_AI_Tool_Image_Response {
 
 		// Combine text message with rendered images.
 		if ( ! empty( $images_html ) ) {
-			$all_images_html         = implode( "\n\n", $images_html );
+			$all_images_html           = implode( "\n\n", $images_html );
 			$result['data']['message'] = ! empty( $text_message ) ? $text_message . "\n\n" . $all_images_html : $all_images_html;
 		}
 
@@ -215,13 +215,13 @@ trait WP_MCP_AI_Tool_Image_Response {
 		foreach ( $alt_candidates as $key ) {
 			if ( ! empty( $result[ $key ] ) && is_string( $result[ $key ] ) ) {
 				$alt_text = $result[ $key ];
-				
+
 				// Limit alt text length (recommended max is 125 characters).
 				// Use substr for precise character-based truncation.
 				if ( strlen( $alt_text ) > 125 ) {
 					$alt_text = substr( $alt_text, 0, 122 ) . '...';
 				}
-				
+
 				return $alt_text;
 			}
 		}

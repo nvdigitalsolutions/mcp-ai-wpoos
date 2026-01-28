@@ -50,7 +50,7 @@ class WP_MCP_AI_Tool_Recommendations {
 
 	/**
 	 * Tool categories and their characteristics
-	 * 
+	 *
 	 * Updated 2026-01-18: Comprehensive coverage of all 202 tools with 2026 industry standards
 	 * Token multipliers based on GPT-4o/4o-mini, Claude 3.5, and Gemini 2.0 capabilities
 	 *

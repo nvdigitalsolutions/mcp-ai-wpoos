@@ -33,13 +33,13 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'check_exit_conditions',
-			'description' => 'Check dual-condition exit gate for autonomous loops. Returns true ONLY when BOTH completion indicators AND explicit EXIT_SIGNAL are present. This prevents premature loop exits.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'check_exit_conditions',
+			'description'         => 'Check dual-condition exit gate for autonomous loops. Returns true ONLY when BOTH completion indicators AND explicit EXIT_SIGNAL are present. This prevents premature loop exits.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'session_id' => array(
+					'session_id'       => array(
 						'type'        => 'string',
 						'description' => 'Session ID to check',
 					),
@@ -47,22 +47,22 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 						'type'        => 'integer',
 						'description' => 'Number of completion indicators detected (from detect_completion_indicators)',
 					),
-					'exit_signal' => array(
+					'exit_signal'      => array(
 						'type'        => 'boolean',
 						'description' => 'Explicit EXIT_SIGNAL flag (set to true when work is verified complete)',
 					),
-					'threshold' => array(
+					'threshold'        => array(
 						'type'        => 'integer',
 						'description' => 'Minimum completion score required (default: 2)',
 						'default'     => 2,
 					),
-					'force_check' => array(
+					'force_check'      => array(
 						'type'        => 'boolean',
 						'description' => 'Force check even if session limits not reached (default: false)',
 						'default'     => false,
 					),
 				),
-				'required' => array( 'session_id' ),
+				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
 		);
@@ -83,11 +83,11 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 			);
 		}
 
-		$session_id        = $arguments['session_id'];
-		$completion_score  = isset( $arguments['completion_score'] ) ? intval( $arguments['completion_score'] ) : 0;
-		$exit_signal       = ! empty( $arguments['exit_signal'] );
-		$threshold         = ! empty( $arguments['threshold'] ) ? intval( $arguments['threshold'] ) : 2;
-		$force_check       = ! empty( $arguments['force_check'] );
+		$session_id       = $arguments['session_id'];
+		$completion_score = isset( $arguments['completion_score'] ) ? intval( $arguments['completion_score'] ) : 0;
+		$exit_signal      = ! empty( $arguments['exit_signal'] );
+		$threshold        = ! empty( $arguments['threshold'] ) ? intval( $arguments['threshold'] ) : 2;
+		$force_check      = ! empty( $arguments['force_check'] );
 
 		// Get session.
 		$session = $this->get_session( $session_id );
@@ -124,16 +124,16 @@ class WP_MCP_AI_Pro_Tool_Check_Exit_Conditions {
 
 		// Calculate metrics.
 		$metrics = array(
-			'iteration_count'       => $session['iteration_count'],
-			'max_iterations'        => $session['max_iterations'],
-			'iterations_remaining'  => max( 0, $session['max_iterations'] - $session['iteration_count'] ),
-			'token_usage'           => $session['token_usage'],
-			'token_budget'          => $session['token_budget'],
-			'tokens_remaining'      => max( 0, $session['token_budget'] - $session['token_usage'] ),
-			'completion_score'      => $completion_score,
-			'completion_threshold'  => $threshold,
-			'health_status'         => $session['health_status'],
-			'circuit_breaker'       => $session['circuit_breaker'],
+			'iteration_count'      => $session['iteration_count'],
+			'max_iterations'       => $session['max_iterations'],
+			'iterations_remaining' => max( 0, $session['max_iterations'] - $session['iteration_count'] ),
+			'token_usage'          => $session['token_usage'],
+			'token_budget'         => $session['token_budget'],
+			'tokens_remaining'     => max( 0, $session['token_budget'] - $session['token_usage'] ),
+			'completion_score'     => $completion_score,
+			'completion_threshold' => $threshold,
+			'health_status'        => $session['health_status'],
+			'circuit_breaker'      => $session['circuit_breaker'],
 		);
 
 		return array(

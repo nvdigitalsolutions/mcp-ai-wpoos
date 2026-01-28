@@ -19,12 +19,12 @@ class WP_MCP_AI_JetEngine_CCT {
 	 * Hook into JetEngine to provision the transcript content type.
 	 */
 	public static function bootstrap() {
-		// Run after JetEngine initialises the Custom Content Types module but before.
-		// the manager registers existing instances (priority 10).
-		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 0 );
+		// Run after JetEngine initialises the Custom Content Types module.
+		// We use priority 100 to ensure JetEngine is fully loaded first.
+		add_action( 'init', array( __CLASS__, 'maybe_register_cct' ), 100 );
 
 		// Ensure data stores module is enabled when JetEngine is active.
-		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 0 );
+		add_action( 'init', array( __CLASS__, 'maybe_enable_data_stores' ), 100 );
 	}
 
 	/**
@@ -48,24 +48,71 @@ class WP_MCP_AI_JetEngine_CCT {
 		$module = self::get_cct_module();
 
 		if ( ! $module ) {
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JetEngine CCT: get_item_handler() failed - CCT module not available',
+				array(
+					'slug'              => self::SLUG,
+					'jetengine_active'  => function_exists( 'jet_engine' ),
+					'reason'            => 'get_cct_module() returned null',
+				)
+			);
 			return null;
 		}
 
 		if ( empty( $module->manager ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JetEngine CCT: get_item_handler() failed - manager not available',
+				array(
+					'slug'   => self::SLUG,
+					'module' => is_object( $module ) ? get_class( $module ) : gettype( $module ),
+					'reason' => 'module->manager is empty',
+				)
+			);
 			return null;
 		}
 
 		// Ensure CCT is registered before trying to get handler.
 		// In some environments (base + pro plugin), the init hook may have fired
 		// but the CCT manager hasn't loaded content types into memory yet.
-		if ( ! self::cct_exists( $module ) ) {
+		$cct_exists_before = self::cct_exists( $module );
+		if ( ! $cct_exists_before ) {
+			WP_MCP_AI_Logger::log_event(
+				'info',
+				'JetEngine CCT: CCT does not exist in database, attempting to register',
+				array(
+					'slug' => self::SLUG,
+				)
+			);
 			// Try to register it now if it doesn't exist.
 			self::maybe_register_cct();
+
+			// Check if registration succeeded.
+			$cct_exists_after = self::cct_exists( $module );
+			WP_MCP_AI_Logger::log_event(
+				$cct_exists_after ? 'info' : 'warning',
+				'JetEngine CCT: Registration attempt completed',
+				array(
+					'slug'     => self::SLUG,
+					'success'  => $cct_exists_after,
+					'existed_before' => $cct_exists_before,
+				)
+			);
 		}
 
 		$instance = $module->manager->get_content_types( self::SLUG );
 
 		if ( ! $instance ) {
+			WP_MCP_AI_Logger::log_event(
+				'info',
+				'JetEngine CCT: Content type not loaded in manager, forcing reload',
+				array(
+					'slug'         => self::SLUG,
+					'cct_exists'   => self::cct_exists( $module ),
+				)
+			);
+
 			// Content type not loaded in manager yet. Force a reload.
 			// The query_raw('post_types') method triggers JetEngine's CCT manager
 			// to reload content types from the database into memory.
@@ -73,6 +120,13 @@ class WP_MCP_AI_JetEngine_CCT {
 				if ( method_exists( $module->manager->data->db, 'query_raw' ) ) {
 					try {
 						$module->manager->data->db->query_raw( 'post_types' );
+						WP_MCP_AI_Logger::log_event(
+							'info',
+							'JetEngine CCT: Successfully called query_raw to reload content types',
+							array(
+								'slug' => self::SLUG,
+							)
+						);
 					} catch ( Exception $e ) {
 						// Log error but continue - handler will still be null.
 						// We catch Exception (not Throwable) to avoid masking fatal errors.
@@ -90,13 +144,55 @@ class WP_MCP_AI_JetEngine_CCT {
 
 			// Try again after reload.
 			$instance = $module->manager->get_content_types( self::SLUG );
+
+			if ( ! $instance ) {
+				WP_MCP_AI_Logger::log_event(
+					'warning',
+					'JetEngine CCT: Content type still not available after reload',
+					array(
+						'slug' => self::SLUG,
+					)
+				);
+			}
 		}
 
 		if ( ! $instance ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'JetEngine CCT: get_item_handler() failed - instance not found',
+				array(
+					'slug'       => self::SLUG,
+					'cct_exists' => self::cct_exists( $module ),
+					'reason'     => 'manager->get_content_types() returned null after all attempts',
+				)
+			);
 			return null;
 		}
 
-		return $instance->get_item_handler();
+		$handler = $instance->get_item_handler();
+
+		if ( ! $handler ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'JetEngine CCT: get_item_handler() failed - handler is null',
+				array(
+					'slug'     => self::SLUG,
+					'instance' => is_object( $instance ) ? get_class( $instance ) : gettype( $instance ),
+					'reason'   => 'instance->get_item_handler() returned null',
+				)
+			);
+		} else {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'JetEngine CCT: get_item_handler() successful',
+				array(
+					'slug'    => self::SLUG,
+					'handler' => is_object( $handler ) ? get_class( $handler ) : gettype( $handler ),
+				)
+			);
+		}
+
+		return $handler;
 	}
 
 	/**
@@ -142,16 +238,48 @@ class WP_MCP_AI_JetEngine_CCT {
 		$module = self::get_cct_module();
 
 		if ( ! $module ) {
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JetEngine CCT: maybe_register_cct() failed - module not available',
+				array(
+					'slug'   => self::SLUG,
+					'reason' => 'get_cct_module() returned null',
+				)
+			);
 			return;
 		}
 
 		if ( empty( $module->manager ) || empty( $module->manager->data ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'warning',
+				'JetEngine CCT: maybe_register_cct() failed - manager or data not available',
+				array(
+					'slug'          => self::SLUG,
+					'has_manager'   => ! empty( $module->manager ),
+					'has_data'      => ! empty( $module->manager ) && ! empty( $module->manager->data ),
+				)
+			);
 			return;
 		}
 
 		if ( self::cct_exists( $module ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'debug',
+				'JetEngine CCT: maybe_register_cct() - CCT already exists, skipping registration',
+				array(
+					'slug' => self::SLUG,
+				)
+			);
 			return;
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'JetEngine CCT: Attempting to register CCT',
+			array(
+				'slug' => self::SLUG,
+			)
+		);
 
 		$data    = $module->manager->data;
 		$request = self::get_registration_request();
@@ -159,12 +287,28 @@ class WP_MCP_AI_JetEngine_CCT {
 		$data->set_request( $request );
 
 		if ( method_exists( $data, 'sanitize_item_request' ) && ! $data->sanitize_item_request() ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'JetEngine CCT: Registration failed - sanitize_item_request returned false',
+				array(
+					'slug' => self::SLUG,
+				)
+			);
 			return;
 		}
 
 		$item = $data->sanitize_item_from_request();
 
 		if ( empty( $item ) || ! is_array( $item ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'JetEngine CCT: Registration failed - sanitize_item_from_request returned invalid data',
+				array(
+					'slug'      => self::SLUG,
+					'item_type' => gettype( $item ),
+					'is_empty'  => empty( $item ),
+				)
+			);
 			return;
 		}
 
@@ -173,6 +317,13 @@ class WP_MCP_AI_JetEngine_CCT {
 		$item_id = $data->update_item_in_db( $item );
 
 		if ( ! $item_id ) {
+			WP_MCP_AI_Logger::log_event(
+				'error',
+				'JetEngine CCT: Registration failed - update_item_in_db returned false/null',
+				array(
+					'slug' => self::SLUG,
+				)
+			);
 			return;
 		}
 
@@ -183,6 +334,15 @@ class WP_MCP_AI_JetEngine_CCT {
 		if ( ! empty( $data->db ) && method_exists( $data->db, 'query_raw' ) ) {
 			$data->db->query_raw( 'post_types' );
 		}
+
+		WP_MCP_AI_Logger::log_event(
+			'info',
+			'JetEngine CCT: Successfully registered CCT',
+			array(
+				'slug'    => self::SLUG,
+				'item_id' => $item_id,
+			)
+		);
 	}
 
 	/**

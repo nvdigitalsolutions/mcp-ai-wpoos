@@ -37,6 +37,7 @@ All provider dropdowns now use `WP_MCP_AI_Admin_Settings::get_available_provider
 | LM Studio | enable_lm_studio | lm_studio_endpoint_url | No (false) |
 | Cloudflare | enable_cloudflare | cloudflare_api_token + cloudflare_account_id | No (false) |
 | Huggingface | enable_huggingface | huggingface_api_key | No (false) |
+| Embedded | enable_embedded | embedded_model | No (false) |
 
 **Important**: All providers default to disabled (false) to ensure that on fresh installations, users must explicitly enable each provider before it appears in dropdowns. This prevents confusion and failed requests when credentials haven't been configured yet.
 

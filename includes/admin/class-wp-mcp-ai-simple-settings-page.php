@@ -162,7 +162,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 					);
 
 					foreach ( $tabs as $tab_id => $tab ) :
-						$tab_url = add_query_arg(
+						$tab_url      = add_query_arg(
 							array(
 								'page' => self::PAGE_SLUG,
 								'tab'  => $tab_id,
@@ -221,7 +221,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 							$count_with_values = 0;
 							foreach ( $current_fields as $key => $field ) {
 								if ( isset( $settings[ $key ] ) && '' !== $settings[ $key ] ) {
-									$count_with_values++;
+									++$count_with_values;
 								}
 							}
 							echo esc_html( $count_with_values );
@@ -248,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 			$value = isset( $settings[ $key ] ) ? $settings[ $key ] : '';
 
 			// Check if this is a sensitive field.
-			$is_sensitive      = false;
+			$is_sensitive       = false;
 			$sensitive_patterns = array( 'key', 'token', 'secret', 'password', 'api' );
 			foreach ( $sensitive_patterns as $pattern ) {
 				if ( false !== stripos( $key, $pattern ) || 'password' === $type ) {
@@ -410,8 +410,14 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 						name="<?php echo esc_attr( $input_name ); ?>"
 						value="<?php echo esc_attr( $numeric_value ); ?>"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
-						<?php if ( '' !== $min ) : ?>min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
-						<?php if ( '' !== $max ) : ?>max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
+						<?php
+						if ( '' !== $min ) :
+							?>
+							min="<?php echo esc_attr( $min ); ?>"<?php endif; ?>
+						<?php
+						if ( '' !== $max ) :
+							?>
+							max="<?php echo esc_attr( $max ); ?>"<?php endif; ?>
 						style="width: 100%;"
 					/>
 					<?php

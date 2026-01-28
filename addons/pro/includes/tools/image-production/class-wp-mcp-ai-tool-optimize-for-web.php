@@ -56,35 +56,35 @@ class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'target_format'    => array(
+					'target_format'  => array(
 						'type'        => 'string',
 						'description' => __( 'Target format: "auto" (best available), "webp", "avif", "jpg".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'auto', 'webp', 'avif', 'jpg' ),
 						'default'     => 'auto',
 					),
-					'quality'          => array(
+					'quality'        => array(
 						'type'        => 'integer',
 						'description' => __( 'Compression quality (1-100). Default 85 for web.', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 1,
 						'maximum'     => 100,
 						'default'     => 85,
 					),
-					'max_width'        => array(
+					'max_width'      => array(
 						'type'        => 'integer',
 						'description' => __( 'Maximum width in pixels. Images larger than this will be resized.', 'mcp-ai-wpoos-pro' ),
 						'default'     => 2560,
 					),
-					'strip_metadata'   => array(
+					'strip_metadata' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Remove EXIF and other metadata to reduce file size.', 'mcp-ai-wpoos-pro' ),
 						'default'     => true,
 					),
-					'progressive'      => array(
+					'progressive'    => array(
 						'type'        => 'boolean',
 						'description' => __( 'Use progressive/interlaced encoding for better perceived performance.', 'mcp-ai-wpoos-pro' ),
 						'default'     => true,
 					),
-					'target_size_kb'   => array(
+					'target_size_kb' => array(
 						'type'        => 'integer',
 						'description' => __( 'Target file size in KB. Will adjust quality to meet target.', 'mcp-ai-wpoos-pro' ),
 					),
@@ -205,7 +205,7 @@ class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base {
 		wp_delete_file( $saved['path'] );
 
 		// Return result with optimization details.
-		$result = $this->format_attachment_response( $attachment_id );
+		$result                 = $this->format_attachment_response( $attachment_id );
 		$result['optimization'] = array(
 			'original_size_kb' => round( $original_size / 1024, 1 ),
 			'final_size_kb'    => round( $final_size / 1024, 1 ),
@@ -251,7 +251,7 @@ class WP_MCP_AI_Tool_Optimize_For_Web extends WP_MCP_AI_Tool_Image_Base {
 
 		while ( $current_size > $max_bytes && $attempts < $max_attempts && $quality > 10 ) {
 			$quality -= 5;
-			$editor = wp_get_image_editor( $file_path );
+			$editor   = wp_get_image_editor( $file_path );
 			if ( is_wp_error( $editor ) ) {
 				return $editor;
 			}

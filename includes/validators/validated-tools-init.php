@@ -29,6 +29,13 @@ function wp_mcp_ai_register_validated_tools( $registry ) {
 		return;
 	}
 
+	// Check if Symfony Validator is available.
+	if ( ! class_exists( 'Symfony\Component\Validator\Validation' ) ) {
+		// Symfony Validator dependencies not available.
+		// This is not an error - fall back to non-validated tools.
+		return;
+	}
+
 	// Define validated tools to register.
 	$validated_tools = array(
 		'WP_MCP_AI_Tool_Save_Post_Validated'               => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-post-validated.php',

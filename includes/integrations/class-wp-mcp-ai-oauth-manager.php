@@ -51,6 +51,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		 * Handle Gmail OAuth start request.
 		 *
 		 * Implements OAuth flow for base version's single Gmail connection.
+		 * Uses The PHP League OAuth2 Client library for standardized OAuth flow.
 		 */
 		public function handle_gmail_oauth_start() {
 			// Check nonce for security.
@@ -97,25 +98,48 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				10 * MINUTE_IN_SECONDS
 			);
 
-			// Build OAuth authorization URL.
-			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			// Build redirect URI - ensure it's not double-encoded and uses consistent format.
+			// Build base admin.php URL first.
+			$base_url = admin_url( 'admin.php' );
+
+			// Add the OAuth callback parameter using add_query_arg for proper URL encoding.
 			$redirect_uri = add_query_arg(
 				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
-				admin_url( 'admin.php' )
+				$base_url
 			);
 
-			$params = array(
-				'client_id'              => $client_id,
-				'redirect_uri'           => $redirect_uri,
-				'response_type'          => 'code',
-				'scope'                  => 'https://www.googleapis.com/auth/gmail.readonly',
-				'access_type'            => 'offline',
-				'include_granted_scopes' => 'true',
-				'prompt'                 => 'consent',
-				'state'                  => $state,
-			);
+			// Use The PHP League OAuth2 Client if available for standardized OAuth URL generation.
+			if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
+				try {
+					$provider = new \League\OAuth2\Client\Provider\GenericProvider(
+						array(
+							'clientId'                => $client_id,
+							'clientSecret'            => $client_secret,
+							'redirectUri'             => $redirect_uri,
+							'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
+							'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
+							'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
+							'scopes'                  => 'https://www.googleapis.com/auth/gmail.readonly',
+						)
+					);
 
-			$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+					// Get the authorization URL from League OAuth2 Client.
+					$authorize_url = $provider->getAuthorizationUrl(
+						array(
+							'state'                  => $state,
+							'access_type'            => 'offline',
+							'include_granted_scopes' => 'true',
+							'prompt'                 => 'consent',
+						)
+					);
+				} catch ( Exception $e ) {
+					// Fall back to manual URL construction if League OAuth2 Client fails.
+					$authorize_url = $this->build_google_oauth_url( $client_id, $redirect_uri, $state, 'https://www.googleapis.com/auth/gmail.readonly' );
+				}
+			} else {
+				// Fall back to manual URL construction if League OAuth2 Client is not available.
+				$authorize_url = $this->build_google_oauth_url( $client_id, $redirect_uri, $state, 'https://www.googleapis.com/auth/gmail.readonly' );
+			}
 
 			// Add Google OAuth domain to allowed redirect hosts.
 			add_filter( 'allowed_redirect_hosts', array( $this, 'allow_gmail_oauth_redirect_host' ) );
@@ -147,7 +171,19 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			);
 
 			if ( $error ) {
-				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos' ), $error ) ), $redirect_base ) );
+				wp_safe_redirect(
+					add_query_arg(
+						'gmail_error',
+						rawurlencode(
+							sprintf(
+								/* translators: %s: Error message from Google OAuth */
+								__( 'Google OAuth error: %s', 'mcp-ai-wpoos' ),
+								$error
+							)
+						),
+						$redirect_base
+					)
+				);
 				exit;
 			}
 
@@ -156,7 +192,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 
 			delete_transient( $transient_key );
 
-			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
 				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
 				exit;
 			}
@@ -176,52 +212,60 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				exit;
 			}
 
-			// Exchange authorization code for tokens.
-			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			// Build redirect_uri - must match exactly what was sent in the authorization request.
+			$base_url     = admin_url( 'admin.php' );
 			$redirect_uri = add_query_arg(
 				array( 'wp_mcp_ai_oauth' => 'gmail_callback' ),
-				admin_url( 'admin.php' )
+				$base_url
 			);
 
-			$response = wp_remote_post(
-				'https://oauth2.googleapis.com/token',
-				array(
-					'timeout' => 15,
-					'body'    => array(
-						'code'          => $code,
-						'client_id'     => $client_id,
-						'client_secret' => $client_secret,
-						'redirect_uri'  => $redirect_uri,
-						'grant_type'    => 'authorization_code',
-					),
-					'headers' => array(
-						'Accept' => 'application/json',
-					),
-				)
-			);
+			// Exchange authorization code for tokens using The PHP League OAuth2 Client if available.
+			$refresh_token = '';
+			$access_token  = '';
 
-			if ( is_wp_error( $response ) ) {
-				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
+			if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
+				try {
+					$provider = new \League\OAuth2\Client\Provider\GenericProvider(
+						array(
+							'clientId'                => $client_id,
+							'clientSecret'            => $client_secret,
+							'redirectUri'             => $redirect_uri,
+							'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
+							'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
+							'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
+							'scopes'                  => 'https://www.googleapis.com/auth/gmail.readonly',
+						)
+					);
+
+					// Exchange code for access token.
+					$access_token_obj = $provider->getAccessToken(
+						'authorization_code',
+						array( 'code' => $code )
+					);
+
+					$refresh_token = $access_token_obj->getRefreshToken();
+					$access_token  = $access_token_obj->getToken();
+
+				} catch ( Exception $e ) {
+					// Fall back to manual token exchange if League OAuth2 Client fails.
+					$token_result = $this->exchange_google_auth_code( $code, $client_id, $client_secret, $redirect_uri );
+					if ( is_wp_error( $token_result ) ) {
+						wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( $token_result->get_error_message() ), $redirect_base ) );
+						exit;
+					}
+					$refresh_token = $token_result['refresh_token'];
+					$access_token  = $token_result['access_token'];
+				}
+			} else {
+				// Fall back to manual token exchange if League OAuth2 Client is not available.
+				$token_result = $this->exchange_google_auth_code( $code, $client_id, $client_secret, $redirect_uri );
+				if ( is_wp_error( $token_result ) ) {
+					wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( $token_result->get_error_message() ), $redirect_base ) );
+					exit;
+				}
+				$refresh_token = $token_result['refresh_token'];
+				$access_token  = $token_result['access_token'];
 			}
-
-			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
-
-			if ( 200 !== (int) $status_code ) {
-				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
-			}
-
-			$decoded = json_decode( $body, true );
-
-			if ( ! is_array( $decoded ) ) {
-				wp_safe_redirect( add_query_arg( 'gmail_error', rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
-			}
-
-			$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
-			$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
 
 			// If no refresh token, check if we can reuse existing one.
 			if ( '' === $refresh_token && ! empty( $settings['gmail_refresh_token'] ) ) {
@@ -290,9 +334,90 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		}
 
 		/**
+		 * Build Google OAuth authorization URL manually.
+		 *
+		 * Used as a fallback when Google API Client is not available.
+		 *
+		 * @param string $client_id     OAuth client ID.
+		 * @param string $redirect_uri  Redirect URI.
+		 * @param string $state         OAuth state parameter.
+		 * @param string $scope         OAuth scopes (space-separated).
+		 *
+		 * @return string Authorization URL.
+		 */
+		protected function build_google_oauth_url( $client_id, $redirect_uri, $state, $scope ) {
+			$params = array(
+				'client_id'              => $client_id,
+				'redirect_uri'           => $redirect_uri,
+				'response_type'          => 'code',
+				'scope'                  => $scope,
+				'access_type'            => 'offline',
+				'include_granted_scopes' => 'true',
+				'prompt'                 => 'consent',
+				'state'                  => $state,
+			);
+
+			return add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+		}
+
+		/**
+		 * Exchange Google authorization code for tokens manually.
+		 *
+		 * Used as a fallback when Google API Client is not available or fails.
+		 *
+		 * @param string $code          Authorization code from Google.
+		 * @param string $client_id     OAuth client ID.
+		 * @param string $client_secret OAuth client secret.
+		 * @param string $redirect_uri  Redirect URI.
+		 *
+		 * @return array|WP_Error Token data or error.
+		 */
+		protected function exchange_google_auth_code( $code, $client_id, $client_secret, $redirect_uri ) {
+			$response = wp_remote_post(
+				'https://oauth2.googleapis.com/token',
+				array(
+					'timeout' => 15,
+					'body'    => array(
+						'code'          => $code,
+						'client_id'     => $client_id,
+						'client_secret' => $client_secret,
+						'redirect_uri'  => $redirect_uri,
+						'grant_type'    => 'authorization_code',
+					),
+					'headers' => array(
+						'Accept' => 'application/json',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return new WP_Error( 'token_exchange_failed', __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos' ) );
+			}
+
+			$status_code = wp_remote_retrieve_response_code( $response );
+			$body        = wp_remote_retrieve_body( $response );
+
+			if ( 200 !== (int) $status_code ) {
+				return new WP_Error( 'token_exchange_rejected', __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos' ) );
+			}
+
+			$decoded = json_decode( $body, true );
+
+			if ( ! is_array( $decoded ) ) {
+				return new WP_Error( 'invalid_token_response', __( 'Invalid response from Google.', 'mcp-ai-wpoos' ) );
+			}
+
+			return array(
+				'refresh_token' => isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '',
+				'access_token'  => isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '',
+			);
+		}
+
+		/**
 		 * Handle Google Drive OAuth start request.
 		 *
 		 * Implements OAuth flow for base version's single Google Drive connection.
+		 * Uses The PHP League OAuth2 Client library for standardized OAuth flow.
 		 */
 		public function handle_google_drive_oauth_start() {
 			// Check nonce for security.
@@ -339,25 +464,51 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				10 * MINUTE_IN_SECONDS
 			);
 
-			// Build OAuth authorization URL.
-			// Note: Build redirect_uri using add_query_arg to ensure proper URL encoding.
+			// Build redirect URI - ensure it's not double-encoded and uses consistent format.
+			// Build base admin.php URL first.
+			$base_url = admin_url( 'admin.php' );
+
+			// Add the OAuth callback parameter using add_query_arg for proper URL encoding.
 			$redirect_uri = add_query_arg(
 				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
-				admin_url( 'admin.php' )
+				$base_url
 			);
 
-			$params = array(
-				'client_id'              => $client_id,
-				'redirect_uri'           => $redirect_uri,
-				'response_type'          => 'code',
-				'scope'                  => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly',
-				'access_type'            => 'offline',
-				'include_granted_scopes' => 'true',
-				'prompt'                 => 'consent',
-				'state'                  => $state,
-			);
+			// Google Drive scopes.
+			$scopes = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly';
 
-			$authorize_url = add_query_arg( $params, 'https://accounts.google.com/o/oauth2/v2/auth' );
+			// Use The PHP League OAuth2 Client if available for standardized OAuth URL generation.
+			if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
+				try {
+					$provider = new \League\OAuth2\Client\Provider\GenericProvider(
+						array(
+							'clientId'                => $client_id,
+							'clientSecret'            => $client_secret,
+							'redirectUri'             => $redirect_uri,
+							'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
+							'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
+							'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
+							'scopes'                  => $scopes,
+						)
+					);
+
+					// Get the authorization URL from League OAuth2 Client.
+					$authorize_url = $provider->getAuthorizationUrl(
+						array(
+							'state'                  => $state,
+							'access_type'            => 'offline',
+							'include_granted_scopes' => 'true',
+							'prompt'                 => 'consent',
+						)
+					);
+				} catch ( Exception $e ) {
+					// Fall back to manual URL construction if League OAuth2 Client fails.
+					$authorize_url = $this->build_google_oauth_url( $client_id, $redirect_uri, $state, $scopes );
+				}
+			} else {
+				// Fall back to manual URL construction if League OAuth2 Client is not available.
+				$authorize_url = $this->build_google_oauth_url( $client_id, $redirect_uri, $state, $scopes );
+			}
 
 			// Add Google OAuth domain to allowed redirect hosts.
 			// Note: Reusing Gmail's filter as both use the same Google OAuth domain (accounts.google.com).
@@ -390,7 +541,19 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			);
 
 			if ( $error ) {
-				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos' ), $error ) ), $redirect_base ) );
+				wp_safe_redirect(
+					add_query_arg(
+						'drive_error',
+						rawurlencode(
+							sprintf(
+								/* translators: %s: Error message from Google OAuth */
+								__( 'Google OAuth error: %s', 'mcp-ai-wpoos' ),
+								$error
+							)
+						),
+						$redirect_base
+					)
+				);
 				exit;
 			}
 
@@ -399,7 +562,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 
 			delete_transient( $transient_key );
 
-			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
 				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
 				exit;
 			}
@@ -419,52 +582,60 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				exit;
 			}
 
-			// Exchange authorization code for tokens.
-			// Note: redirect_uri must match exactly what was sent in the authorization request.
+			// Build redirect_uri - must match exactly what was sent in the authorization request.
+			$base_url     = admin_url( 'admin.php' );
 			$redirect_uri = add_query_arg(
 				array( 'wp_mcp_ai_oauth' => 'google_drive_callback' ),
-				admin_url( 'admin.php' )
+				$base_url
 			);
 
-			$response = wp_remote_post(
-				'https://oauth2.googleapis.com/token',
-				array(
-					'timeout' => 15,
-					'body'    => array(
-						'code'          => $code,
-						'client_id'     => $client_id,
-						'client_secret' => $client_secret,
-						'redirect_uri'  => $redirect_uri,
-						'grant_type'    => 'authorization_code',
-					),
-					'headers' => array(
-						'Accept' => 'application/json',
-					),
-				)
-			);
+			// Exchange authorization code for tokens using The PHP League OAuth2 Client if available.
+			$refresh_token = '';
+			$access_token  = '';
 
-			if ( is_wp_error( $response ) ) {
-				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
+			if ( class_exists( '\League\OAuth2\Client\Provider\GenericProvider' ) ) {
+				try {
+					$provider = new \League\OAuth2\Client\Provider\GenericProvider(
+						array(
+							'clientId'                => $client_id,
+							'clientSecret'            => $client_secret,
+							'redirectUri'             => $redirect_uri,
+							'urlAuthorize'            => 'https://accounts.google.com/o/oauth2/v2/auth',
+							'urlAccessToken'          => 'https://oauth2.googleapis.com/token',
+							'urlResourceOwnerDetails' => 'https://www.googleapis.com/oauth2/v1/userinfo',
+							'scopes'                  => 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.metadata.readonly',
+						)
+					);
+
+					// Exchange code for access token.
+					$access_token_obj = $provider->getAccessToken(
+						'authorization_code',
+						array( 'code' => $code )
+					);
+
+					$refresh_token = $access_token_obj->getRefreshToken();
+					$access_token  = $access_token_obj->getToken();
+
+				} catch ( Exception $e ) {
+					// Fall back to manual token exchange if League OAuth2 Client fails.
+					$token_result = $this->exchange_google_auth_code( $code, $client_id, $client_secret, $redirect_uri );
+					if ( is_wp_error( $token_result ) ) {
+						wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( $token_result->get_error_message() ), $redirect_base ) );
+						exit;
+					}
+					$refresh_token = $token_result['refresh_token'];
+					$access_token  = $token_result['access_token'];
+				}
+			} else {
+				// Fall back to manual token exchange if Google Client is not available.
+				$token_result = $this->exchange_google_auth_code( $code, $client_id, $client_secret, $redirect_uri );
+				if ( is_wp_error( $token_result ) ) {
+					wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( $token_result->get_error_message() ), $redirect_base ) );
+					exit;
+				}
+				$refresh_token = $token_result['refresh_token'];
+				$access_token  = $token_result['access_token'];
 			}
-
-			$status_code = wp_remote_retrieve_response_code( $response );
-			$body        = wp_remote_retrieve_body( $response );
-
-			if ( 200 !== (int) $status_code ) {
-				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
-			}
-
-			$decoded = json_decode( $body, true );
-
-			if ( ! is_array( $decoded ) ) {
-				wp_safe_redirect( add_query_arg( 'drive_error', rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
-				exit;
-			}
-
-			$refresh_token = isset( $decoded['refresh_token'] ) ? trim( (string) $decoded['refresh_token'] ) : '';
-			$access_token  = isset( $decoded['access_token'] ) ? trim( (string) $decoded['access_token'] ) : '';
 
 			// If no refresh token, check if we can reuse existing one.
 			if ( '' === $refresh_token && ! empty( $settings['google_drive_refresh_token'] ) ) {

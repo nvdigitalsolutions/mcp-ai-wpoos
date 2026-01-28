@@ -55,11 +55,11 @@ class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'prompt'        => array(
+					'prompt'     => array(
 						'type'        => 'string',
 						'description' => __( 'Description of what to generate in the masked area.', 'mcp-ai-wpoos-pro' ),
 					),
-					'mask'          => array(
+					'mask'       => array(
 						'type'        => 'object',
 						'description' => __( 'Mask defining the area to edit. Provide as attachment_id, url, or base64.', 'mcp-ai-wpoos-pro' ),
 						'properties'  => array(
@@ -77,26 +77,26 @@ class WP_MCP_AI_Tool_Image_Inpainting extends WP_MCP_AI_Tool_Image_Base {
 							),
 						),
 					),
-					'size'          => array(
+					'size'       => array(
 						'type'        => 'string',
 						'description' => __( 'Output size: "1024x1024", "512x512", "256x256".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( '1024x1024', '512x512', '256x256' ),
 						'default'     => '1024x1024',
 					),
-					'n'             => array(
+					'n'          => array(
 						'type'        => 'integer',
 						'description' => __( 'Number of variations to generate (1-10).', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 1,
 						'maximum'     => 10,
 						'default'     => 1,
 					),
-					'provider'      => array(
+					'provider'   => array(
 						'type'        => 'string',
 						'description' => __( 'AI provider: "openai" (DALL-E), "auto".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'auto', 'openai' ),
 						'default'     => 'auto',
 					),
-					'use_remote'    => array(
+					'use_remote' => array(
 						'type'        => 'boolean',
 						'description' => __( 'Use remote GPU processing if available.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,

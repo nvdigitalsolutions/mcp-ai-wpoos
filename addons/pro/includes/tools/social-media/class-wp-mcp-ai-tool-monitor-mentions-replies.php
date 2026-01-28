@@ -248,20 +248,20 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 		// Collect mentions from all platforms.
 		$all_mentions = array();
 		$stats        = array(
-			'total'       => 0,
-			'by_platform' => array(),
+			'total'        => 0,
+			'by_platform'  => array(),
 			'by_sentiment' => array(
 				'positive' => 0,
 				'negative' => 0,
 				'neutral'  => 0,
 			),
-			'by_priority' => array(
+			'by_priority'  => array(
 				'urgent' => 0,
 				'high'   => 0,
 				'medium' => 0,
 				'low'    => 0,
 			),
-			'unanswered'  => 0,
+			'unanswered'   => 0,
 		);
 
 		foreach ( $platforms as $platform ) {
@@ -307,7 +307,12 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 		usort(
 			$all_mentions,
 			function ( $a, $b ) {
-				$priority_order = array( 'urgent' => 0, 'high' => 1, 'medium' => 2, 'low' => 3 );
+				$priority_order = array(
+					'urgent' => 0,
+					'high'   => 1,
+					'medium' => 2,
+					'low'    => 3,
+				);
 				$a_priority     = $priority_order[ $a['priority'] ] ?? 4;
 				$b_priority     = $priority_order[ $b['priority'] ] ?? 4;
 
@@ -516,7 +521,7 @@ class WP_MCP_AI_Tool_Monitor_Mentions_Replies implements WP_MCP_AI_Tool_Interfac
 		$positive_keywords = array( 'great', 'love', 'awesome', 'excellent', 'amazing', 'fantastic' );
 		$negative_keywords = array( 'hate', 'terrible', 'awful', 'bad', 'worst', 'disappointed', 'unhappy' );
 
-		$content_lower = strtolower( $content );
+		$content_lower  = strtolower( $content );
 		$positive_count = 0;
 		$negative_count = 0;
 

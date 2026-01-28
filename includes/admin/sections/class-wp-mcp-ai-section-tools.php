@@ -306,6 +306,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
+				'enable_sitekit_integration'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Google Site Kit Integration', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable Google Site Kit integration', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Activate Google Site Kit integration to access Analytics, Search Console, PageSpeed, and AdSense data through AI assistants. Requires <a href="https://wordpress.org/plugins/google-site-kit/" target="_blank">Google Site Kit plugin</a> to be installed and configured.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+				),
 
 				// Features fields.
 				'enable_mesh'                          => array(
@@ -618,7 +625,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Architectural Design Toolkit (Phase 2.10).
-				'enable_architectural_design_toolkit' => array(
+				'enable_architectural_design_toolkit'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -731,6 +738,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						'enable_jetengine_tools',
 						'enable_woocommerce_tools',
 						'enable_elementor_widgets',
+						'enable_sitekit_integration',
 					),
 				),
 				'media'               => array(
@@ -858,26 +866,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_toolkit_memory_requirements() {
 			return array(
-				'enable_quiz_system'                   => 32,   // 7 tools, database operations.
-				'enable_media_toolkit'                 => 48,   // Template management, image processing.
-				'enable_document_generation_toolkit'   => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
-				'enable_project_management'            => 64,   // 13 tools, complex data structures.
-				'enable_places_management'             => 56,   // 6+ tools, Google Maps API, geocoding.
-				'enable_ai_cpt_management'             => 24,   // Metabox integration, lightweight.
-				'enable_eca_management'                => 40,   // 5+ tools, iSAMS integration.
-				'enable_health_wellness_management'    => 128,  // 30+ tools, secure health data storage.
-				'enable_cloudways_toolkit'             => 192,  // 58+ tools, extensive server management.
-				'enable_ecommerce_toolkit'             => 80,   // 20 tools, WooCommerce integration.
-				'enable_social_media_toolkit'          => 64,   // 15 tools, multi-platform APIs.
-				'enable_analytics_toolkit'             => 96,   // 12 tools, data warehouse integrations.
-				'enable_multilingual_toolkit'          => 72,   // 10 tools, translation memory.
-				'enable_video_production_toolkit'      => 256,  // 12 tools, FFmpeg, video processing.
-				'enable_financial_planner_toolkit'     => 80,   // 24 tools, Plaid API integration.
-				'enable_calendar_booking_toolkit'      => 64,   // 12-15 tools, calendar sync.
-				'enable_dj_management_toolkit'         => 72,   // 15-18 tools, music APIs, contracts.
-				'enable_image_production_toolkit'      => 192,  // 12-15 tools, AI generation, GPU processing.
-				'enable_ai_tool_builder_toolkit'       => 48,   // 10 meta-tools, code generation.
-				'enable_architectural_design_toolkit'  => 160,  // 16 tools, 3D modeling, rendering.
+				'enable_quiz_system'                  => 32,   // 7 tools, database operations.
+				'enable_media_toolkit'                => 48,   // Template management, image processing.
+				'enable_document_generation_toolkit'  => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
+				'enable_project_management'           => 64,   // 13 tools, complex data structures.
+				'enable_places_management'            => 56,   // 6+ tools, Google Maps API, geocoding.
+				'enable_ai_cpt_management'            => 24,   // Metabox integration, lightweight.
+				'enable_eca_management'               => 40,   // 5+ tools, iSAMS integration.
+				'enable_health_wellness_management'   => 128,  // 30+ tools, secure health data storage.
+				'enable_cloudways_toolkit'            => 192,  // 58+ tools, extensive server management.
+				'enable_ecommerce_toolkit'            => 80,   // 20 tools, WooCommerce integration.
+				'enable_social_media_toolkit'         => 64,   // 15 tools, multi-platform APIs.
+				'enable_analytics_toolkit'            => 96,   // 12 tools, data warehouse integrations.
+				'enable_multilingual_toolkit'         => 72,   // 10 tools, translation memory.
+				'enable_video_production_toolkit'     => 256,  // 12 tools, FFmpeg, video processing.
+				'enable_financial_planner_toolkit'    => 80,   // 24 tools, Plaid API integration.
+				'enable_calendar_booking_toolkit'     => 64,   // 12-15 tools, calendar sync.
+				'enable_dj_management_toolkit'        => 72,   // 15-18 tools, music APIs, contracts.
+				'enable_image_production_toolkit'     => 192,  // 12-15 tools, AI generation, GPU processing.
+				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
+				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
 			);
 		}
 
@@ -890,12 +898,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			$toolkit_memory_requirements = $this->get_toolkit_memory_requirements();
 
-			$enabled_count    = 0;
-			$total_memory_mb  = 0;
+			$enabled_count   = 0;
+			$total_memory_mb = 0;
 
 			foreach ( $toolkit_memory_requirements as $option => $memory_mb ) {
 				if ( ! empty( $settings[ $option ] ) ) {
-					$enabled_count++;
+					++$enabled_count;
 					$total_memory_mb += $memory_mb;
 				}
 			}
@@ -1208,6 +1216,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			$jetengine_active   = class_exists( 'Jet_Engine' );
 			$woocommerce_active = class_exists( 'WooCommerce' );
 			$elementor_active   = did_action( 'elementor/loaded' );
+			$sitekit_active     = class_exists( 'Google\\Site_Kit\\Plugin' );
 			?>
 			<tr>
 				<th scope="row"></th>
@@ -1240,7 +1249,41 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
 							<?php endif; ?>
 						</li>
+						<li>
+							<strong><?php esc_html_e( 'Google Site Kit:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php if ( $sitekit_active ) : ?>
+								<span style="color: #0a5f1a;">✓ <?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></span>
+							<?php else : ?>
+								<span style="color: #646970;">○ <?php esc_html_e( 'Not Active', 'mcp-ai-wpoos' ); ?></span>
+								— <a href="<?php echo esc_url( admin_url( 'plugin-install.php?s=google+site+kit&tab=search' ) ); ?>"><?php esc_html_e( 'Install Site Kit', 'mcp-ai-wpoos' ); ?></a>
+							<?php endif; ?>
+						</li>
 					</ul>
+					<?php if ( $sitekit_active ) : ?>
+						<p class="description" style="margin-top: 15px;">
+							<strong><?php esc_html_e( 'Google Site Kit provides access to:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul style="list-style: disc; margin-left: 20px; margin-top: 5px;">
+								<li><?php esc_html_e( 'Google Analytics — Traffic, sessions, bounce rate, user demographics', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Google Search Console — Keywords, rankings, impressions, clicks, CTR', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'PageSpeed Insights — Performance scores, Core Web Vitals, optimization tips', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'AdSense — Earnings, RPM, impressions, monetization data', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						</p>
+						<p class="description">
+							<?php
+							echo wp_kses_post(
+								sprintf(
+									/* translators: %s: link to Site Kit setup */
+									__(
+										'Site Kit is configured and ready! Make sure you\'ve connected your Google account in <a href="%s">Site Kit settings</a>.',
+										'mcp-ai-wpoos'
+									),
+									admin_url( 'admin.php?page=googlesitekit-dashboard' )
+								)
+							);
+							?>
+						</p>
+					<?php endif; ?>
 					<p class="description">
 						<?php
 						echo wp_kses_post(

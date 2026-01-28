@@ -1,0 +1,245 @@
+/**
+ * Phase 8 UX Improvements Styles
+ *
+ * Styles for progressive model loading and offline-first chat UI.
+ *
+ * @package WP_MCP_AI
+ * @since 1.2.0
+ */
+
+/* Progressive Model Loading */
+.wp-mcp-ai-model-loading {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	background: #fff;
+	border-radius: 8px;
+	padding: 30px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 10000;
+	min-width: 320px;
+	text-align: center;
+}
+
+.wp-mcp-ai-model-loading .loading-animation {
+	margin-bottom: 20px;
+}
+
+.wp-mcp-ai-model-loading .spinner {
+	width: 40px;
+	height: 40px;
+	margin: 0 auto;
+	border: 4px solid #f3f3f3;
+	border-top: 4px solid #3498db;
+	border-radius: 50%;
+	animation: wp-mcp-ai-spin 1s linear infinite;
+}
+
+@keyframes wp-mcp-ai-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+.wp-mcp-ai-model-loading .loading-stage {
+	font-size: 16px;
+	font-weight: 600;
+	color: #333;
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-model-loading .loading-progress {
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-model-loading .progress-bar {
+	width: 100%;
+	height: 8px;
+	background: #e0e0e0;
+	border-radius: 4px;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.wp-mcp-ai-model-loading .progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #3498db, #2ecc71);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+	width: 0;
+}
+
+.wp-mcp-ai-model-loading .progress-text {
+	font-size: 14px;
+	color: #666;
+	font-weight: 500;
+}
+
+.wp-mcp-ai-model-loading .loading-details {
+	font-size: 12px;
+	color: #999;
+	margin-top: 10px;
+	min-height: 18px;
+}
+
+/* Loading Error State */
+.wp-mcp-ai-model-loading .loading-error {
+	text-align: center;
+}
+
+.wp-mcp-ai-model-loading .error-icon {
+	font-size: 48px;
+	margin-bottom: 15px;
+}
+
+.wp-mcp-ai-model-loading .error-message {
+	font-size: 18px;
+	font-weight: 600;
+	color: #e74c3c;
+	margin-bottom: 10px;
+}
+
+.wp-mcp-ai-model-loading .error-details {
+	font-size: 14px;
+	color: #666;
+	padding: 10px;
+	background: #fef5f5;
+	border-radius: 4px;
+	border: 1px solid #fdd;
+}
+
+/* Offline Notice */
+.wp-mcp-ai-offline-notice {
+	position: fixed;
+	bottom: 20px;
+	right: 20px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-left: 4px solid #ff9800;
+	border-radius: 4px;
+	padding: 15px 20px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	z-index: 10000;
+	animation: wp-mcp-ai-slide-in 0.3s ease;
+}
+
+@keyframes wp-mcp-ai-slide-in {
+	from {
+		transform: translateY(100px);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+.wp-mcp-ai-offline-notice svg {
+	color: #ff9800;
+	flex-shrink: 0;
+}
+
+.wp-mcp-ai-offline-notice span {
+	font-size: 14px;
+	color: #333;
+	font-weight: 500;
+}
+
+/* Chart Container */
+.wp-mcp-ai-chart-container {
+	margin: 20px 0;
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+}
+
+.wp-mcp-ai-chart-container canvas {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Mermaid Diagram Container */
+.wp-mcp-ai-mermaid-container {
+	margin: 20px 0;
+	padding: 15px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 4px;
+	overflow-x: auto;
+}
+
+.wp-mcp-ai-mermaid-container .mermaid {
+	text-align: center;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+	.wp-mcp-ai-model-loading {
+		background: #2c3e50;
+		color: #ecf0f1;
+	}
+
+	.wp-mcp-ai-model-loading .loading-stage {
+		color: #ecf0f1;
+	}
+
+	.wp-mcp-ai-model-loading .progress-bar {
+		background: #34495e;
+	}
+
+	.wp-mcp-ai-offline-notice {
+		background: #2c3e50;
+		border-color: #34495e;
+		color: #ecf0f1;
+	}
+
+	.wp-mcp-ai-offline-notice span {
+		color: #ecf0f1;
+	}
+
+	.wp-mcp-ai-chart-container,
+	.wp-mcp-ai-mermaid-container {
+		background: #2c3e50;
+		border-color: #34495e;
+	}
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+	.wp-mcp-ai-model-loading {
+		min-width: 280px;
+		padding: 20px;
+	}
+
+	.wp-mcp-ai-offline-notice {
+		bottom: 10px;
+		right: 10px;
+		left: 10px;
+		max-width: none;
+	}
+
+	.wp-mcp-ai-chart-container,
+	.wp-mcp-ai-mermaid-container {
+		margin: 15px 0;
+		padding: 10px;
+	}
+}
+
+/* Accessibility improvements */
+.wp-mcp-ai-model-loading:focus,
+.wp-mcp-ai-offline-notice:focus {
+	outline: 2px solid #3498db;
+	outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+	.wp-mcp-ai-model-loading,
+	.wp-mcp-ai-offline-notice {
+		display: none;
+	}
+}

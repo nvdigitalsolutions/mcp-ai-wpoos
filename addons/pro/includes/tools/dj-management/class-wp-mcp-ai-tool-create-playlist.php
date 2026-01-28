@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a custom DJ playlist with tracks, ordering, and metadata. Supports event-specific and genre-based playlists.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new playlist or update an existing playlist. If playlist_id is provided, updates the existing playlist instead of creating a new one. Supports event-specific and genre-based playlists with tracks, ordering, and metadata. Use this tool for both creating new playlists and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -45,6 +45,10 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
+				'playlist_id'     => array(
+					'type'        => 'integer',
+					'description' => __( 'Optional playlist ID. If provided, updates the existing playlist instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
+				),
 				'name'            => array(
 					'type'        => 'string',
 					'description' => __( 'Playlist name (required)', 'mcp-ai-wpoos-pro' ),
@@ -111,6 +115,37 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 			);
 		}
 
+		// Check if this is an update operation.
+		$playlist_id       = isset( $arguments['playlist_id'] ) ? absint( $arguments['playlist_id'] ) : 0;
+		$is_update         = false;
+		$existing_playlist = null;
+
+		if ( $playlist_id ) {
+			// Verify playlist exists and user has permission to update it.
+			$existing_playlist = get_post( $playlist_id );
+
+			if ( ! $existing_playlist || 'dj_playlist' !== $existing_playlist->post_type ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'Playlist not found.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			// Check permissions: must be author or have edit_others_posts capability.
+			$current_user_id = ! empty( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+			$is_author       = absint( $existing_playlist->post_author ) === $current_user_id;
+			$can_edit_others = user_can( $current_user_id, 'edit_others_posts' );
+
+			if ( ! $is_author && ! $can_edit_others ) {
+				return array(
+					'success' => false,
+					'error'   => __( 'You do not have permission to update this playlist.', 'mcp-ai-wpoos-pro' ),
+				);
+			}
+
+			$is_update = true;
+		}
+
 		// Sanitize inputs.
 		$name            = sanitize_text_field( $arguments['name'] );
 		$description     = ! empty( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '';
@@ -120,21 +155,39 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		$tracks          = ! empty( $arguments['tracks'] ) ? $arguments['tracks'] : array();
 		$target_duration = ! empty( $arguments['target_duration'] ) ? absint( $arguments['target_duration'] ) : 0;
 
-		// Create playlist post.
-		$post_data = array(
-			'post_title'   => $name,
-			'post_content' => $description,
-			'post_status'  => 'publish',
-			'post_type'    => 'dj_playlist',
-		);
-
-		$playlist_id = wp_insert_post( $post_data );
-
-		if ( is_wp_error( $playlist_id ) ) {
-			return array(
-				'success' => false,
-				'error'   => $playlist_id->get_error_message(),
+		if ( $is_update ) {
+			// Update existing playlist post.
+			$post_data = array(
+				'ID'           => $playlist_id,
+				'post_title'   => $name,
+				'post_content' => $description,
 			);
+
+			$result = wp_update_post( $post_data );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success' => false,
+					'error'   => $result->get_error_message(),
+				);
+			}
+		} else {
+			// Create playlist post.
+			$post_data = array(
+				'post_title'   => $name,
+				'post_content' => $description,
+				'post_status'  => 'publish',
+				'post_type'    => 'dj_playlist',
+			);
+
+			$playlist_id = wp_insert_post( $post_data );
+
+			if ( is_wp_error( $playlist_id ) ) {
+				return array(
+					'success' => false,
+					'error'   => $playlist_id->get_error_message(),
+				);
+			}
 		}
 
 		// Store playlist metadata.
@@ -142,7 +195,9 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		update_post_meta( $playlist_id, '_genre', $genre );
 		update_post_meta( $playlist_id, '_mood', $mood );
 		update_post_meta( $playlist_id, '_target_duration', $target_duration );
-		update_post_meta( $playlist_id, '_created_date', current_time( 'mysql' ) );
+		if ( ! $is_update ) {
+			update_post_meta( $playlist_id, '_created_date', current_time( 'mysql' ) );
+		}
 
 		// Process and store tracks.
 		$processed_tracks = array();
@@ -168,9 +223,10 @@ class WP_MCP_AI_Tool_Create_Playlist implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'success'     => true,
 			'playlist_id' => $playlist_id,
+			'updated'     => $is_update,
 			'message'     => sprintf(
 				/* translators: %s: playlist name */
-				__( 'Playlist "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
+				$is_update ? __( 'Playlist "%s" updated successfully.', 'mcp-ai-wpoos-pro' ) : __( 'Playlist "%s" created successfully.', 'mcp-ai-wpoos-pro' ),
 				$name
 			),
 			'playlist'    => array(

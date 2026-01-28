@@ -52,21 +52,21 @@ class WP_MCP_AI_Tool_Resize_Image_Smart extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'width'          => array(
+					'width'      => array(
 						'type'        => 'integer',
 						'description' => __( 'Target width in pixels.', 'mcp-ai-wpoos-pro' ),
 					),
-					'height'         => array(
+					'height'     => array(
 						'type'        => 'integer',
 						'description' => __( 'Target height in pixels.', 'mcp-ai-wpoos-pro' ),
 					),
-					'mode'           => array(
+					'mode'       => array(
 						'type'        => 'string',
 						'description' => __( 'Resize mode: "crop" (center crop), "fit" (maintain aspect), "fill" (exact size), "smart" (content-aware).', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'crop', 'fit', 'fill', 'smart' ),
 						'default'     => 'smart',
 					),
-					'focus_area'     => array(
+					'focus_area' => array(
 						'type'        => 'string',
 						'description' => __( 'Focus area: "center", "top", "bottom", "left", "right", "face" (auto-detect faces).', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'center', 'top', 'bottom', 'left', 'right', 'face' ),

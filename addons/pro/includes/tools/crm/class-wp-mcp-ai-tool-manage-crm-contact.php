@@ -87,7 +87,10 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 						'phone'      => array( 'type' => 'string' ),
 						'company'    => array( 'type' => 'string' ),
 						'job_title'  => array( 'type' => 'string' ),
-						'tags'       => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+						'tags'       => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
 					),
 				),
 				'search_query' => array(
@@ -398,13 +401,12 @@ class WP_MCP_AI_Tool_Manage_CRM_Contact implements WP_MCP_AI_Tool_Interface, WP_
 		$contacts = $this->data_store->query_items( $query_args );
 
 		return array(
-			'success'       => true,
-			'contacts'      => $contacts,
-			'search_query'  => $arguments['search_query'],
-			'per_page'      => $per_page,
-			'page'          => $page,
-			'storage_type'  => $this->data_store->get_storage_type(),
+			'success'      => true,
+			'contacts'     => $contacts,
+			'search_query' => $arguments['search_query'],
+			'per_page'     => $per_page,
+			'page'         => $page,
+			'storage_type' => $this->data_store->get_storage_type(),
 		);
 	}
 }
-

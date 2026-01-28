@@ -252,11 +252,11 @@ class WP_MCP_AI_Tool_Post_To_Multiple_Platforms implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Set overall success based on whether at least one platform succeeded.
-		$results['success']       = ! empty( $results['platforms'] );
-		$results['total']         = count( $platforms );
-		$results['succeeded']     = count( $results['platforms'] );
-		$results['failed']        = count( $results['errors'] );
-		$results['message']       = sprintf(
+		$results['success']   = ! empty( $results['platforms'] );
+		$results['total']     = count( $platforms );
+		$results['succeeded'] = count( $results['platforms'] );
+		$results['failed']    = count( $results['errors'] );
+		$results['message']   = sprintf(
 			/* translators: 1: Number of successful posts, 2: Number of total platforms */
 			__( 'Posted successfully to %1$d of %2$d platforms.', 'mcp-ai-wpoos-pro' ),
 			$results['succeeded'],

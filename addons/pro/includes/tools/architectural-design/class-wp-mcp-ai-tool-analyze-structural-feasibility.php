@@ -49,11 +49,11 @@ class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_In
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'       => array(
+				'floor_plan'        => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
-				'num_floors'       => array(
+				'num_floors'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of floors in building.', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -65,17 +65,17 @@ class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_In
 					'enum'        => array( 'wood_frame', 'steel', 'concrete', 'masonry' ),
 					'default'     => 'wood_frame',
 				),
-				'soil_type'        => array(
+				'soil_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Soil type: "clay", "sand", "rock", "mixed".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'clay', 'sand', 'rock', 'mixed' ),
 				),
-				'seismic_zone'     => array(
+				'seismic_zone'      => array(
 					'type'        => 'string',
 					'description' => __( 'Seismic design category: "A", "B", "C", "D", "E", "F".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'A', 'B', 'C', 'D', 'E', 'F' ),
 				),
-				'analysis_type'    => array(
+				'analysis_type'     => array(
 					'type'        => 'array',
 					'description' => __( 'Analysis types: "gravity_loads", "lateral_loads", "foundation", "spans".', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -130,12 +130,12 @@ class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		$floor_plan         = $arguments['floor_plan'];
-		$num_floors         = isset( $arguments['num_floors'] ) ? absint( $arguments['num_floors'] ) : 1;
-		$construction_type  = isset( $arguments['construction_type'] ) ? sanitize_text_field( $arguments['construction_type'] ) : 'wood_frame';
-		$soil_type          = isset( $arguments['soil_type'] ) ? sanitize_text_field( $arguments['soil_type'] ) : '';
-		$seismic_zone       = isset( $arguments['seismic_zone'] ) ? sanitize_text_field( $arguments['seismic_zone'] ) : '';
-		$analysis_type      = isset( $arguments['analysis_type'] ) ? (array) $arguments['analysis_type'] : array( 'gravity_loads', 'spans' );
+		$floor_plan        = $arguments['floor_plan'];
+		$num_floors        = isset( $arguments['num_floors'] ) ? absint( $arguments['num_floors'] ) : 1;
+		$construction_type = isset( $arguments['construction_type'] ) ? sanitize_text_field( $arguments['construction_type'] ) : 'wood_frame';
+		$soil_type         = isset( $arguments['soil_type'] ) ? sanitize_text_field( $arguments['soil_type'] ) : '';
+		$seismic_zone      = isset( $arguments['seismic_zone'] ) ? sanitize_text_field( $arguments['seismic_zone'] ) : '';
+		$analysis_type     = isset( $arguments['analysis_type'] ) ? (array) $arguments['analysis_type'] : array( 'gravity_loads', 'spans' );
 
 		// Perform structural analysis.
 		$analysis_results = $this->perform_analysis( $floor_plan, $num_floors, $construction_type, $soil_type, $seismic_zone, $analysis_type, $context );
@@ -166,25 +166,25 @@ class WP_MCP_AI_Tool_Analyze_Structural_Feasibility implements WP_MCP_AI_Tool_In
 	 */
 	protected function perform_analysis( $floor_plan, $num_floors, $construction_type, $soil_type, $seismic_zone, $analysis_type, $context ) {
 		return array(
-			'construction_type' => $construction_type,
-			'num_floors'        => $num_floors,
-			'analyses'          => array(
+			'construction_type'   => $construction_type,
+			'num_floors'          => $num_floors,
+			'analyses'            => array(
 				array(
-					'type'        => 'gravity_loads',
-					'status'      => 'feasible',
-					'findings'    => 'Estimated dead load: 15 PSF, Live load: 40 PSF',
+					'type'            => 'gravity_loads',
+					'status'          => 'feasible',
+					'findings'        => 'Estimated dead load: 15 PSF, Live load: 40 PSF',
 					'recommendations' => 'Standard wood framing adequate for loads',
 				),
 				array(
-					'type'        => 'spans',
-					'status'      => 'warning',
-					'findings'    => 'Great room has 24-foot clear span',
+					'type'            => 'spans',
+					'status'          => 'warning',
+					'findings'        => 'Great room has 24-foot clear span',
 					'recommendations' => 'Consider engineered beam or intermediate support',
 				),
 			),
 			'overall_feasibility' => 'feasible_with_modifications',
-			'critical_issues'   => array(),
-			'warnings'          => array(
+			'critical_issues'     => array(),
+			'warnings'            => array(
 				'Large span requires engineered beam',
 			),
 		);

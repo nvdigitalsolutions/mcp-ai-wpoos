@@ -51,6 +51,22 @@ const bundledOptions = {
 	logLevel: 'info',
 };
 
+// Modern build options for ES2020+ with code splitting (Phase 6)
+const modernOptions = {
+	bundle: true,
+	minify: true,
+	sourcemap: true,
+	target: ['es2020', 'chrome113', 'safari18'],
+	format: 'esm', // ES modules for better tree shaking
+	splitting: true, // Enable code splitting
+	logLevel: 'info',
+	loader: {
+		'.wasm': 'file',
+		'.data': 'file',
+	},
+	chunkNames: 'chunks/[name]-[hash]',
+};
+
 // Build configurations for each file
 const builds = [
 	{
@@ -116,6 +132,85 @@ const builds = [
 		outfile: 'assets/js/tools-manager.min.js',
 		...commonOptions,
 	},
+	// WebLLM enhancement files (Phase 1)
+	{
+		entryPoints: ['assets/js/webllm-tool-adapter.js'],
+		outfile: 'assets/js/webllm-tool-adapter.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/webllm-function-calling-client.js'],
+		outfile: 'assets/js/webllm-function-calling-client.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/webllm-multimodal-client.js'],
+		outfile: 'assets/js/webllm-multimodal-client.min.js',
+		...commonOptions,
+	},
+	// Transformers.js files (Phase 2)
+	{
+		entryPoints: ['assets/js/transformers-tasks-client.js'],
+		outfile: 'assets/js/transformers-tasks-client.min.js',
+		...commonOptions,
+	},
+	// LangChain.js files (Phase 3)
+	{
+		entryPoints: ['assets/js/langchain-tool-adapter.js'],
+		outfile: 'assets/js/langchain-tool-adapter.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/langchain-orchestration.js'],
+		outfile: 'assets/js/langchain-orchestration.min.js',
+		...commonOptions,
+	},
+	// Web Workers files (Phase 4)
+	{
+		entryPoints: ['assets/js/llm-worker-manager.js'],
+		outfile: 'assets/js/llm-worker-manager.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/workers/llm-worker.js'],
+		outfile: 'assets/js/workers/llm-worker.min.js',
+		...commonOptions,
+	},
+	// Browser-native AI tools (Phase 7)
+	{
+		entryPoints: ['assets/js/client-tools.js'],
+		outfile: 'assets/js/client-tools.min.js',
+		...commonOptions,
+	},
+	// UX improvements (Phase 8)
+	{
+		entryPoints: ['assets/js/progressive-model-loader.js'],
+		outfile: 'assets/js/progressive-model-loader.min.js',
+		...commonOptions,
+	},
+	{
+		entryPoints: ['assets/js/offline-chat-manager.js'],
+		outfile: 'assets/js/offline-chat-manager.min.js',
+		...commonOptions,
+	},
+	// Modern bundles with code splitting (Phase 6)
+	// Note: Commented out until source files are created
+	// {
+	// 	entryPoints: ['assets/js/src/chat-modern.ts'],
+	// 	outfile: 'assets/js/dist/chat-modern.min.js',
+	// 	...modernOptions,
+	// },
+	// {
+	// 	entryPoints: ['assets/js/src/webllm-modern.ts'],
+	// 	outfile: 'assets/js/dist/webllm.min.js',
+	// 	...modernOptions,
+	// 	external: ['@mlc-ai/web-llm'], // Load from CDN
+	// },
+	// {
+	// 	entryPoints: ['assets/js/src/transformers-client.ts'],
+	// 	outfile: 'assets/js/dist/transformers.min.js',
+	// 	...modernOptions,
+	// },
 ];
 
 // Build all files

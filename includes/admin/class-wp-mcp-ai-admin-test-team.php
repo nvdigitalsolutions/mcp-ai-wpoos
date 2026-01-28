@@ -209,13 +209,13 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											}
 
 											$category_labels = array(
-												'advisory'   => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
-												'creative'   => __( 'Creative Services', 'mcp-ai-wpoos' ),
-												'technical'  => __( 'Technical', 'mcp-ai-wpoos' ),
+												'advisory' => __( 'Advisory/Consulting', 'mcp-ai-wpoos' ),
+												'creative' => __( 'Creative Services', 'mcp-ai-wpoos' ),
+												'technical' => __( 'Technical', 'mcp-ai-wpoos' ),
 												'healthcare' => __( 'Healthcare', 'mcp-ai-wpoos' ),
-												'legal'      => __( 'Legal', 'mcp-ai-wpoos' ),
-												'financial'  => __( 'Financial', 'mcp-ai-wpoos' ),
-												'other'      => __( 'Other', 'mcp-ai-wpoos' ),
+												'legal'    => __( 'Legal', 'mcp-ai-wpoos' ),
+												'financial' => __( 'Financial', 'mcp-ai-wpoos' ),
+												'other'    => __( 'Other', 'mcp-ai-wpoos' ),
 											);
 
 											$category_display = isset( $category_labels[ $category ] ) ? $category_labels[ $category ] : ( $category ? ucfirst( $category ) : '' );
@@ -231,11 +231,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 
 								// Build team data for JavaScript.
 								$team_data = array(
-									'members'                => $members_data,
-									'orchestration_mode'     => $orchestration_mode ? $orchestration_mode : 'sequential',
-									'result_aggregation'     => $result_aggregation ? $result_aggregation : 'consensus',
-									'multi_agent_enabled'    => $multi_agent_enabled,
-									'supports_unified_mode'  => $multi_agent_enabled && $member_count > 1,
+									'members'             => $members_data,
+									'orchestration_mode'  => $orchestration_mode ? $orchestration_mode : 'sequential',
+									'result_aggregation'  => $result_aggregation ? $result_aggregation : 'consensus',
+									'multi_agent_enabled' => $multi_agent_enabled,
+									'supports_unified_mode' => $multi_agent_enabled && $member_count > 1,
 								);
 								?>
 								<tr>

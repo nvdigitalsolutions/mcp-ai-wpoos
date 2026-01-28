@@ -19,17 +19,17 @@ class WP_MCP_AI_Provider_Keys_Tab_Navigation_Test extends WP_UnitTestCase {
 	public function test_provider_keys_persist_on_tab_navigation() {
 		// Set up initial settings with provider keys configured.
 		$initial_settings = array(
-			'default_provider'       => 'gemini',
-			'default_model'          => 'gpt-4o',
-			'enable_gemini'          => true,
-			'gemini_api_key'         => 'AIza-test-gemini-key-12345',
-			'default_gemini_model'   => 'gemini-2.5-flash',
-			'enable_openai'          => true,
-			'openai_api_key'         => 'sk-test-openai-key-67890',
-			'enable_ollama'          => true,
-			'ollama_endpoint_url'    => 'http://localhost:11434',
-			'enable_anthropic'       => true,
-			'anthropic_api_key'      => 'sk-ant-test-key-abcde',
+			'default_provider'     => 'gemini',
+			'default_model'        => 'gpt-4o',
+			'enable_gemini'        => true,
+			'gemini_api_key'       => 'AIza-test-gemini-key-12345',
+			'default_gemini_model' => 'gemini-2.5-flash',
+			'enable_openai'        => true,
+			'openai_api_key'       => 'sk-test-openai-key-67890',
+			'enable_ollama'        => true,
+			'ollama_endpoint_url'  => 'http://localhost:11434',
+			'enable_anthropic'     => true,
+			'anthropic_api_key'    => 'sk-ant-test-key-abcde',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
@@ -39,8 +39,8 @@ class WP_MCP_AI_Provider_Keys_Tab_Navigation_Test extends WP_UnitTestCase {
 
 		// Simulate navigating to Advanced tab (GET request, no POST data).
 		// This is what happens when clicking "Advanced" tab link.
-		$_GET['page'] = 'wp-mcp-ai-dashboard';
-		$_GET['tab']  = 'advanced';
+		$_GET['page']   = 'wp-mcp-ai-dashboard';
+		$_GET['tab']    = 'advanced';
 		$_GET['subtab'] = 'settings_management';
 
 		// No POST data - this is a navigation, not a form submission.
@@ -98,11 +98,11 @@ class WP_MCP_AI_Provider_Keys_Tab_Navigation_Test extends WP_UnitTestCase {
 	public function test_settings_health_check_doesnt_clear_providers() {
 		// Set up initial settings with provider keys.
 		$initial_settings = array(
-			'default_provider'       => 'gemini',
-			'default_model'          => 'gemini-2.5-flash',
-			'enable_gemini'          => true,
-			'gemini_api_key'         => 'AIza-test-gemini-key-12345',
-			'default_gemini_model'   => 'gemini-2.5-flash',
+			'default_provider'     => 'gemini',
+			'default_model'        => 'gemini-2.5-flash',
+			'enable_gemini'        => true,
+			'gemini_api_key'       => 'AIza-test-gemini-key-12345',
+			'default_gemini_model' => 'gemini-2.5-flash',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
@@ -114,7 +114,7 @@ class WP_MCP_AI_Provider_Keys_Tab_Navigation_Test extends WP_UnitTestCase {
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();
 
 		// Mock the AJAX request.
-		$_POST['action'] = 'wp_mcp_ai_check_settings_health';
+		$_POST['action']    = 'wp_mcp_ai_check_settings_health';
 		$_REQUEST['action'] = 'wp_mcp_ai_check_settings_health';
 
 		// Get settings after health check.
@@ -169,10 +169,10 @@ class WP_MCP_AI_Provider_Keys_Tab_Navigation_Test extends WP_UnitTestCase {
 	public function test_navigating_provider_subtabs_preserves_keys() {
 		// Set up settings with multiple providers.
 		$initial_settings = array(
-			'enable_gemini'   => true,
-			'gemini_api_key'  => 'AIza-test-gemini-key-12345',
-			'enable_openai'   => true,
-			'openai_api_key'  => 'sk-test-openai-key-67890',
+			'enable_gemini'  => true,
+			'gemini_api_key' => 'AIza-test-gemini-key-12345',
+			'enable_openai'  => true,
+			'openai_api_key' => 'sk-test-openai-key-67890',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 

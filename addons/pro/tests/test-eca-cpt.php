@@ -251,4 +251,93 @@ class Test_ECA_CPT_Admin_Notice extends WP_UnitTestCase {
 		wp_delete_post( $post_id, true );
 		unset( $_POST );
 	}
+
+	/**
+	 * Test that ECA category taxonomy is registered correctly.
+	 */
+	public function test_eca_category_taxonomy_registered() {
+		// Enable ECA management.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_eca_management' => true,
+			)
+		);
+
+		// Register post types and taxonomies.
+		WP_MCP_AI_ECA_CPT::register_post_types();
+		WP_MCP_AI_ECA_CPT::register_taxonomies();
+
+		// Check taxonomy is registered.
+		$this->assertTrue( taxonomy_exists( 'mcp_ai_eca_category' ) );
+
+		// Get taxonomy object.
+		$taxonomy = get_taxonomy( 'mcp_ai_eca_category' );
+
+		// Verify taxonomy settings.
+		$this->assertEquals( 'ECA Categories', $taxonomy->labels->name );
+		$this->assertTrue( $taxonomy->hierarchical );
+		$this->assertTrue( $taxonomy->show_ui );
+		$this->assertTrue( $taxonomy->show_admin_column );
+
+		// Verify default categories exist.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_eca_category' );
+		$this->assertNotFalse( $health_wellness );
+		$this->assertEquals( 'Health & Wellness', $health_wellness->name );
+
+		$sports = get_term_by( 'slug', 'sports', 'mcp_ai_eca_category' );
+		$this->assertNotFalse( $sports );
+		$this->assertEquals( 'Sports', $sports->name );
+
+		$arts = get_term_by( 'slug', 'arts-music', 'mcp_ai_eca_category' );
+		$this->assertNotFalse( $arts );
+		$this->assertEquals( 'Arts & Music', $arts->name );
+	}
+
+	/**
+	 * Test that ECA can be assigned to category.
+	 */
+	public function test_eca_can_be_assigned_to_category() {
+		// Enable ECA management.
+		update_option(
+			'wp_mcp_ai_settings',
+			array(
+				'enable_eca_management' => true,
+			)
+		);
+
+		// Register post types and taxonomies.
+		WP_MCP_AI_ECA_CPT::register_post_types();
+		WP_MCP_AI_ECA_CPT::register_taxonomies();
+
+		// Create an ECA post.
+		$post_id = wp_insert_post(
+			array(
+				'post_type'   => 'mcp_ai_eca',
+				'post_title'  => 'Yoga Club',
+				'post_status' => 'publish',
+			)
+		);
+
+		$this->assertIsInt( $post_id );
+		$this->assertGreaterThan( 0, $post_id );
+
+		// Get health wellness category.
+		$health_wellness = get_term_by( 'slug', 'health-wellness', 'mcp_ai_eca_category' );
+		$this->assertNotFalse( $health_wellness );
+
+		// Assign category to ECA.
+		$result = wp_set_object_terms( $post_id, $health_wellness->term_id, 'mcp_ai_eca_category' );
+		$this->assertIsArray( $result );
+		$this->assertNotEmpty( $result );
+
+		// Verify category is assigned.
+		$terms = wp_get_object_terms( $post_id, 'mcp_ai_eca_category' );
+		$this->assertIsArray( $terms );
+		$this->assertCount( 1, $terms );
+		$this->assertEquals( 'Health & Wellness', $terms[0]->name );
+
+		// Clean up.
+		wp_delete_post( $post_id, true );
+	}
 }

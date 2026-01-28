@@ -31,7 +31,18 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 		$this->capability     = 'edit_posts';
 		$this->research_title = __( 'Family Member & Pet Research', 'mcp-ai-wpoos-pro' );
 
-		parent::__construct();
+		parent::__construct( 'health' );
+	}
+
+	/**
+	 * Get entity types for this toolkit.
+	 *
+	 * @return array Entity types.
+	 */
+	protected function get_entity_types() {
+		return array(
+			'members' => __( 'Members', 'mcp-ai-wpoos-pro' ),
+		);
 	}
 
 	/**
@@ -96,6 +107,175 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Get supported import formats.
+	 *
+	 * @return array
+	 */
+	protected static function get_import_formats() {
+		return array(
+			'csv'  => 'CSV',
+			'vcf'  => 'vCard',
+			'json' => 'JSON',
+		);
+	}
+
+	/**
+	 * Process imported data based on format.
+	 *
+	 * @param mixed  $data   The imported data.
+	 * @param string $format The import format.
+	 * @return array|WP_Error Processed data or error.
+	 */
+	protected static function process_import_data( $data, $format ) {
+		return new WP_Error( 'not_implemented', __( 'Member import processing coming soon', 'mcp-ai-wpoos-pro' ) );
+	}
+
+	/**
+	 * Get validation schema for member data.
+	 *
+	 * @return array
+	 */
+	protected static function get_validation_schema() {
+		return array(
+			'required_fields'    => array(
+				'first_name' => __( 'First Name', 'mcp-ai-wpoos-pro' ),
+				'last_name'  => __( 'Last Name', 'mcp-ai-wpoos-pro' ),
+				'email'      => __( 'Email Address', 'mcp-ai-wpoos-pro' ),
+			),
+			'recommended_fields' => array(
+				'phone'       => __( 'Phone Number', 'mcp-ai-wpoos-pro' ),
+				'address'     => __( 'Address', 'mcp-ai-wpoos-pro' ),
+				'member_type' => __( 'Member Type', 'mcp-ai-wpoos-pro' ),
+				'join_date'   => __( 'Join Date', 'mcp-ai-wpoos-pro' ),
+			),
+			'validation_rules'   => array(
+				'email'     => array( 'type' => 'email' ),
+				'join_date' => array( 'type' => 'datetime' ),
+			),
+			'quality_dimensions' => array(
+				'data_completeness',
+				'contact_accuracy',
+				'profile_richness',
+				'compliance',
+			),
+		);
+	}
+
+	/**
+	 * Calculate data completeness percentage.
+	 *
+	 * @return array
+	 */
+	protected static function calculate_completeness() {
+		$members = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_member',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$total    = count( $members );
+		$complete = 0;
+
+		foreach ( $members as $member ) {
+			$email = get_post_meta( $member->ID, 'email', true );
+			$phone = get_post_meta( $member->ID, 'phone', true );
+			if ( ! empty( $email ) && ! empty( $phone ) ) {
+				++$complete;
+			}
+		}
+
+		$percentage = $total > 0 ? round( ( $complete / $total ) * 100 ) : 0;
+
+		return array(
+			'percentage'  => $percentage,
+			'missing'     => array(),
+			'suggestions' => array(
+				__( 'Add email addresses to all members', 'mcp-ai-wpoos-pro' ),
+				__( 'Include phone numbers for better contact', 'mcp-ai-wpoos-pro' ),
+				__( 'Complete member profiles with addresses', 'mcp-ai-wpoos-pro' ),
+			),
+		);
+	}
+
+	/**
+	 * Get items for data quality review.
+	 *
+	 * @return array
+	 */
+	protected static function get_items_for_review() {
+		$members = get_posts(
+			array(
+				'post_type'      => 'mcp_ai_member',
+				'post_status'    => 'any',
+				'posts_per_page' => 20,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+			)
+		);
+
+		$items = array();
+		foreach ( $members as $member ) {
+			$items[] = array(
+				'id'    => $member->ID,
+				'title' => $member->post_title,
+				'meta'  => array(
+					'email' => get_post_meta( $member->ID, 'email', true ),
+					'phone' => get_post_meta( $member->ID, 'phone', true ),
+					'type'  => get_post_meta( $member->ID, 'member_type', true ),
+				),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Calculate quality score for an item.
+	 *
+	 * @param array $item The item to score.
+	 * @return array
+	 */
+	protected static function calculate_quality_score( $item ) {
+		$score  = 0;
+		$issues = array();
+
+		if ( ! empty( $item['meta']['email'] ) && is_email( $item['meta']['email'] ) ) {
+			$score += 40;
+		} else {
+			$issues[] = __( 'Missing or invalid email', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['phone'] ) ) {
+			$score += 30;
+		} else {
+			$issues[] = __( 'Missing phone number', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['meta']['type'] ) ) {
+			$score += 20;
+		} else {
+			$issues[] = __( 'Missing member type', 'mcp-ai-wpoos-pro' );
+		}
+
+		if ( ! empty( $item['title'] ) && strlen( $item['title'] ) > 5 ) {
+			$score += 10;
+		} else {
+			$issues[] = __( 'Name needs improvement', 'mcp-ai-wpoos-pro' );
+		}
+
+		$level = $score >= 80 ? 'high' : ( $score >= 50 ? 'medium' : 'low' );
+
+		return array(
+			'score'  => $score,
+			'level'  => $level,
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'issues' => $issues,
+		);
 	}
 }
 

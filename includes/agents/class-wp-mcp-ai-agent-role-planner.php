@@ -45,6 +45,7 @@ class WP_MCP_AI_Agent_Role_Planner extends WP_MCP_AI_Agent_Role_Base {
 			'create_agent_team',
 			'delegate_to_agent',
 			'aggregate_agent_results',
+			'execute_workflow',
 		);
 	}
 

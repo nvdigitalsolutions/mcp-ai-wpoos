@@ -49,15 +49,15 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'       => array(
+				'floor_plan'           => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data to extract materials from.', 'mcp-ai-wpoos-pro' ),
 				),
-				'specifications'   => array(
+				'specifications'       => array(
 					'type'        => 'object',
 					'description' => __( 'Material specifications and preferences.', 'mcp-ai-wpoos-pro' ),
 				),
-				'material_categories' => array(
+				'material_categories'  => array(
 					'type'        => 'array',
 					'description' => __( 'Categories to include: "framing", "roofing", "siding", "interior", "mechanical", "electrical", "plumbing".', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -71,7 +71,7 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 					'description' => __( 'Include waste/overage factor in quantities.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'output_format'    => array(
+				'output_format'        => array(
 					'type'        => 'string',
 					'description' => __( 'Output format: "detailed", "summary", "csv", "excel".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'detailed', 'summary', 'csv', 'excel' ),
@@ -164,19 +164,19 @@ class WP_MCP_AI_Tool_Generate_Material_Schedule implements WP_MCP_AI_Tool_Interf
 					'category' => 'framing',
 					'items'    => array(
 						array(
-							'item'         => '2x4x8 Studs',
-							'quantity'     => 120,
-							'unit'         => 'ea',
-							'waste_factor' => $include_waste_factor ? 0.1 : 0,
-							'total'        => $include_waste_factor ? 132 : 120,
+							'item'          => '2x4x8 Studs',
+							'quantity'      => 120,
+							'unit'          => 'ea',
+							'waste_factor'  => $include_waste_factor ? 0.1 : 0,
+							'total'         => $include_waste_factor ? 132 : 120,
 							'specification' => 'Kiln-dried, Grade 2 or better',
 						),
 						array(
-							'item'         => '2x6x12 Headers',
-							'quantity'     => 15,
-							'unit'         => 'ea',
-							'waste_factor' => $include_waste_factor ? 0.1 : 0,
-							'total'        => $include_waste_factor ? 17 : 15,
+							'item'          => '2x6x12 Headers',
+							'quantity'      => 15,
+							'unit'          => 'ea',
+							'waste_factor'  => $include_waste_factor ? 0.1 : 0,
+							'total'         => $include_waste_factor ? 17 : 15,
 							'specification' => 'Kiln-dried, Grade 1',
 						),
 					),

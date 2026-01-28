@@ -52,29 +52,29 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => array(
 				'expression' => array(
-					'type' => 'string',
+					'type'        => 'string',
 					'description' => __( 'Expression to simplify (e.g., "2x + 3x - 5 + 2" or "(x + 2)(x - 3)")', 'mcp-ai-wpoos-pro' ),
 				),
-				'rules' => array(
-					'type' => 'array',
+				'rules'      => array(
+					'type'        => 'array',
 					'description' => __( 'Simplification rules to apply', 'mcp-ai-wpoos-pro' ),
-					'items' => array(
+					'items'       => array(
 						'type' => 'string',
 						'enum' => array( 'default', 'all', 'collect', 'distribute' ),
 					),
-					'default' => array( 'default' ),
+					'default'     => array( 'default' ),
 				),
-				'format' => array(
-					'type' => 'string',
-					'enum' => array( 'latex', 'text', 'both' ),
+				'format'     => array(
+					'type'        => 'string',
+					'enum'        => array( 'latex', 'text', 'both' ),
 					'description' => __( 'Output format', 'mcp-ai-wpoos-pro' ),
-					'default' => 'both',
+					'default'     => 'both',
 				),
 			),
-			'required' => array( 'expression' ),
+			'required'   => array( 'expression' ),
 		);
 	}
 
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 			false,
 			array(
 				'expression' => $expression,
-				'rules' => $rules,
+				'rules'      => $rules,
 			)
 		);
 
@@ -130,12 +130,12 @@ class WP_MCP_AI_Tool_Simplify_Expression implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		$result = array(
-			'success' => true,
-			'message' => sprintf( __( 'Expression simplified: %s', 'mcp-ai-wpoos-pro' ), $expression ),
-			'text' => sprintf( 'Simplified: %s', $simplified ),
+			'success'             => true,
+			'message'             => sprintf( __( 'Expression simplified: %s', 'mcp-ai-wpoos-pro' ), $expression ),
+			'text'                => sprintf( 'Simplified: %s', $simplified ),
 			'original_expression' => $expression,
-			'simplified' => $simplified,
-			'latex' => $simplified,
+			'simplified'          => $simplified,
+			'latex'               => $simplified,
 		);
 
 		if ( 'latex' === $format || 'both' === $format ) {

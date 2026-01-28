@@ -49,16 +49,16 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'document_data'    => array(
+				'document_data'      => array(
 					'type'        => 'object',
 					'description' => __( 'Document data to export (floor plan, 3D model, or drawings).', 'mcp-ai-wpoos-pro' ),
 				),
-				'export_format'    => array(
+				'export_format'      => array(
 					'type'        => 'string',
 					'description' => __( 'Export format: "pdf", "dwg", "dxf", "ifc", "revit", "sketchup".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pdf', 'dwg', 'dxf', 'ifc', 'revit', 'sketchup' ),
 				),
-				'include_metadata' => array(
+				'include_metadata'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include project metadata in export.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -69,7 +69,7 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 					'enum'        => array( 'by_type', 'by_floor', 'by_discipline' ),
 					'default'     => 'by_type',
 				),
-				'units'            => array(
+				'units'              => array(
 					'type'        => 'string',
 					'description' => __( 'Measurement units: "imperial", "metric".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'imperial', 'metric' ),
@@ -119,11 +119,11 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		$document_data       = $arguments['document_data'];
-		$export_format       = sanitize_text_field( $arguments['export_format'] );
-		$include_metadata    = isset( $arguments['include_metadata'] ) ? (bool) $arguments['include_metadata'] : true;
-		$layer_organization  = isset( $arguments['layer_organization'] ) ? sanitize_text_field( $arguments['layer_organization'] ) : 'by_type';
-		$units               = isset( $arguments['units'] ) ? sanitize_text_field( $arguments['units'] ) : 'imperial';
+		$document_data      = $arguments['document_data'];
+		$export_format      = sanitize_text_field( $arguments['export_format'] );
+		$include_metadata   = isset( $arguments['include_metadata'] ) ? (bool) $arguments['include_metadata'] : true;
+		$layer_organization = isset( $arguments['layer_organization'] ) ? sanitize_text_field( $arguments['layer_organization'] ) : 'by_type';
+		$units              = isset( $arguments['units'] ) ? sanitize_text_field( $arguments['units'] ) : 'imperial';
 
 		// Export document.
 		$export = $this->export_document( $document_data, $export_format, $include_metadata, $layer_organization, $units );
@@ -134,11 +134,11 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 
 		// Return structured export data.
 		return array(
-			'success'      => true,
-			'export'       => $export,
-			'format'       => $export_format,
-			'file_size'    => 0,
-			'message'      => sprintf(
+			'success'   => true,
+			'export'    => $export,
+			'format'    => $export_format,
+			'file_size' => 0,
+			'message'   => sprintf(
 				/* translators: %s: export format */
 				__( 'Successfully exported to %s format.', 'mcp-ai-wpoos-pro' ),
 				strtoupper( $export_format )
@@ -158,10 +158,10 @@ class WP_MCP_AI_Tool_Export_Architectural_Documents implements WP_MCP_AI_Tool_In
 	 */
 	protected function export_document( $document_data, $export_format, $include_metadata, $layer_organization, $units ) {
 		return array(
-			'file_url'     => '',
-			'format'       => $export_format,
-			'file_size'    => 0,
-			'metadata'     => array(
+			'file_url'  => '',
+			'format'    => $export_format,
+			'file_size' => 0,
+			'metadata'  => array(
 				'units'              => $units,
 				'layer_organization' => $layer_organization,
 				'has_metadata'       => $include_metadata,

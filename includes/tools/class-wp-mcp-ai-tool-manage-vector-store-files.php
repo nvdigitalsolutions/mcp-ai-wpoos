@@ -236,10 +236,10 @@ class WP_MCP_AI_Tool_Manage_Vector_Store_Files implements WP_MCP_AI_Tool_Interfa
 			}
 		}
 
-		$success        = empty( $errors );
-		$total          = count( $file_ids );
-		$removed_count  = count( $results );
-		$errors_count   = count( $errors );
+		$success       = empty( $errors );
+		$total         = count( $file_ids );
+		$removed_count = count( $results );
+		$errors_count  = count( $errors );
 
 		if ( $success ) {
 			$message = sprintf(

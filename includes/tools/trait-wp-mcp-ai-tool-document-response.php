@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Document_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Document_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         // Generate document and get attachment_id, url, etc.
  *         $result = array(
  *             'attachment_id' => $attachment_id,
@@ -55,10 +55,10 @@ trait WP_MCP_AI_Tool_Document_Response {
 		// Check if we have either attachment_id or direct URL.
 		$document_url = '';
 		$mime_type    = isset( $result['mime_type'] ) ? $result['mime_type'] : '';
-		
+
 		if ( ! empty( $result['attachment_id'] ) ) {
 			$attachment_id = absint( $result['attachment_id'] );
-			
+
 			// Get attachment URL and MIME type.
 			$document_url = wp_get_attachment_url( $attachment_id );
 			if ( empty( $mime_type ) ) {
@@ -135,23 +135,23 @@ trait WP_MCP_AI_Tool_Document_Response {
 		$html .= '<div class="wp-mcp-ai-document-header" style="display: flex; align-items: center; margin-bottom: 10px;">';
 		$html .= '<span class="wp-mcp-ai-document-icon" style="font-size: 32px; margin-right: 15px;">' . $icon . '</span>';
 		$html .= '<div class="wp-mcp-ai-document-info" style="flex: 1;">';
-		
+
 		if ( ! empty( $title ) ) {
 			$html .= '<div class="wp-mcp-ai-document-title" style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">' . esc_html( $title ) . '</div>';
 		}
-		
+
 		$html .= '<div class="wp-mcp-ai-document-meta" style="font-size: 12px; color: #666;">';
 		$html .= '<span class="wp-mcp-ai-document-filename">' . esc_html( $file_name ) . '</span>';
-		
+
 		if ( ! empty( $formatted_size ) ) {
 			$html .= ' <span class="wp-mcp-ai-document-separator">•</span> ';
 			$html .= '<span class="wp-mcp-ai-document-size">' . esc_html( $formatted_size ) . '</span>';
 		}
-		
+
 		$html .= ' <span class="wp-mcp-ai-document-separator">•</span> ';
 		$html .= '<span class="wp-mcp-ai-document-type">' . esc_html( strtoupper( $doc_type ) ) . '</span>';
 		$html .= '</div>';
-		
+
 		$html .= '</div>';
 		$html .= '</div>';
 
@@ -180,14 +180,14 @@ trait WP_MCP_AI_Tool_Document_Response {
 		$mime_type = strtolower( $mime_type );
 
 		$type_map = array(
-			'application/pdf' => 'pdf',
-			'application/msword' => 'word',
+			'application/pdf'                         => 'pdf',
+			'application/msword'                      => 'word',
 			'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'word',
-			'application/vnd.ms-excel' => 'excel',
+			'application/vnd.ms-excel'                => 'excel',
 			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'excel',
 			'application/vnd.oasis.opendocument.text' => 'odt',
 			'application/vnd.oasis.opendocument.spreadsheet' => 'ods',
-			'text/csv' => 'csv',
+			'text/csv'                                => 'csv',
 		);
 
 		return isset( $type_map[ $mime_type ] ) ? $type_map[ $mime_type ] : 'document';
@@ -201,12 +201,12 @@ trait WP_MCP_AI_Tool_Document_Response {
 	 */
 	protected function get_document_icon( $doc_type ) {
 		$icons = array(
-			'pdf' => '📄',
-			'word' => '📝',
-			'excel' => '📊',
-			'csv' => '📊',
-			'odt' => '📝',
-			'ods' => '📊',
+			'pdf'      => '📄',
+			'word'     => '📝',
+			'excel'    => '📊',
+			'csv'      => '📊',
+			'odt'      => '📝',
+			'ods'      => '📊',
 			'document' => '📋',
 		);
 
@@ -237,9 +237,9 @@ trait WP_MCP_AI_Tool_Document_Response {
 	 * @return string HTML iframe for PDF preview.
 	 */
 	protected function generate_pdf_preview_html( $pdf_url ) {
-		$html = '<div class="wp-mcp-ai-pdf-preview" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">';
+		$html  = '<div class="wp-mcp-ai-pdf-preview" style="margin-top: 15px; border-top: 1px solid #ddd; padding-top: 15px;">';
 		$html .= '<div style="font-size: 12px; color: #666; margin-bottom: 8px;">' . __( 'Preview:', 'mcp-ai-wpoos' ) . '</div>';
-		
+
 		// Use sandbox attribute for security.
 		$html .= '<iframe src="' . esc_url( $pdf_url ) . '" ';
 		$html .= 'style="width: 100%; height: 500px; border: 1px solid #ccc; border-radius: 3px;" ';

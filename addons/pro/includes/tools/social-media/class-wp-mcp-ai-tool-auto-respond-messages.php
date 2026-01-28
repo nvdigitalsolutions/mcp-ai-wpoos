@@ -104,13 +104,13 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'              => array(
+				'action'               => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'process_messages', 'create_template', 'update_template', 'list_templates' ),
 					'default'     => 'process_messages',
 				),
-				'platforms'           => array(
+				'platforms'            => array(
 					'type'        => 'array',
 					'description' => __( 'Platforms to process messages from', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -118,14 +118,14 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 						'enum' => array( 'facebook', 'twitter', 'instagram', 'linkedin' ),
 					),
 				),
-				'limit'               => array(
+				'limit'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of messages to process', 'mcp-ai-wpoos-pro' ),
 					'default'     => 50,
 					'minimum'     => 1,
 					'maximum'     => 200,
 				),
-				'auto_send'           => array(
+				'auto_send'            => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically send responses (false for preview mode)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -137,25 +137,25 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'template_id'         => array(
+				'template_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Template ID for create/update actions', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'template_name'       => array(
+				'template_name'        => array(
 					'type'        => 'string',
 					'description' => __( 'Template name', 'mcp-ai-wpoos-pro' ),
 				),
-				'template_category'   => array(
+				'template_category'    => array(
 					'type'        => 'string',
 					'description' => __( 'Template category/type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'greeting', 'faq', 'support', 'sales', 'complaint', 'shipping', 'return', 'general' ),
 				),
-				'template_content'    => array(
+				'template_content'     => array(
 					'type'        => 'string',
 					'description' => __( 'Template response content (supports variables: {{name}}, {{product}}, etc.)', 'mcp-ai-wpoos-pro' ),
 				),
-				'keywords'            => array(
+				'keywords'             => array(
 					'type'        => 'array',
 					'description' => __( 'Keywords to trigger this template', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -242,18 +242,18 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 			);
 		}
 
-		$platforms             = array_map( 'sanitize_text_field', $arguments['platforms'] );
-		$limit                 = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
-		$auto_send             = isset( $arguments['auto_send'] ) ? (bool) $arguments['auto_send'] : false;
-		$confidence_threshold  = isset( $arguments['confidence_threshold'] ) ? floatval( $arguments['confidence_threshold'] ) : 0.8;
+		$platforms            = array_map( 'sanitize_text_field', $arguments['platforms'] );
+		$limit                = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 50;
+		$auto_send            = isset( $arguments['auto_send'] ) ? (bool) $arguments['auto_send'] : false;
+		$confidence_threshold = isset( $arguments['confidence_threshold'] ) ? floatval( $arguments['confidence_threshold'] ) : 0.8;
 
 		$processed_messages = array();
 		$stats              = array(
-			'total_messages'   => 0,
-			'responded'        => 0,
-			'escalated'        => 0,
-			'by_platform'      => array(),
-			'by_category'      => array(),
+			'total_messages' => 0,
+			'responded'      => 0,
+			'escalated'      => 0,
+			'by_platform'    => array(),
+			'by_category'    => array(),
 		);
 
 		// Load response templates.
@@ -275,15 +275,15 @@ class WP_MCP_AI_Tool_Auto_Respond_Messages implements WP_MCP_AI_Tool_Interface, 
 				$analysis = $this->analyze_message( $message['content'], $templates );
 
 				$response_data = array(
-					'message_id'     => $message['id'],
-					'platform'       => $platform,
-					'sender'         => $message['sender'],
-					'content'        => $message['content'],
-					'category'       => $analysis['category'],
-					'confidence'     => $analysis['confidence'],
+					'message_id'         => $message['id'],
+					'platform'           => $platform,
+					'sender'             => $message['sender'],
+					'content'            => $message['content'],
+					'category'           => $analysis['category'],
+					'confidence'         => $analysis['confidence'],
 					'suggested_response' => $analysis['response'],
-					'template_used'  => $analysis['template_id'],
-					'action_taken'   => 'none',
+					'template_used'      => $analysis['template_id'],
+					'action_taken'       => 'none',
 				);
 
 				// Determine action.

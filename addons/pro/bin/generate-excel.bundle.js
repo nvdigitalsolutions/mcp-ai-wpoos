@@ -1,3 +1,4 @@
+"use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -64352,7 +64353,10 @@ async function generateExcel() {
     process.exit(1);
   }
 }
-generateExcel();
+generateExcel().catch((error) => {
+  console.error("Unhandled error:", error.message);
+  process.exit(1);
+});
 /*! Bundled license information:
 
 safe-buffer/index.js:

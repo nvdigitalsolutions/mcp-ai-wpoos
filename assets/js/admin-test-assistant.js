@@ -41,6 +41,8 @@
 				const assistantId = button.getAttribute('data-assistant-id');
 				const assistantTitle = button.getAttribute('data-assistant-title');
 				const toolShortcutsJson = button.getAttribute('data-tool-shortcuts');
+				const provider = button.getAttribute('data-provider');
+				const model = button.getAttribute('data-model');
 				let toolShortcuts = [];
 
 				// Parse tool shortcuts if available
@@ -56,7 +58,7 @@
 				}
 
 				if (assistantId) {
-					openTestModal(assistantId, assistantTitle, toolShortcuts);
+					openTestModal(assistantId, assistantTitle, toolShortcuts, provider, model);
 				}
 			});
 		});
@@ -90,8 +92,10 @@
 	 * @param {string} assistantId     The assistant post ID.
 	 * @param {string} assistantTitle  The assistant title for display.
 	 * @param {Array}  toolShortcuts   Tool shortcuts configuration for the assistant.
+	 * @param {string} provider        The AI provider (e.g., 'openai', 'embedded', 'gemini').
+	 * @param {string} model           The model identifier.
 	 */
-	function openTestModal(assistantId, assistantTitle, toolShortcuts) {
+	function openTestModal(assistantId, assistantTitle, toolShortcuts, provider, model) {
 		const modal = document.getElementById('wp-mcp-ai-test-modal');
 		const modalTitle = document.getElementById('wp-mcp-ai-test-modal__title');
 		const chatContainer = document.getElementById('wp-mcp-ai-test-chat-container');
@@ -149,6 +153,8 @@
 			saveTranscript: true, // Enable transcript saving for admin testing
 			allowSensitiveTools: true, // Admin users can access all tools
 			toolShortcuts: toolShortcuts, // Tool shortcuts from assistant config
+			provider: provider || '', // Add provider for client-side execution detection
+			model: model || '', // Add model for client-side execution
 			fileAccept: fileAccept,
 			allowedImageMimes: allowedImageMimes,
 			allowedFileMimes: allowedFileMimes,

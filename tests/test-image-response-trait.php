@@ -30,9 +30,9 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		// Test data mimicking image generation tool result.
 		$result = array(
 			'attachment_id' => $attachment_id,
-			'url' => wp_get_attachment_url( $attachment_id ),
-			'prompt' => 'A beautiful sunset',
-			'text' => 'Successfully generated image (ID: ' . $attachment_id . ').',
+			'url'           => wp_get_attachment_url( $attachment_id ),
+			'prompt'        => 'A beautiful sunset',
+			'text'          => 'Successfully generated image (ID: ' . $attachment_id . ').',
 		);
 
 		// Add image HTML.
@@ -82,19 +82,19 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		// Test data mimicking image variation tool result.
 		$result = array(
 			'success' => true,
-			'data' => array(
+			'data'    => array(
 				'images' => array(
 					array(
 						'attachment_id' => $attachment_id_1,
-						'url' => wp_get_attachment_url( $attachment_id_1 ),
+						'url'           => wp_get_attachment_url( $attachment_id_1 ),
 					),
 					array(
 						'attachment_id' => $attachment_id_2,
-						'url' => wp_get_attachment_url( $attachment_id_2 ),
+						'url'           => wp_get_attachment_url( $attachment_id_2 ),
 					),
 				),
-				'count' => 2,
-				'text' => 'Successfully created 2 variation(s).',
+				'count'  => 2,
+				'text'   => 'Successfully created 2 variation(s).',
 			),
 		);
 
@@ -128,7 +128,7 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 
 		// Test data without attachment_id.
 		$result = array(
-			'url' => 'https://example.com/image.jpg',
+			'url'  => 'https://example.com/image.jpg',
 			'text' => 'Image result without attachment ID.',
 		);
 
@@ -158,8 +158,8 @@ class Test_Image_Response_Trait extends WP_UnitTestCase {
 		// Test data with potentially dangerous content in prompt.
 		$result = array(
 			'attachment_id' => $attachment_id,
-			'prompt' => 'Test<script>alert("xss")</script>image',
-			'text' => 'Image generated.',
+			'prompt'        => 'Test<script>alert("xss")</script>image',
+			'text'          => 'Image generated.',
 		);
 
 		// Add image HTML.

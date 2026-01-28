@@ -414,9 +414,70 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Embedded LLM (Pro) -->
+				<?php
+				// Only show Embedded LLM section if Pro version is active.
+				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
+					?>
+				<div class="card">
+					<h2><?php esc_html_e( '7. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'Provider Enabled', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_embedded'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Selected Model', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['embedded_model'] ) ) : ?>
+										<code><?php echo esc_html( $settings['embedded_model'] ); ?></code>
+									<?php else : ?>
+										<?php esc_html_e( 'Not Selected', 'mcp-ai-wpoos' ); ?>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Model Type', 'mcp-ai-wpoos' ); ?></th>
+								<td><?php esc_html_e( 'WebLLM (Client-side, runs in browser using WebGPU/WebAssembly)', 'mcp-ai-wpoos' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="embedded-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="embedded"
+						<?php echo esc_attr( empty( $settings['enable_embedded'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Embedded LLM Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['enable_embedded'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Enable Embedded LLM in the Providers tab to use client-side AI models that run directly in the browser.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Embedded LLM runs small language models directly in the user\'s browser using WebGPU/WebAssembly. Models are loaded from CDN on-demand. Fully private, no server resources or API calls required.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+				<?php endif; ?>
+
 				<!-- Google Maps Platform -->
 				<div class="card">
-					<h2><?php esc_html_e( '7. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '8. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -463,7 +524,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '8. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '9. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
@@ -536,7 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '9. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
 
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
@@ -729,6 +790,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				case 'cloudflare':
 					self::test_cloudflare( $settings );
+					break;
+
+				case 'embedded':
+					self::test_embedded( $settings );
 					break;
 
 				case 'google_maps':
@@ -1085,7 +1150,11 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					// Include additional error details if available.
 					if ( is_array( $error_data ) ) {
 						if ( isset( $error_data['status'] ) ) {
-							$error_msg .= ' ' . sprintf( __( '(HTTP Status: %d)', 'mcp-ai-wpoos' ), absint( $error_data['status'] ) );
+							$error_msg .= ' ' . sprintf(
+								/* translators: %d: HTTP status code */
+								__( '(HTTP Status: %d)', 'mcp-ai-wpoos' ),
+								absint( $error_data['status'] )
+							);
 						}
 						if ( isset( $error_data['body'] ) && is_string( $error_data['body'] ) ) {
 							$body_data = json_decode( $error_data['body'], true );
@@ -1114,6 +1183,72 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							__( 'Account ID', 'mcp-ai-wpoos' )      => $account_id,
 							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
 							__( 'Selected Model', 'mcp-ai-wpoos' )   => isset( $settings['cloudflare_model'] ) ? $settings['cloudflare_model'] : __( 'Not configured', 'mcp-ai-wpoos' ),
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Embedded LLM connection.
+		 *
+		 * Tests configuration for client-side WebLLM models.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_embedded( $settings ) {
+			// Check if in base version (embedded not available).
+			if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is only available in the Pro version.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( empty( $settings['enable_embedded'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Embedded LLM provider is not enabled.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				// Get available WebLLM models (client-side).
+				// All available models are listed. Models marked with * support function calling.
+				$available_models = array(
+					'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+					'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+					'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+					'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+					'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+					'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+					'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+				);
+
+				$model_count    = count( $available_models );
+				$selected_model = isset( $settings['embedded_model'] ) ? $settings['embedded_model'] : '';
+
+				// Get model name if a model is selected.
+				$selected_model_name = __( 'Not configured', 'mcp-ai-wpoos' );
+				if ( $selected_model && isset( $available_models[ $selected_model ] ) ) {
+					$selected_model_name = $available_models[ $selected_model ];
+				}
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Embedded LLM configuration verified!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Available Models', 'mcp-ai-wpoos' )  => $model_count,
+							__( 'Selected Model', 'mcp-ai-wpoos' )    => $selected_model_name,
+							__( 'Model Identifier', 'mcp-ai-wpoos' )  => $selected_model ? $selected_model : __( 'None', 'mcp-ai-wpoos' ),
+							__( 'Model Type', 'mcp-ai-wpoos' )        => __( 'WebLLM (Client-side)', 'mcp-ai-wpoos' ),
+							__( 'Runtime', 'mcp-ai-wpoos' )           => __( 'Browser (WebGPU/WebAssembly)', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

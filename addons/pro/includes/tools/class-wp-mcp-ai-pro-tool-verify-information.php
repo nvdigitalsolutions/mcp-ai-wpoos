@@ -22,19 +22,22 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'claim'           => array(
+					'claim'   => array(
 						'type'        => 'string',
 						'description' => 'Information or claim to verify',
 					),
-					'sources'         => array(
+					'sources' => array(
 						'type'        => 'array',
 						'description' => 'Sources to check against',
 						'items'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'content'      => array( 'type' => 'string' ),
-								'url'          => array( 'type' => 'string' ),
-								'credibility'  => array( 'type' => 'string', 'enum' => array( 'high', 'medium', 'low' ) ),
+								'content'     => array( 'type' => 'string' ),
+								'url'         => array( 'type' => 'string' ),
+								'credibility' => array(
+									'type' => 'string',
+									'enum' => array( 'high', 'medium', 'low' ),
+								),
 							),
 						),
 					),
@@ -50,29 +53,29 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		$claim   = sanitize_text_field( $arguments['claim'] );
 		$sources = $arguments['sources'];
 
-		$matches = 0;
-		$total   = count( $sources );
-		$supporting = array();
+		$matches       = 0;
+		$total         = count( $sources );
+		$supporting    = array();
 		$contradicting = array();
 
 		foreach ( $sources as $source ) {
-			$content = $source['content'];
+			$content     = $source['content'];
 			$credibility = isset( $source['credibility'] ) ? $source['credibility'] : 'medium';
-			
+
 			// Simple keyword matching (in production, use semantic analysis).
-			$claim_words = explode( ' ', strtolower( $claim ) );
+			$claim_words    = explode( ' ', strtolower( $claim ) );
 			$matching_words = 0;
-			
+
 			foreach ( $claim_words as $word ) {
 				if ( strlen( $word ) > 3 && stripos( $content, $word ) !== false ) {
-					$matching_words++;
+					++$matching_words;
 				}
 			}
-			
+
 			$match_percentage = ( $matching_words / count( $claim_words ) ) * 100;
-			
+
 			if ( $match_percentage > 60 ) {
-				$matches++;
+				++$matches;
 				$supporting[] = array(
 					'url'         => isset( $source['url'] ) ? $source['url'] : '',
 					'credibility' => $credibility,
@@ -87,7 +90,7 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		}
 
 		$confidence = $total > 0 ? round( ( $matches / $total ) * 100, 2 ) : 0;
-		
+
 		$verdict = 'unverified';
 		if ( $confidence >= 70 ) {
 			$verdict = 'verified';
@@ -98,14 +101,14 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		}
 
 		return array(
-			'success'       => true,
-			'claim'         => $claim,
-			'verdict'       => $verdict,
-			'confidence'    => $confidence,
+			'success'         => true,
+			'claim'           => $claim,
+			'verdict'         => $verdict,
+			'confidence'      => $confidence,
 			'sources_checked' => $total,
-			'supporting'    => $supporting,
-			'contradicting' => $contradicting,
-			'recommendation' => $this->get_recommendation( $verdict, $confidence ),
+			'supporting'      => $supporting,
+			'contradicting'   => $contradicting,
+			'recommendation'  => $this->get_recommendation( $verdict, $confidence ),
 		);
 	}
 

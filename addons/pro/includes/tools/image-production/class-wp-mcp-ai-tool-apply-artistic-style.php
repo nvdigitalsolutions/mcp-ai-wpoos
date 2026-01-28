@@ -54,19 +54,19 @@ class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base {
 			'properties'           => array_merge(
 				$this->get_source_parameters_schema(),
 				array(
-					'style'        => array(
+					'style'       => array(
 						'type'        => 'string',
 						'description' => __( 'Style preset: "van_gogh", "picasso", "monet", "kandinsky", "ukiyo-e", "pop_art", "watercolor".', 'mcp-ai-wpoos-pro' ),
 						'enum'        => array( 'van_gogh', 'picasso', 'monet', 'kandinsky', 'ukiyo-e', 'pop_art', 'watercolor', 'oil_painting', 'sketch' ),
 					),
-					'strength'     => array(
+					'strength'    => array(
 						'type'        => 'number',
 						'description' => __( 'Style strength (0-1). Higher values apply style more strongly.', 'mcp-ai-wpoos-pro' ),
 						'minimum'     => 0,
 						'maximum'     => 1,
 						'default'     => 0.8,
 					),
-					'style_image'  => array(
+					'style_image' => array(
 						'type'        => 'object',
 						'description' => __( 'Custom style reference image (optional).', 'mcp-ai-wpoos-pro' ),
 						'properties'  => array(
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_Apply_Artistic_Style extends WP_MCP_AI_Tool_Image_Base {
 							'url'           => array( 'type' => 'string' ),
 						),
 					),
-					'use_remote'   => array(
+					'use_remote'  => array(
 						'type'        => 'boolean',
 						'description' => __( 'Use remote GPU processing for faster style transfer.', 'mcp-ai-wpoos-pro' ),
 						'default'     => false,

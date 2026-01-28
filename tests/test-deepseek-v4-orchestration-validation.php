@@ -77,7 +77,7 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 	 */
 	public function test_executor_has_tool_registry() {
 		$executor = new WP_MCP_AI_Agent_Role_Executor();
-		
+
 		// Use reflection to access protected property.
 		$reflection = new ReflectionClass( $executor );
 		$property   = $reflection->getProperty( 'tool_registry' );
@@ -196,7 +196,7 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 		);
 
 		$service = wp_mcp_ai_get_profession_service();
-		
+
 		$this->assertTrue(
 			method_exists( $service, 'get_profession_for_agent_role' ),
 			'Profession service should have get_profession_for_agent_role() method'
@@ -301,7 +301,7 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 		$this->assertIsArray( $result, 'Result should be an array' );
 		$this->assertArrayHasKey( 'status', $result, 'Result should have status' );
 		$this->assertArrayHasKey( 'result', $result, 'Result should have result data' );
-		
+
 		// Verify status is either completed or failed (not a placeholder).
 		$this->assertContains(
 			$result['status'],
@@ -324,7 +324,7 @@ class Test_DeepSeek_V4_Orchestration_Validation extends WP_UnitTestCase {
 
 		// Verify team structure.
 		$this->assertIsArray( $team, 'Team should be an array' );
-		
+
 		if ( ! is_wp_error( $team ) ) {
 			$this->assertArrayHasKey( 'team_id', $team, 'Team should have team_id' );
 			$this->assertArrayHasKey( 'members', $team, 'Team should have members' );

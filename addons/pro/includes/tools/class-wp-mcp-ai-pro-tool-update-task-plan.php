@@ -33,13 +33,13 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'update_task_plan',
-			'description' => 'Update task completion status in a task plan. Use this after completing tasks to track progress in autonomous workflows.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'update_task_plan',
+			'description'         => 'Update task completion status in a task plan. Use this after completing tasks to track progress in autonomous workflows.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'plan_id' => array(
+					'plan_id'      => array(
 						'type'        => 'integer',
 						'description' => 'Task plan ID',
 					),
@@ -53,21 +53,21 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 									'type'        => 'integer',
 									'description' => 'Zero-based index of the task in the list',
 								),
-								'completed' => array(
+								'completed'  => array(
 									'type'        => 'boolean',
 									'description' => 'Whether the task is completed',
 								),
 							),
-							'required' => array( 'task_index', 'completed' ),
+							'required'   => array( 'task_index', 'completed' ),
 						),
 					),
-					'new_tasks' => array(
+					'new_tasks'    => array(
 						'type'        => 'array',
 						'description' => 'Optional new tasks to add to the plan',
 						'items'       => array(
 							'type'       => 'object',
 							'properties' => array(
-								'text' => array(
+								'text'     => array(
 									'type'        => 'string',
 									'description' => 'Task description',
 								),
@@ -77,11 +77,11 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 									'description' => 'Task priority',
 								),
 							),
-							'required' => array( 'text' ),
+							'required'   => array( 'text' ),
 						),
 					),
 				),
-				'required' => array( 'plan_id' ),
+				'required'   => array( 'plan_id' ),
 			),
 			'required_capability' => 'edit_posts',
 		);
@@ -158,14 +158,14 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 		}
 
 		return array(
-			'success'         => true,
-			'plan_id'         => $plan_id,
-			'task_count'      => $parsed['total'],
-			'completed_count' => $parsed['completed'],
-			'progress'        => $parsed['progress'],
-			'remaining_tasks' => $parsed['total'] - $parsed['completed'],
+			'success'          => true,
+			'plan_id'          => $plan_id,
+			'task_count'       => $parsed['total'],
+			'completed_count'  => $parsed['completed'],
+			'progress'         => $parsed['progress'],
+			'remaining_tasks'  => $parsed['total'] - $parsed['completed'],
 			'updated_markdown' => $markdown,
-			'message'         => sprintf(
+			'message'          => sprintf(
 				'Updated task plan #%d: %d of %d tasks complete (%.1f%%)',
 				$plan_id,
 				$parsed['completed'],
@@ -217,8 +217,8 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 	 * @return array
 	 */
 	private function parse_markdown_tasks( $markdown ) {
-		$tasks     = array();
-		$lines     = explode( "\n", $markdown );
+		$tasks = array();
+		$lines = explode( "\n", $markdown );
 
 		foreach ( $lines as $index => $line ) {
 			if ( preg_match( '/^- \[([ x])\] (.+)$/', $line, $matches ) ) {
@@ -231,9 +231,14 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 		}
 
 		$total     = count( $tasks );
-		$completed = count( array_filter( $tasks, function( $task ) {
-			return $task['completed'];
-		} ) );
+		$completed = count(
+			array_filter(
+				$tasks,
+				function ( $task ) {
+					return $task['completed'];
+				}
+			)
+		);
 		$progress  = $total > 0 ? ( $completed / $total ) * 100 : 0;
 
 		return array(
@@ -258,9 +263,9 @@ class WP_MCP_AI_Pro_Tool_Update_Task_Plan {
 
 		foreach ( $lines as $index => $line ) {
 			if ( preg_match( '/^- \[([ x])\] (.+)$/', $line, $matches ) ) {
-				$task_count++;
+				++$task_count;
 				if ( $task_count === $task_index ) {
-					$checkbox     = $completed ? 'x' : ' ';
+					$checkbox        = $completed ? 'x' : ' ';
 					$lines[ $index ] = sprintf( '- [%s] %s', $checkbox, $matches[2] );
 					break;
 				}

@@ -616,6 +616,78 @@ class WP_MCP_AI_REST_Authenticator {
 	}
 
 	/**
+	 * Authenticate a REST API request.
+	 *
+	 * Checks for authentication via WordPress nonce, bearer token, guest token,
+	 * or mesh API key. Returns auth context on success or WP_Error on failure.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return array|WP_Error Auth context array or WP_Error on failure.
+	 */
+	public function authenticate( WP_REST_Request $request ) {
+		$this->reset_auth_context();
+
+		// Check for WordPress nonce authentication (logged-in users).
+		$nonce = $request->get_header( 'X-WP-Nonce' );
+		if ( $nonce && wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			$user_id = get_current_user_id();
+			if ( $user_id > 0 ) {
+				$this->set_authenticated_user_id( $user_id );
+				return $this->get_auth_context();
+			}
+		}
+
+		// Check for bearer token (local credentials, mesh keys, Auth0).
+		$auth_header = $request->get_header( 'Authorization' );
+		if ( $auth_header && 0 === stripos( $auth_header, 'Bearer ' ) ) {
+			$token = trim( substr( $auth_header, 7 ) );
+
+			// Try local assistant credential token.
+			$assistant_hint = absint( $request->get_param( 'assistant_id' ) );
+			$local_result   = $this->validate_local_token( $token, $request, $assistant_hint );
+			if ( true === $local_result ) {
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $local_result ) && 'wp_mcp_ai_not_local_token' !== $local_result->get_error_code() ) {
+				return $local_result;
+			}
+
+			// Try mesh API key.
+			$mesh_result = $this->validate_mesh_key( $token );
+			if ( true === $mesh_result ) {
+				$this->mark_token_authenticated( 'mesh_key' );
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $mesh_result ) ) {
+				// Mesh key was present but invalid, don't try other methods.
+				return $mesh_result;
+			}
+
+			// Try Auth0 bearer token.
+			$bearer_result = $this->validate_bearer_token( $token, $request );
+			if ( true === $bearer_result ) {
+				return $this->get_auth_context();
+			} elseif ( is_wp_error( $bearer_result ) ) {
+				return $bearer_result;
+			}
+		}
+
+		// Check for guest token.
+		$guest_token = $this->extract_guest_token( $request );
+		if ( ! empty( $guest_token ) ) {
+			// Guest tokens are valid but have limited access.
+			$this->auth_context['is_guest']    = true;
+			$this->auth_context['guest_token'] = $guest_token;
+			return $this->get_auth_context();
+		}
+
+		// No valid authentication found.
+		return new WP_Error(
+			'rest_not_authenticated',
+			__( 'Authentication required. Please provide valid credentials.', 'mcp-ai-wpoos' ),
+			array( 'status' => 401 )
+		);
+	}
+
+	/**
 	 * Convert an RSA JWK to a PEM encoded public key.
 	 *
 	 * @param array $jwk JWK data.

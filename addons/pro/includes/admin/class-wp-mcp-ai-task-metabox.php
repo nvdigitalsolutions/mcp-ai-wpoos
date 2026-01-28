@@ -49,11 +49,15 @@ class WP_MCP_AI_Task_Metabox {
 	 */
 	public static function render_metabox( $post ) {
 		// Get existing values.
-		$status      = get_post_meta( $post->ID, '_task_status', true );
-		$priority    = get_post_meta( $post->ID, '_task_priority', true );
-		$project_id  = get_post_meta( $post->ID, '_task_project_id', true );
-		$due_date    = get_post_meta( $post->ID, '_task_due_date', true );
-		$assigned_to = get_post_meta( $post->ID, '_task_assigned_to', true );
+		$status           = get_post_meta( $post->ID, '_task_status', true );
+		$priority         = get_post_meta( $post->ID, '_task_priority', true );
+		$project_id       = get_post_meta( $post->ID, '_task_project_id', true );
+		$due_date         = get_post_meta( $post->ID, '_task_due_date', true );
+		$assigned_to      = get_post_meta( $post->ID, '_task_assigned_to', true );
+		$category         = get_post_meta( $post->ID, '_task_category', true );
+		$tags             = get_post_meta( $post->ID, '_task_tags', true );
+		$estimated_effort = get_post_meta( $post->ID, '_task_estimated_effort', true );
+		$actual_effort    = get_post_meta( $post->ID, '_task_actual_effort', true );
 
 		// Set defaults.
 		if ( empty( $status ) ) {
@@ -61,6 +65,9 @@ class WP_MCP_AI_Task_Metabox {
 		}
 		if ( empty( $priority ) ) {
 			$priority = 'medium';
+		}
+		if ( empty( $category ) ) {
+			$category = 'general';
 		}
 
 		// Nonce for security.
@@ -152,6 +159,75 @@ class WP_MCP_AI_Task_Metabox {
 					?>
 				</select>
 			</p>
+
+			<hr style="margin: 20px 0;">
+
+			<h3 style="margin-top: 0;"><?php esc_html_e( 'Enhanced Metadata', 'mcp-ai-wpoos-pro' ); ?></h3>
+
+			<p>
+				<label for="task_category">
+					<strong><?php esc_html_e( 'Category:', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label><br>
+				<select id="task_category" name="task_category" class="widefat">
+					<option value="general" <?php selected( $category, 'general' ); ?>><?php esc_html_e( 'General', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="bug" <?php selected( $category, 'bug' ); ?>><?php esc_html_e( 'Bug Fix', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="feature" <?php selected( $category, 'feature' ); ?>><?php esc_html_e( 'Feature', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="maintenance" <?php selected( $category, 'maintenance' ); ?>><?php esc_html_e( 'Maintenance', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="research" <?php selected( $category, 'research' ); ?>><?php esc_html_e( 'Research', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="documentation" <?php selected( $category, 'documentation' ); ?>><?php esc_html_e( 'Documentation', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="design" <?php selected( $category, 'design' ); ?>><?php esc_html_e( 'Design', 'mcp-ai-wpoos-pro' ); ?></option>
+					<option value="testing" <?php selected( $category, 'testing' ); ?>><?php esc_html_e( 'Testing', 'mcp-ai-wpoos-pro' ); ?></option>
+				</select>
+			</p>
+
+			<p>
+				<label for="task_tags">
+					<strong><?php esc_html_e( 'Tags (comma-separated):', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label><br>
+				<input
+					type="text"
+					id="task_tags"
+					name="task_tags"
+					value="<?php echo esc_attr( $tags ); ?>"
+					class="widefat"
+					placeholder="<?php esc_attr_e( 'e.g., urgent, frontend, api', 'mcp-ai-wpoos-pro' ); ?>"
+				/>
+				<span class="description"><?php esc_html_e( 'Enter tags separated by commas for flexible categorization and filtering.', 'mcp-ai-wpoos-pro' ); ?></span>
+			</p>
+
+			<p>
+				<label for="task_estimated_effort">
+					<strong><?php esc_html_e( 'Estimated Effort (hours):', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label><br>
+				<input
+					type="number"
+					id="task_estimated_effort"
+					name="task_estimated_effort"
+					value="<?php echo esc_attr( $estimated_effort ); ?>"
+					class="widefat"
+					min="0"
+					step="0.25"
+					placeholder="<?php esc_attr_e( 'e.g., 4.5', 'mcp-ai-wpoos-pro' ); ?>"
+				/>
+				<span class="description"><?php esc_html_e( 'Estimated time to complete this task in hours.', 'mcp-ai-wpoos-pro' ); ?></span>
+			</p>
+
+			<p>
+				<label for="task_actual_effort">
+					<strong><?php esc_html_e( 'Actual Effort (hours):', 'mcp-ai-wpoos-pro' ); ?></strong>
+				</label><br>
+				<input
+					type="number"
+					id="task_actual_effort"
+					name="task_actual_effort"
+					value="<?php echo esc_attr( $actual_effort ); ?>"
+					class="widefat"
+					min="0"
+					step="0.25"
+					placeholder="<?php esc_attr_e( 'e.g., 5.5', 'mcp-ai-wpoos-pro' ); ?>"
+				/>
+				<span class="description"><?php esc_html_e( 'Actual time spent on this task in hours.', 'mcp-ai-wpoos-pro' ); ?></span>
+			</p>
 		</div>
 		<?php
 	}
@@ -227,6 +303,41 @@ class WP_MCP_AI_Task_Metabox {
 				}
 			} else {
 				delete_post_meta( $post_id, '_task_assigned_to' );
+			}
+		}
+
+		// Save category.
+		if ( isset( $_POST['task_category'] ) ) {
+			$category        = sanitize_key( $_POST['task_category'] );
+			$valid_categories = array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' );
+			if ( in_array( $category, $valid_categories, true ) ) {
+				update_post_meta( $post_id, '_task_category', $category );
+			}
+		}
+
+		// Save tags.
+		if ( isset( $_POST['task_tags'] ) ) {
+			$tags = sanitize_text_field( $_POST['task_tags'] );
+			update_post_meta( $post_id, '_task_tags', $tags );
+		}
+
+		// Save estimated effort.
+		if ( isset( $_POST['task_estimated_effort'] ) ) {
+			$estimated_effort = sanitize_text_field( $_POST['task_estimated_effort'] );
+			if ( is_numeric( $estimated_effort ) && $estimated_effort >= 0 ) {
+				update_post_meta( $post_id, '_task_estimated_effort', floatval( $estimated_effort ) );
+			} elseif ( empty( $estimated_effort ) ) {
+				delete_post_meta( $post_id, '_task_estimated_effort' );
+			}
+		}
+
+		// Save actual effort.
+		if ( isset( $_POST['task_actual_effort'] ) ) {
+			$actual_effort = sanitize_text_field( $_POST['task_actual_effort'] );
+			if ( is_numeric( $actual_effort ) && $actual_effort >= 0 ) {
+				update_post_meta( $post_id, '_task_actual_effort', floatval( $actual_effort ) );
+			} elseif ( empty( $actual_effort ) ) {
+				delete_post_meta( $post_id, '_task_actual_effort' );
 			}
 		}
 	}

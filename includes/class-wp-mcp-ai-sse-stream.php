@@ -219,4 +219,101 @@ class WP_MCP_AI_SSE_Stream {
 	protected static function format_sse_comment( $text ) {
 		return ': ' . sanitize_text_field( $text ) . "\n\n";
 	}
+
+	/**
+	 * Stream with backpressure control.
+	 *
+	 * Enhanced streaming that monitors buffer size and client connection status
+	 * to prevent buffer overflow and wasted processing.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param Generator $generator    Generator yielding chunks of data.
+	 * @param int       $buffer_size  Maximum buffer size before flush (default 8192 bytes).
+	 * @return void
+	 */
+	public static function stream_with_backpressure( $generator, $buffer_size = 8192 ) {
+		$buffer = '';
+
+		foreach ( $generator as $chunk ) {
+			$buffer .= $chunk;
+
+			// Send when buffer is full or on flush signal.
+			if ( strlen( $buffer ) >= $buffer_size ) {
+				echo $buffer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE stream output.
+				if ( function_exists( 'wp_ob_end_flush_all' ) ) {
+					wp_ob_end_flush_all();
+				} else {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Suppress flush warnings.
+					@flush();
+				}
+				$buffer = '';
+
+				// Check client connection.
+				if ( function_exists( 'connection_aborted' ) && connection_aborted() ) {
+					break;
+				}
+			}
+		}
+
+		// Flush remaining buffer.
+		if ( ! empty( $buffer ) ) {
+			echo $buffer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE stream output.
+			if ( function_exists( 'wp_ob_end_flush_all' ) ) {
+				wp_ob_end_flush_all();
+			} else {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- Suppress flush warnings.
+				@flush();
+			}
+		}
+	}
+
+	/**
+	 * Send typed event (tool_call, content, error, metadata).
+	 *
+	 * Provides structured event types for different kinds of AI responses,
+	 * enabling better client-side handling and UI updates.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param string $type      Event type (tool_call, content, error, metadata).
+	 * @param mixed  $data      Event data.
+	 * @param string $event_id  Optional event ID for tracking.
+	 * @return string Formatted typed SSE message.
+	 */
+	public static function send_typed_event( $type, $data, $event_id = '' ) {
+		$event = array(
+			'type'      => sanitize_key( $type ),
+			'data'      => $data,
+			'timestamp' => microtime( true ),
+		);
+
+		return self::format_sse_message( $type, $event, $event_id );
+	}
+
+	/**
+	 * Stream generator with automatic chunking.
+	 *
+	 * Wrapper around stream_with_backpressure that accepts an array of messages
+	 * and yields them as a generator for streaming.
+	 *
+	 * @since 1.2.0
+	 *
+	 * @param array $messages    Array of messages to stream.
+	 * @param int   $buffer_size Buffer size for backpressure control.
+	 * @return void
+	 */
+	public static function stream_messages( $messages, $buffer_size = 8192 ) {
+		$generator = function () use ( $messages ) {
+			foreach ( $messages as $message ) {
+				if ( is_array( $message ) && isset( $message['type'], $message['data'] ) ) {
+					yield self::send_typed_event( $message['type'], $message['data'] );
+				} else {
+					yield self::format_sse_message( 'message', $message );
+				}
+			}
+		};
+
+		self::stream_with_backpressure( $generator(), $buffer_size );
+	}
 }

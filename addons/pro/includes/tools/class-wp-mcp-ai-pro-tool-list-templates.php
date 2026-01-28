@@ -32,8 +32,8 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'list_templates',
-			'description' => 'Lists available task plan templates with filtering by category, status, and sorting options. Shows usage statistics and template metadata.',
+			'name'         => 'list_templates',
+			'description'  => 'Lists available task plan templates with filtering by category, status, and sorting options. Shows usage statistics and template metadata.',
 			'input_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -62,7 +62,7 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 						'description' => 'Maximum number of templates to return (default: 20)',
 					),
 				),
-				'required' => array(),
+				'required'   => array(),
 			),
 		);
 	}
@@ -111,7 +111,7 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 				$query_args['status'] = $status;
 			}
 
-			$factory  = jet_engine()->listings->data->get_listing_data( 'mcp_task_templates' );
+			$factory       = jet_engine()->listings->data->get_listing_data( 'mcp_task_templates' );
 			$raw_templates = $factory ? $factory->db->query( $query_args ) : array();
 
 			foreach ( $raw_templates as $template ) {
@@ -128,7 +128,7 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 
 			// Apply status filter.
 			if ( 'all' !== $status ) {
-				$status_map = array(
+				$status_map                = array(
 					'draft'     => 'draft',
 					'published' => 'publish',
 					'archived'  => 'private',
@@ -159,7 +159,7 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 		// Count templates by category.
 		$category_counts = array();
 		foreach ( $templates as $template ) {
-			$cat = $template['category'];
+			$cat                     = $template['category'];
 			$category_counts[ $cat ] = ( $category_counts[ $cat ] ?? 0 ) + 1;
 		}
 
@@ -190,20 +190,20 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 		$placeholders = array_unique( $matches[1] ?? array() );
 
 		return array(
-			'template_id'      => $template['_ID'] ?? 0,
-			'template_name'    => $template['template_name'] ?? '',
-			'description'      => $template['description'] ?? '',
-			'category'         => $template['category'] ?? 'custom',
-			'status'           => $template['status'] ?? 'draft',
-			'version'          => $template['version'] ?? '1.0.0',
-			'usage_count'      => intval( $template['usage_count'] ?? 0 ),
-			'success_rate'     => floatval( $template['success_rate'] ?? 0 ),
+			'template_id'         => $template['_ID'] ?? 0,
+			'template_name'       => $template['template_name'] ?? '',
+			'description'         => $template['description'] ?? '',
+			'category'            => $template['category'] ?? 'custom',
+			'status'              => $template['status'] ?? 'draft',
+			'version'             => $template['version'] ?? '1.0.0',
+			'usage_count'         => intval( $template['usage_count'] ?? 0 ),
+			'success_rate'        => floatval( $template['success_rate'] ?? 0 ),
 			'avg_completion_time' => intval( $template['avg_completion_time'] ?? 0 ),
-			'tags'             => array_filter( explode( ', ', $template['tags'] ?? '' ) ),
-			'placeholders'     => $placeholders,
-			'author_id'        => intval( $template['author_id'] ?? 0 ),
-			'created'          => $template['cct_created'] ?? '',
-			'modified'         => $template['cct_modified'] ?? '',
+			'tags'                => array_filter( explode( ', ', $template['tags'] ?? '' ) ),
+			'placeholders'        => $placeholders,
+			'author_id'           => intval( $template['author_id'] ?? 0 ),
+			'created'             => $template['cct_created'] ?? '',
+			'modified'            => $template['cct_modified'] ?? '',
 		);
 	}
 
@@ -225,20 +225,20 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 		);
 
 		return array(
-			'template_id'      => $post->ID,
-			'template_name'    => $post->post_title,
-			'description'      => $post->post_excerpt,
-			'category'         => get_post_meta( $post->ID, 'category', true ) ?: 'custom',
-			'status'           => $status_map[ $post->post_status ] ?? 'draft',
-			'version'          => get_post_meta( $post->ID, 'version', true ) ?: '1.0.0',
-			'usage_count'      => intval( get_post_meta( $post->ID, 'usage_count', true ) ?: 0 ),
-			'success_rate'     => floatval( get_post_meta( $post->ID, 'success_rate', true ) ?: 0 ),
+			'template_id'         => $post->ID,
+			'template_name'       => $post->post_title,
+			'description'         => $post->post_excerpt,
+			'category'            => get_post_meta( $post->ID, 'category', true ) ?: 'custom',
+			'status'              => $status_map[ $post->post_status ] ?? 'draft',
+			'version'             => get_post_meta( $post->ID, 'version', true ) ?: '1.0.0',
+			'usage_count'         => intval( get_post_meta( $post->ID, 'usage_count', true ) ?: 0 ),
+			'success_rate'        => floatval( get_post_meta( $post->ID, 'success_rate', true ) ?: 0 ),
 			'avg_completion_time' => intval( get_post_meta( $post->ID, 'avg_completion_time', true ) ?: 0 ),
-			'tags'             => get_post_meta( $post->ID, 'tags', true ) ?: array(),
-			'placeholders'     => $placeholders,
-			'author_id'        => intval( $post->post_author ),
-			'created'          => $post->post_date,
-			'modified'         => $post->post_modified,
+			'tags'                => get_post_meta( $post->ID, 'tags', true ) ?: array(),
+			'placeholders'        => $placeholders,
+			'author_id'           => intval( $post->post_author ),
+			'created'             => $post->post_date,
+			'modified'            => $post->post_modified,
 		);
 	}
 

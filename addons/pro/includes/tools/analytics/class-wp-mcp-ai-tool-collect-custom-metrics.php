@@ -158,9 +158,9 @@ class WP_MCP_AI_Tool_Collect_Custom_Metrics implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'      => true,
+			'analytics'       => true,
 			'data_collection' => true,
-			'write'          => true,
+			'write'           => true,
 		);
 	}
 

@@ -22,7 +22,7 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'dataset'      => array(
+					'dataset'       => array(
 						'type'        => 'array',
 						'description' => 'Array of data points to analyze',
 					),
@@ -53,12 +53,12 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		}
 
 		$analysis = array(
-			'count'   => count( $numeric_data ),
-			'min'     => min( $numeric_data ),
-			'max'     => max( $numeric_data ),
-			'mean'    => array_sum( $numeric_data ) / count( $numeric_data ),
-			'median'  => $this->calculate_median( $numeric_data ),
-			'range'   => max( $numeric_data ) - min( $numeric_data ),
+			'count'  => count( $numeric_data ),
+			'min'    => min( $numeric_data ),
+			'max'    => max( $numeric_data ),
+			'mean'   => array_sum( $numeric_data ) / count( $numeric_data ),
+			'median' => $this->calculate_median( $numeric_data ),
+			'range'  => max( $numeric_data ) - min( $numeric_data ),
 		);
 
 		if ( 'trend' === $type ) {
@@ -80,11 +80,11 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 	}
 
 	private function detect_trend( $data ) {
-		$first_half = array_slice( $data, 0, ceil( count( $data ) / 2 ) );
+		$first_half  = array_slice( $data, 0, ceil( count( $data ) / 2 ) );
 		$second_half = array_slice( $data, ceil( count( $data ) / 2 ) );
-		$avg_first = array_sum( $first_half ) / count( $first_half );
-		$avg_second = array_sum( $second_half ) / count( $second_half );
-		
+		$avg_first   = array_sum( $first_half ) / count( $first_half );
+		$avg_second  = array_sum( $second_half ) / count( $second_half );
+
 		if ( $avg_second > $avg_first * 1.1 ) {
 			return 'increasing';
 		} elseif ( $avg_second < $avg_first * 0.9 ) {
@@ -99,7 +99,7 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 			$insights[] = "Data shows a {$analysis['trend']} trend";
 		}
 		if ( $analysis['range'] > $analysis['mean'] * 2 ) {
-			$insights[] = "High variance detected - data is widely spread";
+			$insights[] = 'High variance detected - data is widely spread';
 		}
 		return $insights;
 	}

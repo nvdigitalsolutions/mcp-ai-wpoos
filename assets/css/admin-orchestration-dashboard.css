@@ -369,3 +369,151 @@
 		justify-content: center;
 	}
 }
+
+/* Workflows Section */
+.orchestration-workflows-container {
+	background: #fff;
+	padding: 25px;
+	margin: 25px 0;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.orchestration-workflows-container h2 {
+	margin-top: 0;
+	margin-bottom: 20px;
+	font-size: 18px;
+}
+
+.workflows-header {
+	margin-bottom: 15px;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.workflows-header .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.workflows-list-container {
+	min-height: 100px;
+}
+
+.workflows-loading,
+.workflows-empty,
+.workflows-error {
+	text-align: center;
+	padding: 40px 20px;
+	color: #8c8f94;
+}
+
+.workflows-loading .spinner {
+	float: none;
+	margin: 0 auto 10px;
+	visibility: visible;
+}
+
+.workflows-error {
+	color: #d63638;
+}
+
+.workflows-empty code {
+	background: #f0f0f1;
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 13px;
+}
+
+.workflows-table {
+	margin-top: 15px;
+}
+
+.workflows-table th {
+	font-weight: 600;
+}
+
+.workflow-id code {
+	background: #f0f0f1;
+	padding: 4px 8px;
+	border-radius: 3px;
+	font-size: 12px;
+	color: #2271b1;
+	font-weight: 500;
+}
+
+.workflow-status-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.workflow-status-badge.status-success {
+	background: #d5f3e0;
+	color: #00a32a;
+}
+
+.workflow-status-badge.status-error {
+	background: #fce4e6;
+	color: #d63638;
+}
+
+.workflow-status-badge.status-info {
+	background: #e5f3fa;
+	color: #2271b1;
+}
+
+.workflow-status-badge.status-default {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.workflow-progress {
+	min-width: 200px;
+}
+
+.progress-bar-container {
+	background: #f0f0f1;
+	height: 20px;
+	border-radius: 10px;
+	overflow: hidden;
+	margin-bottom: 5px;
+}
+
+.progress-bar {
+	height: 100%;
+	background: linear-gradient(90deg, #2271b1, #135e96);
+	transition: width 0.3s ease;
+	border-radius: 10px;
+}
+
+.progress-text {
+	font-size: 12px;
+	color: #646970;
+}
+
+.workflow-created,
+.workflow-updated {
+	font-size: 13px;
+	color: #646970;
+	white-space: nowrap;
+}
+
+@media (max-width: 782px) {
+	.workflows-table {
+		font-size: 12px;
+	}
+	
+	.workflow-progress {
+		min-width: 150px;
+	}
+	
+	.workflow-id code {
+		font-size: 10px;
+		padding: 2px 4px;
+	}
+}

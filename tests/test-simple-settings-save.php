@@ -9,11 +9,11 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
-		
+
 		// Create an admin user and log them in.
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
-		
+
 		// Clear any existing settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 	}
@@ -35,19 +35,19 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 
 		// Simulate POST data from simple settings page with fields from both General and Providers tabs.
 		$_POST = array(
-			'_wpnonce'            => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
-			'action'              => 'wp_mcp_ai_save_settings',
-			'active_tab'          => 'general',
-			'save_all_tabs'       => '1',
-			'redirect_page'       => 'wp-mcp-ai-simple-settings',
-			'wp_mcp_ai_settings'  => array(
+			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
+			'action'             => 'wp_mcp_ai_save_settings',
+			'active_tab'         => 'general',
+			'save_all_tabs'      => '1',
+			'redirect_page'      => 'wp-mcp-ai-simple-settings',
+			'wp_mcp_ai_settings' => array(
 				// General tab fields.
-				'enable_logging'       => '1',
-				'default_provider'     => 'openai',
+				'enable_logging'      => '1',
+				'default_provider'    => 'openai',
 				// Providers tab fields.
-				'openai_api_key'       => 'sk-test123',
-				'gemini_api_key'       => 'test-gemini-key',
-				'ollama_endpoint_url'  => 'http://localhost:11434',
+				'openai_api_key'      => 'sk-test123',
+				'gemini_api_key'      => 'test-gemini-key',
+				'ollama_endpoint_url' => 'http://localhost:11434',
 			),
 		);
 
@@ -86,13 +86,13 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 
 		// Simulate POST data from main dashboard with only General tab.
 		$_POST = array(
-			'_wpnonce'            => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
-			'action'              => 'wp_mcp_ai_save_settings',
-			'active_tab'          => 'general',
-			'wp_mcp_ai_settings'  => array(
+			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
+			'action'             => 'wp_mcp_ai_save_settings',
+			'active_tab'         => 'general',
+			'wp_mcp_ai_settings' => array(
 				// General tab fields.
-				'enable_logging'       => '1',
-				'default_provider'     => 'gemini',
+				'enable_logging'   => '1',
+				'default_provider' => 'gemini',
 			),
 		);
 
@@ -135,13 +135,13 @@ class WP_MCP_AI_Simple_Settings_Save_Test extends WP_UnitTestCase {
 
 		// Simulate POST data with empty password fields (user didn't change them).
 		$_POST = array(
-			'_wpnonce'            => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
-			'action'              => 'wp_mcp_ai_save_settings',
-			'active_tab'          => 'providers',
-			'wp_mcp_ai_settings'  => array(
-				'openai_api_key'      => '', // Empty - should preserve existing.
-				'gemini_api_key'      => '', // Empty - should preserve existing.
-				'enable_openai'       => '1',
+			'_wpnonce'           => wp_create_nonce( 'wp_mcp_ai_save_settings' ),
+			'action'             => 'wp_mcp_ai_save_settings',
+			'active_tab'         => 'providers',
+			'wp_mcp_ai_settings' => array(
+				'openai_api_key' => '', // Empty - should preserve existing.
+				'gemini_api_key' => '', // Empty - should preserve existing.
+				'enable_openai'  => '1',
 			),
 		);
 

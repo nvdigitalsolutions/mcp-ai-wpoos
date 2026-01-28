@@ -49,36 +49,36 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
-			'properties' => array(
+			'type'                 => 'object',
+			'properties'           => array(
 				'base_requirements' => array(
-					'type' => 'string',
+					'type'        => 'string',
 					'description' => __( 'Base floor plan requirements.', 'mcp-ai-wpoos-pro' ),
 				),
-				'num_variations' => array(
-					'type' => 'integer',
+				'num_variations'    => array(
+					'type'        => 'integer',
 					'description' => __( 'Number of variations to generate (1-10).', 'mcp-ai-wpoos-pro' ),
-					'minimum' => 1,
-					'maximum' => 10,
-					'default' => 3,
+					'minimum'     => 1,
+					'maximum'     => 10,
+					'default'     => 3,
 				),
-				'variation_focus' => array(
-					'type' => 'array',
+				'variation_focus'   => array(
+					'type'        => 'array',
 					'description' => __( 'Aspects to vary: "layout", "room_sizes", "door_placement", "window_placement".', 'mcp-ai-wpoos-pro' ),
-					'items' => array(
+					'items'       => array(
 						'type' => 'string',
 						'enum' => array( 'layout', 'room_sizes', 'door_placement', 'window_placement', 'style' ),
 					),
-					'default' => array( 'layout' ),
+					'default'     => array( 'layout' ),
 				),
-				'building_type' => array(
-					'type' => 'string',
+				'building_type'     => array(
+					'type'        => 'string',
 					'description' => __( 'Building type: "residential", "commercial", "industrial".', 'mcp-ai-wpoos-pro' ),
-					'enum' => array( 'residential', 'commercial', 'industrial' ),
-					'default' => 'residential',
+					'enum'        => array( 'residential', 'commercial', 'industrial' ),
+					'default'     => 'residential',
 				),
 			),
-			'required' => array( 'base_requirements' ),
+			'required'             => array( 'base_requirements' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -142,14 +142,14 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 
 		// Return structured variations data.
 		$result = array(
-			'success' => true,
-			'url' => isset( $variations[0]['floor_plan']['image_url'] ) ? $variations[0]['floor_plan']['image_url'] : '',
-			'prompt' => sprintf( 'Floor plan variations: %s', $base_requirements ),
-			'variations' => $variations,
-			'num_variations' => count( $variations ),
+			'success'           => true,
+			'url'               => isset( $variations[0]['floor_plan']['image_url'] ) ? $variations[0]['floor_plan']['image_url'] : '',
+			'prompt'            => sprintf( 'Floor plan variations: %s', $base_requirements ),
+			'variations'        => $variations,
+			'num_variations'    => count( $variations ),
 			'base_requirements' => $base_requirements,
-			'variation_focus' => $variation_focus,
-			'text' => sprintf(
+			'variation_focus'   => $variation_focus,
+			'text'              => sprintf(
 				/* translators: %d: number of variations */
 				_n( 'Generated %d floor plan variation.', 'Generated %d floor plan variations.', count( $variations ), 'mcp-ai-wpoos-pro' ),
 				count( $variations )
@@ -175,18 +175,18 @@ class WP_MCP_AI_Tool_Create_Floor_Plan_Variations implements WP_MCP_AI_Tool_Inte
 		for ( $i = 1; $i <= $num_variations; $i++ ) {
 			$variations[] = array(
 				'variation_id' => $i,
-				'name' => sprintf( 'Variation %d', $i ),
-				'description' => sprintf( 'Alternative layout option %d', $i ),
-				'focus' => implode( ', ', $variation_focus ),
-				'floor_plan' => array(
+				'name'         => sprintf( 'Variation %d', $i ),
+				'description'  => sprintf( 'Alternative layout option %d', $i ),
+				'focus'        => implode( ', ', $variation_focus ),
+				'floor_plan'   => array(
 					'format' => 'json',
-					'data' => array(
-						'rooms' => array(),
+					'data'   => array(
+						'rooms'      => array(),
 						'dimensions' => array(),
-						'walls' => array(),
+						'walls'      => array(),
 					),
 				),
-				'highlights' => array(
+				'highlights'   => array(
 					sprintf( 'Optimized for %s', $variation_focus[0] ),
 					'Unique room arrangement',
 					'Improved traffic flow',

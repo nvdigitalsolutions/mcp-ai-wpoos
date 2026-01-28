@@ -104,16 +104,16 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		foreach ( $professions as $profession ) {
 			try {
 				$role_data = $this->determine_agent_role( $profession );
-				
+
 				// Handle both single role (backward compatibility) and multi-role return.
 				if ( is_array( $role_data ) ) {
-					$primary_role     = $role_data['primary'];
-					$secondary_roles  = isset( $role_data['secondary'] ) ? $role_data['secondary'] : array();
+					$primary_role    = $role_data['primary'];
+					$secondary_roles = isset( $role_data['secondary'] ) ? $role_data['secondary'] : array();
 				} else {
-					$primary_role     = $role_data;
-					$secondary_roles  = array();
+					$primary_role    = $role_data;
+					$secondary_roles = array();
 				}
-				
+
 				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_ROLE, $primary_role );
 				update_post_meta( $profession->ID, WP_MCP_AI_Profession_CPT::META_AGENT_SECONDARY_ROLES, wp_json_encode( $secondary_roles ) );
 				++$seeded;
@@ -176,99 +176,235 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		$matched_roles = array();
 
 		// 1. Check CRITIC capabilities.
-		if ( $this->has_keywords( $title, array(
-			// Quality Assurance & Testing
-			'qa engineer', 'quality assurance', 'quality engineer', 'tester', 'test engineer',
-			// Editorial & Review
-			'editor', 'reviewer', 'proofreader', 'copy editor',
-			// Audit & Compliance
-			'auditor', 'inspector', 'compliance officer', 'validator',
-			// Evaluation & Assessment
-			'evaluator', 'assessor', 'judge', 'critic',
-		) ) ||
-			$this->has_keywords( $expertise_lower, array(
-				'quality assurance', 'qa', 'testing', 'test automation',
-				'editing', 'reviewing', 'proofreading',
-				'validation', 'inspection', 'audit', 'compliance',
-				'quality control', 'peer review'
-			) ) ) {
+		if ( $this->has_keywords(
+			$title,
+			array(
+				// Quality Assurance & Testing
+				'qa engineer',
+				'quality assurance',
+				'quality engineer',
+				'tester',
+				'test engineer',
+				// Editorial & Review
+				'editor',
+				'reviewer',
+				'proofreader',
+				'copy editor',
+				// Audit & Compliance
+				'auditor',
+				'inspector',
+				'compliance officer',
+				'validator',
+				// Evaluation & Assessment
+				'evaluator',
+				'assessor',
+				'judge',
+				'critic',
+			)
+		) ||
+			$this->has_keywords(
+				$expertise_lower,
+				array(
+					'quality assurance',
+					'qa',
+					'testing',
+					'test automation',
+					'editing',
+					'reviewing',
+					'proofreading',
+					'validation',
+					'inspection',
+					'audit',
+					'compliance',
+					'quality control',
+					'peer review',
+				)
+			) ) {
 			$matched_roles[] = 'critic';
 		}
 
 		// 2. Check SPECIALIST capabilities.
 		if ( in_array( $category, array( 'legal', 'healthcare', 'financial', 'scientific', 'regulatory' ), true ) ||
-			$this->has_keywords( $title, array(
-				// Legal
-				'attorney', 'lawyer', 'paralegal', 'legal advisor', 'judge',
-				// Medical/Healthcare
-				'doctor', 'physician', 'surgeon', 'nurse', 'dentist', 'veterinarian', 'pharmacist',
-				'therapist', 'psychologist', 'psychiatrist',
-				// Financial
-				'accountant', 'financial advisor', 'tax advisor', 'bookkeeper',
-				// Scientific/Research
-				'scientist', 'researcher', 'physicist', 'chemist', 'biologist',
-				'geologist', 'meteorologist', 'oceanographer', 'toxicologist',
-				// Regulatory/Compliance
-				'regulatory affairs', 'compliance specialist', 'drug safety',
-			) ) ||
-			$this->has_keywords( $expertise_lower, array(
-				'legal', 'law', 'litigation',
-				'medical', 'healthcare', 'clinical', 'pharmacy',
-				'financial', 'accounting', 'taxation',
-				'scientific research', 'laboratory', 'clinical trials',
-				'regulatory', 'compliance', 'pharmaceutical'
-			) ) ) {
+			$this->has_keywords(
+				$title,
+				array(
+					// Legal
+					'attorney',
+					'lawyer',
+					'paralegal',
+					'legal advisor',
+					'judge',
+					// Medical/Healthcare
+					'doctor',
+					'physician',
+					'surgeon',
+					'nurse',
+					'dentist',
+					'veterinarian',
+					'pharmacist',
+					'therapist',
+					'psychologist',
+					'psychiatrist',
+					// Financial
+					'accountant',
+					'financial advisor',
+					'tax advisor',
+					'bookkeeper',
+					// Scientific/Research
+					'scientist',
+					'researcher',
+					'physicist',
+					'chemist',
+					'biologist',
+					'geologist',
+					'meteorologist',
+					'oceanographer',
+					'toxicologist',
+					// Regulatory/Compliance
+					'regulatory affairs',
+					'compliance specialist',
+					'drug safety',
+				)
+			) ||
+			$this->has_keywords(
+				$expertise_lower,
+				array(
+					'legal',
+					'law',
+					'litigation',
+					'medical',
+					'healthcare',
+					'clinical',
+					'pharmacy',
+					'financial',
+					'accounting',
+					'taxation',
+					'scientific research',
+					'laboratory',
+					'clinical trials',
+					'regulatory',
+					'compliance',
+					'pharmaceutical',
+				)
+			) ) {
 			$matched_roles[] = 'specialist';
 		}
 
 		// 3. Check PLANNER capabilities.
-		if ( $this->has_keywords( $title, array(
-			// Project/Product Management
-			'project manager', 'product manager', 'program manager', 'scrum master',
-			// Strategic Planning
-			'planner', 'strategist', 'strategic planner', 'urban planner', 'event planner',
-			// Coordination
-			'coordinator', 'logistics coordinator', 'research coordinator',
-			// Architecture (system design, not implementation)
-			'architect', 'cloud architect', 'solutions architect', 'systems architect',
-			'enterprise architect', 'landscape architect',
-			// Management/Leadership
-			'director', 'manager', 'administrator', 'supervisor',
-		) ) ||
-			$this->has_keywords( $expertise_lower, array(
-				'project management', 'product management', 'program management',
-				'planning', 'strategy', 'strategic planning',
-				'coordination', 'logistics',
-				'architecture', 'system design', 'solution design',
-				'management', 'administration', 'leadership'
-			) ) ||
+		if ( $this->has_keywords(
+			$title,
+			array(
+				// Project/Product Management
+				'project manager',
+				'product manager',
+				'program manager',
+				'scrum master',
+				// Strategic Planning
+				'planner',
+				'strategist',
+				'strategic planner',
+				'urban planner',
+				'event planner',
+				// Coordination
+				'coordinator',
+				'logistics coordinator',
+				'research coordinator',
+				// Architecture (system design, not implementation)
+				'architect',
+				'cloud architect',
+				'solutions architect',
+				'systems architect',
+				'enterprise architect',
+				'landscape architect',
+				// Management/Leadership
+				'director',
+				'manager',
+				'administrator',
+				'supervisor',
+			)
+		) ||
+			$this->has_keywords(
+				$expertise_lower,
+				array(
+					'project management',
+					'product management',
+					'program management',
+					'planning',
+					'strategy',
+					'strategic planning',
+					'coordination',
+					'logistics',
+					'architecture',
+					'system design',
+					'solution design',
+					'management',
+					'administration',
+					'leadership',
+				)
+			) ||
 			'advisory' === $category ) {
 			$matched_roles[] = 'planner';
 		}
 
 		// 4. Check EXECUTOR capabilities.
 		if ( in_array( $category, array( 'technical', 'creative', 'trades', 'operations' ), true ) ||
-			$this->has_keywords( $title, array(
-				// Software Development
-				'developer', 'programmer', 'coder', 'software engineer',
-				// Engineering (implementation)
-				'engineer', 'drafter', 'technician', 'mechanic',
-				// Creative Execution
-				'designer', 'artist', 'photographer', 'videographer', 'animator',
-				'editor', 'producer', 'cinematographer',
-				// Trades/Crafts
-				'electrician', 'plumber', 'carpenter', 'welder', 'mason',
-				'machinist', 'painter', 'roofer',
-				// Operations
-				'operator', 'driver', 'pilot', 'captain',
-			) ) ||
-			$this->has_keywords( $expertise_lower, array(
-				'development', 'programming', 'coding', 'software development',
-				'engineering', 'technical implementation',
-				'design', 'creative', 'multimedia production',
-				'construction', 'fabrication', 'installation',
-				'operations', 'execution'
-			) ) ) {
+			$this->has_keywords(
+				$title,
+				array(
+					// Software Development
+					'developer',
+					'programmer',
+					'coder',
+					'software engineer',
+					// Engineering (implementation)
+					'engineer',
+					'drafter',
+					'technician',
+					'mechanic',
+					// Creative Execution
+					'designer',
+					'artist',
+					'photographer',
+					'videographer',
+					'animator',
+					'editor',
+					'producer',
+					'cinematographer',
+					// Trades/Crafts
+					'electrician',
+					'plumber',
+					'carpenter',
+					'welder',
+					'mason',
+					'machinist',
+					'painter',
+					'roofer',
+					// Operations
+					'operator',
+					'driver',
+					'pilot',
+					'captain',
+				)
+			) ||
+			$this->has_keywords(
+				$expertise_lower,
+				array(
+					'development',
+					'programming',
+					'coding',
+					'software development',
+					'engineering',
+					'technical implementation',
+					'design',
+					'creative',
+					'multimedia production',
+					'construction',
+					'fabrication',
+					'installation',
+					'operations',
+					'execution',
+				)
+			) ) {
 			$matched_roles[] = 'executor';
 		}
 
@@ -282,13 +418,13 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 			// Priority: Specialist > Critic > Planner > Executor.
 			$priority = array( 'specialist', 'critic', 'planner', 'executor' );
 			$sorted   = array();
-			
+
 			foreach ( $priority as $role ) {
 				if ( in_array( $role, $matched_roles, true ) ) {
 					$sorted[] = $role;
 				}
 			}
-			
+
 			return array(
 				'primary'   => $sorted[0],
 				'secondary' => array_slice( $sorted, 1 ),

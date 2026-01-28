@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'platforms'             => array(
+				'platforms'          => array(
 					'type'        => 'array',
 					'description' => __( 'Social media platforms to include (default: all connected)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -115,48 +115,48 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 						'enum' => array( 'twitter', 'facebook', 'instagram', 'linkedin', 'youtube', 'tiktok' ),
 					),
 				),
-				'date_from'             => array(
+				'date_from'          => array(
 					'type'        => 'string',
 					'description' => __( 'Start date (Y-m-d format, default: 30 days ago)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'               => array(
+				'date_to'            => array(
 					'type'        => 'string',
 					'description' => __( 'End date (Y-m-d format, default: today)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_engagement'    => array(
+				'include_engagement' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include detailed engagement metrics', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_reach'         => array(
+				'include_reach'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include reach and impressions data', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_growth'        => array(
+				'include_growth'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include follower growth analysis', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_top_posts'     => array(
+				'include_top_posts'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include best performing posts', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'top_posts_count'       => array(
+				'top_posts_count'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of top posts to return per platform', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'group_by'              => array(
+				'group_by'           => array(
 					'type'        => 'string',
 					'description' => __( 'Group results by time period for trends', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'day', 'week', 'month' ),
 					'default'     => 'day',
 				),
-				'comparison_period'     => array(
+				'comparison_period'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include comparison with previous period', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -207,11 +207,11 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 		}
 
 		// Parse and sanitize arguments.
-		$platforms         = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] ) ? array_map( 'sanitize_text_field', $arguments['platforms'] ) : array();
-		$date_from         = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
-		$date_to           = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : gmdate( 'Y-m-d' );
-		$group_by          = isset( $arguments['group_by'] ) ? sanitize_text_field( $arguments['group_by'] ) : 'day';
-		$top_posts_count   = isset( $arguments['top_posts_count'] ) ? absint( $arguments['top_posts_count'] ) : 10;
+		$platforms       = isset( $arguments['platforms'] ) && is_array( $arguments['platforms'] ) ? array_map( 'sanitize_text_field', $arguments['platforms'] ) : array();
+		$date_from       = isset( $arguments['date_from'] ) ? sanitize_text_field( $arguments['date_from'] ) : gmdate( 'Y-m-d', strtotime( '-30 days' ) );
+		$date_to         = isset( $arguments['date_to'] ) ? sanitize_text_field( $arguments['date_to'] ) : gmdate( 'Y-m-d' );
+		$group_by        = isset( $arguments['group_by'] ) ? sanitize_text_field( $arguments['group_by'] ) : 'day';
+		$top_posts_count = isset( $arguments['top_posts_count'] ) ? absint( $arguments['top_posts_count'] ) : 10;
 
 		// Validate date range.
 		if ( strtotime( $date_from ) > strtotime( $date_to ) ) {
@@ -237,9 +237,9 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 		$analytics = array(
 			'success' => true,
 			'period'  => array(
-				'from'      => $date_from,
-				'to'        => $date_to,
-				'group_by'  => $group_by,
+				'from'     => $date_from,
+				'to'       => $date_to,
+				'group_by' => $group_by,
 			),
 			'summary' => $this->get_summary_metrics( $platforms, $date_from, $date_to ),
 		);
@@ -316,24 +316,24 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	 */
 	protected function get_summary_metrics( $platforms, $date_from, $date_to ) {
 		$summary = array(
-			'total_posts'          => 0,
-			'total_engagement'     => 0,
-			'total_reach'          => 0,
-			'total_impressions'    => 0,
-			'total_followers'      => 0,
-			'platforms_count'      => count( $platforms ),
-			'by_platform'          => array(),
+			'total_posts'       => 0,
+			'total_engagement'  => 0,
+			'total_reach'       => 0,
+			'total_impressions' => 0,
+			'total_followers'   => 0,
+			'platforms_count'   => count( $platforms ),
+			'by_platform'       => array(),
 		);
 
 		foreach ( $platforms as $platform ) {
 			$platform_data = $this->get_platform_summary( $platform, $date_from, $date_to );
-			
+
 			$summary['total_posts']       += $platform_data['posts_count'];
 			$summary['total_engagement']  += $platform_data['engagement'];
 			$summary['total_reach']       += $platform_data['reach'];
 			$summary['total_impressions'] += $platform_data['impressions'];
 			$summary['total_followers']   += $platform_data['followers'];
-			
+
 			$summary['by_platform'][ $platform ] = $platform_data;
 		}
 
@@ -353,13 +353,13 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	protected function get_platform_summary( $platform, $date_from, $date_to ) {
 		// Mock data structure - in production, this would call actual API endpoints.
 		return array(
-			'platform'      => $platform,
-			'posts_count'   => 0,
-			'engagement'    => 0,
-			'reach'         => 0,
-			'impressions'   => 0,
-			'followers'     => 0,
-			'status'        => 'connected',
+			'platform'    => $platform,
+			'posts_count' => 0,
+			'engagement'  => 0,
+			'reach'       => 0,
+			'impressions' => 0,
+			'followers'   => 0,
+			'status'      => 'connected',
 		);
 	}
 
@@ -376,19 +376,19 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	 */
 	protected function get_engagement_metrics( $platforms, $date_from, $date_to, $group_by ) {
 		$engagement = array(
-			'total_likes'    => 0,
-			'total_comments' => 0,
-			'total_shares'   => 0,
-			'total_saves'    => 0,
+			'total_likes'     => 0,
+			'total_comments'  => 0,
+			'total_shares'    => 0,
+			'total_saves'     => 0,
 			'engagement_rate' => 0,
-			'trends'         => array(),
-			'by_platform'    => array(),
+			'trends'          => array(),
+			'by_platform'     => array(),
 		);
 
 		foreach ( $platforms as $platform ) {
-			$platform_engagement = $this->get_platform_engagement( $platform, $date_from, $date_to, $group_by );
+			$platform_engagement                    = $this->get_platform_engagement( $platform, $date_from, $date_to, $group_by );
 			$engagement['by_platform'][ $platform ] = $platform_engagement;
-			
+
 			$engagement['total_likes']    += $platform_engagement['likes'];
 			$engagement['total_comments'] += $platform_engagement['comments'];
 			$engagement['total_shares']   += $platform_engagement['shares'];
@@ -441,9 +441,9 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 		);
 
 		foreach ( $platforms as $platform ) {
-			$platform_reach = $this->get_platform_reach( $platform, $date_from, $date_to, $group_by );
+			$platform_reach                    = $this->get_platform_reach( $platform, $date_from, $date_to, $group_by );
 			$reach['by_platform'][ $platform ] = $platform_reach;
-			
+
 			$reach['total_reach']       += $platform_reach['reach'];
 			$reach['total_impressions'] += $platform_reach['impressions'];
 		}
@@ -484,18 +484,18 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	 */
 	protected function get_follower_growth( $platforms, $date_from, $date_to, $group_by ) {
 		$growth = array(
-			'net_growth'     => 0,
-			'new_followers'  => 0,
-			'unfollows'      => 0,
-			'growth_rate'    => 0,
-			'trends'         => array(),
-			'by_platform'    => array(),
+			'net_growth'    => 0,
+			'new_followers' => 0,
+			'unfollows'     => 0,
+			'growth_rate'   => 0,
+			'trends'        => array(),
+			'by_platform'   => array(),
 		);
 
 		foreach ( $platforms as $platform ) {
-			$platform_growth = $this->get_platform_growth( $platform, $date_from, $date_to, $group_by );
+			$platform_growth                    = $this->get_platform_growth( $platform, $date_from, $date_to, $group_by );
 			$growth['by_platform'][ $platform ] = $platform_growth;
-			
+
 			$growth['net_growth']    += $platform_growth['net_growth'];
 			$growth['new_followers'] += $platform_growth['new_followers'];
 			$growth['unfollows']     += $platform_growth['unfollows'];
@@ -604,18 +604,18 @@ class WP_MCP_AI_Tool_Get_Cross_Platform_Analytics implements WP_MCP_AI_Tool_Inte
 	protected function prepare_chart_data( $analytics, $group_by ) {
 		return array(
 			'engagement_chart' => array(
-				'type'   => 'line',
-				'labels' => array(),
+				'type'     => 'line',
+				'labels'   => array(),
 				'datasets' => array(),
 			),
 			'reach_chart'      => array(
-				'type'   => 'bar',
-				'labels' => array(),
+				'type'     => 'bar',
+				'labels'   => array(),
 				'datasets' => array(),
 			),
 			'growth_chart'     => array(
-				'type'   => 'line',
-				'labels' => array(),
+				'type'     => 'line',
+				'labels'   => array(),
 				'datasets' => array(),
 			),
 		);

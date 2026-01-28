@@ -105,13 +105,13 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'action'             => array(
+				'action'          => array(
 					'type'        => 'string',
 					'description' => __( 'Moderation action to perform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'scan', 'approve', 'delete', 'hide', 'report', 'bulk_action' ),
 					'default'     => 'scan',
 				),
-				'platforms'          => array(
+				'platforms'       => array(
 					'type'        => 'array',
 					'description' => __( 'Platforms to moderate comments on', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -120,55 +120,55 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 					),
 					'minItems'    => 1,
 				),
-				'post_id'            => array(
+				'post_id'         => array(
 					'type'        => 'string',
 					'description' => __( 'Specific post ID to moderate (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'comment_ids'        => array(
+				'comment_ids'     => array(
 					'type'        => 'array',
 					'description' => __( 'Specific comment IDs for bulk actions', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'date_from'          => array(
+				'date_from'       => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for comment retrieval (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'date_to'            => array(
+				'date_to'         => array(
 					'type'        => 'string',
 					'description' => __( 'End date for comment retrieval (Y-m-d format)', 'mcp-ai-wpoos-pro' ),
 				),
-				'filter_spam'        => array(
+				'filter_spam'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Filter to show only suspected spam comments', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'filter_negative'    => array(
+				'filter_negative' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Filter to show only negative sentiment comments', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'keyword_filter'     => array(
+				'keyword_filter'  => array(
 					'type'        => 'array',
 					'description' => __( 'Keywords to filter comments (blacklist)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'auto_moderate'      => array(
+				'auto_moderate'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically moderate based on rules (false for preview)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'spam_threshold'     => array(
+				'spam_threshold'  => array(
 					'type'        => 'number',
 					'description' => __( 'Spam confidence threshold for auto-moderation (0-1)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0.9,
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'limit'              => array(
+				'limit'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of comments to retrieve', 'mcp-ai-wpoos-pro' ),
 					'default'     => 100,
@@ -257,14 +257,14 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array Result.
 	 */
 	protected function scan_comments( $arguments, $context ) {
-		$platforms        = array_map( 'sanitize_text_field', $arguments['platforms'] );
-		$post_id          = isset( $arguments['post_id'] ) ? sanitize_text_field( $arguments['post_id'] ) : '';
-		$filter_spam      = isset( $arguments['filter_spam'] ) ? (bool) $arguments['filter_spam'] : false;
-		$filter_negative  = isset( $arguments['filter_negative'] ) ? (bool) $arguments['filter_negative'] : false;
-		$keyword_filter   = isset( $arguments['keyword_filter'] ) && is_array( $arguments['keyword_filter'] ) ? array_map( 'sanitize_text_field', $arguments['keyword_filter'] ) : array();
-		$auto_moderate    = isset( $arguments['auto_moderate'] ) ? (bool) $arguments['auto_moderate'] : false;
-		$spam_threshold   = isset( $arguments['spam_threshold'] ) ? floatval( $arguments['spam_threshold'] ) : 0.9;
-		$limit            = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 100;
+		$platforms       = array_map( 'sanitize_text_field', $arguments['platforms'] );
+		$post_id         = isset( $arguments['post_id'] ) ? sanitize_text_field( $arguments['post_id'] ) : '';
+		$filter_spam     = isset( $arguments['filter_spam'] ) ? (bool) $arguments['filter_spam'] : false;
+		$filter_negative = isset( $arguments['filter_negative'] ) ? (bool) $arguments['filter_negative'] : false;
+		$keyword_filter  = isset( $arguments['keyword_filter'] ) && is_array( $arguments['keyword_filter'] ) ? array_map( 'sanitize_text_field', $arguments['keyword_filter'] ) : array();
+		$auto_moderate   = isset( $arguments['auto_moderate'] ) ? (bool) $arguments['auto_moderate'] : false;
+		$spam_threshold  = isset( $arguments['spam_threshold'] ) ? floatval( $arguments['spam_threshold'] ) : 0.9;
+		$limit           = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 100;
 
 		$all_comments = array();
 		$stats        = array(
@@ -296,10 +296,10 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 				// Analyze comment.
 				$analysis = $this->analyze_comment( $comment['content'], $keyword_filter );
 
-				$comment['spam_score']     = $analysis['spam_score'];
-				$comment['is_spam']        = $analysis['is_spam'];
-				$comment['sentiment']      = $analysis['sentiment'];
-				$comment['matched_keywords'] = $analysis['matched_keywords'];
+				$comment['spam_score']         = $analysis['spam_score'];
+				$comment['is_spam']            = $analysis['is_spam'];
+				$comment['sentiment']          = $analysis['sentiment'];
+				$comment['matched_keywords']   = $analysis['matched_keywords'];
 				$comment['recommended_action'] = $this->determine_action( $comment, $moderation_rules );
 
 				++$stats['total'];
@@ -477,28 +477,28 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 		// Simulated data for demonstration (replace with actual API calls).
 		$sample_comments = array(
 			array(
-				'id'       => 'cmt_' . wp_generate_uuid4(),
-				'post_id'  => $post_id ?: 'post_123',
-				'author'   => '@spammer123',
-				'content'  => 'Buy cheap products here!!! Click link in bio!!!',
-				'date'     => gmdate( 'Y-m-d H:i:s' ),
-				'likes'    => 0,
+				'id'      => 'cmt_' . wp_generate_uuid4(),
+				'post_id' => $post_id ?: 'post_123',
+				'author'  => '@spammer123',
+				'content' => 'Buy cheap products here!!! Click link in bio!!!',
+				'date'    => gmdate( 'Y-m-d H:i:s' ),
+				'likes'   => 0,
 			),
 			array(
-				'id'       => 'cmt_' . wp_generate_uuid4(),
-				'post_id'  => $post_id ?: 'post_123',
-				'author'   => '@customer456',
-				'content'  => 'This product is terrible, wasted my money!',
-				'date'     => gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour' ) ),
-				'likes'    => 3,
+				'id'      => 'cmt_' . wp_generate_uuid4(),
+				'post_id' => $post_id ?: 'post_123',
+				'author'  => '@customer456',
+				'content' => 'This product is terrible, wasted my money!',
+				'date'    => gmdate( 'Y-m-d H:i:s', strtotime( '-1 hour' ) ),
+				'likes'   => 3,
 			),
 			array(
-				'id'       => 'cmt_' . wp_generate_uuid4(),
-				'post_id'  => $post_id ?: 'post_123',
-				'author'   => '@fan789',
-				'content'  => 'Love this! Great quality!',
-				'date'     => gmdate( 'Y-m-d H:i:s', strtotime( '-2 hours' ) ),
-				'likes'    => 15,
+				'id'      => 'cmt_' . wp_generate_uuid4(),
+				'post_id' => $post_id ?: 'post_123',
+				'author'  => '@fan789',
+				'content' => 'Love this! Great quality!',
+				'date'    => gmdate( 'Y-m-d H:i:s', strtotime( '-2 hours' ) ),
+				'likes'   => 15,
 			),
 		);
 
@@ -513,19 +513,19 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return array Analysis result.
 	 */
 	protected function analyze_comment( $content, $keyword_filter ) {
-		$spam_score        = 0;
-		$matched_keywords  = array();
-		$content_lower     = strtolower( $content );
+		$spam_score       = 0;
+		$matched_keywords = array();
+		$content_lower    = strtolower( $content );
 
 		// Check for spam indicators.
 		$spam_indicators = array(
-			'buy now'       => 0.3,
-			'click here'    => 0.3,
-			'free'          => 0.2,
-			'!!!'           => 0.2,
-			'check bio'     => 0.3,
-			'link in bio'   => 0.4,
-			'dm for'        => 0.3,
+			'buy now'     => 0.3,
+			'click here'  => 0.3,
+			'free'        => 0.2,
+			'!!!'         => 0.2,
+			'check bio'   => 0.3,
+			'link in bio' => 0.4,
+			'dm for'      => 0.3,
 		);
 
 		foreach ( $spam_indicators as $indicator => $score ) {
@@ -537,7 +537,7 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 		// Check blacklist keywords.
 		foreach ( $keyword_filter as $keyword ) {
 			if ( stripos( $content_lower, strtolower( $keyword ) ) !== false ) {
-				$spam_score       += 0.4;
+				$spam_score        += 0.4;
 				$matched_keywords[] = $keyword;
 			}
 		}
@@ -666,8 +666,8 @@ class WP_MCP_AI_Tool_Moderate_Comments implements WP_MCP_AI_Tool_Interface, WP_M
 		// Default rules if none exist.
 		if ( empty( $rules ) ) {
 			$rules = array(
-				'auto_delete_spam_threshold' => 0.9,
-				'auto_hide_spam_threshold'   => 0.7,
+				'auto_delete_spam_threshold'  => 0.9,
+				'auto_hide_spam_threshold'    => 0.7,
 				'flag_negative_with_keywords' => true,
 			);
 		}

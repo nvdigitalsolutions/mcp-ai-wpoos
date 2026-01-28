@@ -79,6 +79,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response
  */
 class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * Maximum number of results to include in LLM payload.
 	 *

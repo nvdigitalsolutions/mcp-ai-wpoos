@@ -1,3 +1,4 @@
+"use strict";
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
@@ -155483,7 +155484,8 @@ try {
     layout: data.orientation || "portrait",
     margin: 50
   });
-  doc.pipe(fs.createWriteStream(outputFile));
+  const stream = fs.createWriteStream(outputFile);
+  doc.pipe(stream);
   if (data.title) {
     doc.info.Title = data.title;
   }
@@ -155517,8 +155519,14 @@ try {
     });
   }
   doc.end();
-  console.log("PDF generated successfully");
-  process.exit(0);
+  stream.on("finish", () => {
+    console.log("PDF generated successfully");
+    process.exit(0);
+  });
+  stream.on("error", (error) => {
+    console.error("Error writing PDF file:", error.message);
+    process.exit(1);
+  });
 } catch (error) {
   console.error("Error generating PDF:", error.message);
   process.exit(1);

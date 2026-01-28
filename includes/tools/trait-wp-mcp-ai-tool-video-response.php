@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * class My_Video_Tool implements WP_MCP_AI_Tool_Interface {
  *     use WP_MCP_AI_Tool_Video_Response;
  *
- *     public function execute( $arguments, $context ) {
+ *     public function execute( array $arguments = array(), array $context = array() ) {
  *         // Generate video and get attachment_id, url, etc.
  *         $result = array(
  *             'attachment_id' => $attachment_id,
@@ -53,10 +53,10 @@ trait WP_MCP_AI_Tool_Video_Response {
 	protected function add_video_html_to_response( array $result ) {
 		// Check if we have either attachment_id or direct URL.
 		$video_url = '';
-		
+
 		if ( ! empty( $result['attachment_id'] ) ) {
 			$attachment_id = absint( $result['attachment_id'] );
-			
+
 			// Verify attachment exists and is video.
 			if ( wp_attachment_is( 'video', $attachment_id ) ) {
 				$video_url = wp_get_attachment_url( $attachment_id );
@@ -134,44 +134,44 @@ trait WP_MCP_AI_Tool_Video_Response {
 
 		// Build video tag.
 		$html = '<video';
-		
+
 		if ( ! empty( $width ) ) {
 			$html .= ' width="' . $width . '"';
 		}
-		
+
 		if ( ! empty( $height ) ) {
 			$html .= ' height="' . $height . '"';
 		}
-		
+
 		// Add controls for playback.
 		$html .= ' controls';
-		
+
 		// Add preload metadata for faster initial display.
 		$html .= ' preload="metadata"';
-		
+
 		// Add poster if available.
 		if ( ! empty( $poster ) ) {
 			$html .= ' poster="' . esc_url( $poster ) . '"';
 		}
-		
+
 		// Add CSS class for styling.
 		$html .= ' class="wp-mcp-ai-generated-video"';
-		
+
 		// Add title for accessibility.
 		if ( ! empty( $title ) ) {
 			$html .= ' title="' . esc_attr( $title ) . '"';
 		}
-		
+
 		$html .= '>';
-		
+
 		// Add source element with proper MIME type.
 		$mime_type = isset( $result['mime_type'] ) ? $result['mime_type'] : 'video/mp4';
-		$html .= '<source src="' . esc_url( $video_url ) . '" type="' . esc_attr( $mime_type ) . '">';
-		
+		$html     .= '<source src="' . esc_url( $video_url ) . '" type="' . esc_attr( $mime_type ) . '">';
+
 		// Fallback content for browsers that don't support video tag.
 		$html .= '<p>' . __( 'Your browser does not support the video tag.', 'mcp-ai-wpoos' ) . ' ';
 		$html .= '<a href="' . esc_url( $video_url ) . '">' . __( 'Download video', 'mcp-ai-wpoos' ) . '</a></p>';
-		
+
 		$html .= '</video>';
 
 		return $html;

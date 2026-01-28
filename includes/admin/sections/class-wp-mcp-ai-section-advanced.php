@@ -1119,15 +1119,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 				<?php
 				// Get task template counts (Pro only if mcp_task_template exists).
-				$has_templates    = post_type_exists( 'mcp_task_template' );
-				$has_task_plans   = post_type_exists( 'mcp_task_plan' );
-				$template_query   = null;
+				$has_templates          = post_type_exists( 'mcp_task_template' );
+				$has_task_plans         = post_type_exists( 'mcp_task_plan' );
+				$template_query         = null;
 				$template_total_count   = 0;
 				$template_publish_count = 0;
 				$template_draft_count   = 0;
-				
+
 				if ( $has_templates ) {
-					$template_query = new WP_Query(
+					$template_query       = new WP_Query(
 						array(
 							'post_type'      => 'mcp_task_template',
 							'post_status'    => 'any',
@@ -1148,10 +1148,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				}
 
 				// Get task plan counts (available in base).
-				$plan_query = null;
+				$plan_query       = null;
 				$plan_total_count = 0;
 				if ( $has_task_plans ) {
-					$plan_query = new WP_Query(
+					$plan_query       = new WP_Query(
 						array(
 							'post_type'      => 'mcp_task_plan',
 							'post_status'    => 'any',
@@ -1693,7 +1693,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function render_settings_management() {
 			// Get current settings count.
-			$settings = WP_MCP_AI_Admin_Settings::get_settings();
+			$settings       = WP_MCP_AI_Admin_Settings::get_settings();
 			$settings_count = count( $settings );
 
 			// Get backup count.

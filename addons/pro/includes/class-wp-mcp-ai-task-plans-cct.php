@@ -278,40 +278,40 @@ class WP_MCP_AI_Task_Plans_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'edit_posts',
 			'admin_columns'       => array(
-				'_ID'              => array(
+				'_ID'             => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'goal'             => array(
+				'goal'            => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'status'           => array(
+				'status'          => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'task_count'       => array(
-					'enabled'     => true,
-					'is_sortable' => true,
-					'is_num'      => true,
-				),
-				'completed_count'  => array(
+				'task_count'      => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'progress'         => array(
+				'completed_count' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'cct_created'      => array(
+				'progress'        => array(
+					'enabled'     => true,
+					'is_sortable' => true,
+					'is_num'      => true,
+				),
+				'cct_created'     => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'cct_modified'     => array(
+				'cct_modified'    => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),

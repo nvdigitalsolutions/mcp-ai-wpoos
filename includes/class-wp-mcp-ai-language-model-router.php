@@ -98,6 +98,27 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		public function create_chat_completion( array $messages, array $options = array() ) {
 			$provider = isset( $options['provider'] ) ? sanitize_key( $options['provider'] ) : '';
 
+			// Log system prompt state before routing to provider.
+			// This ensures we can verify that assistant defaults are reaching the LLM clients.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'router_before_llm_call',
+					'Language Model Router: Options before LLM client call',
+					array(
+						'provider'              => $provider,
+						'has_system_prompt'     => isset( $options['system_prompt'] ),
+						'system_prompt_length'  => isset( $options['system_prompt'] ) ? strlen( (string) $options['system_prompt'] ) : 0,
+						'system_prompt_preview' => isset( $options['system_prompt'] ) ? substr( (string) $options['system_prompt'], 0, 100 ) . '...' : 'NOT SET',
+						'has_model'             => isset( $options['model'] ),
+						'model'                 => isset( $options['model'] ) ? $options['model'] : 'NOT SET',
+						'has_temperature'       => isset( $options['temperature'] ),
+						'has_tools'             => isset( $options['tools'] ) && ! empty( $options['tools'] ),
+						'tools_count'           => isset( $options['tools'] ) && is_array( $options['tools'] ) ? count( $options['tools'] ) : 0,
+						'message_count'         => count( $messages ),
+					)
+				);
+			}
+
 			// If provider is explicitly specified, use it directly without fallback.
 			if ( ! empty( $provider ) ) {
 				return $this->route_to_provider( $provider, $messages, $options );
@@ -107,7 +128,7 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
 			$priority_list = isset( $settings['provider_priority_list'] ) && is_array( $settings['provider_priority_list'] )
 				? $settings['provider_priority_list']
-				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+				: array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 
 			$last_error = null;
 
@@ -183,6 +204,15 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 
 				case 'cloudflare':
 					return $this->cloudflare_client->create_chat_completion( $messages, $options );
+
+				case 'embedded':
+					// Embedded LLM runs client-side in the browser using WebLLM.
+					// Server-side chat completion requests for embedded provider are not supported.
+					return new WP_Error(
+						'wp_mcp_ai_embedded_client_side_only',
+						__( 'Embedded LLM provider runs client-side in the browser. Server-side API requests are not supported for this provider.', 'mcp-ai-wpoos' ),
+						array( 'status' => 400 )
+					);
 
 				case 'openai':
 				default:

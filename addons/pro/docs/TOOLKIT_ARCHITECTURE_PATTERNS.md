@@ -21,7 +21,7 @@ These toolkits manage **domain-specific entities** that need WordPress storage.
    - Tools: create_eca, update_eca, list_ecas, etc.
 
 2. **Health & Wellness Toolkit**
-   - CPTs: `mcp_ai_member`, `mcp_ai_policy`, `mcp_ai_medical_record`, etc.
+   - CPTs: `mcp_ai_member`, `mcp_ai_policy`, `mcp_ai_med_record`, etc.
    - Research page: Find and create policies
    - Settings page: Health system configuration
    - Tools: create_member, update_policy, etc.
