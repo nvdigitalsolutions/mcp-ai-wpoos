@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-html-export-tool',
-        'version' => 'dev-copilot/update-html-export-tool',
-        'reference' => 'e3a6275dda39d611f6492721b1a0a4e951544e52',
+        'pretty_version' => 'dev-copilot/start-phase-2-enhancements',
+        'version' => 'dev-copilot/start-phase-2-enhancements',
+        'reference' => '632ce4f33c20803f9d85b9561ecf7af08284c49d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-html-export-tool',
-            'version' => 'dev-copilot/update-html-export-tool',
-            'reference' => 'e3a6275dda39d611f6492721b1a0a4e951544e52',
+            'pretty_version' => 'dev-copilot/start-phase-2-enhancements',
+            'version' => 'dev-copilot/start-phase-2-enhancements',
+            'reference' => '632ce4f33c20803f9d85b9561ecf7af08284c49d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
