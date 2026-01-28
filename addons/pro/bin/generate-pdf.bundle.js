@@ -201745,10 +201745,10 @@ function htmlToPdf(html, doc) {
             break;
           case "u":
             doc2.underline().text(text, { continued: true });
-            doc2.undash();
+            doc2.underline(false, {});
             break;
           case "a":
-            doc2.fillColor("#0066CC").underline().text(text, { continued: true, link: $child.attr("href") || "" }).undash().fillColor("#333333");
+            doc2.fillColor("#0066CC").underline().text(text, { continued: true, link: $child.attr("href") || "" }).underline(false, {}).fillColor("#333333");
             break;
           case "code":
             doc2.font("Courier").text(text, { continued: true });

@@ -192,13 +192,13 @@ function htmlToPdf(html, doc) {
 						break;
 					case 'u':
 						doc.underline().text(text, { continued: true });
-						doc.undash();
+						doc.underline(false, {});
 						break;
 					case 'a':
 						doc.fillColor('#0066CC')
 							.underline()
 							.text(text, { continued: true, link: $child.attr('href') || '' })
-							.undash()
+							.underline(false, {})
 							.fillColor('#333333');
 						break;
 					case 'code':

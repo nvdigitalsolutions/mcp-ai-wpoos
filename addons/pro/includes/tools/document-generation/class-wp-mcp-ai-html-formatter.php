@@ -53,7 +53,7 @@ class WP_MCP_AI_HTML_Formatter {
 	 *
 	 * @var int
 	 */
-	protected $page_width = 816; // A4 width at 96 DPI (8.5 inches).
+	protected $page_width = 816; // US Letter width at 96 DPI (8.5 inches).
 
 	/**
 	 * Create a complete HTML document from content.

@@ -542,11 +542,11 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	protected function get_page_width( $page_size ) {
 		$widths = array(
-			'A4'     => '816px',  // 8.5 inches at 96 DPI.
-			'Letter' => '816px',  // 8.5 inches.
-			'Legal'  => '816px',  // 8.5 inches.
-			'A3'     => '1123px', // 11.69 inches.
-			'A5'     => '559px',  // 5.83 inches.
+			'A4'     => '816px',  // Approximation (actual A4 is 8.27", using Letter width for consistency).
+			'Letter' => '816px',  // 8.5 inches at 96 DPI.
+			'Legal'  => '816px',  // 8.5 inches at 96 DPI.
+			'A3'     => '1123px', // Approximation (actual A3 is 11.69", ~1122px at 96 DPI).
+			'A5'     => '559px',  // Approximation (actual A5 is 5.83", ~560px at 96 DPI).
 		);
 
 		return isset( $widths[ $page_size ] ) ? $widths[ $page_size ] : $widths['A4'];
