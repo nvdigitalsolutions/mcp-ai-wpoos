@@ -160,4 +160,68 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 			'Description should reference create_agent_team response'
 		);
 	}
+
+	/**
+	 * Test that team is saved as workflow for dashboard tracking
+	 *
+	 * Verifies that when a team is created, it's also saved as a workflow
+	 * so it appears on the orchestration dashboard.
+	 */
+	public function test_team_saved_as_workflow_for_dashboard() {
+		global $wpdb;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Agent_Team' ) ) {
+			$this->markTestSkipped( 'WP_MCP_AI_Tool_Create_Agent_Team class not available.' );
+		}
+
+		$tool = new WP_MCP_AI_Tool_Create_Agent_Team();
+
+		$arguments = array(
+			'task_type'    => 'content',
+			'requirements' => array(
+				'expertise_needed' => array( 'content writing' ),
+			),
+		);
+
+		$context = array(
+			'assistant_id' => 1,
+			'user_id'      => 1,
+		);
+
+		$result = $tool->execute( $arguments, $context );
+
+		$this->assertTrue( $result['success'], 'Tool should succeed' );
+		$this->assertArrayHasKey( 'team', $result );
+		$this->assertArrayHasKey( 'team_id', $result['team'] );
+
+		$team_id = $result['team']['team_id'];
+
+		// Check that a workflow transient was created for this team.
+		$workflow_transient_name = '_transient_wp_mcp_ai_workflow_wf_' . $team_id;
+		
+		// Query the database to check if the workflow transient exists.
+		$workflow_exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s",
+				$workflow_transient_name
+			)
+		);
+
+		$this->assertGreaterThan(
+			0,
+			$workflow_exists,
+			'A workflow transient should be created for the team so it appears on the orchestration dashboard'
+		);
+
+		// Verify the workflow data structure.
+		$workflow_data = get_transient( 'wp_mcp_ai_workflow_wf_' . $team_id );
+		$this->assertIsArray( $workflow_data, 'Workflow data should be an array' );
+		$this->assertArrayHasKey( 'workflow_id', $workflow_data );
+		$this->assertArrayHasKey( 'team_id', $workflow_data );
+		$this->assertArrayHasKey( 'state', $workflow_data );
+		$this->assertArrayHasKey( 'tasks', $workflow_data );
+		$this->assertEquals( $team_id, $workflow_data['team_id'] );
+		$this->assertNotEmpty( $workflow_data['tasks'], 'Workflow should have tasks' );
+	}
 }
+

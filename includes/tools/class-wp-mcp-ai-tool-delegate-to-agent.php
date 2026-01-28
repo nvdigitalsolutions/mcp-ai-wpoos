@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'agent_id'        => array(
 					'type'        => array( 'integer', 'string' ),
-					'description' => __( 'The agent_id value from create_agent_team response. Can be an integer assistant post ID or a virtual agent string ID (e.g., "virtual_executor_abc123"). Do NOT use profession names.', 'mcp-ai-wpoos' ),
+					'description' => __( 'The agent_id value from the create_agent_team response. This can be an integer assistant post ID or a virtual agent string ID (e.g., "virtual_executor_abc123"). Do NOT use profession names.', 'mcp-ai-wpoos' ),
 				),
 				'task'            => array(
 					'type'        => 'string',
