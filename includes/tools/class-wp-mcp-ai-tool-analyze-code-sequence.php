@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['code'] ) ) {
 			return new WP_Error(

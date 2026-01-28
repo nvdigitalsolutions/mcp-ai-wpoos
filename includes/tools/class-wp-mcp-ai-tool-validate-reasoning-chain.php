@@ -96,7 +96,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
 		if ( empty( $arguments['reasoning_steps'] ) || ! is_array( $arguments['reasoning_steps'] ) ) {
 			return new WP_Error(
