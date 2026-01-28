@@ -375,7 +375,7 @@ Security/Network:              10%
 # Add to docker-compose.yml
 services:
   crawl4ai:
-    image: nvdigital/crawl4ai-service:latest
+    image: nvdigital/crawl4ai-service:1.0.0
     container_name: wp-mcp-ai-crawl4ai
     ports:
       - "8000:8000"
@@ -684,7 +684,6 @@ wp mcp-ai crawl https://example.com --format=json
 
 ```bash
 # /opt/crawl4ai/docker-compose.yml
-version: '3.8'
 
 services:
   crawl4ai:
@@ -744,7 +743,8 @@ networks:
 ```nginx
 # /etc/nginx/sites-available/crawl4ai
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
+    http2 on;
     server_name crawl4ai.example.com;
     
     ssl_certificate /etc/letsencrypt/live/crawl4ai.example.com/fullchain.pem;
@@ -899,17 +899,24 @@ Providers:
 # app.py
 from fastapi import Security, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import secrets
+import os
 
 security = HTTPBearer()
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
-    if credentials.credentials != os.getenv("API_KEY"):
+    # Use constant-time comparison to prevent timing attacks
+    expected_token = os.getenv("API_KEY", "")
+    provided_token = credentials.credentials
+    
+    if not secrets.compare_digest(expected_token, provided_token):
         raise HTTPException(status_code=401, detail="Invalid API key")
     return credentials
 ```
 
 **Rate Limiting:**
 ```python
+from fastapi import Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -925,6 +932,8 @@ async def crawl(request: Request, data: CrawlRequest):
 ```python
 from urllib.parse import urlparse
 import ipaddress
+import socket
+import logging
 
 BLOCKED_NETWORKS = [
     ipaddress.ip_network("127.0.0.0/8"),    # Localhost
@@ -934,23 +943,28 @@ BLOCKED_NETWORKS = [
     ipaddress.ip_network("169.254.0.0/16"), # Link-local
 ]
 
+logger = logging.getLogger(__name__)
+
 def validate_url(url: str) -> bool:
     """Prevent SSRF attacks"""
     parsed = urlparse(url)
     
     # Must be HTTP/HTTPS
     if parsed.scheme not in ["http", "https"]:
+        logger.warning(f"Invalid URL scheme: {parsed.scheme}")
         return False
     
     # Resolve hostname
     try:
         ip = ipaddress.ip_address(socket.gethostbyname(parsed.hostname))
-    except:
+    except (socket.gaierror, ValueError, TypeError) as e:
+        logger.error(f"Failed to resolve hostname {parsed.hostname}: {e}")
         return False
     
     # Check against blocked networks
     for network in BLOCKED_NETWORKS:
         if ip in network:
+            logger.warning(f"Blocked IP {ip} in network {network}")
             return False
     
     return True
