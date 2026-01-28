@@ -16,12 +16,16 @@ Located in root `package.json`:
 ```json
 {
   "dependencies": {
-    "@microsoft/fetch-event-source": "^2.0.1",  // SSE for streaming
+    "@langchain/community": "^0.3.14",           // LangChain community integrations
+    "@langchain/core": "^0.3.20",                // LangChain core functionality
+    "@microsoft/fetch-event-source": "^2.0.1",   // SSE for streaming
+    "@mlc-ai/web-llm": "^0.2.80",                // Browser-native LLM support
     "@neplex/vectorizer": "^0.0.5",              // Vector embeddings
     "chart.js": "^4.4.7",                        // Charts in admin
     "dompurify": "^3.3.0",                       // HTML sanitization
     "ky": "^1.14.0",                             // HTTP client
-    "marked": "^17.0.0"                          // Markdown parsing
+    "langchain": "^0.3.6",                       // LangChain framework
+    "marked": "^9.1.6"                           // Markdown parsing
   }
 }
 ```
@@ -46,16 +50,18 @@ Located in `addons/pro/package.json`:
 ```json
 {
   "dependencies": {
-    "@huggingface/transformers": "^3.4.0",        // Browser-native AI models (44.8 MB)
     "@turf/turf": "^7.3.2",                       // Geospatial analysis
     "@types/pdfkit": "^0.17.4",                   // TypeScript types
     "@woocommerce/woocommerce-rest-api": "^1.0.1", // E-commerce API
     "axios": "^1.6.5",                            // HTTP client
     "chart.js": "^4.4.7",                         // Charts (also in base)
     "cheerio": "^1.0.0",                          // HTML parsing for research tools
+    "csv-parse": "^5.6.0",                        // CSV parsing
+    "csv-stringify": "^6.5.2",                    // CSV formatting
     "currency.js": "^2.0.4",                      // Currency formatting
     "d3": "^7.8.5",                               // Data visualization
     "docx": "^9.5.1",                             // Word document generation
+    "email-validator": "^2.0.4",                  // Email validation
     "exceljs": "^4.4.0",                          // Excel generation
     "facebook-nodejs-business-sdk": "^24.0.1",    // Facebook API
     "fast-csv": "^5.0.0",                         // CSV processing
@@ -66,21 +72,27 @@ Located in `addons/pro/package.json`:
     "gif-encoder": "^0.7.2",                      // GIF creation
     "google-translate-api-x": "^10.7.0",          // Translation
     "i18next": "^23.7.0",                         // i18n framework
+    "ical-generator": "^8.0.1",                   // Calendar generation
     "ics": "^3.8.1",                              // Calendar export
     "iso-639-1": "^3.1.0",                        // Language codes
     "katex": "^0.16.11",                          // Math rendering
+    "libphonenumber-js": "^1.11.21",              // Phone number validation
     "linkedin-api-client": "^0.3.0",              // LinkedIn API
+    "mailparser": "^3.7.1",                       // Email parsing
     "mathjs": "^12.3.0",                          // Math library
-    "mjml": "^4.18.0",                            // Email templates
+    "mjml": "^5.0.0-alpha.10",                    // Email templates
+    "nodemailer": "^7.0.12",                      // Email sending
     "p-queue": "^8.0.1",                          // Promise queue for rate limiting
     "pdfkit": "^0.17.2",                          // PDF generation
     "prettier": "^3.4.2",                         // Code formatting
+    "qrcode": "^1.5.4",                           // QR code generation
     "regression": "^2.0.1",                       // Statistical regression
     "sharp": "^0.33.5",                           // Image processing
     "stripe": "^14.0.0",                          // Payment processing
     "subtitle": "^3.0.0",                         // Subtitle files
     "turndown": "^7.2.0",                         // HTML to Markdown conversion
     "twitter-api-v2": "^1.15.2",                  // Twitter API
+    "validator": "^13.12.0",                      // Data validation
     "video-stitch": "^1.7.1"                      // Video stitching
   }
 }
@@ -110,12 +122,7 @@ node scripts/copy-dependencies.js
 
 #### What Gets Copied
 
-All 40 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
-
-**AI/ML Toolkit:**
-| Package | Size | Files Copied |
-|---------|------|-------------|
-| @huggingface/transformers | 44.8 MB | dist/ (web, node, WASM), types/ |
+All 46 Pro addon packages are automatically copied from `node_modules` to `assets/vendor` during the postinstall hook.
 
 **Core Toolkits:**
 | Package | Size | Files Copied |
@@ -180,7 +187,15 @@ All 40 Pro addon packages are automatically copied from `node_modules` to `asset
 | video-stitch | 8.6 KB | index.js, lib/ |
 | subtitle | 43.3 KB | dist/ |
 
-**Total**: ~91.7 MB (40 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
+**Document & Data Processing Toolkit:**
+| Package | Size | Files Copied |
+|---------|------|-------------|
+| docx | ~700 KB | build/ |
+| exceljs | ~1.2 MB | dist/, lib/ |
+| pdfkit | ~250 KB | js/ |
+| qrcode | ~45 KB | lib/ |
+
+**Total**: ~49 MB (46 packages, including 3 browser-bundled packages: cheerio, p-queue, turndown)
 
 #### Special Cases
 
@@ -220,7 +235,8 @@ Located in root `composer.json`:
     "symfony/validator": "^6.4|^7.0",
     "symfony/cache": "^6.4|^7.0",
     "symfony/filesystem": "^6.4|^7.0",
-    "symfony/process": "^6.4|^7.0"
+    "symfony/process": "^6.4|^7.0",
+    "league/oauth2-client": "^2.7"
   }
 }
 ```
