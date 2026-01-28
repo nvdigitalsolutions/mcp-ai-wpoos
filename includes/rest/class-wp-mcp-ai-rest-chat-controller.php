@@ -204,34 +204,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos' ),
 							'type'              => 'array',
 							'required'          => true,
-							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-							'items'             => array(
-								'type'       => 'object',
-								'properties' => array(
-									'role'    => array(
-										'type' => 'string',
-										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-									),
-									'content' => array(
-										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-										'oneOf'       => array(
-											array( 'type' => 'null' ),
-											array( 'type' => 'string' ),
-											array(
-												'type'  => 'array',
-												'items' => array(
-													'type' => 'object',
-												),
-											),
-										),
-									),
-									'display' => array(
-										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'mcp-ai-wpoos' ),
-										'type'        => 'object',
-										'required'    => false,
-									),
-								),
-							),
+							'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 						),
 						'response_metadata' => array(
 							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'mcp-ai-wpoos' ),
@@ -257,7 +230,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
 						'user_id'      => array(
 							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'mcp-ai-wpoos' ),
@@ -282,7 +255,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
 					),
 				),
@@ -354,47 +327,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'description'       => __( 'Array of message objects with role and content.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => true,
-				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'role'    => array(
-							'type' => 'string',
-							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-						),
-						'content' => array(
-							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-							'oneOf'       => array(
-								array( 'type' => 'null' ),
-								array( 'type' => 'string' ),
-								array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'object',
-									),
-								),
-							),
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 			),
 			'attachments'         => array(
 				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => false,
-				'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'file_id' => array(
-							'type' => 'integer',
-						),
-						'url'     => array(
-							'type'   => 'string',
-							'format' => 'uri',
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_attachments_array_wrapper' ),
 			),
 			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
@@ -437,6 +376,80 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
 		);
+	}
+
+	/**
+	 * Get or initialize the validator instance.
+	 *
+	 * This method ensures the validator is available at runtime.
+	 * The validator should always be initialized via the parent constructor,
+	 * but this provides a defensive fallback for edge cases where the
+	 * validator might not be set (e.g., during unit tests or if the
+	 * constructor chain is broken).
+	 *
+	 * @return WP_MCP_AI_REST_Validator The validator instance.
+	 */
+	private function get_validator() {
+		// Return existing validator if available.
+		if ( $this->validator ) {
+			return $this->validator;
+		}
+
+		// Try to get from container.
+		$container = wp_mcp_ai_container();
+		if ( $container ) {
+			$this->validator = $container->get( 'rest.validator' );
+		}
+
+		// Final fallback: create new instance.
+		if ( ! $this->validator ) {
+			$this->validator = new WP_MCP_AI_REST_Validator();
+		}
+
+		return $this->validator;
+	}
+
+	/**
+	 * Wrapper for messages array validation.
+	 *
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_messages_array_wrapper( $value, $request, $param ) {
+		return $this->get_validator()->validate_messages_array( $value, $request, $param );
+	}
+
+	/**
+	 * Wrapper for attachments array validation.
+	 *
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_attachments_array_wrapper( $value, $request, $param ) {
+		return $this->get_validator()->validate_attachments_array( $value, $request, $param );
+	}
+
+	/**
+	 * Wrapper for session key sanitization.
+	 *
+	 * This wrapper ensures sanitization happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param string $value The session key to sanitize.
+	 * @return string Sanitized session key.
+	 */
+	public function sanitize_session_key_wrapper( $value ) {
+		return $this->get_validator()->sanitize_session_key_param( $value );
 	}
 
 	/**
@@ -816,7 +829,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Get assistant_id as raw value first to check for virtual team IDs.
 		$assistant_id_raw = $request->get_param( 'assistant_id' );
-		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$session_key      = $this->get_validator()->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 		$messages         = $request->get_param( 'messages' );
 
 		// Check if this is a virtual team assistant ID.
@@ -869,7 +882,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Sanitize messages.
-		$sanitized_messages = $this->validator->sanitize_messages( $messages );
+		$sanitized_messages = $this->get_validator()->sanitize_messages( $messages );
 		if ( is_wp_error( $sanitized_messages ) ) {
 			return $sanitized_messages;
 		}
