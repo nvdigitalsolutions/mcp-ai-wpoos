@@ -192,6 +192,8 @@
 		renderWorkflows: function(workflows) {
 			const $container = $('#workflows-list-content');
 
+			console.log('WP MCP AI: Rendering ' + (workflows ? workflows.length : 0) + ' workflows');
+
 			if (!workflows || workflows.length === 0) {
 				$container.html('<div class="workflows-empty"><p>No workflows found. Use the <code>create_agent_team</code> tool to create multi-agent teams, which will appear here as workflows.</p></div>');
 				return;
@@ -254,6 +256,11 @@
 				
 				if (workflow.state === 'running') {
 					html += '<span class="description"><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Running...</span>';
+				}
+				
+				// Fallback for unknown states or states without actions
+				if (workflow.state !== 'initialized' && workflow.state !== 'failed' && workflow.state !== 'completed' && workflow.state !== 'running') {
+					html += '<span class="description">—</span>';
 				}
 				
 				html += '</td>';
@@ -431,6 +438,7 @@
 
 	// Initialize when document is ready
 	$(document).ready(function() {
+		console.log('WP MCP AI: Initializing Orchestration Dashboard');
 		OrchestrationDashboard.init();
 	});
 
