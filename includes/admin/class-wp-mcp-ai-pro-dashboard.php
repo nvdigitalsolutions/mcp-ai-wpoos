@@ -1511,7 +1511,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 				</div>
 			</div>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
 			?>
@@ -1536,7 +1535,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					display: block;
 				}
 			</style>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
 			?>
@@ -2307,8 +2305,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</p>
 				<?php
 			endif;
-			?>
-			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
 			?>
 			<style>
@@ -2566,7 +2562,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
 			?>
@@ -2616,7 +2611,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					color: #383d41;
 				}
 			</style>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
 			?>
@@ -2931,7 +2925,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<span class="risk-badge risk-high"><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></span>
 				<span class="risk-badge risk-critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></span>
 			</div>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
 			?>
@@ -3345,7 +3338,6 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
 			?>
