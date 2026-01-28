@@ -38,9 +38,9 @@ class WP_MCP_AI_Reasoning_Controller {
 	/**
 	 * Configuration
 	 */
-	const REASONING_THRESHOLD = 0.7; // Score needed to activate reasoning mode.
-	const HISTORY_LIMIT = 500;       // Max reasoning tasks to track.
-	const METRICS_CACHE_TTL = 3600;  // 1 hour.
+	const REASONING_THRESHOLD = 0.7;  // Score needed to activate reasoning mode.
+	const HISTORY_LIMIT       = 500;  // Max reasoning tasks to track.
+	const METRICS_CACHE_TTL   = 3600; // 1 hour.
 
 	/**
 	 * Reasoning mode triggers and weights
@@ -139,11 +139,11 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	public function track_reasoning_quality( $task, $reasoning_output, $final_result, $success ) {
 		$metrics = array(
-			'coherence'         => $this->evaluate_coherence( $reasoning_output ),
+			'coherence'           => $this->evaluate_coherence( $reasoning_output ),
 			'logical_consistency' => $this->check_logical_consistency( $reasoning_output ),
-			'completeness'      => $this->check_completeness( $reasoning_output, $task ),
-			'success'           => $success,
-			'timestamp'         => time(),
+			'completeness'        => $this->check_completeness( $reasoning_output, $task ),
+			'success'             => $success,
+			'timestamp'           => time(),
 		);
 
 		// Store metrics.
@@ -163,11 +163,11 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		if ( empty( $metrics ) ) {
 			return array(
-				'total_tasks'        => 0,
-				'success_rate'       => 0,
-				'avg_coherence'      => 0,
-				'avg_consistency'    => 0,
-				'avg_completeness'   => 0,
+				'total_tasks'      => 0,
+				'success_rate'     => 0,
+				'avg_coherence'    => 0,
+				'avg_consistency'  => 0,
+				'avg_completeness' => 0,
 			);
 		}
 
@@ -177,11 +177,11 @@ class WP_MCP_AI_Reasoning_Controller {
 		} );
 
 		return array(
-			'total_tasks'        => $total,
-			'success_rate'       => ( count( $successful ) / $total ) * 100,
-			'avg_coherence'      => array_sum( array_column( $metrics, 'coherence' ) ) / $total,
-			'avg_consistency'    => array_sum( array_column( $metrics, 'logical_consistency' ) ) / $total,
-			'avg_completeness'   => array_sum( array_column( $metrics, 'completeness' ) ) / $total,
+			'total_tasks'      => $total,
+			'success_rate'     => ( count( $successful ) / $total ) * 100,
+			'avg_coherence'    => array_sum( array_column( $metrics, 'coherence' ) ) / $total,
+			'avg_consistency'  => array_sum( array_column( $metrics, 'logical_consistency' ) ) / $total,
+			'avg_completeness' => array_sum( array_column( $metrics, 'completeness' ) ) / $total,
 		);
 	}
 

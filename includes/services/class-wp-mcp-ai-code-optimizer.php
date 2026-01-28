@@ -38,9 +38,9 @@ class WP_MCP_AI_Code_Optimizer {
 	/**
 	 * Configuration
 	 */
-	const SESSION_TTL = 3600;        // 1 hour.
+	const SESSION_TTL        = 3600; // 1 hour.
 	const MAX_CONTEXT_LENGTH = 8000; // Tokens approximate.
-	const CACHE_TTL = 1800;          // 30 minutes.
+	const CACHE_TTL          = 1800; // 30 minutes.
 
 	/**
 	 * Optimize context for long code sequences
@@ -77,11 +77,11 @@ class WP_MCP_AI_Code_Optimizer {
 		$compressed = $this->compress_boilerplate( $relevant_sections, $dependencies );
 
 		return array(
-			'optimized_code'   => $compressed['code'],
-			'structure'        => $compressed['structure'],
-			'dependencies'     => $dependencies,
-			'original_length'  => strlen( $existing_code ),
-			'optimized_length' => strlen( $compressed['code'] ),
+			'optimized_code'    => $compressed['code'],
+			'structure'         => $compressed['structure'],
+			'dependencies'      => $dependencies,
+			'original_length'   => strlen( $existing_code ),
+			'optimized_length'  => strlen( $compressed['code'] ),
 			'compression_ratio' => $this->calculate_compression_ratio(
 				strlen( $existing_code ),
 				strlen( $compressed['code'] )
@@ -101,10 +101,10 @@ class WP_MCP_AI_Code_Optimizer {
 	 */
 	public function validate_code( $generated_code, $language, $requirements = array() ) {
 		$results = array(
-			'valid'        => true,
-			'issues'       => array(),
-			'suggestions'  => array(),
-			'security'     => array(),
+			'valid'       => true,
+			'issues'      => array(),
+			'suggestions' => array(),
+			'security'    => array(),
 		);
 
 		// Syntax validation.
@@ -467,8 +467,8 @@ class WP_MCP_AI_Code_Optimizer {
 		}
 
 		return array(
-			'valid'                 => empty( $missing_requirements ),
-			'missing_requirements'  => $missing_requirements,
+			'valid'                => empty( $missing_requirements ),
+			'missing_requirements' => $missing_requirements,
 		);
 	}
 

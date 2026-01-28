@@ -40,7 +40,7 @@ class WP_MCP_AI_Efficiency_Monitor {
 	 * Configuration
 	 */
 	const HISTORY_RETENTION_DAYS = 7;
-	const CACHE_TTL              = 300; // 5 minutes.
+	const CACHE_TTL               = 300; // 5 minutes.
 
 	/**
 	 * Load monitor instance
@@ -113,12 +113,12 @@ class WP_MCP_AI_Efficiency_Monitor {
 		$bottlenecks = $this->identify_bottlenecks( $system_load );
 
 		$metrics = array(
-			'health_status'     => $system_load['health_status'] ?? 'unknown',
-			'tool_execution'    => $tool_metrics,
-			'load_balancing'    => $balancing_metrics,
-			'resource_usage'    => $resource_metrics,
-			'bottlenecks'       => $bottlenecks,
-			'timestamp'         => current_time( 'mysql' ),
+			'health_status'      => $system_load['health_status'] ?? 'unknown',
+			'tool_execution'     => $tool_metrics,
+			'load_balancing'     => $balancing_metrics,
+			'resource_usage'     => $resource_metrics,
+			'bottlenecks'        => $bottlenecks,
+			'timestamp'          => current_time( 'mysql' ),
 			'available_capacity' => $system_load['available_capacity'] ?? 100,
 		);
 

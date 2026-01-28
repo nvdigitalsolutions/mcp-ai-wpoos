@@ -38,9 +38,9 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	/**
 	 * Configuration
 	 */
-	const MAX_CHAIN_LENGTH = 10;
-	const MIN_CONFIDENCE   = 0.5;
-	const HISTORY_LIMIT    = 1000;
+	const MAX_CHAIN_LENGTH  = 10;
+	const MIN_CONFIDENCE    = 0.5;
+	const HISTORY_LIMIT     = 1000;
 	const PATTERN_CACHE_TTL = 3600; // 1 hour.
 
 	/**
