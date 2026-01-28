@@ -43,7 +43,7 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Find the orchestration dashboard in the submenu.
 		$orchestration_found = false;
 		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
-			if ( isset( $item[2] ) && 'mcp-ai-orchestration-dashboard' === $item[2] ) {
+			if ( isset( $item[2] ) && 'mcp-ai-orchestration' === $item[2] ) {
 				$orchestration_found = true;
 				$this->assertEquals( 'Orchestration', $item[0], 'Menu title should be "Orchestration"' );
 				break;
@@ -70,22 +70,22 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
-		// Check if the main NV oOS menu exists.
+		// Check if the Pro Dashboard menu exists.
 		$this->assertArrayHasKey(
-			'wp-mcp-ai-dashboard',
+			'nvoos-pro-dashboard',
 			$submenu,
-			'Main NV oOS menu should be registered'
+			'Pro Dashboard menu should be registered'
 		);
 
-		// Find the Pro orchestration dashboard in the submenu.
+		// Find the Pro orchestration dashboard in the Pro submenu.
 		$pro_orchestration_found = false;
-		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
-			if ( isset( $item[2] ) && 'mcp-ai-orchestration' === $item[2] ) {
+		foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
+			if ( isset( $item[2] ) && 'mcp-ai-orchestration-pro' === $item[2] ) {
 				$pro_orchestration_found = true;
 				$this->assertStringContainsString(
-					'(Pro)',
+					'Orchestration',
 					$item[0],
-					'Pro orchestration menu title should contain "(Pro)"'
+					'Pro orchestration menu title should contain "Orchestration"'
 				);
 				break;
 			}
@@ -93,7 +93,7 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 
 		$this->assertTrue(
 			$pro_orchestration_found,
-			'Pro orchestration dashboard should be registered in submenu'
+			'Pro orchestration dashboard should be registered in Pro submenu'
 		);
 	}
 
@@ -111,31 +111,36 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
-		// Check if the main NV oOS menu exists.
-		$this->assertArrayHasKey(
-			'wp-mcp-ai-dashboard',
-			$submenu,
-			'Main NV oOS menu should be registered'
-		);
-
-		$slugs = array();
-		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
-			if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
-				$slugs[] = $item[2];
+		// Get base orchestration slug from base menu.
+		$base_slug = null;
+		if ( isset( $submenu['wp-mcp-ai-dashboard'] ) ) {
+			foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
+				if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
+					$base_slug = $item[2];
+					break;
+				}
 			}
 		}
 
-		// Should have exactly 2 orchestration-related pages.
-		$this->assertCount(
-			2,
-			$slugs,
-			'Should have exactly 2 orchestration pages (base and Pro)'
-		);
+		// Get Pro orchestration slug from Pro menu.
+		$pro_slug = null;
+		if ( isset( $submenu['nvoos-pro-dashboard'] ) ) {
+			foreach ( $submenu['nvoos-pro-dashboard'] as $item ) {
+				if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
+					$pro_slug = $item[2];
+					break;
+				}
+			}
+		}
+
+		// Both should exist.
+		$this->assertNotNull( $base_slug, 'Base orchestration page should exist' );
+		$this->assertNotNull( $pro_slug, 'Pro orchestration page should exist' );
 
 		// Slugs should be different.
 		$this->assertNotEquals(
-			$slugs[0],
-			$slugs[1],
+			$base_slug,
+			$pro_slug,
 			'Base and Pro orchestration pages should use different slugs'
 		);
 	}
@@ -158,7 +163,7 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 
 		$page_found = false;
 		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
-			if ( isset( $item[2] ) && 'mcp-ai-orchestration-dashboard' === $item[2] ) {
+			if ( isset( $item[2] ) && 'mcp-ai-orchestration' === $item[2] ) {
 				$page_found = true;
 				// Page title is in $item[3].
 				$this->assertEquals(
