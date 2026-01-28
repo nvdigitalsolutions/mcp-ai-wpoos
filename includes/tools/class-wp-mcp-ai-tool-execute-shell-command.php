@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$command     = isset( $arguments['command'] ) ? trim( $arguments['command'] ) : '';
 		$preview     = isset( $arguments['preview'] ) ? (bool) $arguments['preview'] : false;

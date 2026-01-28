@@ -123,7 +123,7 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$query           = isset( $arguments['query'] ) ? trim( $arguments['query'] ) : '';
 		$search_type     = isset( $arguments['search_type'] ) ? sanitize_text_field( $arguments['search_type'] ) : 'text';

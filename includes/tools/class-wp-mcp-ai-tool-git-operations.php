@@ -121,7 +121,7 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 	 * {@inheritdoc}
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$operation   = isset( $arguments['operation'] ) ? sanitize_text_field( $arguments['operation'] ) : '';
 		$file_path   = isset( $arguments['file_path'] ) ? sanitize_text_field( $arguments['file_path'] ) : '';
