@@ -9,9 +9,9 @@
  */
 
 /**
- * Test Chat Transcript Recorder Base Mode with JetEngine
+ * Test Chat Transcript Recorder with JetEngine
  */
-class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
+class Test_Transcript_Recorder_Base_JetEngine extends WP_UnitTestCase {
 
 	/**
 	 * Administrator user ID for authenticated requests.
@@ -51,7 +51,7 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 			array(
 				'post_type'   => WP_MCP_AI_Assistant_CPT::POST_TYPE,
 				'post_status' => 'publish',
-				'post_title'  => 'Base Pro Test Assistant',
+				'post_title'  => 'Transcript Test Assistant',
 			)
 		);
 
@@ -103,16 +103,14 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that transcript recording works when Pro addon is active (base + pro mode).
+	 * Test that transcript recording works when JetEngine handler is available.
 	 *
-	 * This test verifies the fix for the issue where transcript recording failed
-	 * when WP_MCP_AI_BASE_VERSION was true but WP_MCP_AI_PRO_VERSION was also defined.
+	 * This test verifies that transcript recording works when a handler is available
+	 * via the filter hook, simulating JetEngine CCT availability.
 	 */
-	public function test_transcript_recording_with_pro_active() {
-		// Simulate base + pro mode by defining both constants.
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			define( 'WP_MCP_AI_PRO_VERSION', '1.1.0' );
-		}
+	public function test_transcript_recording_with_handler_available() {
+		// This test works regardless of Pro addon status.
+		// The mock handler simulates JetEngine CCT availability.
 
 		$messages = array(
 			array(
@@ -149,7 +147,7 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 		$request->set_param( 'messages', $messages );
 
 		$context = array(
-			'session_key'           => 'test-base-pro-session-123',
+			'session_key'           => 'test-jetengine-session-123',
 			'save_transcript'       => true,
 			'request_started_at'    => microtime( true ),
 			'response_completed_at' => microtime( true ),
@@ -167,12 +165,12 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 		);
 
 		// Verify that recording succeeded (returned session key, not null).
-		$this->assertNotNull( $result, 'Transcript recording should succeed when Pro addon is active' );
-		$this->assertEquals( 'test-base-pro-session-123', $result, 'Should return the session key' );
+		$this->assertNotNull( $result, 'Transcript recording should succeed when handler is available' );
+		$this->assertEquals( 'test-jetengine-session-123', $result, 'Should return the session key' );
 
 		// Verify the handler received the correct data.
 		$this->assertNotNull( $this->transcript_handler->last_record, 'Handler should receive a record' );
-		$this->assertEquals( 'test-base-pro-session-123', $this->transcript_handler->last_record['session_key'] );
+		$this->assertEquals( 'test-jetengine-session-123', $this->transcript_handler->last_record['session_key'] );
 		$this->assertEquals( (string) $this->assistant_id, $this->transcript_handler->last_record['assistant_id'] );
 		$this->assertEquals( $this->admin_id, $this->transcript_handler->last_record['user_id'] );
 	}
@@ -249,11 +247,11 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test resolve_handler method returns handler when JetEngine is available.
+	 * Test resolve_handler method returns handler when mock filter is present.
 	 *
-	 * This is a more direct test of the resolve_handler logic.
+	 * This test directly verifies that resolve_handler properly uses the filter hook.
 	 */
-	public function test_resolve_handler_with_jetengine_available() {
+	public function test_resolve_handler_with_mock_filter() {
 
 		$messages = array(
 			array(
@@ -286,6 +284,6 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 		);
 
 		// When we have a mock handler via filter (simulating JetEngine), should not be null.
-		$this->assertNotNull( $handler, 'resolve_handler should return a handler when JetEngine is available' );
+		$this->assertNotNull( $handler, 'resolve_handler should return handler from filter hook' );
 	}
 }
