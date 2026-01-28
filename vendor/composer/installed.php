@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/run-composer-install-production-please-work',
+        'version' => 'dev-copilot/run-composer-install-production-please-work',
+        'reference' => '9376258eecd6a4d4abd8851a1aa2dce28b359c1f',
         'pretty_version' => 'dev-copilot/install-composer-dependencies-another-one',
         'version' => 'dev-copilot/install-composer-dependencies-another-one',
         'reference' => 'a1e34139937c8475c0e2ec5249bf8e136f36b791',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/run-composer-install-production-please-work',
+            'version' => 'dev-copilot/run-composer-install-production-please-work',
+            'reference' => '9376258eecd6a4d4abd8851a1aa2dce28b359c1f',
             'pretty_version' => 'dev-copilot/install-composer-dependencies-another-one',
             'version' => 'dev-copilot/install-composer-dependencies-another-one',
             'reference' => 'a1e34139937c8475c0e2ec5249bf8e136f36b791',
