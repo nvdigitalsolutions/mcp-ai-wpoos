@@ -1259,10 +1259,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_agent_roles ) {
 						$this->render_agents_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'Agent Roles are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'professions':
@@ -1271,10 +1271,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_professions ) {
 						$this->render_professions_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'AI Professions are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'teams':
@@ -1283,10 +1283,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_multi_agent_teams ) {
 						$this->render_teams_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'Multi-Agent Teams are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'overview':
@@ -1967,22 +1967,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling. All orchestration features work uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'mcp-ai-wpoos' ) . '</p>';
 
-			echo '<table class="form-table" role="presentation">';
+			echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			foreach ( $settings_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
 						// Close table for section headers, render HTML, reopen table.
-						echo '</table>';
+						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field definition.
 						echo $field['content'];
-						echo '<table class="form-table" role="presentation">';
+						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
 					}
 				}
 			}
-			echo '</table>';
+			echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 		/**
@@ -1991,7 +1991,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_presets_view() {
 			$fields = $this->get_fields();
 
-			echo '<div class="wp-mcp-ai-presets-view">';
+			echo '<div class="wp-mcp-ai-presets-view">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			echo '<h3>' . esc_html__( 'Orchestration Configuration Presets', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Choose a preset configuration optimized for your expected usage pattern. Presets automatically configure context window limits, health monitoring thresholds, budget allocation, and predictive settings across all AI providers.', 'mcp-ai-wpoos' ) . '</p>';
 
@@ -2007,7 +2007,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( $current_preset ) . '" />';
 			}
 
-			echo '</div>';
+			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 		/**
@@ -2064,13 +2064,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_per_session_limits',
 			);
 
-			echo '<table class="form-table" role="presentation">';
+			echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			foreach ( $checkbox_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$this->render_field( $key, $fields[ $key ] );
 				}
 			}
-			echo '</table>';
+			echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 

@@ -416,11 +416,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 		 */
 		public function render() {
 			// Display security overview notice.
-			echo '<div class="notice notice-info inline" style="margin: 20px 0; padding: 12px;">';
+			echo '<div class="notice notice-info inline" style="margin: 20px 0; padding: 12px;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			echo '<p><strong>' . esc_html__( '🔒 Security Overview:', 'mcp-ai-wpoos' ) . '</strong></p>';
 			echo '<p>' . esc_html__( 'This page provides comprehensive security controls following OWASP Top 10, GDPR, and SOC 2 compliance standards. Enable controls that match your security requirements. Start with conservative settings and adjust based on your needs.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '<p><em>' . esc_html__( '💡 Tip: Use "Require Authentication for All Access" as the master switch to lock down everything, then use granular controls to allow specific access patterns.', 'mcp-ai-wpoos' ) . '</em></p>';
-			echo '</div>';
+			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 
 			$fields = $this->get_fields();
 
