@@ -86,15 +86,18 @@ class WP_MCP_AI_Federation_WellKnown {
 
 		switch ( $wellknown ) {
 			case 'ai-peer':
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				echo wp_json_encode( $this->get_ai_peer_document(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 				break;
 
 			case 'jwks':
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				echo wp_json_encode( $this->get_jwks_document(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 				break;
 
 			default:
 				status_header( 404 );
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				echo wp_json_encode(
 					array(
 						'error'   => 'not_found',
