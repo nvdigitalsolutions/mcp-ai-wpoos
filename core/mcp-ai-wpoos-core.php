@@ -218,12 +218,26 @@ add_action( 'plugins_loaded', 'wp_mcp_ai_core_init', 10 );
  * ============================================================================
  */
 
+// Load activation tracker if main plugin is not loaded.
+if ( ! class_exists( 'WP_MCP_AI_Activation_Tracker' ) ) {
+	// Check if we can load it from the parent plugin.
+	$tracker_path = dirname( WP_MCP_AI_CORE_PATH ) . '/includes/class-wp-mcp-ai-activation-tracker.php';
+	if ( file_exists( $tracker_path ) ) {
+		require_once $tracker_path;
+	}
+}
+
 /**
  * Plugin activation handler.
  *
  * @param bool $network_wide Whether activated network-wide.
  */
 function wp_mcp_ai_core_activate( $network_wide = false ) {
+	// Track Core plugin activation if tracker is available.
+	if ( class_exists( 'WP_MCP_AI_Activation_Tracker' ) ) {
+		WP_MCP_AI_Activation_Tracker::track_activation( 'core' );
+	}
+
 	// Flush rewrite rules for REST endpoints.
 	flush_rewrite_rules();
 }
@@ -235,6 +249,11 @@ register_activation_hook( WP_MCP_AI_CORE_FILE, 'wp_mcp_ai_core_activate' );
  * @param bool $network_wide Whether deactivated network-wide.
  */
 function wp_mcp_ai_core_deactivate( $network_wide = false ) {
+	// Track Core plugin deactivation if tracker is available.
+	if ( class_exists( 'WP_MCP_AI_Activation_Tracker' ) ) {
+		WP_MCP_AI_Activation_Tracker::track_deactivation( 'core' );
+	}
+
 	flush_rewrite_rules();
 }
 register_deactivation_hook( WP_MCP_AI_CORE_FILE, 'wp_mcp_ai_core_deactivate' );

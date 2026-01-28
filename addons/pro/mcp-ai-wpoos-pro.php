@@ -1281,6 +1281,11 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		);
 	}
 
+	// Track Pro addon activation.
+	if ( class_exists( 'WP_MCP_AI_Activation_Tracker' ) ) {
+		WP_MCP_AI_Activation_Tracker::track_activation( 'pro' );
+	}
+
 	// Initialize default settings.
 	if ( false === get_option( 'wp_mcp_ai_pro_permissions' ) ) {
 		add_option( 'wp_mcp_ai_pro_permissions', array() );
@@ -1310,6 +1315,11 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
  * @param bool $network_wide Whether deactivated network-wide.
  */
 function wp_mcp_ai_pro_deactivate( $network_wide = false ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Hook callback signature requires $network_wide parameter for potential future multisite support.
+	// Track Pro addon deactivation.
+	if ( class_exists( 'WP_MCP_AI_Activation_Tracker' ) ) {
+		WP_MCP_AI_Activation_Tracker::track_deactivation( 'pro' );
+	}
+
 	flush_rewrite_rules();
 }
 

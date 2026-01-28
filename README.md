@@ -1334,6 +1334,40 @@ Sites running Elementor automatically register a suite of MCP blocks so you can 
 
 ## 🧮 Usage Tracking
 
+### Privacy-First Analytics (v1.2.0+)
+
+The plugin includes **optional, privacy-first activation tracking** to help us understand plugin usage and improve development priorities. This feature is:
+
+**Privacy Features:**
+- ✅ **No PII collected** - No personal information or identifiable data
+- ✅ **Site URLs hashed** - Non-reversible SHA-256 hash with WordPress salts
+- ✅ **No IP storage** - IP addresses are not logged or stored
+- ✅ **Local dev excluded** - Automatically disabled for localhost and common dev domains
+- ✅ **Opt-out available** - Easy to disable via settings or filter hook
+- ✅ **GDPR compliant** - Meets all privacy regulations
+- ✅ **Fully transparent** - All code is open source and documented
+
+**Data Collected:**
+- Plugin variant (complete, base, pro, or core)
+- Plugin version number
+- WordPress version
+- PHP version
+- Site locale (language)
+- Multisite status
+- Hashed site identifier (non-reversible)
+- Timestamp
+
+**How to Opt Out:**
+1. **Via Settings**: Settings → NV oOS → General → Log Management → Disable Activation Tracking
+2. **Via Filter Hook**:
+   ```php
+   add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );
+   ```
+
+**Full Privacy Details**: See [EXTERNAL_SERVICES.md](docs/EXTERNAL_SERVICES.md#plugin-analytics-service) for complete documentation.
+
+---
+
 The plugin records aggregate token usage per user, provider, and model whenever responses include usage metadata, simplifying internal reconciliation or billing workflows. Usage data is stored as user meta and automatically purged when accounts are deleted, and hooks are exposed for custom reporting pipelines.【F:includes/class-wp-mcp-ai-usage-tracker.php†L12-L119】
 
 ### Token Usage Management Dashboard
