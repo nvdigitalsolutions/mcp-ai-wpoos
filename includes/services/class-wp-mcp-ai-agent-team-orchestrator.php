@@ -988,7 +988,8 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	protected function log_team_action( $team_id, $action, $data = array() ) {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				sprintf( 'Team %s: %s', $team_id, $action ),
 				array_merge(
 					array(
@@ -996,8 +997,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 						'action'  => $action,
 					),
 					$data
-				),
-				'info'
+				)
 			);
 		}
 	}
