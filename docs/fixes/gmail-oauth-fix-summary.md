@@ -46,7 +46,9 @@ if ( class_exists( 'Google_Client' ) ) {
 - `includes/integrations/class-wp-mcp-ai-oauth-manager.php` - Integrated Google_Client with fallback methods
 
 ### Documentation
-See detailed implementation guide: `docs/fixes/gmail-oauth-google-client-integration-2026-01-27.md`
+- **Detailed Implementation Guide:** [gmail-oauth-google-client-integration-2026-01-27.md](gmail-oauth-google-client-integration-2026-01-27.md)
+- **Google OAuth Reference:** https://developers.google.com/identity/protocols/oauth2/web-server#authorization-errors-redirect-uri-mismatch
+- **Google API Client Library:** https://github.com/googleapis/google-api-php-client
 
 ### User Benefits
 - **Fixes redirect_uri_mismatch:** Google_Client ensures consistent URL normalization
