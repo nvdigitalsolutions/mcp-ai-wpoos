@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/start-phase-1-wordpress-integration',
+        'version' => 'dev-copilot/start-phase-1-wordpress-integration',
+        'reference' => '7992d79d753d56d7ba69b258845d43b199a91999',
         'pretty_version' => 'dev-copilot/fix-create-agent-team-bug',
         'version' => 'dev-copilot/fix-create-agent-team-bug',
         'reference' => '312a68fd879826bb9e89fb234a242895cdc96ca6',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/start-phase-1-wordpress-integration',
+            'version' => 'dev-copilot/start-phase-1-wordpress-integration',
+            'reference' => '7992d79d753d56d7ba69b258845d43b199a91999',
             'pretty_version' => 'dev-copilot/fix-create-agent-team-bug',
             'version' => 'dev-copilot/fix-create-agent-team-bug',
             'reference' => '312a68fd879826bb9e89fb234a242895cdc96ca6',

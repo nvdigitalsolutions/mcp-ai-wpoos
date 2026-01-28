@@ -116,6 +116,9 @@ $severity_colors = array(
 			<canvas id="wp-mcp-ai-anomaly-scatter-chart"></canvas>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js anomaly detection scatter plot initialization with dynamic data
+		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {
