@@ -64,6 +64,37 @@ This document provides a comprehensive index of all documentation available for 
 
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
 
+### Documentation Organization & Proposals Consolidation (January 28, 2026) 📁 **LATEST** ⭐
+
+**NEW:** Major reorganization of root documentation files and proposals directory:
+
+- **Root Documentation Files Organized:**
+  - ✅ **WPCODE_QUICK_START.md** → `docs/guides/developer/wpcode-snippet-activation-tracking-quick-start.md`
+  - ✅ **GMAIL_OAUTH_FIX_SUMMARY.md** → Consolidated with `docs/fixes/gmail-oauth-fix-summary.md` (added Jan 27 Google API Client library fix)
+
+- **Proposals Directory Consolidated (37 → 15-20 files):**
+  - **[proposals/README.md](proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
+  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
+  - **[WEBLLM-ROADMAP-AND-STATUS.md](proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
+  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
+  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
+  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
+
+**Key Improvements:**
+- 📊 Clear status tracking (✅ Implemented, ⏳ Active, 🔮 Pending, 📚 Reference)
+- 🎯 Consolidated status documents as primary references
+- 📁 Better organization by feature area and priority
+- 🔗 Improved cross-referencing between related documents
+- ⏱️ Implementation timeline and decision framework
+
+**Proposals Status Overview:**
+- **Implemented:** Playwright Web Browser, WebLLM Phases 1-3, DeepSeek V4 (85-90%)
+- **Active:** DeepSeek V4 completion (13-17h), Ralph Wiggum (80-120h)
+- **Pending:** Bitwarden/Vaultwarden, WebLLM Phases 4-8
+- **Reference:** Size reduction, NPM packages, CLI integration
+
+---
+
 ### Web Browser Pro Tool Proposal (January 9, 2026) 🌐 **NEW PROPOSAL** ⭐
 
 **NEW:** Evaluation and decision to create Playwright-based browser automation Pro tool:
