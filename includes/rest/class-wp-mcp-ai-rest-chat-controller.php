@@ -204,34 +204,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos' ),
 							'type'              => 'array',
 							'required'          => true,
-							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-							'items'             => array(
-								'type'       => 'object',
-								'properties' => array(
-									'role'    => array(
-										'type' => 'string',
-										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-									),
-									'content' => array(
-										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-										'oneOf'       => array(
-											array( 'type' => 'null' ),
-											array( 'type' => 'string' ),
-											array(
-												'type'  => 'array',
-												'items' => array(
-													'type' => 'object',
-												),
-											),
-										),
-									),
-									'display' => array(
-										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'mcp-ai-wpoos' ),
-										'type'        => 'object',
-										'required'    => false,
-									),
-								),
-							),
+							'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 						),
 						'response_metadata' => array(
 							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'mcp-ai-wpoos' ),
@@ -354,47 +327,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'description'       => __( 'Array of message objects with role and content.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => true,
-				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'role'    => array(
-							'type' => 'string',
-							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-						),
-						'content' => array(
-							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-							'oneOf'       => array(
-								array( 'type' => 'null' ),
-								array( 'type' => 'string' ),
-								array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'object',
-									),
-								),
-							),
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 			),
 			'attachments'         => array(
 				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => false,
-				'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'file_id' => array(
-							'type' => 'integer',
-						),
-						'url'     => array(
-							'type'   => 'string',
-							'format' => 'uri',
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_attachments_array_wrapper' ),
 			),
 			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
@@ -437,6 +376,68 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
 		);
+	}
+
+	/**
+	 * Wrapper for messages array validation.
+	 *
+	 * This wrapper method ensures the validator is available at runtime,
+	 * not just at route registration time. This prevents issues where
+	 * $this->validator might be null when register_routes() is called.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_messages_array_wrapper( $value, $request, $param ) {
+		// Ensure validator is available.
+		if ( ! $this->validator ) {
+			// If validator is somehow null, try to get it from container.
+			$container = wp_mcp_ai_container();
+			if ( $container && method_exists( $container, 'get' ) ) {
+				$this->validator = $container->get( 'rest.validator' );
+			}
+
+			// If still null, create a new instance as fallback.
+			if ( ! $this->validator ) {
+				$this->validator = new WP_MCP_AI_REST_Validator();
+			}
+		}
+
+		// Delegate to the validator's method.
+		return $this->validator->validate_messages_array( $value, $request, $param );
+	}
+
+	/**
+	 * Wrapper for attachments array validation.
+	 *
+	 * This wrapper method ensures the validator is available at runtime,
+	 * not just at route registration time. This prevents issues where
+	 * $this->validator might be null when register_routes() is called.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_attachments_array_wrapper( $value, $request, $param ) {
+		// Ensure validator is available.
+		if ( ! $this->validator ) {
+			// If validator is somehow null, try to get it from container.
+			$container = wp_mcp_ai_container();
+			if ( $container && method_exists( $container, 'get' ) ) {
+				$this->validator = $container->get( 'rest.validator' );
+			}
+
+			// If still null, create a new instance as fallback.
+			if ( ! $this->validator ) {
+				$this->validator = new WP_MCP_AI_REST_Validator();
+			}
+		}
+
+		// Delegate to the validator's method.
+		return $this->validator->validate_attachments_array( $value, $request, $param );
 	}
 
 	/**
