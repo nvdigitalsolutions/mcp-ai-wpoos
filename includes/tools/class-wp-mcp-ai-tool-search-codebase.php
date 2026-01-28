@@ -337,7 +337,7 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Context lines.
 		if ( $context_lines > 0 ) {
-			$cmd .= ' -C ' . $context_lines;
+			$cmd .= ' -C ' . absint( $context_lines );
 		}
 
 		// File pattern.
@@ -345,10 +345,16 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$cmd .= ' --include=' . escapeshellarg( $file_pattern );
 		}
 
-		// Default exclusions.
-		$default_excludes = array( '.git', 'vendor', 'node_modules', '.sass-cache', '*.min.js', '*.min.css' );
-		foreach ( $default_excludes as $exclude ) {
+		// Default exclusions - directories.
+		$default_exclude_dirs = array( '.git', 'vendor', 'node_modules', '.sass-cache' );
+		foreach ( $default_exclude_dirs as $exclude ) {
 			$cmd .= ' --exclude-dir=' . escapeshellarg( $exclude );
+		}
+
+		// Default exclusions - file patterns.
+		$default_exclude_files = array( '*.min.js', '*.min.css' );
+		foreach ( $default_exclude_files as $exclude ) {
+			$cmd .= ' --exclude=' . escapeshellarg( $exclude );
 		}
 
 		// Custom exclusion.
@@ -356,11 +362,11 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 			$cmd .= ' --exclude=' . escapeshellarg( $exclude_pattern );
 		}
 
-		// Query.
+		// Query - sanitize for shell.
 		$cmd .= ' ' . escapeshellarg( $query ) . ' .';
 
 		// Limit results.
-		$cmd .= ' | head -n ' . ( $limit * 3 ); // Account for context lines.
+		$cmd .= ' | head -n ' . absint( $limit * 3 ); // Account for context lines.
 
 		return $cmd;
 	}

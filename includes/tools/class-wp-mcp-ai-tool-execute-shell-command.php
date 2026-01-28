@@ -38,15 +38,25 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	 * @var array
 	 */
 	private $dangerous_patterns = array(
-		'/rm\s+-rf\s+\//',           // rm -rf /
-		'/rm\s+-rf\s+\*/',           // rm -rf *
-		'/dd\s+if=/',                // dd operations
-		'/mkfs/',                    // filesystem formatting
-		'/:\(\)\{.*\};:/',           // fork bomb
-		'/chmod\s+-R\s+777/',        // dangerous permissions
-		'/\>\s*\/dev\/sd/',          // writing to disk
-		'/curl.*\|\s*sh/',           // piping to shell
-		'/wget.*\|\s*sh/',           // piping to shell
+		'/rm\s+-rf\s*\//',           // rm -rf / (with or without space).
+		'/rm\s+-rf\s*\*/',           // rm -rf * (with or without space).
+		'/dd\s+if=/',                // dd operations.
+		'/mkfs/',                    // filesystem formatting.
+		'/:\(\)\{.*\};:/',           // fork bomb.
+		'/chmod\s+-R\s+777/',        // dangerous permissions.
+		'/chown\s+-R/',              // ownership changes.
+		'/\>\s*\/dev\/sd/',          // writing to disk.
+		'/curl.*\|\s*(sh|bash)/',    // piping to shell.
+		'/wget.*\|\s*(sh|bash)/',    // piping to shell.
+		'/sudo\s/',                  // privilege escalation.
+		'/eval\s/',                  // code injection.
+		'/killall\s/',               // kill all processes.
+		'/pkill\s/',                 // kill processes by name.
+		'/\bsu\s/',                  // switch user.
+		'/rm\s+-rf.*\.git/',         // destructive git operations.
+		'/&&.*rm\s+-rf/',            // chained dangerous commands.
+		'/;\s*rm\s+-rf/',            // chained dangerous commands.
+		'/\|\|.*rm\s+-rf/',          // chained dangerous commands.
 	);
 
 	/**

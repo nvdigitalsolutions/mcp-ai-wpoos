@@ -454,6 +454,10 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return array Operation result.
 	 */
 	private function git_checkout( $branch_name, $file_path, $options, $context ) {
+		if ( empty( $branch_name ) && empty( $file_path ) ) {
+			return $this->error_response( __( 'Either branch_name or file_path is required for checkout operation.', 'mcp-ai-wpoos' ) );
+		}
+
 		$opts = $this->sanitize_options( $options );
 		$cmd  = 'git checkout ' . $opts;
 
