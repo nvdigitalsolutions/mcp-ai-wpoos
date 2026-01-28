@@ -1304,6 +1304,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for pro settings page layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-pro-settings h1 .dashicons {
 					font-size: 30px;

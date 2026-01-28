@@ -201,6 +201,9 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	 */
 	protected function enqueue_test_runner_script() {
 		?>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		?>
 		<script>
 		(function($) {
 			// Helper function to escape HTML and prevent XSS.
@@ -298,6 +301,9 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 			});
 		})(jQuery);
 		</script>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
+		?>
 		<style>
 		.wp-mcp-ai-test-runner {
 			padding: 20px;

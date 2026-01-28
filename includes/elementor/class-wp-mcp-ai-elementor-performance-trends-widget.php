@@ -259,6 +259,9 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	protected function enqueue_chart_script( $trends, $chart_height, $chart_id ) {
 		// Chart.js is loaded via get_script_depends().
 		?>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		?>
 		<script>
 		(function() {
 			// Global registry for chart instances to enable proper cleanup.
@@ -358,6 +361,9 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 			}
 		})();
 		</script>
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
+		?>
 		<style>
 		.wp-mcp-ai-performance-trends {
 			padding: 20px;

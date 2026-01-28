@@ -350,6 +350,9 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 		</div>
 
 		<?php if ( $enabled && $extension_loaded ) : ?>
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				// Test connection on page load.

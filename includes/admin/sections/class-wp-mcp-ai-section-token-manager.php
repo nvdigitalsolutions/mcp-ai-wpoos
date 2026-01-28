@@ -801,6 +801,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</div>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+		?>
 		<style>
 			.wp-mcp-ai-tool-row-recommended {
 				background-color: #fffbf0 !important;
@@ -1286,6 +1289,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 			.wp-mcp-ai-model-manager__actions {
 				display: grid;
@@ -1370,6 +1376,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 			</style>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				// Discover models action

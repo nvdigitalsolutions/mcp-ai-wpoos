@@ -174,6 +174,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 
 			<?php $this->render_pro_banner(); ?>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-overview-dashboard {
 					max-width: 1200px;

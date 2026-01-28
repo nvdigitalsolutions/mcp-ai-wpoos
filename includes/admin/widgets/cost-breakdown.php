@@ -61,6 +61,9 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 			<canvas id="wp-mcp-ai-dashboard-cost-breakdown"></canvas>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js cost breakdown chart initialization with dynamic data
+		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {

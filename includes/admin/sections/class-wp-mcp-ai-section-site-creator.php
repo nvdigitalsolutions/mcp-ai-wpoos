@@ -593,6 +593,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 		 */
 		protected function render_elementor_kit_import_script() {
 			?>
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				var mediaFrame;

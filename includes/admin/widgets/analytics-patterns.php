@@ -86,6 +86,9 @@ if ( $has_analytics ) {
 			</div>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js hourly and daily pattern visualization with dynamic data
+		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {

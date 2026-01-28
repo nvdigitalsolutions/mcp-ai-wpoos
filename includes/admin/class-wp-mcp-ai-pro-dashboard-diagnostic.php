@@ -277,6 +277,9 @@ Pro Dashboard initialization complete
 				</p>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for pro dashboard diagnostic layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-pro-dashboard-diagnostic h2 {
 					margin-top: 30px;
