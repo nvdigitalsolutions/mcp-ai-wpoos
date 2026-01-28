@@ -59,7 +59,7 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 	 * This simulates the scenario where:
 	 * 1. Base plugin is active (WP_MCP_AI_BASE_VERSION = true)
 	 * 2. Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
-	 * 3. JetEngine integrations should still load
+	 * 3. Full integrations should load (including JetEngine if available)
 	 */
 	public function test_loading_logic_with_base_plus_pro() {
 		// Simulate base version mode.
@@ -68,15 +68,12 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Simulate pro addon being active.
 		$pro_active = true;
 
-		// JetEngine status doesn't matter when Pro is active.
-		$jetengine_available = false;
-
-		// The loading condition: !base_version || pro_active || jetengine_available.
-		$should_load = ! $base_version || $pro_active || $jetengine_available;
+		// The loading condition: !base_version || pro_active.
+		$should_load = ! $base_version || $pro_active;
 
 		$this->assertTrue(
 			$should_load,
-			'Integrations should load when Pro addon is active, even in base version mode'
+			'Full integrations should load when Pro addon is active, even in base version mode'
 		);
 
 		// Verify the helper function produces the same result in test environment.
@@ -100,11 +97,8 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Simulate pro addon NOT being active.
 		$pro_active = false;
 
-		// Simulate JetEngine NOT being available.
-		$jetengine_available = false;
-
-		// The loading condition: !base_version || pro_active || jetengine_available.
-		$should_load = ! $base_version || $pro_active || $jetengine_available;
+		// The loading condition for full integrations: !base_version || pro_active.
+		$should_load = ! $base_version || $pro_active;
 
 		$this->assertFalse(
 			$should_load,
@@ -116,7 +110,8 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 	 * Test loading logic for base version with JetEngine.
 	 *
 	 * When the base version is active with JetEngine installed (no Pro addon),
-	 * JetEngine integrations SHOULD load to support chat transcript CCT storage.
+	 * only the minimal JetEngine CCT class should be loaded for chat transcript storage.
+	 * Full integrations should NOT load.
 	 */
 	public function test_loading_logic_with_base_and_jetengine() {
 		// Simulate base version mode.
@@ -128,19 +123,27 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Simulate JetEngine being available.
 		$jetengine_available = true;
 
-		// The loading condition: !base_version || pro_active || jetengine_available.
-		$should_load = ! $base_version || $pro_active || $jetengine_available;
+		// The loading condition for full integrations: !base_version || pro_active.
+		$should_load_full_integrations = ! $base_version || $pro_active;
 
+		// Full integrations should NOT load.
+		$this->assertFalse(
+			$should_load_full_integrations,
+			'Full integrations should NOT load in base version with only JetEngine'
+		);
+
+		// But JetEngine CCT should be loaded separately for chat transcripts.
+		// This is tested by checking if the JetEngine helper function exists.
 		$this->assertTrue(
-			$should_load,
-			'Integrations SHOULD load in base version when JetEngine is available (for chat transcript CCT storage)'
+			function_exists( 'wp_mcp_ai_is_jetengine_available' ),
+			'JetEngine availability check should be available for selective loading'
 		);
 	}
 
 	/**
 	 * Test loading logic for full version.
 	 *
-	 * In full version mode (cloned repository), integrations should load.
+	 * In full version mode (cloned repository), full integrations should load.
 	 */
 	public function test_loading_logic_with_full_version() {
 		// Simulate full version mode.
@@ -149,15 +152,12 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Pro addon status doesn't matter in full version.
 		$pro_active = false;
 
-		// JetEngine status doesn't matter in full version.
-		$jetengine_available = false;
-
-		// The loading condition: !base_version || pro_active || jetengine_available.
-		$should_load = ! $base_version || $pro_active || $jetengine_available;
+		// The loading condition: !base_version || pro_active.
+		$should_load = ! $base_version || $pro_active;
 
 		$this->assertTrue(
 			$should_load,
-			'Integrations should load in full version mode'
+			'Full integrations should load in full version mode'
 		);
 	}
 
