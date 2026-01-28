@@ -555,6 +555,28 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return WP_REST_Response|WP_Error Response object.
 	 */
 	public function handle_chat_client_request( WP_REST_Request $request ) {
+		// Defensive check: If main_controller is not available, return error immediately
+		// without setting up filters to avoid secondary errors during filter execution.
+		if ( null === $this->main_controller ) {
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'error',
+					'Chat Controller: main_controller is null in handle_chat_client_request',
+					array(
+						'route'   => $request->get_route(),
+						'method'  => $request->get_method(),
+						'context' => 'handle_chat_client_request',
+					)
+				);
+			}
+
+			return $this->error(
+				'wp_mcp_ai_chat_unavailable',
+				__( 'Chat service is not available. Please ensure the plugin is properly configured.', 'mcp-ai-wpoos' ),
+				503
+			);
+		}
+
 		// Set higher max_iterations for browser chat UI (allows more complex multi-tool workflows).
 		add_filter( 'wp_mcp_ai_max_agentic_iterations', array( $this, 'get_chat_client_max_iterations' ), 10, 2 );
 
@@ -621,6 +643,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return array Modified options.
 	 */
 	public function set_chat_client_tool_choice_default( $options, $assistant_config, $request_params ) {
+		// Defensive check: Ensure $options is an array.
+		if ( ! is_array( $options ) ) {
+			return $options;
+		}
+
 		// Only apply default if:
 		// 1. Provider is Cloudflare
 		// 2. tool_choice is not already set by user
@@ -631,14 +658,17 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			// Default to "auto" for chat-client to let model decide when tools are needed
 			$options['tool_choice'] = 'auto';
 
-			WP_MCP_AI_Logger::log_event(
-				'chat_client_tool_choice_default',
-				'Set default tool_choice="auto" for Cloudflare chat-client',
-				array(
-					'assistant_id' => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
-					'tool_count'   => count( $options['tools'] ),
-				)
-			);
+			// Only log if logger class is available.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'chat_client_tool_choice_default',
+					'Set default tool_choice="auto" for Cloudflare chat-client',
+					array(
+						'assistant_id' => isset( $assistant_config['ID'] ) ? $assistant_config['ID'] : null,
+						'tool_count'   => count( $options['tools'] ),
+					)
+				);
+			}
 		}
 
 		return $options;
