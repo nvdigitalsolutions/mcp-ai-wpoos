@@ -189,27 +189,35 @@
 			const $container = $('#workflows-list-content');
 
 			if (!workflows || workflows.length === 0) {
-				$container.html('<div class="workflows-empty"><p>No workflows found. Use the <code>execute_workflow</code> tool to create multi-agent workflows.</p></div>');
+				$container.html('<div class="workflows-empty"><p>No workflows found. Use the <code>create_agent_team</code> tool to create multi-agent teams, which will appear here as workflows.</p></div>');
 				return;
 			}
 
 			let html = '<table class="wp-list-table widefat fixed striped workflows-table">';
 			html += '<thead><tr>';
 			html += '<th class="workflow-id-col">Workflow ID</th>';
+			html += '<th class="workflow-type-col">Type</th>';
 			html += '<th class="workflow-state-col">State</th>';
 			html += '<th class="workflow-progress-col">Progress</th>';
 			html += '<th class="workflow-created-col">Created</th>';
 			html += '<th class="workflow-updated-col">Updated</th>';
+			html += '<th class="workflow-actions-col">Actions</th>';
 			html += '</tr></thead><tbody>';
 
 			workflows.forEach(function(workflow) {
 				const stateClass = workflow.state === 'completed' ? 'success' : 
 								   workflow.state === 'failed' ? 'error' : 
-								   workflow.state === 'running' ? 'info' : 'default';
+								   workflow.state === 'running' ? 'info' : 
+								   workflow.state === 'initialized' ? 'warning' : 'default';
 				const progress = workflow.tasks_total > 0 ? Math.round((workflow.tasks_done / workflow.tasks_total) * 100) : 0;
 				
 				html += '<tr>';
-				html += '<td class="workflow-id"><code>' + workflow.workflow_id + '</code></td>';
+				html += '<td class="workflow-id"><code>' + workflow.workflow_id + '</code>';
+				if (workflow.team_id) {
+					html += '<br><small class="description">Team: ' + workflow.team_id + '</small>';
+				}
+				html += '</td>';
+				html += '<td class="workflow-type">' + (workflow.task_type || 'generic') + '</td>';
 				html += '<td class="workflow-state"><span class="workflow-status-badge status-' + stateClass + '">' + workflow.state + '</span></td>';
 				html += '<td class="workflow-progress">';
 				html += '<div class="progress-bar-container">';
@@ -219,11 +227,135 @@
 				html += '</td>';
 				html += '<td class="workflow-created">' + OrchestrationDashboard.formatDate(workflow.created_at) + '</td>';
 				html += '<td class="workflow-updated">' + OrchestrationDashboard.formatDate(workflow.updated_at) + '</td>';
+				html += '<td class="workflow-actions">';
+				
+				// Show appropriate actions based on state
+				if (workflow.state === 'initialized' || workflow.state === 'failed') {
+					html += '<button type="button" class="button button-small workflow-action-continue" data-workflow-id="' + workflow.workflow_id + '">';
+					html += '<span class="dashicons dashicons-controls-play"></span> Continue';
+					html += '</button> ';
+				}
+				
+				if (workflow.state === 'completed' || workflow.state === 'failed') {
+					html += '<button type="button" class="button button-small workflow-action-restart" data-workflow-id="' + workflow.workflow_id + '">';
+					html += '<span class="dashicons dashicons-update"></span> Restart';
+					html += '</button>';
+				}
+				
+				if (workflow.state === 'running') {
+					html += '<span class="description"><span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Running...</span>';
+				}
+				
+				html += '</td>';
 				html += '</tr>';
 			});
 
 			html += '</tbody></table>';
 			$container.html(html);
+		},
+
+		/**
+		 * Handle Continue Workflow button click.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleContinueWorkflow: function(e) {
+			e.preventDefault();
+			
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow-id');
+			
+			if (!workflowId) {
+				alert('Invalid workflow ID');
+				return;
+			}
+			
+			if (!confirm('Are you sure you want to continue this workflow? This will start executing the remaining tasks.')) {
+				return;
+			}
+			
+			const originalHtml = $button.html();
+			$button.prop('disabled', true);
+			$button.html('<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Starting...');
+			
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_execute_workflow',
+					nonce: wpMcpAiOrchestration.nonce,
+					workflow_id: workflowId
+				},
+				success: function(response) {
+					if (response.success) {
+						alert('Workflow started successfully!');
+						// Reload workflows to show updated state
+						OrchestrationDashboard.loadWorkflows();
+					} else {
+						alert('Error: ' + (response.data.message || 'Unknown error'));
+						$button.prop('disabled', false);
+						$button.html(originalHtml);
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					alert('Error starting workflow. Check console for details.');
+					$button.prop('disabled', false);
+					$button.html(originalHtml);
+				}
+			});
+		},
+
+		/**
+		 * Handle Restart Workflow button click.
+		 *
+		 * @param {Event} e Click event.
+		 */
+		handleRestartWorkflow: function(e) {
+			e.preventDefault();
+			
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow-id');
+			
+			if (!workflowId) {
+				alert('Invalid workflow ID');
+				return;
+			}
+			
+			if (!confirm('Are you sure you want to restart this workflow? This will reset all tasks and start from the beginning.')) {
+				return;
+			}
+			
+			const originalHtml = $button.html();
+			$button.prop('disabled', true);
+			$button.html('<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Restarting...');
+			
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_restart_workflow',
+					nonce: wpMcpAiOrchestration.nonce,
+					workflow_id: workflowId
+				},
+				success: function(response) {
+					if (response.success) {
+						alert('Workflow reset successfully! You can now continue it.');
+						// Reload workflows to show updated state
+						OrchestrationDashboard.loadWorkflows();
+					} else {
+						alert('Error: ' + (response.data.message || 'Unknown error'));
+						$button.prop('disabled', false);
+						$button.html(originalHtml);
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('AJAX Error:', status, error);
+					alert('Error restarting workflow. Check console for details.');
+					$button.prop('disabled', false);
+					$button.html(originalHtml);
+				}
+			});
 		},
 
 		/**

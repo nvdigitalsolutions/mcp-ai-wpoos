@@ -29,6 +29,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_action( 'wp_ajax_wp_mcp_ai_run_orchestration_seeder', array( $this, 'ajax_run_seeder' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_orchestration_stats', array( $this, 'ajax_get_stats' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_recent_workflows', array( $this, 'ajax_get_recent_workflows' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_execute_workflow', array( $this, 'ajax_execute_workflow' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_restart_workflow', array( $this, 'ajax_restart_workflow' ) );
 	}
 
 	/**
@@ -627,11 +629,125 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					'updated_at'   => $workflow_data['updated_at'] ?? '',
 					'started_at'   => $workflow_data['started_at'] ?? null,
 					'completed_at' => $workflow_data['completed_at'] ?? null,
+					'team_id'      => $workflow_data['team_id'] ?? null,
+					'task_type'    => $workflow_data['task_type'] ?? 'generic',
 				);
 			}
 		}
 
 		return $workflows;
+	}
+
+	/**
+	 * AJAX handler: Execute workflow.
+	 *
+	 * @return void
+	 */
+	public function ajax_execute_workflow() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_text_field( wp_unslash( $_POST['workflow_id'] ) ) : '';
+
+		if ( empty( $workflow_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow ID is required.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Check if Enhanced Workflow Coordinator is available.
+		if ( ! class_exists( 'WP_MCP_AI_Enhanced_Workflow_Coordinator' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow coordinator not available.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		try {
+			$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
+			$result      = $coordinator->execute_workflow( $workflow_id );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error(
+					array(
+						'message' => $result->get_error_message(),
+						'code'    => $result->get_error_code(),
+					)
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message'     => __( 'Workflow execution started successfully.', 'mcp-ai-wpoos' ),
+					'workflow_id' => $workflow_id,
+					'result'      => $result,
+				)
+			);
+
+		} catch ( Exception $e ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Error executing workflow: %s', 'mcp-ai-wpoos' ),
+						$e->getMessage()
+					),
+				)
+			);
+		}
+	}
+
+	/**
+	 * AJAX handler: Restart workflow.
+	 *
+	 * @return void
+	 */
+	public function ajax_restart_workflow() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_text_field( wp_unslash( $_POST['workflow_id'] ) ) : '';
+
+		if ( empty( $workflow_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow ID is required.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Get the existing workflow data.
+		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );
+		$workflow_data = get_transient( $transient_key );
+
+		if ( false === $workflow_data ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		// Reset workflow state to initialized.
+		$workflow_data['state']        = 'initialized';
+		$workflow_data['started_at']   = null;
+		$workflow_data['completed_at'] = null;
+		$workflow_data['updated_at']   = current_time( 'mysql' );
+
+		// Reset all tasks to pending status.
+		if ( isset( $workflow_data['tasks'] ) && is_array( $workflow_data['tasks'] ) ) {
+			foreach ( $workflow_data['tasks'] as &$task ) {
+				if ( 'composition' !== $task['type'] ) {
+					$task['status'] = 'pending';
+					unset( $task['completed_at'] );
+					unset( $task['error'] );
+				}
+			}
+		}
+
+		// Save the reset workflow.
+		set_transient( $transient_key, $workflow_data, 7 * DAY_IN_SECONDS );
+
+		wp_send_json_success(
+			array(
+				'message'     => __( 'Workflow reset successfully. You can now continue it.', 'mcp-ai-wpoos' ),
+				'workflow_id' => $workflow_id,
+				'workflow'    => $workflow_data,
+			)
+		);
 	}
 }
 

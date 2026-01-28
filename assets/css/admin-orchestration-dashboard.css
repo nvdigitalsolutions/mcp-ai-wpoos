@@ -503,6 +503,59 @@
 	white-space: nowrap;
 }
 
+/* Workflow Actions */
+.workflow-actions-col {
+	width: 200px;
+}
+
+.workflow-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.workflow-actions .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	white-space: nowrap;
+	font-size: 12px;
+}
+
+.workflow-actions .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.workflow-actions .description {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 12px;
+	color: #646970;
+}
+
+.workflow-actions .description .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.workflow-status-badge.status-warning {
+	background: #fcf3cd;
+	color: #996800;
+}
+
+.workflow-type {
+	text-transform: capitalize;
+	font-size: 13px;
+}
+
+.workflow-type-col {
+	width: 120px;
+}
+
 @media (max-width: 782px) {
 	.workflows-table {
 		font-size: 12px;
@@ -515,5 +568,15 @@
 	.workflow-id code {
 		font-size: 10px;
 		padding: 2px 4px;
+	}
+	
+	.workflow-actions {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 5px;
+	}
+	
+	.workflow-actions .button {
+		font-size: 11px;
 	}
 }
