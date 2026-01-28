@@ -146,6 +146,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		$show_prompt       = ! empty( $settings['show_system_prompt'] ) && 'yes' === $settings['show_system_prompt'];
 		$empty_message     = isset( $settings['empty_message'] ) ? $settings['empty_message'] : '';
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-assistant-defaults">';
 
 		if ( '' !== $title ) {
@@ -164,6 +165,7 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 				echo '<p class="wp-mcp-ai-assistant-defaults__notice">' . $empty_output . '</p>';
 			}
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 			return;
 		}
@@ -175,38 +177,50 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 		$temperature    = isset( $config['temperature'] ) ? $config['temperature'] : null;
 		$prompt         = isset( $config['system_prompt'] ) ? $config['system_prompt'] : '';
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<dl class="wp-mcp-ai-assistant-defaults__list">';
 
 		if ( '' !== $provider_label ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Provider', 'mcp-ai-wpoos' ) . '</dt>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $provider_label ) . '</dd>';
 		}
 
 		if ( '' !== $model ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Model', 'mcp-ai-wpoos' ) . '</dt>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $model ) . '</dd>';
 		}
 
 		if ( null !== $temperature && '' !== $temperature ) {
 			$temperature_value = number_format_i18n( floatval( $temperature ), 2 );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dt class="wp-mcp-ai-assistant-defaults__label">' . esc_html__( 'Temperature', 'mcp-ai-wpoos' ) . '</dt>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dd class="wp-mcp-ai-assistant-defaults__value">' . esc_html( $temperature_value ) . '</dd>';
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</dl>';
 
 		if ( $show_prompt ) {
 			$prompt_output = $this->format_text_block( $prompt );
 
 			if ( '' !== $prompt_output ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt">';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<h4 class="wp-mcp-ai-assistant-defaults__system-prompt-heading">' . esc_html__( 'System prompt', 'mcp-ai-wpoos' ) . '</h4>';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-assistant-defaults__system-prompt-content">' . $prompt_output . '</div>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</div>';
 			}
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 	}
 

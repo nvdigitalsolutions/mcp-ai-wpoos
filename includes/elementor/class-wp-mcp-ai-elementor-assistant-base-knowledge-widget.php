@@ -154,6 +154,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 		$empty_message     = isset( $settings['empty_message'] ) ? $settings['empty_message'] : '';
 		$no_files_message  = isset( $settings['no_files_message'] ) ? $settings['no_files_message'] : '';
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-assistant-base-knowledge">';
 
 		if ( '' !== $title ) {
@@ -173,6 +174,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . $empty_output . '</p>';
 			}
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 			return;
 		}
@@ -190,6 +192,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . wp_kses_post( $no_files_output ) . '</p>';
 			}
 		} else {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<ul class="wp-mcp-ai-assistant-base-knowledge__files">';
 
 			foreach ( $entries as $entry ) {
@@ -197,6 +200,7 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 				$url        = $entry['url'];
 				$size       = $entry['size'];
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<li class="wp-mcp-ai-assistant-base-knowledge__file">';
 
 				if ( '' !== $url ) {
@@ -209,19 +213,24 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 					echo '<span class="wp-mcp-ai-assistant-base-knowledge__file-size">' . esc_html( $size ) . '</span>';
 				}
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</li>';
 			}
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</ul>';
 		}
 
 		if ( '' !== $vector_store ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div class="wp-mcp-ai-assistant-base-knowledge__vector-store">';
 			echo '<span class="wp-mcp-ai-assistant-base-knowledge__vector-store-label">' . esc_html__( 'Vector Store ID:', 'mcp-ai-wpoos' ) . '</span>';
 			echo '<code class="wp-mcp-ai-assistant-base-knowledge__vector-store-value">' . esc_html( $vector_store ) . '</code>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 		}
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 	}
 
