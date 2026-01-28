@@ -330,6 +330,7 @@ class WP_MCP_AI_Report_Generator {
 			<title>ISO 27001 Compliance Report - <?php echo esc_html( $data['metadata']['site_name'] ); ?></title>
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline styles for ISO 27001 compliance report PDF generation only
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline styles for standalone report generation.
 			?>
 			<style>
 				body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
