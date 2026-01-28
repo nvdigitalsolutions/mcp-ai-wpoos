@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
-		$action = sanitize_text_field( $arguments['action'] );
+		$action        = sanitize_text_field( $arguments['action'] );
 		$valid_actions = array( 'read', 'write', 'list' );
 
 		if ( ! in_array( $action, $valid_actions, true ) ) {
@@ -222,7 +222,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// Build absolute path within plugin directory.
-		$plugin_dir = rtrim( WP_MCP_AI_PATH, '/' );
+		$plugin_dir    = rtrim( WP_MCP_AI_PATH, '/' );
 		$absolute_path = $plugin_dir . '/' . $path;
 
 		// Normalize the path to resolve any remaining traversal attempts.
@@ -331,7 +331,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
-		$content = $arguments['content'];
+		$content     = $arguments['content'];
 		$create_dirs = isset( $arguments['create_dirs'] ) ? (bool) $arguments['create_dirs'] : true;
 
 		// Check if parent directory exists.
@@ -376,8 +376,8 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'path'    => $relative_path,
 			'bytes'   => $result,
 			'message' => sprintf(
-				/* translators: %s: file path */
-				__( 'Successfully wrote %d bytes to file: %s', 'mcp-ai-wpoos' ),
+				/* translators: 1: number of bytes, 2: file path */
+				__( 'Successfully wrote %1$d bytes to file: %2$s', 'mcp-ai-wpoos' ),
 				$result,
 				$relative_path
 			),
@@ -410,7 +410,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			);
 		}
 
-		$files = array();
+		$files       = array();
 		$directories = array();
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_opendir -- Reading directory for self-editing.
@@ -423,7 +423,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_readdir -- Reading directory for self-editing.
-		while ( false !== ( $entry = readdir( $handle ) ) ) {
+		while ( false !== ( $entry = readdir( $handle ) ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- Standard PHP pattern for directory iteration.
 			// Skip . and ..
 			if ( '.' === $entry || '..' === $entry ) {
 				continue;
@@ -483,7 +483,7 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			return;
 		}
 
-		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+		$user_id      = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 		$assistant_id = isset( $context['assistant_id'] ) ? absint( $context['assistant_id'] ) : 0;
 
 		wp_mcp_ai_log_activity(

@@ -4,7 +4,6 @@
  *
  * @package WP_MCP_AI
  */
-
 class Test_Manage_Files_Tool extends WP_UnitTestCase {
 
 	/**
