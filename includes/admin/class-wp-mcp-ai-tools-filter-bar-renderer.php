@@ -61,6 +61,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
 				$filter_bar_class .= ' has-active-filters';
 			}
 
+			// Output buffering for filter bar rendering - buffer is closed with ob_get_clean() at line 123.
 			ob_start();
 			?>
 			<!-- Search and Filter Bar -->

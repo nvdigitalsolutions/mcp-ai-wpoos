@@ -140,6 +140,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		$default_model        = sanitize_text_field( $atts['default_model'] );
 		$show_temperature     = wp_validate_boolean( $atts['show_temperature'] );
 
+		// Output buffering for shortcode rendering - buffer is closed with ob_get_clean() at line 302.
 		ob_start();
 		?>
 		<div class="wp-mcp-ai-professional-selector" id="<?php echo esc_attr( $instance_id ); ?>" data-wp-mcp-ai-professional-selector>
