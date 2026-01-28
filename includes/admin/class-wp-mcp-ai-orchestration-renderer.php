@@ -52,6 +52,7 @@ if ( ! class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
 				// Validate value is within bounds.
 				$value = max( $min, min( $max, absint( $value ) ) );
 
+				// Output buffering for slider control rendering - buffer is closed with ob_get_clean() at line 122.
 				ob_start();
 				?>
 				<div class="wp-mcp-ai-slider-control">
