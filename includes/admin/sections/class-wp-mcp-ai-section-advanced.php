@@ -276,23 +276,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Render performance monitoring if we're on the performance_monitoring sub-tab.
 			if ( 'performance_monitoring' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_performance_monitoring();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 
 			// Render data management if we're on the data_management sub-tab.
 			if ( 'data_management' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_data_management();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 
 			// Render settings management if we're on the settings_management sub-tab.
 			if ( 'settings_management' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_settings_management();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 		}
 

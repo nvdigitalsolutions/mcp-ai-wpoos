@@ -673,9 +673,9 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'selectedTools'    => array(),
 		);
 
-		echo '<div class="wp-mcp-ai-prompt-tools-section">';
+		echo '<div class="wp-mcp-ai-prompt-tools-section">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		include $render_file;
-		echo '</div>';
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**
@@ -706,9 +706,9 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'showPreview'   => true,
 		);
 
-		echo '<div class="wp-mcp-ai-prompt-knowledge-section">';
+		echo '<div class="wp-mcp-ai-prompt-knowledge-section">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		include $render_file;
-		echo '</div>';
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**
