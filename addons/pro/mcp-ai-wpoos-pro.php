@@ -283,6 +283,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// NOTE: Orchestration Dashboard moved to base plugin (includes/admin/class-wp-mcp-ai-orchestration-dashboard.php)
 		// It's accessible at NV oOS → Orchestration for all users.
 
+		// Load Pro Orchestration Dashboard (real-time monitoring with SSE).
+		if ( is_admin() ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+			new WP_MCP_AI_Orchestration_Dashboard();
+		}
+
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 

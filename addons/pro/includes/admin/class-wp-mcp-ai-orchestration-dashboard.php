@@ -34,8 +34,8 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	public function add_menu_page() {
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
-			__( 'Orchestration Dashboard', 'mcp-ai-wpoos-pro' ),
-			__( 'Orchestration', 'mcp-ai-wpoos-pro' ),
+			__( 'Real-Time Orchestration Monitor', 'mcp-ai-wpoos-pro' ),
+			__( 'Real-Time Monitor', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'mcp-ai-orchestration',
 			array( $this, 'render_dashboard' )
