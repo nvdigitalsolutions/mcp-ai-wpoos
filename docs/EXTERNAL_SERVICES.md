@@ -539,14 +539,10 @@ Site administrators are responsible for:
 - **Fully transparent**: All tracking code is open source and documented
 
 **How to Disable:**
-1. **Via Settings**: Go to Settings → NV oOS → Disable activation tracking
+1. **Via Settings**: Go to Settings → NV oOS → General → Log Management → Disable activation tracking
 2. **Via Filter Hook**:
    ```php
-   add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
-   ```
-3. **Via Constant** (in wp-config.php):
-   ```php
-   add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
+   add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );
    ```
 
 **Legal & Privacy:**

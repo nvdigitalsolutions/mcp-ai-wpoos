@@ -22,16 +22,16 @@ class Test_Activation_Tracker extends WP_UnitTestCase {
 	 */
 	public function test_tracking_disabled_via_filter() {
 		// Add filter to disable tracking.
-		add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
+		add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );
 
 		// Tracking should not send any HTTP requests when disabled.
 		// We can't easily test this without mocking wp_remote_post,
 		// but we can verify the filter is respected.
-		$result = apply_filters( 'wp_mcp_ai_enable_activation_tracking', true );
+		$result = apply_filters( 'wp_mcp_ai_enable_usage_tracking', true );
 		$this->assertFalse( $result );
 
 		// Remove filter.
-		remove_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
+		remove_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );
 	}
 
 	/**

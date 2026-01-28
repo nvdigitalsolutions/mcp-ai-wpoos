@@ -215,8 +215,8 @@ As of version 1.2.0, the plugin includes optional, privacy-first activation trac
 **Privacy documentation**: See [EXTERNAL_SERVICES.md](../EXTERNAL_SERVICES.md#plugin-analytics-service) for complete details.
 
 **To disable**:
-1. Via Settings: Go to Settings → NV oOS → Log Management → Disable Activation Tracking
-2. Via Filter: `add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );`
+1. Via Settings: Go to Settings → NV oOS → General → Log Management → Disable Activation Tracking
+2. Via Filter: `add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );`
 
 ### Framework Updates
 - Frameworks reviewed quarterly

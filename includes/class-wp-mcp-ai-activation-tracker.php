@@ -46,8 +46,14 @@ class WP_MCP_AI_Activation_Tracker {
 	 * @return void
 	 */
 	public static function track_activation( $plugin_variant = 'complete' ) {
+		// Validate plugin variant.
+		$valid_variants = array( 'complete', 'base', 'pro', 'core' );
+		if ( ! in_array( $plugin_variant, $valid_variants, true ) ) {
+			$plugin_variant = 'complete'; // Fallback to default.
+		}
+
 		// Check if tracking is disabled via filter.
-		if ( ! apply_filters( 'wp_mcp_ai_enable_activation_tracking', true ) ) {
+		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', true ) ) {
 			return;
 		}
 
@@ -146,12 +152,6 @@ class WP_MCP_AI_Activation_Tracker {
 			return true;
 		}
 
-		// Check WP_DEBUG constant (optional - can be removed if too broad).
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// Don't skip tracking just because debug mode is on.
-			// This was too broad - removed.
-		}
-
 		return false;
 	}
 
@@ -160,6 +160,7 @@ class WP_MCP_AI_Activation_Tracker {
 	 *
 	 * Uses WordPress HTTP API to send data in a non-blocking manner.
 	 * Failures are silent to avoid disrupting the activation process.
+	 * Note: timeout parameter is included for completeness but not used when blocking=false.
 	 *
 	 * @param array $data The tracking data to send.
 	 * @return void
@@ -174,7 +175,6 @@ class WP_MCP_AI_Activation_Tracker {
 					'Content-Type' => 'application/json',
 					'User-Agent'   => 'NV-oOS-Tracker/' . ( defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : '1.0.0' ),
 				),
-				'timeout'   => 5, // Short timeout - don't wait for response.
 				'blocking'  => false, // Non-blocking - don't wait for response.
 				'sslverify' => true,
 			)
@@ -194,8 +194,14 @@ class WP_MCP_AI_Activation_Tracker {
 	 * @return void
 	 */
 	public static function track_deactivation( $plugin_variant = 'complete' ) {
+		// Validate plugin variant.
+		$valid_variants = array( 'complete', 'base', 'pro', 'core' );
+		if ( ! in_array( $plugin_variant, $valid_variants, true ) ) {
+			$plugin_variant = 'complete'; // Fallback to default.
+		}
+
 		// Check if tracking is disabled.
-		if ( ! apply_filters( 'wp_mcp_ai_enable_activation_tracking', true ) ) {
+		if ( ! apply_filters( 'wp_mcp_ai_enable_usage_tracking', true ) ) {
 			return;
 		}
 
