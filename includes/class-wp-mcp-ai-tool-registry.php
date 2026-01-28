@@ -936,6 +936,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
 				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
+				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
+				'WP_MCP_AI_Tool_Enable_Reasoning_Mode'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-enable-reasoning-mode.php',
+				'WP_MCP_AI_Tool_Analyze_Code_Sequence'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-code-sequence.php',
+				'WP_MCP_AI_Tool_Validate_Reasoning_Chain'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-validate-reasoning-chain.php',
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
