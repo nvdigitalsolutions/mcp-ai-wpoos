@@ -74,7 +74,9 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 	$wrapper_attributes = sprintf( 'class="%s"', esc_attr( $wrapper_class ) );
 }
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 echo '<div ' . $wrapper_attributes . '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- do_shortcode handles escaping.
 echo do_shortcode( $shortcode );
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 echo '</div>';

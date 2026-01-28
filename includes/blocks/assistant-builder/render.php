@@ -11,8 +11,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Check user permissions.
 if ( ! current_user_can( 'edit_posts' ) ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 	echo '<div class="wp-block-mcp-ai-wpoos-assistant-builder__notice">';
 	echo '<p>' . esc_html__( 'You do not have permission to use the Assistant Builder.', 'mcp-ai-wpoos' ) . '</p>';
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 	echo '</div>';
 	return;
 }
@@ -190,6 +192,9 @@ $config = array(
 	</div>
 
 	<script type="application/json" class="wp-mcp-ai-assistant-builder-config">
-		<?php echo wp_json_encode( $config ); ?>
+		<?php
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
+		echo wp_json_encode( $config );
+		?>
 	</script>
 </div>
