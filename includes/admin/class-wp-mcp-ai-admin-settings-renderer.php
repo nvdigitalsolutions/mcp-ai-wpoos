@@ -100,7 +100,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 				rows="<?php echo esc_attr( $rows ); ?>"
 				cols="<?php echo esc_attr( $cols ); ?>"
 				class="<?php echo esc_attr( $class ); ?>"
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			><?php echo esc_textarea( $value ); ?></textarea>
 			<?php if ( ! empty( $description ) ) : ?>
 				<p class="description"><?php echo wp_kses_post( $description ); ?></p>

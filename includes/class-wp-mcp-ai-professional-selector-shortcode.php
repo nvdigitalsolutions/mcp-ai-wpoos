@@ -304,7 +304,6 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 		?>
 		<script type="application/json" data-selector-config="<?php echo esc_attr( $instance_id ); ?>">
 		<?php
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 		echo wp_json_encode(
 			array(
 				'instanceId'          => $instance_id,

@@ -1606,11 +1606,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					}
 					
 					var overviewChartData = {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						workforce: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						tools: <?php echo wp_json_encode( $this->get_profession_tool_distribution_data() ); ?>,
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						capacity: <?php echo wp_json_encode( $this->get_workload_tier_distribution_data() ); ?>
 					};
 					
@@ -1977,7 +1974,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( 'html' === $field['type'] ) {
 						// Close table for section headers, render HTML, reopen table.
 						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo $field['content'];
 						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
@@ -2000,7 +1996,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Render presets selector.
 			if ( isset( $fields['configuration_presets'] ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo $fields['configuration_presets']['content'];
 			}
 
@@ -2049,12 +2044,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo $field['content'];
 					} elseif ( 'slider' === $field['type'] ) {
 						// Use orchestration renderer for sliders.
 						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
 						}
 					}
@@ -2227,7 +2220,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
 
@@ -2785,9 +2777,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				// Chart data
 				var chartData = {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					roleDistribution: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					workloadTier: <?php echo wp_json_encode( $this->get_workload_tier_distribution_data() ); ?>
 				};
 				
@@ -3719,9 +3709,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				
 				// Chart data
 				var professionChartData = {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					roleDistribution: <?php echo wp_json_encode( $this->get_agent_role_distribution_data() ); ?>,
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					toolDistribution: <?php echo wp_json_encode( $this->get_profession_tool_distribution_data() ); ?>
 				};
 				

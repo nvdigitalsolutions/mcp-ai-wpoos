@@ -149,7 +149,6 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 			return;
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-chat-faq">';
 
 		if ( ! empty( $title ) ) {
@@ -157,7 +156,6 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 		}
 
 		if ( ! empty( $items ) && is_array( $items ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<dl class="wp-mcp-ai-chat-faq__list">';
 			foreach ( $items as $item ) {
 				if ( empty( $item['question'] ) && empty( $item['answer'] ) ) {
@@ -177,11 +175,9 @@ class WP_MCP_AI_Elementor_Chat_FAQ_Widget extends \Elementor\Widget_Base {
 					}
 				}
 			}
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</dl>';
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 	}
 }

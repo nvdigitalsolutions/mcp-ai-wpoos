@@ -151,10 +151,8 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 */
 	protected function render() {
 		if ( ! current_user_can( 'manage_options' ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div class="wp-mcp-ai-performance-trends">';
 			echo '<p>' . esc_html__( 'You do not have permission to view performance trends.', 'mcp-ai-wpoos' ) . '</p>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 			return;
 		}
@@ -169,7 +167,6 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 		// Get trend data.
 		$trends = $this->get_trend_data( $component, $time_period );
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-performance-trends">';
 
 		if ( ! empty( $title ) ) {
@@ -185,19 +182,15 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 			echo '<div class="wp-mcp-ai-performance-trends__summary ' . esc_attr( $trend_class ) . '">';
 			echo '<span class="dashicons dashicons-' . esc_attr( $trend_icon ) . '"></span>';
 			echo '<span>' . esc_html( $trend_text ) . '</span>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 		}
 
 		// Chart canvas - use unique ID per widget instance to avoid conflicts.
 		$chart_id = 'wp-mcp-ai-trends-chart-' . $this->get_id();
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-performance-trends__chart-container">';
 		echo '<canvas id="' . esc_attr( $chart_id ) . '" height="' . esc_attr( $chart_height ) . '"></canvas>';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 
 		$this->enqueue_chart_script( $trends, $chart_height, $chart_id );

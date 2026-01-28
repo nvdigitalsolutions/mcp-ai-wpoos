@@ -977,7 +977,6 @@ WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for 
 					?>
 					<script>
 					jQuery(document).ready(function($) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ) ?: '{}'; ?>;
 						
 						// Fallback to empty object if encoding failed.
@@ -1030,15 +1029,12 @@ WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for 
 							$('.toolkit-limit-counter').removeClass('toolkit-limit-good toolkit-limit-warning toolkit-limit-maximum');
 							if (totalMemory >= 800) {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-maximum');
-								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								statusBadge.text(<?php echo wp_json_encode( __( 'High Usage', 'mcp-ai-wpoos' ) ); ?>);
 							} else if (totalMemory >= 500) {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-warning');
-								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								statusBadge.text(<?php echo wp_json_encode( __( 'Moderate Usage', 'mcp-ai-wpoos' ) ); ?>);
 							} else {
 								$('.toolkit-limit-counter').addClass('toolkit-limit-good');
-								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								statusBadge.text(<?php echo wp_json_encode( __( 'Low Usage', 'mcp-ai-wpoos' ) ); ?>);
 							}
 						}

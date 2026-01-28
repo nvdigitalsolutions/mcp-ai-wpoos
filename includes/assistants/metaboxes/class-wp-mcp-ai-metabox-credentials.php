@@ -91,17 +91,13 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 		if ( empty( $credentials ) ) {
 			echo '<p>' . esc_html__( 'No credentials have been issued for this assistant.', 'mcp-ai-wpoos' ) . '</p>';
 		} else {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<table class="widefat striped">';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<thead><tr>';
 			echo '<th>' . esc_html__( 'Credential ID', 'mcp-ai-wpoos' ) . '</th>';
 			echo '<th>' . esc_html__( 'Created', 'mcp-ai-wpoos' ) . '</th>';
 			echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
 			echo '<th>' . esc_html__( 'Actions', 'mcp-ai-wpoos' ) . '</th>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</tr></thead>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<tbody>';
 
 			foreach ( $credentials as $credential ) {
@@ -140,19 +136,15 @@ class WP_MCP_AI_Metabox_Credentials extends WP_MCP_AI_Metabox_Base {
 
 				$actions = empty( $action_links ) ? '&#8212;' : implode( ' ', $action_links );
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<tr>';
 				echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
 				echo '<td>' . esc_html( $created_at ) . '</td>';
 				echo '<td>' . esc_html( $status ) . '</td>';
 				echo '<td>' . wp_kses_post( $actions ) . '</td>';
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</tr>';
 			}
 
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</tbody>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</table>';
 		}
 

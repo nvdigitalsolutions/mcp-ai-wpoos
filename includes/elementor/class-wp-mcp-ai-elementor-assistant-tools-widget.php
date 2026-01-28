@@ -146,21 +146,18 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$show_descriptions = ! empty( $settings['show_descriptions'] ) && 'yes' === $settings['show_descriptions'];
 		$empty_message     = isset( $settings['empty_message'] ) ? $settings['empty_message'] : '';
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '<div class="wp-mcp-ai-assistant-tools">';
 
 		if ( '' !== $title ) {
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<h3 class="wp-mcp-ai-assistant-tools__title">' . $title_output . '</h3>';
 			}
 		}
 
 		if ( ! $assistant_id ) {
 			echo '<p class="wp-mcp-ai-assistant-tools__notice">' . esc_html__( 'Select an assistant in the widget settings to view its tools.', 'mcp-ai-wpoos' ) . '</p>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 			return;
 		}
@@ -181,7 +178,6 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 				}
 			}
 		} else {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<ul class="wp-mcp-ai-assistant-tools__list">';
 
 			foreach ( $tool_items as $tool ) {
@@ -189,9 +185,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 				$slug        = isset( $tool['slug'] ) ? $tool['slug'] : '';
 				$description = isset( $tool['description'] ) ? $tool['description'] : '';
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<li class="wp-mcp-ai-assistant-tools__item">';
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<div class="wp-mcp-ai-assistant-tools__item-header">';
 
 				if ( '' !== $name ) {
@@ -204,19 +198,15 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 					$success_text = esc_html__( 'Copied!', 'mcp-ai-wpoos' );
 					$failure_text = esc_html__( 'Copy failed', 'mcp-ai-wpoos' );
 
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<span class="wp-mcp-ai-assistant-tools__slug">';
 					echo '<span class="wp-mcp-ai-assistant-tools__slug-label">' . esc_html__( 'Slug:', 'mcp-ai-wpoos' ) . '</span> ';
 					echo '<button type="button" class="wp-mcp-ai-assistant-tools__copy-button" data-slug="' . esc_attr( $slug ) . '" data-success-message="' . esc_attr( $success_text ) . '" data-failure-message="' . esc_attr( $failure_text ) . '" aria-label="' . esc_attr( $copy_label ) . '">';
 					echo '<code class="wp-mcp-ai-assistant-tools__slug-code">' . esc_html( $slug ) . '</code>';
 					echo '<span class="wp-mcp-ai-assistant-tools__copy-feedback" aria-hidden="true" style="display:none;">' . esc_html( $success_text ) . '</span>';
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</button>';
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</span>';
 				}
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</div>';
 
 				if ( $show_descriptions && '' !== $description ) {
@@ -230,11 +220,9 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 					}
 				}
 
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</li>';
 			}
 
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</ul>';
 		}
 
@@ -243,17 +231,14 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 			$missing_list    = implode( ', ', $missing_escaped );
 
 			if ( '' !== $missing_list ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<p class="wp-mcp-ai-assistant-tools__notice wp-mcp-ai-assistant-tools__notice--warning">';
 				echo esc_html__( 'Some tools assigned to this assistant are no longer registered:', 'mcp-ai-wpoos' ) . ' ';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each item already escaped via array_map('esc_html').
 				echo $missing_list;
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</p>';
 			}
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 
 		self::maybe_print_copy_script();

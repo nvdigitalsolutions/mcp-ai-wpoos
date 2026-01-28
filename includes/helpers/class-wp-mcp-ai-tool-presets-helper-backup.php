@@ -328,9 +328,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 			);
 		}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		echo '</div>';
 
 		// Include JavaScript if requested.
@@ -359,7 +357,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			document.addEventListener( 'DOMContentLoaded', function() {
 				var presetButtons = document.querySelectorAll( '.wp-mcp-ai-tool-preset-btn' );
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				var checkboxSelector = <?php echo wp_json_encode( $checkbox_selector ); ?>;
 
 				presetButtons.forEach( function( button ) {

@@ -3243,7 +3243,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 				)
 			);
 
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div class="notice notice-warning"><p>' . wp_kses(
 				$message,
 				array(
@@ -5149,7 +5148,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			rows="5"
 			cols="40"
 			class="large-text code"
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		><?php echo esc_textarea( $value ); ?></textarea>
 		<p class="description">
 			<?php
@@ -5181,7 +5179,6 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			rows="6"
 			cols="40"
 			class="large-text code"
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		><?php echo esc_textarea( $value ); ?></textarea>
 		<p class="description">
 			<?php

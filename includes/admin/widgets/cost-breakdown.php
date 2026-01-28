@@ -69,9 +69,7 @@ $period_end   = isset( $data['period_end'] ) ? $data['period_end'] : gmdate( 'Y-
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-dashboard-cost-breakdown');
 				if (ctx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					var providers = <?php echo wp_json_encode( array_keys( $by_provider ) ); ?>;
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					var costs = <?php echo wp_json_encode( array_values( $by_provider ) ); ?>;
 
 					new Chart(ctx.getContext('2d'), {

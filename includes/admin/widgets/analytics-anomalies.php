@@ -124,7 +124,6 @@ $severity_colors = array(
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-anomaly-scatter-chart');
 				if (ctx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					var anomalies = <?php echo wp_json_encode( $anomalies ); ?>;
 
 					// Prepare scatter plot data.
@@ -140,7 +139,6 @@ $severity_colors = array(
 
 					// Color points by severity.
 					var pointColors = scatterData.map(function(point) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						var severityMap = <?php echo wp_json_encode( $severity_colors ); ?>;
 						return severityMap[point.severity] || '#666';
 					});
