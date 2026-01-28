@@ -608,9 +608,11 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-r
 // Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 
-// Load third-party plugin integrations only when not in base version mode.
-// However, if Pro addon is active (even with base version), load JetEngine integrations
-// since Pro features may depend on them for chat transcript storage and other functionality.
+// Load third-party plugin integrations.
+// Integrations are loaded when:
+// - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+// - Pro addon is active (even with base version), OR
+// - JetEngine plugin is active (for chat transcript CCT storage in base version)
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
