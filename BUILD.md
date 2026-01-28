@@ -547,14 +547,57 @@ See [RELEASE_CHECKLIST.md](docs/troubleshooting/deployment/RELEASE_CHECKLIST.md)
 
 ## Troubleshooting
 
-### Fatal Error: Failed opening required 'deep_copy.php'
+### Deployment Verification
 
-If you see this error in production:
-```
-Fatal error: Uncaught Error: Failed opening required 'vendor/composer/../myclabs/deep-copy/src/DeepCopy/deep_copy.php'
+**Before deploying to production**, verify your installation is ready:
+
+```bash
+php bin/check-production-deployment.php
 ```
 
-This means the Composer autoloader was generated with dev dependencies included, but the dev packages are missing in production.
+This script checks:
+- ✓ Vendor directory and autoloader exist
+- ✓ All critical packages are present
+- ✓ Autoloader is optimized for production
+- ✓ No dev dependencies are included
+- ✓ File permissions are correct
+- ✓ Plugin structure is valid
+
+Exit code 0 = Ready for deployment  
+Exit code 1 = Issues found (with actionable fixes)
+
+### Cloning for Production Use
+
+**The repository is production-ready** - you can clone it directly and use it as a production plugin:
+
+```bash
+# Clone the repository
+git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
+cd mcp-ai-wpoos
+
+# Verify it's ready for production
+php bin/check-production-deployment.php
+
+# If checks pass, deploy to WordPress
+cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+**No build step required!** The repository includes:
+- ✓ Optimized production autoloader
+- ✓ All vendor dependencies (production only)
+- ✓ Minified assets
+- ✓ Complete plugin code
+
+### Fatal Error: Failed opening required 'getallheaders.php' or 'deep_copy.php'
+
+If you see errors about missing vendor files in production:
+
+```
+Fatal error: Failed opening required 'vendor/composer/../ralouphie/getallheaders/src/getallheaders.php'
+Fatal error: Failed opening required 'vendor/composer/../myclabs/deep-copy/src/DeepCopy/deep_copy.php'
+```
+
+**Cause:** The Composer autoloader was generated incorrectly, or vendor files are incomplete.
 
 **Fix:**
 ```bash
@@ -564,7 +607,10 @@ rm -rf vendor/
 # Regenerate with production-only dependencies and optimized autoloader
 composer install --no-dev --prefer-dist --classmap-authoritative
 
-# Rebuild distribution packages
+# Verify the fix
+php bin/check-production-deployment.php
+
+# Rebuild distribution packages if needed
 ./bin/rebuild-all-zips.sh
 ```
 
@@ -572,9 +618,12 @@ composer install --no-dev --prefer-dist --classmap-authoritative
 - Dev dependencies like `myclabs/deep-copy` (used by PHPUnit) were included when autoloader was generated
 - The autoloader references these files in `autoload_files.php`
 - When deployed to production without dev dependencies, PHP tries to load missing files
+- OR: Vendor files were not properly cloned/copied during deployment
 
 **Prevention:**
-Always regenerate the autoloader with `--no-dev --classmap-authoritative` before committing vendor changes.
+1. Always regenerate the autoloader with `--no-dev --classmap-authoritative` before committing vendor changes
+2. Use `bin/check-production-deployment.php` to verify before deployment
+3. When cloning, ensure the `.gitignore` allows vendor files (it does by default)
 
 ### Vectorizer Module Error
 
