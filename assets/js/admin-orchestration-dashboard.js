@@ -298,11 +298,33 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						alert('Workflow started successfully!');
+						// Build success message with metrics if available
+						let message = 'Workflow started successfully!';
+						if (response.data.metrics) {
+							const metrics = response.data.metrics;
+							message += '\n\nMetrics:';
+							if (metrics.duration) {
+								message += '\n• Duration: ' + metrics.duration + 's';
+							}
+							if (metrics.tasks_executed) {
+								message += '\n• Tasks executed: ' + metrics.tasks_executed;
+							}
+							if (metrics.tokens_used) {
+								message += '\n• Tokens used: ' + metrics.tokens_used.toLocaleString();
+							}
+							if (metrics.estimated_cost) {
+								message += '\n• Estimated cost: $' + metrics.estimated_cost.toFixed(4);
+							}
+						}
+						alert(message);
 						// Reload workflows to show updated state
 						OrchestrationDashboard.loadWorkflows();
 					} else {
-						alert('Error: ' + (response.data.message || 'Unknown error'));
+						let errorMsg = 'Error: ' + (response.data.message || 'Unknown error');
+						if (response.data.duration) {
+							errorMsg += '\n\nFailed after ' + response.data.duration + 's';
+						}
+						alert(errorMsg);
 						$button.prop('disabled', false);
 						$button.html(originalHtml);
 					}
@@ -350,7 +372,19 @@
 				},
 				success: function(response) {
 					if (response.success) {
-						alert('Workflow reset successfully! You can now continue it.');
+						// Build success message with metrics if available
+						let message = 'Workflow reset successfully! You can now continue it.';
+						if (response.data.metrics) {
+							const metrics = response.data.metrics;
+							message += '\n\nReset Details:';
+							if (metrics.original_state) {
+								message += '\n• Previous state: ' + metrics.original_state;
+							}
+							if (metrics.tasks_reset) {
+								message += '\n• Tasks reset: ' + metrics.tasks_reset;
+							}
+						}
+						alert(message);
 						// Reload workflows to show updated state
 						OrchestrationDashboard.loadWorkflows();
 					} else {
