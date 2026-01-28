@@ -343,13 +343,13 @@ class WP_MCP_AI_Asset_Inventory {
 		} catch ( Exception $e ) {
 			// Log error but continue with directory mtime.
 			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log(
+				WP_MCP_AI_Logger::log_event(
+					'warning',
 					'Error reading directory for asset discovery',
 					array(
 						'path'  => $path,
 						'error' => $e->getMessage(),
-					),
-					'warning'
+					)
 				);
 			}
 		}
@@ -373,13 +373,13 @@ class WP_MCP_AI_Asset_Inventory {
 
 		// Log the inventory update.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				'Asset inventory updated',
 				array(
 					'total_assets' => count( $assets ),
 					'timestamp'    => gmdate( 'Y-m-d H:i:s' ),
-				),
-				'info'
+				)
 			);
 		}
 	}
