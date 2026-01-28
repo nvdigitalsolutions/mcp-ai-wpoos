@@ -200,7 +200,25 @@ wp option get wp_mcp_ai_iso27001_compliance
 
 ## 📝 Maintenance
 
-### Updates
+### Plugin Activation Tracking
+
+As of version 1.2.0, the plugin includes optional, privacy-first activation tracking to help understand plugin usage patterns. This feature is:
+
+- **Fully transparent**: All tracking code is open source
+- **GDPR compliant**: No personal data collected, site URLs are hashed
+- **Opt-out available**: Can be disabled in Settings → General → Log Management or via filter hook
+- **Non-blocking**: Uses asynchronous requests that won't delay activation
+- **Local-aware**: Automatically disabled for localhost and development environments
+
+**Data collected**: Plugin variant (complete/base/pro/core), plugin version, WordPress version, PHP version, locale, multisite status, and a non-reversible site hash.
+
+**Privacy documentation**: See [EXTERNAL_SERVICES.md](../EXTERNAL_SERVICES.md#plugin-analytics-service) for complete details.
+
+**To disable**:
+1. Via Settings: Go to Settings → NV oOS → General → Log Management → Disable Activation Tracking
+2. Via Filter: `add_filter( 'wp_mcp_ai_enable_usage_tracking', '__return_false' );`
+
+### Framework Updates
 - Frameworks reviewed quarterly
 - Controls updated with WordPress releases
 - Documentation maintained in sync with code

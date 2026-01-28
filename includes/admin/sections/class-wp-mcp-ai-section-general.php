@@ -158,6 +158,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 					'description'    => __( 'When enabled, all settings and data will be deleted when the plugin is uninstalled.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'disable_activation_tracking'           => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Disable Activation Tracking', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Opt out of anonymous activation tracking', 'mcp-ai-wpoos' ),
+					'description'    => sprintf(
+						/* translators: %s: Link to external services documentation */
+						__( 'When enabled, the plugin will not send anonymous activation/deactivation events to NV Digital. This tracking uses minimal, non-identifying data (plugin version, WordPress version, PHP version, hashed site ID). No personal information or IP addresses are collected. %s', 'mcp-ai-wpoos' ),
+						'<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/EXTERNAL_SERVICES.md#plugin-analytics-service" target="_blank" rel="noopener noreferrer">' . esc_html__( 'Learn more about what data is collected', 'mcp-ai-wpoos' ) . '</a>'
+					),
+					'default'        => false,
+				),
 				'max_history_messages'                  => array(
 					'type'        => 'number',
 					'label'       => __( 'Max History Messages', 'mcp-ai-wpoos' ),
@@ -281,6 +292,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 						'enable_tool_execution_logging',
 						'enable_chat_interaction_logging',
 						'delete_on_uninstall',
+						'disable_activation_tracking',
 					),
 				),
 				'custom_filters' => array(

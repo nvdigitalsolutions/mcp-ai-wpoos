@@ -473,6 +473,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-optional-components.php'
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cron-manager.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-logger.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-error-handler.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-activation-tracker.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-root-security-key.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-nefarious-usage-monitor.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-http.php';
@@ -1752,6 +1753,14 @@ if ( ! function_exists( 'wp_mcp_ai_activate_single_site' ) ) {
 		// This runs in the background after activation to avoid blocking.
 		do_action( 'wp_mcp_ai_after_activation' );
 
+		// Track plugin activation for analytics.
+		// Determine the plugin variant based on constants and file structure.
+		$plugin_variant = 'complete'; // Default for mcp-ai-wpoos.php.
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$plugin_variant = 'base';
+		}
+		WP_MCP_AI_Activation_Tracker::track_activation( $plugin_variant );
+
 		// Note: We intentionally do not call WP_MCP_AI_Assistant_CPT::register_post_type() here
 		// to avoid triggering translation loading before the init action (WordPress 6.7+ requirement).
 		// The post type will be registered on the next page load via the init hook.
@@ -1787,6 +1796,13 @@ if ( ! function_exists( 'wp_mcp_ai_deactivate_single_site' ) ) {
 	 * @return void
 	 */
 	function wp_mcp_ai_deactivate_single_site() {
+		// Track plugin deactivation for analytics.
+		$plugin_variant = 'complete';
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+			$plugin_variant = 'base';
+		}
+		WP_MCP_AI_Activation_Tracker::track_deactivation( $plugin_variant );
+
 		// Unschedule file cleanup cron jobs.
 		$timestamp = wp_next_scheduled( 'wp_mcp_ai_cleanup_gemini_files' );
 		if ( $timestamp ) {
