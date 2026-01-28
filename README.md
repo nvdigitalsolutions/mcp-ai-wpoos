@@ -12,7 +12,7 @@
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.0  
-**Release Date:** 2025-12-25  
+**Release Date:** 2026-01-28 (January 2026 update with DeepSeek V4 orchestration and Social Media Analytics)  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
