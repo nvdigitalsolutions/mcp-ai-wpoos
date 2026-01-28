@@ -365,8 +365,9 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * Enqueue auto-refresh script.
 	 */
 	protected function enqueue_auto_refresh_script() {
-		?>
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
+		?>
 		<script>
 		(function($) {
 			setInterval(function() {
@@ -395,7 +396,6 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 			}, 30000); // Refresh every 30 seconds.
 		})(jQuery);
 		</script>
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
 		<style>
 		.wp-mcp-ai-performance-metrics {
 			padding: 20px;

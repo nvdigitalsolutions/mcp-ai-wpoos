@@ -33,8 +33,6 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 	 */
 	public static function add_create_button( $views ) {
 		$build_assistant_url = admin_url( 'edit.php?post_type=mcp_ai_assistant&page=wp-mcp-ai-build-assistant' );
-		?>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Build AI Assistant button positioning on this admin page only
 		?>
 		<style>
@@ -43,7 +41,6 @@ class WP_MCP_AI_Admin_Create_Assistant_Button {
 				vertical-align: middle;
 			}
 		</style>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for adding Build AI Assistant button after page title on this admin page only
 		?>
 		<script type="text/javascript">

@@ -152,6 +152,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		// Store team configuration.
 		$this->store_team( $team );
 
+		// Also store as workflow for orchestration dashboard tracking.
+		$this->save_team_as_workflow( $team );
+
 		$this->log_team_action( $team['team_id'], 'composed', array( 'member_count' => count( $team_members ) ) );
 
 		return $team;
@@ -1377,6 +1380,142 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		
 		// Store workflow data for 7 days.
 		return set_transient( $transient_key, $workflow_data, 7 * DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Save team as workflow for dashboard tracking
+	 *
+	 * Converts a team composition into a workflow record so it appears
+	 * on the orchestration dashboard even before workflow execution begins.
+	 *
+	 * @param array $team Team configuration.
+	 * @return bool True on success, false on failure.
+	 */
+	protected function save_team_as_workflow( $team ) {
+		if ( empty( $team['team_id'] ) ) {
+			return false;
+		}
+
+		// Create workflow tasks from team members and workflow steps.
+		$tasks = array();
+		
+		// Add team composition as initial task.
+		$tasks[] = array(
+			'task_id'      => 'compose_' . $team['team_id'],
+			'name'         => __( 'Team Composition', 'mcp-ai-wpoos' ),
+			'type'         => 'composition',
+			'status'       => 'completed',
+			'completed_at' => $team['created_at'],
+		);
+
+		// Add workflow steps as pending tasks.
+		if ( isset( $team['workflow'] ) && is_array( $team['workflow'] ) ) {
+			foreach ( $team['workflow'] as $index => $step ) {
+				$tasks[] = array(
+					'task_id' => 'step_' . $index . '_' . $team['team_id'],
+					'name'    => $step['name'],
+					'type'    => $step['type'],
+					'role'    => isset( $step['role'] ) ? $step['role'] : null,
+					'status'  => 'pending',
+				);
+			}
+		}
+
+		// Build workflow data structure.
+		$workflow_data = array(
+			'workflow_id'  => 'wf_' . $team['team_id'],
+			'team_id'      => $team['team_id'],
+			'task_type'    => $team['task_type'],
+			'state'        => 'initialized',
+			'tasks'        => $tasks,
+			'members'      => $team['members'],
+			'created_at'   => $team['created_at'],
+			'updated_at'   => $team['created_at'],
+			'started_at'   => null,
+			'completed_at' => null,
+		);
+
+		return $this->save_workflow_to_dashboard( $workflow_data['workflow_id'], $workflow_data );
+	}
+
+	/**
+	 * Get workflow by ID
+	 *
+	 * Retrieves workflow data from transient storage.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @return array|null Workflow data or null if not found.
+	 */
+	public function get_workflow( $workflow_id ) {
+		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );
+		$workflow_data = get_transient( $transient_key );
+
+		return $workflow_data ? $workflow_data : null;
+	}
+
+	/**
+	 * Check workflow health status
+	 *
+	 * Checks if workflow is stale (stuck in initialized state for too long).
+	 * Important for WordPress plugins where workflows may wait for cron/async processing.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @return array Health status with recommendations.
+	 */
+	public function check_workflow_health( $workflow_id ) {
+		$workflow = $this->get_workflow( $workflow_id );
+
+		if ( ! $workflow ) {
+			return array(
+				'status'  => 'error',
+				'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$current_time = time();
+		$created_time = strtotime( $workflow['created_at'] );
+		$age_seconds  = $current_time - $created_time;
+		$age_minutes  = round( $age_seconds / 60, 1 );
+
+		$health = array(
+			'workflow_id'  => $workflow_id,
+			'state'        => $workflow['state'],
+			'age_seconds'  => $age_seconds,
+			'age_minutes'  => $age_minutes,
+			'created_at'   => $workflow['created_at'],
+			'started_at'   => $workflow['started_at'] ?? null,
+			'completed_at' => $workflow['completed_at'] ?? null,
+			'status'       => 'healthy',
+			'warnings'     => array(),
+			'recommendations' => array(),
+		);
+
+		// Check for workflows stuck in initialized state.
+		// WordPress plugins need time for cron setup, so we allow 5 minutes.
+		$initialized_timeout = 300; // 5 minutes.
+
+		if ( 'initialized' === $workflow['state'] ) {
+			if ( $age_seconds > $initialized_timeout ) {
+				$health['status']     = 'warning';
+				$health['warnings'][] = sprintf(
+					/* translators: %s: age in minutes */
+					__( 'Workflow has been initialized for %s minutes without starting.', 'mcp-ai-wpoos' ),
+					$age_minutes
+				);
+				$health['recommendations'][] = __( 'Call execute_workflow() to start the workflow, or use delegate_to_agent to assign tasks to team members.', 'mcp-ai-wpoos' );
+				$health['recommendations'][] = __( 'For WordPress plugins, ensure wp-cron is running: wp cron event run --due-now', 'mcp-ai-wpoos' );
+			} else {
+				$health['status']  = 'pending';
+				$health['message'] = sprintf(
+					/* translators: 1: age in minutes, 2: timeout in minutes */
+					__( 'Workflow is waiting to start (%1$s minutes old, timeout at %2$s minutes).', 'mcp-ai-wpoos' ),
+					$age_minutes,
+					round( $initialized_timeout / 60, 1 )
+				);
+			}
+		}
+
+		return $health;
 	}
 }
 

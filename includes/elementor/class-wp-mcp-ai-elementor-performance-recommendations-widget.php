@@ -293,8 +293,9 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 * Enqueue action button script.
 	 */
 	protected function enqueue_action_script() {
-		?>
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
+		?>
 		<script>
 		(function($) {
 			$(document).ready(function() {
@@ -313,7 +314,6 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			});
 		})(jQuery);
 		</script>
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
 		<style>
 		.wp-mcp-ai-recommendations {
 			padding: 20px;
