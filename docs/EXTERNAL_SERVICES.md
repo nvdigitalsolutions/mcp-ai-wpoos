@@ -508,6 +508,67 @@ Site administrators are responsible for:
 
 ---
 
+## Plugin Analytics Service
+
+### NV Digital Plugin Tracking
+
+**Service URL:** `https://nvdigitalsolutions.com/api/plugin-tracking/activation`  
+**Purpose:** Anonymous plugin activation/deactivation tracking to understand plugin usage patterns  
+**Data Sent:**
+- Plugin variant (complete, base, pro, or core)
+- Plugin version number
+- WordPress version
+- PHP version
+- Site locale (language)
+- Multisite status (true/false)
+- Hashed site identifier (non-reversible SHA-256 hash)
+- Timestamp
+
+**When Used:**
+- Once when the plugin is activated
+- Once when the plugin is deactivated
+
+**Privacy Features:**
+- **No PII collected**: No personally identifiable information is transmitted
+- **Site URL hashed**: Site URL is converted to a non-reversible hash using SHA-256 with WordPress salts
+- **No IP storage**: IP addresses are not logged or stored
+- **Local development excluded**: Tracking automatically disabled for localhost and common dev domains
+- **Opt-out available**: Can be disabled via settings or filter hook
+- **Non-blocking**: Uses asynchronous HTTP requests with short timeout
+- **Silent failure**: Tracking failures don't disrupt plugin operation
+- **Fully transparent**: All tracking code is open source and documented
+
+**How to Disable:**
+1. **Via Settings**: Go to Settings → NV oOS → Disable activation tracking
+2. **Via Filter Hook**:
+   ```php
+   add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
+   ```
+3. **Via Constant** (in wp-config.php):
+   ```php
+   add_filter( 'wp_mcp_ai_enable_activation_tracking', '__return_false' );
+   ```
+
+**Legal & Privacy:**
+- **GDPR Compliant**: No personal data collected
+- **Privacy Policy**: https://nvdigitalsolutions.com/privacy
+- **Terms of Service**: https://nvdigitalsolutions.com/terms
+- **Data Retention**: Aggregated statistics only, no individual site data stored long-term
+
+**Related Files:**
+- `includes/class-wp-mcp-ai-activation-tracker.php`
+
+**Purpose & Rationale:**
+This minimal tracking helps NV Digital understand:
+- Which plugin variants (complete, base, pro, core) are most popular
+- PHP and WordPress version distributions for compatibility planning
+- Geographic distribution of users (via locale) for translation priorities
+- General adoption and retention metrics
+
+All data is used solely for product improvement and never sold or shared with third parties.
+
+---
+
 ## Contact & Updates
 
 For updates to this document or to report outdated service information:
