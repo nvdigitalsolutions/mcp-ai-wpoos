@@ -682,7 +682,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 											<?php echo esc_html( number_format( $utilization_pct, 1 ) ); ?>%
 										</td>
 										<td>
-											<span class="capacity-score" style="color: <?php echo $metrics['capacity_score'] > 70 ? '#46b450' : ( $metrics['capacity_score'] > 30 ? '#f0b849' : '#dc3232' ); ?>;">
+											<span class="capacity-score" style="color: <?php echo esc_attr( $metrics['capacity_score'] > 70 ? '#46b450' : ( $metrics['capacity_score'] > 30 ? '#f0b849' : '#dc3232' ) ); ?>;">
 												<?php echo esc_html( number_format( $metrics['capacity_score'], 0 ) ); ?>
 											</span>
 										</td>
@@ -879,7 +879,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
 									<td><?php echo esc_html( number_format( $tool_stats['total_count'] ) ); ?></td>
 									<td>
-										<span style="color: <?php echo $tool_stats['success_rate'] > 95 ? '#46b450' : ( $tool_stats['success_rate'] > 80 ? '#f0b849' : '#dc3232' ); ?>;">
+										<span style="color: <?php echo esc_attr( $tool_stats['success_rate'] > 95 ? '#46b450' : ( $tool_stats['success_rate'] > 80 ? '#f0b849' : '#dc3232' ) ); ?>;">
 											<?php echo esc_html( number_format( $tool_stats['success_rate'], 1 ) ); ?>%
 										</span>
 									</td>
@@ -1359,7 +1359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<span class="status-label"><?php esc_html_e( 'System', 'mcp-ai-wpoos' ); ?></span>
 							</div>
 							<div class="status-item">
-								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?> status-icon-<?php echo $team_ready ? 'good' : 'warning'; ?>"></span>
+								<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?> status-icon-<?php echo esc_attr( $team_ready ? 'good' : 'warning' ); ?>"></span>
 								<span class="status-label"><?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?></span>
 							</div>
 						</div>
@@ -1435,14 +1435,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					</div>
 
-					<div class="executive-metric-card <?php echo $team_ready ? 'status-good' : 'status-warning'; ?>">
+					<div class="executive-metric-card <?php echo esc_attr( $team_ready ? 'status-good' : 'status-warning' ); ?>">
 						<div class="metric-header">
 							<span class="dashicons dashicons-networking"></span>
 							<h4><?php esc_html_e( 'Team Coordination', 'mcp-ai-wpoos' ); ?></h4>
 						</div>
 						<div class="metric-body">
 							<div class="metric-primary">
-								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>"></span>
+								<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?>"></span>
 							</div>
 							<div class="wp-mcp-ai-metric-label">
 								<?php echo $team_ready ? esc_html__( 'Teams Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Setup Required', 'mcp-ai-wpoos' ); ?>
@@ -3090,9 +3090,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
 							$team_ready   = $has_planner && $has_executor && $has_critic;
 							?>
-							<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>" style="color: <?php echo $team_ready ? '#4CAF50' : '#FF9800'; ?>"></span>
+							<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?>" style="color: <?php echo esc_attr( $team_ready ? '#4CAF50' : '#FF9800' ); ?>"></span>
 						</div>
-						<div class="metric-subtitle status-<?php echo $team_ready ? 'good' : 'warning'; ?>">
+						<div class="metric-subtitle status-<?php echo esc_attr( $team_ready ? 'good' : 'warning' ); ?>">
 							<?php echo $team_ready ? esc_html__( 'Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Incomplete', 'mcp-ai-wpoos' ); ?>
 						</div>
 					</div>
