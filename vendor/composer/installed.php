@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-orchestration-page-issue',
-        'version' => 'dev-copilot/fix-orchestration-page-issue',
-        'reference' => 'd6e461ecf746b2e258d454d3fcd53c791df04598',
+        'pretty_version' => 'dev-copilot/fix-orchestration-pages-issue',
+        'version' => 'dev-copilot/fix-orchestration-pages-issue',
+        'reference' => '9af3eb247926bc09c1dc972c077539cb2d48fe4d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-orchestration-page-issue',
-            'version' => 'dev-copilot/fix-orchestration-page-issue',
-            'reference' => 'd6e461ecf746b2e258d454d3fcd53c791df04598',
+            'pretty_version' => 'dev-copilot/fix-orchestration-pages-issue',
+            'version' => 'dev-copilot/fix-orchestration-pages-issue',
+            'reference' => '9af3eb247926bc09c1dc972c077539cb2d48fe4d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
