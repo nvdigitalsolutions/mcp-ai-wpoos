@@ -1013,8 +1013,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Project Management tools moved to Pro addon.
 			);
 
+			// Pro tools (only loaded when not in base version mode).
+			$pro_tools = array(
+				// Self-editing capability for Architect Agent (Pro feature).
+				'WP_MCP_AI_Tool_Manage_Files' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-files.php',
+			);
+
 			// Combine tools based on version mode.
-			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools );
+			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools, $pro_tools );
 
 			/**
 			 * Filter the list of default tools to load.
