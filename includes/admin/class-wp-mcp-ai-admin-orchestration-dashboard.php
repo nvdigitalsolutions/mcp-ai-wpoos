@@ -42,7 +42,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Orchestration Dashboard', 'mcp-ai-wpoos' ),
-			__( 'Orchestration', 'mcp-ai-wpoos' ),
+			__( 'Orchestration Dashboard', 'mcp-ai-wpoos' ),
 			'manage_options',
 			'mcp-ai-orchestration-dashboard',
 			array( $this, 'render_dashboard' )
@@ -408,6 +408,15 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	protected function render_quick_actions( $stats ) {
 		?>
 		<div class="quick-actions-grid">
+			<div class="action-card">
+				<span class="dashicons dashicons-admin-settings"></span>
+				<h3><?php esc_html_e( 'Orchestration Settings', 'mcp-ai-wpoos' ); ?></h3>
+				<p><?php esc_html_e( 'Configure orchestration layer settings, budgets, presets, and advanced options.', 'mcp-ai-wpoos' ); ?></p>
+				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=orchestration' ) ); ?>" class="button">
+					<?php esc_html_e( 'Configure Settings', 'mcp-ai-wpoos' ); ?>
+				</a>
+			</div>
+
 			<div class="action-card">
 				<span class="dashicons dashicons-admin-tools"></span>
 				<h3><?php esc_html_e( 'Run Orchestration Seeder', 'mcp-ai-wpoos' ); ?></h3>

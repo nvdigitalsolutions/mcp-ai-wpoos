@@ -35,7 +35,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		add_submenu_page(
 			'wp-mcp-ai-dashboard',
 			__( 'Real-Time Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
-			__( 'Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
+			__( 'Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'mcp-ai-orchestration',
 			array( $this, 'render_dashboard' )
@@ -110,9 +110,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	public function render_dashboard() {
 		?>
 		<div class="wrap wp-mcp-ai-orchestration-dashboard">
-			<h1><?php esc_html_e( 'Autonomous Orchestration Dashboard', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with Ralph Wiggum patterns.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with advanced analytics.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<!-- Overview Cards -->
