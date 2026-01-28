@@ -1,0 +1,160 @@
+# Git attributes for mcp-ai-wpoos plugin
+# This file controls how files are treated during git operations and exports
+
+# ====================
+# Export-ignore patterns
+# ====================
+# Files and directories that should NOT be included when creating archives
+# via `git archive` (e.g., GitHub releases, composer install from source)
+
+# Development and CI/CD
+/.github export-ignore
+/.codex export-ignore
+/.devcontainer export-ignore
+/.wordpress-org export-ignore
+/.git-branch-info export-ignore
+
+# Development configuration
+/.editorconfig export-ignore
+/.eslintignore export-ignore
+/.eslintrc.json export-ignore
+/.nvmrc export-ignore
+/.codecov.yml export-ignore
+/CODEOWNERS export-ignore
+
+# Build tools
+/babel.config.js export-ignore
+/esbuild.config.js export-ignore
+/esbuild.config.pro.js export-ignore
+/jest.config.js export-ignore
+/tsconfig.json export-ignore
+/phpcs.xml.dist export-ignore
+/phpunit.xml.dist export-ignore
+
+# Composer and NPM
+/composer.json export-ignore
+/composer.lock export-ignore
+/package.json export-ignore
+/package-lock.json export-ignore
+
+# Development scripts and documentation
+/bin export-ignore
+/patches export-ignore
+/patches.lock.json export-ignore
+/docs export-ignore
+/tests export-ignore
+/examples export-ignore
+
+# Docker
+/docker-compose.yml export-ignore
+
+# Documentation (keep README.md but exclude others)
+/BUILD.md export-ignore
+/CONTRIBUTING.md export-ignore
+/DEPENDENCIES_BUNDLING.md export-ignore
+/DOCUMENTATION.md export-ignore
+/GMAIL_OAUTH_FIX_SUMMARY.md export-ignore
+/SECURITY.md export-ignore
+/WPCODE_QUICK_START.md export-ignore
+/CHANGELOG.md export-ignore
+/tool-status.txt export-ignore
+
+# Build artifacts and cache
+/.phpunit.result.cache export-ignore
+/coverage export-ignore
+
+# ====================
+# Line ending normalization
+# ====================
+# Ensure consistent line endings across platforms
+
+# Auto-detect text files and normalize to LF
+* text=auto
+
+# Force LF for these files
+*.php text eol=lf
+*.js text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+
+# Force LF for vendor PHP files to ensure consistency
+vendor/**/*.php text eol=lf
+
+# ====================
+# Binary files
+# ====================
+# Declare files that are binary and should not be modified
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.mov binary
+*.mp4 binary
+*.mp3 binary
+*.flv binary
+*.fla binary
+*.swf binary
+*.gz binary
+*.zip binary
+*.7z binary
+*.ttf binary
+*.eot binary
+*.woff binary
+*.woff2 binary
+*.node binary
+*.so binary
+*.dll binary
+*.dylib binary
+
+# ====================
+# Language statistics
+# ====================
+# Configure how GitHub calculates repository language percentages
+
+# Vendor directories should not be counted in language statistics
+vendor/* linguist-vendored
+node_modules/* linguist-vendored
+addons/pro/node_modules/* linguist-vendored
+addons/pro/assets/vendor/* linguist-vendored
+assets/js/vendor/* linguist-vendored
+
+# Documentation
+*.md linguist-documentation
+
+# Generated files
+*.min.js linguist-generated
+*.min.css linguist-generated
+*-bundle.js linguist-generated
+*-bundle.min.js linguist-generated
+
+# ====================
+# Diff settings
+# ====================
+# Configure how git shows diffs for specific file types
+
+*.php diff=php
+*.css diff=css
+*.html diff=html
+
+# Treat composer.lock and package-lock.json as binary
+# (they should not show line-by-line diffs)
+composer.lock -diff
+package-lock.json -diff
+
+# ====================
+# Merge settings
+# ====================
+# Configure merge behavior for specific files
+
+# Never merge these files, always take one side
+composer.lock merge=binary
+package-lock.json merge=binary
