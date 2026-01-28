@@ -294,9 +294,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 */
 	protected function enqueue_action_script() {
 		?>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
-		?>
 		<script>
 		(function($) {
 			$(document).ready(function() {
@@ -315,9 +313,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 			});
 		})(jQuery);
 		</script>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
-		?>
 		<style>
 		.wp-mcp-ai-recommendations {
 			padding: 20px;

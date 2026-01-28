@@ -304,9 +304,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	 */
 	protected function enqueue_details_modal_script() {
 		?>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
-		?>
 		<script>
 		(function($) {
 			$(document).ready(function() {
@@ -320,9 +318,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 			});
 		})(jQuery);
 		</script>
-		<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
-		?>
 		<style>
 		.wp-mcp-ai-test-results {
 			padding: 20px;
