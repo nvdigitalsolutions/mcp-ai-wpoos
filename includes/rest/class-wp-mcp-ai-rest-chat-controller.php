@@ -230,7 +230,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
 						'user_id'      => array(
 							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'mcp-ai-wpoos' ),
@@ -255,7 +255,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
 					),
 				),
@@ -379,11 +379,41 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
+	 * Get or initialize the validator instance.
+	 *
+	 * This method ensures the validator is available at runtime.
+	 * The validator should always be initialized via the parent constructor,
+	 * but this provides a defensive fallback for edge cases where the
+	 * validator might not be set (e.g., during unit tests or if the
+	 * constructor chain is broken).
+	 *
+	 * @return WP_MCP_AI_REST_Validator The validator instance.
+	 */
+	private function get_validator() {
+		// Return existing validator if available.
+		if ( $this->validator ) {
+			return $this->validator;
+		}
+
+		// Try to get from container.
+		$container = wp_mcp_ai_container();
+		if ( $container ) {
+			$this->validator = $container->get( 'rest.validator' );
+		}
+
+		// Final fallback: create new instance.
+		if ( ! $this->validator ) {
+			$this->validator = new WP_MCP_AI_REST_Validator();
+		}
+
+		return $this->validator;
+	}
+
+	/**
 	 * Wrapper for messages array validation.
 	 *
-	 * This wrapper method ensures the validator is available at runtime,
-	 * not just at route registration time. This prevents issues where
-	 * $this->validator might be null when register_routes() is called.
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
 	 *
 	 * @param mixed           $value   The value to validate.
 	 * @param WP_REST_Request $request The REST request object.
@@ -391,30 +421,14 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error True if valid, WP_Error otherwise.
 	 */
 	public function validate_messages_array_wrapper( $value, $request, $param ) {
-		// Ensure validator is available.
-		if ( ! $this->validator ) {
-			// If validator is somehow null, try to get it from container.
-			$container = wp_mcp_ai_container();
-			if ( $container && method_exists( $container, 'get' ) ) {
-				$this->validator = $container->get( 'rest.validator' );
-			}
-
-			// If still null, create a new instance as fallback.
-			if ( ! $this->validator ) {
-				$this->validator = new WP_MCP_AI_REST_Validator();
-			}
-		}
-
-		// Delegate to the validator's method.
-		return $this->validator->validate_messages_array( $value, $request, $param );
+		return $this->get_validator()->validate_messages_array( $value, $request, $param );
 	}
 
 	/**
 	 * Wrapper for attachments array validation.
 	 *
-	 * This wrapper method ensures the validator is available at runtime,
-	 * not just at route registration time. This prevents issues where
-	 * $this->validator might be null when register_routes() is called.
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
 	 *
 	 * @param mixed           $value   The value to validate.
 	 * @param WP_REST_Request $request The REST request object.
@@ -422,22 +436,20 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	 * @return bool|WP_Error True if valid, WP_Error otherwise.
 	 */
 	public function validate_attachments_array_wrapper( $value, $request, $param ) {
-		// Ensure validator is available.
-		if ( ! $this->validator ) {
-			// If validator is somehow null, try to get it from container.
-			$container = wp_mcp_ai_container();
-			if ( $container && method_exists( $container, 'get' ) ) {
-				$this->validator = $container->get( 'rest.validator' );
-			}
+		return $this->get_validator()->validate_attachments_array( $value, $request, $param );
+	}
 
-			// If still null, create a new instance as fallback.
-			if ( ! $this->validator ) {
-				$this->validator = new WP_MCP_AI_REST_Validator();
-			}
-		}
-
-		// Delegate to the validator's method.
-		return $this->validator->validate_attachments_array( $value, $request, $param );
+	/**
+	 * Wrapper for session key sanitization.
+	 *
+	 * This wrapper ensures sanitization happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param string $value The session key to sanitize.
+	 * @return string Sanitized session key.
+	 */
+	public function sanitize_session_key_wrapper( $value ) {
+		return $this->get_validator()->sanitize_session_key_param( $value );
 	}
 
 	/**
@@ -817,7 +829,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Get assistant_id as raw value first to check for virtual team IDs.
 		$assistant_id_raw = $request->get_param( 'assistant_id' );
-		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$session_key      = $this->get_validator()->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 		$messages         = $request->get_param( 'messages' );
 
 		// Check if this is a virtual team assistant ID.
@@ -870,7 +882,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Sanitize messages.
-		$sanitized_messages = $this->validator->sanitize_messages( $messages );
+		$sanitized_messages = $this->get_validator()->sanitize_messages( $messages );
 		if ( is_wp_error( $sanitized_messages ) ) {
 			return $sanitized_messages;
 		}
