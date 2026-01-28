@@ -29,6 +29,10 @@
 
 			// Refresh workflows button
 			$('#refresh-workflows-btn').on('click', this.loadWorkflows.bind(this));
+
+			// Workflow action buttons (delegated for dynamically created elements)
+			$(document).on('click', '.workflow-action-continue', this.handleContinueWorkflow.bind(this));
+			$(document).on('click', '.workflow-action-restart', this.handleRestartWorkflow.bind(this));
 		},
 
 		/**
@@ -211,14 +215,20 @@
 								   workflow.state === 'initialized' ? 'warning' : 'default';
 				const progress = workflow.tasks_total > 0 ? Math.round((workflow.tasks_done / workflow.tasks_total) * 100) : 0;
 				
+				// Escape all user-controllable data to prevent XSS
+				const escapedWorkflowId = OrchestrationDashboard.escapeHtml(workflow.workflow_id || '');
+				const escapedTeamId = OrchestrationDashboard.escapeHtml(workflow.team_id || '');
+				const escapedTaskType = OrchestrationDashboard.escapeHtml(workflow.task_type || 'generic');
+				const escapedState = OrchestrationDashboard.escapeHtml(workflow.state || 'unknown');
+				
 				html += '<tr>';
-				html += '<td class="workflow-id"><code>' + workflow.workflow_id + '</code>';
+				html += '<td class="workflow-id"><code>' + escapedWorkflowId + '</code>';
 				if (workflow.team_id) {
-					html += '<br><small class="description">Team: ' + workflow.team_id + '</small>';
+					html += '<br><small class="description">Team: ' + escapedTeamId + '</small>';
 				}
 				html += '</td>';
-				html += '<td class="workflow-type">' + (workflow.task_type || 'generic') + '</td>';
-				html += '<td class="workflow-state"><span class="workflow-status-badge status-' + stateClass + '">' + workflow.state + '</span></td>';
+				html += '<td class="workflow-type">' + escapedTaskType + '</td>';
+				html += '<td class="workflow-state"><span class="workflow-status-badge status-' + stateClass + '">' + escapedState + '</span></td>';
 				html += '<td class="workflow-progress">';
 				html += '<div class="progress-bar-container">';
 				html += '<div class="progress-bar" style="width: ' + progress + '%;"></div>';
@@ -231,13 +241,13 @@
 				
 				// Show appropriate actions based on state
 				if (workflow.state === 'initialized' || workflow.state === 'failed') {
-					html += '<button type="button" class="button button-small workflow-action-continue" data-workflow-id="' + workflow.workflow_id + '">';
+					html += '<button type="button" class="button button-small workflow-action-continue" data-workflow-id="' + escapedWorkflowId + '">';
 					html += '<span class="dashicons dashicons-controls-play"></span> Continue';
 					html += '</button> ';
 				}
 				
 				if (workflow.state === 'completed' || workflow.state === 'failed') {
-					html += '<button type="button" class="button button-small workflow-action-restart" data-workflow-id="' + workflow.workflow_id + '">';
+					html += '<button type="button" class="button button-small workflow-action-restart" data-workflow-id="' + escapedWorkflowId + '">';
 					html += '<span class="dashicons dashicons-update"></span> Restart';
 					html += '</button>';
 				}
@@ -370,6 +380,18 @@
 			}
 			const date = new Date(dateString);
 			return date.toLocaleString();
+		},
+
+		/**
+		 * Escape HTML to prevent XSS.
+		 *
+		 * @param {string} text Text to escape.
+		 * @return {string} Escaped text.
+		 */
+		escapeHtml: function(text) {
+			const div = document.createElement('div');
+			div.textContent = text;
+			return div.innerHTML;
 		}
 	};
 
