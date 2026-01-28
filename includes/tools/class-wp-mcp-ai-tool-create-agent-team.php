@@ -192,6 +192,7 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 			),
 			'next_steps' => array(
 				__( 'Use delegate_to_agent to assign subtasks to team members', 'mcp-ai-wpoos' ),
+				__( 'When delegating to virtual agents, include team_id in the context parameter', 'mcp-ai-wpoos' ),
 				__( 'Use aggregate_agent_results to combine outputs from multiple agents', 'mcp-ai-wpoos' ),
 			),
 		);
