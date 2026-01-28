@@ -53,6 +53,12 @@ Your capabilities:
 2. List directory contents to explore the codebase structure
 3. Write new files or update existing files to implement improvements
 
+Your discovery approach:
+1. **Explore first**: Use list and read actions to understand the codebase before making changes
+2. **Learn from patterns**: Examine similar existing implementations to understand conventions
+3. **Consult documentation**: Check docs/ directory for architecture and API references
+4. **Follow examples**: When creating new code, read existing files to match style and structure
+
 Your responsibilities:
 1. Maintain code quality and follow WordPress coding standards
 2. Add proper PHPDoc documentation for all changes
@@ -66,6 +72,14 @@ Your constraints:
 2. Never modify critical files without explicit user approval (.htaccess, wp-config.php, etc.)
 3. Always explain what you're about to change and why
 4. If uncertain, ask for clarification rather than making assumptions
+
+Discovery workflow example:
+- User asks: "Add a new tool for X"
+- You: List includes/tools/ to see existing tools
+- You: Read 1-2 similar tools to understand the pattern
+- You: Read includes/class-wp-mcp-ai-tool-registry.php to understand registration
+- You: Create the new tool following discovered patterns
+- You: Update registry to register the new tool
 
 When using the manage_files tool:
 - Use action="list" to explore directory structure
@@ -81,11 +95,74 @@ When using the manage_files tool:
 3. Review the tool description to understand its parameters
 4. Save the assistant
 
+## Codebase Discovery
+
+### Does the Agent Need to Know Everything?
+
+**No.** The Architect Agent doesn't need pre-loaded knowledge of every function, class, and tool in the codebase. Instead, it discovers the codebase structure **dynamically** and **on-demand** using the `manage_files` tool.
+
+### Discovery Process
+
+The agent follows this pattern when working with unfamiliar code:
+
+1. **Start Broad**: List directory contents to understand structure
+2. **Narrow Focus**: Read specific files related to the task
+3. **Understand Context**: Examine related files (base classes, interfaces, similar tools)
+4. **Make Changes**: Write modifications based on discovered patterns
+
+### Available Documentation
+
+The agent can access comprehensive reference documentation:
+
+- **Tool Reference** (`docs/reference/tools/tool-reference.md`): 398 tools documented with usage examples
+- **Architecture Docs** (`docs/`): 100+ documentation files covering all aspects of the plugin
+- **Code Comments**: PHPDoc blocks in all classes provide inline documentation
+- **WordPress Codex**: Agent can reference WordPress standards and APIs
+
+### Example Discovery Workflow
+
+```
+User: "Add a new tool for generating SVG diagrams"
+
+Agent Process:
+1. Lists includes/tools/ directory to see existing tool patterns
+2. Reads a similar tool (e.g., class-wp-mcp-ai-tool-generate-mermaid.php)
+3. Identifies base class and interfaces to implement
+4. Examines tool registration in includes/class-wp-mcp-ai-tool-registry.php
+5. Creates new tool following discovered patterns
+6. Registers tool in appropriate array (base_tools or pro_tools)
+```
+
+### Smart Discovery Strategies
+
+The agent learns efficiently by:
+
+- **Pattern Recognition**: One or two tool examples reveal the common structure
+- **Interface Documentation**: Reading interface files shows required methods
+- **Registry Inspection**: Understanding the tool registry reveals registration requirements
+- **Test Examination**: Looking at existing tests shows expected behavior
+- **Documentation First**: Checking docs/ before diving into implementation details
+
+### Knowledge Persistence
+
+While the agent discovers code on-demand, you can improve efficiency by:
+
+1. **Including Context**: Provide relevant file paths in your request
+   - ❌ "Add a tool" → Agent must search broadly
+   - ✅ "Add a tool like the generate_mermaid tool" → Agent knows where to look
+
+2. **Referencing Documentation**: Point to specific docs when available
+   - "See docs/reference/tools/tool-reference.md for tool standards"
+
+3. **Building Incrementally**: Each interaction builds understanding
+   - Session 1: Agent learns tool structure
+   - Session 2: Agent applies learned patterns faster
+
 ## Using the Architect Agent
 
 ### Example Workflows
 
-#### 1. Exploring the Codebase
+#### 1. Discovering Codebase Structure
 
 ```
 User: Show me the structure of the includes/tools directory
@@ -93,7 +170,15 @@ User: Show me the structure of the includes/tools directory
 Agent: [Uses manage_files with action="list", path="includes/tools"]
 ```
 
-#### 2. Reading Existing Code
+#### 2. Learning from Existing Tools
+
+```
+User: Show me how image generation tools are implemented
+
+Agent: [Lists includes/tools/, finds image tools, reads 1-2 examples to understand patterns]
+```
+
+#### 3. Reading Existing Code
 
 ```
 User: Read the manage_files tool implementation
@@ -101,7 +186,7 @@ User: Read the manage_files tool implementation
 Agent: [Uses manage_files with action="read", path="includes/tools/class-wp-mcp-ai-tool-manage-files.php"]
 ```
 
-#### 3. Creating a New File
+#### 4. Creating a New File
 
 ```
 User: Create a new tool for generating documentation
@@ -110,7 +195,7 @@ Agent: I'll create a new documentation generator tool. Let me write the file...
 [Uses manage_files with action="write", path="includes/tools/class-wp-mcp-ai-tool-generate-docs.php", content="<?php..."]
 ```
 
-#### 4. Modifying Existing Code
+#### 5. Modifying Existing Code
 
 ```
 User: Add input validation to the search_content tool
