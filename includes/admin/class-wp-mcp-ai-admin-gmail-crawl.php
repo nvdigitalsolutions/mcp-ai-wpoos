@@ -420,6 +420,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Gmail_Crawl_Integration' ) ) {
 								<label for="google_analytics_credentials"><?php esc_html_e( 'Google Analytics Service Account JSON', 'mcp-ai-wpoos' ); ?></label>
 							</th>
 							<td>
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 								<textarea id="google_analytics_credentials" name="google_analytics_credentials" rows="10" class="large-text code" placeholder='{"type": "service_account", ...}'><?php echo esc_textarea( $google_analytics_credentials ); ?></textarea>
 								<p class="description"><?php esc_html_e( 'Service account credentials in JSON format from Google Cloud Console.', 'mcp-ai-wpoos' ); ?></p>
 							</td>

@@ -254,6 +254,7 @@ class WP_MCP_AI_Metabox_Mesh_Routing extends WP_MCP_AI_Metabox_Base {
 
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				var peerOptions = <?php echo wp_json_encode( array_column( $peer_sites, 'name' ) ); ?>;
 
 				$('#wp-mcp-ai-add-preferred-peer').on('click', function() {

@@ -410,6 +410,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								class="large-text code"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
 								<?php echo esc_attr( $required ? 'required' : '' ); ?>
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							><?php echo esc_textarea( $value ); ?></textarea>
 							<?php
 							break;

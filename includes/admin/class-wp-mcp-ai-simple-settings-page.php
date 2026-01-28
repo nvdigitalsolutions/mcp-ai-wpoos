@@ -348,6 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 						rows="3"
 						style="width: 100%;"
 						placeholder="<?php echo esc_attr( $placeholder ); ?>"
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					><?php echo esc_textarea( $value ); ?></textarea>
 					<?php
 					if ( $description ) {

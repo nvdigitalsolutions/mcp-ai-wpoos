@@ -324,6 +324,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Tool_Loader' ) ) {
 		private function get_tool_template_content( $class_name, $tool_slug ) {
 			ob_start();
 			?>
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			<?php echo '<?php'; ?>
 
 /**

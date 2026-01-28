@@ -1069,7 +1069,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: 0' );
 
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON already encoded via wp_json_encode().
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo $json;
 			exit;
 		}

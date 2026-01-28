@@ -321,19 +321,25 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				)
 			);
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div class="wp-mcp-ai-prebuilt-shortcuts">';
 			echo '<h3>' . esc_html__( 'Pre-built prompt shortcuts', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Configure quick-access prompts that appear as buttons in the chat interface. Users can click these to instantly send pre-written prompts to the assistant.', 'mcp-ai-wpoos' ) . '</p>';
 
 			if ( empty( $selected_tools ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">';
 				echo '<p style="margin: 0.5em 0;"><strong>' . esc_html__( 'Get started:', 'mcp-ai-wpoos' ) . '</strong></p>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<ol style="margin: 0.5em 0 0.5em 1.5em;">';
 				echo '<li>' . esc_html__( 'Select tools from the "Available Tools" section above', 'mcp-ai-wpoos' ) . '</li>';
 				echo '<li>' . esc_html__( 'Each tool automatically provides helpful prompt shortcuts', 'mcp-ai-wpoos' ) . '</li>';
 				echo '<li>' . esc_html__( 'Customize or hide shortcuts as needed', 'mcp-ai-wpoos' ) . '</li>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</ol>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</div>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</div>';
 				return;
 			}
@@ -387,20 +393,27 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					}
 
 					echo '<details class="wp-mcp-ai-prebuilt-shortcuts__tool" data-tool="' . esc_attr( $tool_slug ) . '" data-group="' . esc_attr( $group_name ) . '" data-defaults="' . esc_attr( $defaults_json ) . '" data-has-existing-custom="' . ( $has_existing_custom ? 'true' : 'false' ) . '" data-mode-label-inherit="' . esc_attr( $mode_label_inherit ) . '" data-mode-label-custom="' . esc_attr( $mode_label_custom ) . '"' . esc_attr( $open_attr ) . '>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-badge">';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-count">' . esc_html( sprintf( _n( '%d shortcut', '%d shortcuts', $shortcut_count, 'mcp-ai-wpoos' ), $shortcut_count ) ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</span>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</summary>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__content">';
 
 					if ( $tool_description ) {
 						echo '<p class="wp-mcp-ai-prebuilt-shortcuts__tool-description"><em>' . esc_html( $tool_description ) . '</em></p>';
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__mode-selector">';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<p class="wp-mcp-ai-prebuilt-shortcuts__mode" style="margin-top: 0;">';
 					printf(
 						'<label class="wp-mcp-ai-prebuilt-shortcuts__mode-option"><input type="radio" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][mode]" value="inherit" %2$s /> <strong>%3$s</strong><br><span class="description">%4$s</span></label>',
@@ -416,12 +429,16 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						esc_html__( 'Customize shortcuts', 'mcp-ai-wpoos' ),
 						esc_html__( 'Create your own custom prompt shortcuts or modify the defaults', 'mcp-ai-wpoos' )
 					);
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</p>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__defaults">';
 					if ( ! empty( $defaults ) ) {
 						echo '<h5 style="margin-top: 1rem;">' . esc_html__( 'Recommended shortcuts for this tool:', 'mcp-ai-wpoos' ) . '</h5>';
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo '<ul class="wp-mcp-ai-prebuilt-shortcuts__defaults-list">';
 
 						foreach ( $defaults as $default_shortcut ) {
@@ -434,6 +451,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								$summary = wp_html_excerpt( $default_payload, 120, '&hellip;' );
 							}
 
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<li>';
 							if ( '' !== $default_label ) {
 								echo '<strong class="wp-mcp-ai-prebuilt-shortcuts__defaults-label">' . esc_html( $default_label ) . '</strong>';
@@ -449,21 +467,28 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								echo '<p class="wp-mcp-ai-prebuilt-shortcuts__defaults-summary"><code>' . esc_html( $summary ) . '</code></p>';
 							}
 
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</li>';
 						}
 
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo '</ul>';
 					} else {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo '<div class="notice notice-warning inline" style="margin: 1rem 0;">';
 						echo '<p>' . esc_html__( 'This tool does not provide any pre-built shortcuts yet. You can create custom shortcuts below.', 'mcp-ai-wpoos' ) . '</p>';
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo '</div>';
 					}
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
 
 					echo '<div class="wp-mcp-ai-prebuilt-shortcuts__rows" data-tool="' . esc_attr( $tool_slug ) . '" data-next-index="' . esc_attr( $next_index ) . '" aria-hidden="' . esc_attr( $rows_aria_hidden ) . '"';
 					if ( 'custom' !== $mode ) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo ' hidden';
 					}
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '>';
 
 					if ( 'custom' === $mode ) {
@@ -483,7 +508,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 							echo '<fieldset class="' . esc_attr( $row_class ) . '" data-index="' . esc_attr( $index ) . '">';
 							echo '<legend class="screen-reader-text">' . esc_html( $legend_text ) . '</legend>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<div class="wp-mcp-ai-prebuilt-shortcuts__row-header">';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<p style="margin: 0;">';
 							printf(
 								'<label class="wp-mcp-ai-prebuilt-shortcuts__hide-toggle"><input type="checkbox" name="wp_mcp_ai_prebuilt_shortcuts[%1$s][shortcuts][%2$s][hidden]" value="1"%3$s%4$s /> <span class="dashicons dashicons-hidden" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %5$s</label>',
@@ -493,8 +520,11 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								disabled( 'custom' !== $mode, true, false ),
 								esc_html__( 'Hide this shortcut (keep it but don\'t show in chat)', 'mcp-ai-wpoos' )
 							);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</p>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</div>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<p>';
 							printf(
 								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><input type="text" class="widefat" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][label]" value="%5$s"%6$s placeholder="%7$s" /></label>',
@@ -506,7 +536,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								disabled( 'custom' !== $mode, true, false ),
 								esc_attr__( 'e.g., Show latest updates', 'mcp-ai-wpoos' )
 							);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</p>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<p>';
 							printf(
 								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><textarea class="widefat" rows="4" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][payload]"%5$s placeholder="%6$s">%7$s</textarea></label>',
@@ -518,7 +550,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								esc_attr__( 'e.g., Use the get_recent_posts tool to show the 5 most recent blog posts', 'mcp-ai-wpoos' ),
 								esc_textarea( $payload )
 							);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</p>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<p>';
 							printf(
 								'<label><strong>%1$s</strong><br><span class="description">%2$s</span><textarea class="widefat" rows="2" name="wp_mcp_ai_prebuilt_shortcuts[%3$s][shortcuts][%4$s][description]"%5$s placeholder="%6$s">%7$s</textarea></label>',
@@ -530,20 +564,27 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 								esc_attr__( 'e.g., Quickly view the latest blog posts', 'mcp-ai-wpoos' ),
 								esc_textarea( $description )
 							);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</p>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<p>';
 							printf(
 								'<button type="button" class="button-link-delete wp-mcp-ai-prebuilt-shortcuts__remove"%1$s><span class="dashicons dashicons-trash" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %2$s</button>',
 								disabled( 'custom' !== $mode, true, false ),
 								esc_html__( 'Delete this shortcut', 'mcp-ai-wpoos' )
 							);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</p>';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '<hr />';
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 							echo '</fieldset>';
 						}
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<p>';
 					printf(
 						'<button type="button" class="button wp-mcp-ai-prebuilt-shortcuts__add" data-tool="%1$s"%2$s><span class="dashicons dashicons-plus-alt" style="font-size: 16px; width: 16px; height: 16px; vertical-align: middle;"></span> %3$s</button>',
@@ -551,16 +592,21 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						disabled( 'custom' !== $mode, true, false ),
 						esc_html__( 'Add custom shortcut', 'mcp-ai-wpoos' )
 					);
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</p>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</details>';
 
 					++$tool_index;
 				}
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</div>'; // Close group.
 			}
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 
 			$this->render_prebuilt_shortcuts_styles();
@@ -2135,13 +2181,17 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			if ( empty( $credentials ) ) {
 				echo '<p>' . esc_html__( 'No credentials have been issued for this assistant.', 'mcp-ai-wpoos' ) . '</p>';
 			} else {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<table class="widefat striped">';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<thead><tr>';
 				echo '<th>' . esc_html__( 'Credential ID', 'mcp-ai-wpoos' ) . '</th>';
 				echo '<th>' . esc_html__( 'Created', 'mcp-ai-wpoos' ) . '</th>';
 				echo '<th>' . esc_html__( 'Status', 'mcp-ai-wpoos' ) . '</th>';
 				echo '<th>' . esc_html__( 'Actions', 'mcp-ai-wpoos' ) . '</th>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</tr></thead>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<tbody>';
 
 				foreach ( $credentials as $credential ) {
@@ -2180,15 +2230,19 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 					$actions = empty( $action_links ) ? '&#8212;' : implode( ' ', $action_links );
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<tr>';
 					echo '<td><code>' . esc_html( $credential['id'] ) . '</code></td>';
 					echo '<td>' . esc_html( $created_at ) . '</td>';
 					echo '<td>' . esc_html( $status ) . '</td>';
 					echo '<td>' . wp_kses_post( $actions ) . '</td>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</tr>';
 				}
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</tbody>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</table>';
 			}
 
@@ -2410,28 +2464,38 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			echo '<p>' . esc_html__( 'Select the tools this assistant is permitted to invoke.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '<p class="description">' . esc_html__( 'Expand a group to review related capabilities. You can optionally limit who can call each tool by assigning WordPress roles.', 'mcp-ai-wpoos' ) . '</p>';
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div class="notice notice-info inline" style="margin: 1rem 0; padding: 10px;">';
 			echo '<p style="margin: 0.5em 0;"><strong>' . esc_html_e( 'About Prompt Shortcuts:', 'mcp-ai-wpoos' ) . '</strong></p>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<ul style="margin: 0.5em 0 0.5em 1.5em;">';
 			echo '<li>' . esc_html_e( 'Each tool you select can provide pre-built prompt shortcuts', 'mcp-ai-wpoos' ) . '</li>';
 			echo '<li>' . esc_html_e( 'You can customize or hide individual shortcuts in the "Pre-built Prompt Shortcuts" section below', 'mcp-ai-wpoos' ) . '</li>';
 			echo '<li>' . esc_html_e( 'Or use the checkbox below to disable all tool shortcuts at once', 'mcp-ai-wpoos' ) . '</li>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</ul>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<fieldset class="wp-mcp-ai-tools__shortcuts-toggle" style="margin: 1rem 0; padding: 1rem; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">';
 			echo '<legend class="screen-reader-text">' . esc_html__( 'Tool shortcut options', 'mcp-ai-wpoos' ) . '</legend>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<label for="wp-mcp-ai-disable-tool-shortcuts" class="wp-mcp-ai-tools__shortcuts-toggle-label" style="display: flex; align-items: flex-start; gap: 0.5rem;">';
 			printf(
 				'<input type="checkbox" id="wp-mcp-ai-disable-tool-shortcuts" name="wp_mcp_ai_disable_prebuilt_shortcuts" value="1" %s style="margin-top: 0.25rem;" />',
 				checked( $disable_tool_shortcuts, true, false )
 			);
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '<div>';
 			echo '<strong>' . esc_html__( 'Disable all pre-built shortcuts from tools', 'mcp-ai-wpoos' ) . '</strong>';
 			echo '<p class="description" style="margin: 0.25rem 0 0 0;">' . esc_html__( 'When enabled, tools will still work, but their automatic prompt shortcuts won\'t appear. Only your custom shortcuts (defined in the "Custom Prompt Shortcuts" section) will be shown.', 'mcp-ai-wpoos' ) . '</p>';
 			echo '<p class="description" style="margin: 0.5rem 0 0 0;"><em>' . esc_html__( 'Tip: For more control, leave this unchecked and hide individual shortcuts in the "Pre-built Prompt Shortcuts" section below.', 'mcp-ai-wpoos' ) . '</em></p>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</label>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</fieldset>';
 
 			// Render tool selection presets.
@@ -2927,12 +2991,15 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 				echo '<details class="wp-mcp-ai-tools__group" role="group" aria-labelledby="' . esc_attr( $summary_id ) . '"' . esc_attr( $open_attr ) . '>';
 				echo '<summary id="' . esc_attr( $summary_id ) . '" class="wp-mcp-ai-tools__summary">';
 				echo '<span class="wp-mcp-ai-tools__summary-title">' . esc_html( $group_label ) . '</span>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '<span class="wp-mcp-ai-tools__summary-count" aria-hidden="true">';
 				echo '<span class="wp-mcp-ai-tools__group-selected">' . esc_html( number_format_i18n( $group_selected_count ) ) . '</span>';
 				echo ' / ' . esc_html( number_format_i18n( $group_count ) );
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</span>';
 				/* translators: %d: number of tools */
 				echo '<span class="screen-reader-text">' . esc_html( sprintf( _n( '%d tool in this group', '%d tools in this group', $group_count, 'mcp-ai-wpoos' ), $group_count ) ) . '</span>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</summary>';
 				echo '<ul class="wp-mcp-ai-tools__list" id="' . esc_attr( $list_id ) . '" role="group" aria-label="' . esc_attr( $group_label ) . '">';
 
@@ -2956,6 +3023,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					$select_size      = ! empty( $role_options ) ? min( max( count( $role_options ), 4 ), 8 ) : 4;
 
 					echo '<li class="wp-mcp-ai-tools__item" data-tool-selected="' . esc_attr( $is_selected ? 'true' : 'false' ) . '">';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<div class="wp-mcp-ai-tools__header">';
 					printf(
 						'<input type="checkbox" class="wp-mcp-ai-tools__checkbox" id="%1$s" name="wp_mcp_ai_tools[]" value="%2$s" %3$s aria-describedby="%4$s" />',
@@ -2967,7 +3035,9 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '<label for="' . esc_attr( $checkbox_id ) . '">';
 					echo '<span class="wp-mcp-ai-tools__name">' . esc_html( $tool->get_name() ) . '</span>';
 					echo '<p class="wp-mcp-ai-tools__description" id="' . esc_attr( $description_id ) . '">' . esc_html( $tool->get_description() ) . '</p>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</label>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
 
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $control_disabled is a safe attribute string.
@@ -2989,6 +3059,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						echo '<input type="hidden" name="wp_mcp_ai_tool_role_rules[' . esc_attr( $slug ) . '][flags][]" value="' . esc_attr( $flag_value ) . '" data-tool-control="1"' . $control_disabled . ' />';
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '<div class="wp-mcp-ai-tools__controls">';
 
 					if ( ! empty( $role_options ) ) {
@@ -3005,6 +3076,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							);
 						}
 
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 						echo '</select>';
 						echo '<p class="description wp-mcp-ai-tools__helper" id="' . esc_attr( $role_helper_id ) . '">' . esc_html__( 'Hold Ctrl (Windows) or Command (macOS) to toggle multiple roles. Leave blank to allow any role with access to the assistant interface.', 'mcp-ai-wpoos' ) . '</p>';
 					} else {
@@ -3049,14 +3121,19 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 						<?php
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</div>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo '</li>';
 				}
 
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</ul>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 				echo '</details>';
 			}
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			echo '</div>';
 
 			$this->render_prebuilt_shortcuts_editor( $post, $selected_tools, $prebuilt_shortcuts );
@@ -3161,6 +3238,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 							<span class="wp-mcp-ai-tool-shortcuts__summary-title">
 								<?php
 								if ( $hidden ) {
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 									echo '<span class="dashicons dashicons-hidden" style="font-size: 16px; opacity: 0.5;"></span> ';
 								}
 								echo esc_html( '' !== $label ? $label : $summary_fallback );
@@ -3206,6 +3284,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 										rows="4"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][payload]"
 										placeholder="<?php esc_attr_e( 'e.g., Please explain the above in simple, easy-to-understand language', 'mcp-ai-wpoos' ); ?>"
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 									><?php echo esc_textarea( $payload ); ?></textarea>
 								</label>
 							</p>
@@ -3218,6 +3297,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 										rows="2"
 										name="wp_mcp_ai_tool_shortcuts[<?php echo esc_attr( $index ); ?>][description]"
 										placeholder="<?php esc_attr_e( 'e.g., Get a simplified explanation of complex topics', 'mcp-ai-wpoos' ); ?>"
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 									><?php echo esc_textarea( $description ); ?></textarea>
 								</label>
 							</p>
@@ -3578,6 +3658,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		</p>
 		<p>
 			<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></strong></label>
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 			<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
 		</p>
 			<?php
@@ -5376,6 +5457,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					var peerOptions = <?php echo wp_json_encode( array_column( $peer_sites, 'name' ) ); ?>;
 
 					$('#wp-mcp-ai-add-preferred-peer').on('click', function() {

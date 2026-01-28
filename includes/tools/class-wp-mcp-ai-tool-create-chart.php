@@ -555,7 +555,9 @@ class WP_MCP_AI_Tool_Create_Chart implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 					setTimeout(initChart, 50);
 					return;
 				}
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				const ctx = document.getElementById(<?php echo wp_json_encode( $chart_id ); ?>).getContext('2d');
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				const chartConfig = <?php echo wp_json_encode( json_decode( $config_json, true ) ); ?>;
 				new Chart(ctx, chartConfig);
 			}

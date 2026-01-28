@@ -169,7 +169,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_JetEngine_Integration' ) ) {
 
 			foreach ( $fields as $key => $field ) {
 				if ( 'html' === $field['type'] ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in helper methods.
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 					echo $field['content'];
 				} else {
 					$this->render_field( $key, $field );

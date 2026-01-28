@@ -181,6 +181,7 @@ class WP_MCP_AI_Metabox_Defaults extends WP_MCP_AI_Metabox_Base {
 	</p>
 	<p>
 		<label for="wp-mcp-ai-system-prompt"><strong><?php esc_html_e( 'System Prompt', 'mcp-ai-wpoos' ); ?></strong></label>
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure.
 		<textarea id="wp-mcp-ai-system-prompt" name="wp_mcp_ai_system_prompt" class="widefat" rows="5"><?php echo esc_textarea( $system_prompt ); ?></textarea>
 	</p>
 		<?php

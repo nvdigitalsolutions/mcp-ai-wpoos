@@ -714,6 +714,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_reseed_professions',
 								action_type: actionType,
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_reseed_professions' ) ); ?>
 							},
 							success: function(response) {
@@ -732,6 +733,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -740,6 +742,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -755,6 +758,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-update-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will update existing professions and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performReseed('update', '#wp-mcp-ai-reseed-update-btn');
 						}
@@ -762,6 +766,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-replace-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing professions and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performReseed('replace', '#wp-mcp-ai-reseed-replace-btn');
 						}
@@ -912,6 +917,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_seed_orchestration',
 								force: force,
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_seed_orchestration' ) ); ?>
 							},
 							success: function(response) {
@@ -930,6 +936,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -938,6 +945,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -953,6 +961,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-seed-orchestration-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will assign agent roles to all professions based on their category and expertise. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performOrchestrationSeed(false, '#wp-mcp-ai-seed-orchestration-btn');
 						}
@@ -960,6 +969,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-seed-orchestration-force-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will overwrite all existing orchestration settings. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performOrchestrationSeed(true, '#wp-mcp-ai-seed-orchestration-force-btn');
 						}
@@ -1069,6 +1079,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_reseed_teams',
 								action_type: actionType,
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_reseed_teams' ) ); ?>
 							},
 							success: function(response) {
@@ -1087,6 +1098,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -1095,6 +1107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -1110,6 +1123,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-teams-update-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will update existing teams and add new ones from the knowledge base. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTeamReseed('update', '#wp-mcp-ai-reseed-teams-update-btn');
 						}
@@ -1117,6 +1131,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-reseed-teams-replace-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will DELETE all existing teams and replace them with fresh data from the knowledge base. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTeamReseed('replace', '#wp-mcp-ai-reseed-teams-replace-btn');
 						}
@@ -1280,6 +1295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_seed_task_templates',
 								overwrite: overwrite,
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_seed_task_templates' ) ); ?>
 							},
 							success: function(response) {
@@ -1298,6 +1314,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -1306,6 +1323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -1321,6 +1339,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-seed-templates-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will seed the task template library with pre-built professional templates. Existing templates will not be modified. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTemplateSeed(false, '#wp-mcp-ai-seed-templates-btn');
 						}
@@ -1328,6 +1347,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-seed-templates-overwrite-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will update existing templates with the latest versions from the library. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performTemplateSeed(true, '#wp-mcp-ai-seed-templates-overwrite-btn');
 						}
@@ -1421,6 +1441,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_migrate_gemini_costs',
 								action_type: actionType,
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_migrate_gemini_costs' ) ); ?>
 							},
 							success: function(response) {
@@ -1441,6 +1462,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									// If actual migration was successful, offer to reload.
 									if (!response.data.dry_run && response.data.records_updated > 0) {
 										setTimeout(function() {
+											// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 											if (confirm(<?php echo wp_json_encode( __( 'Migration completed successfully! Would you like to reload the page to see updated statistics?', 'mcp-ai-wpoos' ) ); ?>)) {
 												location.reload();
 											}
@@ -1450,6 +1472,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning notice-info')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -1458,6 +1481,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning notice-info')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -1478,6 +1502,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-migrate-gemini-run-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will update historical cost tracking data to fix Gemini provider attribution. This cannot be undone, but you can preview the changes first. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							performGeminiMigration('migrate', '#wp-mcp-ai-migrate-gemini-run-btn');
 						}
@@ -1508,6 +1533,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							data: {
 								action: 'wp_mcp_ai_sync_all_playbooks',
 								force: force ? 'true' : 'false',
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_sync_all_playbooks' ) ); ?>
 							},
 							success: function(response) {
@@ -1526,6 +1552,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -1534,6 +1561,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -1554,6 +1582,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-sync-playbooks-force-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'This will force regenerate all profession playbooks even if unchanged. This may take a moment. Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							syncPlaybooks(true);
 						}
@@ -1561,6 +1590,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 					$('#wp-mcp-ai-delete-old-playbooks-btn').on('click', function(e) {
 						e.preventDefault();
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						if (confirm(<?php echo wp_json_encode( __( 'WARNING: This will permanently delete all orphaned playbook attachments from the media library. This cannot be undone! Continue?', 'mcp-ai-wpoos' ) ); ?>)) {
 							deleteOldPlaybooks();
 						}
@@ -1587,6 +1617,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							type: 'POST',
 							data: {
 								action: 'wp_mcp_ai_delete_old_playbooks',
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								nonce: <?php echo wp_json_encode( wp_create_nonce( 'wp_mcp_ai_delete_old_playbooks' ) ); ?>
 							},
 							success: function(response) {
@@ -1605,6 +1636,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									$message
 										.removeClass('notice-success notice-warning')
 										.addClass('notice-error')
+										// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 										.find('p').html(response.data.message || <?php echo wp_json_encode( __( 'An error occurred.', 'mcp-ai-wpoos' ) ); ?>);
 									$message.show();
 								}
@@ -1613,6 +1645,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$message
 									.removeClass('notice-success notice-warning')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').html(<?php echo wp_json_encode( __( 'AJAX error: ', 'mcp-ai-wpoos' ) ); ?> + error);
 								$message.show();
 							},
@@ -1839,6 +1872,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 				const nonce = <?php echo wp_json_encode( wp_create_nonce( 'wp-mcp-ai-dashboard' ) ); ?>;
 
 				// Enable import button when file is selected.
@@ -1855,10 +1889,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				$('#wp-mcp-ai-import-settings').on('click', function() {
 					const fileInput = document.getElementById('wp-mcp-ai-import-file');
 					if (!fileInput.files.length) {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						alert(<?php echo wp_json_encode( __( 'Please select a JSON file to import.', 'mcp-ai-wpoos' ) ); ?>);
 						return;
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					if (!confirm(<?php echo wp_json_encode( __( 'Import settings from file? Your current settings will be backed up first.', 'mcp-ai-wpoos' ) ); ?>)) {
 						return;
 					}
@@ -1868,6 +1904,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					formData.append('nonce', nonce);
 					formData.append('settings_file', fileInput.files[0]);
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Importing...', 'mcp-ai-wpoos' ) ); ?>);
 
 					$.ajax({
@@ -1890,13 +1927,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								$('#wp-mcp-ai-settings-management-message')
 									.removeClass('notice-success')
 									.addClass('notice-error')
+									// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 									.find('p').text(response.data.message || <?php echo wp_json_encode( __( 'Import failed.', 'mcp-ai-wpoos' ) ); ?>);
 								$('#wp-mcp-ai-settings-management-message').slideDown();
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 								$('#wp-mcp-ai-import-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Upload & Import', 'mcp-ai-wpoos' ) ); ?>);
 							}
 						},
 						error: function() {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							alert(<?php echo wp_json_encode( __( 'AJAX error occurred.', 'mcp-ai-wpoos' ) ); ?>);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							$('#wp-mcp-ai-import-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Upload & Import', 'mcp-ai-wpoos' ) ); ?>);
 						}
 					});
@@ -1904,10 +1945,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 				// Clear cache.
 				$('#wp-mcp-ai-clear-cache').on('click', function() {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					if (!confirm(<?php echo wp_json_encode( __( 'Clear all settings caches?', 'mcp-ai-wpoos' ) ); ?>)) {
 						return;
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Clearing...', 'mcp-ai-wpoos' ) ); ?>);
 
 					$.post(ajaxurl, {
@@ -1921,18 +1964,22 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								.find('p').text(response.data.message);
 							$('#wp-mcp-ai-settings-management-message').slideDown();
 						} else {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							alert(response.data.message || <?php echo wp_json_encode( __( 'Failed to clear cache.', 'mcp-ai-wpoos' ) ); ?>);
 						}
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						$('#wp-mcp-ai-clear-cache').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Clear All Caches', 'mcp-ai-wpoos' ) ); ?>);
 					});
 				});
 
 				// Reset settings.
 				$('#wp-mcp-ai-reset-settings').on('click', function() {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					if (!confirm(<?php echo wp_json_encode( __( 'Reset ALL settings to defaults? This cannot be undone! (Current settings will be backed up)', 'mcp-ai-wpoos' ) ); ?>)) {
 						return;
 					}
 
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Resetting...', 'mcp-ai-wpoos' ) ); ?>);
 
 					$.post(ajaxurl, {
@@ -1949,7 +1996,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								window.location.reload();
 							}, 2000);
 						} else {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							alert(response.data.message || <?php echo wp_json_encode( __( 'Failed to reset settings.', 'mcp-ai-wpoos' ) ); ?>);
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							$('#wp-mcp-ai-reset-settings').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Reset All Settings', 'mcp-ai-wpoos' ) ); ?>);
 						}
 					});
@@ -1957,6 +2006,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 				// Check settings health.
 				$('#wp-mcp-ai-check-settings-health').on('click', function() {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 					$(this).prop('disabled', true).text(<?php echo wp_json_encode( __( 'Checking...', 'mcp-ai-wpoos' ) ); ?>);
 
 					$.post(ajaxurl, {
@@ -1992,8 +2042,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 							$('#wp-mcp-ai-settings-health-status').html(statusHtml);
 						} else {
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 							$('#wp-mcp-ai-settings-health-status').html('<p class="notice notice-error inline">' + (response.data.message || <?php echo wp_json_encode( __( 'Health check failed.', 'mcp-ai-wpoos' ) ); ?>) + '</p>');
 						}
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON encoded via wp_json_encode().
 						$('#wp-mcp-ai-check-settings-health').prop('disabled', false).text(<?php echo wp_json_encode( __( 'Check Settings Health', 'mcp-ai-wpoos' ) ); ?>);
 					});
 				});
