@@ -124,6 +124,27 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 		$task_context    = isset( $arguments['context'] ) ? $arguments['context'] : array();
 		$expected_output = isset( $arguments['expected_output'] ) ? $arguments['expected_output'] : array();
 
+		// Merge execution context with task context to preserve team_id and other workflow data.
+		// This ensures virtual agents can be resolved properly.
+		$merged_context = array_merge( $task_context, array_filter( array(
+			'team_id'      => isset( $context['team_id'] ) ? $context['team_id'] : null,
+			'workflow_id'  => isset( $context['workflow_id'] ) ? $context['workflow_id'] : null,
+			'assistant_id' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
+		) ) );
+
+		// Log delegation attempt for debugging.
+		WP_MCP_AI_Logger::log_event(
+			'agent_delegation_initiated',
+			'Task delegation requested',
+			array(
+				'agent_id'    => $agent_id,
+				'is_virtual'  => is_string( $agent_id ) && 0 === strpos( $agent_id, 'virtual_' ),
+				'team_id'     => isset( $merged_context['team_id'] ) ? $merged_context['team_id'] : 'none',
+				'workflow_id' => isset( $merged_context['workflow_id'] ) ? $merged_context['workflow_id'] : 'none',
+				'task'        => substr( $task, 0, 100 ) . ( strlen( $task ) > 100 ? '...' : '' ),
+			)
+		);
+
 		// Get communication service.
 		if ( ! class_exists( 'WP_MCP_AI_Agent_Communication_Service' ) ) {
 			return array(
@@ -137,27 +158,51 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 		// Prepare task data.
 		$task_data = array(
 			'description'     => $task,
-			'context'         => $task_context,
+			'context'         => $merged_context,
 			'expected_output' => $expected_output,
 			'delegated_by'    => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
 			'delegated_at'    => current_time( 'mysql' ),
 		);
 
-		// Delegate task.
+		// Delegate task, passing merged context so virtual agents can be resolved.
 		$result = $communication_service->delegate_task(
 			isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
 			$agent_id,
 			$task_data,
-			$task_context
+			$merged_context
 		);
 
 		if ( is_wp_error( $result ) ) {
+			// Log delegation failure.
+			WP_MCP_AI_Logger::log_error(
+				'agent_delegation_failed',
+				'Agent delegation encountered an error',
+				array(
+					'agent_id'    => $agent_id,
+					'error_code'  => $result->get_error_code(),
+					'error_msg'   => $result->get_error_message(),
+					'team_id'     => isset( $merged_context['team_id'] ) ? $merged_context['team_id'] : 'none',
+				)
+			);
+
 			return array(
 				'success' => false,
 				'message' => $result->get_error_message(),
 				'code'    => $result->get_error_code(),
 			);
 		}
+
+		// Log successful delegation.
+		WP_MCP_AI_Logger::log_event(
+			'agent_delegation_successful',
+			'Task successfully delegated to agent',
+			array(
+				'delegation_id' => $result['delegation_id'],
+				'agent_id'      => $agent_id,
+				'agent_name'    => $result['agent_name'],
+				'agent_role'    => $result['agent_role'],
+			)
+		);
 
 		// Format delegation result.
 		return array(
