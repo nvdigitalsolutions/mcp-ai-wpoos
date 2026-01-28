@@ -36,7 +36,7 @@ Manages DeepSeek V4 multi-agent orchestration system configuration and workflows
 
 ## 2. Real-Time Monitor (Pro)
 
-**Location:** NV oOS → Real-Time Monitor (Pro)  
+**Location:** NV oOS → Monitor (Pro)  
 **URL:** `/wp-admin/admin.php?page=mcp-ai-orchestration`  
 **File:** `addons/pro/includes/admin/class-wp-mcp-ai-orchestration-dashboard.php`  
 **Class:** `WP_MCP_AI_Orchestration_Dashboard`
@@ -93,7 +93,7 @@ ISO/IEC 27001 compliance monitoring for security events and system health.
 | **Purpose** | Workflow Management | Session Monitoring | Security Monitoring |
 | **Update Type** | Manual/On-demand | Real-time (SSE) | Event-driven |
 | **Focus** | Configuration | Live Sessions | Compliance |
-| **Menu Location** | NV oOS → Orchestration | NV oOS → Real-Time Monitor (Pro) | NV oOS Pro → Monitoring |
+| **Menu Location** | NV oOS → Orchestration | NV oOS → Monitor (Pro) | NV oOS Pro → Monitoring |
 | **Primary Users** | Admins configuring workflows | Admins monitoring sessions | Security/Compliance officers |
 
 ## When to Use Each Page
