@@ -258,10 +258,8 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$printed = true;
 
 		ob_start();
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor assistant tools widget layout and styling
 		?>
-<?php
-// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor assistant tools widget layout and styling
-?>
 <style>
 .wp-mcp-ai-assistant-tools__copy-button {
 	background: none;
