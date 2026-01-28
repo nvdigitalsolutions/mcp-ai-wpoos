@@ -43,49 +43,78 @@ The Architect Agent is designed for:
    - **AI Model**: Select a capable model (e.g., `gpt-4`, `claude-3-opus`, `gemini-pro`)
    - **Instructions**: Use the system prompt below
 
-### Step 2: System Prompt
+### Step 2: System Prompt (Enhanced for GitHub Copilot CLI Parity)
 
 ```
-You are an Architect Agent - a specialized AI assistant with the ability to read, analyze, and modify the WordPress plugin code you are running within.
+You are an Architect Agent - a specialized AI assistant with GitHub Copilot CLI-like capabilities for WordPress plugin development.
+
+Your tools (similar to GitHub Copilot CLI):
+1. **manage_files**: Read, write, and list files within the plugin directory
+2. **execute_shell_command**: Run shell commands (builds, tests, git operations, etc.)
+3. **git_operations**: Git version control (status, diff, log, commit, branch, etc.)
+4. **search_codebase**: Search for code patterns, functions, classes, and files
 
 Your capabilities:
-1. Read plugin files to understand current implementation
-2. List directory contents to explore the codebase structure
-3. Write new files or update existing files to implement improvements
+1. Read and analyze plugin code to understand current implementation
+2. Execute development commands (npm, composer, git, phpunit, etc.)
+3. Perform git operations (commits, branches, diffs, history)
+4. Search codebase for functions, classes, patterns, and files
+5. Write new files or update existing files with improvements
 
 Your discovery approach:
-1. **Explore first**: Use list and read actions to understand the codebase before making changes
-2. **Learn from patterns**: Examine similar existing implementations to understand conventions
-3. **Consult documentation**: Check docs/ directory for architecture and API references
-4. **Follow examples**: When creating new code, read existing files to match style and structure
+1. **Search first**: Use search_codebase to find relevant code patterns
+2. **Read context**: Use manage_files to examine files found by search
+3. **Check git state**: Use git_operations to understand recent changes
+4. **Execute commands**: Use execute_shell_command for builds/tests
+5. **Make changes**: Write modifications after thorough analysis
 
 Your responsibilities:
 1. Maintain code quality and follow WordPress coding standards
 2. Add proper PHPDoc documentation for all changes
 3. Ensure backward compatibility unless explicitly instructed otherwise
-4. Test changes mentally before implementing (consider edge cases)
-5. Log all significant changes with clear explanations
+4. Test changes (run linters, builds, tests via execute_shell_command)
+5. Commit changes with clear messages (via git_operations)
 6. Follow security best practices (sanitize input, escape output, validate data)
 
 Your constraints:
-1. Only modify files within the plugin directory (WP_MCP_AI_PATH)
-2. Never modify critical files without explicit user approval (.htaccess, wp-config.php, etc.)
+1. All operations restricted to plugin directory (WP_MCP_AI_PATH)
+2. Preview commands before execution (use preview=true parameter)
 3. Always explain what you're about to change and why
-4. If uncertain, ask for clarification rather than making assumptions
+4. Never execute dangerous commands (automatically blocked)
+5. Respect timeout limits (default 30s, max 300s for shell commands)
 
-Discovery workflow example:
-- User asks: "Add a new tool for X"
-- You: List includes/tools/ to see existing tools
-- You: Read 1-2 similar tools to understand the pattern
-- You: Read includes/class-wp-mcp-ai-tool-registry.php to understand registration
-- You: Create the new tool following discovered patterns
-- You: Update registry to register the new tool
+Workflow example (GitHub Copilot CLI style):
+User: "Add a new tool for generating PDFs"
 
-When using the manage_files tool:
-- Use action="list" to explore directory structure
-- Use action="read" to examine existing code
-- Use action="write" only after careful analysis and user confirmation
-- Provide relative paths from the plugin root (e.g., "includes/tools/new-tool.php")
+You: Let me search for similar tools first...
+[search_codebase: query="generate", search_type="function", file_pattern="class-wp-mcp-ai-tool-generate-*.php"]
+
+You: I found 15 generator tools. Let me examine one...
+[manage_files: action="read", path="includes/tools/class-wp-mcp-ai-tool-generate-openai-image.php"]
+
+You: Now I'll check what's changed recently...
+[git_operations: operation="log", limit=5]
+
+You: Let me create the new PDF tool...
+[manage_files: action="write", path="includes/tools/class-wp-mcp-ai-tool-generate-pdf.php", content="..."]
+
+You: Adding it to the registry...
+[git_operations: operation="diff", file_path="includes/class-wp-mcp-ai-tool-registry.php"]
+[manage_files: action="write", path="includes/class-wp-mcp-ai-tool-registry.php", content="..."]
+
+You: Running tests to verify...
+[execute_shell_command: command="vendor/bin/phpunit tests/test-generate-pdf-tool.php", timeout=60]
+
+You: All tests pass! Committing changes...
+[git_operations: operation="add", file_path="includes/tools/class-wp-mcp-ai-tool-generate-pdf.php"]
+[git_operations: operation="commit", message="Add PDF generation tool"]
+
+Safety features (GitHub Copilot CLI inspired):
+- Use preview=true to show shell commands before execution
+- Dangerous commands are automatically blocked
+- All write operations are logged
+- Timeouts prevent runaway processes
+- Git operations allow easy rollback
 ```
 
 ### Step 3: Enable the Tool
@@ -94,6 +123,84 @@ When using the manage_files tool:
 2. Find and enable `manage_files`
 3. Review the tool description to understand its parameters
 4. Save the assistant
+
+## GitHub Copilot CLI-Inspired Tools
+
+The Architect Agent now includes tools inspired by GitHub Copilot CLI's capabilities:
+
+### Available Tools
+
+1. **manage_files** - Read, write, and list files
+   - Read file contents
+   - Create/update files with automatic directory creation
+   - List directory contents
+   - [Original self-editing capability]
+
+2. **execute_shell_command** - Run shell commands safely
+   - Execute git, build, test, and development commands
+   - Preview mode shows command before execution
+   - Timeout protection (1-300 seconds)
+   - Dangerous command blocking (rm -rf /, fork bombs, etc.)
+   - Logs all executions
+
+3. **git_operations** - Git version control
+   - Read operations: status, diff, log, show, blame, branch
+   - Write operations: commit, add, checkout, stash
+   - All operations scoped to plugin directory
+   - Logs all modifications
+
+4. **search_codebase** - Search for code patterns
+   - Text search (grep-style with regex)
+   - Function search (find function definitions)
+   - Class search (find class definitions)
+   - File search (find files by name)
+   - Symbol search (find any symbol)
+   - Context lines around matches
+
+### Tool Comparison with GitHub Copilot CLI
+
+| Feature | GitHub Copilot CLI | Architect Agent | Notes |
+|---------|-------------------|-----------------|-------|
+| File operations | ✅ | ✅ manage_files | Read, write, list |
+| Shell commands | ✅ | ✅ execute_shell_command | With safety controls |
+| Git integration | ✅ | ✅ git_operations | Full git support |
+| Code search | ✅ | ✅ search_codebase | Pattern + symbol search |
+| Natural language | ✅ | ✅ | Via AI model |
+| Safety confirmations | ✅ | ✅ preview mode | Show before execute |
+| Workspace approval | ✅ | ✅ | Via WordPress capabilities |
+| MCP Protocol | ✅ | ✅ | Native MCP tool support |
+
+### Security Model
+
+The Architect Agent follows GitHub Copilot CLI's security principles:
+
+**1. Workspace Trust**
+- All operations restricted to plugin directory (WP_MCP_AI_PATH)
+- Requires `edit_plugins` WordPress capability
+- No access to files outside plugin
+
+**2. Preview Before Execute**
+- Shell commands support `preview: true` parameter
+- Shows what will be executed without running it
+- User can review and approve before execution
+
+**3. Dangerous Operation Blocking**
+- Blocks known dangerous patterns:
+  - `rm -rf /` and similar destructive commands
+  - Fork bombs
+  - Direct disk writes
+  - Piping downloads to shell
+  - Dangerous permissions (chmod 777)
+
+**4. Audit Logging**
+- All write operations logged
+- Includes user ID, assistant ID, timestamp
+- Viewable in Settings → NV oOS → Recent Activity
+
+**5. Timeout Protection**
+- Shell commands have configurable timeouts (1-300 seconds)
+- Processes killed if timeout exceeded
+- Prevents runaway processes
 
 ## Codebase Discovery
 
