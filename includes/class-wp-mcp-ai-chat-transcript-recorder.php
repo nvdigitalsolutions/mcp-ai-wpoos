@@ -244,26 +244,9 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 			return $handler;
 		}
 
-		// Check if running in base version mode (no JetEngine integration).
-		// Exception: If Pro addon is active, JetEngine integration is available even in base version mode.
-		$is_base_version = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
-		$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-		if ( $is_base_version && ! $is_pro_active ) {
-			WP_MCP_AI_Logger::log_event(
-				'info',
-				'Chat Transcript Recorder: Persistence unavailable in base version mode',
-				array(
-					'assistant_id'  => $assistant_id,
-					'session_key'   => isset( $context['session_key'] ) ? $context['session_key'] : 'none',
-					'base_version'  => $is_base_version,
-					'pro_active'    => $is_pro_active,
-					'info'          => 'Transcript persistence requires full version with JetEngine integration or Pro addon',
-				)
-			);
-			return null;
-		}
-
+		// Check if JetEngine CCT class is available.
+		// In base version mode, this class is loaded when JetEngine plugin is active (see mcp-ai-wpoos.php line 644).
+		// This allows transcript persistence in base mode as long as JetEngine is installed.
 		if ( class_exists( 'WP_MCP_AI_JetEngine_CCT' ) ) {
 			$handler = WP_MCP_AI_JetEngine_CCT::get_item_handler();
 
@@ -299,7 +282,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 				'base_version_mode'    => wp_mcp_ai_is_base_version(),
 				'pro_addon_active'     => defined( 'WP_MCP_AI_PRO_VERSION' ),
 				'impact'               => 'Transcripts will be stored in browser only (24h)',
-				'solution'             => 'If using base + pro plugins, ensure Pro addon is activated. If using base only, JetEngine integration is not available.',
+				'solution'             => 'Install and activate JetEngine plugin to enable transcript persistence. The plugin works in base mode, Pro mode, or full mode as long as JetEngine is available.',
 			)
 		);
 

@@ -1,15 +1,15 @@
 <?php
 /**
- * Tests for WP_MCP_AI_Chat_Transcript_Recorder in base + pro mode
+ * Tests for WP_MCP_AI_Chat_Transcript_Recorder in base mode with JetEngine
  *
- * Verifies that transcript recording works correctly when both base plugin
- * and Pro addon are active, even with WP_MCP_AI_BASE_VERSION set to true.
+ * Verifies that transcript recording works correctly in base-only mode
+ * when JetEngine is available, with or without Pro addon.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test Chat Transcript Recorder Base + Pro Mode
+ * Test Chat Transcript Recorder Base Mode with JetEngine
  */
 class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 
@@ -178,9 +178,11 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that transcript recording fails when in pure base mode (no Pro).
+	 * Test that transcript recording works in base mode when JetEngine CCT class is available.
+	 *
+	 * This test verifies that base-only mode with JetEngine supports transcript persistence.
 	 */
-	public function test_transcript_recording_fails_in_pure_base_mode() {
+	public function test_transcript_recording_in_base_mode_with_jetengine() {
 		// Ensure Pro version is not defined for this test.
 		// Note: We can't undefine constants, so this test assumes WP_MCP_AI_PRO_VERSION
 		// is not defined at test start. If it is, skip this test.
@@ -188,9 +190,7 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Cannot test pure base mode when Pro is already defined' );
 		}
 
-		// Remove the mock handler filter to test the actual resolve_handler logic.
-		remove_filter( 'wp_mcp_ai_chat_transcript_handler', array( $this, 'provide_transcript_handler' ), 10 );
-
+		// Using mock handler simulates having JetEngine CCT available.
 		$messages = array(
 			array(
 				'role'    => 'user',
@@ -221,15 +221,14 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 		$request->set_param( 'messages', $messages );
 
 		$context = array(
-			'session_key'           => 'test-pure-base-session-456',
+			'session_key'           => 'test-base-jetengine-session-456',
 			'save_transcript'       => true,
 			'request_started_at'    => microtime( true ),
 			'response_completed_at' => microtime( true ),
 		);
 
-		// In pure base mode (if WP_MCP_AI_BASE_VERSION is true and Pro not active),
-		// recording should return null unless JetEngine CCT class is available.
-		// Since we're not mocking, it depends on the test environment.
+		// In base mode with JetEngine available (simulated by mock handler),
+		// recording should succeed.
 		$result = WP_MCP_AI_Chat_Transcript_Recorder::record(
 			$this->assistant_id,
 			$messages,
@@ -240,22 +239,21 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 			$context
 		);
 
-		// If WP_MCP_AI_BASE_VERSION is true and no Pro, expect null.
-		if ( wp_mcp_ai_is_base_version() ) {
-			$this->assertNull( $result, 'Transcript recording should fail in pure base mode without Pro' );
-		}
+		// With mock handler (simulating JetEngine availability), recording should succeed.
+		$this->assertNotNull( $result, 'Transcript recording should succeed in base mode when JetEngine is available' );
+		$this->assertEquals( 'test-base-jetengine-session-456', $result, 'Should return the session key' );
+
+		// Verify the handler received the correct data.
+		$this->assertNotNull( $this->transcript_handler->last_record, 'Handler should receive a record' );
+		$this->assertEquals( 'test-base-jetengine-session-456', $this->transcript_handler->last_record['session_key'] );
 	}
 
 	/**
-	 * Test resolve_handler method returns handler when Pro is active.
+	 * Test resolve_handler method returns handler when JetEngine is available.
 	 *
 	 * This is a more direct test of the resolve_handler logic.
 	 */
-	public function test_resolve_handler_with_pro_active() {
-		// Ensure Pro version is defined.
-		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
-			define( 'WP_MCP_AI_PRO_VERSION', '1.1.0' );
-		}
+	public function test_resolve_handler_with_jetengine_available() {
 
 		$messages = array(
 			array(
@@ -287,7 +285,7 @@ class Test_Transcript_Recorder_Base_Pro extends WP_UnitTestCase {
 			)
 		);
 
-		// When Pro is active and we have a mock handler via filter, should not be null.
-		$this->assertNotNull( $handler, 'resolve_handler should return a handler when Pro is active' );
+		// When we have a mock handler via filter (simulating JetEngine), should not be null.
+		$this->assertNotNull( $handler, 'resolve_handler should return a handler when JetEngine is available' );
 	}
 }
