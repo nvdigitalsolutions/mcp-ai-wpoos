@@ -362,6 +362,18 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_is_jetengine_available' ) ) {
+	/**
+	 * Check if JetEngine plugin is available and active.
+	 *
+	 * @since 1.1.1
+	 * @return bool Whether JetEngine is available.
+	 */
+	function wp_mcp_ai_is_jetengine_available() {
+		return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	/**
 	 * Determine whether third-party plugin integrations should be loaded.
@@ -372,6 +384,9 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	 *
 	 * This ensures that when using base + pro as separate plugins, JetEngine
 	 * integrations are available for chat transcript storage and other Pro features.
+	 *
+	 * Note: In base version with only JetEngine available (no Pro), only the minimal
+	 * JetEngine CCT files needed for chat transcripts are loaded via a separate condition.
 	 *
 	 * @since 1.1.0
 	 * @return bool Whether integrations should be loaded.
@@ -591,9 +606,10 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-r
 // Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 
-// Load third-party plugin integrations only when not in base version mode.
-// However, if Pro addon is active (even with base version), load JetEngine integrations
-// since Pro features may depend on them for chat transcript storage and other functionality.
+// Load third-party plugin integrations.
+// Integrations are loaded when:
+// - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+// - Pro addon is active (even with base version)
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
@@ -622,6 +638,10 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/sitekit-integration-init.php';
+} elseif ( wp_mcp_ai_is_jetengine_available() ) {
+	// In base version with only JetEngine available, load only JetEngine CCT files
+	// needed for chat transcript storage. Do not load other third-party integrations.
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 }
 
 // Load Elementor integration for all versions (base and full).
