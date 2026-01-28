@@ -1,10 +1,18 @@
 # Fix for create_agent_team Bug with OpenAI Chat-Client
 
-## Problem
+## Problems
+
+### Problem 1: Delegation with Wrong IDs
 
 When using `create_agent_team` in chat-client with OpenAI as the provider, the AI was attempting to delegate tasks using **profession names** (like "social_media_manager") instead of the actual **agent IDs** (like "virtual_executor_9ecad675-6335-49ea-9b2a-786946ac5eb3").
 
-## Root Cause
+### Problem 2: Teams Not Showing on Dashboard
+
+Teams created via `create_agent_team` were not appearing on the orchestration dashboard even though they were successfully created. This made it impossible to track team workflows.
+
+## Root Causes
+
+### Problem 1: Ambiguous Field Names
 
 The `create_agent_team` tool response included both `agent_id` and `profession` fields for each team member:
 
@@ -23,9 +31,15 @@ The `create_agent_team` tool response included both `agent_id` and `profession` 
 
 The AI model (OpenAI) was confused about which field to use for delegation, and the `delegate_to_agent` parameter description mentioned "profession" which suggested it could be used as an ID.
 
-## Solution
+### Problem 2: Missing Workflow Transient
 
-### 1. Enhanced `create_agent_team` Response
+The orchestration dashboard queries for `wp_mcp_ai_workflow_*` transients to display workflows. However, the `create_agent_team` tool only created `wp_mcp_ai_team_*` transients. There was no workflow record created until the team actually executed a workflow via `execute_team_workflow()`, which meant teams created but not yet executing wouldn't show on the dashboard.
+
+## Solutions
+
+### Solution 1: Enhanced Delegation Guidance
+
+#### 1. Added `delegation_examples` Array
 
 Added a `delegation_examples` array that explicitly shows how to delegate to each team member:
 
@@ -38,7 +52,7 @@ Added a `delegation_examples` array that explicitly shows how to delegate to eac
 }
 ```
 
-### 2. Clarified Next Steps
+#### 2. Clarified Next Steps
 
 Updated the `next_steps` array to include an explicit warning:
 
@@ -53,13 +67,83 @@ Updated the `next_steps` array to include an explicit warning:
 }
 ```
 
-### 3. Updated `delegate_to_agent` Parameter Description
+#### 3. Updated `delegate_to_agent` Parameter Description
 
 Changed the `agent_id` parameter description from:
 
 ❌ **Before:** "ID of the agent (profession, assistant, or virtual agent) to delegate to..."
 
-✅ **After:** "The agent_id value from create_agent_team response. Can be an integer assistant post ID or a virtual agent string ID (e.g., "virtual_executor_abc123"). Do NOT use profession names."
+✅ **After:** "The agent_id value from the create_agent_team response. This can be an integer assistant post ID or a virtual agent string ID (e.g., "virtual_executor_abc123"). Do NOT use profession names."
+
+### Solution 2: Automatic Workflow Tracking
+
+#### 1. Added `save_team_as_workflow()` Method
+
+Created a new method in the orchestrator that converts team composition into a workflow record:
+
+```php
+protected function save_team_as_workflow( $team ) {
+    // Create workflow tasks from team members and workflow steps
+    $tasks = array();
+    
+    // Add team composition as initial completed task
+    $tasks[] = array(
+        'task_id'      => 'compose_' . $team['team_id'],
+        'name'         => __( 'Team Composition', 'mcp-ai-wpoos' ),
+        'type'         => 'composition',
+        'status'       => 'completed',
+        'completed_at' => $team['created_at'],
+    );
+
+    // Add workflow steps as pending tasks
+    foreach ( $team['workflow'] as $index => $step ) {
+        $tasks[] = array(
+            'task_id' => 'step_' . $index . '_' . $team['team_id'],
+            'name'    => $step['name'],
+            'type'    => $step['type'],
+            'status'  => 'pending',
+        );
+    }
+
+    // Build workflow data and save
+    $workflow_data = array(
+        'workflow_id' => 'wf_' . $team['team_id'],
+        'team_id'     => $team['team_id'],
+        'state'       => 'initialized',
+        'tasks'       => $tasks,
+        // ... more fields
+    );
+
+    return $this->save_workflow_to_dashboard( $workflow_data['workflow_id'], $workflow_data );
+}
+```
+
+#### 2. Automatic Invocation
+
+The method is automatically called when a team is composed:
+
+```php
+public function compose_team( $task_requirements ) {
+    // ... team composition logic ...
+    
+    // Store team configuration
+    $this->store_team( $team );
+    
+    // Also store as workflow for orchestration dashboard tracking
+    $this->save_team_as_workflow( $team );
+    
+    return $team;
+}
+```
+
+#### 3. Workflow Structure
+
+Teams are now saved with this structure:
+- **workflow_id**: `wf_{team_id}` format for easy identification
+- **state**: `initialized` - indicates team is created but not yet executing
+- **tasks**: Array with composition marked as completed, workflow steps as pending
+- **members**: Full team member details
+- **timestamps**: created_at, updated_at, started_at (null initially), completed_at (null initially)
 
 ## Example Usage
 
