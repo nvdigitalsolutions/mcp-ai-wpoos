@@ -362,22 +362,39 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_is_jetengine_available' ) ) {
+	/**
+	 * Check if JetEngine plugin is available and active.
+	 *
+	 * @since 1.1.1
+	 * @return bool Whether JetEngine is available.
+	 */
+	function wp_mcp_ai_is_jetengine_available() {
+		return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	/**
 	 * Determine whether third-party plugin integrations should be loaded.
 	 *
 	 * Integrations are loaded when:
 	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
-	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
+	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined), OR
+	 * - JetEngine plugin is active (for chat transcript CCT storage in base version)
 	 *
-	 * This ensures that when using base + pro as separate plugins, JetEngine
-	 * integrations are available for chat transcript storage and other Pro features.
+	 * This ensures that:
+	 * 1. Chat transcripts work in base version when JetEngine is installed
+	 * 2. When using base + pro as separate plugins, all JetEngine integrations are available
+	 * 3. Combined plugin has access to all integrations
 	 *
 	 * @since 1.1.0
 	 * @return bool Whether integrations should be loaded.
 	 */
 	function wp_mcp_ai_should_load_integrations() {
-		return ! wp_mcp_ai_is_base_version() || defined( 'WP_MCP_AI_PRO_VERSION' );
+		return ! wp_mcp_ai_is_base_version() 
+			|| defined( 'WP_MCP_AI_PRO_VERSION' )
+			|| wp_mcp_ai_is_jetengine_available();
 	}
 }
 

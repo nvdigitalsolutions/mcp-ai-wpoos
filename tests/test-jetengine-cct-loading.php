@@ -44,6 +44,16 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test helper function wp_mcp_ai_is_jetengine_available exists.
+	 */
+	public function test_is_jetengine_available_function_exists() {
+		$this->assertTrue(
+			function_exists( 'wp_mcp_ai_is_jetengine_available' ),
+			'wp_mcp_ai_is_jetengine_available() helper function should exist'
+		);
+	}
+
+	/**
 	 * Test loading logic for base + pro plugin scenario using helper function.
 	 *
 	 * This simulates the scenario where:
@@ -58,8 +68,11 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Simulate pro addon being active.
 		$pro_active = true;
 
-		// The loading condition: !base_version || pro_active.
-		$should_load = ! $base_version || $pro_active;
+		// JetEngine status doesn't matter when Pro is active.
+		$jetengine_available = false;
+
+		// The loading condition: !base_version || pro_active || jetengine_available.
+		$should_load = ! $base_version || $pro_active || $jetengine_available;
 
 		$this->assertTrue(
 			$should_load,
@@ -75,9 +88,9 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test loading logic for base version only.
+	 * Test loading logic for base version only (without JetEngine or Pro).
 	 *
-	 * When only the base version is active (no Pro addon),
+	 * When only the base version is active (no Pro addon, no JetEngine),
 	 * JetEngine integrations should NOT load.
 	 */
 	public function test_loading_logic_with_base_only() {
@@ -87,12 +100,40 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Simulate pro addon NOT being active.
 		$pro_active = false;
 
-		// The loading condition: !base_version || pro_active.
-		$should_load = ! $base_version || $pro_active;
+		// Simulate JetEngine NOT being available.
+		$jetengine_available = false;
+
+		// The loading condition: !base_version || pro_active || jetengine_available.
+		$should_load = ! $base_version || $pro_active || $jetengine_available;
 
 		$this->assertFalse(
 			$should_load,
-			'Integrations should NOT load in base version without Pro addon'
+			'Integrations should NOT load in base version without Pro addon or JetEngine'
+		);
+	}
+
+	/**
+	 * Test loading logic for base version with JetEngine.
+	 *
+	 * When the base version is active with JetEngine installed (no Pro addon),
+	 * JetEngine integrations SHOULD load to support chat transcript CCT storage.
+	 */
+	public function test_loading_logic_with_base_and_jetengine() {
+		// Simulate base version mode.
+		$base_version = true;
+
+		// Simulate pro addon NOT being active.
+		$pro_active = false;
+
+		// Simulate JetEngine being available.
+		$jetengine_available = true;
+
+		// The loading condition: !base_version || pro_active || jetengine_available.
+		$should_load = ! $base_version || $pro_active || $jetengine_available;
+
+		$this->assertTrue(
+			$should_load,
+			'Integrations SHOULD load in base version when JetEngine is available (for chat transcript CCT storage)'
 		);
 	}
 
@@ -108,8 +149,11 @@ class Test_JetEngine_CCT_Loading extends WP_UnitTestCase {
 		// Pro addon status doesn't matter in full version.
 		$pro_active = false;
 
-		// The loading condition: !base_version || pro_active.
-		$should_load = ! $base_version || $pro_active;
+		// JetEngine status doesn't matter in full version.
+		$jetengine_available = false;
+
+		// The loading condition: !base_version || pro_active || jetengine_available.
+		$should_load = ! $base_version || $pro_active || $jetengine_available;
 
 		$this->assertTrue(
 			$should_load,
