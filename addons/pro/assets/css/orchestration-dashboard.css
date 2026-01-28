@@ -278,3 +278,68 @@
 		font-size: 24px;
 	}
 }
+
+/* Workflow Table Styles */
+.workflows-table-wrapper {
+	overflow-x: auto;
+}
+
+.workflows-table-wrapper table {
+	margin-top: 10px;
+}
+
+.workflows-table-wrapper code {
+	font-size: 11px;
+	background: #f0f0f1;
+	padding: 2px 5px;
+	border-radius: 2px;
+}
+
+/* Stale Workflow Row Highlighting */
+tr.workflow-stale {
+	background-color: #fff3cd !important;
+	border-left: 3px solid #ff6900;
+}
+
+tr.workflow-stale:hover {
+	background-color: #ffe69c !important;
+}
+
+/* Workflow State Badges */
+.status-badge.status-initialized {
+	background: #cfe2ff;
+	color: #084298;
+}
+
+.status-badge.status-running {
+	background: #d1ecf1;
+	color: #0c5460;
+}
+
+.status-badge.status-completed {
+	background: #d4edda;
+	color: #155724;
+}
+
+.status-badge.status-failed {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+/* Workflow Action Buttons */
+.workflow-trigger {
+	white-space: nowrap;
+}
+
+.workflow-trigger.button-primary {
+	animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		box-shadow: 0 0 0 0 rgba(46, 170, 220, 0.7);
+	}
+	50% {
+		box-shadow: 0 0 0 5px rgba(46, 170, 220, 0);
+	}
+}

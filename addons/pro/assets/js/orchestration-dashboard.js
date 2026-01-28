@@ -20,6 +20,9 @@
 			// Session control buttons.
 			$(document).on('click', '.session-action', this.handleSessionAction.bind(this));
 			
+			// Workflow trigger buttons.
+			$(document).on('click', '.workflow-trigger', this.handleWorkflowTrigger.bind(this));
+			
 			// Manual refresh button (if added).
 			$(document).on('click', '.refresh-dashboard', this.loadDashboardData.bind(this));
 		},
@@ -73,6 +76,11 @@
 			// Update sessions table.
 			if (data.sessions) {
 				this.updateSessionsTable(data.sessions);
+			}
+
+			// Update workflows table.
+			if (data.workflows) {
+				this.updateWorkflowsTable(data.workflows);
 			}
 
 			// Update activity feed.
@@ -201,6 +209,94 @@
 			const div = document.createElement('div');
 			div.textContent = text;
 			return div.innerHTML;
+		},
+
+		updateWorkflowsTable: function(workflows) {
+			const $tbody = $('#workflows-table-body');
+			
+			if (workflows.length === 0) {
+				$tbody.html('<tr class="no-items"><td colspan="8">' + (this.config.strings.noWorkflows || 'No workflows found') + '</td></tr>');
+				return;
+			}
+
+			let html = '';
+			workflows.forEach(workflow => {
+				const stateClass = workflow.is_stale ? 'status-warning' : 'status-' + workflow.state;
+				const stateBadge = workflow.is_stale ? 
+					'<span class="status-badge ' + stateClass + '" title="Stuck in initialized state">' + workflow.state + ' (STALE)</span>' :
+					'<span class="status-badge ' + stateClass + '">' + workflow.state + '</span>';
+
+				html += '<tr' + (workflow.is_stale ? ' class="workflow-stale"' : '') + '>';
+				html += '<td><code>' + this.escapeHtml(workflow.workflow_id.substring(0, 20)) + '...</code></td>';
+				html += '<td><code>' + this.escapeHtml(workflow.team_id) + '</code></td>';
+				html += '<td>' + this.escapeHtml(workflow.task_type) + '</td>';
+				html += '<td>' + stateBadge + '</td>';
+				html += '<td>' + this.escapeHtml(workflow.age_display) + '</td>';
+				html += '<td>' + workflow.tasks_done + ' / ' + workflow.tasks_total + '</td>';
+				html += '<td>' + this.escapeHtml(workflow.created_at) + '</td>';
+				html += '<td>' + this.getWorkflowActions(workflow) + '</td>';
+				html += '</tr>';
+			});
+
+			$tbody.html(html);
+		},
+
+		getWorkflowActions: function(workflow) {
+			let actions = '';
+			
+			// Show "Start Workflow" button for initialized workflows
+			if (workflow.state === 'initialized') {
+				const buttonText = workflow.is_stale ? 
+					'🚀 ' + (this.config.strings.startWorkflow || 'Start Workflow') :
+					'▶ ' + (this.config.strings.startWorkflow || 'Start');
+				const buttonClass = workflow.is_stale ? 'button-primary' : 'button';
+				actions += '<button class="button button-small ' + buttonClass + ' workflow-trigger" ' +
+					'data-workflow="' + workflow.workflow_id + '" ' +
+					'title="' + (this.config.strings.startWorkflow || 'Start this workflow') + '">' +
+					buttonText + '</button> ';
+			}
+			
+			// View details link (future enhancement)
+			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + workflow.workflow_id + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
+			
+			return actions;
+		},
+
+		handleWorkflowTrigger: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow');
+
+			// Confirm before starting
+			if (!confirm(this.config.strings.confirmStart || 'Are you sure you want to start this workflow?')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Starting...');
+
+			$.ajax({
+				url: this.config.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_trigger_workflow',
+					nonce: this.config.nonce,
+					workflow_id: workflowId
+				},
+				success: (response) => {
+					if (response.success) {
+						alert(this.config.strings.workflowStarted || 'Workflow started successfully');
+						this.loadDashboardData(); // Reload to show updated state
+					} else {
+						alert((this.config.strings.workflowError || 'Error starting workflow') + ': ' + (response.data.message || 'Unknown error'));
+					}
+				},
+				error: (xhr, status, error) => {
+					alert((this.config.strings.workflowError || 'Error starting workflow') + ': ' + error);
+				},
+				complete: () => {
+					$button.prop('disabled', false).text(this.config.strings.startWorkflow || 'Start Workflow');
+				}
+			});
 		}
 	};
 

@@ -33,6 +33,12 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	const MAX_PARALLEL_TASKS = 3;
 
 	/**
+	 * Timeout for workflows stuck in initialized state (in seconds)
+	 * WordPress plugins may need time for cron setup, so we allow 5 minutes.
+	 */
+	const INITIALIZED_TIMEOUT = 300; // 5 minutes
+
+	/**
 	 * Orchestrator instance
 	 *
 	 * @var WP_MCP_AI_Agent_Team_Orchestrator
@@ -678,5 +684,101 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 			'started_at'   => $workflow['started_at'] ?? null,
 			'completed_at' => $workflow['completed_at'] ?? null,
 		);
+	}
+
+	/**
+	 * Check for workflows stuck in initialized state
+	 *
+	 * This is important for WordPress plugins where workflows might be created
+	 * but never executed due to cron delays or missing triggers.
+	 *
+	 * @return array List of stuck workflows with recommendations.
+	 */
+	public function check_stale_initialized_workflows() {
+		$stale_workflows = array();
+		$current_time    = time();
+
+		foreach ( $this->active_workflows as $workflow_id => $workflow ) {
+			// Only check workflows in initialized state.
+			if ( 'initialized' !== $workflow['state'] ) {
+				continue;
+			}
+
+			// Calculate how long the workflow has been initialized.
+			$created_time = strtotime( $workflow['created_at'] );
+			$age_seconds  = $current_time - $created_time;
+
+			// Check if workflow has exceeded the initialized timeout.
+			if ( $age_seconds > self::INITIALIZED_TIMEOUT ) {
+				$stale_workflows[] = array(
+					'workflow_id' => $workflow_id,
+					'team_id'     => $workflow['team_id'] ?? null,
+					'age_seconds' => $age_seconds,
+					'age_minutes' => round( $age_seconds / 60, 1 ),
+					'created_at'  => $workflow['created_at'],
+					'status'      => 'stale',
+					'message'     => sprintf(
+						/* translators: %s: age in minutes */
+						__( 'Workflow has been initialized for %s minutes but not started. Consider calling execute_workflow() or using delegate_to_agent to begin execution.', 'mcp-ai-wpoos' ),
+						round( $age_seconds / 60, 1 )
+					),
+				);
+			}
+		}
+
+		return $stale_workflows;
+	}
+
+	/**
+	 * Get health status of all workflows
+	 *
+	 * Provides comprehensive health check including detection of stale initialized workflows.
+	 *
+	 * @return array Health status with counts and stuck workflow details.
+	 */
+	public function get_workflows_health() {
+		$health = array(
+			'total'                => count( $this->active_workflows ),
+			'by_state'             => array(
+				'initialized' => 0,
+				'running'     => 0,
+				'completed'   => 0,
+				'failed'      => 0,
+			),
+			'stale_initialized'    => array(),
+			'status'               => 'healthy',
+			'warnings'             => array(),
+			'recommendations'      => array(),
+		);
+
+		// Count workflows by state.
+		foreach ( $this->active_workflows as $workflow ) {
+			$state = $workflow['state'] ?? 'unknown';
+			if ( isset( $health['by_state'][ $state ] ) ) {
+				++$health['by_state'][ $state ];
+			}
+		}
+
+		// Check for stale initialized workflows.
+		$stale_workflows = $this->check_stale_initialized_workflows();
+		if ( ! empty( $stale_workflows ) ) {
+			$health['stale_initialized'] = $stale_workflows;
+			$health['status']            = 'warning';
+			$health['warnings'][]        = sprintf(
+				/* translators: %d: number of stale workflows */
+				_n(
+					'%d workflow stuck in initialized state',
+					'%d workflows stuck in initialized state',
+					count( $stale_workflows ),
+					'mcp-ai-wpoos'
+				),
+				count( $stale_workflows )
+			);
+
+			$health['recommendations'][] = __( 'Use execute_workflow() to start pending workflows or delegate tasks to agents.', 'mcp-ai-wpoos' );
+			$health['recommendations'][] = __( 'For WordPress plugins, ensure wp-cron is properly configured and running.', 'mcp-ai-wpoos' );
+		}
+
+		return $health;
 	}
 }
