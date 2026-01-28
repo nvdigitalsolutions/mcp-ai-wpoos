@@ -390,15 +390,15 @@ class WP_MCP_AI_Agent_Communication_Service {
 	 */
 	protected function log_delegation( $delegation, $action ) {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				sprintf( 'Agent delegation %s', $action ),
 				array(
 					'delegation_id' => $delegation['delegation_id'],
 					'from_agent'    => $delegation['from_agent_id'],
 					'to_agent'      => $delegation['to_agent_id'],
 					'action'        => $action,
-				),
-				'info'
+				)
 			);
 		}
 	}
