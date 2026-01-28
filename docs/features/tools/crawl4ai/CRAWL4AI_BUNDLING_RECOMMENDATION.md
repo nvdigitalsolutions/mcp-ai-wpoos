@@ -486,9 +486,9 @@ return array(
         'cost'     => '$5-10/month',
         'limits'   => '100-500 jobs/day',
         'providers' => array(
-            'DigitalOcean Droplet' => 'https://m.do.co/c/xxxxx',
-            'Linode Nanode'        => 'https://linode.com/...',
-            'Vultr Cloud Compute'  => 'https://vultr.com/...',
+            'DigitalOcean Droplet' => 'https://www.digitalocean.com/pricing',
+            'Linode Nanode'        => 'https://www.linode.com/pricing',
+            'Vultr Cloud Compute'  => 'https://www.vultr.com/pricing',
         ),
     ),
     
@@ -539,7 +539,7 @@ services:
   wordpress: ...
   mysql: ...
   
-  # Optional: Uncomment for advanced web scraping
+# Optional: Uncomment for advanced web scraping
   # crawl4ai:
   #   image: nvdigital/crawl4ai-service:1.0.0
   #   ports:
@@ -632,7 +632,7 @@ services:
 **For local development:**
 ```bash
 # Use Docker Compose (easiest)
-cd mcp-ai-wpoos
+cd mcp-ai-wp-oos
 docker-compose up -d crawl4ai
 
 # Configure in WordPress
