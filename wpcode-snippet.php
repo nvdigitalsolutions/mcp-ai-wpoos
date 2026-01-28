@@ -1,3 +1,4 @@
+<?php
 /**
  * NV oOS Plugin Activation Tracking Endpoint - WPCode Snippet
  * 
