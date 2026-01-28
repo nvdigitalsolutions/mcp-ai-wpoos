@@ -1018,14 +1018,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			);
 
 			// Pro tools (only loaded when not in base version mode).
-			$pro_tools = array(
-				// Self-editing capability for Architect Agent (Pro feature).
-				'WP_MCP_AI_Tool_Manage_Files'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-manage-files.php',
-				// GitHub Copilot CLI-inspired developer tools.
-				'WP_MCP_AI_Tool_Execute_Shell_Command' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-shell-command.php',
-				'WP_MCP_AI_Tool_Git_Operations'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-git-operations.php',
-				'WP_MCP_AI_Tool_Search_Codebase'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-codebase.php',
-			);
+			// NOTE: Architect Agent tools (manage_files, execute_shell_command, git_operations, search_codebase)
+			// are now loaded via the Architect Agent Toolkit (addons/pro/includes/architect-agent-toolkit-init.php).
+			$pro_tools = array();
 
 			// Combine tools based on version mode.
 			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools, $pro_tools );
