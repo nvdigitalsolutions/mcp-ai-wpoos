@@ -70,6 +70,13 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
+		// Check if the main NV oOS menu exists.
+		$this->assertArrayHasKey(
+			'wp-mcp-ai-dashboard',
+			$submenu,
+			'Main NV oOS menu should be registered'
+		);
+
 		// Find the Pro orchestration dashboard in the submenu.
 		$pro_orchestration_found = false;
 		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
@@ -104,6 +111,13 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
+		// Check if the main NV oOS menu exists.
+		$this->assertArrayHasKey(
+			'wp-mcp-ai-dashboard',
+			$submenu,
+			'Main NV oOS menu should be registered'
+		);
+
 		$slugs = array();
 		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
 			if ( isset( $item[2] ) && false !== strpos( $item[2], 'orchestration' ) ) {
@@ -135,8 +149,17 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 		// Trigger the admin_menu action to register menus.
 		do_action( 'admin_menu' );
 
+		// Check if the main NV oOS menu exists.
+		$this->assertArrayHasKey(
+			'wp-mcp-ai-dashboard',
+			$submenu,
+			'Main NV oOS menu should be registered'
+		);
+
+		$page_found = false;
 		foreach ( $submenu['wp-mcp-ai-dashboard'] as $item ) {
 			if ( isset( $item[2] ) && 'mcp-ai-orchestration-dashboard' === $item[2] ) {
+				$page_found = true;
 				// Page title is in $item[3].
 				$this->assertEquals(
 					'Orchestration Dashboard',
@@ -146,5 +169,10 @@ class Test_Orchestration_Dashboard_Menu extends WP_UnitTestCase {
 				break;
 			}
 		}
+
+		$this->assertTrue(
+			$page_found,
+			'Base orchestration dashboard menu item should exist to verify page title'
+		);
 	}
 }
