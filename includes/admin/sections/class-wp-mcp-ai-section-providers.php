@@ -131,8 +131,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				);
 			}
 
+			// Get available embedded models (WebLLM client-side models).
+			// All available models are listed. Models marked with * support function calling.
+			$embedded_models = array(
+				'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+				'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+				'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+				'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+				'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+				'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+				'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+			);
+
 			// Get provider list dynamically.
-			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$provider_list = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -436,13 +448,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'label'       => __( 'Gemini Image Aspect Ratio', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default aspect ratio for Gemini-generated images. Square (1:1) works for most purposes. Portrait (3:4, 9:16) and landscape (4:3, 16:9) offer creative flexibility.', 'mcp-ai-wpoos' ),
 					'options'     => array(
+						'auto' => 'Auto (Let AI decide)',
 						'1:1'  => '1:1 (Square)',
 						'3:4'  => '3:4 (Portrait)',
 						'4:3'  => '4:3 (Landscape)',
 						'9:16' => '9:16 (Vertical)',
 						'16:9' => '16:9 (Widescreen)',
 					),
-					'default'     => '1:1',
+					'default'     => '4:3',
 				),
 				'gemini_video_model'                 => array(
 					'type'        => 'select',
@@ -583,6 +596,29 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'Advanced: Bind HTTP requests to a specific LOCAL network interface on THIS WordPress server. Examples: "eth0", "wlan0", or a LOCAL IP like "192.168.1.50" assigned to THIS server. Leave EMPTY for most setups (default routing works). NOTE: If your LM Studio is on a different machine (e.g., 192.168.2.222), put that IP in the Endpoint URL field above, NOT here. This field is for source binding only.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
+
+				// Embedded LLM Settings (Pro version only - auto-enabled when Pro is present).
+				'enable_embedded'                    => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable client-side embedded language models (Pro - Auto-enabled)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Run language models directly in the user\'s browser using WebGPU/WebAssembly. Fully private, no server resources required, no API keys needed. Models are downloaded on-demand to browser cache. This feature is automatically enabled when the Pro plugin is present.', 'mcp-ai-wpoos' ),
+					'default'        => true,
+					'disabled'       => true, // Read-only since it's auto-enabled with Pro.
+				) : null,
+				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'        => 'select',
+					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select a model for client-side inference. Models are downloaded on-demand to the user\'s browser cache when first used. Models marked with * support tool/function calling. Recommended: Hermes 2 Pro for best function calling accuracy.', 'mcp-ai-wpoos' ),
+					'options'     => $embedded_models,
+					'default'     => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
+				) : null,
+				'embedded_model_management'          => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'type'        => 'custom',
+					'label'       => __( 'Available Models', 'mcp-ai-wpoos' ),
+					'description' => __( 'Models available for client-side inference. Models are automatically downloaded to the user\'s browser cache when first used. No server-side storage required.', 'mcp-ai-wpoos' ),
+					'callback'    => array( $this, 'render_embedded_model_management' ),
+				) : null,
 
 				// Hugging Face Settings.
 				'enable_huggingface'                 => array(
@@ -793,7 +829,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 * @return array
 		 */
 		protected function get_subtab_groups() {
-			return array(
+			$groups = array(
 				'priority'             => array(
 					'id'     => 'priority',
 					'label'  => __( 'Priority Order', 'mcp-ai-wpoos' ),
@@ -830,6 +866,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
+				'embedded'             => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+					'id'     => 'embedded',
+					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-smartphone',
+					'fields' => array( 'enable_embedded', 'embedded_model', 'embedded_model_management' ),
+				) : null,
 				'huggingface'          => array(
 					'id'     => 'huggingface',
 					'label'  => __( 'Hugging Face', 'mcp-ai-wpoos' ),
@@ -855,6 +897,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'fields' => array( 'google_maps_api_key' ),
 				),
 			);
+
+			// Filter out null values (e.g., embedded provider in base version).
+			return array_filter( $groups );
 		}
 
 		/**
@@ -940,12 +985,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 
 <div class="wp-mcp-ai-subtab-content">
 <table class="form-table" role="presentation">
-			<?php $this->render(); ?>
+				<?php $this->render(); ?>
 </table>
 </div>
 </div>
 </div>
-			<?php
+				<?php
 		}
 
 		/**
@@ -1005,6 +1050,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				'ollama'      => __( 'Ollama (Local AI)', 'mcp-ai-wpoos' ),
 				'lm_studio'   => __( 'LM Studio (Local AI)', 'mcp-ai-wpoos' ),
 				'cloudflare'  => __( 'Cloudflare (Workers AI)', 'mcp-ai-wpoos' ),
+				'embedded'    => __( 'Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ),
 			);
 			?>
 			<tr>
@@ -1014,7 +1060,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				<td>
 					<div id="wp-mcp-ai-provider-priority-list" class="wp-mcp-ai-sortable-list">
 						<ul id="wp-mcp-ai-provider-sortable">
-							<?php foreach ( $value as $provider ) : ?>
+						<?php foreach ( $value as $provider ) : ?>
 								<?php if ( isset( $provider_labels[ $provider ] ) ) : ?>
 									<li class="wp-mcp-ai-provider-item" data-provider="<?php echo esc_attr( $provider ); ?>">
 										<span class="dashicons dashicons-menu"></span>
@@ -1025,7 +1071,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 							<?php endforeach; ?>
 						</ul>
 					</div>
-					<?php if ( $description ) : ?>
+				<?php if ( $description ) : ?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
 					<?php endif; ?>
 					<style>
@@ -1104,7 +1150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 		 */
 		private function sanitize_provider_priority_list( $priority_list ) {
 			// Get valid providers dynamically from Model Config.
-			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' );
+			$valid_providers = array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' );
 			if ( class_exists( 'WP_MCP_AI_Model_Config' ) ) {
 				$configured_providers = WP_MCP_AI_Model_Config::get_all_provider_slugs();
 				if ( ! empty( $configured_providers ) ) {
@@ -1151,7 +1197,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					$result = WP_MCP_AI_Settings_Validator::validate_url( $input[ $field ] );
 					if ( is_wp_error( $result ) ) {
 						$errors[] = sprintf(
-							/* translators: %s: field name */
+						/* translators: %s: field name */
 							__( '%s: ', 'mcp-ai-wpoos' ),
 							$field
 						) . $result->get_error_message();
@@ -1164,6 +1210,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			}
 
 			return $input;
+		}
+
+		/**
+		 * Render embedded model management custom field.
+		 *
+		 * @param array $field_data Field configuration data.
+		 * @return void
+		 */
+		public function render_embedded_model_management( $field_data ) {
+			?>
+<div class="notice notice-info inline">
+<p>
+<strong><?php esc_html_e( 'Client-Side Models (Pro Feature)', 'mcp-ai-wpoos' ); ?></strong><br>
+			<?php esc_html_e( 'Models run in the user browser using WebGPU/WebAssembly. See Pro Settings page for model list and NPM dependencies.', 'mcp-ai-wpoos' ); ?>
+</p>
+</div>
+			<?php
 		}
 	}
 }

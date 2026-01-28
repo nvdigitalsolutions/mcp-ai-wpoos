@@ -19,7 +19,7 @@ The system registers 6 primary CPTs:
    - Health, dental, vision, pet, and life insurance
    - Policy details, coverage info, provider data
    
-3. **mcp_ai_medical_record** - Medical records
+3. **mcp_ai_med_record** - Medical records
    - Lab results, diagnoses, treatments, vaccinations, imaging, procedures
    - Linked to members with date, provider, attachments
    

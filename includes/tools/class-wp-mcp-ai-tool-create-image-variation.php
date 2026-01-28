@@ -52,42 +52,42 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 	 */
 	public function get_parameters_schema() {
 		return array(
-			'type' => 'object',
+			'type'       => 'object',
 			'properties' => array_merge(
 				array(
-					'image_id' => array(
-						'type' => 'integer',
+					'image_id'        => array(
+						'type'        => 'integer',
 						'description' => __( 'WordPress attachment ID of the source image.', 'mcp-ai-wpoos' ),
 					),
-					'model' => array(
-						'type' => 'string',
+					'model'           => array(
+						'type'        => 'string',
 						'description' => __( 'OpenAI model to use for generating variations.', 'mcp-ai-wpoos' ),
-						'enum' => array( 'dall-e-2' ),
-						'default' => 'dall-e-2',
+						'enum'        => array( 'dall-e-2' ),
+						'default'     => 'dall-e-2',
 					),
-					'n' => array(
-						'type' => 'integer',
+					'n'               => array(
+						'type'        => 'integer',
 						'description' => __( 'Number of variations to generate.', 'mcp-ai-wpoos' ),
-						'minimum' => 1,
-						'maximum' => 10,
-						'default' => 1,
+						'minimum'     => 1,
+						'maximum'     => 10,
+						'default'     => 1,
 					),
-					'size' => array(
-						'type' => 'string',
+					'size'            => array(
+						'type'        => 'string',
 						'description' => __( 'Size of the variation images.', 'mcp-ai-wpoos' ),
-						'enum' => array( '256x256', '512x512', '1024x1024' ),
-						'default' => '1024x1024',
+						'enum'        => array( '256x256', '512x512', '1024x1024' ),
+						'default'     => '1024x1024',
 					),
 					'response_format' => array(
-						'type' => 'string',
+						'type'        => 'string',
 						'description' => __( 'Format for the response.', 'mcp-ai-wpoos' ),
-						'enum' => array( 'url', 'b64_json' ),
-						'default' => 'b64_json',
+						'enum'        => array( 'url', 'b64_json' ),
+						'default'     => 'b64_json',
 					),
 				),
 				$this->get_output_format_parameter_schema()
 			),
-			'required' => array( 'image_id' ),
+			'required'   => array( 'image_id' ),
 		);
 	}
 
@@ -102,7 +102,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $arguments['image_id'] ) ) {
 			return array(
 				'success' => false,
-				'error' => __( 'The image_id parameter is required.', 'mcp-ai-wpoos' ),
+				'error'   => __( 'The image_id parameter is required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -110,7 +110,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( ! wp_attachment_is_image( $image_id ) ) {
 			return array(
 				'success' => false,
-				'error' => __( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' ),
+				'error'   => __( 'The specified image_id is not a valid image attachment.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( ! $image_path || ! file_exists( $image_path ) ) {
 			return array(
 				'success' => false,
-				'error' => __( 'The image file could not be found.', 'mcp-ai-wpoos' ),
+				'error'   => __( 'The image file could not be found.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -149,7 +149,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( is_wp_error( $result ) ) {
 			return array(
 				'success' => false,
-				'error' => $result->get_error_message(),
+				'error'   => $result->get_error_message(),
 			);
 		}
 
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 								'variation_svg_conversion_failed',
 								'Failed to convert image variation to SVG',
 								array(
-									'error' => $svg_saved->get_error_message(),
+									'error'         => $svg_saved->get_error_message(),
 									'attachment_id' => $saved['attachment_id'],
 								)
 							);
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		if ( empty( $saved_images ) ) {
 			return array(
 				'success' => false,
-				'error' => __( 'Failed to save variation images.', 'mcp-ai-wpoos' ),
+				'error'   => __( 'Failed to save variation images.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -199,22 +199,22 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 			count( $saved_images ),
 			$image_id
 		);
-		
+
 		if ( 'svg' === $output_format ) {
 			$text_parts[] = __( 'Variations converted to SVG format.', 'mcp-ai-wpoos' );
 		}
 
-		$text    = implode( ' ', $text_parts );
+		$text = implode( ' ', $text_parts );
 
 		$result = array(
 			'success' => true,
-			'data' => array(
-				'images' => $saved_images,
-				'count' => count( $saved_images ),
+			'data'    => array(
+				'images'         => $saved_images,
+				'count'          => count( $saved_images ),
 				'original_image' => $image_id,
-				'output_format' => $output_format,
-				'text' => $text,
-				'message' => $text,
+				'output_format'  => $output_format,
+				'text'           => $text,
+				'message'        => $text,
 			),
 		);
 
@@ -275,9 +275,9 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 		// Create attachment.
 		$attachment = array(
 			'post_mime_type' => 'image/png',
-			'post_title' => sanitize_text_field( $variation_title ),
-			'post_content' => '',
-			'post_status' => 'inherit',
+			'post_title'     => sanitize_text_field( $variation_title ),
+			'post_content'   => '',
+			'post_status'    => 'inherit',
 		);
 
 		$attachment_id = wp_insert_attachment( $attachment, $file_path );
@@ -299,11 +299,11 @@ class WP_MCP_AI_Tool_Create_Image_Variation implements WP_MCP_AI_Tool_Interface,
 
 		return array(
 			'attachment_id' => $attachment_id,
-			'url' => wp_get_attachment_url( $attachment_id ),
-			'file' => $file_path,
-			'file_name' => basename( $file_path ),
-			'bytes' => $bytes,
-			'mime_type' => 'image/png',
+			'url'           => wp_get_attachment_url( $attachment_id ),
+			'file'          => $file_path,
+			'file_name'     => basename( $file_path ),
+			'bytes'         => $bytes,
+			'mime_type'     => 'image/png',
 		);
 	}
 

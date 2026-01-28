@@ -88,4 +88,7 @@ async function generateExcel() {
 	}
 }
 
-generateExcel();
+generateExcel().catch(error => {
+	console.error('Unhandled error:', error.message);
+	process.exit(1);
+});

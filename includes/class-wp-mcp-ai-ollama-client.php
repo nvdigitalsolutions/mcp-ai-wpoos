@@ -339,6 +339,32 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 
 			if ( ! empty( $options['system_prompt'] ) ) {
 				$payload['system'] = wp_kses_post( $options['system_prompt'] );
+
+				// Log system prompt inclusion for Ollama requests.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'ollama_system_prompt_included',
+						'Ollama: System prompt added to payload',
+						array(
+							'model'                => $model,
+							'system_prompt_length' => strlen( $payload['system'] ),
+							'system_preview'       => substr( $payload['system'], 0, 100 ) . '...',
+						)
+					);
+				}
+			} else {
+				// Log warning if system prompt is missing.
+				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+					WP_MCP_AI_Logger::log_event(
+						'ollama_system_prompt_missing',
+						'Ollama: No system prompt in options',
+						array(
+							'model'            => $model,
+							'has_options_key'  => isset( $options['system_prompt'] ),
+							'options_is_empty' => empty( $options['system_prompt'] ),
+						)
+					);
+				}
 			}
 
 			return $payload;

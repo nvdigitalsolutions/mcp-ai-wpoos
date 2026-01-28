@@ -1672,56 +1672,56 @@ class WP_MCP_AI_Model_Config {
 			),
 			// Qwen family - Alibaba's multilingual models.
 			'Qwen/Qwen3-Coder-30B-A3B-Instruct'            => array(
-				'name'                   => 'Qwen 3 Coder 30B A3B Instruct',
-				'provider'               => 'huggingface',
-				'tpm'                    => 50000,
-				'rpm'                    => 100,
-				'tpd'                    => 1000000,
-				'rpd'                    => 5000,
-				'context_window'         => 32768,
-				'max_completion_tokens'  => 8192,
-				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
-				'cost_per_1k'            => 0.001,
-				'status'                 => 'active',
+				'name'                  => 'Qwen 3 Coder 30B A3B Instruct',
+				'provider'              => 'huggingface',
+				'tpm'                   => 50000,
+				'rpm'                   => 100,
+				'tpd'                   => 1000000,
+				'rpd'                   => 5000,
+				'context_window'        => 32768,
+				'max_completion_tokens' => 8192,
+				'fallback_model'        => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'           => 0.001,
+				'status'                => 'active',
 			),
 			'Qwen/Qwen2.5-72B-Instruct'                    => array(
-				'name'                   => 'Qwen 2.5 72B Instruct',
-				'provider'               => 'huggingface',
-				'tpm'                    => 50000,
-				'rpm'                    => 100,
-				'tpd'                    => 1000000,
-				'rpd'                    => 5000,
-				'context_window'         => 32768,
-				'max_completion_tokens'  => 8192,
-				'fallback_model'         => 'Qwen/Qwen2.5-32B-Instruct',
-				'cost_per_1k'            => 0.001,
-				'status'                 => 'active',
+				'name'                  => 'Qwen 2.5 72B Instruct',
+				'provider'              => 'huggingface',
+				'tpm'                   => 50000,
+				'rpm'                   => 100,
+				'tpd'                   => 1000000,
+				'rpd'                   => 5000,
+				'context_window'        => 32768,
+				'max_completion_tokens' => 8192,
+				'fallback_model'        => 'Qwen/Qwen2.5-32B-Instruct',
+				'cost_per_1k'           => 0.001,
+				'status'                => 'active',
 			),
 			'Qwen/Qwen2.5-32B-Instruct'                    => array(
-				'name'                   => 'Qwen 2.5 32B Instruct',
-				'provider'               => 'huggingface',
-				'tpm'                    => 70000,
-				'rpm'                    => 140,
-				'tpd'                    => 1400000,
-				'rpd'                    => 7000,
-				'context_window'         => 32768,
-				'max_completion_tokens'  => 8192,
-				'fallback_model'         => 'Qwen/Qwen2.5-7B-Instruct',
-				'cost_per_1k'            => 0.0005,
-				'status'                 => 'active',
+				'name'                  => 'Qwen 2.5 32B Instruct',
+				'provider'              => 'huggingface',
+				'tpm'                   => 70000,
+				'rpm'                   => 140,
+				'tpd'                   => 1400000,
+				'rpd'                   => 7000,
+				'context_window'        => 32768,
+				'max_completion_tokens' => 8192,
+				'fallback_model'        => 'Qwen/Qwen2.5-7B-Instruct',
+				'cost_per_1k'           => 0.0005,
+				'status'                => 'active',
 			),
 			'Qwen/Qwen2.5-7B-Instruct'                     => array(
-				'name'                   => 'Qwen 2.5 7B Instruct',
-				'provider'               => 'huggingface',
-				'tpm'                    => 120000,
-				'rpm'                    => 240,
-				'tpd'                    => 2400000,
-				'rpd'                    => 12000,
-				'context_window'         => 32768,
-				'max_completion_tokens'  => 8192,
-				'fallback_model'         => 'microsoft/Phi-3-mini-4k-instruct',
-				'cost_per_1k'            => 0.0002,
-				'status'                 => 'active',
+				'name'                  => 'Qwen 2.5 7B Instruct',
+				'provider'              => 'huggingface',
+				'tpm'                   => 120000,
+				'rpm'                   => 240,
+				'tpd'                   => 2400000,
+				'rpd'                   => 12000,
+				'context_window'        => 32768,
+				'max_completion_tokens' => 8192,
+				'fallback_model'        => 'microsoft/Phi-3-mini-4k-instruct',
+				'cost_per_1k'           => 0.0002,
+				'status'                => 'active',
 			),
 			// Specialized Hugging Face models.
 			'google/gemma-2-9b-it-hf'                      => array(
@@ -2184,6 +2184,15 @@ class WP_MCP_AI_Model_Config {
 		$enable_huggingface = isset( $settings['enable_huggingface'] ) ? $settings['enable_huggingface'] : false;
 		if ( $enable_huggingface && ! empty( $settings['huggingface_api_key'] ) ) {
 			$providers['huggingface'] = __( 'Hugging Face', 'mcp-ai-wpoos' );
+		}
+
+		// Check enable_embedded setting (defaults to false if not set).
+		// Embedded LLM runs in the browser, so no API key is required - just check if enabled and a model is selected.
+		// Note: Embedded LLM is not available in base-only version, but IS available when Pro addon is active.
+		$enable_embedded = isset( $settings['enable_embedded'] ) ? $settings['enable_embedded'] : false;
+		$is_base_only    = defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION && ! defined( 'WP_MCP_AI_PRO_VERSION' );
+		if ( $enable_embedded && ! empty( $settings['embedded_model'] ) && ! $is_base_only ) {
+			$providers['embedded'] = __( 'Embedded LLM', 'mcp-ai-wpoos' );
 		}
 
 		return $providers;

@@ -190,9 +190,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'permission_callback' => array( $this, 'chat_transcripts_permissions_check' ),
 					'args'                => array(
 						'assistant_id'      => array(
-							'description'       => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
-							'type'              => array( 'integer', 'string' ),
-							'required'          => true,
+							'description' => __( 'ID of the assistant for this chat transcript. Can be an integer assistant ID or a string like "unified_team_123" or "team_123_member_456".', 'mcp-ai-wpoos' ),
+							'type'        => array( 'integer', 'string' ),
+							'required'    => true,
 						),
 						'session_key'       => array(
 							'description'       => __( 'Session key for this conversation.', 'mcp-ai-wpoos' ),
@@ -204,34 +204,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Array of conversation messages.', 'mcp-ai-wpoos' ),
 							'type'              => 'array',
 							'required'          => true,
-							'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-							'items'             => array(
-								'type'       => 'object',
-								'properties' => array(
-									'role'    => array(
-										'type' => 'string',
-										'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-									),
-									'content' => array(
-										'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-										'oneOf'       => array(
-											array( 'type' => 'null' ),
-											array( 'type' => 'string' ),
-											array(
-												'type'  => 'array',
-												'items' => array(
-													'type' => 'object',
-												),
-											),
-										),
-									),
-									'display' => array(
-										'description' => __( 'Display metadata for UI restoration (video attachments, bubble type, usage/cost badges).', 'mcp-ai-wpoos' ),
-										'type'        => 'object',
-										'required'    => false,
-									),
-								),
-							),
+							'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 						),
 						'response_metadata' => array(
 							'description' => __( 'Optional response metadata to preserve (usage data, provider info, etc.). If provided, this will be merged into the response payload and metadata fields.', 'mcp-ai-wpoos' ),
@@ -257,7 +230,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
 						'user_id'      => array(
 							'description'       => __( 'User ID to filter transcripts by. Defaults to current user.', 'mcp-ai-wpoos' ),
@@ -282,8 +255,55 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 							'description'       => __( 'Session key for the transcript.', 'mcp-ai-wpoos' ),
 							'type'              => 'string',
 							'required'          => true,
-							'sanitize_callback' => array( $this->validator, 'sanitize_session_key_param' ),
+							'sanitize_callback' => array( $this, 'sanitize_session_key_wrapper' ),
 						),
+					),
+				),
+			)
+		);
+
+		// /track-embedded-usage - Track usage from embedded LLM (client-side).
+		register_rest_route(
+			self::REST_NAMESPACE,
+			'/track-embedded-usage',
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'permission_callback' => array( $this, 'permissions_check' ),
+				'callback'            => array( $this, 'handle_track_embedded_usage' ),
+				'args'                => array(
+					'assistant_id' => array(
+						'description'       => __( 'ID of the assistant that generated the response.', 'mcp-ai-wpoos' ),
+						'type'              => 'integer',
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+					),
+					'model'        => array(
+						'description'       => __( 'Model identifier used for generation.', 'mcp-ai-wpoos' ),
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'usage'        => array(
+						'description' => __( 'Usage statistics object.', 'mcp-ai-wpoos' ),
+						'type'        => 'object',
+						'required'    => true,
+						'properties'  => array(
+							'prompt_tokens'     => array(
+								'type' => 'integer',
+							),
+							'completion_tokens' => array(
+								'type' => 'integer',
+							),
+							'total_tokens'      => array(
+								'type' => 'integer',
+							),
+						),
+					),
+					'finish_reason' => array(
+						'description'       => __( 'Why generation stopped.', 'mcp-ai-wpoos' ),
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 			)
@@ -307,47 +327,13 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'description'       => __( 'Array of message objects with role and content.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => true,
-				'validate_callback' => array( $this->validator, 'validate_messages_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'role'    => array(
-							'type' => 'string',
-							'enum' => array( 'system', 'user', 'assistant', 'tool' ),
-						),
-						'content' => array(
-							'description' => __( 'Message content. Can be a string, array of content parts, or null for assistant messages with tool_calls.', 'mcp-ai-wpoos' ),
-							'oneOf'       => array(
-								array( 'type' => 'null' ),
-								array( 'type' => 'string' ),
-								array(
-									'type'  => 'array',
-									'items' => array(
-										'type' => 'object',
-									),
-								),
-							),
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_messages_array_wrapper' ),
 			),
 			'attachments'         => array(
 				'description'       => __( 'Optional array of file attachments to include with the request.', 'mcp-ai-wpoos' ),
 				'type'              => 'array',
 				'required'          => false,
-				'validate_callback' => array( $this->validator, 'validate_attachments_array' ),
-				'items'             => array(
-					'type'       => 'object',
-					'properties' => array(
-						'file_id' => array(
-							'type' => 'integer',
-						),
-						'url'     => array(
-							'type'   => 'string',
-							'format' => 'uri',
-						),
-					),
-				),
+				'validate_callback' => array( $this, 'validate_attachments_array_wrapper' ),
 			),
 			'options'             => array(
 				'description' => __( 'Optional request options to override assistant defaults.', 'mcp-ai-wpoos' ),
@@ -390,6 +376,80 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'sanitize_callback' => 'sanitize_textarea_field',
 			),
 		);
+	}
+
+	/**
+	 * Get or initialize the validator instance.
+	 *
+	 * This method ensures the validator is available at runtime.
+	 * The validator should always be initialized via the parent constructor,
+	 * but this provides a defensive fallback for edge cases where the
+	 * validator might not be set (e.g., during unit tests or if the
+	 * constructor chain is broken).
+	 *
+	 * @return WP_MCP_AI_REST_Validator The validator instance.
+	 */
+	private function get_validator() {
+		// Return existing validator if available.
+		if ( $this->validator ) {
+			return $this->validator;
+		}
+
+		// Try to get from container.
+		$container = wp_mcp_ai_container();
+		if ( $container ) {
+			$this->validator = $container->get( 'rest.validator' );
+		}
+
+		// Final fallback: create new instance.
+		if ( ! $this->validator ) {
+			$this->validator = new WP_MCP_AI_REST_Validator();
+		}
+
+		return $this->validator;
+	}
+
+	/**
+	 * Wrapper for messages array validation.
+	 *
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_messages_array_wrapper( $value, $request, $param ) {
+		return $this->get_validator()->validate_messages_array( $value, $request, $param );
+	}
+
+	/**
+	 * Wrapper for attachments array validation.
+	 *
+	 * This wrapper ensures validation happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param mixed           $value   The value to validate.
+	 * @param WP_REST_Request $request The REST request object.
+	 * @param string          $param   The parameter name.
+	 * @return bool|WP_Error True if valid, WP_Error otherwise.
+	 */
+	public function validate_attachments_array_wrapper( $value, $request, $param ) {
+		return $this->get_validator()->validate_attachments_array( $value, $request, $param );
+	}
+
+	/**
+	 * Wrapper for session key sanitization.
+	 *
+	 * This wrapper ensures sanitization happens through a consistent method
+	 * that can handle edge cases where the validator might not be initialized.
+	 *
+	 * @param string $value The session key to sanitize.
+	 * @return string Sanitized session key.
+	 */
+	public function sanitize_session_key_wrapper( $value ) {
+		return $this->get_validator()->sanitize_session_key_param( $value );
 	}
 
 	/**
@@ -668,9 +728,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 			);
 		}
 
-		$session_key     = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
+		$session_key      = $main_controller->normalise_transcript_session_key( $request->get_param( 'session_key' ) );
 		$assistant_id_raw = $request->get_param( 'assistant_id' );
-		
+
 		// Handle both integer and string assistant IDs (for unified teams and team members).
 		if ( is_string( $assistant_id_raw ) && ! empty( $assistant_id_raw ) ) {
 			$assistant_id = sanitize_text_field( $assistant_id_raw );
@@ -799,15 +859,15 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Get assistant_id as raw value first to check for virtual team IDs.
 		$assistant_id_raw = $request->get_param( 'assistant_id' );
-		$session_key      = $this->validator->sanitize_session_key_param( $request->get_param( 'session_key' ) );
+		$session_key      = $this->get_validator()->sanitize_session_key_param( $request->get_param( 'session_key' ) );
 		$messages         = $request->get_param( 'messages' );
 
 		// Check if this is a virtual team assistant ID.
 		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
 		// Format: unified_team_{digits} or team_{digits}_member_{digits}
-		$is_virtual_team_assistant = is_string( $assistant_id_raw ) && 
+		$is_virtual_team_assistant = is_string( $assistant_id_raw ) &&
 			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id_raw );
-		
+
 		// Sanitize assistant_id based on type.
 		if ( $is_virtual_team_assistant ) {
 			// Keep as string for virtual team IDs.
@@ -852,7 +912,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		// Sanitize messages.
-		$sanitized_messages = $this->validator->sanitize_messages( $messages );
+		$sanitized_messages = $this->get_validator()->sanitize_messages( $messages );
 		if ( is_wp_error( $sanitized_messages ) ) {
 			return $sanitized_messages;
 		}
@@ -1459,5 +1519,88 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return __( 'Transcript persistence is unavailable. Transcripts will be stored in browser only (24 hours). Check the error logs for more details.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Handle /track-embedded-usage request.
+	 *
+	 * Tracks usage from embedded LLM (client-side WebLLM) for cost monitoring
+	 * and orchestration dashboard visibility.
+	 *
+	 * @param WP_REST_Request $request REST request object.
+	 * @return WP_REST_Response|WP_Error Response object.
+	 */
+	public function handle_track_embedded_usage( WP_REST_Request $request ) {
+		$assistant_id  = $request->get_param( 'assistant_id' );
+		$model         = $request->get_param( 'model' );
+		$usage         = $request->get_param( 'usage' );
+		$finish_reason = $request->get_param( 'finish_reason' );
+
+		// Get current user.
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			return $this->error(
+				'wp_mcp_ai_no_user',
+				__( 'User must be authenticated to track usage.', 'mcp-ai-wpoos' ),
+				401
+			);
+		}
+
+		// Validate usage data.
+		if ( empty( $usage ) || ! is_array( $usage ) ) {
+			return $this->error(
+				'wp_mcp_ai_invalid_usage',
+				__( 'Invalid usage data provided.', 'mcp-ai-wpoos' ),
+				400
+			);
+		}
+
+		// Prepare response object for usage tracker.
+		// Format matches what server-side chat responses provide.
+		$response = array(
+			'usage'    => $usage,
+			'provider' => 'embedded',
+			'model'    => $model,
+		);
+
+		// Prepare options for usage tracker.
+		$options = array(
+			'provider' => 'embedded',
+			'model'    => $model,
+		);
+
+		// Record usage via standard usage tracker.
+		// This integrates with existing cost estimation and reporting.
+		if ( class_exists( 'WP_MCP_AI_Usage_Tracker' ) ) {
+			WP_MCP_AI_Usage_Tracker::record_chat_usage(
+				$user_id,
+				$assistant_id,
+				$options,
+				$response
+			);
+		}
+
+		// Optional: Log to JetEngine CCT for detailed usage history.
+		// This provides queryable usage logs with timestamps.
+		/**
+		 * Fires after embedded LLM usage is tracked.
+		 *
+		 * Extensions can use this to log detailed usage history to JetEngine CCT
+		 * or other storage systems.
+		 *
+		 * @param int    $user_id       User who generated the completion.
+		 * @param int    $assistant_id  Assistant used.
+		 * @param string $model         Model identifier.
+		 * @param array  $usage         Usage statistics.
+		 * @param string $finish_reason Why generation stopped.
+		 */
+		do_action( 'wp_mcp_ai_embedded_usage_tracked', $user_id, $assistant_id, $model, $usage, $finish_reason );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'message' => __( 'Usage tracked successfully.', 'mcp-ai-wpoos' ),
+			)
+		);
 	}
 }

@@ -118,6 +118,63 @@ class WP_MCP_AI_Shortcode {
 			$style_version
 		);
 
+		// Register embedded LLM client scripts (always register, enqueue conditionally).
+		// This prevents conflicts when multiple widgets with different providers are on the same page.
+		if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) {
+			$embedded_script_path    = WP_MCP_AI_URL . 'assets/js/embedded-llm-client.js';
+			$embedded_script_version = $this->get_asset_version( 'assets/js/embedded-llm-client.js' );
+			$webllm_loader_path      = WP_MCP_AI_URL . 'assets/js/webllm-loader.js';
+			$webllm_loader_version   = $this->get_asset_version( 'assets/js/webllm-loader.js' );
+
+			// Register WebLLM loader (loads WebLLM library dynamically).
+			if ( ! wp_script_is( 'webllm-loader', 'registered' ) ) {
+				wp_register_script(
+					'webllm-loader',
+					$webllm_loader_path,
+					array(),
+					$webllm_loader_version,
+					true
+				);
+			}
+
+			// Register embedded LLM client (depends on WebLLM loader).
+			if ( ! wp_script_is( 'wp-mcp-ai-embedded-llm-client', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-embedded-llm-client',
+					$embedded_script_path,
+					array( 'webllm-loader' ),
+					$embedded_script_version,
+					true
+				);
+			}
+
+			// Register enhanced WebLLM scripts for tool calling and knowledge support.
+			$tool_adapter_path    = WP_MCP_AI_URL . 'assets/js/webllm-tool-adapter.min.js';
+			$tool_adapter_version = $this->get_asset_version( 'assets/js/webllm-tool-adapter.min.js' );
+			$function_calling_path    = WP_MCP_AI_URL . 'assets/js/webllm-function-calling-client.min.js';
+			$function_calling_version = $this->get_asset_version( 'assets/js/webllm-function-calling-client.min.js' );
+
+			if ( ! wp_script_is( 'wp-mcp-ai-webllm-tool-adapter', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-webllm-tool-adapter',
+					$tool_adapter_path,
+					array(),
+					$tool_adapter_version,
+					true
+				);
+			}
+
+			if ( ! wp_script_is( 'wp-mcp-ai-webllm-function-calling', 'registered' ) ) {
+				wp_register_script(
+					'wp-mcp-ai-webllm-function-calling',
+					$function_calling_path,
+					array( 'wp-mcp-ai-embedded-llm-client', 'wp-mcp-ai-webllm-tool-adapter' ),
+					$function_calling_version,
+					true
+				);
+			}
+		}
+
 		if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$color_css = WP_MCP_AI_Admin_Settings::get_chat_color_css();
 
@@ -198,140 +255,7 @@ class WP_MCP_AI_Shortcode {
 				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
 				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
 				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
-				'strings'             => array(
-					'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
-					'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
-					'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
-					'building'                      => __( 'Building assistant…', 'mcp-ai-wpoos' ),
-					'buildSuccess'                  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
-					'buildError'                    => __( 'Failed to create assistant. Please try again.', 'mcp-ai-wpoos' ),
-					'bundlingMessages'              => __( 'Preparing to send…', 'mcp-ai-wpoos' ),
-					'sending'                       => __( 'Sending message…', 'mcp-ai-wpoos' ),
-					'waiting'                       => __( 'Waiting for the assistant…', 'mcp-ai-wpoos' ),
-					'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
-					'missingAssistant'              => __( 'Assistant configuration was not found.', 'mcp-ai-wpoos' ),
-					'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name being executed */
-																'toolExecuting' => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
-					'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
-					'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
-					'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
-					'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
-					'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool failure error message */
-					'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
-					'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
-					/* translators: %s: task name */
-																'toolShortcutLabel' => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
-					'emptyMessage'                  => __( 'Enter a message before sending.', 'mcp-ai-wpoos' ),
-					'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
-					'transcribe'                    => __( 'Transcribe', 'mcp-ai-wpoos' ),
-					'transcribeAudio'               => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
-					'transcribing'                  => __( 'Transcribing audio…', 'mcp-ai-wpoos' ),
-					'recording'                     => __( 'Recording… tap to stop.', 'mcp-ai-wpoos' ),
-					'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
-					'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
-					'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name */
-																'transcriptionSuccess' => __( 'Inserted transcription from “%s”.', 'mcp-ai-wpoos' ),
-					'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
-					'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
-					'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
-					'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
-					'translate'                     => __( 'Translate', 'mcp-ai-wpoos' ),
-					'translateAudio'                => __( 'Translate audio', 'mcp-ai-wpoos' ),
-					'translating'                   => __( 'Translating audio…', 'mcp-ai-wpoos' ),
-					'translationError'              => __( 'The translation request failed. Please try again.', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name */
-																'translationSuccess' => __( 'Inserted translation from "%s".', 'mcp-ai-wpoos' ),
-					'translationFileTooLarge'       => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
-					'translateChooseSource'         => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
-					'translationEndpointNotFound'   => __( 'Translation service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
-					'translationNotConfigured'      => __( 'Translation is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
-					'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
-					'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
-					'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
-					'voiceChatProcessing'           => __( 'Processing your voice message…', 'mcp-ai-wpoos' ),
-					'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
-					'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
-					'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
-					'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
-					'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
-					'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
-					'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name being uploaded */
-																'uploadingFile' => __( 'Uploading “%s”…', 'mcp-ai-wpoos' ),
-					'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
-					'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
-					'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
-					/* translators: %s: file name with unsupported type */
-																'unsupportedFileType' => __( '“%s” is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
-					'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
-					'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
-					'expandTranscript'              => __( 'Expand conversation', 'mcp-ai-wpoos' ),
-					'collapseTranscript'            => __( 'Collapse conversation', 'mcp-ai-wpoos' ),
-					'newConversation'               => __( 'Start new conversation', 'mcp-ai-wpoos' ),
-					'loadConversation'              => __( 'Load conversation', 'mcp-ai-wpoos' ),
-					'jsonResponse'                  => __( 'JSON response', 'mcp-ai-wpoos' ),
-					'historyToggleShow'             => __( 'Show previous conversations', 'mcp-ai-wpoos' ),
-					'historyToggleHide'             => __( 'Hide previous conversations', 'mcp-ai-wpoos' ),
-					'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
-					'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
-					'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
-					/* translators: %d: number of messages in chat history */
-																'historyMessageCount' => __( '%d messages', 'mcp-ai-wpoos' ),
-					'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
-					/* translators: %s: conversation identifier */
-					'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
-					'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
-					'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
-					'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'mcp-ai-wpoos' ),
-					'savingPost'                    => __( 'Saving post…', 'mcp-ai-wpoos' ),
-					'saveConversation'              => __( 'Save conversation', 'mcp-ai-wpoos' ),
-					'savingConversation'            => __( 'Saving current conversation...', 'mcp-ai-wpoos' ),
-					'conversationSaved'             => __( 'Conversation saved successfully.', 'mcp-ai-wpoos' ),
-					'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'mcp-ai-wpoos' ),
-					'saveFailedProceed'             => __( 'Failed to save conversation: ', 'mcp-ai-wpoos' ),
-					'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'mcp-ai-wpoos' ),
-					'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'mcp-ai-wpoos' ),
-					'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'mcp-ai-wpoos' ),
-					'saveSkipped'                   => __( 'Save not available for this conversation.', 'mcp-ai-wpoos' ),
-					'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'mcp-ai-wpoos' ),
-					'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'mcp-ai-wpoos' ),
-					'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'mcp-ai-wpoos' ),
-					'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'mcp-ai-wpoos' ),
-					'exportFailed'                  => __( 'Export failed: ', 'mcp-ai-wpoos' ),
-					'exportSuccess'                 => __( 'Conversation exported successfully as ', 'mcp-ai-wpoos' ),
-					'deleteConversation'            => __( 'Delete this conversation', 'mcp-ai-wpoos' ),
-					'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'mcp-ai-wpoos' ),
-					'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'videoNotSupported'             => __( 'Your browser does not support video playback.', 'mcp-ai-wpoos' ),
-					'downloadVideo'                 => __( 'Download video', 'mcp-ai-wpoos' ),
-					'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'mcp-ai-wpoos' ),
-					'videoPending'                  => __( 'Pending • ~5 min', 'mcp-ai-wpoos' ),
-					'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'mcp-ai-wpoos' ),
-					'tokensLabel'                   => __( 'Tokens', 'mcp-ai-wpoos' ),
-					'costLabel'                     => __( 'Cost', 'mcp-ai-wpoos' ),
-					'estimatedCostLabel'            => __( 'Est. Cost', 'mcp-ai-wpoos' ),
-					/* translators: %d: number of tokens used */
-					'tokensUsed'                    => __( '%d tokens', 'mcp-ai-wpoos' ),
-					/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
-					'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'mcp-ai-wpoos' ),
-					/* translators: %s: cost in USD */
-					'costAmount'                    => __( '$%s', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name that is processing */
-					'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
-					/* translators: %s: tool name that is temporarily unavailable */
-					'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
-					'roleLabels'                    => array(
-						'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
-						'user'      => __( 'You', 'mcp-ai-wpoos' ),
-						'system'    => __( 'System', 'mcp-ai-wpoos' ),
-						'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
-					),
-				),
+				'strings'             => $this->get_strings(),
 			)
 		);
 	}
@@ -416,6 +340,227 @@ class WP_MCP_AI_Shortcode {
 		</div>
 		<?php
 		return ob_get_clean();
+	}
+
+	/**
+	 * Check if embedded provider is available for the assistant.
+	 *
+	 * @param string $provider The provider to check.
+	 * @return bool True if embedded provider is available, false otherwise.
+	 */
+	protected function is_embedded_provider_available( $provider ) {
+		return 'embedded' === $provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+	}
+
+	/**
+	 * Get localized strings for the chat interface.
+	 *
+	 * Provides all user-facing text strings for the JavaScript chat widget,
+	 * including UI labels, status messages, error messages, and role labels.
+	 * Strings are translatable via WordPress i18n functions.
+	 *
+	 * @return array Array of localized strings for JavaScript.
+	 */
+	protected function get_strings() {
+		$strings = array(
+			'placeholder'                   => __( 'Ask something…', 'mcp-ai-wpoos' ),
+			'send'                          => __( 'Send', 'mcp-ai-wpoos' ),
+			'build'                         => __( 'Build', 'mcp-ai-wpoos' ),
+			'building'                      => __( 'Building assistant…', 'mcp-ai-wpoos' ),
+			'buildSuccess'                  => __( 'Assistant created successfully!', 'mcp-ai-wpoos' ),
+			'buildError'                    => __( 'Failed to create assistant. Please try again.', 'mcp-ai-wpoos' ),
+			'bundlingMessages'              => __( 'Preparing to send…', 'mcp-ai-wpoos' ),
+			'sending'                       => __( 'Sending message…', 'mcp-ai-wpoos' ),
+			'waiting'                       => __( 'Waiting for the assistant…', 'mcp-ai-wpoos' ),
+			'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
+			'missingAssistant'              => __( 'Assistant configuration was not found.', 'mcp-ai-wpoos' ),
+			'notAuthorized'                 => __( 'You do not have permission to chat with this assistant.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name being executed */
+			'toolExecuting'                 => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
+			'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
+			'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
+			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
+			'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
+			'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool failure error message */
+			'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
+			'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
+			/* translators: %s: task name */
+			'toolShortcutLabel'             => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
+			'emptyMessage'                  => __( 'Enter a message before sending.', 'mcp-ai-wpoos' ),
+			'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
+			'transcribe'                    => __( 'Transcribe', 'mcp-ai-wpoos' ),
+			'transcribeAudio'               => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
+			'transcribing'                  => __( 'Transcribing audio…', 'mcp-ai-wpoos' ),
+			'recording'                     => __( 'Recording… tap to stop.', 'mcp-ai-wpoos' ),
+			'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
+			'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
+			'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name */
+			'transcriptionSuccess'          => __( 'Inserted transcription from "%s".', 'mcp-ai-wpoos' ),
+			'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+			'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+			'transcriptionEndpointNotFound' => __( 'Transcription service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+			'transcriptionNotConfigured'    => __( 'Transcription is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+			'translate'                     => __( 'Translate', 'mcp-ai-wpoos' ),
+			'translateAudio'                => __( 'Translate audio', 'mcp-ai-wpoos' ),
+			'translating'                   => __( 'Translating audio…', 'mcp-ai-wpoos' ),
+			'translationError'              => __( 'The translation request failed. Please try again.', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name */
+			'translationSuccess'            => __( 'Inserted translation from "%s".', 'mcp-ai-wpoos' ),
+			'translationFileTooLarge'       => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
+			'translateChooseSource'         => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
+			'translationEndpointNotFound'   => __( 'Translation service is temporarily unavailable. Please try again later.', 'mcp-ai-wpoos' ),
+			'translationNotConfigured'      => __( 'Translation is not properly configured. Please contact support.', 'mcp-ai-wpoos' ),
+			'voiceChatError'                => __( 'Voice chat failed. Please try again or type your message.', 'mcp-ai-wpoos' ),
+			'voiceChatEndpointNotFound'     => __( 'Voice chat service is temporarily unavailable. Please type your message instead.', 'mcp-ai-wpoos' ),
+			'voiceChatNotConfigured'        => __( 'Voice chat is not properly configured. Please type your message instead.', 'mcp-ai-wpoos' ),
+			'voiceChatProcessing'           => __( 'Processing your voice message…', 'mcp-ai-wpoos' ),
+			'voiceChatNoData'               => __( 'No audio was recorded.', 'mcp-ai-wpoos' ),
+			'voiceChatFileTooLarge'         => __( 'The recorded audio is too large. Please try a shorter message.', 'mcp-ai-wpoos' ),
+			'voiceChatPermissionDenied'     => __( 'Microphone access was denied.', 'mcp-ai-wpoos' ),
+			'voiceChatRecording'            => __( 'Recording… speak now or tap to stop and send. (Hands-free: pauses auto-send)', 'mcp-ai-wpoos' ),
+			'voiceChatSending'              => __( 'Sending your message…', 'mcp-ai-wpoos' ),
+			'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
+			'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name being uploaded */
+			'uploadingFile'                 => __( 'Uploading "%s"…', 'mcp-ai-wpoos' ),
+			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
+			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
+			'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
+			/* translators: %s: file name with unsupported type */
+			'unsupportedFileType'           => __( '"%s" is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
+			'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
+			'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
+			'expandTranscript'              => __( 'Expand conversation', 'mcp-ai-wpoos' ),
+			'collapseTranscript'            => __( 'Collapse conversation', 'mcp-ai-wpoos' ),
+			'newConversation'               => __( 'Start new conversation', 'mcp-ai-wpoos' ),
+			'loadConversation'              => __( 'Load conversation', 'mcp-ai-wpoos' ),
+			'jsonResponse'                  => __( 'JSON response', 'mcp-ai-wpoos' ),
+			'historyToggleShow'             => __( 'Show previous conversations', 'mcp-ai-wpoos' ),
+			'historyToggleHide'             => __( 'Hide previous conversations', 'mcp-ai-wpoos' ),
+			'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
+			'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
+			'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
+			/* translators: %d: number of messages in chat history */
+			'historyMessageCount'           => __( '%d messages', 'mcp-ai-wpoos' ),
+			'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
+			/* translators: %s: conversation identifier */
+			'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
+			'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
+			'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
+			'historyNoMessages'             => __( 'No messages were saved for this conversation.', 'mcp-ai-wpoos' ),
+			'savingPost'                    => __( 'Saving post…', 'mcp-ai-wpoos' ),
+			'saveConversation'              => __( 'Save conversation', 'mcp-ai-wpoos' ),
+			'savingConversation'            => __( 'Saving current conversation...', 'mcp-ai-wpoos' ),
+			'conversationSaved'             => __( 'Conversation saved successfully.', 'mcp-ai-wpoos' ),
+			'saveFailed'                    => __( 'Failed to save conversation. See console for details.', 'mcp-ai-wpoos' ),
+			'saveFailedProceed'             => __( 'Failed to save conversation: ', 'mcp-ai-wpoos' ),
+			'proceedAnyway'                 => __( 'Do you want to proceed anyway? Your current conversation will be lost.', 'mcp-ai-wpoos' ),
+			'saveFailedKeepingConversation' => __( 'Conversation not cleared. You can try again later.', 'mcp-ai-wpoos' ),
+			'noConversationToSave'          => __( 'No conversation to save. Start chatting first!', 'mcp-ai-wpoos' ),
+			'saveSkipped'                   => __( 'Save not available for this conversation.', 'mcp-ai-wpoos' ),
+			'confirmClearConversation'      => __( 'Start a new conversation? Your current conversation will be saved automatically.', 'mcp-ai-wpoos' ),
+			'noConversationToExport'        => __( 'No conversation to export. Start chatting first!', 'mcp-ai-wpoos' ),
+			'exportFormatPrompt'            => __( 'Choose export format:\n- json\n- markdown\n- text', 'mcp-ai-wpoos' ),
+			'invalidExportFormat'           => __( 'Invalid format. Please choose json, markdown, or text.', 'mcp-ai-wpoos' ),
+			'exportFailed'                  => __( 'Export failed: ', 'mcp-ai-wpoos' ),
+			'exportSuccess'                 => __( 'Conversation exported successfully as ', 'mcp-ai-wpoos' ),
+			'deleteConversation'            => __( 'Delete this conversation', 'mcp-ai-wpoos' ),
+			'confirmDeleteConversation'     => __( 'Are you sure you want to delete this conversation? This action cannot be undone.', 'mcp-ai-wpoos' ),
+			'veoVideoToolSuccess'           => __( 'Video generated successfully and saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'videoNotSupported'             => __( 'Your browser does not support video playback.', 'mcp-ai-wpoos' ),
+			'downloadVideo'                 => __( 'Download video', 'mcp-ai-wpoos' ),
+			'videoGenerating'               => __( 'Video generation started. Your video will be available within approximately 5 minutes.', 'mcp-ai-wpoos' ),
+			'videoPending'                  => __( 'Pending • ~5 min', 'mcp-ai-wpoos' ),
+			'geminiImageToolSuccess'        => __( 'Gemini image saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'editGeminiImageToolSuccess'    => __( 'Gemini image edited and saved to the Media Library.', 'mcp-ai-wpoos' ),
+			'tokensLabel'                   => __( 'Tokens', 'mcp-ai-wpoos' ),
+			'costLabel'                     => __( 'Cost', 'mcp-ai-wpoos' ),
+			'estimatedCostLabel'            => __( 'Est. Cost', 'mcp-ai-wpoos' ),
+			/* translators: %d: number of tokens used */
+			'tokensUsed'                    => __( '%d tokens', 'mcp-ai-wpoos' ),
+			/* translators: %d: total tokens, %d: input tokens, %d: output tokens */
+			'tokensBreakdown'               => __( '%1$d total (%2$d in / %3$d out)', 'mcp-ai-wpoos' ),
+			/* translators: %s: cost in USD */
+			'costAmount'                    => __( '$%s', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name that is processing */
+			'toolProcessing'                => __( '%s is temporarily processing your request. The assistant will continue using available information.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name that is temporarily unavailable */
+			'toolTemporarilyUnavailable'    => __( '%s temporarily unavailable', 'mcp-ai-wpoos' ),
+			// Embedded LLM client messages.
+			'embeddedClientMissing'         => __( 'Embedded LLM client not loaded. Please refresh the page.', 'mcp-ai-wpoos' ),
+			'embeddedClientInvalid'         => __( 'Embedded LLM client is not properly initialized. Please refresh the page and clear your browser cache.', 'mcp-ai-wpoos' ),
+			'embeddedClientInitializing'    => __( 'Initializing embedded AI client...', 'mcp-ai-wpoos' ),
+			'embeddedClientInitError'       => __( 'Failed to initialize embedded AI client: ', 'mcp-ai-wpoos' ),
+			'roleLabels'                    => array(
+				'assistant' => __( 'Assistant', 'mcp-ai-wpoos' ),
+				'user'      => __( 'You', 'mcp-ai-wpoos' ),
+				'system'    => __( 'System', 'mcp-ai-wpoos' ),
+				'tool'      => __( 'Tool', 'mcp-ai-wpoos' ),
+			),
+		);
+
+		/**
+		 * Filter the localized strings for the chat interface.
+		 *
+		 * Allows developers and themes to customize the chat interface text,
+		 * enabling white-label customization, brand-specific messaging, and
+		 * contextual modifications without modifying core plugin code.
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param array $strings Array of localized strings with keys matching
+		 *                       JavaScript properties (e.g., 'placeholder', 'send', 'error').
+		 *
+		 * @example
+		 * ```php
+		 * add_filter( 'wp_mcp_ai_chat_strings', function( $strings ) {
+		 *     $strings['placeholder'] = 'How can we assist you today?';
+		 *     $strings['error'] = 'Something went wrong. Please contact support.';
+		 *     return $strings;
+		 * });
+		 * ```
+		 */
+		return apply_filters( 'wp_mcp_ai_chat_strings', $strings );
+	}
+
+	/**
+	 * Apply script localization to the chat script handle.
+	 * This method centralizes the localization logic to avoid duplication.
+	 *
+	 * @param array $settings Plugin settings array.
+	 * @return void
+	 */
+	protected function apply_script_localization( $settings ) {
+		$show_usage_costs      = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+		$show_usage_costs      = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
+		wp_localize_script(
+			self::SCRIPT_HANDLE,
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE ) ) ) ),
+				'uploadEndpoint'      => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( 'wp/v2/media' ) ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/files' ) ) ) ),
+				'toolsEndpoint'       => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/tools' ) ) ),
+				'transcriptsEndpoint' => esc_url_raw( WP_MCP_AI_Request_Context::normalise_rest_url( rest_url( WP_MCP_AI_REST::REST_NAMESPACE . '/chat-transcripts' ) ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
+				'asyncToolTimeout'    => self::get_async_tool_timeout_ms( $settings ),
+				'vadEnabled'          => isset( $settings['enable_voice_activity_detection'] ) ? (bool) $settings['enable_voice_activity_detection'] : true,
+				'vadSilenceThreshold' => isset( $settings['vad_silence_threshold'] ) ? absint( $settings['vad_silence_threshold'] ) : 700,
+				'vadMinSpeech'        => isset( $settings['vad_min_speech_duration'] ) ? absint( $settings['vad_min_speech_duration'] ) : 300,
+				'vadAudioThreshold'   => isset( $settings['vad_audio_threshold'] ) ? floatval( $settings['vad_audio_threshold'] ) : -50,
+				'strings'             => $this->get_strings(),
+			)
+		);
 	}
 
 	/**
@@ -520,12 +665,12 @@ class WP_MCP_AI_Shortcode {
 			}
 
 			// Handle team parameter for multi-agent coordination.
-			$team_id = ! empty( $atts['team'] ) ? absint( $atts['team'] ) : 0;
-			$team_data = null;
-			$team_members = array();
-			$orchestration_mode = '';
-			$result_aggregation = '';
-			$multi_agent_enabled = false;
+			$team_id               = ! empty( $atts['team'] ) ? absint( $atts['team'] ) : 0;
+			$team_data             = null;
+			$team_members          = array();
+			$orchestration_mode    = '';
+			$result_aggregation    = '';
+			$multi_agent_enabled   = false;
 			$supports_unified_mode = false;
 
 			if ( $team_id > 0 ) {
@@ -563,10 +708,10 @@ class WP_MCP_AI_Shortcode {
 							'shortcode_team_detected',
 							'Team chat interface initialized',
 							array(
-								'team_id'                => $team_id,
-								'member_count'           => count( $team_members ),
-								'orchestration_mode'     => $orchestration_mode,
-								'supports_unified_mode'  => $supports_unified_mode,
+								'team_id'               => $team_id,
+								'member_count'          => count( $team_members ),
+								'orchestration_mode'    => $orchestration_mode,
+								'supports_unified_mode' => $supports_unified_mode,
 							)
 						);
 					}
@@ -632,10 +777,54 @@ class WP_MCP_AI_Shortcode {
 			// won't break the editor when WP_DEBUG is enabled.
 			$is_elementor_editor = $this->is_elementor_editor();
 
-			if ( ! wp_script_is( self::SCRIPT_HANDLE, 'registered' ) ) {
-				$this->register_assets();
+			// Get assistant provider and model for client-side execution (embedded provider).
+			// This must be done BEFORE enqueuing chat scripts to ensure correct dependency order.
+			// For profession tests, use the permissions_assistant_id to get the associated assistant's provider.
+			// If permissions_assistant_id is not set, fall back to assistant_id (though this is rare).
+			$assistant_provider            = '';
+			$assistant_model               = '';
+			$assistant_config_for_provider = array(); // Initialize to empty array to prevent undefined variable errors.
+			if ( class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+				// Determine which assistant ID to use for provider check.
+				if ( $is_profession_test && isset( $permissions_assistant_id ) ) {
+					// For profession tests, check the associated assistant's provider.
+					$provider_check_id = $permissions_assistant_id;
+				} else {
+					// For regular assistants or profession tests without associated assistant.
+					$provider_check_id = $assistant_id;
+				}
+
+				$assistant_config_for_provider = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( absint( $provider_check_id ) );
+				$assistant_provider            = isset( $assistant_config_for_provider['provider'] ) ? sanitize_key( $assistant_config_for_provider['provider'] ) : '';
+				$assistant_model               = isset( $assistant_config_for_provider['model'] ) ? sanitize_text_field( $assistant_config_for_provider['model'] ) : '';
 			}
 
+			// Enqueue embedded LLM client scripts if this assistant uses embedded provider.
+			// Scripts are already registered in register_assets(), just enqueue them here.
+			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
+			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
+
+			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
+				// Enqueue embedded provider scripts.
+				// WordPress ensures these are only loaded once even if called multiple times.
+				wp_enqueue_script( 'webllm-loader' );
+				wp_enqueue_script( 'wp-mcp-ai-embedded-llm-client' );
+
+				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
+				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
+				$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+				$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+				$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
+
+				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
+					// Enqueue tool adapter and function calling client for enhanced capabilities.
+					wp_enqueue_script( 'wp-mcp-ai-webllm-tool-adapter' );
+					wp_enqueue_script( 'wp-mcp-ai-webllm-function-calling' );
+				}
+			}
+
+			// Enqueue chat script (always with same dependencies - no conditional changes).
+			// This prevents conflicts when multiple widgets with different providers are on the same page.
 			wp_enqueue_script( self::SCRIPT_HANDLE );
 			wp_enqueue_style( self::STYLE_HANDLE );
 
@@ -715,6 +904,103 @@ class WP_MCP_AI_Shortcode {
 
 			// Add async tool timeout using helper method (reuses $settings already fetched).
 			$config['asyncToolTimeout'] = self::get_async_tool_timeout_ms( $settings );
+
+			// Add provider and model for client-side execution (embedded provider).
+			// Also include system_prompt and temperature for embedded provider to use assistant defaults.
+			if ( ! empty( $assistant_provider ) ) {
+				$config['provider'] = $assistant_provider;
+			}
+			if ( ! empty( $assistant_model ) ) {
+				$config['model'] = $assistant_model;
+			}
+
+			// Add assistant defaults (system_prompt, temperature) for client-side execution.
+			// This ensures embedded providers have access to the same defaults as server-side providers.
+			if ( ! empty( $assistant_config_for_provider['system_prompt'] ) ) {
+				$config['systemPrompt'] = $assistant_config_for_provider['system_prompt'];
+			}
+			if ( isset( $assistant_config_for_provider['temperature'] ) && '' !== $assistant_config_for_provider['temperature'] ) {
+				$config['temperature'] = floatval( $assistant_config_for_provider['temperature'] );
+			}
+
+			// Add base knowledge (memory files and vector store) for embedded provider.
+			// This enables the embedded client to access the same knowledge base as server-side providers.
+			if ( ! empty( $assistant_config_for_provider['memory_files'] ) && is_array( $assistant_config_for_provider['memory_files'] ) ) {
+				$config['memoryFiles'] = $assistant_config_for_provider['memory_files'];
+			}
+			if ( ! empty( $assistant_config_for_provider['vector_store_id'] ) ) {
+				$config['vectorStoreId'] = $assistant_config_for_provider['vector_store_id'];
+			}
+
+			// Add tool definitions for embedded provider (Phase 1: Tool Support Implementation).
+			// This enables client-side LLM to know which tools are available and call them.
+			// Tools will be executed server-side via the existing orchestration layer.
+			$tool_slugs_to_include = array();
+			
+			// Start with assistant's configured tools.
+			if ( ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] ) ) {
+				$tool_slugs_to_include = $assistant_config_for_provider['tools'];
+			}
+			
+			// Automatically add semantic_content_search if assistant has knowledge files (RAG pattern).
+			// This enables embedded client to retrieve knowledge content server-side when needed.
+			if ( $has_knowledge && ! in_array( 'semantic_content_search', $tool_slugs_to_include, true ) ) {
+				$tool_slugs_to_include[] = 'semantic_content_search';
+				
+				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					error_log(
+						sprintf(
+							'[WP_MCP_AI] Auto-adding semantic_content_search tool for assistant %d (has knowledge files)',
+							$assistant_id
+						)
+					);
+				}
+			}
+			
+			// Build tool definitions for embedded client.
+			if ( ! empty( $tool_slugs_to_include ) ) {
+				$tool_definitions = array();
+
+				if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+					$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+					foreach ( $tool_slugs_to_include as $tool_slug ) {
+						$tool = $registry->get_tool( $tool_slug );
+						if ( $tool && method_exists( $tool, 'get_definition' ) ) {
+							$definition = $tool->get_definition();
+							if ( $definition && is_array( $definition ) ) {
+								// Ensure tool definition is in OpenAI-compatible format.
+								// Most tools already return this format.
+								$tool_definitions[] = $definition;
+							}
+						}
+					}
+				}
+
+				if ( ! empty( $tool_definitions ) ) {
+					$config['tools'] = $tool_definitions;
+
+					// Log tool definitions being passed to embedded provider.
+					if ( class_exists( 'WP_MCP_AI_Logger' ) && 'embedded' === $assistant_provider ) {
+						WP_MCP_AI_Logger::log_event(
+							'embedded_tools_config',
+							'Embedded provider: Tool definitions passed to client',
+							array(
+								'assistant_id'       => $assistant_id,
+								'tool_count'         => count( $tool_definitions ),
+								'has_knowledge'      => $has_knowledge,
+								'auto_added_search'  => $has_knowledge && in_array( 'semantic_content_search', $tool_slugs_to_include, true ),
+								'tool_names'         => array_map(
+									function ( $def ) {
+										return isset( $def['function']['name'] ) ? $def['function']['name'] : 'unknown';
+									},
+									$tool_definitions
+								),
+							)
+						);
+					}
+				}
+			}
 
 			// Add team information if team is configured.
 			if ( ! empty( $team_data ) ) {
@@ -1311,10 +1597,84 @@ class WP_MCP_AI_Shortcode {
 		}
 
 		if ( ! empty( $config['disable_prebuilt_shortcuts'] ) ) {
+			// Even with prebuilt shortcuts disabled, ensure fallback shortcut if no custom shortcuts.
+			if ( empty( $shortcuts ) ) {
+				$fallback_shortcut = array(
+					'tool'    => 'default',
+					'label'   => sanitize_text_field( __( 'What can you do?', 'mcp-ai-wpoos' ) ),
+					'payload' => sanitize_textarea_field( 'Can you tell me what you can do?' ),
+				);
+
+				/**
+				 * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+				 *
+				 * @since 1.0.1
+				 *
+				 * @param array $fallback_shortcut Default shortcut configuration.
+				 * @param int   $assistant_id      Assistant post ID.
+				 */
+				$fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
+
+				if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
+					$fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
+						? sanitize_key( $fallback_shortcut['tool'] )
+						: 'default';
+
+					$fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
+					$fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
+
+					if ( isset( $fallback_shortcut['description'] ) ) {
+						if ( is_string( $fallback_shortcut['description'] ) ) {
+							$fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
+						} else {
+							unset( $fallback_shortcut['description'] );
+						}
+					}
+
+					$shortcuts[] = $fallback_shortcut;
+				}
+			}
 			return $shortcuts;
 		}
 
 		if ( empty( $selected_tools ) ) {
+			// Even with no tools selected, ensure fallback shortcut if no custom shortcuts.
+			if ( empty( $shortcuts ) ) {
+				$fallback_shortcut = array(
+					'tool'    => 'default',
+					'label'   => sanitize_text_field( __( 'What can you do?', 'mcp-ai-wpoos' ) ),
+					'payload' => sanitize_textarea_field( 'Can you tell me what you can do?' ),
+				);
+
+				/**
+				 * Filter the default shortcut shown when an assistant has no tool shortcuts configured.
+				 *
+				 * @since 1.0.1
+				 *
+				 * @param array $fallback_shortcut Default shortcut configuration.
+				 * @param int   $assistant_id      Assistant post ID.
+				 */
+				$fallback_shortcut = apply_filters( 'wp_mcp_ai_default_tool_shortcut', $fallback_shortcut, $assistant_id );
+
+				if ( is_array( $fallback_shortcut ) && ! empty( $fallback_shortcut['label'] ) && ! empty( $fallback_shortcut['payload'] ) ) {
+					$fallback_shortcut['tool'] = isset( $fallback_shortcut['tool'] ) && is_string( $fallback_shortcut['tool'] )
+						? sanitize_key( $fallback_shortcut['tool'] )
+						: 'default';
+
+					$fallback_shortcut['label']   = sanitize_text_field( $fallback_shortcut['label'] );
+					$fallback_shortcut['payload'] = sanitize_textarea_field( $fallback_shortcut['payload'] );
+
+					if ( isset( $fallback_shortcut['description'] ) ) {
+						if ( is_string( $fallback_shortcut['description'] ) ) {
+							$fallback_shortcut['description'] = sanitize_textarea_field( $fallback_shortcut['description'] );
+						} else {
+							unset( $fallback_shortcut['description'] );
+						}
+					}
+
+					$shortcuts[] = $fallback_shortcut;
+				}
+			}
 			return $shortcuts;
 		}
 

@@ -118,7 +118,7 @@ jobs:
 
       - name: Install production Composer dependencies
         run: |
-          composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+          composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
           echo "✅ Production dependencies installed"
 
       - name: Update version numbers
@@ -408,7 +408,7 @@ jobs:
 
       - name: Install production dependencies
         if: steps.check_creds.outputs.has_creds == 'true'
-        run: composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
+        run: composer install --no-dev --prefer-dist --classmap-authoritative --no-interaction
 
       - name: Update version numbers
         if: steps.check_creds.outputs.has_creds == 'true'

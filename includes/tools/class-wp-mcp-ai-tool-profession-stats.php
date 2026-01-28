@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -78,17 +79,66 @@ class WP_MCP_AI_Tool_Profession_Stats implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! function_exists( 'wp_mcp_ai_get_profession_service' ) ) {
 			return array(
 				'success' => false,
-				'message' => __( 'Profession system not available.', 'mcp-ai-wpoos' ),
+				'message' => __( 'Profession system not available. The professions module may not be loaded.', 'mcp-ai-wpoos' ),
+				'code'    => 'profession_system_unavailable',
 			);
 		}
 
-		$profession_service = wp_mcp_ai_get_profession_service();
+		try {
+			$profession_service = wp_mcp_ai_get_profession_service();
 
-		// Get all professions.
-		$all_professions = $profession_service->get_all_professions();
+			if ( ! $profession_service ) {
+				return array(
+					'success' => false,
+					'message' => __( 'Profession service could not be initialized.', 'mcp-ai-wpoos' ),
+					'code'    => 'profession_service_initialization_failed',
+				);
+			}
 
-		// Get category counts.
-		$category_counts = $profession_service->get_category_counts();
+			// Get all professions.
+			$all_professions = $profession_service->get_all_professions();
+
+			// Get category counts.
+			$category_counts = $profession_service->get_category_counts();
+		} catch ( Exception $e ) {
+			WP_MCP_AI_Logger::log_error(
+				'profession_stats_error',
+				'Error retrieving profession statistics',
+				array(
+					'exception' => $e->getMessage(),
+					'trace'     => $e->getTraceAsString(),
+				)
+			);
+
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Error retrieving profession statistics: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				'code'    => 'profession_stats_exception',
+			);
+		} catch ( Error $e ) {
+			WP_MCP_AI_Logger::log_error(
+				'profession_stats_fatal_error',
+				'Fatal error retrieving profession statistics',
+				array(
+					'error' => $e->getMessage(),
+					'trace' => $e->getTraceAsString(),
+				)
+			);
+
+			return array(
+				'success' => false,
+				'message' => sprintf(
+					/* translators: %s: error message */
+					__( 'Fatal error retrieving profession statistics: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				'code'    => 'profession_stats_fatal_error',
+			);
+		}
 
 		// Calculate category percentages.
 		$total                = count( $all_professions );

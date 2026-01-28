@@ -32,8 +32,8 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'seed_template_library',
-			'description' => 'Seeds the template library with pre-built professional templates for common workflows (research, content creation, data analysis, marketing). Only needs to be called once to set up the library.',
+			'name'         => 'seed_template_library',
+			'description'  => 'Seeds the template library with pre-built professional templates for common workflows (research, content creation, data analysis, marketing). Only needs to be called once to set up the library.',
 			'input_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 						'description' => 'Whether to overwrite existing templates with same names (default: false)',
 					),
 				),
-				'required' => array(),
+				'required'   => array(),
 			),
 		);
 	}
@@ -60,15 +60,20 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		// Get pre-built templates.
 		$templates = $this->get_prebuilt_templates();
 
-		$created   = array();
-		$skipped   = array();
-		$errors    = array();
+		$created = array();
+		$skipped = array();
+		$errors  = array();
 
 		foreach ( $templates as $template ) {
 			// Check if template already exists.
 			if ( ! $overwrite && $this->template_exists( $template['template_name'] ) ) {
 				$skipped[] = $template['template_name'];
 				continue;
+			}
+
+			// Ensure the create_template tool class is loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Create_Template' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-create-template.php';
 			}
 
 			// Create template using create_template tool.
@@ -81,9 +86,18 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 				$use_cct     = 'cct' === $result['storage_type'];
 
 				if ( $use_cct ) {
-					$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
-					if ( $handler ) {
-						$handler->update_item( $template_id, array( 'status' => 'published' ) );
+					// Ensure CCT class is loaded.
+					if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+						if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+							require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+						}
+					}
+
+					if ( class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+						$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
+						if ( $handler ) {
+							$handler->update_item( $template_id, array( 'status' => 'published' ) );
+						}
 					}
 				} else {
 					wp_update_post(
@@ -109,14 +123,14 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		}
 
 		return array(
-			'success'        => true,
+			'success'           => true,
 			'templates_created' => count( $created ),
 			'templates_skipped' => count( $skipped ),
 			'templates_errors'  => count( $errors ),
-			'created'        => $created,
-			'skipped'        => $skipped,
-			'errors'         => $errors,
-			'message'        => sprintf(
+			'created'           => $created,
+			'skipped'           => $skipped,
+			'errors'            => $errors,
+			'message'           => sprintf(
 				'Template library seeded: %d created, %d skipped, %d errors',
 				count( $created ),
 				count( $skipped ),
@@ -135,6 +149,15 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 		$use_cct = $this->should_use_cct();
 
 		if ( $use_cct ) {
+			// Ensure CCT class is loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+				if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+				} else {
+					return false;
+				}
+			}
+
 			$handler = WP_MCP_AI_Task_Templates_CCT::get_item_handler();
 			if ( ! $handler ) {
 				return false;
@@ -388,7 +411,14 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 			return false;
 		}
 		if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
-			return false;
+			// Try to load the CCT class.
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-task-templates-cct.php';
+			}
+			// Check again after attempting to load.
+			if ( ! class_exists( 'WP_MCP_AI_Task_Templates_CCT' ) ) {
+				return false;
+			}
 		}
 		$settings = get_option( 'wp_mcp_ai_project_settings', array() );
 		return ! empty( $settings['use_cct_storage'] );

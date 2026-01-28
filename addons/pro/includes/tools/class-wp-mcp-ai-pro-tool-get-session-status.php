@@ -33,13 +33,13 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'get_session_status',
-			'description' => 'Get real-time status of autonomous orchestration session including health metrics, progress, and resource usage.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'get_session_status',
+			'description'         => 'Get real-time status of autonomous orchestration session including health metrics, progress, and resource usage.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'session_id' => array(
+					'session_id'   => array(
 						'type'        => 'string',
 						'description' => 'Session ID to retrieve',
 					),
@@ -49,7 +49,7 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 						'default'     => false,
 					),
 				),
-				'required' => array( 'session_id' ),
+				'required'   => array( 'session_id' ),
 			),
 			'required_capability' => 'read',
 		);
@@ -88,46 +88,46 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 
 		// Build response.
 		$response = array(
-			'success'     => true,
-			'session_id'  => $session_id,
-			'status'      => $session['status'],
-			'health'      => array(
+			'success'    => true,
+			'session_id' => $session_id,
+			'status'     => $session['status'],
+			'health'     => array(
 				'status'          => $session['health_status'],
 				'circuit_breaker' => $session['circuit_breaker'],
 				'success_rate'    => $session['success_rate'],
 				'error_count'     => $session['error_count'],
 			),
-			'progress'    => array(
+			'progress'   => array(
 				'iteration_count'      => $session['iteration_count'],
 				'max_iterations'       => $session['max_iterations'],
 				'iterations_remaining' => $metrics['iterations_remaining'],
 				'progress_percent'     => $metrics['iteration_progress'],
 				'completion_score'     => $session['completion_score'],
 			),
-			'resources'   => array(
+			'resources'  => array(
 				'token_usage'      => $session['token_usage'],
 				'token_budget'     => $session['token_budget'],
 				'tokens_remaining' => $metrics['tokens_remaining'],
 				'budget_percent'   => $metrics['token_progress'],
 			),
-			'timing'      => array(
-				'started_at'    => $session['started_at'],
-				'last_activity' => $session['last_activity'],
-				'expires_at'    => $session['expires_at'],
-				'elapsed'       => $metrics['elapsed_time'],
+			'timing'     => array(
+				'started_at'     => $session['started_at'],
+				'last_activity'  => $session['last_activity'],
+				'expires_at'     => $session['expires_at'],
+				'elapsed'        => $metrics['elapsed_time'],
 				'time_remaining' => $metrics['time_remaining'],
 			),
-			'metadata'    => array(
+			'metadata'   => array(
 				'plan_id'      => $session['plan_id'],
 				'assistant_id' => $session['assistant_id'],
 				'user_id'      => $session['user_id'],
 				'last_tool'    => ! empty( $session['last_tool'] ) ? $session['last_tool'] : null,
 				'last_error'   => ! empty( $session['last_error'] ) ? $session['last_error'] : null,
 			),
-			'indicators'  => array(
-				'exit_signal'       => $session['exit_signal'],
-				'should_continue'   => $this->should_continue( $session, $metrics ),
-				'status_summary'    => $this->get_status_summary( $session, $metrics ),
+			'indicators' => array(
+				'exit_signal'     => $session['exit_signal'],
+				'should_continue' => $this->should_continue( $session, $metrics ),
+				'status_summary'  => $this->get_status_summary( $session, $metrics ),
 			),
 		);
 
@@ -176,8 +176,8 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 		$expires_time = strtotime( $session['expires_at'] );
 		$current_time = time();
 
-		$elapsed_time    = $current_time - $started_time;
-		$time_remaining  = max( 0, $expires_time - $current_time );
+		$elapsed_time   = $current_time - $started_time;
+		$time_remaining = max( 0, $expires_time - $current_time );
 
 		return array(
 			'iterations_remaining' => $iterations_remaining,
@@ -298,7 +298,11 @@ class WP_MCP_AI_Pro_Tool_Get_Session_Status {
 	 */
 	private function get_task_plan( $plan_id ) {
 		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Task_Plan' ) ) {
-			return null;
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php';
+			} else {
+				return null;
+			}
 		}
 
 		$tool   = new WP_MCP_AI_Pro_Tool_Get_Task_Plan();

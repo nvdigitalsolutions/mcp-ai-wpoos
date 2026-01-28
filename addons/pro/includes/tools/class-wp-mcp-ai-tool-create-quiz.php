@@ -35,7 +35,7 @@ class WP_MCP_AI_Tool_Create_Quiz implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new quiz with questions or updates an existing one if quiz_id is provided. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new quiz or update an existing quiz. If quiz_id is provided, updates the existing quiz instead of creating a new one. Supports multiple choice, true/false, and short answer formats. Optionally includes a time limit. Use this tool for both creating new quizzes and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

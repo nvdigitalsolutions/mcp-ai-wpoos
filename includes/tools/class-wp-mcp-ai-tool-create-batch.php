@@ -22,6 +22,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-openai-client.php';
  */
 class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Model_Requirements_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	/**
 	 * {@inheritdoc}
 	 */

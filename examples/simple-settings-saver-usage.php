@@ -1,10 +1,10 @@
 <?php
 /**
  * Example: Using the Simplified Settings Saver
- * 
+ *
  * This file demonstrates how to use WP_MCP_AI_Simple_Settings_Saver
  * as an alternative to the complex section-based sanitization system.
- * 
+ *
  * @package WP_MCP_AI
  */
 
@@ -35,10 +35,10 @@ function example_save_simple_form() {
 function example_programmatic_update() {
 	// Update multiple settings at once without form submission.
 	$updates = array(
-		'enable_logging'     => true,
-		'default_provider'   => 'openai',
-		'request_timeout'    => 300,
-		'openai_api_key'     => 'sk-new-key',
+		'enable_logging'   => true,
+		'default_provider' => 'openai',
+		'request_timeout'  => 300,
+		'openai_api_key'   => 'sk-new-key',
 	);
 
 	$success = WP_MCP_AI_Simple_Settings_Saver::batch_update( $updates );
@@ -73,7 +73,7 @@ function example_performance_comparison() {
 	// 4. Each section validates and merges independently
 	// 5. Multiple array_merge operations
 	// Time: ~50-100ms for complex forms
-	
+
 	/*
 	$sections = WP_MCP_AI_Settings_Registry::get_sections( $active_tab );
 	foreach ( $sections as $section ) {
@@ -88,7 +88,7 @@ function example_performance_comparison() {
 	// 2. Single pass through posted data
 	// 3. One array_merge with existing settings
 	// Time: ~5-10ms for same data
-	
+
 	/*
 	$saved = WP_MCP_AI_Simple_Settings_Saver::save_settings( $posted_data );
 	*/
@@ -100,24 +100,24 @@ function example_performance_comparison() {
 function example_flat_settings_integration() {
 	// The Simple Settings Saver can be used as an alternative
 	// save handler for the flat settings page.
-	
+
 	// In class-wp-mcp-ai-simple-settings-page.php, you could add:
 	// add_action( 'admin_post_wp_mcp_ai_save_simple_settings', array( $this, 'handle_simple_save' ) );
-	
+
 	// Then in the handler:
 	/*
 	public function handle_simple_save() {
 		check_admin_referer( 'wp_mcp_ai_save_settings' );
-		
+
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( 'Insufficient permissions' );
 		}
 
 		$posted = isset( $_POST['wp_mcp_ai_settings'] ) ? wp_unslash( $_POST['wp_mcp_ai_settings'] ) : array();
-		
+
 		// Use simplified saver instead of complex section system.
 		WP_MCP_AI_Simple_Settings_Saver::save_settings( $posted );
-		
+
 		wp_safe_redirect( add_query_arg( array( 'page' => self::PAGE_SLUG, 'updated' => 'true' ), admin_url( 'options-general.php' ) ) );
 		exit;
 	}
@@ -126,38 +126,38 @@ function example_flat_settings_integration() {
 
 /**
  * BENEFITS OF THE SIMPLIFIED SAVER:
- * 
+ *
  * 1. PERFORMANCE: 5-10x faster than section-based system
  *    - Direct field lookup vs. iterating through sections
  *    - Single sanitization pass vs. multiple section passes
  *    - No subtab logic overhead
- * 
+ *
  * 2. SIMPLICITY: Much easier to understand and maintain
  *    - Clear field type definitions in one place
  *    - Straightforward sanitization logic
  *    - No complex section inheritance
- * 
+ *
  * 3. FLEXIBILITY: Can be used alongside existing system
  *    - Works with both flat and tabbed interfaces
  *    - Supports programmatic updates
  *    - Easy to extend with custom field types
- * 
+ *
  * 4. RELIABILITY: Fewer moving parts means fewer bugs
  *    - No section registration required
  *    - No subtab handling complexity
  *    - Clear password field preservation logic
- * 
+ *
  * 5. COMPATIBILITY: Works with existing settings structure
  *    - Uses same option name
  *    - Same cache clearing mechanism
  *    - Same security checks
- * 
+ *
  * WHEN TO USE:
  * - Flat settings pages (like the simple settings page)
  * - Programmatic settings updates (migrations, defaults)
  * - Performance-critical save operations
  * - Simple forms without complex validation needs
- * 
+ *
  * WHEN TO USE SECTION SYSTEM:
  * - Complex tabbed interfaces with subtabs
  * - Need custom validation per section

@@ -195,4 +195,16 @@ function wp_mcp_ai_setup_test_environment() {
 
 tests_add_filter( 'wp_loaded', 'wp_mcp_ai_setup_test_environment' );
 
+/**
+ * Initialize database tables for testing.
+ */
+function wp_mcp_ai_init_test_database_tables() {
+	// Ensure token tracking database table exists for tests.
+	if ( class_exists( 'WP_MCP_AI_Token_Tracking_Database' ) ) {
+		WP_MCP_AI_Token_Tracking_Database::maybe_create_or_update_table();
+	}
+}
+
+tests_add_filter( 'wp_loaded', 'wp_mcp_ai_init_test_database_tables', 20 );
+
 require $_tests_dir . '/includes/bootstrap.php';

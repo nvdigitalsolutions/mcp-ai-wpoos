@@ -55,6 +55,7 @@ class WP_MCP_AI_ECA_CPT {
 		}
 
 		add_action( 'init', array( __CLASS__, 'register_post_types' ) );
+		add_action( 'init', array( __CLASS__, 'register_taxonomies' ) );
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_boxes' ) );
 		add_action( 'save_post_' . self::POST_TYPE, array( __CLASS__, 'save_eca_meta' ), 5, 2 );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
@@ -357,6 +358,54 @@ class WP_MCP_AI_ECA_CPT {
 				'show_in_rest'       => true,
 			)
 		);
+	}
+
+	/**
+	 * Register taxonomies for ECA categorization.
+	 */
+	public static function register_taxonomies() {
+		// Register ECA Category taxonomy.
+		register_taxonomy(
+			'mcp_ai_eca_category',
+			self::POST_TYPE,
+			array(
+				'labels'            => array(
+					'name'          => __( 'ECA Categories', 'mcp-ai-wpoos-pro' ),
+					'singular_name' => __( 'ECA Category', 'mcp-ai-wpoos-pro' ),
+					'search_items'  => __( 'Search ECA Categories', 'mcp-ai-wpoos-pro' ),
+					'all_items'     => __( 'All ECA Categories', 'mcp-ai-wpoos-pro' ),
+					'edit_item'     => __( 'Edit ECA Category', 'mcp-ai-wpoos-pro' ),
+					'update_item'   => __( 'Update ECA Category', 'mcp-ai-wpoos-pro' ),
+					'add_new_item'  => __( 'Add New ECA Category', 'mcp-ai-wpoos-pro' ),
+					'new_item_name' => __( 'New ECA Category Name', 'mcp-ai-wpoos-pro' ),
+					'menu_name'     => __( 'Categories', 'mcp-ai-wpoos-pro' ),
+				),
+				'hierarchical'      => true,
+				'show_ui'           => true,
+				'show_admin_column' => true,
+				'show_in_rest'      => true,
+				'query_var'         => true,
+				'rewrite'           => array( 'slug' => 'eca-category' ),
+			)
+		);
+
+		// Register default ECA categories.
+		$default_categories = array(
+			'sports'           => __( 'Sports', 'mcp-ai-wpoos-pro' ),
+			'arts-music'       => __( 'Arts & Music', 'mcp-ai-wpoos-pro' ),
+			'academic'         => __( 'Academic', 'mcp-ai-wpoos-pro' ),
+			'health-wellness'  => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+			'technology'       => __( 'Technology', 'mcp-ai-wpoos-pro' ),
+			'community'        => __( 'Community Service', 'mcp-ai-wpoos-pro' ),
+			'leadership'       => __( 'Leadership', 'mcp-ai-wpoos-pro' ),
+			'other'            => __( 'Other', 'mcp-ai-wpoos-pro' ),
+		);
+
+		foreach ( $default_categories as $slug => $name ) {
+			if ( ! term_exists( $slug, 'mcp_ai_eca_category' ) ) {
+				wp_insert_term( $name, 'mcp_ai_eca_category', array( 'slug' => $slug ) );
+			}
+		}
 	}
 }
 

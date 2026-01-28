@@ -157,8 +157,8 @@ class WP_MCP_AI_CRM_Settings_Page extends WP_MCP_AI_Toolkit_Settings_Base {
 					<th scope="row"><?php esc_html_e( 'Storage Backend', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<?php
-						$storage_type = class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' ) 
-							? WP_MCP_AI_Toolkit_Data_Store_Factory::get_storage_type() 
+						$storage_type = class_exists( 'WP_MCP_AI_Toolkit_Data_Store_Factory' )
+							? WP_MCP_AI_Toolkit_Data_Store_Factory::get_storage_type()
 							: 'cpt';
 						?>
 						<p>

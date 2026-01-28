@@ -83,6 +83,10 @@ class WP_MCP_AI_Model_Service {
 				$models = $this->get_cloudflare_models( $settings, $requires_vision, $requires_multimodal );
 				break;
 
+			case 'embedded':
+				$models = $this->get_embedded_models( $settings );
+				break;
+
 			default:
 				WP_MCP_AI_Logger::log_event(
 					'model_service_invalid_provider',
@@ -508,6 +512,43 @@ class WP_MCP_AI_Model_Service {
 	}
 
 	/**
+	 * Get embedded models
+	 *
+	 * Returns client-side WebLLM models that run in the browser using WebGPU/WebAssembly.
+	 * These models are loaded from CDN on-demand, not server-side GGUF models.
+	 *
+	 * @param array $settings Settings array.
+	 * @return array Array of model_id => model_name pairs.
+	 */
+	protected function get_embedded_models( $settings ) {
+		// Check if embedded provider is enabled.
+		if ( empty( $settings['enable_embedded'] ) ) {
+			return array();
+		}
+
+		// Check if in base-only version (embedded not available).
+		// Embedded IS available when Pro addon is active (base + pro).
+		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION && ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			return array();
+		}
+
+		// Return client-side WebLLM models (run in browser via WebGPU/WebAssembly).
+		// These models are loaded from CDN automatically when first used.
+		// All available models are listed. Models marked with * support function calling.
+		$models = array(
+			'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC' => __( 'Hermes 2 Pro Llama 3 8B (~4.5GB) - Recommended*', 'mcp-ai-wpoos' ),
+			'Qwen2.5-7B-Instruct-q4f16_1-MLC'     => __( 'Qwen2.5 7B Instruct (~4.5GB)*', 'mcp-ai-wpoos' ),
+			'Phi-3.5-mini-instruct-q4f16_1-MLC'   => __( 'Phi-3.5 Mini Instruct (~2.5GB)*', 'mcp-ai-wpoos' ),
+			'Llama-3.2-3B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 3B Instruct (~2GB)', 'mcp-ai-wpoos' ),
+			'Qwen2.5-1.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 1.5B Instruct (~1GB)*', 'mcp-ai-wpoos' ),
+			'Llama-3.2-1B-Instruct-q4f16_1-MLC'   => __( 'Llama 3.2 1B Instruct (~800MB)', 'mcp-ai-wpoos' ),
+			'Qwen2.5-0.5B-Instruct-q4f16_1-MLC'   => __( 'Qwen2.5 0.5B Instruct (~400MB)', 'mcp-ai-wpoos' ),
+		);
+
+		return $models;
+	}
+
+	/**
 	 * Validate model for provider
 	 *
 	 * @param string $model    Model ID.
@@ -573,6 +614,7 @@ class WP_MCP_AI_Model_Service {
 			'ollama'      => 'llama3.2',
 			'lm_studio'   => 'qwen/qwen2.5-7b',
 			'cloudflare'  => '@cf/meta/llama-3.2-3b-instruct',
+			'embedded'    => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
 		);
 
 		$default = isset( $defaults[ $provider ] ) ? $defaults[ $provider ] : '';

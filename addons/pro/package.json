@@ -39,11 +39,12 @@
 		"linkedin-api-client": "^0.3.0",
 		"mailparser": "^3.7.1",
 		"mathjs": "^12.3.0",
-		"mjml": "^4.18.0",
+		"mjml": "^5.0.0-alpha.10",
 		"nodemailer": "^7.0.12",
 		"p-queue": "^8.0.1",
 		"pdfkit": "^0.17.2",
 		"prettier": "^3.4.2",
+		"qrcode": "^1.5.4",
 		"regression": "^2.0.1",
 		"sharp": "^0.33.5",
 		"stripe": "^14.0.0",
@@ -52,6 +53,10 @@
 		"twitter-api-v2": "^1.15.2",
 		"validator": "^13.12.0",
 		"video-stitch": "^1.7.1"
+	},
+	"overrides": {
+		"shelljs": "~0.8.5",
+		"html-minifier": "^5.0.0"
 	},
 	"keywords": [
 		"wordpress",
@@ -64,6 +69,10 @@
 		"math-rendering",
 		"calendar",
 		"charts",
+		"qr-code",
+		"totp",
+		"two-factor-authentication",
+		"password-vault",
 		"email-templates",
 		"crm",
 		"email-marketing",

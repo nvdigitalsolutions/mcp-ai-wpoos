@@ -49,32 +49,32 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'       => array(
+				'floor_plan'           => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data for timeline generation.', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_area'       => array(
+				'total_area'           => array(
 					'type'        => 'number',
 					'description' => __( 'Total building area in square feet.', 'mcp-ai-wpoos-pro' ),
 				),
-				'start_date'       => array(
+				'start_date'           => array(
 					'type'        => 'string',
 					'description' => __( 'Project start date (YYYY-MM-DD).', 'mcp-ai-wpoos-pro' ),
 					'format'      => 'date',
 				),
-				'crew_size'        => array(
+				'crew_size'            => array(
 					'type'        => 'string',
 					'description' => __( 'Crew size: "small", "medium", "large".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'small', 'medium', 'large' ),
 					'default'     => 'medium',
 				),
-				'construction_type' => array(
+				'construction_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Construction type: "wood_frame", "steel", "concrete".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'wood_frame', 'steel', 'concrete' ),
 					'default'     => 'wood_frame',
 				),
-				'include_milestones' => array(
+				'include_milestones'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include project milestones.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 					'description' => __( 'Include task dependencies and critical path.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'output_format'    => array(
+				'output_format'        => array(
 					'type'        => 'string',
 					'description' => __( 'Output format: "gantt", "list", "calendar", "json".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'gantt', 'list', 'calendar', 'json' ),
@@ -136,14 +136,14 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 			);
 		}
 
-		$floor_plan            = $arguments['floor_plan'];
-		$total_area            = floatval( $arguments['total_area'] );
-		$start_date            = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : current_time( 'Y-m-d' );
-		$crew_size             = isset( $arguments['crew_size'] ) ? sanitize_text_field( $arguments['crew_size'] ) : 'medium';
-		$construction_type     = isset( $arguments['construction_type'] ) ? sanitize_text_field( $arguments['construction_type'] ) : 'wood_frame';
-		$include_milestones    = isset( $arguments['include_milestones'] ) ? (bool) $arguments['include_milestones'] : true;
-		$include_dependencies  = isset( $arguments['include_dependencies'] ) ? (bool) $arguments['include_dependencies'] : true;
-		$output_format         = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'gantt';
+		$floor_plan           = $arguments['floor_plan'];
+		$total_area           = floatval( $arguments['total_area'] );
+		$start_date           = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : current_time( 'Y-m-d' );
+		$crew_size            = isset( $arguments['crew_size'] ) ? sanitize_text_field( $arguments['crew_size'] ) : 'medium';
+		$construction_type    = isset( $arguments['construction_type'] ) ? sanitize_text_field( $arguments['construction_type'] ) : 'wood_frame';
+		$include_milestones   = isset( $arguments['include_milestones'] ) ? (bool) $arguments['include_milestones'] : true;
+		$include_dependencies = isset( $arguments['include_dependencies'] ) ? (bool) $arguments['include_dependencies'] : true;
+		$output_format        = isset( $arguments['output_format'] ) ? sanitize_text_field( $arguments['output_format'] ) : 'gantt';
 
 		// Generate timeline.
 		$timeline = $this->generate_timeline( $floor_plan, $total_area, $start_date, $crew_size, $construction_type, $include_milestones, $include_dependencies, $output_format, $context );
@@ -244,14 +244,19 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 		);
 
 		return array(
-			'format'       => $output_format,
-			'start_date'   => $start_date,
-			'end_date'     => $this->add_days( $start_date, 76 ),
-			'total_days'   => 76,
-			'tasks'        => $tasks,
-			'milestones'   => $include_milestones ? array_values( array_filter( $tasks, function( $task ) {
-				return $task['milestone'];
-			} ) ) : array(),
+			'format'        => $output_format,
+			'start_date'    => $start_date,
+			'end_date'      => $this->add_days( $start_date, 76 ),
+			'total_days'    => 76,
+			'tasks'         => $tasks,
+			'milestones'    => $include_milestones ? array_values(
+				array_filter(
+					$tasks,
+					function ( $task ) {
+						return $task['milestone'];
+					}
+				)
+			) : array(),
 			'critical_path' => $include_dependencies ? array( 1, 2, 3, 5, 6, 7, 8 ) : array(),
 		);
 	}
@@ -287,7 +292,7 @@ class WP_MCP_AI_Tool_Generate_Construction_Timeline implements WP_MCP_AI_Tool_In
 			return $datetime->format( 'Y-m-d' );
 		} catch ( Exception $e ) {
 			// Fallback to strtotime if DateTime fails.
-			$timestamp = strtotime( $date );
+			$timestamp     = strtotime( $date );
 			$new_timestamp = strtotime( "+{$days} days", $timestamp );
 			return gmdate( 'Y-m-d', $new_timestamp );
 		}

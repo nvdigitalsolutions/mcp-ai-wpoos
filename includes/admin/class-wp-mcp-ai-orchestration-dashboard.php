@@ -82,16 +82,16 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			'wp-mcp-ai-orchestration-dashboard',
 			'wpMcpAiOrchestration',
 			array(
-				'ajaxUrl'          => admin_url( 'admin-ajax.php' ),
-				'nonce'            => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
-				'refreshInterval'  => 5000, // 5 seconds.
-				'strings'          => array(
-					'loading'      => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
-					'error'        => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
-					'noSessions'   => __( 'No active sessions', 'mcp-ai-wpoos-pro' ),
-					'pauseSession' => __( 'Pause', 'mcp-ai-wpoos-pro' ),
+				'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
+				'nonce'           => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
+				'refreshInterval' => 5000, // 5 seconds.
+				'strings'         => array(
+					'loading'       => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
+					'error'         => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
+					'noSessions'    => __( 'No active sessions', 'mcp-ai-wpoos-pro' ),
+					'pauseSession'  => __( 'Pause', 'mcp-ai-wpoos-pro' ),
 					'resumeSession' => __( 'Resume', 'mcp-ai-wpoos-pro' ),
-					'stopSession'  => __( 'Stop', 'mcp-ai-wpoos-pro' ),
+					'stopSession'   => __( 'Stop', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -221,11 +221,11 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	private function get_dashboard_data() {
 		$data = array(
-			'overview'   => $this->get_overview_metrics(),
-			'capacity'   => $this->get_capacity_metrics(),
-			'sessions'   => $this->get_active_sessions(),
-			'activity'   => $this->get_recent_activity(),
-			'timestamp'  => time(),
+			'overview'  => $this->get_overview_metrics(),
+			'capacity'  => $this->get_capacity_metrics(),
+			'sessions'  => $this->get_active_sessions(),
+			'activity'  => $this->get_recent_activity(),
+			'timestamp' => time(),
 		);
 
 		return $data;
@@ -241,21 +241,21 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 		// Count active sessions (from transients for now).
 		$active_sessions = 0;
-		$transients = $wpdb->get_results(
+		$transients      = $wpdb->get_results(
 			"SELECT option_name, option_value FROM {$wpdb->options} 
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'"
 		);
-		
+
 		foreach ( $transients as $transient ) {
 			$session_data = maybe_unserialize( $transient->option_value );
 			if ( isset( $session_data['status'] ) && 'active' === $session_data['status'] ) {
-				$active_sessions++;
+				++$active_sessions;
 			}
 		}
 
 		// Count task plans.
 		$total_plans = wp_count_posts( 'mcp_task_plan' );
-		$plan_count = isset( $total_plans->publish ) ? $total_plans->publish : 0;
+		$plan_count  = isset( $total_plans->publish ) ? $total_plans->publish : 0;
 
 		// Estimate executions (placeholder).
 		$total_executions = $active_sessions * 5; // Rough estimate.
@@ -264,10 +264,10 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		$system_health = $active_sessions < 5 ? 'Healthy' : ( $active_sessions < 10 ? 'Good' : 'Busy' );
 
 		return array(
-			'active_sessions'   => $active_sessions,
-			'total_plans'       => $plan_count,
-			'total_executions'  => $total_executions,
-			'system_health'     => $system_health,
+			'active_sessions'  => $active_sessions,
+			'total_plans'      => $plan_count,
+			'total_executions' => $total_executions,
+			'system_health'    => $system_health,
 		);
 	}
 
@@ -277,16 +277,16 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @return array
 	 */
 	private function get_capacity_metrics() {
-		$overview = $this->get_overview_metrics();
+		$overview       = $this->get_overview_metrics();
 		$max_concurrent = 10; // Default max.
-		
+
 		$utilization = $max_concurrent > 0 ? round( ( $overview['active_sessions'] / $max_concurrent ) * 100, 2 ) : 0;
-		
+
 		// Little's Law: L = λ × W (simplified).
 		$arrival_rate = 2; // Sessions per hour (placeholder).
 		$service_time = 0.5; // Hours per session (placeholder).
 		$queue_length = round( $arrival_rate * $service_time, 2 );
-		
+
 		$load_status = 'IDLE';
 		if ( $utilization > 90 ) {
 			$load_status = 'CRITICAL';
@@ -299,9 +299,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		}
 
 		return array(
-			'utilization'   => $utilization . '%',
-			'queue_length'  => $queue_length,
-			'load_status'   => $load_status,
+			'utilization'    => $utilization . '%',
+			'queue_length'   => $queue_length,
+			'load_status'    => $load_status,
 			'max_concurrent' => $max_concurrent,
 		);
 	}
@@ -314,7 +314,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	private function get_active_sessions() {
 		global $wpdb;
 
-		$sessions = array();
+		$sessions   = array();
 		$transients = $wpdb->get_results(
 			"SELECT option_name, option_value FROM {$wpdb->options} 
 			WHERE option_name LIKE '_transient_mcp_ai_session_%'
@@ -322,7 +322,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		);
 
 		foreach ( $transients as $transient ) {
-			$session_id = str_replace( array( '_transient_mcp_ai_session_', '_transient_timeout_mcp_ai_session_' ), '', $transient->option_name );
+			$session_id   = str_replace( array( '_transient_mcp_ai_session_', '_transient_timeout_mcp_ai_session_' ), '', $transient->option_name );
 			$session_data = maybe_unserialize( $transient->option_value );
 
 			if ( ! is_array( $session_data ) ) {
@@ -338,15 +338,15 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			}
 
 			$sessions[] = array(
-				'session_id'   => substr( $session_id, 0, 8 ),
-				'plan_title'   => $plan_title,
-				'status'       => isset( $session_data['status'] ) ? $session_data['status'] : 'unknown',
-				'health'       => isset( $session_data['health'] ) ? $session_data['health'] : 'unknown',
-				'iterations'   => isset( $session_data['iterations'] ) ? $session_data['iterations'] : 0,
+				'session_id'     => substr( $session_id, 0, 8 ),
+				'plan_title'     => $plan_title,
+				'status'         => isset( $session_data['status'] ) ? $session_data['status'] : 'unknown',
+				'health'         => isset( $session_data['health'] ) ? $session_data['health'] : 'unknown',
+				'iterations'     => isset( $session_data['iterations'] ) ? $session_data['iterations'] : 0,
 				'max_iterations' => isset( $session_data['max_iterations'] ) ? $session_data['max_iterations'] : 25,
-				'tokens_used'  => isset( $session_data['tokens_used'] ) ? $session_data['tokens_used'] : 0,
-				'token_budget' => isset( $session_data['token_budget'] ) ? $session_data['token_budget'] : 10000,
-				'start_time'   => isset( $session_data['start_time'] ) ? $session_data['start_time'] : time(),
+				'tokens_used'    => isset( $session_data['tokens_used'] ) ? $session_data['tokens_used'] : 0,
+				'token_budget'   => isset( $session_data['token_budget'] ) ? $session_data['token_budget'] : 10000,
+				'start_time'     => isset( $session_data['start_time'] ) ? $session_data['start_time'] : time(),
 			);
 		}
 
@@ -398,16 +398,18 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		} elseif ( 'resume' === $action ) {
 			$session_data['status'] = 'active';
 		} elseif ( 'stop' === $action ) {
-			$session_data['status'] = 'stopped';
+			$session_data['status']      = 'stopped';
 			$session_data['stop_reason'] = 'Manual stop';
 		}
 
 		set_transient( 'mcp_ai_session_' . $session_id, $session_data, 86400 );
 
-		wp_send_json_success( array(
-			'message' => 'Session updated',
-			'session' => $session_data,
-		) );
+		wp_send_json_success(
+			array(
+				'message' => 'Session updated',
+				'session' => $session_data,
+			)
+		);
 	}
 }
 

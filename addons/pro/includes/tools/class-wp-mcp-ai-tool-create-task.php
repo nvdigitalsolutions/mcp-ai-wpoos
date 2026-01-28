@@ -43,45 +43,65 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'task_id'     => array(
+				'task_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Optional task ID. If provided, updates the existing task instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'title'       => array(
+				'title'            => array(
 					'type'        => 'string',
 					'description' => __( 'Task title (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'description' => array(
+				'description'      => array(
 					'type'        => 'string',
 					'description' => __( 'Task description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'project_id'  => array(
+				'project_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'ID of the project this task belongs to (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'      => array(
+				'status'           => array(
 					'type'        => 'string',
 					'description' => __( 'Task status (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'todo', 'in-progress', 'review', 'completed', 'cancelled' ),
 					'default'     => 'todo',
 				),
-				'priority'    => array(
+				'priority'         => array(
 					'type'        => 'string',
 					'description' => __( 'Task priority (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'low', 'medium', 'high', 'urgent' ),
 					'default'     => 'medium',
 				),
-				'due_date'    => array(
+				'due_date'         => array(
 					'type'        => 'string',
 					'description' => __( 'Task due date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'assigned_to' => array(
+				'assigned_to'      => array(
 					'type'        => 'integer',
 					'description' => __( 'User ID this task is assigned to (optional)', 'mcp-ai-wpoos-pro' ),
+				),
+				'category'         => array(
+					'type'        => 'string',
+					'description' => __( 'Task category/type (optional)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' ),
+					'default'     => 'general',
+				),
+				'tags'             => array(
+					'type'        => 'string',
+					'description' => __( 'Comma-separated list of tags for flexible categorization (optional)', 'mcp-ai-wpoos-pro' ),
+				),
+				'estimated_effort' => array(
+					'type'        => 'number',
+					'description' => __( 'Estimated effort in hours (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
+				),
+				'actual_effort'    => array(
+					'type'        => 'number',
+					'description' => __( 'Actual effort in hours (optional)', 'mcp-ai-wpoos-pro' ),
+					'minimum'     => 0,
 				),
 			),
 			'required'             => array( 'title' ),
@@ -156,13 +176,17 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		}
 
 		// Validate and sanitize inputs.
-		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
-		$description = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
-		$project_id  = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
-		$status      = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'todo';
-		$priority    = isset( $arguments['priority'] ) ? sanitize_key( $arguments['priority'] ) : 'medium';
-		$due_date    = isset( $arguments['due_date'] ) ? sanitize_text_field( $arguments['due_date'] ) : '';
-		$assigned_to = isset( $arguments['assigned_to'] ) ? absint( $arguments['assigned_to'] ) : 0;
+		$title            = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : '';
+		$description      = isset( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
+		$project_id       = isset( $arguments['project_id'] ) ? absint( $arguments['project_id'] ) : 0;
+		$status           = isset( $arguments['status'] ) ? sanitize_key( $arguments['status'] ) : 'todo';
+		$priority         = isset( $arguments['priority'] ) ? sanitize_key( $arguments['priority'] ) : 'medium';
+		$due_date         = isset( $arguments['due_date'] ) ? sanitize_text_field( $arguments['due_date'] ) : '';
+		$assigned_to      = isset( $arguments['assigned_to'] ) ? absint( $arguments['assigned_to'] ) : 0;
+		$category         = isset( $arguments['category'] ) ? sanitize_key( $arguments['category'] ) : 'general';
+		$tags             = isset( $arguments['tags'] ) ? sanitize_text_field( $arguments['tags'] ) : '';
+		$estimated_effort = isset( $arguments['estimated_effort'] ) ? floatval( $arguments['estimated_effort'] ) : 0;
+		$actual_effort    = isset( $arguments['actual_effort'] ) ? floatval( $arguments['actual_effort'] ) : 0;
 
 		if ( '' === $title ) {
 			return new WP_Error( 'wp_mcp_ai_missing_title', __( 'Task title is required.', 'mcp-ai-wpoos-pro' ) );
@@ -186,6 +210,12 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		$valid_priorities = array( 'low', 'medium', 'high', 'urgent' );
 		if ( ! in_array( $priority, $valid_priorities, true ) ) {
 			$priority = 'medium';
+		}
+
+		// Validate category.
+		$valid_categories = array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' );
+		if ( ! in_array( $category, $valid_categories, true ) ) {
+			$category = 'general';
 		}
 
 		// Validate due date.
@@ -215,6 +245,7 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			// Update task metadata.
 			update_post_meta( $task_id, '_task_status', $status );
 			update_post_meta( $task_id, '_task_priority', $priority );
+			update_post_meta( $task_id, '_task_category', $category );
 
 			if ( $project_id > 0 ) {
 				update_post_meta( $task_id, '_task_project_id', $project_id );
@@ -228,6 +259,18 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				update_post_meta( $task_id, '_task_assigned_to', $assigned_to );
 			}
 
+			if ( $tags ) {
+				update_post_meta( $task_id, '_task_tags', $tags );
+			}
+
+			if ( $estimated_effort > 0 ) {
+				update_post_meta( $task_id, '_task_estimated_effort', $estimated_effort );
+			}
+
+			if ( $actual_effort > 0 ) {
+				update_post_meta( $task_id, '_task_actual_effort', $actual_effort );
+			}
+
 			$task = get_post( $task_id );
 
 			return array(
@@ -239,15 +282,19 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'task_id' => $task_id,
 				'task'    => array(
-					'id'          => $task_id,
-					'title'       => $title,
-					'description' => $description,
-					'project_id'  => $project_id ?: null,
-					'status'      => $status,
-					'priority'    => $priority,
-					'due_date'    => $due_date,
-					'assigned_to' => $assigned_to ?: null,
-					'updated_at'  => $task->post_modified,
+					'id'               => $task_id,
+					'title'            => $title,
+					'description'      => $description,
+					'project_id'       => $project_id ?: null,
+					'status'           => $status,
+					'priority'         => $priority,
+					'category'         => $category,
+					'tags'             => $tags,
+					'due_date'         => $due_date,
+					'assigned_to'      => $assigned_to ?: null,
+					'estimated_effort' => $estimated_effort > 0 ? $estimated_effort : null,
+					'actual_effort'    => $actual_effort > 0 ? $actual_effort : null,
+					'updated_at'       => $task->post_modified,
 				),
 				'updated' => true,
 			);
@@ -270,6 +317,7 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			// Save task metadata.
 			update_post_meta( $task_id, '_task_status', $status );
 			update_post_meta( $task_id, '_task_priority', $priority );
+			update_post_meta( $task_id, '_task_category', $category );
 
 			if ( $project_id > 0 ) {
 				update_post_meta( $task_id, '_task_project_id', $project_id );
@@ -283,20 +331,36 @@ class WP_MCP_AI_Tool_Create_Task implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				update_post_meta( $task_id, '_task_assigned_to', $assigned_to );
 			}
 
+			if ( $tags ) {
+				update_post_meta( $task_id, '_task_tags', $tags );
+			}
+
+			if ( $estimated_effort > 0 ) {
+				update_post_meta( $task_id, '_task_estimated_effort', $estimated_effort );
+			}
+
+			if ( $actual_effort > 0 ) {
+				update_post_meta( $task_id, '_task_actual_effort', $actual_effort );
+			}
+
 			return array(
 				'success' => true,
 				'message' => __( 'Task created successfully.', 'mcp-ai-wpoos-pro' ),
 				'task_id' => $task_id,
 				'task'    => array(
-					'id'          => $task_id,
-					'title'       => $title,
-					'description' => $description,
-					'project_id'  => $project_id ?: null,
-					'status'      => $status,
-					'priority'    => $priority,
-					'due_date'    => $due_date,
-					'assigned_to' => $assigned_to ?: null,
-					'created_at'  => current_time( 'mysql' ),
+					'id'               => $task_id,
+					'title'            => $title,
+					'description'      => $description,
+					'project_id'       => $project_id ?: null,
+					'status'           => $status,
+					'priority'         => $priority,
+					'category'         => $category,
+					'tags'             => $tags,
+					'due_date'         => $due_date,
+					'assigned_to'      => $assigned_to ?: null,
+					'estimated_effort' => $estimated_effort > 0 ? $estimated_effort : null,
+					'actual_effort'    => $actual_effort > 0 ? $actual_effort : null,
+					'created_at'       => current_time( 'mysql' ),
 				),
 				'updated' => false,
 			);

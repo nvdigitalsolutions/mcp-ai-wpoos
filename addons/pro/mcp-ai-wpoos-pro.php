@@ -220,6 +220,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			// Load Remote Connections metabox for assistants.
 			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-metabox-remote-connections.php';
 
+			// Load WebLLM Advanced Features settings page (Phase 1).
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webllm-settings-page.php';
+
 			// Load AI CPT Management Integration if enabled.
 			if ( ! empty( $settings['enable_ai_cpt_management'] ) ) {
 				require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-pro-cpt-ai-integration.php';
@@ -347,6 +350,10 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
 		}
+
+		// Load Password Vault Manager (Pro feature - Phase 2.11).
+		// Always enabled - provides secure password storage with AES-256-GCM encryption.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/password-vault-init.php';
 
 		// Load Document Generation Toolkit if enabled (Pro feature).
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {

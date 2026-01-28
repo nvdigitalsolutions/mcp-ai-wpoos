@@ -53,10 +53,14 @@ class WP_MCP_AI_Validator_Service {
 		}
 
 		// Allow Node.js-based validation via filter.
-		$result = apply_filters( 'wp_mcp_ai_validator_email', false, array(
-			'email'   => $email,
-			'options' => $options,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_validator_email',
+			false,
+			array(
+				'email'   => $email,
+				'options' => $options,
+			)
+		);
 
 		// If no filter implementation, use PHP validation.
 		if ( false === $result ) {
@@ -100,10 +104,14 @@ class WP_MCP_AI_Validator_Service {
 		}
 
 		// Allow Node.js-based validation via filter (libphonenumber-js).
-		$result = apply_filters( 'wp_mcp_ai_validator_phone', false, array(
-			'phone'   => $phone,
-			'country' => $country,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_validator_phone',
+			false,
+			array(
+				'phone'   => $phone,
+				'country' => $country,
+			)
+		);
 
 		if ( false === $result ) {
 			// Basic PHP validation - just check if it contains digits.
@@ -137,10 +145,14 @@ class WP_MCP_AI_Validator_Service {
 		}
 
 		// Allow Node.js-based validation via filter.
-		$result = apply_filters( 'wp_mcp_ai_validator_url', false, array(
-			'url'     => $url,
-			'options' => $options,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_validator_url',
+			false,
+			array(
+				'url'     => $url,
+				'options' => $options,
+			)
+		);
 
 		if ( false === $result ) {
 			return true;
@@ -160,9 +172,13 @@ class WP_MCP_AI_Validator_Service {
 		$card = preg_replace( '/[\s-]/', '', $card );
 
 		// Allow Node.js-based validation via filter.
-		$result = apply_filters( 'wp_mcp_ai_validator_credit_card', false, array(
-			'card' => $card,
-		) );
+		$result = apply_filters(
+			'wp_mcp_ai_validator_credit_card',
+			false,
+			array(
+				'card' => $card,
+			)
+		);
 
 		if ( false === $result ) {
 			// Basic Luhn algorithm check.

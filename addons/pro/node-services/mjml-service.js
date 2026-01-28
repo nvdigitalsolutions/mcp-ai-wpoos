@@ -4,9 +4,9 @@
  */
 const mjml2html = require('mjml');
 
-function compileMJML(mjml, options = {}) {
+async function compileMJML(mjml, options = {}) {
     try {
-        const result = mjml2html(mjml, {
+        const result = await mjml2html(mjml, {
             minify: options.minify || false,
             beautify: options.beautify !== false,
             validationLevel: options.validationLevel || 'soft',
@@ -23,9 +23,9 @@ function compileMJML(mjml, options = {}) {
     }
 }
 
-function validateMJML(mjml) {
+async function validateMJML(mjml) {
     try {
-        const result = mjml2html(mjml, { validationLevel: 'strict' });
+        const result = await mjml2html(mjml, { validationLevel: 'strict' });
         return {
             valid: result.errors.length === 0,
             errors: result.errors,
@@ -49,24 +49,26 @@ if (require.main === module) {
         process.exit(1);
     }
     
-    try {
-        const data = JSON.parse(dataJson);
-        
-        switch (action) {
-            case 'compile':
-                console.log(compileMJML(data.mjml, data.options));
-                break;
-            case 'validate':
-                console.log(JSON.stringify(validateMJML(data.mjml)));
-                break;
-            default:
-                console.error(`Unknown action: ${action}`);
-                process.exit(1);
+    (async () => {
+        try {
+            const data = JSON.parse(dataJson);
+            
+            switch (action) {
+                case 'compile':
+                    console.log(await compileMJML(data.mjml, data.options));
+                    break;
+                case 'validate':
+                    console.log(JSON.stringify(await validateMJML(data.mjml)));
+                    break;
+                default:
+                    console.error(`Unknown action: ${action}`);
+                    process.exit(1);
+            }
+        } catch (error) {
+            console.error(JSON.stringify({ error: error.message }));
+            process.exit(1);
         }
-    } catch (error) {
-        console.error(JSON.stringify({ error: error.message }));
-        process.exit(1);
-    }
+    })();
 }
 
 module.exports = { compileMJML, validateMJML };

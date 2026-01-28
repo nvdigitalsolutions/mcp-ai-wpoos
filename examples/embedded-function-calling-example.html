@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLLM Function Calling Example - NV oOS</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+        }
+        .status {
+            padding: 12px;
+            border-radius: 4px;
+            margin: 12px 0;
+            font-size: 14px;
+        }
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        .status.warning {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        .status.error {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+        .chat-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+            background: #fafafa;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+        }
+        .message.user {
+            background: #e3f2fd;
+            margin-left: 20%;
+        }
+        .message.assistant {
+            background: #f5f5f5;
+            margin-right: 20%;
+        }
+        .message.tool-call {
+            background: #fff3e0;
+            border-left: 4px solid #f57c00;
+        }
+        .message.tool-result {
+            background: #e8f5e9;
+            border-left: 4px solid #388e3c;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin: 4px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+        }
+        .code-block {
+            background: #263238;
+            color: #aed581;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #1976d2;
+            transition: width 0.3s;
+        }
+        .info-section {
+            background: #f5f5f5;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        .tool-definition {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 12px;
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 WebLLM Function Calling Example</h1>
+        
+        <p>
+            This example demonstrates how to use function calling with the embedded WebLLM client.
+            Function calling allows the AI model to call external functions/tools during conversation.
+        </p>
+
+        <div class="info-section">
+            <h3>Prerequisites</h3>
+            <ul>
+                <li>Modern browser with WebGPU support (Chrome 113+, Edge 113+, or Safari 18+)</li>
+                <li>At least 4GB RAM for smaller models</li>
+                <li>Fast internet connection for initial model download (~1-4GB)</li>
+                <li>Function calling requires models like Hermes-2-Pro or similar instruction-tuned models</li>
+            </ul>
+        </div>
+
+        <div id="status-container">
+            <div id="init-status" class="status info">
+                Ready to initialize WebLLM
+            </div>
+            <div id="progress-container" style="display:none;">
+                <div class="progress-bar">
+                    <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div id="progress-text" style="text-align: center; font-size: 12px; color: #666;"></div>
+            </div>
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button id="init-button" onclick="initializeModel()">Initialize Model</button>
+            <button id="chat-button" onclick="startFunctionCallingChat()" disabled>Test Function Calling</button>
+            <button id="clear-button" onclick="clearChat()">Clear Chat</button>
+        </div>
+
+        <div class="info-section">
+            <h3>Defined Tools/Functions</h3>
+            <div class="tool-definition">
+                <strong>get_current_weather</strong>
+                <p>Get the current weather in a given location</p>
+                <div class="code-block">
+{
+  "name": "get_current_weather",
+  "description": "Get the current weather in a given location",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "The city and state, e.g. San Francisco, CA"
+      },
+      "unit": {
+        "type": "string",
+        "enum": ["celsius", "fahrenheit"]
+      }
+    },
+    "required": ["location"]
+  }
+}
+                </div>
+            </div>
+        </div>
+
+        <div id="chat-container" class="chat-container" style="display:none;">
+            <h3>Chat Messages</h3>
+            <div id="messages"></div>
+        </div>
+
+        <div class="info-section">
+            <h3>How It Works</h3>
+            <ol>
+                <li>Define tools/functions with JSON schema (see above)</li>
+                <li>Send a chat request with <code>tools</code> parameter</li>
+                <li>Model may respond with <code>tool_calls</code> if it needs to call a function</li>
+                <li>Execute the function with provided arguments</li>
+                <li>Send function results back to model as <code>tool</code> role messages</li>
+                <li>Model uses results to generate final response</li>
+            </ol>
+        </div>
+
+        <div class="info-section">
+            <h3>Browser Console Output</h3>
+            <p>Check your browser's Developer Tools (F12) → Console tab for detailed logs of the function calling process.</p>
+        </div>
+    </div>
+
+    <!-- Load WebLLM from CDN -->
+    <script type="module">
+        import * as webllm from "https://esm.run/@mlc-ai/web-llm";
+        
+        // Make webllm globally available
+        window.webllm = webllm;
+        window.webLLM = webllm; // Alias for compatibility
+        
+        // Dispatch ready event
+        window.dispatchEvent(new Event('webllm-ready'));
+        
+        console.log('[Function Calling Example] WebLLM loaded from CDN');
+    </script>
+
+    <script>
+        // Global state
+        let engine = null;
+        let isInitializing = false;
+        
+        // Model configuration - using Hermes-2-Pro which supports function calling
+        const MODEL_ID = "Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC";
+        
+        // Tool definitions (OpenAI format)
+        const tools = [
+            {
+                type: "function",
+                function: {
+                    name: "get_current_weather",
+                    description: "Get the current weather in a given location",
+                    parameters: {
+                        type: "object",
+                        properties: {
+                            location: {
+                                type: "string",
+                                description: "The city and state, e.g. San Francisco, CA",
+                            },
+                            unit: {
+                                type: "string",
+                                enum: ["celsius", "fahrenheit"]
+                            },
+                        },
+                        required: ["location"],
+                    },
+                },
+            },
+        ];
+        
+        /**
+         * Update status message
+         */
+        function setStatus(message, type = 'info') {
+            const statusEl = document.getElementById('init-status');
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+            console.log('[Status]', message);
+        }
+        
+        /**
+         * Update progress bar
+         */
+        function updateProgress(progress, text) {
+            const progressContainer = document.getElementById('progress-container');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            progressContainer.style.display = 'block';
+            progressFill.style.width = (progress * 100) + '%';
+            progressText.textContent = text;
+        }
+        
+        /**
+         * Add message to chat display
+         */
+        function addMessage(role, content, type = '') {
+            const messagesDiv = document.getElementById('messages');
+            const chatContainer = document.getElementById('chat-container');
+            
+            chatContainer.style.display = 'block';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + (type || role);
+            
+            let displayContent = content;
+            if (typeof content === 'object') {
+                displayContent = JSON.stringify(content, null, 2);
+            }
+            
+            const roleLabel = {
+                'user': '👤 User',
+                'assistant': '🤖 Assistant',
+                'tool-call': '🔧 Tool Call',
+                'tool-result': '✅ Tool Result',
+                'system': '⚙️ System'
+            }[type || role] || role;
+            
+            messageDiv.innerHTML = '<strong>' + roleLabel + ':</strong><br>' + 
+                                  '<pre style="margin: 8px 0 0 0; white-space: pre-wrap;">' + 
+                                  displayContent + '</pre>';
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        /**
+         * Initialize WebLLM engine with model
+         */
+        async function initializeModel() {
+            if (isInitializing) {
+                setStatus('Model is already initializing...', 'warning');
+                return;
+            }
+            
+            if (engine) {
+                setStatus('Model already loaded!', 'success');
+                return;
+            }
+            
+            isInitializing = true;
+            document.getElementById('init-button').disabled = true;
+            
+            try {
+                setStatus('Checking WebLLM availability...', 'info');
+                
+                // Wait for WebLLM to load
+                await waitForWebLLM();
+                
+                setStatus('WebLLM library loaded. Initializing model...', 'info');
+                
+                // Progress callback
+                const progressCallback = (report) => {
+                    updateProgress(report.progress || 0, report.text || 'Loading...');
+                    console.log('[Progress]', report.text, report.progress);
+                };
+                
+                // Create engine
+                console.log('[Init] Creating MLCEngine with model:', MODEL_ID);
+                engine = await window.webllm.CreateMLCEngine(
+                    MODEL_ID,
+                    { 
+                        initProgressCallback: progressCallback,
+                        logLevel: 'INFO'
+                    }
+                );
+                
+                setStatus('✅ Model loaded successfully! Function calling is ready.', 'success');
+                document.getElementById('chat-button').disabled = false;
+                document.getElementById('progress-container').style.display = 'none';
+                
+                console.log('[Init] Engine created successfully');
+                
+            } catch (error) {
+                console.error('[Init] Error:', error);
+                setStatus('❌ Error: ' + error.message, 'error');
+                document.getElementById('init-button').disabled = false;
+                isInitializing = false;
+            }
+        }
+        
+        /**
+         * Wait for WebLLM to be loaded from CDN
+         */
+        function waitForWebLLM() {
+            return new Promise((resolve, reject) => {
+                if (window.webllm) {
+                    resolve(window.webllm);
+                    return;
+                }
+                
+                const timeout = setTimeout(() => {
+                    reject(new Error('Timeout waiting for WebLLM to load'));
+                }, 30000);
+                
+                window.addEventListener('webllm-ready', () => {
+                    clearTimeout(timeout);
+                    resolve(window.webllm);
+                }, { once: true });
+            });
+        }
+        
+        /**
+         * Mock function to get weather (simulates external API call)
+         */
+        function get_current_weather(location, unit = 'celsius') {
+            console.log('[Function Call] get_current_weather called with:', { location, unit });
+            
+            // Simulate API response (in real app, this would call a weather API)
+            const mockWeather = {
+                location: location,
+                temperature: unit === 'celsius' ? 22 : 72,
+                unit: unit,
+                condition: 'Partly cloudy',
+                humidity: 65,
+                wind_speed: 10
+            };
+            
+            return mockWeather;
+        }
+        
+        /**
+         * Execute tool call
+         */
+        function executeToolCall(toolCall) {
+            const functionName = toolCall.function.name;
+            const functionArgs = JSON.parse(toolCall.function.arguments);
+            
+            console.log('[Tool Execution]', functionName, functionArgs);
+            
+            // Execute the function
+            if (functionName === 'get_current_weather') {
+                return get_current_weather(functionArgs.location, functionArgs.unit);
+            }
+            
+            throw new Error('Unknown function: ' + functionName);
+        }
+        
+        /**
+         * Start a chat with function calling
+         */
+        async function startFunctionCallingChat() {
+            if (!engine) {
+                setStatus('Please initialize the model first', 'warning');
+                return;
+            }
+            
+            document.getElementById('chat-button').disabled = true;
+            setStatus('Processing chat with function calling...', 'info');
+            
+            try {
+                // User message
+                const userMessage = "What is the current weather in celsius in Pittsburgh and Tokyo?";
+                addMessage('user', userMessage);
+                
+                // Build request
+                const request = {
+                    stream: true,
+                    stream_options: { include_usage: true },
+                    messages: [
+                        {
+                            role: "user",
+                            content: userMessage,
+                        },
+                    ],
+                    tool_choice: "auto",
+                    tools: tools,
+                };
+                
+                console.log('[Chat] Starting streaming chat completion with tools');
+                
+                // Create streaming response
+                const asyncChunkGenerator = await engine.chat.completions.create(request);
+                
+                let message = "";
+                let lastChunk;
+                let usageChunk;
+                let toolCalls = [];
+                
+                // Process stream
+                for await (const chunk of asyncChunkGenerator) {
+                    console.log('[Chunk]', chunk);
+                    
+                    // Handle content
+                    if (chunk.choices[0]?.delta?.content) {
+                        message += chunk.choices[0].delta.content;
+                    }
+                    
+                    // Handle tool calls
+                    if (chunk.choices[0]?.delta?.tool_calls) {
+                        const toolCallDeltas = chunk.choices[0].delta.tool_calls;
+                        
+                        toolCallDeltas.forEach(tc => {
+                            const index = tc.index || 0;
+                            
+                            if (!toolCalls[index]) {
+                                toolCalls[index] = {
+                                    id: tc.id || 'call_' + Date.now() + '_' + index,
+                                    type: 'function',
+                                    function: {
+                                        name: tc.function?.name || '',
+                                        arguments: tc.function?.arguments || ''
+                                    }
+                                };
+                            } else {
+                                if (tc.function?.name) {
+                                    toolCalls[index].function.name += tc.function.name;
+                                }
+                                if (tc.function?.arguments) {
+                                    toolCalls[index].function.arguments += tc.function.arguments;
+                                }
+                            }
+                        });
+                    }
+                    
+                    if (!chunk.usage) {
+                        lastChunk = chunk;
+                    }
+                    usageChunk = chunk;
+                }
+                
+                console.log('[Chat] Streaming completed');
+                console.log('[Chat] Tool calls:', toolCalls);
+                console.log('[Chat] Usage:', usageChunk?.usage);
+                
+                // Display assistant response
+                if (message) {
+                    addMessage('assistant', message);
+                }
+                
+                // Handle tool calls
+                if (toolCalls.length > 0) {
+                    console.log('[Chat] Processing ' + toolCalls.length + ' tool calls');
+                    
+                    // Add tool calls to messages
+                    const toolCallMessages = [];
+                    
+                    for (const toolCall of toolCalls) {
+                        // Display tool call
+                        addMessage('tool-call', {
+                            id: toolCall.id,
+                            function: toolCall.function.name,
+                            arguments: JSON.parse(toolCall.function.arguments)
+                        }, 'tool-call');
+                        
+                        // Execute tool
+                        const result = executeToolCall(toolCall);
+                        
+                        // Display result
+                        addMessage('tool-result', result, 'tool-result');
+                        
+                        // Add to messages for next request
+                        toolCallMessages.push({
+                            role: "tool",
+                            tool_call_id: toolCall.id,
+                            name: toolCall.function.name,
+                            content: JSON.stringify(result)
+                        });
+                    }
+                    
+                    // Send tool results back to model for final response
+                    console.log('[Chat] Sending tool results to model for final response');
+                    setStatus('Getting final response from model...', 'info');
+                    
+                    const followUpRequest = {
+                        stream: true,
+                        messages: [
+                            { role: "user", content: userMessage },
+                            { role: "assistant", content: message, tool_calls: toolCalls },
+                            ...toolCallMessages
+                        ],
+                        tools: tools
+                    };
+                    
+                    const followUpGenerator = await engine.chat.completions.create(followUpRequest);
+                    let finalMessage = "";
+                    
+                    for await (const chunk of followUpGenerator) {
+                        if (chunk.choices[0]?.delta?.content) {
+                            finalMessage += chunk.choices[0].delta.content;
+                        }
+                    }
+                    
+                    addMessage('assistant', finalMessage);
+                    console.log('[Chat] Final response:', finalMessage);
+                }
+                
+                setStatus('✅ Chat completed successfully!', 'success');
+                
+            } catch (error) {
+                console.error('[Chat] Error:', error);
+                setStatus('❌ Error: ' + error.message, 'error');
+                addMessage('system', 'Error: ' + error.message, 'error');
+            } finally {
+                document.getElementById('chat-button').disabled = false;
+            }
+        }
+        
+        /**
+         * Clear chat messages
+         */
+        function clearChat() {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            document.getElementById('chat-container').style.display = 'none';
+            setStatus('Chat cleared', 'info');
+        }
+        
+        // Make functions globally available
+        window.initializeModel = initializeModel;
+        window.startFunctionCallingChat = startFunctionCallingChat;
+        window.clearChat = clearChat;
+        
+        console.log('[Function Calling Example] Ready');
+    </script>
+</body>
+</html>

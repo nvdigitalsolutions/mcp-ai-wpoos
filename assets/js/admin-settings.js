@@ -754,6 +754,7 @@ window.wpMcpAiSaveExpandedState = function() {
         initFlowhubHandlers();
         initTokenUsageHandlers();
         initProviderPriorityList();
+        initEmbeddedModelManagement();
         
         log('All admin handlers initialized successfully');
     });
@@ -881,6 +882,156 @@ window.wpMcpAiSaveExpandedState = function() {
             });
             log('Provider priority list sortable initialized');
         }
+    }
+
+    /**
+     * Initialize embedded model management handlers.
+     */
+    function initEmbeddedModelManagement() {
+        log('Initializing embedded model management...');
+        
+        const $container = $('.wp-mcp-ai-embedded-model-management');
+        
+        if ($container.length === 0) {
+            log('Embedded model management container not found on this page');
+            return;
+        }
+        
+        const nonce = $container.data('nonce');
+        
+        // Handle download button clicks
+        $container.on('click', '.wp-mcp-ai-download-model', function(e) {
+            e.preventDefault();
+            
+            const $btn = $(this);
+            const $row = $btn.closest('.wp-mcp-ai-model-row');
+            const modelSlug = $btn.data('model-slug');
+            
+            log('Download button clicked', { model: modelSlug });
+            
+            if (!modelSlug) {
+                alert('Invalid model specified.');
+                return;
+            }
+            
+            if (!confirm('This will download the model to your server. Depending on the model size and your connection speed, this may take several minutes. Continue?')) {
+                return;
+            }
+            
+            // Disable button and show progress
+            $btn.prop('disabled', true).text('Downloading...');
+            $row.find('.wp-mcp-ai-model-status').html('<span class="dashicons dashicons-update dashicons-spin"></span> Downloading...');
+            
+            log('Sending download request', {
+                url: wpMcpAiAdmin.ajaxUrl,
+                model: modelSlug
+            });
+            
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_download_embedded_model',
+                    nonce: nonce,
+                    model: modelSlug
+                }
+            }, {
+                context: 'embedded-model-download',
+                showGlobalError: true,
+                timeout: 600000 // 10 minutes timeout for large downloads
+            })
+            .done(function(response) {
+                log('Download successful', response);
+                
+                if (response.success) {
+                    const modelName = $row.data('model-name') || modelSlug;
+                    
+                    // Show success message with model identifier
+                    alert('Model downloaded successfully!\n\n' +
+                          'Model: ' + modelName + '\n' +
+                          'Model Identifier: ' + modelSlug + '\n\n' +
+                          'Use this identifier when configuring assistants with the Embedded provider.');
+                    
+                    // Reload the page to show the updated table with usage instructions
+                    window.location.reload();
+                } else {
+                    $btn.prop('disabled', false).text('Download');
+                    $row.find('.wp-mcp-ai-model-status')
+                        .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
+                    alert('Download failed: ' + (response.data || 'Unknown error'));
+                }
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                log('Download failed', { status: textStatus, error: errorThrown });
+                $btn.prop('disabled', false).text('Download');
+                $row.find('.wp-mcp-ai-model-status')
+                    .html('<span class="dashicons dashicons-download"></span> Not Downloaded');
+                alert('Download failed. Please check your connection and try again.');
+            });
+        });
+        
+        // Handle delete button clicks
+        $container.on('click', '.wp-mcp-ai-delete-model', function(e) {
+            e.preventDefault();
+            
+            const $btn = $(this);
+            const $row = $btn.closest('.wp-mcp-ai-model-row');
+            const modelSlug = $btn.data('model-slug');
+            
+            log('Delete button clicked', { model: modelSlug });
+            
+            if (!modelSlug) {
+                alert('Invalid model specified.');
+                return;
+            }
+            
+            if (!confirm('Are you sure you want to delete this model? This action cannot be undone.')) {
+                return;
+            }
+            
+            // Disable button and show progress
+            $btn.prop('disabled', true).text('Deleting...');
+            
+            log('Sending delete request', {
+                url: wpMcpAiAdmin.ajaxUrl,
+                model: modelSlug
+            });
+            
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_delete_embedded_model',
+                    nonce: nonce,
+                    model: modelSlug
+                }
+            }, {
+                context: 'embedded-model-delete',
+                showGlobalError: true
+            })
+            .done(function(response) {
+                log('Delete successful', response);
+                
+                if (response.success) {
+                    alert('Model deleted successfully!');
+                    
+                    // Reload the page to show the updated table
+                    window.location.reload();
+                } else {
+                    $btn.prop('disabled', false).text('Delete');
+                    alert('Delete failed: ' + (response.data || 'Unknown error'));
+                }
+            })
+            .fail(function(jqXHR, textStatus, errorThrown) {
+                log('Delete failed', { status: textStatus, error: errorThrown });
+                $btn.prop('disabled', false).text('Delete');
+                alert('Delete failed. Please check your connection and try again.');
+            });
+        });
+        
+        log('Embedded model management initialized');
     }
 
 })(jQuery);

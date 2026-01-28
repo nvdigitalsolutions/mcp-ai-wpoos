@@ -36,6 +36,7 @@
         "data_scientist",
         "research_scientist",
         "statistician",
+        "applied_statistician",
         "computer_scientist"
       ],
       "default_provider": "openai",

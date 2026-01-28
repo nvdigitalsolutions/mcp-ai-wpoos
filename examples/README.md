@@ -2,6 +2,131 @@
 
 This directory contains practical examples demonstrating how to use the WP MCP AI plugin features.
 
+## Embedded Function Calling Examples
+
+The `embedded-function-calling-example.html` and `embedded-function-calling-example.js` files demonstrate how to use function calling (tool calling) with the embedded WebLLM client.
+
+### What is Function Calling?
+
+Function calling allows AI models to call external functions/tools during conversation. This enables:
+- Real-time data access (weather, stock prices, etc.)
+- External API interactions
+- WordPress operations (create posts, query database, etc.)
+- Custom business logic execution
+
+### Files
+
+- **`embedded-function-calling-example.html`** - Complete standalone HTML example with UI
+- **`embedded-function-calling-example.js`** - JavaScript-only examples for integration
+- **`docs/embedded-function-calling-guide.md`** - Comprehensive documentation
+
+### Running the HTML Example
+
+1. **Open in Browser**:
+   ```bash
+   # From project root
+   open examples/embedded-function-calling-example.html
+   # Or navigate to it in your browser
+   ```
+
+2. **Requirements**:
+   - Modern browser with WebGPU support:
+     - Chrome 113+ or Edge 113+ (Windows/Linux/macOS)
+     - Safari 18+ (macOS only)
+   - At least 4GB RAM
+   - Fast internet for initial model download (~4.5GB for Hermes-2-Pro)
+
+3. **Using the Example**:
+   - Click "Initialize Model" to download and load the AI model
+   - Once loaded, click "Test Function Calling" to see a weather query example
+   - Watch the console for detailed logs of the function calling process
+
+### Supported Models for Function Calling
+
+Not all models support function calling. Use these models:
+
+| Model | Size | Support | Recommended |
+|-------|------|---------|-------------|
+| Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC | ~4.5GB | ✅ Excellent | **Yes** |
+| Qwen2.5-7B-Instruct-q4f16_1-MLC | ~4.5GB | ✅ Good | No |
+| Phi-3.5-mini-instruct-q4f16_1-MLC | ~2.5GB | ✅ Fair | No |
+
+### Quick Code Example
+
+```javascript
+// Define a tool
+const tools = [{
+    type: "function",
+    function: {
+        name: "get_current_weather",
+        description: "Get weather for a location",
+        parameters: {
+            type: "object",
+            properties: {
+                location: { type: "string" },
+                unit: { type: "string", enum: ["celsius", "fahrenheit"] }
+            },
+            required: ["location"]
+        }
+    }
+}];
+
+// Use with WebLLM
+const engine = await webllm.CreateMLCEngine("Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC");
+
+const response = await engine.chat.completions.create({
+    messages: [{ role: "user", content: "What's the weather in Tokyo?" }],
+    tools: tools,
+    tool_choice: "auto",
+    stream: true
+});
+
+// Handle tool calls in response
+for await (const chunk of response) {
+    if (chunk.choices[0]?.delta?.tool_calls) {
+        // Model is calling a tool
+        console.log('Tool call:', chunk.choices[0].delta.tool_calls);
+    }
+}
+```
+
+### Using with WordPress Plugin
+
+```javascript
+// Create client with tools
+const client = new window.WP_MCP_AI_EmbeddedLLM('my-chat', {
+    tools: [
+        {
+            slug: 'get_weather',
+            description: 'Get current weather',
+            parameters: { /* schema */ }
+        }
+    ]
+});
+
+// Load model
+await client.loadModel('Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC');
+
+// Chat with tool support
+const result = await client.generateStreamingCompletion(messages, {
+    tools: client.tools
+});
+
+// Check for tool calls
+if (result.tool_calls) {
+    // Execute tools and send results back
+}
+```
+
+### Documentation
+
+See `docs/embedded-function-calling-guide.md` for:
+- Complete architecture overview
+- Detailed API reference
+- WordPress integration guide
+- Security best practices
+- Troubleshooting tips
+
 ## Cloudflare AI Utils Examples
 
 The `cloudflare-ai-utils-examples.php` file demonstrates the embedded function calling feature (PHP equivalent to @cloudflare/ai-utils).

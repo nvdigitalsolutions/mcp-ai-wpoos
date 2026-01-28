@@ -32,16 +32,16 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'instantiate_template',
-			'description' => 'Creates a task plan from a template by replacing placeholders with actual values. This allows reusing proven workflows by just changing the variables.',
+			'name'         => 'instantiate_template',
+			'description'  => 'Creates a task plan from a template by replacing placeholders with actual values. This allows reusing proven workflows by just changing the variables.',
 			'input_schema' => array(
 				'type'       => 'object',
 				'properties' => array(
-					'template_id' => array(
+					'template_id'      => array(
 						'type'        => 'number',
 						'description' => 'ID of the template to instantiate',
 					),
-					'variables'   => array(
+					'variables'        => array(
 						'type'        => 'object',
 						'description' => 'Key-value pairs to replace template placeholders (e.g., {"goal": "Research AI trends", "topic": "Machine Learning", "count": "10"})',
 					),
@@ -59,12 +59,12 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 							),
 						),
 					),
-					'project_id'  => array(
+					'project_id'       => array(
 						'type'        => 'number',
 						'description' => 'Optional project ID to link task plan to',
 					),
 				),
-				'required' => array( 'template_id', 'variables' ),
+				'required'   => array( 'template_id', 'variables' ),
 			),
 		);
 	}
@@ -142,8 +142,8 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 
 		if ( ! empty( $unreplaced_placeholders ) ) {
 			return array(
-				'success' => false,
-				'error'   => 'Missing required variables: ' . implode( ', ', $unreplaced_placeholders ),
+				'success'                 => false,
+				'error'                   => 'Missing required variables: ' . implode( ', ', $unreplaced_placeholders ),
 				'unreplaced_placeholders' => $unreplaced_placeholders,
 			);
 		}
@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		$task_count = 0;
 		foreach ( explode( "\n", $markdown_content ) as $line ) {
 			if ( preg_match( '/^- \[([ x])\] /', $line ) ) {
-				$task_count++;
+				++$task_count;
 			}
 		}
 
@@ -188,17 +188,17 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 			}
 
 			$plan_data = array(
-				'goal'              => $goal,
-				'markdown_content'  => $markdown_content,
-				'status'            => 'active',
-				'task_count'        => $task_count,
-				'completed_count'   => 0,
-				'progress'          => 0,
-				'tasks_parsed'      => '',
-				'template_id'       => $template_id,
-				'project_id'        => $project_id,
-				'completed_at'      => null,
-				'metadata'          => wp_json_encode( array( 'instantiated_from' => $template_id ) ),
+				'goal'             => $goal,
+				'markdown_content' => $markdown_content,
+				'status'           => 'active',
+				'task_count'       => $task_count,
+				'completed_count'  => 0,
+				'progress'         => 0,
+				'tasks_parsed'     => '',
+				'template_id'      => $template_id,
+				'project_id'       => $project_id,
+				'completed_at'     => null,
+				'metadata'         => wp_json_encode( array( 'instantiated_from' => $template_id ) ),
 			);
 
 			$plan_id = $plan_handler->update_item( null, $plan_data );
@@ -241,16 +241,16 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 		}
 
 		return array(
-			'success'          => true,
-			'plan_id'          => $plan_id,
-			'template_id'      => $template_id,
-			'template_name'    => $template_name,
-			'goal'             => $goal,
-			'task_count'       => $task_count,
-			'config'           => $final_config,
-			'storage_type'     => $use_cct ? 'cct' : 'cpt',
-			'usage_count'      => $usage_count,
-			'message'          => 'Task plan created from template successfully. Use this plan_id to start an autonomous session.',
+			'success'       => true,
+			'plan_id'       => $plan_id,
+			'template_id'   => $template_id,
+			'template_name' => $template_name,
+			'goal'          => $goal,
+			'task_count'    => $task_count,
+			'config'        => $final_config,
+			'storage_type'  => $use_cct ? 'cct' : 'cpt',
+			'usage_count'   => $usage_count,
+			'message'       => 'Task plan created from template successfully. Use this plan_id to start an autonomous session.',
 		);
 	}
 

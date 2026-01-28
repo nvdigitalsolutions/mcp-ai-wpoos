@@ -30,11 +30,15 @@
 		"install:vectorizer:fix": "find assets/js/vendor/neplex-vectorizer -maxdepth 2 -name '*.node' -type f -exec sh -c 'cp \"$1\" assets/js/vendor/neplex-vectorizer/vectorizer/' _ {} \\;"
 	},
 	"dependencies": {
+		"@langchain/community": "^0.3.14",
+		"@langchain/core": "^0.3.20",
 		"@microsoft/fetch-event-source": "^2.0.1",
+		"@mlc-ai/web-llm": "^0.2.80",
 		"@neplex/vectorizer": "^0.0.5",
 		"chart.js": "^4.4.7",
 		"dompurify": "^3.3.0",
 		"ky": "^1.14.0",
+		"langchain": "^0.3.6",
 		"marked": "^9.1.6"
 	},
 	"devDependencies": {

@@ -33,7 +33,7 @@ class WP_MCP_AI_Tool_Create_Project implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a new project for managing tasks and events or updates an existing one if project_id is provided. Projects can have a name, description, start/end dates, status, and assigned members.', 'mcp-ai-wpoos-pro' );
+		return __( 'Create a new project or update an existing project. If project_id is provided, updates the existing project instead of creating a new one. Projects can have a name, description, start/end dates, status, and assigned members. Use this tool for both creating new projects and updating existing ones.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**

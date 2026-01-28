@@ -49,15 +49,15 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'floor_plan'       => array(
+				'floor_plan'           => array(
 					'type'        => 'object',
 					'description' => __( 'Floor plan data to analyze.', 'mcp-ai-wpoos-pro' ),
 				),
-				'total_area'       => array(
+				'total_area'           => array(
 					'type'        => 'number',
 					'description' => __( 'Total building area in square feet.', 'mcp-ai-wpoos-pro' ),
 				),
-				'climate_zone'     => array(
+				'climate_zone'         => array(
 					'type'        => 'string',
 					'description' => __( 'Climate zone: "1", "2", "3", "4", "5", "6", "7", "8".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( '1', '2', '3', '4', '5', '6', '7', '8' ),
@@ -67,22 +67,22 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 					'description' => __( 'Primary building orientation: "north", "south", "east", "west".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'north', 'south', 'east', 'west' ),
 				),
-				'window_wall_ratio' => array(
+				'window_wall_ratio'    => array(
 					'type'        => 'number',
 					'description' => __( 'Window-to-wall ratio (0-1).', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 0,
 					'maximum'     => 1,
 				),
-				'insulation_values' => array(
+				'insulation_values'    => array(
 					'type'        => 'object',
 					'description' => __( 'R-values for walls, roof, foundation.', 'mcp-ai-wpoos-pro' ),
 				),
-				'hvac_system'      => array(
+				'hvac_system'          => array(
 					'type'        => 'string',
 					'description' => __( 'HVAC system type: "standard", "high_efficiency", "geothermal", "heat_pump".', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'standard', 'high_efficiency', 'geothermal', 'heat_pump' ),
 				),
-				'renewable_energy' => array(
+				'renewable_energy'     => array(
 					'type'        => 'object',
 					'description' => __( 'Renewable energy systems (solar, wind, etc.).', 'mcp-ai-wpoos-pro' ),
 				),
@@ -179,24 +179,24 @@ class WP_MCP_AI_Tool_Calculate_Sustainability_Metrics implements WP_MCP_AI_Tool_
 	 */
 	protected function calculate_metrics( $floor_plan, $total_area, $climate_zone, $building_orientation, $window_wall_ratio, $insulation_values, $hvac_system, $renewable_energy, $certification_target, $context ) {
 		return array(
-			'energy_performance' => array(
-				'estimated_eui'     => 45.2, // kBtu/sf/year.
-				'energy_star_score' => 78,
+			'energy_performance'   => array(
+				'estimated_eui'       => 45.2, // kBtu/sf/year.
+				'energy_star_score'   => 78,
 				'baseline_comparison' => '-25% better than code',
 			),
 			'environmental_impact' => array(
-				'carbon_footprint'  => 12.5, // tons CO2/year.
-				'water_usage'       => 'Estimated 30% reduction',
+				'carbon_footprint'    => 12.5, // tons CO2/year.
+				'water_usage'         => 'Estimated 30% reduction',
 				'material_efficiency' => 'Standard',
 			),
-			'certification'      => array(
-				'target'            => $certification_target ? $certification_target : 'leed',
-				'estimated_level'   => 'Silver',
-				'points_estimate'   => 52,
-				'requirements_met'  => 14,
+			'certification'        => array(
+				'target'             => $certification_target ? $certification_target : 'leed',
+				'estimated_level'    => 'Silver',
+				'points_estimate'    => 52,
+				'requirements_met'   => 14,
 				'requirements_total' => 18,
 			),
-			'recommendations'    => array(
+			'recommendations'      => array(
 				'Increase insulation to R-30 for roof',
 				'Consider solar PV for 20% energy offset',
 				'Install high-efficiency windows (U-factor < 0.30)',

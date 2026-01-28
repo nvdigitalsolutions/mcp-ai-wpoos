@@ -16,6 +16,7 @@ require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool-llm-
  */
 class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_LLM_Sanitizer_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
+
 	const DEFAULT_WAIT_TIMEOUT  = 120;
 	const DEFAULT_POLL_INTERVAL = 3;
 

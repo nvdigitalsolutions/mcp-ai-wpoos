@@ -97,26 +97,26 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'platform'           => array(
+				'platform'            => array(
 					'type'        => 'string',
 					'description' => __( 'Target social media platform', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'facebook', 'twitter', 'instagram', 'linkedin', 'pinterest', 'tiktok', 'youtube' ),
 				),
-				'industry'           => array(
+				'industry'            => array(
 					'type'        => 'string',
 					'description' => __( 'Industry or niche for content', 'mcp-ai-wpoos-pro' ),
 				),
-				'brand_voice'        => array(
+				'brand_voice'         => array(
 					'type'        => 'string',
 					'description' => __( 'Brand voice and tone', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'professional', 'casual', 'friendly', 'authoritative', 'humorous', 'inspirational', 'educational' ),
 					'default'     => 'professional',
 				),
-				'target_audience'    => array(
+				'target_audience'     => array(
 					'type'        => 'string',
 					'description' => __( 'Target audience description', 'mcp-ai-wpoos-pro' ),
 				),
-				'content_types'      => array(
+				'content_types'       => array(
 					'type'        => 'array',
 					'description' => __( 'Types of content to generate ideas for', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -124,21 +124,21 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 						'enum' => array( 'promotional', 'educational', 'entertaining', 'inspirational', 'news', 'behind-the-scenes', 'user-generated', 'poll', 'question' ),
 					),
 				),
-				'topics'             => array(
+				'topics'              => array(
 					'type'        => 'array',
 					'description' => __( 'Specific topics or themes to focus on', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'keywords'           => array(
+				'keywords'            => array(
 					'type'        => 'array',
 					'description' => __( 'Keywords to include in ideas', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'trending_topics'    => array(
+				'trending_topics'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include trending topics in suggestions', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -148,19 +148,19 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 					'description' => __( 'Analyze past post performance for insights', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'ideas_count'        => array(
+				'ideas_count'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of ideas to generate', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 50,
 				),
-				'include_hashtags'   => array(
+				'include_hashtags'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include suggested hashtags with ideas', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_visuals'    => array(
+				'include_visuals'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Suggest visual content types for ideas', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -210,24 +210,24 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Sanitize inputs.
-		$platform           = isset( $arguments['platform'] ) ? sanitize_text_field( $arguments['platform'] ) : '';
-		$industry           = isset( $arguments['industry'] ) ? sanitize_text_field( $arguments['industry'] ) : '';
-		$brand_voice        = isset( $arguments['brand_voice'] ) ? sanitize_text_field( $arguments['brand_voice'] ) : 'professional';
-		$target_audience    = isset( $arguments['target_audience'] ) ? sanitize_text_field( $arguments['target_audience'] ) : '';
-		$content_types      = isset( $arguments['content_types'] ) && is_array( $arguments['content_types'] )
+		$platform            = isset( $arguments['platform'] ) ? sanitize_text_field( $arguments['platform'] ) : '';
+		$industry            = isset( $arguments['industry'] ) ? sanitize_text_field( $arguments['industry'] ) : '';
+		$brand_voice         = isset( $arguments['brand_voice'] ) ? sanitize_text_field( $arguments['brand_voice'] ) : 'professional';
+		$target_audience     = isset( $arguments['target_audience'] ) ? sanitize_text_field( $arguments['target_audience'] ) : '';
+		$content_types       = isset( $arguments['content_types'] ) && is_array( $arguments['content_types'] )
 			? array_map( 'sanitize_text_field', $arguments['content_types'] )
 			: array();
-		$topics             = isset( $arguments['topics'] ) && is_array( $arguments['topics'] )
+		$topics              = isset( $arguments['topics'] ) && is_array( $arguments['topics'] )
 			? array_map( 'sanitize_text_field', $arguments['topics'] )
 			: array();
-		$keywords           = isset( $arguments['keywords'] ) && is_array( $arguments['keywords'] )
+		$keywords            = isset( $arguments['keywords'] ) && is_array( $arguments['keywords'] )
 			? array_map( 'sanitize_text_field', $arguments['keywords'] )
 			: array();
-		$trending_topics    = isset( $arguments['trending_topics'] ) ? (bool) $arguments['trending_topics'] : true;
+		$trending_topics     = isset( $arguments['trending_topics'] ) ? (bool) $arguments['trending_topics'] : true;
 		$analyze_performance = isset( $arguments['analyze_performance'] ) ? (bool) $arguments['analyze_performance'] : false;
-		$ideas_count        = isset( $arguments['ideas_count'] ) ? absint( $arguments['ideas_count'] ) : 10;
-		$include_hashtags   = isset( $arguments['include_hashtags'] ) ? (bool) $arguments['include_hashtags'] : true;
-		$include_visuals    = isset( $arguments['include_visuals'] ) ? (bool) $arguments['include_visuals'] : true;
+		$ideas_count         = isset( $arguments['ideas_count'] ) ? absint( $arguments['ideas_count'] ) : 10;
+		$include_hashtags    = isset( $arguments['include_hashtags'] ) ? (bool) $arguments['include_hashtags'] : true;
+		$include_visuals     = isset( $arguments['include_visuals'] ) ? (bool) $arguments['include_visuals'] : true;
 
 		// Get trending topics if enabled.
 		$trends = array();
@@ -315,17 +315,17 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 		// In a production environment, this would query analytics data.
 		// For now, return sample insights.
 		return array(
-			'top_performing_types'   => array( 'educational', 'entertaining' ),
-			'best_posting_times'     => array( '09:00', '13:00', '18:00' ),
-			'avg_engagement_rate'    => '4.2%',
-			'top_hashtags'           => array( '#business', '#marketing', '#success' ),
-			'engagement_by_type'     => array(
-				'video'  => 'high',
-				'image'  => 'medium',
-				'text'   => 'medium',
-				'link'   => 'low',
+			'top_performing_types'  => array( 'educational', 'entertaining' ),
+			'best_posting_times'    => array( '09:00', '13:00', '18:00' ),
+			'avg_engagement_rate'   => '4.2%',
+			'top_hashtags'          => array( '#business', '#marketing', '#success' ),
+			'engagement_by_type'    => array(
+				'video' => 'high',
+				'image' => 'medium',
+				'text'  => 'medium',
+				'link'  => 'low',
 			),
-			'audience_demographics'  => array(
+			'audience_demographics' => array(
 				'age_range'     => '25-44',
 				'top_locations' => array( 'United States', 'United Kingdom', 'Canada' ),
 			),
@@ -354,10 +354,10 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 
 		// Generate ideas based on different strategies.
 		$strategies = array(
-			'trending'     => 0.3, // 30% trending-based.
-			'performance'  => 0.3, // 30% performance-based.
-			'topic'        => 0.2, // 20% topic-based.
-			'audience'     => 0.2, // 20% audience-based.
+			'trending'    => 0.3, // 30% trending-based.
+			'performance' => 0.3, // 30% performance-based.
+			'topic'       => 0.2, // 20% topic-based.
+			'audience'    => 0.2, // 20% audience-based.
 		);
 
 		foreach ( $strategies as $strategy => $ratio ) {
@@ -415,7 +415,7 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 				$topic = ! empty( $trends ) ? $trends[ array_rand( $trends ) ] : '';
 				break;
 			case 'performance':
-				$topic = ! empty( $performance_insights['top_performing_types'] ) 
+				$topic = ! empty( $performance_insights['top_performing_types'] )
 					? $performance_insights['top_performing_types'][ array_rand( $performance_insights['top_performing_types'] ) ]
 					: '';
 				break;
@@ -492,13 +492,13 @@ class WP_MCP_AI_Tool_Generate_Post_Ideas implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	protected function generate_hook( $content_type, $topic, $brand_voice ) {
 		$hooks = array(
-			'professional'    => 'Explore professional insights on %s that can transform your approach.',
-			'casual'          => 'Let\'s talk about %s - you\'re going to love this!',
-			'friendly'        => 'Hey there! We want to share something amazing about %s with you.',
-			'authoritative'   => 'Industry experts agree: %s is crucial for success.',
-			'humorous'        => 'Warning: This post about %s may cause excessive smiling.',
-			'inspirational'   => 'Ready to be inspired? Let\'s dive into %s together.',
-			'educational'     => 'Today we\'re breaking down %s to help you succeed.',
+			'professional'  => 'Explore professional insights on %s that can transform your approach.',
+			'casual'        => 'Let\'s talk about %s - you\'re going to love this!',
+			'friendly'      => 'Hey there! We want to share something amazing about %s with you.',
+			'authoritative' => 'Industry experts agree: %s is crucial for success.',
+			'humorous'      => 'Warning: This post about %s may cause excessive smiling.',
+			'inspirational' => 'Ready to be inspired? Let\'s dive into %s together.',
+			'educational'   => 'Today we\'re breaking down %s to help you succeed.',
 		);
 
 		$hook_template = isset( $hooks[ $brand_voice ] ) ? $hooks[ $brand_voice ] : $hooks['professional'];

@@ -51,17 +51,17 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	 */
 	public function get_definition() {
 		return array(
-			'name'        => 'detect_completion_indicators',
-			'description' => 'Analyze text for semantic completion indicators. Returns a score indicating how many completion signals are detected. Used for intelligent exit detection in autonomous loops.',
-			'category'    => 'project_management',
-			'input_schema' => array(
+			'name'                => 'detect_completion_indicators',
+			'description'         => 'Analyze text for semantic completion indicators. Returns a score indicating how many completion signals are detected. Used for intelligent exit detection in autonomous loops.',
+			'category'            => 'project_management',
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'text' => array(
+					'text'      => array(
 						'type'        => 'string',
 						'description' => 'Text to analyze for completion indicators',
 					),
-					'plan_id' => array(
+					'plan_id'   => array(
 						'type'        => 'integer',
 						'description' => 'Optional task plan ID to check completion against',
 					),
@@ -71,7 +71,7 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 						'default'     => 2,
 					),
 				),
-				'required' => array( 'text' ),
+				'required'   => array( 'text' ),
 			),
 			'required_capability' => 'read',
 		);
@@ -105,8 +105,8 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 		}
 
 		// Calculate total score.
-		$total_score     = count( $indicators['matches'] );
-		$completion_met  = $total_score >= $threshold;
+		$total_score    = count( $indicators['matches'] );
+		$completion_met = $total_score >= $threshold;
 
 		// Add task plan score if available.
 		if ( null !== $task_completion ) {
@@ -114,14 +114,14 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 		}
 
 		return array(
-			'success'           => true,
-			'indicator_count'   => count( $indicators['matches'] ),
-			'indicators_found'  => $indicators['matches'],
-			'total_score'       => $total_score,
-			'threshold'         => $threshold,
-			'completion_met'    => $completion_met,
-			'task_completion'   => $task_completion,
-			'recommendation'    => $this->get_recommendation( $total_score, $threshold, $task_completion ),
+			'success'          => true,
+			'indicator_count'  => count( $indicators['matches'] ),
+			'indicators_found' => $indicators['matches'],
+			'total_score'      => $total_score,
+			'threshold'        => $threshold,
+			'completion_met'   => $completion_met,
+			'task_completion'  => $task_completion,
+			'recommendation'   => $this->get_recommendation( $total_score, $threshold, $task_completion ),
 		);
 	}
 
@@ -163,8 +163,8 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 			return '';
 		}
 
-		$start  = max( 0, $pos - 50 );
-		$length = min( strlen( $text ) - $start, 150 );
+		$start   = max( 0, $pos - 50 );
+		$length  = min( strlen( $text ) - $start, 150 );
 		$context = substr( $text, $start, $length );
 
 		return trim( $context );
@@ -177,8 +177,17 @@ class WP_MCP_AI_Pro_Tool_Detect_Completion_Indicators {
 	 * @return array|null
 	 */
 	private function check_plan_completion( $plan_id ) {
+		// Ensure Get Task Plan tool is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Pro_Tool_Get_Task_Plan' ) ) {
+			if ( defined( 'WP_MCP_AI_PRO_PATH' ) && file_exists( WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-pro-tool-get-task-plan.php';
+			} else {
+				return null;
+			}
+		}
+
 		// Get task plan using existing tool.
-		$tool = new WP_MCP_AI_Pro_Tool_Get_Task_Plan();
+		$tool   = new WP_MCP_AI_Pro_Tool_Get_Task_Plan();
 		$result = $tool->execute(
 			array( 'plan_id' => $plan_id ),
 			array()

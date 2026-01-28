@@ -106,52 +106,52 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attribution_model'    => array(
+				'attribution_model' => array(
 					'type'        => 'string',
 					'description' => 'Attribution model: first_touch, last_touch, linear, time_decay, position_based',
 					'enum'        => array( 'first_touch', 'last_touch', 'linear', 'time_decay', 'position_based' ),
 					'default'     => 'linear',
 				),
-				'lookback_window'      => array(
+				'lookback_window'   => array(
 					'type'        => 'integer',
 					'description' => 'Days to look back for touchpoints before conversion',
 					'minimum'     => 1,
 					'maximum'     => 90,
 					'default'     => 30,
 				),
-				'date_range'           => array(
+				'date_range'        => array(
 					'type'        => 'string',
 					'description' => 'Conversion date range: last_7_days, last_30_days, last_90_days, custom',
 					'enum'        => array( 'last_7_days', 'last_30_days', 'last_90_days', 'custom' ),
 					'default'     => 'last_30_days',
 				),
-				'start_date'           => array(
+				'start_date'        => array(
 					'type'        => 'string',
 					'description' => 'Start date for custom range (YYYY-MM-DD)',
 				),
-				'end_date'             => array(
+				'end_date'          => array(
 					'type'        => 'string',
 					'description' => 'End date for custom range (YYYY-MM-DD)',
 				),
-				'group_by'             => array(
+				'group_by'          => array(
 					'type'        => 'string',
 					'description' => 'Group results by: channel, campaign, source, medium',
 					'enum'        => array( 'channel', 'campaign', 'source', 'medium' ),
 					'default'     => 'channel',
 				),
-				'min_conversions'      => array(
+				'min_conversions'   => array(
 					'type'        => 'integer',
 					'description' => 'Minimum conversions to include channel/campaign',
 					'minimum'     => 1,
 					'maximum'     => 1000,
 					'default'     => 5,
 				),
-				'include_revenue'      => array(
+				'include_revenue'   => array(
 					'type'        => 'boolean',
 					'description' => 'Include revenue attribution',
 					'default'     => true,
 				),
-				'compare_models'       => array(
+				'compare_models'    => array(
 					'type'        => 'boolean',
 					'description' => 'Compare multiple attribution models',
 					'default'     => false,
@@ -227,9 +227,9 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 
 		if ( empty( $conversions ) ) {
 			return array(
-				'success' => true,
+				'success'     => true,
 				'attribution' => array(),
-				'message' => __( 'No conversions found in the specified period.', 'mcp-ai-wpoos-pro' ),
+				'message'     => __( 'No conversions found in the specified period.', 'mcp-ai-wpoos-pro' ),
 			);
 		}
 
@@ -239,7 +239,7 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 		// Filter by minimum conversions.
 		$attribution = array_filter(
 			$attribution,
-			function( $item ) use ( $min_conversions ) {
+			function ( $item ) use ( $min_conversions ) {
 				return $item['conversions'] >= $min_conversions;
 			}
 		);
@@ -408,12 +408,12 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 
 		// Simulate touchpoint data.
 		$channels = array( 'organic_search', 'paid_search', 'email', 'social', 'direct', 'referral' );
-		$count = wp_rand( 2, 5 );
+		$count    = wp_rand( 2, 5 );
 
 		$conversion_timestamp = strtotime( $conversion_date );
 
 		for ( $i = 0; $i < $count; $i++ ) {
-			$days_before = wp_rand( 0, $lookback_days );
+			$days_before   = wp_rand( 0, $lookback_days );
 			$touchpoints[] = array(
 				'channel'   => $channels[ array_rand( $channels ) ],
 				'timestamp' => gmdate( 'Y-m-d H:i:s', strtotime( "-{$days_before} days", $conversion_timestamp ) ),
@@ -444,12 +444,12 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 		$attribution = array();
 
 		foreach ( $conversions as $conversion ) {
-			$touchpoints = $conversion['touchpoints'];
+			$touchpoints         = $conversion['touchpoints'];
 			$credit_distribution = $this->calculate_credit_distribution( $touchpoints, $model );
 
 			foreach ( $credit_distribution as $touchpoint_index => $credit ) {
 				$touchpoint = $touchpoints[ $touchpoint_index ];
-				$key = $touchpoint[ $group_by ];
+				$key        = $touchpoint[ $group_by ];
 
 				if ( ! isset( $attribution[ $key ] ) ) {
 					$attribution[ $key ] = array(
@@ -488,7 +488,7 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Credit distribution.
 	 */
 	private function calculate_credit_distribution( $touchpoints, $model ) {
-		$count = count( $touchpoints );
+		$count        = count( $touchpoints );
 		$distribution = array();
 
 		switch ( $model ) {
@@ -509,9 +509,9 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 
 			case 'time_decay':
 				$total_weight = 0;
-				$weights = array();
+				$weights      = array();
 				for ( $i = 0; $i < $count; $i++ ) {
-					$weight = pow( 2, $i );
+					$weight        = pow( 2, $i );
 					$weights[ $i ] = $weight;
 					$total_weight += $weight;
 				}
@@ -528,9 +528,9 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 					$distribution[1] = 0.5;
 				} else {
 					// 40% first, 40% last, 20% distributed among middle.
-					$distribution[0] = 0.4;
+					$distribution[0]            = 0.4;
 					$distribution[ $count - 1 ] = 0.4;
-					$middle_credit = 0.2 / ( $count - 2 );
+					$middle_credit              = 0.2 / ( $count - 2 );
 					for ( $i = 1; $i < $count - 1; $i++ ) {
 						$distribution[ $i ] = $middle_credit;
 					}
@@ -592,11 +592,11 @@ class WP_MCP_AI_Tool_Attribution_Modeling implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Model comparison.
 	 */
 	private function compare_attribution_models( $conversions, $group_by, $include_revenue ) {
-		$models = array( 'first_touch', 'last_touch', 'linear', 'time_decay', 'position_based' );
+		$models     = array( 'first_touch', 'last_touch', 'linear', 'time_decay', 'position_based' );
 		$comparison = array();
 
 		foreach ( $models as $model ) {
-			$attribution = $this->apply_attribution_model( $conversions, $model, $group_by, $include_revenue );
+			$attribution          = $this->apply_attribution_model( $conversions, $model, $group_by, $include_revenue );
 			$comparison[ $model ] = array(
 				'top_channels' => array_slice( $attribution, 0, 5 ),
 				'summary'      => $this->calculate_attribution_summary( $attribution, $include_revenue ),

@@ -28,6 +28,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_run_orchestration_seeder', array( $this, 'ajax_run_seeder' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_orchestration_stats', array( $this, 'ajax_get_stats' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_recent_workflows', array( $this, 'ajax_get_recent_workflows' ) );
 	}
 
 	/**
@@ -121,6 +122,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<?php $this->render_role_distribution_chart( $stats ); ?>
 			</div>
 
+			<!-- Recent Workflows -->
+			<div class="orchestration-workflows-container">
+				<h2><?php esc_html_e( 'Recent Workflows', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_recent_workflows(); ?>
+			</div>
+
 			<!-- Quick Actions -->
 			<div class="orchestration-quick-actions">
 				<h2><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos' ); ?></h2>
@@ -144,15 +151,15 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	protected function get_orchestration_statistics() {
 		$roles = array( 'planner', 'executor', 'critic', 'specialist', 'generalist' );
 		$stats = array(
-			'total_professions' => 0,
+			'total_professions'  => 0,
 			'seeded_professions' => 0,
-			'roles' => array(),
+			'roles'              => array(),
 			'with_task_patterns' => 0,
-			'seeder_version' => get_option( 'wp_mcp_ai_profession_orchestration_version', __( 'Not seeded', 'mcp-ai-wpoos' ) ),
+			'seeder_version'     => get_option( 'wp_mcp_ai_profession_orchestration_version', __( 'Not seeded', 'mcp-ai-wpoos' ) ),
 		);
 
 		// Get total professions.
-		$total_query = new WP_Query(
+		$total_query                = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
@@ -164,7 +171,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		// Count by role.
 		foreach ( $roles as $role ) {
-			$role_query = new WP_Query(
+			$role_query              = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_profession',
 					'post_status'    => 'publish',
@@ -182,7 +189,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		}
 
 		// Count seeded professions (have agent role assigned).
-		$seeded_query = new WP_Query(
+		$seeded_query                = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
@@ -199,7 +206,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		$stats['seeded_professions'] = $seeded_query->found_posts;
 
 		// Count professions with task patterns.
-		$patterns_query = new WP_Query(
+		$patterns_query              = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_profession',
 				'post_status'    => 'publish',
@@ -226,18 +233,18 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @return void
 	 */
 	protected function render_status_banner( $stats ) {
-		$seeding_percentage = $stats['total_professions'] > 0 
+		$seeding_percentage = $stats['total_professions'] > 0
 			? round( ( $stats['seeded_professions'] / $stats['total_professions'] ) * 100 )
 			: 0;
 
-		$status_class = 'success';
+		$status_class   = 'success';
 		$status_message = __( 'System Ready', 'mcp-ai-wpoos' );
 
 		if ( $seeding_percentage < 50 ) {
-			$status_class = 'warning';
+			$status_class   = 'warning';
 			$status_message = __( 'Seeding Incomplete', 'mcp-ai-wpoos' );
 		} elseif ( $seeding_percentage < 90 ) {
-			$status_class = 'info';
+			$status_class   = 'info';
 			$status_message = __( 'Partially Seeded', 'mcp-ai-wpoos' );
 		}
 
@@ -304,10 +311,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'color' => '#f0b849',
 			),
 			array(
-				'title' => __( 'Agent Tools', 'mcp-ai-wpoos' ),
-				'value' => 3,
-				'icon'  => 'admin-tools',
-				'color' => '#8c8f94',
+				'title'       => __( 'Agent Tools', 'mcp-ai-wpoos' ),
+				'value'       => 3,
+				'icon'        => 'admin-tools',
+				'color'       => '#8c8f94',
 				'description' => __( 'create_agent_team, delegate_to_agent, aggregate_agent_results', 'mcp-ai-wpoos' ),
 			),
 		);
@@ -358,7 +365,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		<div class="role-chart">
 			<?php if ( $total_seeded > 0 ) : ?>
 				<div class="role-bars">
-					<?php foreach ( $stats['roles'] as $role => $count ) :
+					<?php
+					foreach ( $stats['roles'] as $role => $count ) :
 						$percentage = $total_seeded > 0 ? round( ( $count / $total_seeded ) * 100, 1 ) : 0;
 						?>
 						<div class="role-bar-row">
@@ -456,23 +464,23 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	protected function render_documentation_links() {
 		$docs = array(
 			array(
-				'title' => __( 'Usage Guide', 'mcp-ai-wpoos' ),
-				'url'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-USAGE-GUIDE.md',
+				'title'       => __( 'Usage Guide', 'mcp-ai-wpoos' ),
+				'url'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-USAGE-GUIDE.md',
 				'description' => __( 'Complete how-to guide with examples for administrators and developers', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'title' => __( 'Workflow Examples', 'mcp-ai-wpoos' ),
-				'url'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-WORKFLOW-EXAMPLES.md',
+				'title'       => __( 'Workflow Examples', 'mcp-ai-wpoos' ),
+				'url'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-WORKFLOW-EXAMPLES.md',
 				'description' => __( 'End-to-end workflow examples with production-ready code', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'title' => __( 'Quick Reference', 'mcp-ai-wpoos' ),
-				'url'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-QUICK-REFERENCE-CARD.md',
+				'title'       => __( 'Quick Reference', 'mcp-ai-wpoos' ),
+				'url'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-QUICK-REFERENCE-CARD.md',
 				'description' => __( 'Developer cheat sheet with quick commands and code snippets', 'mcp-ai-wpoos' ),
 			),
 			array(
-				'title' => __( 'Implementation Summary', 'mcp-ai-wpoos' ),
-				'url'   => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-IMPLEMENTATION-SUMMARY.md',
+				'title'       => __( 'Implementation Summary', 'mcp-ai-wpoos' ),
+				'url'         => 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-IMPLEMENTATION-SUMMARY.md',
 				'description' => __( 'Technical overview and validation results', 'mcp-ai-wpoos' ),
 			),
 		);
@@ -485,6 +493,30 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					<p><?php echo esc_html( $doc['description'] ); ?></p>
 				</div>
 			<?php endforeach; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render recent workflows section.
+	 *
+	 * @return void
+	 */
+	protected function render_recent_workflows() {
+		?>
+		<div class="workflows-list-container">
+			<div class="workflows-header">
+				<button type="button" class="button button-secondary" id="refresh-workflows-btn">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh', 'mcp-ai-wpoos' ); ?>
+				</button>
+			</div>
+			<div id="workflows-list-content">
+				<div class="workflows-loading">
+					<span class="spinner is-active"></span>
+					<p><?php esc_html_e( 'Loading workflows...', 'mcp-ai-wpoos' ); ?></p>
+				</div>
+			</div>
 		</div>
 		<?php
 	}
@@ -531,6 +563,75 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		$stats = $this->get_orchestration_statistics();
 		wp_send_json_success( $stats );
+	}
+
+	/**
+	 * AJAX handler: Get recent workflows.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_recent_workflows() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$workflows = $this->get_recent_workflows();
+		wp_send_json_success( $workflows );
+	}
+
+	/**
+	 * Get recent workflows from transients.
+	 *
+	 * @return array List of recent workflows.
+	 */
+	protected function get_recent_workflows() {
+		// Get all workflow transients.
+		global $wpdb;
+
+		$transient_prefix = '_transient_wp_mcp_ai_workflow_';
+		$transients       = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} 
+				WHERE option_name LIKE %s 
+				ORDER BY option_id DESC 
+				LIMIT 10",
+				$wpdb->esc_like( $transient_prefix ) . '%'
+			)
+		);
+
+		$workflows = array();
+		foreach ( $transients as $transient ) {
+			$workflow_id   = str_replace( $transient_prefix, '', $transient->option_name );
+			$workflow_data = maybe_unserialize( $transient->option_value );
+
+			if ( is_array( $workflow_data ) && isset( $workflow_data['workflow_id'] ) ) {
+				$tasks_total = isset( $workflow_data['tasks'] ) ? count( $workflow_data['tasks'] ) : 0;
+				$tasks_done  = 0;
+
+				if ( isset( $workflow_data['tasks'] ) && is_array( $workflow_data['tasks'] ) ) {
+					foreach ( $workflow_data['tasks'] as $task ) {
+						if ( isset( $task['status'] ) && 'completed' === $task['status'] ) {
+							++$tasks_done;
+						}
+					}
+				}
+
+				$workflows[] = array(
+					'workflow_id'  => $workflow_data['workflow_id'],
+					'state'        => $workflow_data['state'] ?? 'unknown',
+					'tasks_total'  => $tasks_total,
+					'tasks_done'   => $tasks_done,
+					'created_at'   => $workflow_data['created_at'] ?? '',
+					'updated_at'   => $workflow_data['updated_at'] ?? '',
+					'started_at'   => $workflow_data['started_at'] ?? null,
+					'completed_at' => $workflow_data['completed_at'] ?? null,
+				);
+			}
+		}
+
+		return $workflows;
 	}
 }
 

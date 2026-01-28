@@ -197,6 +197,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Assistant' ) ) {
 											data-assistant-id="<?php echo esc_attr( $assistant->ID ); ?>"
 											data-assistant-title="<?php echo esc_attr( $assistant->post_title ); ?>"
 											data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $tool_shortcuts ) ); ?>"
+											data-provider="<?php echo esc_attr( ! empty( $config['provider'] ) ? $config['provider'] : '' ); ?>"
+											data-model="<?php echo esc_attr( ! empty( $config['model'] ) ? $config['model'] : '' ); ?>"
 										>
 											<?php echo esc_html__( 'Test', 'mcp-ai-wpoos' ); ?>
 										</button>

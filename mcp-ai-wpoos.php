@@ -55,7 +55,7 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 
 /**
  * Define base version mode constant.
- * 
+ *
  * Defaults to false (full mode with all available tools).
  * Set to true in wp-config.php to enable base mode (core tools only).
  */
@@ -362,6 +362,18 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_mcp_ai_is_jetengine_available' ) ) {
+	/**
+	 * Check if JetEngine plugin is available and active.
+	 *
+	 * @since 1.1.1
+	 * @return bool Whether JetEngine is available.
+	 */
+	function wp_mcp_ai_is_jetengine_available() {
+		return function_exists( 'jet_engine' ) || class_exists( 'Jet_Engine' );
+	}
+}
+
 if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	/**
 	 * Determine whether third-party plugin integrations should be loaded.
@@ -372,6 +384,9 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	 *
 	 * This ensures that when using base + pro as separate plugins, JetEngine
 	 * integrations are available for chat transcript storage and other Pro features.
+	 *
+	 * Note: In base version with only JetEngine available (no Pro), only the minimal
+	 * JetEngine CCT files needed for chat transcripts are loaded via a separate condition.
 	 *
 	 * @since 1.1.0
 	 * @return bool Whether integrations should be loaded.
@@ -419,6 +434,7 @@ if ( ! $skip_buffering ) {
 // Load admin settings component classes.
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-base.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-ajax-handlers.php';
+
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-settings-renderer.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-validator.php';
 require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-settings-registry.php';
@@ -480,6 +496,9 @@ require_once WP_MCP_AI_PATH . 'includes/services-init.php';
 // Load agent roles (DeepSeek V4 orchestration enhancements - Phase 1).
 require_once WP_MCP_AI_PATH . 'includes/agents-init.php';
 
+// Load Content Assistant metabox feature.
+require_once WP_MCP_AI_PATH . 'includes/content-assistant-init.php';
+
 // Token budget manager is now loaded via services-init.php.
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-selector.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-model-config.php';
@@ -496,6 +515,7 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-cloudflare-client.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-huggingface-datasets-client.php';
+
 require_once WP_MCP_AI_PATH . 'includes/tool-response-helpers.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-language-model-router.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-message-attachments.php';
@@ -519,6 +539,18 @@ require_once WP_MCP_AI_PATH . 'includes/class-rest-endpoints.php';
 require_once WP_MCP_AI_PATH . 'includes/class-tool-registry.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcode.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-shortcode.php';
+
+// Load WebLLM enqueue manager (Phase 1: Advanced WebLLM Integration).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
+
+// Load Transformers.js enqueue manager (Phase 2: Browser-Native AI Tasks).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
+
+// Load LangChain.js enqueue manager (Phase 3: Orchestration & Agents).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+
+// Load Web Worker enqueue manager (Phase 4: Performance & Non-Blocking UI).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 
 // Load Pro addon early so it can register tool hooks before tool registry initializes.
@@ -574,9 +606,10 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-security-training-r
 // Load ISO 27001 Supplier Security REST API (Controls A.5.19-A.5.22).
 require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-rest.php';
 
-// Load third-party plugin integrations only when not in base version mode.
-// However, if Pro addon is active (even with base version), load JetEngine integrations
-// since Pro features may depend on them for chat transcript storage and other functionality.
+// Load third-party plugin integrations.
+// Integrations are loaded when:
+// - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+// - Pro addon is active (even with base version)
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';
@@ -604,6 +637,11 @@ if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/integrations/cloudflare-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/mailjet-integration-init.php';
 	require_once WP_MCP_AI_PATH . 'includes/integrations/quickbooks-integration-init.php';
+	require_once WP_MCP_AI_PATH . 'includes/integrations/sitekit-integration-init.php';
+} elseif ( wp_mcp_ai_is_jetengine_available() ) {
+	// In base version with only JetEngine available, load only JetEngine CCT files
+	// needed for chat transcript storage. Do not load other third-party integrations.
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-cct.php';
 }
 
 // Load Elementor integration for all versions (base and full).

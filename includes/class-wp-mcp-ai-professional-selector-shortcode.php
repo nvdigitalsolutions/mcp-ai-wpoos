@@ -404,7 +404,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 	protected function get_available_providers() {
 		$providers = apply_filters(
 			'wp_mcp_ai_allowed_providers',
-			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare' )
+			array( 'openai', 'anthropic', 'gemini', 'huggingface', 'ollama', 'lm_studio', 'cloudflare', 'embedded' )
 		);
 
 		$labels = array(
@@ -415,6 +415,7 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			'ollama'      => __( 'Ollama (Local)', 'mcp-ai-wpoos' ),
 			'lm_studio'   => __( 'LM Studio (Local)', 'mcp-ai-wpoos' ),
 			'cloudflare'  => __( 'Cloudflare Worker AI', 'mcp-ai-wpoos' ),
+			'embedded'    => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 		);
 
 		$options = array();

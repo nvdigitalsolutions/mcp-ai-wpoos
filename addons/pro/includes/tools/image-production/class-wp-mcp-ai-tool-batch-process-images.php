@@ -167,7 +167,7 @@ class WP_MCP_AI_Tool_Batch_Process_Images implements WP_MCP_AI_Tool_Interface, W
 		$current_ref = $image_ref;
 
 		foreach ( $operations as $operation ) {
-			$type = isset( $operation['type'] ) ? sanitize_text_field( $operation['type'] ) : '';
+			$type   = isset( $operation['type'] ) ? sanitize_text_field( $operation['type'] ) : '';
 			$params = isset( $operation['parameters'] ) ? (array) $operation['parameters'] : array();
 
 			// Map operation type to tool.

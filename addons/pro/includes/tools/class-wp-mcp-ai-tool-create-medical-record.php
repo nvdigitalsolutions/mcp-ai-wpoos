@@ -129,7 +129,7 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 			// Verify record exists and user has permission to update it.
 			$existing_record = get_post( $record_id );
 
-			if ( ! $existing_record || 'mcp_ai_medical_record' !== $existing_record->post_type ) {
+			if ( ! $existing_record || 'mcp_ai_med_record' !== $existing_record->post_type ) {
 				return new WP_Error( 'wp_mcp_ai_record_not_found', __( 'Medical record not found.', 'mcp-ai-wpoos-pro' ) );
 			}
 
@@ -226,7 +226,7 @@ class WP_MCP_AI_Tool_Create_Medical_Record implements WP_MCP_AI_Tool_Interface, 
 		} else {
 			// Create medical record post.
 			$post_data = array(
-				'post_type'    => 'mcp_ai_medical_record',
+				'post_type'    => 'mcp_ai_med_record',
 				'post_title'   => $title,
 				'post_content' => $details,
 				'post_excerpt' => $notes,

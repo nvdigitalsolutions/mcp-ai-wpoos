@@ -38,11 +38,11 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'content'     => array(
+					'content'       => array(
 						'type'        => 'string',
 						'description' => 'HTML or text content to parse',
 					),
-					'selectors'   => array(
+					'selectors'     => array(
 						'type'        => 'object',
 						'description' => 'CSS selectors or field patterns to extract (e.g., {"title": "h1", "price": ".product-price"})',
 					),
@@ -75,9 +75,9 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 			);
 		}
 
-		$content        = $arguments['content'];
-		$selectors      = $arguments['selectors'];
-		$output_format  = isset( $arguments['output_format'] ) ? $arguments['output_format'] : 'json';
+		$content       = $arguments['content'];
+		$selectors     = $arguments['selectors'];
+		$output_format = isset( $arguments['output_format'] ) ? $arguments['output_format'] : 'json';
 
 		// Extract data based on selectors.
 		$extracted_data = $this->extract_data( $content, $selectors );
@@ -86,11 +86,11 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 		$formatted = $this->format_output( $extracted_data, $output_format );
 
 		return array(
-			'success'         => true,
-			'extracted_data'  => $extracted_data,
+			'success'          => true,
+			'extracted_data'   => $extracted_data,
 			'formatted_output' => $formatted,
 			'fields_extracted' => count( $extracted_data ),
-			'output_format'   => $output_format,
+			'output_format'    => $output_format,
 		);
 	}
 
@@ -171,7 +171,7 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 		// Markdown.
 		$md = "# Extracted Data\n\n";
 		foreach ( $data as $key => $value ) {
-			$md .= "## " . ucfirst( $key ) . "\n\n";
+			$md .= '## ' . ucfirst( $key ) . "\n\n";
 			if ( is_array( $value ) ) {
 				foreach ( $value as $item ) {
 					$md .= "- {$item}\n";

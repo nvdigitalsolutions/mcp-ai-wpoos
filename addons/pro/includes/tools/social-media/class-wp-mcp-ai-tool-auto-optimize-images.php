@@ -38,33 +38,84 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 	 */
 	protected $platform_specs = array(
 		'facebook'  => array(
-			'feed'    => array( 'width' => 1200, 'height' => 630 ),
-			'story'   => array( 'width' => 1080, 'height' => 1920 ),
-			'profile' => array( 'width' => 180, 'height' => 180 ),
+			'feed'    => array(
+				'width'  => 1200,
+				'height' => 630,
+			),
+			'story'   => array(
+				'width'  => 1080,
+				'height' => 1920,
+			),
+			'profile' => array(
+				'width'  => 180,
+				'height' => 180,
+			),
 		),
 		'instagram' => array(
-			'feed'       => array( 'width' => 1080, 'height' => 1080 ),
-			'story'      => array( 'width' => 1080, 'height' => 1920 ),
-			'reels'      => array( 'width' => 1080, 'height' => 1920 ),
-			'portrait'   => array( 'width' => 1080, 'height' => 1350 ),
-			'landscape'  => array( 'width' => 1080, 'height' => 566 ),
+			'feed'      => array(
+				'width'  => 1080,
+				'height' => 1080,
+			),
+			'story'     => array(
+				'width'  => 1080,
+				'height' => 1920,
+			),
+			'reels'     => array(
+				'width'  => 1080,
+				'height' => 1920,
+			),
+			'portrait'  => array(
+				'width'  => 1080,
+				'height' => 1350,
+			),
+			'landscape' => array(
+				'width'  => 1080,
+				'height' => 566,
+			),
 		),
 		'twitter'   => array(
-			'feed'    => array( 'width' => 1200, 'height' => 675 ),
-			'header'  => array( 'width' => 1500, 'height' => 500 ),
-			'profile' => array( 'width' => 400, 'height' => 400 ),
+			'feed'    => array(
+				'width'  => 1200,
+				'height' => 675,
+			),
+			'header'  => array(
+				'width'  => 1500,
+				'height' => 500,
+			),
+			'profile' => array(
+				'width'  => 400,
+				'height' => 400,
+			),
 		),
 		'linkedin'  => array(
-			'feed'    => array( 'width' => 1200, 'height' => 627 ),
-			'profile' => array( 'width' => 400, 'height' => 400 ),
+			'feed'    => array(
+				'width'  => 1200,
+				'height' => 627,
+			),
+			'profile' => array(
+				'width'  => 400,
+				'height' => 400,
+			),
 		),
 		'pinterest' => array(
-			'pin'     => array( 'width' => 1000, 'height' => 1500 ),
-			'profile' => array( 'width' => 165, 'height' => 165 ),
+			'pin'     => array(
+				'width'  => 1000,
+				'height' => 1500,
+			),
+			'profile' => array(
+				'width'  => 165,
+				'height' => 165,
+			),
 		),
 		'tiktok'    => array(
-			'video_cover' => array( 'width' => 1080, 'height' => 1920 ),
-			'profile'     => array( 'width' => 200, 'height' => 200 ),
+			'video_cover' => array(
+				'width'  => 1080,
+				'height' => 1920,
+			),
+			'profile'     => array(
+				'width'  => 200,
+				'height' => 200,
+			),
 		),
 	);
 
@@ -138,11 +189,11 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'image_source'     => array(
+				'image_source'       => array(
 					'type'        => 'string',
 					'description' => __( 'Image URL or path (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'platforms'        => array(
+				'platforms'          => array(
 					'type'        => 'array',
 					'description' => __( 'Target platforms (required)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -151,36 +202,36 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 					),
 					'minItems'    => 1,
 				),
-				'image_type'       => array(
+				'image_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Image type for platform (feed, story, profile, etc.)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'feed',
 				),
-				'output_format'    => array(
+				'output_format'      => array(
 					'type'        => 'string',
 					'description' => __( 'Output image format', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'jpeg', 'png', 'webp' ),
 					'default'     => 'jpeg',
 				),
-				'quality'          => array(
+				'quality'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Output quality (1-100)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 100,
 					'default'     => 85,
 				),
-				'crop_mode'        => array(
+				'crop_mode'          => array(
 					'type'        => 'string',
 					'description' => __( 'How to handle aspect ratio', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'cover', 'contain', 'fill' ),
 					'default'     => 'cover',
 				),
-				'add_watermark'    => array(
+				'add_watermark'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Add watermark to images', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'watermark_image'  => array(
+				'watermark_image'    => array(
 					'type'        => 'string',
 					'description' => __( 'Watermark image URL or path', 'mcp-ai-wpoos-pro' ),
 				),
@@ -190,7 +241,7 @@ class WP_MCP_AI_Tool_Auto_Optimize_Images implements WP_MCP_AI_Tool_Interface, W
 					'enum'        => array( 'top-left', 'top-right', 'bottom-left', 'bottom-right', 'center' ),
 					'default'     => 'bottom-right',
 				),
-				'output_directory' => array(
+				'output_directory'   => array(
 					'type'        => 'string',
 					'description' => __( 'Output directory path (default: uploads/social-media)', 'mcp-ai-wpoos-pro' ),
 				),

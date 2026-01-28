@@ -150,10 +150,10 @@ class WP_MCP_AI_Optional_Components {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function download_vectorizer() {
-		$base_url       = self::get_download_base_url();
-		$download_url   = $base_url . '/neplex-vectorizer.zip';
-		$target_dir     = WP_MCP_AI_PATH . 'assets/js/vendor/';
-		$temp_file      = download_url( $download_url );
+		$base_url     = self::get_download_base_url();
+		$download_url = $base_url . '/neplex-vectorizer.zip';
+		$target_dir   = WP_MCP_AI_PATH . 'assets/js/vendor/';
+		$temp_file    = download_url( $download_url );
 
 		if ( is_wp_error( $temp_file ) ) {
 			self::update_status( 'vectorizer', 'error', $temp_file->get_error_message() );
@@ -263,8 +263,8 @@ class WP_MCP_AI_Optional_Components {
 			return;
 		}
 
-		$status       = self::get_status();
-		$downloading  = get_transient( self::DOWNLOAD_IN_PROGRESS );
+		$status      = self::get_status();
+		$downloading = get_transient( self::DOWNLOAD_IN_PROGRESS );
 
 		// Show downloading notice.
 		if ( $downloading ) {

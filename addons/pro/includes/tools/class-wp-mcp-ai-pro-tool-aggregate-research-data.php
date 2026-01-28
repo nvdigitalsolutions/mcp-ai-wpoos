@@ -115,10 +115,10 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 			);
 		}
 
-		$sources            = $arguments['sources'];
-		$topic              = sanitize_text_field( $arguments['topic'] );
-		$dedup_mode         = isset( $arguments['deduplication_mode'] ) ? $arguments['deduplication_mode'] : 'moderate';
-		$output_format      = isset( $arguments['output_format'] ) ? $arguments['output_format'] : 'markdown';
+		$sources       = $arguments['sources'];
+		$topic         = sanitize_text_field( $arguments['topic'] );
+		$dedup_mode    = isset( $arguments['deduplication_mode'] ) ? $arguments['deduplication_mode'] : 'moderate';
+		$output_format = isset( $arguments['output_format'] ) ? $arguments['output_format'] : 'markdown';
 
 		// Deduplicate sources.
 		$unique_sources = $this->deduplicate_sources( $sources, $dedup_mode );
@@ -150,8 +150,8 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	 * @return array
 	 */
 	private function deduplicate_sources( $sources, $dedup_mode ) {
-		$unique   = array();
-		$seen_urls = array();
+		$unique              = array();
+		$seen_urls           = array();
 		$seen_content_hashes = array();
 
 		// Similarity thresholds based on mode.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 			'moderate' => 0.85, // 85% similarity = duplicate.
 			'lenient'  => 0.70, // 70% similarity = duplicate.
 		);
-		$threshold = isset( $thresholds[ $dedup_mode ] ) ? $thresholds[ $dedup_mode ] : 0.85;
+		$threshold  = isset( $thresholds[ $dedup_mode ] ) ? $thresholds[ $dedup_mode ] : 0.85;
 
 		foreach ( $sources as $source ) {
 			// Skip if URL already seen.
@@ -213,12 +213,12 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	 */
 	private function aggregate_data( $sources, $topic ) {
 		$data = array(
-			'summary'         => '',
-			'key_points'      => array(),
-			'common_themes'   => array(),
-			'sources'         => array(),
+			'summary'           => '',
+			'key_points'        => array(),
+			'common_themes'     => array(),
+			'sources'           => array(),
 			'publication_dates' => array(),
-			'authors'         => array(),
+			'authors'           => array(),
 		);
 
 		foreach ( $sources as $source ) {
@@ -294,7 +294,7 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	 * @return string
 	 */
 	private function format_markdown( $data, $topic ) {
-		$md = "# Research Compilation: {$topic}\n\n";
+		$md  = "# Research Compilation: {$topic}\n\n";
 		$md .= "## Summary\n\n";
 		$md .= "{$data['summary']}\n\n";
 
@@ -340,14 +340,14 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	 * @return string
 	 */
 	private function format_html( $data, $topic ) {
-		$html  = "<h1>Research Compilation: " . esc_html( $topic ) . "</h1>\n";
+		$html  = '<h1>Research Compilation: ' . esc_html( $topic ) . "</h1>\n";
 		$html .= "<h2>Summary</h2>\n";
-		$html .= "<p>" . esc_html( $data['summary'] ) . "</p>\n";
+		$html .= '<p>' . esc_html( $data['summary'] ) . "</p>\n";
 
 		if ( ! empty( $data['key_points'] ) ) {
 			$html .= "<h2>Key Findings</h2>\n<ul>\n";
 			foreach ( $data['key_points'] as $point ) {
-				$html .= "<li>" . esc_html( $point ) . "</li>\n";
+				$html .= '<li>' . esc_html( $point ) . "</li>\n";
 			}
 			$html .= "</ul>\n";
 		}
@@ -357,7 +357,7 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 			$title = ! empty( $source['title'] ) ? esc_html( $source['title'] ) : 'Untitled';
 			$url   = ! empty( $source['url'] ) ? esc_url( $source['url'] ) : '#';
 			$html .= "<h3><a href=\"{$url}\">{$title}</a></h3>\n";
-			$html .= "<p>" . esc_html( $source['excerpt'] ) . "</p>\n";
+			$html .= '<p>' . esc_html( $source['excerpt'] ) . "</p>\n";
 		}
 
 		return $html;

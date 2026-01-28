@@ -33,6 +33,7 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-audio-respons
 class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Audio_Response;
+
 	const DEFAULT_MODEL  = 'tts-1';
 	const DEFAULT_VOICE  = 'alloy';
 	const DEFAULT_FORMAT = 'mp3';
@@ -44,8 +45,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 */
 	protected function get_configured_defaults() {
 		$defaults = array(
-			'model' => self::DEFAULT_MODEL,
-			'voice' => self::DEFAULT_VOICE,
+			'model'  => self::DEFAULT_MODEL,
+			'voice'  => self::DEFAULT_VOICE,
 			'format' => self::DEFAULT_FORMAT,
 		);
 
@@ -107,46 +108,46 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$defaults = $this->get_configured_defaults();
 
 		return array(
-			'type' => 'object',
-			'properties' => array(
-				'text' => array(
-					'type' => 'string',
+			'type'                 => 'object',
+			'properties'           => array(
+				'text'      => array(
+					'type'        => 'string',
 					'description' => __( 'The text that should be converted to speech.', 'mcp-ai-wpoos' ),
 				),
-				'voice' => array(
-					'type' => 'string',
+				'voice'     => array(
+					'type'        => 'string',
 					'description' => __( 'Optional OpenAI voice to use (for example, alloy, verse, or shimmer).', 'mcp-ai-wpoos' ),
-					'default' => $defaults['voice'],
+					'default'     => $defaults['voice'],
 				),
-				'format' => array(
-					'type' => 'string',
+				'format'    => array(
+					'type'        => 'string',
 					'description' => __( 'Audio format for the generated file.', 'mcp-ai-wpoos' ),
-					'enum' => array_keys( $this->get_allowed_formats() ),
-					'default' => $defaults['format'],
+					'enum'        => array_keys( $this->get_allowed_formats() ),
+					'default'     => $defaults['format'],
 				),
-				'model' => array(
-					'type' => 'string',
+				'model'     => array(
+					'type'        => 'string',
 					'description' => __( 'OpenAI speech model to use.', 'mcp-ai-wpoos' ),
-					'default' => $defaults['model'],
+					'default'     => $defaults['model'],
 				),
-				'speed' => array(
-					'type' => 'number',
+				'speed'     => array(
+					'type'        => 'number',
 					'description' => __( 'Playback speed multiplier (0.25 – 4).', 'mcp-ai-wpoos' ),
-					'minimum' => 0.25,
-					'maximum' => 4,
+					'minimum'     => 0.25,
+					'maximum'     => 4,
 				),
 				'file_name' => array(
-					'type' => 'string',
+					'type'        => 'string',
 					'description' => __( 'Optional base file name for the saved audio attachment.', 'mcp-ai-wpoos' ),
 				),
-				'timeout' => array(
-					'type' => 'integer',
+				'timeout'   => array(
+					'type'        => 'integer',
 					'description' => __( 'Override the OpenAI request timeout in seconds.', 'mcp-ai-wpoos' ),
-					'minimum' => 5,
-					'maximum' => 300,
+					'minimum'     => 5,
+					'maximum'     => 300,
 				),
 			),
-			'required' => array( 'text' ),
+			'required'             => array( 'text' ),
 			'additionalProperties' => false,
 		);
 	}
@@ -211,9 +212,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 						$provider
 					),
 					array(
-						'status' => 400,
+						'status'   => 400,
 						'provider' => $provider,
-						'actions' => array(
+						'actions'  => array(
 							'configure_openai_api_key' => __( 'Add an OpenAI API key in the NV oOS settings.', 'mcp-ai-wpoos' ),
 						),
 					)
@@ -225,9 +226,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				'speech_generation_provider_fallback',
 				sprintf( 'Using OpenAI for speech generation despite assistant using %s provider.', $provider ),
 				array(
-					'assistant_id' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+					'assistant_id'     => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
 					'primary_provider' => $provider,
-					'tool' => 'generate_openai_speech',
+					'tool'             => 'generate_openai_speech',
 				)
 			);
 		}
@@ -264,8 +265,8 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		}
 
 		$options = array(
-			'model' => $model,
-			'voice' => $voice,
+			'model'  => $model,
+			'voice'  => $voice,
 			'format' => $format,
 		);
 
@@ -301,7 +302,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				// Normalize Google TTS response to match OpenAI format.
 				if ( ! is_wp_error( $speech ) && isset( $speech['audio_data'] ) ) {
 					$speech = array(
-						'audio' => $speech['audio_data'],
+						'audio'  => $speech['audio_data'],
 						'format' => isset( $speech['format'] ) ? $speech['format'] : 'mp3',
 					);
 				}
@@ -363,16 +364,16 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 
 		$result = array(
 			'attachment_id' => $storage['attachment_id'],
-			'url' => $storage['url'],
-			'file_path' => $storage['file'],
-			'file_name' => $storage['file_name'],
-			'mime_type' => $storage['mime_type'],
-			'bytes' => $storage['bytes'],
-			'format' => $format,
-			'model' => $speech['model'],
-			'voice' => $speech['voice'],
-			'text' => $message,
-			'message' => $message,
+			'url'           => $storage['url'],
+			'file_path'     => $storage['file'],
+			'file_name'     => $storage['file_name'],
+			'mime_type'     => $storage['mime_type'],
+			'bytes'         => $storage['bytes'],
+			'format'        => $format,
+			'model'         => $speech['model'],
+			'voice'         => $speech['voice'],
+			'text'          => $message,
+			'message'       => $message,
 		);
 
 		if ( isset( $speech['speed'] ) && null !== $speech['speed'] ) {
@@ -400,9 +401,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			'Stored OpenAI text-to-speech audio as a media attachment.',
 			array(
 				'attachment_id' => $storage['attachment_id'],
-				'format' => $format,
-				'model' => $speech['model'],
-				'voice' => $speech['voice'],
+				'format'        => $format,
+				'model'         => $speech['model'],
+				'voice'         => $speech['voice'],
 			)
 		);
 
@@ -428,11 +429,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	 */
 	protected function get_allowed_formats() {
 		return array(
-			'mp3' => array(
+			'mp3'  => array(
 				'extension' => 'mp3',
 				'mime_type' => 'audio/mpeg',
 			),
-			'aac' => array(
+			'aac'  => array(
 				'extension' => 'aac',
 				'mime_type' => 'audio/aac',
 			),
@@ -440,7 +441,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				'extension' => 'flac',
 				'mime_type' => 'audio/flac',
 			),
-			'ogg' => array(
+			'ogg'  => array(
 				'extension' => 'ogg',
 				'mime_type' => 'audio/ogg',
 			),
@@ -448,7 +449,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 				'extension' => 'opus',
 				'mime_type' => 'audio/opus',
 			),
-			'wav' => array(
+			'wav'  => array(
 				'extension' => 'wav',
 				'mime_type' => 'audio/wav',
 			),
@@ -522,9 +523,9 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 
 		$attachment = array(
 			'post_mime_type' => $mime_type,
-			'post_title' => $title,
-			'post_content' => '',
-			'post_status' => 'inherit',
+			'post_title'     => $title,
+			'post_content'   => '',
+			'post_status'    => 'inherit',
 		);
 
 		if ( $user_id ) {
@@ -566,15 +567,15 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		$local_url = WP_MCP_AI_Media_URL_Utils::get_local_upload_url( $upload, $attachment_id );
 
 		return array(
-			'attachment_id' => (int) $attachment_id,
-			'file' => $file_path,
-			'file_name' => wp_basename( $file_path ),
-			'url' => $local_url,
-			'mime_type' => $mime_type,
-			'bytes' => $bytes ? (int) $bytes : 0,
-			'duration' => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
+			'attachment_id'      => (int) $attachment_id,
+			'file'               => $file_path,
+			'file_name'          => wp_basename( $file_path ),
+			'url'                => $local_url,
+			'mime_type'          => $mime_type,
+			'bytes'              => $bytes ? (int) $bytes : 0,
+			'duration'           => isset( $metadata['length'] ) ? floatval( $metadata['length'] ) : null,
 			'duration_formatted' => isset( $metadata['length_formatted'] ) ? $metadata['length_formatted'] : '',
-			'title' => $title,
+			'title'              => $title,
 		);
 	}
 

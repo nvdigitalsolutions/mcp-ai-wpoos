@@ -231,10 +231,10 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Get parameters.
-		$timezone      = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string();
-		$preview_only  = isset( $arguments['preview_only'] ) ? (bool) $arguments['preview_only'] : false;
-		$skip_errors   = isset( $arguments['skip_errors'] ) ? (bool) $arguments['skip_errors'] : true;
-		$batch_size    = isset( $arguments['batch_size'] ) ? absint( $arguments['batch_size'] ) : 50;
+		$timezone     = isset( $arguments['timezone'] ) ? sanitize_text_field( $arguments['timezone'] ) : wp_timezone_string();
+		$preview_only = isset( $arguments['preview_only'] ) ? (bool) $arguments['preview_only'] : false;
+		$skip_errors  = isset( $arguments['skip_errors'] ) ? (bool) $arguments['skip_errors'] : true;
+		$batch_size   = isset( $arguments['batch_size'] ) ? absint( $arguments['batch_size'] ) : 50;
 
 		// Validate posts.
 		$validated_posts = $this->validate_posts( $posts, $timezone );
@@ -242,14 +242,14 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 		// If preview only, return validation results.
 		if ( $preview_only ) {
 			return array(
-				'success'    => true,
-				'preview'    => true,
-				'total'      => count( $posts ),
-				'valid'      => count( $validated_posts['valid'] ),
-				'invalid'    => count( $validated_posts['invalid'] ),
-				'posts'      => $validated_posts['valid'],
-				'errors'     => $validated_posts['invalid'],
-				'message'    => sprintf(
+				'success' => true,
+				'preview' => true,
+				'total'   => count( $posts ),
+				'valid'   => count( $validated_posts['valid'] ),
+				'invalid' => count( $validated_posts['invalid'] ),
+				'posts'   => $validated_posts['valid'],
+				'errors'  => $validated_posts['invalid'],
+				'message' => sprintf(
 					/* translators: 1: Number of valid posts, 2: Number of total posts */
 					__( '%1$d of %2$d posts are valid and ready to schedule.', 'mcp-ai-wpoos-pro' ),
 					count( $validated_posts['valid'] ),
@@ -260,12 +260,12 @@ class WP_MCP_AI_Tool_Bulk_Schedule_Posts implements WP_MCP_AI_Tool_Interface, WP
 
 		// Schedule posts in batches.
 		$results = array(
-			'success'    => true,
-			'total'      => count( $posts ),
-			'scheduled'  => 0,
-			'failed'     => 0,
-			'posts'      => array(),
-			'errors'     => array(),
+			'success'   => true,
+			'total'     => count( $posts ),
+			'scheduled' => 0,
+			'failed'    => 0,
+			'posts'     => array(),
+			'errors'    => array(),
 		);
 
 		foreach ( $validated_posts['valid'] as $post_data ) {

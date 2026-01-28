@@ -105,32 +105,32 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'cohort_by'        => array(
+				'cohort_by'          => array(
 					'type'        => 'string',
 					'description' => 'Cohort grouping basis: registration, first_purchase, campaign',
 					'enum'        => array( 'registration', 'first_purchase', 'campaign' ),
 					'default'     => 'first_purchase',
 				),
-				'cohort_period'    => array(
+				'cohort_period'      => array(
 					'type'        => 'string',
 					'description' => 'Cohort grouping period: daily, weekly, monthly',
 					'enum'        => array( 'daily', 'weekly', 'monthly' ),
 					'default'     => 'monthly',
 				),
-				'analysis_months'  => array(
+				'analysis_months'    => array(
 					'type'        => 'integer',
 					'description' => 'Number of months to analyze',
 					'minimum'     => 1,
 					'maximum'     => 24,
 					'default'     => 6,
 				),
-				'metric'           => array(
+				'metric'             => array(
 					'type'        => 'string',
 					'description' => 'Metric to track: retention, revenue, orders, engagement',
 					'enum'        => array( 'retention', 'revenue', 'orders', 'engagement' ),
 					'default'     => 'retention',
 				),
-				'min_cohort_size'  => array(
+				'min_cohort_size'    => array(
 					'type'        => 'integer',
 					'description' => 'Minimum users in cohort to include',
 					'minimum'     => 1,
@@ -167,9 +167,9 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'analytics'  => true,
-			'cohorts'    => true,
-			'customers'  => true,
+			'analytics' => true,
+			'cohorts'   => true,
+			'customers' => true,
 		);
 	}
 
@@ -184,11 +184,11 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function execute( $arguments, $context ) {
 		// Parse arguments.
-		$cohort_by        = ! empty( $arguments['cohort_by'] ) ? sanitize_text_field( $arguments['cohort_by'] ) : 'first_purchase';
-		$cohort_period    = ! empty( $arguments['cohort_period'] ) ? sanitize_text_field( $arguments['cohort_period'] ) : 'monthly';
-		$analysis_months  = isset( $arguments['analysis_months'] ) ? absint( $arguments['analysis_months'] ) : 6;
-		$metric           = ! empty( $arguments['metric'] ) ? sanitize_text_field( $arguments['metric'] ) : 'retention';
-		$min_cohort_size  = isset( $arguments['min_cohort_size'] ) ? absint( $arguments['min_cohort_size'] ) : 10;
+		$cohort_by          = ! empty( $arguments['cohort_by'] ) ? sanitize_text_field( $arguments['cohort_by'] ) : 'first_purchase';
+		$cohort_period      = ! empty( $arguments['cohort_period'] ) ? sanitize_text_field( $arguments['cohort_period'] ) : 'monthly';
+		$analysis_months    = isset( $arguments['analysis_months'] ) ? absint( $arguments['analysis_months'] ) : 6;
+		$metric             = ! empty( $arguments['metric'] ) ? sanitize_text_field( $arguments['metric'] ) : 'retention';
+		$min_cohort_size    = isset( $arguments['min_cohort_size'] ) ? absint( $arguments['min_cohort_size'] ) : 10;
 		$include_chart_data = ! isset( $arguments['include_chart_data'] ) || $arguments['include_chart_data'];
 
 		// Validate parameters.
@@ -221,11 +221,11 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		// Prepare result.
 		$result = array(
-			'success'    => true,
-			'cohorts'    => $analysis['cohorts'],
-			'summary'    => $analysis['summary'],
-			'insights'   => $insights,
-			'parameters' => array(
+			'success'     => true,
+			'cohorts'     => $analysis['cohorts'],
+			'summary'     => $analysis['summary'],
+			'insights'    => $insights,
+			'parameters'  => array(
 				'cohort_by'       => $cohort_by,
 				'cohort_period'   => $cohort_period,
 				'analysis_months' => $analysis_months,
@@ -261,7 +261,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	private function build_cohorts( $cohort_by, $cohort_period, $analysis_months, $min_cohort_size ) {
 		global $wpdb;
 
-		$cohorts = array();
+		$cohorts    = array();
 		$start_date = gmdate( 'Y-m-d', strtotime( "-{$analysis_months} months" ) );
 
 		// Determine date format based on period.
@@ -335,7 +335,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Filter cohorts by minimum size.
 		$cohorts = array_filter(
 			$cohorts,
-			function( $cohort ) use ( $min_cohort_size ) {
+			function ( $cohort ) use ( $min_cohort_size ) {
 				return count( $cohort['users'] ) >= $min_cohort_size;
 			}
 		);
@@ -355,10 +355,10 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	private function analyze_cohorts( $cohorts, $metric, $analysis_months ) {
 		$analyzed_cohorts = array();
-		$total_users = 0;
+		$total_users      = 0;
 
 		foreach ( $cohorts as $cohort ) {
-			$cohort_size = count( $cohort['users'] );
+			$cohort_size  = count( $cohort['users'] );
 			$total_users += $cohort_size;
 
 			$cohort_analysis = array(
@@ -492,9 +492,9 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	private function calculate_cohort_summary( $cohorts, $metric, $total_users ) {
 		$summary = array(
-			'total_cohorts'      => count( $cohorts ),
-			'total_users'        => $total_users,
-			'avg_cohort_size'    => count( $cohorts ) > 0 ? round( $total_users / count( $cohorts ), 2 ) : 0,
+			'total_cohorts'   => count( $cohorts ),
+			'total_users'     => $total_users,
+			'avg_cohort_size' => count( $cohorts ) > 0 ? round( $total_users / count( $cohorts ), 2 ) : 0,
 		);
 
 		if ( 'retention' === $metric ) {
@@ -547,7 +547,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 			// Check for stable retention.
 			if ( count( $retention ) >= 3 ) {
 				$last_periods = array_slice( $retention, -3, 3, true );
-				$variance = max( $last_periods ) - min( $last_periods );
+				$variance     = max( $last_periods ) - min( $last_periods );
 				if ( $variance < 5 ) {
 					$insights[] = array(
 						'type'    => 'stable_retention',
@@ -571,7 +571,7 @@ class WP_MCP_AI_Tool_Cohort_Analysis implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	private function prepare_chart_data( $cohorts, $metric ) {
 		$chart_data = array(
-			'labels' => array(),
+			'labels'   => array(),
 			'datasets' => array(),
 		);
 
