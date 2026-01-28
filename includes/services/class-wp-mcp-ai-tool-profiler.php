@@ -33,9 +33,9 @@ class WP_MCP_AI_Tool_Profiler {
 	/**
 	 * Configuration
 	 */
-	const EXECUTION_HISTORY_LIMIT = 100;  // Per tool.
-	const PROFILE_CACHE_TTL       = 3600; // 1 hour.
-	const MIN_EXECUTIONS_FOR_PROFILE = 5; // Minimum data for reliable profile.
+	const EXECUTION_HISTORY_LIMIT    = 100;  // Per tool.
+	const PROFILE_CACHE_TTL          = 3600; // 1 hour.
+	const MIN_EXECUTIONS_FOR_PROFILE = 5;    // Minimum data for reliable profile.
 
 	/**
 	 * Tool registry instance

@@ -366,8 +366,8 @@ class WP_MCP_AI_Tool_Load_Balancer {
 		$definition = $tool->get_definition();
 
 		// Tool must be marked as safe and not modify state.
-		$is_safe         = isset( $definition['safe'] ) && $definition['safe'];
-		$modifies_wp     = isset( $definition['modifies-wp'] ) && $definition['modifies-wp'];
+		$is_safe          = isset( $definition['safe'] ) && $definition['safe'];
+		$modifies_wp      = isset( $definition['modifies-wp'] ) && $definition['modifies-wp'];
 		$is_deterministic = isset( $definition['deterministic'] ) && $definition['deterministic'];
 
 		return $is_safe && ! $modifies_wp && $is_deterministic;

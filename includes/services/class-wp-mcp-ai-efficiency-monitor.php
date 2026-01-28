@@ -40,7 +40,7 @@ class WP_MCP_AI_Efficiency_Monitor {
 	 * Configuration
 	 */
 	const HISTORY_RETENTION_DAYS = 7;
-	const CACHE_TTL               = 300; // 5 minutes.
+	const CACHE_TTL              = 300; // 5 minutes.
 
 	/**
 	 * Load monitor instance
@@ -327,18 +327,18 @@ class WP_MCP_AI_Efficiency_Monitor {
 
 			if ( $utilization > 0.9 ) {
 				$bottlenecks[] = array(
-					'type'       => 'tool',
-					'tool_slug'  => $tool_slug,
-					'issue'      => 'high_utilization',
-					'severity'   => 'high',
+					'type'        => 'tool',
+					'tool_slug'   => $tool_slug,
+					'issue'       => 'high_utilization',
+					'severity'    => 'high',
 					'utilization' => $utilization,
 				);
 			} elseif ( $utilization > 0.7 ) {
 				$bottlenecks[] = array(
-					'type'       => 'tool',
-					'tool_slug'  => $tool_slug,
-					'issue'      => 'elevated_utilization',
-					'severity'   => 'medium',
+					'type'        => 'tool',
+					'tool_slug'   => $tool_slug,
+					'issue'       => 'elevated_utilization',
+					'severity'    => 'medium',
 					'utilization' => $utilization,
 				);
 			}

@@ -468,9 +468,9 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	 * @return array Parallel groups.
 	 */
 	protected function identify_parallel_groups( $tool_chain, $dependencies ) {
-		$groups     = array();
-		$group_id   = 0;
-		$processed  = array();
+		$groups    = array();
+		$group_id  = 0;
+		$processed = array();
 
 		foreach ( $tool_chain as $tool_info ) {
 			$tool_slug = is_array( $tool_info ) ? $tool_info['tool_slug'] : $tool_info;

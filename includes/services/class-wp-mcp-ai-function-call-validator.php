@@ -57,8 +57,8 @@ class WP_MCP_AI_Function_Call_Validator {
 	 * @return array Validation result with normalized arguments.
 	 */
 	public function validate_function_call( $tool_slug, $arguments, $schema ) {
-		$errors           = array();
-		$normalized_args  = array();
+		$errors          = array();
+		$normalized_args = array();
 
 		// Get tool instance to retrieve schema if not provided.
 		if ( empty( $schema ) ) {
@@ -98,7 +98,7 @@ class WP_MCP_AI_Function_Call_Validator {
 	 * @return array Validation result.
 	 */
 	protected function validate_object( $value, $schema, $path ) {
-		$errors = array();
+		$errors     = array();
 		$normalized = array();
 
 		if ( ! is_array( $value ) ) {
@@ -154,7 +154,7 @@ class WP_MCP_AI_Function_Call_Validator {
 	 * @return array Validation result.
 	 */
 	protected function validate_array( $value, $schema, $path ) {
-		$errors = array();
+		$errors     = array();
 		$normalized = array();
 
 		if ( ! is_array( $value ) ) {
@@ -208,7 +208,7 @@ class WP_MCP_AI_Function_Call_Validator {
 	 */
 	protected function validate_value( $value, $schema, $path ) {
 		$errors = array();
-		$type = $schema['type'] ?? 'string';
+		$type   = $schema['type'] ?? 'string';
 
 		// Handle null values.
 		if ( is_null( $value ) ) {
@@ -405,7 +405,7 @@ class WP_MCP_AI_Function_Call_Validator {
 	 * @return array Execution order (array of levels).
 	 */
 	protected function parse_dependency_tree( $tool_calls_tree ) {
-		$levels = array();
+		$levels    = array();
 		$processed = array();
 
 		// Simple topological sort.

@@ -124,16 +124,16 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 
 		// Build analysis result.
 		$result = array(
-			'language'            => $language,
-			'code_length'         => strlen( $code ),
-			'validation'          => $validation_result,
-			'analysis_timestamp'  => current_time( 'mysql' ),
+			'language'           => $language,
+			'code_length'        => strlen( $code ),
+			'validation'         => $validation_result,
+			'analysis_timestamp' => current_time( 'mysql' ),
 		);
 
 		// Generate summary message.
-		$issues_count       = count( $validation_result['issues'] ?? array() );
-		$suggestions_count  = count( $validation_result['suggestions'] ?? array() );
-		$security_count     = count( $validation_result['security'] ?? array() );
+		$issues_count      = count( $validation_result['issues'] ?? array() );
+		$suggestions_count = count( $validation_result['suggestions'] ?? array() );
+		$security_count    = count( $validation_result['security'] ?? array() );
 
 		if ( $validation_result['valid'] ) {
 			$message = sprintf(
@@ -155,10 +155,10 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 
 		// Add detailed breakdown.
 		$result['summary'] = array(
-			'valid'               => $validation_result['valid'],
-			'syntax_errors'       => $issues_count,
-			'style_suggestions'   => $suggestions_count,
-			'security_issues'     => $security_count,
+			'valid'              => $validation_result['valid'],
+			'syntax_errors'      => $issues_count,
+			'style_suggestions'  => $suggestions_count,
+			'security_issues'    => $security_count,
 		);
 
 		if ( $security_count > 0 ) {

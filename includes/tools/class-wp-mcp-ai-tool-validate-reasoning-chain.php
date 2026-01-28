@@ -270,11 +270,11 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 			'valid'  => $valid && count( $issues ) === 0,
 			'issues' => $issues,
 			'checks' => array(
-				'has_empty_steps'         => $valid,
-				'sufficient_length'       => count( $reasoning_steps ) >= 2,
-				'premises_referenced'     => empty( $premises ) || $premises_referenced ?? false,
-				'conclusion_supported'    => empty( $conclusion ) || $matches > 0,
-				'has_logical_connectors'  => $connectors_found > 0,
+				'has_empty_steps'        => $valid,
+				'sufficient_length'      => count( $reasoning_steps ) >= 2,
+				'premises_referenced'    => empty( $premises ) || $premises_referenced ?? false,
+				'conclusion_supported'   => empty( $conclusion ) || $matches > 0,
+				'has_logical_connectors' => $connectors_found > 0,
 			),
 		);
 	}
