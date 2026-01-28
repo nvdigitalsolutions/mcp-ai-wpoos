@@ -33,11 +33,11 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
+			'nvoos-pro-dashboard',
 			__( 'Real-Time Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
-			__( 'Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
+			__( 'Orchestration Monitor', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
-			'mcp-ai-orchestration',
+			'mcp-ai-orchestration-pro',
 			array( $this, 'render_dashboard' )
 		);
 	}
@@ -48,7 +48,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook ) {
+		if ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' !== $hook ) {
 			return;
 		}
 
@@ -110,9 +110,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	public function render_dashboard() {
 		?>
 		<div class="wrap wp-mcp-ai-orchestration-dashboard">
-			<h1><?php esc_html_e( 'Autonomous Orchestration Dashboard', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with Ralph Wiggum patterns.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with advanced analytics.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<!-- Overview Cards -->
