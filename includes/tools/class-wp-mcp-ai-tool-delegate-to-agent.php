@@ -54,8 +54,8 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'type'                 => 'object',
 			'properties'           => array(
 				'agent_id'        => array(
-					'type'        => 'integer',
-					'description' => __( 'ID of the agent (profession or assistant) to delegate to', 'mcp-ai-wpoos' ),
+					'type'        => array( 'integer', 'string' ),
+					'description' => __( 'ID of the agent (profession, assistant, or virtual agent) to delegate to. Can be an integer post ID or a virtual agent string ID.', 'mcp-ai-wpoos' ),
 				),
 				'task'            => array(
 					'type'        => 'string',
@@ -118,7 +118,8 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			);
 		}
 
-		$agent_id        = absint( $arguments['agent_id'] );
+		// agent_id can be an integer (real assistant) or string (virtual agent).
+		$agent_id        = $arguments['agent_id'];
 		$task            = sanitize_textarea_field( $arguments['task'] );
 		$task_context    = isset( $arguments['context'] ) ? $arguments['context'] : array();
 		$expected_output = isset( $arguments['expected_output'] ) ? $arguments['expected_output'] : array();
