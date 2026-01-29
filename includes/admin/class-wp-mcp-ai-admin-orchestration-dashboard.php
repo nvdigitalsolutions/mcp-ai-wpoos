@@ -82,21 +82,21 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Enqueue shared monitor CSS for auto-refresh controls.
 		wp_enqueue_style(
 			'wp-mcp-ai-admin-monitor-shared',
-			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/css/admin-monitor-shared.css',
 			array(),
 			$shared_css_version
 		);
 
 		wp_enqueue_style(
 			'wp-mcp-ai-orchestration-dashboard',
-			plugins_url( 'assets/css/admin-orchestration-dashboard.css', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/css/admin-orchestration-dashboard.css',
 			array( 'wp-mcp-ai-admin-monitor-shared' ),
 			$css_version
 		);
 
 		wp_enqueue_script(
 			'wp-mcp-ai-orchestration-dashboard',
-			plugins_url( 'assets/js/admin-orchestration-dashboard.js', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/js/admin-orchestration-dashboard.js',
 			array( 'jquery' ),
 			$js_version,
 			true
