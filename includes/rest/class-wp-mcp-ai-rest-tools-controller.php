@@ -100,6 +100,58 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 	}
 
 	/**
+	 * Get lightweight system status for chat client display.
+	 *
+	 * Provides async health and orchestration health status for the chat UI's
+	 * status bar. This is a lightweight version suitable for frequent polling.
+	 *
+	 * @since 1.9.1
+	 * @return array System status data with async and health information.
+	 */
+	private function get_system_status_for_chat() {
+		$status = array(
+			'async'  => array(
+				'status'       => 'unknown',
+				'stuck_jobs'   => 0,
+				'long_running' => 0,
+			),
+			'health' => array(
+				'status' => 'unknown',
+				'label'  => 'Unknown',
+			),
+		);
+
+		// Get async health status if monitor is available.
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
+					'status'       => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
+					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
+					'long_running' => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
+				);
+			} catch ( Exception $e ) {
+				// Silently fail - status monitoring should not break the chat.
+			}
+		}
+
+		// Get orchestration health status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
+					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
+				);
+			} catch ( Exception $e ) {
+				// Silently fail.
+			}
+		}
+
+		return $status;
+	}
+
+	/**
 	 * Register tools and admin routes.
 	 *
 	 * Registers REST API endpoints for tool management and administration:
@@ -668,8 +720,9 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$counts = $service->get_status_counts( $user_id, $assistant_id ?: null );
 
 		$response = array(
-			'jobs'   => $jobs,
-			'counts' => $counts,
+			'jobs'          => $jobs,
+			'counts'        => $counts,
+			'system_status' => $this->get_system_status_for_chat(),
 		);
 
 		if ( $assistant_id ) {

@@ -62,7 +62,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		// Enqueue shared admin monitor styles.
 		wp_enqueue_style(
 			'wp-mcp-ai-admin-monitor-shared',
-			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/css/admin-monitor-shared.css',
 			array(),
 			filemtime( WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css' )
 		);
@@ -93,7 +93,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		// Enqueue JavaScript for auto-refresh functionality.
 		wp_enqueue_script(
 			'wp-mcp-ai-admin-crawl4ai-monitor',
-			plugins_url( 'assets/js/admin-crawl4ai-monitor.js', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/js/admin-crawl4ai-monitor.js',
 			array( 'jquery' ),
 			filemtime( WP_MCP_AI_PATH . 'assets/js/admin-crawl4ai-monitor.js' ),
 			true
