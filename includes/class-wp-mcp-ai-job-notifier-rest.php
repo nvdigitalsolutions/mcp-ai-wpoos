@@ -504,6 +504,7 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 * - User is member of the team that created the job
 	 * - User owns the profession that created the job
 	 * - User owns the agent that executed the job
+	 * - User owns the virtual agent that executed the job
 	 *
 	 * @param array $job_metadata Job metadata containing various IDs.
 	 * @param int   $current_user_id Current user ID making the request.
@@ -575,6 +576,25 @@ class WP_MCP_AI_Job_Notifier_REST {
 					if ( $agent && absint( $agent->post_author ) === $current_user_id ) {
 						return true;
 					}
+				}
+			}
+		}
+
+		// Check virtual agent ownership.
+		// Virtual agents are dynamically created within team contexts,
+		// so check if user has access to the team.
+		if ( isset( $job_metadata['virtual_agent_id'] ) && isset( $job_metadata['team_id'] ) ) {
+			$team_id = absint( $job_metadata['team_id'] );
+			if ( $team_id > 0 ) {
+				$team = get_post( $team_id );
+				// Check if user is team owner.
+				if ( $team && absint( $team->post_author ) === $current_user_id ) {
+					return true;
+				}
+				// Check if user is team member.
+				$team_members = get_post_meta( $team_id, 'team_members', true );
+				if ( is_array( $team_members ) && in_array( $current_user_id, array_map( 'absint', $team_members ), true ) ) {
+					return true;
 				}
 			}
 		}

@@ -51,7 +51,10 @@ class WP_MCP_AI_Job_Notifier {
 	 * - team_id: Team workflow that triggered the job
 	 * - professional_id/profession_id: Professional that triggered the job
 	 * - agent_id: Specific agent that executed the job (in multi-agent workflows)
+	 * - virtual_agent_id: Virtual agent identifier (dynamically created agents)
 	 * - virtual_id: Virtual assistant that triggered the job
+	 * - workflow_id: Orchestration workflow identifier
+	 * - parent_job_id: Parent job ID for nested/child jobs
 	 *
 	 * @param array $metadata Job metadata.
 	 * @param array $context Optional execution context to extract IDs from.
@@ -94,9 +97,24 @@ class WP_MCP_AI_Job_Notifier {
 			$metadata['agent_role'] = sanitize_key( $context['agent_role'] );
 		}
 
+		// Extract virtual_agent_id from context if available (dynamically created agents).
+		if ( ! isset( $metadata['virtual_agent_id'] ) && isset( $context['virtual_agent_id'] ) ) {
+			$metadata['virtual_agent_id'] = sanitize_text_field( $context['virtual_agent_id'] );
+		}
+
 		// Extract virtual_id from context if available.
 		if ( ! isset( $metadata['virtual_id'] ) && isset( $context['virtual_id'] ) ) {
 			$metadata['virtual_id'] = absint( $context['virtual_id'] );
+		}
+
+		// Extract workflow_id from context if available (orchestration workflows).
+		if ( ! isset( $metadata['workflow_id'] ) && isset( $context['workflow_id'] ) ) {
+			$metadata['workflow_id'] = sanitize_text_field( $context['workflow_id'] );
+		}
+
+		// Extract parent_job_id from context if available (nested jobs).
+		if ( ! isset( $metadata['parent_job_id'] ) && isset( $context['parent_job_id'] ) ) {
+			$metadata['parent_job_id'] = sanitize_text_field( $context['parent_job_id'] );
 		}
 
 		return $metadata;
