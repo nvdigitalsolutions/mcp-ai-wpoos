@@ -58,7 +58,6 @@ rsync -av --quiet addons/pro/ "$PRO_BUILD_DIR/" \
     --exclude 'node_modules' \
     --exclude 'tests' \
     --exclude '.npmrc' \
-    --exclude 'package.json' \
     --exclude 'package-lock.json' \
     --exclude '*.md' \
     --exclude '.DS_Store' \

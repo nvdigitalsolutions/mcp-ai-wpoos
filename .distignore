@@ -29,7 +29,6 @@ node_modules
 vendor-dev
 composer.json
 composer.lock
-package.json
 package-lock.json
 babel.config.js
 jest.config.js
