@@ -215,6 +215,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve all registered tools as an associative array keyed by slug.
+		 *
+		 * Use this method when you need to:
+		 * - Look up tools by slug using array key access
+		 * - Iterate over tools with slug keys (foreach $tools as $slug => $tool)
+		 * - Get tool slugs using array_keys()
+		 *
+		 * Use get_tools() instead when you only need to:
+		 * - Count the number of tools
+		 * - Iterate over tool objects without needing slugs
+		 *
+		 * @return WP_MCP_AI_Tool_Interface[] Associative array with slugs as keys.
+		 */
+		public function get_all_tools() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
+			return $this->tools;
+		}
+
+		/**
 		 * Execute a tool.
 		 *
 		 * @param string $slug      Tool slug.

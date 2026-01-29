@@ -381,4 +381,26 @@ class WP_MCP_AI_Tool_Registry_Tests extends WP_UnitTestCase {
 		// Should be numeric keys.
 		$this->assertEquals( array( 0 ), $keys );
 	}
+
+	/**
+	 * Test get_all_tools returns associative array with slug keys.
+	 */
+	public function test_get_all_tools_returns_keyed_array() {
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+		// Reset tools.
+		$reflection = new ReflectionClass( $registry );
+		$property   = $reflection->getProperty( 'tools' );
+		$property->setAccessible( true );
+		$property->setValue( $registry, array() );
+
+		$tool = new WP_MCP_AI_Mock_Tool( 'test_tool' );
+		$registry->register_tool( $tool );
+
+		$tools = $registry->get_all_tools();
+
+		// Should have slug as key.
+		$this->assertArrayHasKey( 'test_tool', $tools );
+		$this->assertSame( $tool, $tools['test_tool'] );
+	}
 }
