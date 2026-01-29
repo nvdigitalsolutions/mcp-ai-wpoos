@@ -97,11 +97,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no build type specified, build base, pro, and combined (but not core-only)
+# If no build type specified, build all versions (base, pro, combined, and core-only)
 if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
+    BUILD_CORE_ONLY=true
 fi
 
 # Get version if not specified
@@ -306,8 +307,9 @@ if [ "$BUILD_BASE" = true ]; then
     # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
     # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
-        # Replace the plugin header comment block with a regular comment
-        sed -i '1,/\*\//c\
+        # Replace the plugin header comment block (lines 1-24) with a regular comment
+        # Use line number range for consistency and to prevent accidentally removing code
+        sed -i '1,24c\
 <?php\
 /**\
  * WP MCP AI - Main Plugin File\

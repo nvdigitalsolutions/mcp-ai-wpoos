@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
         'version' => 'dev-copilot/fix-activation-error-pro-plugin',
-        'reference' => 'fa74fb69d7c24f864fb774a35caf8f7efb348a76',
+        'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
             'version' => 'dev-copilot/fix-activation-error-pro-plugin',
-            'reference' => 'fa74fb69d7c24f864fb774a35caf8f7efb348a76',
+            'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
