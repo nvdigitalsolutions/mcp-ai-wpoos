@@ -98,6 +98,8 @@ function wp_mcp_ai_load_site_creator_tools() {
 
 	// Page Building Tools.
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-landing-page.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-homepage-layout.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-about-page.php';
 
 	// TODO: Add more tools as they are implemented.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
@@ -113,6 +115,8 @@ function wp_mcp_ai_load_site_creator_tools() {
 
 		// Page Building.
 		$registry->register( new WP_MCP_AI_Tool_Generate_Landing_Page() );
+		$registry->register( new WP_MCP_AI_Tool_Create_Homepage_Layout() );
+		$registry->register( new WP_MCP_AI_Tool_Build_About_Page() );
 
 		// Section Building - to be implemented.
 		// Section Building - to be implemented.
