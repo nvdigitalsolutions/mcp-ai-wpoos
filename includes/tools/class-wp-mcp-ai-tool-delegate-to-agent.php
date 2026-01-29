@@ -204,6 +204,23 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			)
 		);
 
+		// Update workflow task status if this is part of a workflow.
+		if ( ! empty( $merged_context['workflow_id'] ) && ! empty( $merged_context['task_name'] ) ) {
+			if ( class_exists( 'WP_MCP_AI_Agent_Team_Orchestrator' ) ) {
+				$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
+				$orchestrator->update_workflow_task_status(
+					$merged_context['workflow_id'],
+					$merged_context['task_name'],
+					'completed',
+					array(
+						'agent_id'      => $agent_id,
+						'agent_name'    => $result['agent_name'],
+						'execution_time' => 0, // Actual execution happens async.
+					)
+				);
+			}
+		}
+
 		// Format delegation result.
 		return array(
 			'success'    => true,

@@ -138,7 +138,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<!-- Auto-Refresh Controls -->
 			<div class="auto-refresh-controls">
 				<label>
-					<input type="checkbox" id="toggle-auto-refresh" checked />
+					<input type="checkbox" id="toggle-auto-refresh" />
 					<?php esc_html_e( 'Auto-refresh', 'mcp-ai-wpoos' ); ?>
 				</label>
 				<button type="button" class="button button-secondary" id="manual-refresh-btn">
