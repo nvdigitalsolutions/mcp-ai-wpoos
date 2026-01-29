@@ -34,7 +34,7 @@ vendor/bin/phpunit tests/test-deepseek-v4-orchestration-validation.php
 
 ---
 
-## 3 Core Tools
+## 5 Core Tools
 
 ### 1. Create Agent Team
 ```php
@@ -68,6 +68,42 @@ $result = $tool->execute(
     array(
         'agent_results' => array( $result1, $result2 ),
         'strategy' => 'consensus',
+    ),
+    array( 'assistant_id' => 1 )
+);
+```
+
+### 4. Store Agent Context (NEW - Phase 4/5)
+```php
+$tool = $tool_registry->get_tool( 'store_agent_context' );
+$result = $tool->execute(
+    array(
+        'agent_id' => 123,
+        'context_type' => 'learning',
+        'context_data' => array(
+            'title' => 'Customer Preference',
+            'content' => 'Prefers email over phone',
+            'importance' => 'high',
+            'tags' => array( 'customer', 'communication' ),
+        ),
+        'ttl' => 2592000,  // 30 days
+    ),
+    array( 'assistant_id' => 1 )
+);
+```
+
+### 5. Retrieve Agent Memory (NEW - Phase 4/5)
+```php
+$tool = $tool_registry->get_tool( 'retrieve_agent_memory' );
+$result = $tool->execute(
+    array(
+        'agent_id' => 123,
+        'query' => 'customer communication preferences',
+        'filters' => array(
+            'importance' => array( 'high', 'critical' ),
+            'tags' => array( 'customer' ),
+        ),
+        'limit' => 10,
     ),
     array( 'assistant_id' => 1 )
 );
