@@ -147,7 +147,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Get available categories.
-		$taxonomy          = $arguments['taxonomy'] ?? 'category';
+		$taxonomy             = $arguments['taxonomy'] ?? 'category';
 		$available_categories = $this->get_available_categories( $taxonomy );
 
 		// Analyze content and suggest categories.
@@ -157,8 +157,8 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 		}
 
 		// Filter suggestions.
-		$min_confidence = $arguments['min_confidence'] ?? 0.6;
-		$max_categories = $arguments['max_categories'] ?? 3;
+		$min_confidence       = $arguments['min_confidence'] ?? 0.6;
+		$max_categories       = $arguments['max_categories'] ?? 3;
 		$filtered_suggestions = $this->filter_suggestions( $suggestions, $min_confidence, $max_categories );
 
 		// Apply filter hook.

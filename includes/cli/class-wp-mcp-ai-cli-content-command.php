@@ -97,20 +97,24 @@ class WP_MCP_AI_CLI_Content_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		// Validate taxonomy.
 		if ( ! taxonomy_exists( $taxonomy ) ) {
-			$this->error( sprintf(
-				/* translators: %s: taxonomy name */
-				__( 'Taxonomy "%s" does not exist.', 'mcp-ai-wpoos' ),
-				$taxonomy
-			) );
+			$this->error(
+				sprintf(
+					/* translators: %s: taxonomy name */
+					__( 'Taxonomy "%s" does not exist.', 'mcp-ai-wpoos' ),
+					$taxonomy
+				)
+			);
 		}
 
 		// Validate post type.
 		if ( ! post_type_exists( $post_type ) ) {
-			$this->error( sprintf(
-				/* translators: %s: post type name */
-				__( 'Post type "%s" does not exist.', 'mcp-ai-wpoos' ),
-				$post_type
-			) );
+			$this->error(
+				sprintf(
+					/* translators: %s: post type name */
+					__( 'Post type "%s" does not exist.', 'mcp-ai-wpoos' ),
+					$post_type
+				)
+			);
 		}
 
 		// Get posts to categorize.
@@ -131,11 +135,13 @@ class WP_MCP_AI_CLI_Content_Command extends WP_MCP_AI_CLI_Base_Command {
 		}
 
 		// Display summary.
-		$this->info( sprintf(
-			/* translators: %d: number of posts */
-			__( 'Found %d posts to categorize.', 'mcp-ai-wpoos' ),
-			count( $post_ids )
-		) );
+		$this->info(
+			sprintf(
+				/* translators: %d: number of posts */
+				__( 'Found %d posts to categorize.', 'mcp-ai-wpoos' ),
+				count( $post_ids )
+			)
+		);
 
 		if ( $dry_run ) {
 			$this->dry_run_notice();
@@ -171,11 +177,13 @@ class WP_MCP_AI_CLI_Content_Command extends WP_MCP_AI_CLI_Base_Command {
 		$this->display_summary( $results );
 
 		if ( $results['success_count'] > 0 ) {
-			$this->success( sprintf(
-				/* translators: %d: number of posts */
-				__( 'Successfully categorized %d posts.', 'mcp-ai-wpoos' ),
-				$results['success_count']
-			) );
+			$this->success(
+				sprintf(
+					/* translators: %d: number of posts */
+					__( 'Successfully categorized %d posts.', 'mcp-ai-wpoos' ),
+					$results['success_count']
+				)
+			);
 		}
 	}
 
@@ -210,12 +218,14 @@ class WP_MCP_AI_CLI_Content_Command extends WP_MCP_AI_CLI_Base_Command {
 
 		if ( ! empty( $categories ) ) {
 			$category_names = wp_list_pluck( $categories, 'name' );
-			$this->debug( sprintf(
-				/* translators: %1$s: post title, %2$s: category names */
-				__( '"%1$s" → %2$s', 'mcp-ai-wpoos' ),
-				$post->post_title,
-				implode( ', ', $category_names )
-			) );
+			$this->debug(
+				sprintf(
+					/* translators: %1$s: post title, %2$s: category names */
+					__( '"%1$s" → %2$s', 'mcp-ai-wpoos' ),
+					$post->post_title,
+					implode( ', ', $category_names )
+				)
+			);
 		}
 
 		return true;

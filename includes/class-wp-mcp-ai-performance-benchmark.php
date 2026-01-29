@@ -75,7 +75,7 @@ class WP_MCP_AI_Performance_Benchmark {
 			);
 		}
 
-		$timer = self::$timers[ $identifier ];
+		$timer      = self::$timers[ $identifier ];
 		$end_time   = microtime( true );
 		$end_memory = memory_get_usage();
 
@@ -168,14 +168,17 @@ class WP_MCP_AI_Performance_Benchmark {
 	 */
 	public static function measure( $identifier, $callback, $args = array() ) {
 		self::start( $identifier );
-		
+
 		$value = call_user_func_array( $callback, $args );
-		
-		$benchmark = self::end( $identifier, array(
-			'callback' => is_array( $callback ) ? 
-				get_class( $callback[0] ) . '::' . $callback[1] : 
-				( is_string( $callback ) ? $callback : 'closure' ),
-		) );
+
+		$benchmark = self::end(
+			$identifier,
+			array(
+				'callback' => is_array( $callback ) ?
+					get_class( $callback[0] ) . '::' . $callback[1] :
+					( is_string( $callback ) ? $callback : 'closure' ),
+			)
+		);
 
 		return array(
 			'value'     => $value,

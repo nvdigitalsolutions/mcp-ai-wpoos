@@ -285,8 +285,10 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	 */
 	public function test_filter_hook_applied() {
 		// Verify the filter is registered correctly.
-		$this->assertTrue( has_filter( 'wp_mcp_ai_auto_categorize_categories' ), 
-			'Filter hook wp_mcp_ai_auto_categorize_categories should be registered' );
+		$this->assertTrue(
+			has_filter( 'wp_mcp_ai_auto_categorize_categories' ),
+			'Filter hook wp_mcp_ai_auto_categorize_categories should be registered'
+		);
 
 		// Note: We cannot test if the filter is actually called during execution
 		// because the tool requires an AI client which is not available in unit tests.

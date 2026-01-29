@@ -230,8 +230,8 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	 */
 	protected function confirm( $question, $assoc_args = array() ) {
 		// Use WP-CLI utility to check for yes flag or prompt user.
-		return WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) || 
-			   WP_CLI\Utils\get_flag_value( $assoc_args, 'y', false );
+		return WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) ||
+			WP_CLI\Utils\get_flag_value( $assoc_args, 'y', false );
 	}
 
 	/**
@@ -279,11 +279,15 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 		) );
 
 		if ( $results['error_count'] > 0 ) {
-			WP_CLI::log( WP_CLI::colorize( sprintf(
-				/* translators: %d: number of items */
-				'%%R  Failed: %d%%n',
-				$results['error_count']
-			) ) );
+			WP_CLI::log(
+				WP_CLI::colorize(
+					sprintf(
+						/* translators: %d: number of items */
+						'%%R  Failed: %d%%n',
+						$results['error_count']
+					)
+				)
+			);
 		}
 
 		if ( $elapsed > 0 ) {
@@ -309,18 +313,22 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 			WP_CLI::log( WP_CLI::colorize( '%R' . __( 'Errors:', 'mcp-ai-wpoos' ) . '%n' ) );
 
 			foreach ( array_slice( $results['errors'], 0, 10 ) as $error ) {
-				WP_CLI::log( sprintf(
-					'  - %s',
-					$error['message']
-				) );
+				WP_CLI::log(
+					sprintf(
+						'  - %s',
+						$error['message']
+					)
+				);
 			}
 
 			if ( count( $results['errors'] ) > 10 ) {
-				WP_CLI::log( sprintf(
-					/* translators: %d: number of errors */
-					__( '  ... and %d more errors', 'mcp-ai-wpoos' ),
-					count( $results['errors'] ) - 10
-				) );
+				WP_CLI::log(
+					sprintf(
+						/* translators: %d: number of errors */
+						__( '  ... and %d more errors', 'mcp-ai-wpoos' ),
+						count( $results['errors'] ) - 10
+					)
+				);
 			}
 		}
 	}
