@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-enhancement-pages',
-        'version' => 'dev-copilot/review-enhancement-pages',
-        'reference' => '3148e9bf440f776dbe0e20ad7c6e3803bda734ea',
+        'pretty_version' => 'dev-copilot/research-site-creator-toolkit',
+        'version' => 'dev-copilot/research-site-creator-toolkit',
+        'reference' => '4af49aaf7226edc2e675faf5823fd11eb8812c07',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-enhancement-pages',
-            'version' => 'dev-copilot/review-enhancement-pages',
-            'reference' => '3148e9bf440f776dbe0e20ad7c6e3803bda734ea',
+            'pretty_version' => 'dev-copilot/research-site-creator-toolkit',
+            'version' => 'dev-copilot/research-site-creator-toolkit',
+            'reference' => '4af49aaf7226edc2e675faf5823fd11eb8812c07',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
