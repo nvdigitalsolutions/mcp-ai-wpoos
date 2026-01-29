@@ -324,8 +324,9 @@ if [ "$BUILD_BASE" = true ]; then
     # Add plugin header to mcp-ai-wpoos-base.php for base version distribution
     # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php" ]; then
-        # Replace the comment block with a full plugin header
-        sed -i '1,/\*\//c\
+        # Replace the comment block (lines 1-17) with a full plugin header
+        # Use line number range to avoid accidentally removing code after the comment
+        sed -i '1,17c\
 <?php\
 /**\
  * Plugin Name: NV Digital Open Operator System (oOS)\
@@ -445,8 +446,9 @@ if [ "$BUILD_PRO" = true ]; then
         # Add plugin header to mcp-ai-wpoos-pro.php for standalone Pro addon distribution
         # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
         if [ -f "build/${PRO_SLUG}/mcp-ai-wpoos-pro.php" ]; then
-            # Replace the comment block with a full plugin header
-            sed -i '1,/\*\//c\
+            # Replace the comment block (lines 1-25) with a full plugin header
+            # Use line number range to avoid accidentally removing constants after the comment
+            sed -i '1,25c\
 <?php\
 /**\
  * Plugin Name: NV Digital Open Operator System Pro (oOS Pro)\
