@@ -179,14 +179,14 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 				<p>
 					<?php
 					esc_html_e(
-						'To enable or disable this toolkit, go to Settings → NV oOS → Tools and toggle the "Enable Site Creator Toolkit" option.',
+						'To enable or disable this toolkit, go to Settings → NV oOS → Tools → Features and toggle the "Enable Site Creator Toolkit" option.',
 						'mcp-ai-wpoos-pro'
 					);
 					?>
 				</p>
 				<p>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings&tab=tools' ) ); ?>" class="button button-primary">
-						<?php esc_html_e( 'Go to Tools Settings', 'mcp-ai-wpoos-pro' ); ?>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'Go to Features Settings', 'mcp-ai-wpoos-pro' ); ?>
 					</a>
 				</p>
 
@@ -196,7 +196,7 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 				$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
 				?>
 				<p>
-					<strong><?php esc_html_e( 'Current Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<strong><?php esc_html_e( 'Toolkit Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					<?php if ( $is_enabled ) : ?>
 						<span style="color: #46b450;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></span>
 					<?php else : ?>
@@ -204,6 +204,102 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 					<?php endif; ?>
 				</p>
 			</div>
+
+			<?php if ( $is_enabled ) : ?>
+			<div class="card">
+				<h2><?php esc_html_e( 'Permissions', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					esc_html_e(
+						'Configure what actions AI assistants are allowed to perform when using Site Creator tools. All permissions require manage_options capability.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+				<form method="post" action="options.php">
+					<?php
+					settings_fields( 'wp_mcp_ai_settings' );
+					?>
+					<table class="form-table" role="presentation">
+						<tbody>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Enable Site Creator', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[enable_site_creator]" value="1" <?php checked( ! empty( $settings['enable_site_creator'] ) ); ?> />
+										<?php esc_html_e( 'Allow AI to create and configure sites', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'When enabled, AI assistants can use site creator tools to automatically install themes, plugins, update options, and create content.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Plugin Installation', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[site_creator_allow_plugin_install]" value="1" <?php checked( ! empty( $settings['site_creator_allow_plugin_install'] ) ); ?> />
+										<?php esc_html_e( 'Enable automatic plugin installation from WordPress.org', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows AI to install and activate plugins from the WordPress.org repository. Plugins are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Theme Installation', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[site_creator_allow_theme_install]" value="1" <?php checked( ! empty( $settings['site_creator_allow_theme_install'] ) ); ?> />
+										<?php esc_html_e( 'Enable automatic theme installation from WordPress.org', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows AI to install and activate themes from the WordPress.org repository. Themes are only installed from trusted WordPress.org sources.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Option Updates', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[site_creator_allow_option_updates]" value="1" <?php checked( ! empty( $settings['site_creator_allow_option_updates'] ) ); ?> />
+										<?php esc_html_e( 'Enable automatic WordPress option updates', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows AI to update WordPress options (e.g., blogname, blogdescription) via the update_option tool.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'WP-CLI Tools', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[site_creator_allow_wp_cli_tools]" value="1" <?php checked( ! empty( $settings['site_creator_allow_wp_cli_tools'] ) ); ?> />
+										<?php esc_html_e( 'Enable WP-CLI inspection and execution tools', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows AI to inspect and interact with the WP-CLI environment. This includes checking WP-CLI availability and version information.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Elementor Kit Import', 'mcp-ai-wpoos-pro' ); ?></th>
+								<td>
+									<label>
+										<input type="checkbox" name="wp_mcp_ai_settings[site_creator_allow_elementor_kit_import]" value="1" <?php checked( ! empty( $settings['site_creator_allow_elementor_kit_import'] ) ); ?> />
+										<?php esc_html_e( 'Enable Elementor template kit import', 'mcp-ai-wpoos-pro' ); ?>
+									</label>
+									<p class="description">
+										<?php esc_html_e( 'Allows AI to import Elementor template kits from the Media Library. Requires Elementor to be active.', 'mcp-ai-wpoos-pro' ); ?>
+									</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<?php submit_button( __( 'Save Permissions', 'mcp-ai-wpoos-pro' ) ); ?>
+				</form>
+			</div>
+			<?php endif; ?>
 
 			<div class="card">
 				<h2><?php esc_html_e( 'Template Management', 'mcp-ai-wpoos-pro' ); ?></h2>

@@ -807,13 +807,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - always show tab.
-			$subtab_groups['site_creator'] = array(
-				'id'     => 'site_creator',
-				'label'  => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'icon'   => 'dashicons-admin-site',
-				'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
-			);
+			// Note: Site Creator settings have been moved to their own separate admin page.
+			// See: addons/pro/includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php
 
 			return $subtab_groups;
 		}

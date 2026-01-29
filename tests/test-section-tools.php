@@ -89,12 +89,15 @@ class Test_Section_Tools extends WP_UnitTestCase {
 
 		$subtabs = $method->invoke( $section );
 
-		// Check for expected subtabs.
-		$expected_subtabs = array( 'tools_manager', 'features', 'media', 'comments', 'site_creator' );
+		// Check for expected subtabs (always present).
+		$expected_subtabs = array( 'tools_manager', 'features', 'media', 'comments' );
 
 		foreach ( $expected_subtabs as $expected_subtab ) {
 			$this->assertArrayHasKey( $expected_subtab, $subtabs, "Subtab '$expected_subtab' should exist" );
 		}
+
+		// Site Creator subtab should NOT exist here - it has its own separate admin page.
+		$this->assertArrayNotHasKey( 'site_creator', $subtabs, "Site Creator subtab should not exist in Tools page" );
 	}
 
 	/**
@@ -549,5 +552,21 @@ class Test_Section_Tools extends WP_UnitTestCase {
 			$this->assertIsInt( $memory_mb, "Memory requirement for {$toolkit} should be an integer" );
 			$this->assertGreaterThan( 0, $memory_mb, "Memory requirement for {$toolkit} should be positive" );
 		}
+	}
+
+	/**
+	 * Test that site creator subtab does not exist in Tools section.
+	 * Site Creator has its own separate admin page.
+	 */
+	public function test_site_creator_subtab_does_not_exist() {
+		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
+
+		// Use reflection to access private method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
+		$method->setAccessible( true );
+
+		$subtabs = $method->invoke( $section );
+		$this->assertArrayNotHasKey( 'site_creator', $subtabs, 'Site Creator subtab should not exist in Tools section - it has its own admin page' );
 	}
 }
