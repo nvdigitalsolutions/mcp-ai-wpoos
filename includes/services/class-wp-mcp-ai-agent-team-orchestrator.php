@@ -1517,5 +1517,83 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		return $health;
 	}
+
+	/**
+	 * Update workflow task status
+	 *
+	 * Updates a specific task's status within a workflow and recalculates overall workflow state.
+	 * Used when tasks are completed via delegation or other async mechanisms.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @param string $task_name   Task name or identifier.
+	 * @param string $status      New status: 'pending', 'completed', 'failed'.
+	 * @param array  $task_data   Optional additional task data (error, result, etc.).
+	 * @return bool True on success, false if workflow not found.
+	 */
+	public function update_workflow_task_status( $workflow_id, $task_name, $status, $task_data = array() ) {
+		$workflow = $this->get_workflow( $workflow_id );
+		
+		if ( ! $workflow ) {
+			return false;
+		}
+
+		// Update task status in workflow tasks array.
+		if ( isset( $workflow['tasks'] ) && is_array( $workflow['tasks'] ) ) {
+			foreach ( $workflow['tasks'] as $key => $task ) {
+				if ( isset( $task['name'] ) && $task['name'] === $task_name ) {
+					$workflow['tasks'][ $key ]['status']       = $status;
+					$workflow['tasks'][ $key ]['updated_at']   = current_time( 'mysql' );
+					
+					// Add completion timestamp for completed/failed tasks.
+					if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
+						$workflow['tasks'][ $key ]['completed_at'] = current_time( 'mysql' );
+					}
+					
+					// Merge additional task data.
+					if ( ! empty( $task_data ) ) {
+						$workflow['tasks'][ $key ] = array_merge( $workflow['tasks'][ $key ], $task_data );
+					}
+					
+					break;
+				}
+			}
+		}
+
+		// Recalculate workflow state based on task statuses.
+		$total_tasks      = count( $workflow['tasks'] );
+		$completed_tasks  = 0;
+		$failed_tasks     = 0;
+		
+		foreach ( $workflow['tasks'] as $task ) {
+			if ( isset( $task['status'] ) ) {
+				if ( 'completed' === $task['status'] ) {
+					++$completed_tasks;
+				} elseif ( 'failed' === $task['status'] ) {
+					++$failed_tasks;
+				}
+			}
+		}
+
+		// Update workflow state.
+		if ( $completed_tasks === $total_tasks ) {
+			$workflow['state']        = 'completed';
+			$workflow['completed_at'] = current_time( 'mysql' );
+		} elseif ( $failed_tasks > 0 && ( $completed_tasks + $failed_tasks ) === $total_tasks ) {
+			$workflow['state']        = 'completed_with_errors';
+			$workflow['completed_at'] = current_time( 'mysql' );
+		} elseif ( $completed_tasks > 0 || $failed_tasks > 0 ) {
+			// Some tasks done, update state to running if still initialized.
+			if ( 'initialized' === $workflow['state'] ) {
+				$workflow['state']      = 'running';
+				$workflow['started_at'] = current_time( 'mysql' );
+			}
+		}
+
+		// Update timestamp and save.
+		$workflow['updated_at'] = current_time( 'mysql' );
+		$this->save_workflow_to_dashboard( $workflow_id, $workflow );
+
+		return true;
+	}
 }
 
