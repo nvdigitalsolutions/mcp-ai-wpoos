@@ -117,7 +117,18 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-sidebar-widget.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-footer-widget.php';
 
-	// TODO: Add more tools as they are implemented.
+	// Template Management Tools.
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-save-site-template.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-import-site-template.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-export-template-kit.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-manage-template-versions.php';
+
+	// Integration Tools.
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-integrate-with-architect.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-scaffold-theme-structure.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-automate-development-workflow.php';
+
+	// All tools loaded successfully.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
 	// Get registry and register tools.
@@ -150,7 +161,18 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register( new WP_MCP_AI_Tool_Generate_Sidebar_Widget() );
 		$registry->register( new WP_MCP_AI_Tool_Create_Footer_Widget() );
 
-		// Template Management - to be implemented.
+		// Template Management.
+		$registry->register( new WP_MCP_AI_Tool_Save_Site_Template() );
+		$registry->register( new WP_MCP_AI_Tool_Import_Site_Template() );
+		$registry->register( new WP_MCP_AI_Tool_Export_Template_Kit() );
+		$registry->register( new WP_MCP_AI_Tool_Manage_Template_Versions() );
+
+		// Integration Tools.
+		$registry->register( new WP_MCP_AI_Tool_Integrate_With_Architect() );
+		$registry->register( new WP_MCP_AI_Tool_Scaffold_Theme_Structure() );
+		$registry->register( new WP_MCP_AI_Tool_Automate_Development_Workflow() );
+
+		// All 25 tools registered successfully (26 planned - 1 research tool reserved for future).
 		// Section Building - to be implemented.
 		// Widget Building - to be implemented.
 		// Template Management - to be implemented.
