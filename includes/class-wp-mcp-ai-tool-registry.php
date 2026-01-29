@@ -559,6 +559,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'firefly_get_budgets'                => 'external-tools',
 				'firefly_get_categories'             => 'external-tools',
 				'firefly_get_bills'                  => 'external-tools',
+				// Firefly III Chart.js visualization tools.
+				'firefly_chart_expenses'             => 'external-tools',
 				'list_github_repositories'           => 'external-tools',
 				'github_repository_operations'       => 'external-tools',
 				'manage_github_codespace'            => 'external-tools',
@@ -1029,6 +1031,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Firefly_Get_Budgets'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-firefly-get-budgets.php',
 				'WP_MCP_AI_Tool_Firefly_Get_Categories'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-firefly-get-categories.php',
 				'WP_MCP_AI_Tool_Firefly_Get_Bills'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-firefly-get-bills.php',
+				// Firefly III Chart.js visualization tools.
+				'WP_MCP_AI_Tool_Firefly_Chart_Expenses'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-firefly-chart-expenses.php',
 				'WP_MCP_AI_Tool_Get_JetEngine_Items'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetengine-items.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Forms'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-forms.php',
 				'WP_MCP_AI_Tool_Get_JetFormBuilder_Submissions' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-jetformbuilder-submissions.php',
