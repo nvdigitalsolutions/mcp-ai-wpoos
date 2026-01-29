@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/move-to-phase-5',
+        'version' => 'dev-copilot/move-to-phase-5',
+        'reference' => '88b2cd2231c4bd71a8dca239c204e8b3d15f6294',
         'pretty_version' => 'dev-copilot/remove-old-settings-page',
         'version' => 'dev-copilot/remove-old-settings-page',
         'reference' => '9c1ee9f1196f53441e4aac3b883473adb97a90f4',
@@ -74,6 +77,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/move-to-phase-5',
+            'version' => 'dev-copilot/move-to-phase-5',
+            'reference' => '88b2cd2231c4bd71a8dca239c204e8b3d15f6294',
             'pretty_version' => 'dev-copilot/remove-old-settings-page',
             'version' => 'dev-copilot/remove-old-settings-page',
             'reference' => '9c1ee9f1196f53441e4aac3b883473adb97a90f4',
