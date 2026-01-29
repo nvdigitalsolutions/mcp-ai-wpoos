@@ -92,6 +92,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-healt
 // Load agent context management service (DeepSeek V4 enhancements - Phase 5).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-context-manager.php';
 
+// Load vector context service (DeepSeek V4 enhancements - Phase 5.5).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
+
 // Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-balancer.php';
@@ -381,6 +384,19 @@ function wp_mcp_ai_get_enhanced_workflow_coordinator() {
  */
 function wp_mcp_ai_get_agent_context_manager() {
 	return WP_MCP_AI_Agent_Context_Manager::get_instance();
+}
+
+/**
+ * Get vector context service instance
+ *
+ * Helper function to get the vector context service for semantic
+ * search using OpenAI embeddings.
+ *
+ * @since 1.1.0
+ * @return WP_MCP_AI_Vector_Context_Service Vector context service instance.
+ */
+function wp_mcp_ai_get_vector_context_service() {
+	return WP_MCP_AI_Vector_Context_Service::get_instance();
 }
 
 /**

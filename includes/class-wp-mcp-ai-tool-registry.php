@@ -456,6 +456,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'store_agent_context'                => 'wordpress-core',
 				'retrieve_agent_memory'              => 'wordpress-core',
 				'prioritize_context'                 => 'wordpress-core',
+				'semantic_context_search'            => 'external-tools',
 
 				// Project Management - Pro feature tools for managing projects, tasks, and events.
 				'create_project'                     => 'project-management',
@@ -968,6 +969,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Store_Agent_Context'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-store-agent-context.php',
 				'WP_MCP_AI_Tool_Retrieve_Agent_Memory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php',
 				'WP_MCP_AI_Tool_Prioritize_Context'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-prioritize-context.php',
+				'WP_MCP_AI_Tool_Semantic_Context_Search'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-context-search.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
