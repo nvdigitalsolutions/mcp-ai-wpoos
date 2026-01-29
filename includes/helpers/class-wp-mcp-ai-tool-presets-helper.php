@@ -979,6 +979,205 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
+			'architect'                => array(
+				'name'        => __( '🏗️ Architect', 'mcp-ai-wpoos' ),
+				'description' => __( 'Architectural design, planning, building codes, and construction documentation tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Architectural Design (Pro) - Floor Planning & Space Design.
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'create_floor_plan_variations',
+					'convert_sketch_to_floor_plan',
+					// 3D Modeling & Visualization.
+					'generate_3d_model',
+					'render_architectural_view',
+					'create_walkthrough_animation',
+					// Documentation & Blueprints.
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					// Analysis & Compliance.
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					// Estimation & Scheduling.
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					// Visual Design & Rendering.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'generate_veo_video',
+					'create_walkthrough_animation',
+					// Image Processing.
+					'resize_image',
+					'crop_image',
+					'remove_background',
+					// Research & Analysis.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'submit_document_prompt',
+					'pro_pdf',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// Data & Charts.
+					'create_chart',
+					'pro_excel',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					// Communication.
+					'send_group_email',
+					'create_google_calendar_event',
+					// CAD/BIM Integration.
+					'get_elementor_templates',
+					'elementor',
+				),
+			),
+
+			'engineering'              => array(
+				'name'        => __( '⚙️ Engineering Professional', 'mcp-ai-wpoos' ),
+				'description' => __( 'Civil, structural, MEP engineering with analysis, calculations, and technical documentation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Structural Analysis & Building Code Compliance.
+					'analyze_structural_feasibility',
+					'check_building_code_compliance',
+					'calculate_sustainability_metrics',
+					// Architectural Design Tools (for coordination).
+					'generate_floor_plan',
+					'generate_3d_model',
+					'render_architectural_view',
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					// Material & Cost Estimation.
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					// Mathematical & Scientific Tools.
+					'solve_equation',
+					'simplify_expression',
+					'calculate_derivative',
+					'calculate_integral',
+					'matrix_operations',
+					'render_math_equation',
+					// Data Analysis & Visualization.
+					'create_chart',
+					'analyze_data_patterns',
+					'pro_excel',
+					// Geospatial Analysis.
+					'geocode_address',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Research & Technical Documentation.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'submit_document_prompt',
+					// Document Generation.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// File Management.
+					'search_attachments',
+					'list_openai_files',
+					'get_openai_file_details',
+					// Communication & Collaboration.
+					'send_group_email',
+					'create_google_calendar_event',
+				),
+			),
+
+			'construction_management'  => array(
+				'name'        => __( '👷 Construction Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Construction planning, scheduling, cost estimation, and project coordination tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Cost Estimation & Scheduling.
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					'generate_material_schedule',
+					// Building Code & Safety Compliance.
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					// Project Management & Coordination.
+					'create_project',
+					'update_project',
+					'delete_project',
+					'list_projects',
+					'research_project',
+					// Task Management & Scheduling.
+					'create_task',
+					'update_task',
+					'delete_task',
+					'list_tasks',
+					'create_task_plan',
+					'get_task_plan',
+					// Calendar & Events.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Documentation & Drawings (for review).
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					'generate_floor_plan',
+					'generate_3d_model',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'submit_document_prompt',
+					'pro_pdf',
+					'pro_excel',
+					// Analytics & Reporting.
+					'create_chart',
+					'analyze_data_patterns',
+					// Communication & Team Coordination.
+					'send_group_email',
+					'schedule_notify_sms',
+					'send_telegram_message',
+					'send_whatsapp_message',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'get_open_meteo_forecast',
+					// Research & Information.
+					'web_search',
+					'search_content',
+					'semantic_content_search',
+					// Forms & Data Collection.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Agent Coordination (for complex projects).
+					'create_agent_team',
+					'delegate_to_agent',
+					'execute_workflow',
+				),
+			),
+
 			'travel_hospitality'       => array(
 				'name'        => __( '✈️ Travel & Hospitality', 'mcp-ai-wpoos' ),
 				'description' => __( 'Tourism, hospitality, and travel industry tools', 'mcp-ai-wpoos' ),
