@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+        'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+        'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
         'pretty_version' => 'dev-copilot/review-ajax-endpoints-testing',
         'version' => 'dev-copilot/review-ajax-endpoints-testing',
         'reference' => 'a1b238a60469286452276f4719f02067198c81da',
@@ -68,6 +71,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+            'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+            'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
             'pretty_version' => 'dev-copilot/review-ajax-endpoints-testing',
             'version' => 'dev-copilot/review-ajax-endpoints-testing',
             'reference' => 'a1b238a60469286452276f4719f02067198c81da',
