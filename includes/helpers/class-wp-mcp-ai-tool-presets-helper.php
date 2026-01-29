@@ -479,7 +479,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'design_professional'      => array(
 				'name'        => __( '🎨 Design Professional', 'mcp-ai-wpoos' ),
-				'description' => __( 'Visual design, rendering, branding, and creative production tools', 'mcp-ai-wpoos' ),
+				'description' => __( 'Visual design, rendering, branding, creative production, and architectural design tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Image generation.
 					'generate_openai_image',
@@ -516,6 +516,23 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_elementor_templates',
 					'import_elementor_template_kit',
 					'elementor',
+					// Architectural Design (Pro).
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'create_floor_plan_variations',
+					'convert_sketch_to_floor_plan',
+					'generate_3d_model',
+					'render_architectural_view',
+					'create_walkthrough_animation',
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
 				),
 			),
 
