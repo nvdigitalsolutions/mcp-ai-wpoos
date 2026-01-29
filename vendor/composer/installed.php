@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-research-add-page-visibility',
-        'version' => 'dev-copilot/fix-research-add-page-visibility',
-        'reference' => '4aa32f396cee8a99f0b6e64cd6a78dff5884d840',
+        'pretty_version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+        'version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+        'reference' => '7454717cdadb7d7d1dbe40cf30d6a4d24151281f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-research-add-page-visibility',
-            'version' => 'dev-copilot/fix-research-add-page-visibility',
-            'reference' => '4aa32f396cee8a99f0b6e64cd6a78dff5884d840',
+            'pretty_version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+            'version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+            'reference' => '7454717cdadb7d7d1dbe40cf30d6a4d24151281f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
