@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-empty-section-display',
-        'version' => 'dev-copilot/fix-empty-section-display',
-        'reference' => '6209bf6218cdf53b11a771a9a7ee442a1370b063',
+        'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
+        'version' => 'dev-copilot/add-diagnostic-instrumentation',
+        'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-empty-section-display',
-            'version' => 'dev-copilot/fix-empty-section-display',
-            'reference' => '6209bf6218cdf53b11a771a9a7ee442a1370b063',
+            'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
+            'version' => 'dev-copilot/add-diagnostic-instrumentation',
+            'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
