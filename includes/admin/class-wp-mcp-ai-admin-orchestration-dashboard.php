@@ -118,6 +118,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<?php $this->render_statistics_cards( $stats ); ?>
 			</div>
 
+			<!-- Agent Memory Usage (NEW - Phase 4/5) -->
+			<div class="orchestration-memory-container">
+				<h2><?php esc_html_e( 'Agent Memory Usage', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_agent_memory_stats(); ?>
+			</div>
+
 			<!-- Agent Role Distribution Chart -->
 			<div class="orchestration-chart-container">
 				<h2><?php esc_html_e( 'Agent Role Distribution', 'mcp-ai-wpoos' ); ?></h2>
@@ -862,6 +868,138 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Render agent memory statistics widget.
+	 *
+	 * Shows usage statistics for the new agent memory tools (Phase 4/5).
+	 *
+	 * @return void
+	 * @since 1.1.0
+	 */
+	protected function render_agent_memory_stats() {
+		global $wpdb;
+
+		// Count total stored contexts.
+		$total_contexts = 0;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options} 
+				WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+			)
+		);
+
+		$contexts_by_type = array();
+		$total_agents     = 0;
+
+		foreach ( $transients as $transient ) {
+			$index = maybe_unserialize( $transient->option_value );
+			if ( is_array( $index ) && ! empty( $index ) ) {
+				$total_agents++;
+				$total_contexts += count( $index );
+
+				// Count by type.
+				foreach ( $index as $context_id => $context_meta ) {
+					$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
+					if ( ! isset( $contexts_by_type[ $type ] ) ) {
+						$contexts_by_type[ $type ] = 0;
+					}
+					$contexts_by_type[ $type ]++;
+				}
+			}
+		}
+
+		?>
+		<div class="agent-memory-stats-widget">
+			<div class="memory-stats-grid">
+				<div class="memory-stat-card">
+					<div class="stat-icon">💾</div>
+					<div class="stat-content">
+						<h3><?php echo esc_html( number_format_i18n( $total_contexts ) ); ?></h3>
+						<p><?php esc_html_e( 'Total Contexts Stored', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+
+				<div class="memory-stat-card">
+					<div class="stat-icon">🤖</div>
+					<div class="stat-content">
+						<h3><?php echo esc_html( number_format_i18n( $total_agents ) ); ?></h3>
+						<p><?php esc_html_e( 'Agents with Memory', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+
+				<div class="memory-stat-card">
+					<div class="stat-icon">📊</div>
+					<div class="stat-content">
+						<h3><?php echo esc_html( number_format_i18n( count( $contexts_by_type ) ) ); ?></h3>
+						<p><?php esc_html_e( 'Context Types Used', 'mcp-ai-wpoos' ); ?></p>
+					</div>
+				</div>
+			</div>
+
+			<?php if ( ! empty( $contexts_by_type ) ) : ?>
+				<div class="memory-contexts-breakdown">
+					<h4><?php esc_html_e( 'Contexts by Type', 'mcp-ai-wpoos' ); ?></h4>
+					<table class="widefat">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Context Type', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Count', 'mcp-ai-wpoos' ); ?></th>
+								<th><?php esc_html_e( 'Percentage', 'mcp-ai-wpoos' ); ?></th>
+							</tr>
+						</thead>
+						<tbody>
+							<?php
+							// Sort by count descending.
+							arsort( $contexts_by_type );
+							foreach ( $contexts_by_type as $type => $count ) :
+								$percentage = $total_contexts > 0 ? round( ( $count / $total_contexts ) * 100, 1 ) : 0;
+								?>
+								<tr>
+									<td><strong><?php echo esc_html( ucfirst( $type ) ); ?></strong></td>
+									<td><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
+									<td><?php echo esc_html( $percentage ); ?>%</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
+				</div>
+			<?php else : ?>
+				<div class="memory-empty-state">
+					<p>
+						<?php
+						esc_html_e( 'No agent memories stored yet. Agents will automatically store context when using the store_agent_context tool.', 'mcp-ai-wpoos' );
+						?>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<div class="memory-tool-info">
+				<h4><?php esc_html_e( 'Agent Memory Tools (Phase 4/5)', 'mcp-ai-wpoos' ); ?></h4>
+				<ul>
+					<li>
+						<strong>store_agent_context:</strong>
+						<?php esc_html_e( 'Store important context with 10 types, TTL, importance levels, and tags', 'mcp-ai-wpoos' ); ?>
+					</li>
+					<li>
+						<strong>retrieve_agent_memory:</strong>
+						<?php esc_html_e( 'Retrieve contexts with semantic search, filtering, and relevance scoring', 'mcp-ai-wpoos' ); ?>
+					</li>
+				</ul>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=mcp-ai-settings#tools' ) ); ?>" class="button">
+						<?php esc_html_e( 'Configure Tools', 'mcp-ai-wpoos' ); ?>
+					</a>
+					<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-USAGE-GUIDE.md#using-agent-memory-tools" class="button button-secondary" target="_blank">
+						<?php esc_html_e( 'View Documentation', 'mcp-ai-wpoos' ); ?>
+					</a>
+				</p>
+			</div>
+		</div>
+		<?php
 	}
 }
 
