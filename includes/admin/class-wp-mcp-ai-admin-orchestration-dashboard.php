@@ -59,9 +59,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// WordPress generates submenu hooks as: {sanitized_parent_title}_page_{submenu_slug}
 		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Submenu slug: "mcp-ai-orchestration"
-		// Expected hook: "nv-oos_page_mcp-ai-orchestration"
-		// Also check alternate format just in case: "nvoos_page_mcp-ai-orchestration"
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook && 'nvoos_page_mcp-ai-orchestration' !== $hook ) {
+		// Check if this is the orchestration page by looking for the submenu slug in the hook
+		if ( false === strpos( $hook, 'mcp-ai-orchestration' ) ) {
 			return;
 		}
 
