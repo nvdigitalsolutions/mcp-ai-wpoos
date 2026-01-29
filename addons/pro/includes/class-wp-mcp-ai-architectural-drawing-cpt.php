@@ -45,6 +45,7 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'init', array( __CLASS__, 'register_taxonomies' ) );
+		add_action( 'init', array( __CLASS__, 'register_meta' ) );
 
 		// Admin columns.
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( __CLASS__, 'add_admin_columns' ) );
@@ -86,6 +87,49 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 				'capability_type'    => 'post',
 				'supports'           => array( 'title', 'editor', 'thumbnail', 'author' ),
 				'menu_icon'          => 'dashicons-media-spreadsheet',
+			)
+		);
+	}
+
+	/**
+	 * Register post meta fields.
+	 *
+	 * @since 2.10.0
+	 */
+	public static function register_meta() {
+		// Text fields.
+		$text_fields = array(
+			'_arch_drawing_number',
+			'_arch_scale',
+			'_arch_revision',
+			'_arch_file_url',
+			'_arch_file_format',
+		);
+
+		foreach ( $text_fields as $meta_key ) {
+			register_post_meta(
+				self::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'string',
+					'description'       => '',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				)
+			);
+		}
+
+		// Integer field for project ID.
+		register_post_meta(
+			self::POST_TYPE,
+			'_arch_project_id',
+			array(
+				'type'              => 'integer',
+				'description'       => 'Parent project ID',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
 			)
 		);
 	}

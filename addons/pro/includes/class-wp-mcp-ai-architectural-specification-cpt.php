@@ -45,6 +45,7 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'init', array( __CLASS__, 'register_taxonomies' ) );
+		add_action( 'init', array( __CLASS__, 'register_meta' ) );
 
 		// Admin columns.
 		add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', array( __CLASS__, 'add_admin_columns' ) );
@@ -88,6 +89,60 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 				'menu_icon'          => 'dashicons-media-document',
 			)
 		);
+	}
+
+	/**
+	 * Register post meta fields.
+	 *
+	 * @since 2.10.0
+	 */
+	public static function register_meta() {
+		// Text field for spec number.
+		register_post_meta(
+			self::POST_TYPE,
+			'_arch_spec_number',
+			array(
+				'type'              => 'string',
+				'description'       => 'CSI MasterFormat specification number',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+
+		// Integer field for project ID.
+		register_post_meta(
+			self::POST_TYPE,
+			'_arch_project_id',
+			array(
+				'type'              => 'integer',
+				'description'       => 'Parent project ID',
+				'single'            => true,
+				'show_in_rest'      => true,
+				'sanitize_callback' => 'absint',
+			)
+		);
+
+		// Three-part specification format fields.
+		$spec_parts = array(
+			'_arch_spec_part_1',
+			'_arch_spec_part_2',
+			'_arch_spec_part_3',
+		);
+
+		foreach ( $spec_parts as $meta_key ) {
+			register_post_meta(
+				self::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'string',
+					'description'       => '',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'wp_kses_post',
+				)
+			);
+		}
 	}
 
 	/**

@@ -47,6 +47,7 @@ class WP_MCP_AI_Architectural_Project_CPT {
 
 		add_action( 'init', array( __CLASS__, 'register_post_type' ) );
 		add_action( 'init', array( __CLASS__, 'register_taxonomies' ) );
+		add_action( 'init', array( __CLASS__, 'register_meta' ) );
 		add_action( 'admin_notices', array( __CLASS__, 'show_info_notice' ) );
 
 		// Admin columns.
@@ -221,6 +222,57 @@ class WP_MCP_AI_Architectural_Project_CPT {
 				'menu_position'      => 31,
 			)
 		);
+	}
+
+	/**
+	 * Register post meta fields.
+	 *
+	 * @since 2.10.0
+	 */
+	public static function register_meta() {
+		// Text fields.
+		$text_fields = array(
+			'_arch_client_name',
+			'_arch_location',
+			'_arch_start_date',
+			'_arch_completion_date',
+			'_arch_unit_system',
+			'_arch_building_code',
+		);
+
+		foreach ( $text_fields as $meta_key ) {
+			register_post_meta(
+				self::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'string',
+					'description'       => '',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'sanitize_text_field',
+				)
+			);
+		}
+
+		// Numeric fields.
+		$numeric_fields = array(
+			'_arch_budget',
+			'_arch_square_footage',
+		);
+
+		foreach ( $numeric_fields as $meta_key ) {
+			register_post_meta(
+				self::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'number',
+					'description'       => '',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'floatval',
+				)
+			);
+		}
 	}
 
 	/**

@@ -35,19 +35,80 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-architectural-design-research-add.php';
 		new WP_MCP_AI_Architectural_Design_Research_Add();
 
-		// Load Project Research & Add page (under Design Projects menu).
+		// Load Project Settings and Research & Add pages (under Design Projects menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-research-page.php';
 		new WP_MCP_AI_Architectural_Project_Research_Page();
 
-		// Load Drawing Research & Add page (under Drawings menu).
+		// Load Drawing Settings and Research & Add pages (under Drawings menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-research-page.php';
 		new WP_MCP_AI_Architectural_Drawing_Research_Page();
 
-		// Load Specification Research & Add page (under Specifications menu).
+		// Load Specification Settings and Research & Add pages (under Specifications menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-research-page.php';
 		new WP_MCP_AI_Architectural_Specification_Research_Page();
 	}
 }
+
+/**
+ * Initialize architectural design admin interface.
+ */
+function wp_mcp_ai_init_architectural_design_admin() {
+	// Only load in admin context.
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	// Check if architectural design toolkit is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_architectural_design_toolkit'] ) ) {
+		return;
+	}
+
+	// Load metabox classes.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-metabox.php';
+
+	// Initialize metaboxes.
+	WP_MCP_AI_Architectural_Project_Metabox::init();
+	WP_MCP_AI_Architectural_Drawing_Metabox::init();
+	WP_MCP_AI_Architectural_Specification_Metabox::init();
+}
+add_action( 'admin_init', 'wp_mcp_ai_init_architectural_design_admin' );
+
+/**
+ * Enqueue architectural design admin styles.
+ *
+ * @param string $hook Current admin page hook.
+ */
+function wp_mcp_ai_enqueue_architectural_design_admin_styles( $hook ) {
+	// Only load on architectural design edit screens.
+	$screen = get_current_screen();
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_arch_proj', 'mcp_ai_arch_draw', 'mcp_ai_arch_spec' ), true ) ) {
+		return;
+	}
+
+	// Check if architectural design toolkit is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_architectural_design_toolkit'] ) ) {
+		return;
+	}
+
+	// Enqueue admin styles if available.
+	$css_file = WP_MCP_AI_PRO_PATH . 'assets/css/admin-architectural-design-toolkit.css';
+	if ( file_exists( $css_file ) ) {
+		wp_enqueue_style(
+			'wp-mcp-ai-architectural-design-toolkit-admin',
+			WP_MCP_AI_PRO_URL . 'assets/css/admin-architectural-design-toolkit.css',
+			array(),
+			WP_MCP_AI_PRO_VERSION
+		);
+	}
+}
+add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_architectural_design_admin_styles' );
 
 // Only load tools if enabled and not in base version.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
