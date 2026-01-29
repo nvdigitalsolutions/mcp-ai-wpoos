@@ -469,6 +469,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 				if ( ! empty( $capabilities ) ) {
 					echo esc_html( count( $capabilities ) ) . ' ' . esc_html__( 'tools', 'mcp-ai-wpoos' );
 				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
 					echo '—';
 				}
 				break;
@@ -491,6 +492,7 @@ class WP_MCP_AI_AI_Peer_CPT {
 				if ( $latency ) {
 					echo esc_html( $latency ) . ' ms';
 				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
 					echo '—';
 				}
 				break;

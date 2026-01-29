@@ -33,11 +33,11 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
-			__( 'Orchestration Dashboard', 'mcp-ai-wpoos-pro' ),
-			__( 'Orchestration', 'mcp-ai-wpoos-pro' ),
+			'nvoos-pro-dashboard',
+			__( 'Real-Time Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
+			__( 'Orchestration Monitor', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
-			'mcp-ai-orchestration',
+			'mcp-ai-orchestration-pro',
 			array( $this, 'render_dashboard' )
 		);
 	}
@@ -48,7 +48,20 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook ) {
+		// Check for orchestration page.
+		// Hook format: 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro'
+		// Also check via $_GET for additional safety.
+		$is_orchestration_page = ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' === $hook ) ||
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
+
+		// Debug logging for troubleshooting asset enqueue issues.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Orchestration Dashboard: Hook=%s, GET page=%s, Is orchestration page=%s', $hook, isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : 'not set', $is_orchestration_page ? 'YES' : 'NO' ) );
+		}
+
+		if ( ! $is_orchestration_page ) {
 			return;
 		}
 
@@ -110,9 +123,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	public function render_dashboard() {
 		?>
 		<div class="wrap wp-mcp-ai-orchestration-dashboard">
-			<h1><?php esc_html_e( 'Autonomous Orchestration Dashboard', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with Ralph Wiggum patterns.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with advanced analytics.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<!-- Overview Cards -->

@@ -172,7 +172,7 @@ class WP_MCP_AI_Profession_Metabox_Expertise extends WP_MCP_AI_Profession_Metabo
 										data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>"
 										data-tool-name="<?php echo esc_attr( strtolower( $tool_name ) ); ?>"
 										data-tool-description="<?php echo esc_attr( strtolower( $tool_desc ) ); ?>"
-										data-initially-checked="<?php echo $is_checked ? '1' : '0'; ?>">
+										data-initially-checked="<?php echo esc_attr( $is_checked ? '1' : '0' ); ?>">
 										<label style="display: inline-flex; align-items: flex-start; cursor: pointer; width: 100%;">
 											<input
 												type="checkbox"

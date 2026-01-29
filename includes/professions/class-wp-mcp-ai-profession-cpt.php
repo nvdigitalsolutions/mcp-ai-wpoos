@@ -1020,6 +1020,7 @@ class WP_MCP_AI_Profession_CPT {
 					);
 					echo esc_html( isset( $categories[ $category ] ) ? $categories[ $category ] : $category );
 				} else {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
 					echo '—';
 				}
 				break;

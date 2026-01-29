@@ -215,6 +215,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve all registered tools as an associative array keyed by slug.
+		 *
+		 * Use this method when you need to:
+		 * - Look up tools by slug using array key access
+		 * - Iterate over tools with slug keys (foreach $tools as $slug => $tool)
+		 * - Get tool slugs using array_keys()
+		 *
+		 * Use get_tools() instead when you only need to:
+		 * - Count the number of tools
+		 * - Iterate over tool objects without needing slugs
+		 *
+		 * @return WP_MCP_AI_Tool_Interface[] Associative array with slugs as keys.
+		 */
+		public function get_all_tools() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
+			return $this->tools;
+		}
+
+		/**
 		 * Execute a tool.
 		 *
 		 * @param string $slug      Tool slug.
@@ -935,6 +956,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
 				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
 				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
+				// Agent memory tools (DeepSeek V4 Phase 4/5: State Management & Memory).
+				'WP_MCP_AI_Tool_Store_Agent_Context'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-store-agent-context.php',
+				'WP_MCP_AI_Tool_Retrieve_Agent_Memory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).

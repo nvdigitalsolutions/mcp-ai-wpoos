@@ -8,9 +8,25 @@
 
 	const OrchestrationDashboard = {
 		refreshInterval: null,
-		config: wpMcpAiOrchestration || {},
+		config: typeof wpMcpAiOrchestration !== 'undefined' ? wpMcpAiOrchestration : {},
 
 		init: function() {
+			console.log('OrchestrationDashboard: Initializing...', this.config);
+			
+			// Check if config is properly loaded.
+			if (!this.config.ajaxUrl || !this.config.nonce) {
+				console.error('OrchestrationDashboard: Configuration not loaded properly', this.config);
+				// Show user-friendly error message on the page.
+				$('.wp-mcp-ai-orchestration-dashboard').prepend(
+					'<div class="notice notice-error"><p>' +
+					'<strong>Configuration Error:</strong> The orchestration dashboard could not load properly. ' +
+					'Please check that the plugin is activated correctly and try refreshing the page.' +
+					'</p></div>'
+				);
+				return;
+			}
+			
+			console.log('OrchestrationDashboard: Configuration loaded successfully');
 			this.bindEvents();
 			this.startAutoRefresh();
 			this.loadDashboardData();
@@ -22,6 +38,9 @@
 			
 			// Workflow trigger buttons.
 			$(document).on('click', '.workflow-trigger', this.handleWorkflowTrigger.bind(this));
+			
+			// Workflow restart buttons.
+			$(document).on('click', '.workflow-restart', this.handleWorkflowRestart.bind(this));
 			
 			// Manual refresh button (if added).
 			$(document).on('click', '.refresh-dashboard', this.loadDashboardData.bind(this));
@@ -35,6 +54,7 @@
 		},
 
 		loadDashboardData: function() {
+			console.log('OrchestrationDashboard: Loading dashboard data...');
 			$.ajax({
 				url: this.config.ajaxUrl,
 				type: 'POST',
@@ -43,12 +63,20 @@
 					nonce: this.config.nonce
 				},
 				success: (response) => {
+					console.log('OrchestrationDashboard: AJAX response received', response);
 					if (response.success && response.data) {
+						console.log('OrchestrationDashboard: Updating dashboard with data', response.data);
 						this.updateDashboard(response.data);
+					} else {
+						console.error('Dashboard data load failed:', response);
 					}
 				},
-				error: () => {
-					console.error('Failed to load dashboard data');
+				error: (xhr, status, error) => {
+					console.error('Failed to load dashboard data:', {
+						status: status,
+						error: error,
+						response: xhr.responseText
+					});
 				}
 			});
 		},
@@ -151,13 +179,16 @@
 		getSessionActions: function(session) {
 			let actions = '';
 			
+			// Escape session_id for safe insertion into HTML attributes
+			const escapedSessionId = this.escapeHtmlAttribute(session.session_id);
+			
 			if (session.status === 'active') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="pause">⏸ Pause</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="pause">⏸ Pause</button> ';
 			} else if (session.status === 'paused') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="resume">▶ Resume</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="resume">▶ Resume</button> ';
 			}
 			
-			actions += '<button class="button button-small button-link-delete session-action" data-session="' + session.session_id + '" data-action="stop">⏹ Stop</button>';
+			actions += '<button class="button button-small button-link-delete session-action" data-session="' + escapedSessionId + '" data-action="stop">⏹ Stop</button>';
 			
 			return actions;
 		},
@@ -211,6 +242,21 @@
 			return div.innerHTML;
 		},
 
+		/**
+		 * Escape HTML attribute value
+		 * 
+		 * @param {string} text Text to escape for use in HTML attribute.
+		 * @return {string} Escaped text safe for HTML attributes.
+		 */
+		escapeHtmlAttribute: function(text) {
+			return String(text)
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		},
+
 		updateWorkflowsTable: function(workflows) {
 			const $tbody = $('#workflows-table-body');
 			
@@ -244,20 +290,38 @@
 		getWorkflowActions: function(workflow) {
 			let actions = '';
 			
-			// Show "Start Workflow" button for initialized workflows
-			if (workflow.state === 'initialized') {
+			// Escape workflow_id for safe insertion into HTML attributes
+			const escapedWorkflowId = this.escapeHtmlAttribute(workflow.workflow_id);
+			
+			// Show "Continue" button for initialized or failed workflows
+			if (workflow.state === 'initialized' || workflow.state === 'failed') {
 				const buttonText = workflow.is_stale ? 
-					'🚀 ' + (this.config.strings.startWorkflow || 'Start Workflow') :
-					'▶ ' + (this.config.strings.startWorkflow || 'Start');
+					'🚀 ' + (this.config.strings.startWorkflow || 'Continue') :
+					'▶ ' + (this.config.strings.startWorkflow || 'Continue');
 				const buttonClass = workflow.is_stale ? 'button-primary' : 'button';
 				actions += '<button class="button button-small ' + buttonClass + ' workflow-trigger" ' +
-					'data-workflow="' + workflow.workflow_id + '" ' +
-					'title="' + (this.config.strings.startWorkflow || 'Start this workflow') + '">' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
+					'title="Continue this workflow">' +
 					buttonText + '</button> ';
 			}
 			
+			// Show "Restart" button for completed or failed workflows
+			if (workflow.state === 'completed' || workflow.state === 'failed') {
+				actions += '<button class="button button-small workflow-restart" ' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
+					'title="Restart this workflow from beginning">' +
+					'<span class="dashicons dashicons-update"></span> Restart</button>';
+			}
+			
+			// Show running indicator for active workflows
+			if (workflow.state === 'running') {
+				actions += '<span class="description">' +
+					'<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> ' +
+					'Running...</span>';
+			}
+			
 			// View details link (future enhancement)
-			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + workflow.workflow_id + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
+			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + escapedWorkflowId + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
 			
 			return actions;
 		},
@@ -295,6 +359,43 @@
 				},
 				complete: () => {
 					$button.prop('disabled', false).text(this.config.strings.startWorkflow || 'Start Workflow');
+				}
+			});
+		},
+
+		handleWorkflowRestart: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow');
+
+			// Confirm before restarting
+			if (!confirm('Are you sure you want to restart this workflow? This will reset all tasks and start from the beginning.')) {
+				return;
+			}
+
+			const originalHtml = $button.html();
+			$button.prop('disabled', true).html('<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Restarting...');
+
+			$.ajax({
+				url: this.config.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_restart_workflow',
+					nonce: this.config.nonce,
+					workflow_id: workflowId
+				},
+				success: (response) => {
+					if (response.success) {
+						alert('Workflow reset successfully! You can now continue it.');
+						this.loadDashboardData(); // Reload to show updated state
+					} else {
+						alert('Error restarting workflow: ' + (response.data.message || 'Unknown error'));
+						$button.prop('disabled', false).html(originalHtml);
+					}
+				},
+				error: (xhr, status, error) => {
+					alert('Error restarting workflow: ' + error);
+					$button.prop('disabled', false).html(originalHtml);
 				}
 			});
 		}

@@ -708,7 +708,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<details class="toolkit-section">
 							<summary>
 								<?php esc_html_e( 'PHP Requirements', 'mcp-ai-wpoos' ); ?>
-								<span class="section-badge <?php echo $toolkit['php_available'] ? 'ok' : 'error'; ?>">
+								<span class="section-badge <?php echo esc_attr( $toolkit['php_available'] ? 'ok' : 'error' ); ?>">
 									<?php echo $toolkit['php_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</summary>
@@ -724,8 +724,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 										<tr>
 											<td><code><?php echo esc_html( $func_name ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo $available ? 'available' : 'unavailable'; ?>">
-													<?php echo $available ? '✓' : '✗'; ?>
+												<span class="status-indicator <?php echo esc_attr( $available ? 'available' : 'unavailable' ); ?>">
+													<?php echo $available ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
 												</span>
 											</td>
 										</tr>
@@ -739,7 +739,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<details class="toolkit-section">
 							<summary>
 								<?php esc_html_e( 'NPM Dependencies', 'mcp-ai-wpoos' ); ?>
-								<span class="section-badge <?php echo $toolkit['npm_available'] ? 'ok' : 'error'; ?>">
+								<span class="section-badge <?php echo esc_attr( $toolkit['npm_available'] ? 'ok' : 'error' ); ?>">
 									<?php echo $toolkit['npm_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</summary>
@@ -755,8 +755,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 										<tr>
 											<td><code><?php echo esc_html( $package ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo $installed ? 'available' : 'unavailable'; ?>">
-													<?php echo $installed ? '✓' : '✗'; ?>
+												<span class="status-indicator <?php echo esc_attr( $installed ? 'available' : 'unavailable' ); ?>">
+													<?php echo $installed ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
 												</span>
 											</td>
 										</tr>
@@ -1089,7 +1089,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Pro Dashboard', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['pro_dashboard_enabled'] ? 'enabled' : 'disabled'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['pro_dashboard_enabled'] ? 'enabled' : 'disabled' ); ?>">
 								<?php echo $status['pro_dashboard_enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1097,7 +1097,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Base Version Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['base_version'] ? 'active' : 'inactive'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['base_version'] ? 'active' : 'inactive' ); ?>">
 								<?php echo $status['base_version'] ? esc_html__( 'Active (35 core tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (65+ tools)', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1105,7 +1105,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Debug Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['debug_mode'] ? 'enabled' : 'disabled'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['debug_mode'] ? 'enabled' : 'disabled' ); ?>">
 								<?php echo $status['debug_mode'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1150,7 +1150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<tr>
 							<td><strong><?php echo esc_html( $display_name ); ?></strong></td>
 							<td>
-								<span class="wp-mcp-ai-status-badge <?php echo $is_active ? 'active' : 'inactive'; ?>">
+								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $is_active ? 'active' : 'inactive' ); ?>">
 									<?php echo $is_active ? esc_html__( 'Active', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</td>
@@ -1182,7 +1182,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<tr>
 							<td><strong><?php echo esc_html( $toolkit_info['name'] ); ?></strong></td>
 							<td>
-								<span class="wp-mcp-ai-status-badge <?php echo $toolkit_info['enabled'] ? 'enabled' : 'disabled'; ?>">
+								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $toolkit_info['enabled'] ? 'enabled' : 'disabled' ); ?>">
 									<?php echo $toolkit_info['enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</td>
@@ -1732,7 +1732,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 <div class="wp-mcp-ai-model-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
 			<?php foreach ( $models as $model_id => $model ) : ?>
-<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo $model['recommended'] ? '#00a32a' : '#c3c4c7'; ?>; padding: 15px; background: #fff; border-radius: 4px;">
+<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo esc_attr( $model['recommended'] ? '#00a32a' : '#c3c4c7' ); ?>; padding: 15px; background: #fff; border-radius: 4px;">
 <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 10px;">
 <h4 style="margin: 0; font-size: 14px;">
 				<?php echo esc_html( $model['name'] ); ?>

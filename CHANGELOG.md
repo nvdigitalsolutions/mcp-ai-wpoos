@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+### Added
+- **DeepSeek V4 Agent Memory Tools (January 29, 2026)**: Phase 4/5 state management and memory enhancements
+  - **store_agent_context Tool**: Stores important context, learnings, or information for agents to remember across sessions
+    - Supports 10 context types: learning, fact, preference, pattern, workflow, decision, result, insight, note, generic
+    - Configurable TTL (1 hour to 1 year, default 30 days)
+    - Importance levels: low, medium, high, critical
+    - Tag-based categorization for easy retrieval
+    - Uses WordPress transients for storage with automatic index maintenance
+  - **retrieve_agent_memory Tool**: Retrieves previously stored agent context with advanced search
+    - Specific context ID retrieval for exact lookup
+    - Semantic search with query matching and relevance scoring
+    - Advanced filtering: context types, tags, importance levels, date ranges
+    - Results ranked by importance and relevance (0-1 scale)
+    - Configurable result limits (1-50 contexts)
+    - Optional inclusion of expired contexts
+  - **Integration**: Added to `agentic_workflow`, `general_purpose`, and `operations_management` tool presets
+  - **Test Coverage**: Comprehensive PHPUnit test suite with 12 test methods validating storage, retrieval, search, filtering, and expiration
+  - **Documentation**: Complete tool documentation in DEEPSEEK-V4-README.md and DEEPSEEK-V4-USAGE-GUIDE.md
+  - These tools complete the DeepSeek V4 Phase 4/5 implementation for persistent agent memory and state management
+
 ### Documentation
 - **Documentation Consolidation (January 22, 2026)**: Organized and consolidated root-level documentation
   - **Menu Fixes**: Consolidated 6 menu-related documents into single comprehensive guide at `docs/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`

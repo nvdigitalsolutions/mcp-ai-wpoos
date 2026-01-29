@@ -483,6 +483,10 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php' 
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 }
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
+
+// Load WordPress integration enhancements (Privacy API and Site Health).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-site-health.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
 
@@ -826,7 +830,6 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-helper.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-settings.php';
@@ -835,7 +838,6 @@ if ( is_admin() ) {
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
 	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
-	new WP_MCP_AI_Pro_Dashboard_REST();
 
 	/**
 	 * Add plugin action links in the plugins list.
@@ -861,6 +863,11 @@ if ( is_admin() ) {
 
 	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
+
+// Load Pro Dashboard REST API (must be loaded outside is_admin block).
+// REST API endpoints need to be registered for all request types, not just admin requests.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+new WP_MCP_AI_Pro_Dashboard_REST();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';
@@ -1109,6 +1116,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Initialize Gutenberg blocks for AI Assistant Builder.
 			if ( class_exists( 'WP_MCP_AI_Assistant_Builder_Blocks' ) ) {
 				WP_MCP_AI_Assistant_Builder_Blocks::init();
+			}
+
+			// Initialize WordPress integration enhancements (Privacy API and Site Health).
+			if ( class_exists( 'WP_MCP_AI_Privacy' ) ) {
+				new WP_MCP_AI_Privacy();
+			}
+			if ( class_exists( 'WP_MCP_AI_Site_Health' ) ) {
+				new WP_MCP_AI_Site_Health();
 			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.

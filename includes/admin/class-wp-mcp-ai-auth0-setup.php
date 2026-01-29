@@ -219,6 +219,7 @@ if ( ! class_exists( 'WP_MCP_AI_Auth0_Setup' ) ) {
 
 			<?php
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Auth0 setup wizard layout and styling on this admin page only
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Auth0 setup wizard on this admin page only.
 			?>
 			<style>
 				.wp-mcp-ai-setup-wizard { max-width: 900px; }

@@ -381,7 +381,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<?php
 			// Render filter bar if component is available.
 			if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
 				echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
 					array(
 						'tab'          => 'token_manager',
@@ -1164,11 +1163,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
 			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
 			// Output JavaScript for inline editing.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is properly escaped in renderer.
 			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 

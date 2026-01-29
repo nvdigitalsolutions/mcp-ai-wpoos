@@ -89,7 +89,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 		$usage = $this->get_attachment_usage( $attachment_id );
 
 		if ( empty( $usage ) ) {
-			echo '<span class="wp-mcp-ai-no-usage">—</span>';
+			echo '<span class="wp-mcp-ai-no-usage">—</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML badge.
 			return;
 		}
 
@@ -166,7 +166,7 @@ class WP_MCP_AI_Admin_Media_Library_Columns {
 			);
 		}
 
-		echo '</div>';
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**

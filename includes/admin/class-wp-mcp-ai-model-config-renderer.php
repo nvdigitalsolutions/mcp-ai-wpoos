@@ -35,6 +35,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				return self::render_empty_state();
 			}
 
+			// Output buffering for model configuration table rendering - buffer is closed with ob_get_clean() at line 226.
 			ob_start();
 			?>
 			<div class="wp-mcp-ai-model-config-table-wrapper wp-mcp-ai-table-wrapper">
