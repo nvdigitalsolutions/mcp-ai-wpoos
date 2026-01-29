@@ -75,7 +75,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		if ( empty( $available_tools ) ) {
 			$registry = $this->get_registry();
 			if ( $registry ) {
-				$tools            = $registry->get_tools();
+				$tools            = $registry->get_all_tools();
 				$available_tools  = array_keys( $tools );
 			}
 		}

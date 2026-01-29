@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Profiler {
 		$task_features = $this->analyze_task_features( $task_description, $context );
 
 		// Get all available tools.
-		$available_tools = $this->registry->get_tools();
+		$available_tools = $this->registry->get_all_tools();
 
 		// Score each tool.
 		$scored_tools = array();
