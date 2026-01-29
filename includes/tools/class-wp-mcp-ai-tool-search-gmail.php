@@ -92,7 +92,10 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
 
-		$required_capability = apply_filters( 'wp_mcp_ai_search_gmail_capability', 'manage_options', $context, $arguments, $this );
+		// Get capability setting from admin configuration.
+		$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+		$default_capability  = isset( $settings['search_gmail_capability'] ) ? $settings['search_gmail_capability'] : 'manage_options';
+		$required_capability = apply_filters( 'wp_mcp_ai_search_gmail_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
 			return new WP_Error( 'wp_mcp_ai_gmail_forbidden', __( 'You do not have permission to search Gmail.', 'mcp-ai-wpoos' ) );
@@ -178,12 +181,13 @@ class WP_MCP_AI_Tool_Search_Gmail implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
-		$max_results = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
+		$max_results        = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 5;
+		$max_results_limit  = isset( $settings['search_gmail_max_results'] ) ? absint( $settings['search_gmail_max_results'] ) : 50;
 		if ( $max_results < 1 ) {
 			$max_results = 1;
 		}
-		if ( $max_results > 50 ) {
-			$max_results = 50;
+		if ( $max_results > $max_results_limit ) {
+			$max_results = $max_results_limit;
 		}
 
 		$label_ids = array();

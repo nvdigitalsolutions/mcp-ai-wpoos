@@ -18,6 +18,7 @@
 		 */
 		init: function() {
 			this.bindEvents();
+			this.updateStats(); // Load initial system status data
 			this.loadWorkflows();
 			this.setupAutoRefresh();
 		},
