@@ -199,6 +199,7 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 		if ( ! empty( $description ) ) {
 			$description_output = $this->format_text_block( $description );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $description_output ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-tool-matrix__description">' . $description_output . '</div>';
@@ -221,7 +222,9 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 				if ( $show_capabilities ) {
 					$capability_output = $this->format_text_inline( $entry['capability'] );
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 					if ( '' !== $capability_output ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 						$formatted_entry['capability'] = $capability_output;
 						$has_capability_notes          = true;
 					}
@@ -230,7 +233,9 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 				if ( ! empty( $entry['description'] ) ) {
 					$description_output = $this->format_text_inline( $entry['description'] );
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 					if ( '' !== $description_output ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 						$formatted_entry['description'] = $description_output;
 						$has_descriptions               = true;
 					}
@@ -266,7 +271,6 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 				echo '<td class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug"><code>' . esc_html( $formatted_entry['slug'] ) . '</code></td>';
 
 				if ( $has_capability_notes ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 					echo '<td class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . $formatted_entry['capability'] . '</td>';
 				}
 

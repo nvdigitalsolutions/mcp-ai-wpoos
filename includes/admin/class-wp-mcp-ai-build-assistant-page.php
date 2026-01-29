@@ -526,7 +526,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 										$first               = true;
 										foreach ( $available_providers as $provider_slug => $provider_label ) {
 											?>
-											<option value="<?php echo esc_attr( $provider_slug ); ?>"<?php echo $first ? ' selected' : ''; ?>><?php echo esc_html( $provider_label ); ?></option>
+											<option value="<?php echo esc_attr( $provider_slug ); ?>"<?php echo $first ? ' selected' : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML attribute. ?>><?php echo esc_html( $provider_label ); ?></option>
 											<?php
 											$first = false;
 										}
@@ -673,9 +673,9 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'selectedTools'    => array(),
 		);
 
-		echo '<div class="wp-mcp-ai-prompt-tools-section">';
+		echo '<div class="wp-mcp-ai-prompt-tools-section">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		include $render_file;
-		echo '</div>';
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**
@@ -706,9 +706,9 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'showPreview'   => true,
 		);
 
-		echo '<div class="wp-mcp-ai-prompt-knowledge-section">';
+		echo '<div class="wp-mcp-ai-prompt-knowledge-section">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		include $render_file;
-		echo '</div>';
+		echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 	}
 
 	/**

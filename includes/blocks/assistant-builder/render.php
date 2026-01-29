@@ -190,6 +190,8 @@ $config = array(
 	</div>
 
 	<script type="application/json" class="wp-mcp-ai-assistant-builder-config">
-		<?php echo wp_json_encode( $config ); ?>
+		<?php
+		echo wp_json_encode( $config );
+		?>
 	</script>
 </div>

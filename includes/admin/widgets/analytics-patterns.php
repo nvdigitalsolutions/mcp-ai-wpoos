@@ -95,7 +95,6 @@ if ( $has_analytics ) {
 				// Hourly Pattern Chart.
 				var hourlyCtx = document.getElementById('wp-mcp-ai-hourly-pattern-chart');
 				if (hourlyCtx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var hourlyPattern = <?php echo wp_json_encode( array_values( $pattern_data['hourly_pattern'] ) ); ?>;
 					var hourLabels = [];
 					for (var i = 0; i < 24; i++) {
@@ -153,7 +152,6 @@ if ( $has_analytics ) {
 				// Daily Pattern Chart.
 				var dailyCtx = document.getElementById('wp-mcp-ai-daily-pattern-chart');
 				if (dailyCtx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var dailyPattern = <?php echo wp_json_encode( array_values( $pattern_data['daily_pattern'] ) ); ?>;
 					var dayLabels = ['<?php echo esc_js( __( 'Sun', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Mon', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Tue', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Wed', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Thu', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Fri', 'mcp-ai-wpoos' ) ); ?>', '<?php echo esc_js( __( 'Sat', 'mcp-ai-wpoos' ) ); ?>'];
 

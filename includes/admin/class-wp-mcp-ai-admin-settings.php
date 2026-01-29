@@ -2964,9 +2964,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 								continue;
 							}
 
-							echo '<table class="form-table" role="presentation">';
+							echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 							do_settings_fields( self::PAGE_SLUG, $section_id );
-							echo '</table>';
+							echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 							?>
 						</div>
 					</div>
@@ -2998,7 +2998,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 			$definitions = self::get_chat_color_definitions();
 			$groups      = self::get_chat_color_groups();
 
-			echo '<div class="wp-mcp-ai-chat-colors">';
+			echo '<div class="wp-mcp-ai-chat-colors">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 
 			foreach ( $groups as $group_key => $group_label ) {
 				$group_colors = array();
@@ -3013,7 +3013,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 					continue;
 				}
 
-				echo '<fieldset class="wp-mcp-ai-chat-colors__group">';
+				echo '<fieldset class="wp-mcp-ai-chat-colors__group">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 				echo '<legend>' . esc_html( $group_label ) . '</legend>';
 
 				foreach ( $group_colors as $color_key => $definition ) {
@@ -3030,7 +3030,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						$descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'mcp-ai-wpoos' );
 					}
 
-					echo '<div class="wp-mcp-ai-chat-colors__field">';
+					echo '<div class="wp-mcp-ai-chat-colors__field">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					echo '<label for="' . esc_attr( $input_id ) . '">' . esc_html( $definition['label'] ) . '</label>';
 					echo '<input type="text" id="' . esc_attr( $input_id ) . '" class="regular-text wp-mcp-ai-color-field" name="' . esc_attr( self::OPTION_NAME ) . '[chat_colors][' . esc_attr( $color_key ) . ']" value="' . esc_attr( $value ) . '" data-format="' . esc_attr( $format ) . '" data-default-color="' . esc_attr( $definition['default'] ) . '" />';
 
@@ -3038,14 +3038,14 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 						echo '<p class="description">' . esc_html( $text ) . '</p>';
 					}
 
-					echo '</div>';
+					echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 				}
 
-				echo '</fieldset>';
+				echo '</fieldset>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			}
 
-			echo '</div>';
-			echo '</details>'; // Close the collapsible section opened in render_chat_colors_section_description.
+			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
+			echo '</details>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the collapsible section opened in render_chat_colors_section_description.
 		}
 
 		/**

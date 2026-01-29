@@ -253,7 +253,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		?>
 		<div class="status-banner status-<?php echo esc_attr( $status_class ); ?>">
 			<div class="status-icon">
-				<span class="dashicons dashicons-<?php echo 'success' === $status_class ? 'yes-alt' : ( 'warning' === $status_class ? 'warning' : 'info' ); ?>"></span>
+				<span class="dashicons dashicons-<?php echo esc_attr( 'success' === $status_class ? 'yes-alt' : ( 'warning' === $status_class ? 'warning' : 'info' ) ); ?>"></span>
 			</div>
 			<div class="status-content">
 				<h3><?php echo esc_html( $status_message ); ?></h3>

@@ -299,6 +299,9 @@ class WP_MCP_AI_Professional_Selector_Shortcode {
 			</div>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- JSON configuration data for selector widget.
+		?>
 		<script type="application/json" data-selector-config="<?php echo esc_attr( $instance_id ); ?>">
 		<?php
 		echo wp_json_encode(
