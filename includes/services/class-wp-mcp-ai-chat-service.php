@@ -525,6 +525,7 @@ class WP_MCP_AI_Chat_Service {
 					'max_iterations'   => $max_iterations,
 					'user_id'          => get_current_user_id(),
 					'messages'         => $messages, // Include original messages for metadata access.
+					'system_status'    => $this->get_system_status(), // Add system status for agentic loop awareness.
 				)
 			);
 
@@ -1067,6 +1068,95 @@ class WP_MCP_AI_Chat_Service {
 		}
 
 		return $this->tool_orchestrator;
+	}
+
+	/**
+	 * Get system status information for tool context.
+	 *
+	 * Provides lightweight system status data to tools in the agentic loop,
+	 * allowing AI agents to be aware of system health, job statuses, etc.
+	 *
+	 * @return array System status data.
+	 */
+	private function get_system_status() {
+		$status = array(
+			'cron'   => array(
+				'active'  => 0,
+				'pending' => 0,
+				'failed'  => 0,
+			),
+			'async'  => array(
+				'status'         => 'unknown',
+				'stuck_jobs'     => 0,
+				'long_running'   => 0,
+				'cron_scheduled' => false,
+			),
+			'health' => array(
+				'status' => 'unknown',
+				'label'  => 'Unknown',
+			),
+		);
+
+		// Get cron job status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			try {
+				$cron_service   = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary   = $cron_service->get_status_summary( 0, 5 );
+				$status['cron'] = array(
+					'total'     => count( $cron_summary ),
+					'active'    => 0,
+					'completed' => 0,
+					'pending'   => 0,
+					'failed'    => 0,
+				);
+
+				foreach ( $cron_summary as $job ) {
+					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
+
+					if ( 'active' === $job_status || 'running' === $job_status ) {
+						++$status['cron']['active'];
+					} elseif ( 'completed' === $job_status ) {
+						++$status['cron']['completed'];
+					} elseif ( 'pending' === $job_status ) {
+						++$status['cron']['pending'];
+					} elseif ( 'failed' === $job_status ) {
+						++$status['cron']['failed'];
+					}
+				}
+			} catch ( Exception $e ) {
+				// Silently fail - status monitoring should not break the chat.
+			}
+		}
+
+		// Get async health status if monitor is available.
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
+					'status'         => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
+					'stuck_jobs'     => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
+					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
+					'cron_scheduled' => isset( $async_health['cron_scheduled'] ) ? $async_health['cron_scheduled'] : false,
+				);
+			} catch ( Exception $e ) {
+				// Silently fail.
+			}
+		}
+
+		// Get orchestration health status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
+					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
+				);
+			} catch ( Exception $e ) {
+				// Silently fail.
+			}
+		}
+
+		return $status;
 	}
 
 	/**
