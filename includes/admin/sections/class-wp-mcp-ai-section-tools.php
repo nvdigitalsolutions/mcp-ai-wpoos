@@ -807,7 +807,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - only show tab if toolkit is enabled.
+			// Site Creator subtab is only shown when the toolkit is enabled in Features.
+			// The Pro addon also provides a separate top-level admin menu for Site Creator.
 			$settings  = get_option( 'wp_mcp_ai_settings', array() );
 			$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
 			
