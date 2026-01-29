@@ -131,8 +131,17 @@
 					nonce: wpMcpAiOrchestration.nonce
 				},
 				success: function(response) {
+					console.log('[Orchestration Dashboard] AJAX response received:', response);
+					
 					if (response.success && response.data) {
 						const stats = response.data;
+						
+						console.log('[Orchestration Dashboard] Stats data:', stats);
+						console.log('[Orchestration Dashboard] Has system_status:', !!stats.system_status);
+						if (stats.system_status) {
+							console.log('[Orchestration Dashboard] System status keys:', Object.keys(stats.system_status));
+							console.log('[Orchestration Dashboard] System status data:', stats.system_status);
+						}
 						
 						// Update stat cards
 						$('[data-stat="total_professions"]').text(stats.total_professions || 0);
@@ -142,10 +151,14 @@
 						// Update system status if available
 						if (stats.system_status) {
 							self.updateSystemStatus(stats.system_status);
+						} else {
+							console.warn('[Orchestration Dashboard] No system_status in response');
 						}
 						
 						// Update last refresh time
 						self.updateLastRefreshTime();
+					} else {
+						console.warn('[Orchestration Dashboard] Response not successful or no data', response);
 					}
 				},
 				error: function(xhr, status, error) {
@@ -160,15 +173,21 @@
 		 * @param {Object} systemStatus System status data.
 		 */
 		updateSystemStatus: function(systemStatus) {
+			console.log('[Orchestration Dashboard] updateSystemStatus called with:', systemStatus);
+			
 			// Update cron status
 			if (systemStatus.cron) {
+				console.log('[Orchestration Dashboard] Updating cron status:', systemStatus.cron);
 				$('[data-system-status="cron_active"]').text(systemStatus.cron.active || 0);
 				$('[data-system-status="cron_pending"]').text(systemStatus.cron.pending || 0);
 				$('[data-system-status="cron_failed"]').text(systemStatus.cron.failed || 0);
+			} else {
+				console.warn('[Orchestration Dashboard] No cron data in systemStatus');
 			}
 
 			// Update async status
 			if (systemStatus.async) {
+				console.log('[Orchestration Dashboard] Updating async status:', systemStatus.async);
 				const asyncStatus = systemStatus.async.status || 'unknown';
 				$('[data-system-status="async_status"]')
 					.text(asyncStatus)
@@ -176,27 +195,37 @@
 					.addClass('status-' + asyncStatus);
 				$('[data-system-status="async_stuck_jobs"]').text(systemStatus.async.stuck_jobs || 0);
 				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
+			} else {
+				console.warn('[Orchestration Dashboard] No async data in systemStatus');
 			}
 
 			// Update health status
 			if (systemStatus.health) {
+				console.log('[Orchestration Dashboard] Updating health status:', systemStatus.health);
 				const healthStatus = systemStatus.health.status || 'unknown';
 				$('[data-system-status="health_status"]')
 					.text(systemStatus.health.icon + ' ' + healthStatus)
 					.removeClass('status-healthy status-good status-fair status-poor')
 					.addClass('status-' + healthStatus);
 				$('[data-system-status="health_label"]').text(systemStatus.health.label || 'Unknown');
+			} else {
+				console.warn('[Orchestration Dashboard] No health data in systemStatus');
 			}
 
 			// Update SSE status
 			if (systemStatus.sse) {
+				console.log('[Orchestration Dashboard] Updating SSE status:', systemStatus.sse);
 				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
 				$('[data-system-status="sse_available"]')
 					.text(sseAvailable)
 					.removeClass('status-yes status-no')
 					.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
 				$('[data-system-status="sse_endpoint"]').text(systemStatus.sse.endpoint || 'N/A');
+			} else {
+				console.warn('[Orchestration Dashboard] No sse data in systemStatus');
 			}
+			
+			console.log('[Orchestration Dashboard] System status update complete');
 		},
 
 		/**
