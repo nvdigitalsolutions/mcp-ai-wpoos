@@ -60,7 +60,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Submenu slug: "mcp-ai-orchestration"
 		// Check if this is the orchestration page by looking for the submenu slug in the hook
-		if ( false === strpos( $hook, 'mcp-ai-orchestration' ) ) {
+		// Exclude the Pro version (-pro suffix) to avoid conflicts
+		if ( false === strpos( $hook, 'mcp-ai-orchestration' ) || false !== strpos( $hook, 'mcp-ai-orchestration-pro' ) ) {
 			return;
 		}
 

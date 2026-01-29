@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-loading-issues-section',
-        'version' => 'dev-copilot/fix-loading-issues-section',
-        'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
+        'pretty_version' => 'dev-copilot/fix-css-js-loading-issues-again',
+        'version' => 'dev-copilot/fix-css-js-loading-issues-again',
+        'reference' => '5e3f234434de941b15edba5909b819e885f043aa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-loading-issues-section',
-            'version' => 'dev-copilot/fix-loading-issues-section',
-            'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
+            'pretty_version' => 'dev-copilot/fix-css-js-loading-issues-again',
+            'version' => 'dev-copilot/fix-css-js-loading-issues-again',
+            'reference' => '5e3f234434de941b15edba5909b819e885f043aa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
