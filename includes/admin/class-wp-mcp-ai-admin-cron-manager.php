@@ -70,7 +70,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		// Enqueue shared admin monitor styles.
 		wp_enqueue_style(
 			'wp-mcp-ai-admin-monitor-shared',
-			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/css/admin-monitor-shared.css',
 			array(),
 			filemtime( WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css' )
 		);
@@ -105,7 +105,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		// Enqueue JavaScript for auto-refresh functionality.
 		wp_enqueue_script(
 			'wp-mcp-ai-admin-cron-manager',
-			plugins_url( 'assets/js/admin-cron-manager.js', WP_MCP_AI_FILE ),
+			WP_MCP_AI_URL . 'assets/js/admin-cron-manager.js',
 			array( 'jquery' ),
 			filemtime( WP_MCP_AI_PATH . 'assets/js/admin-cron-manager.js' ),
 			true
