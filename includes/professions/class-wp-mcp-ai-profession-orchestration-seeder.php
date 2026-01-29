@@ -496,6 +496,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	 */
 	protected function get_default_task_patterns() {
 		return array(
+			// Data & Analytics Professions
 			'data_scientist'     => array(
 				'data_analysis' => array(
 					'steps'         => array( 'get_dataset', 'analyze_data', 'create_chart', 'interpret_results' ),
@@ -505,22 +506,44 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 						'interpret_results' => 'create_chart',
 					),
 					'parallel_safe' => false,
-					'tools'         => array( 'get_recent_posts', 'create_chart', 'save_post' ),
+					'tools'         => array( 'get_recent_posts', 'create_chart', 'huggingface_dataset_get_rows', 'create_text_embeddings', 'save_post' ),
+				),
+				'ml_pipeline'   => array(
+					'steps'         => array( 'prepare_data', 'train_model', 'validate_model', 'deploy_results' ),
+					'dependencies'  => array(
+						'train_model'    => 'prepare_data',
+						'validate_model' => 'train_model',
+						'deploy_results' => 'validate_model',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'batch_embed_content', 'create_vector_store', 'openai_usage_analytics' ),
 				),
 			),
+			// Content Creation Professions
 			'content_writer'     => array(
-				'article_writing' => array(
+				'article_writing'    => array(
 					'steps'        => array( 'research_topic', 'create_outline', 'write_draft', 'polish' ),
 					'dependencies' => array(
 						'create_outline' => 'research_topic',
 						'write_draft'    => 'create_outline',
 						'polish'         => 'write_draft',
 					),
-					'tools'        => array( 'web_search', 'create_post', 'save_post' ),
+					'tools'        => array( 'web_search', 'deep_research', 'create_post', 'generate_post_excerpt', 'save_post' ),
+				),
+				'seo_optimization'   => array(
+					'steps'         => array( 'analyze_keywords', 'optimize_content', 'check_seo', 'publish' ),
+					'dependencies'  => array(
+						'optimize_content' => 'analyze_keywords',
+						'check_seo'        => 'optimize_content',
+						'publish'          => 'check_seo',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'get_rankmath_seo', 'seo_meta_optimizer', 'suggest_internal_links', 'save_post' ),
 				),
 			),
+			// Development Professions
 			'software_developer' => array(
-				'code_development' => array(
+				'code_development'   => array(
 					'steps'         => array( 'analyze_requirements', 'design_solution', 'implement_code', 'test' ),
 					'dependencies'  => array(
 						'design_solution' => 'analyze_requirements',
@@ -528,28 +551,56 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 						'test'            => 'implement_code',
 					),
 					'parallel_safe' => false,
+					'tools'         => array( 'analyze_code_sequence', 'generate_mermaid', 'save_post' ),
+				),
+				'code_review'        => array(
+					'steps'        => array( 'analyze_code', 'check_quality', 'suggest_improvements', 'document' ),
+					'dependencies' => array(
+						'check_quality'        => 'analyze_code',
+						'suggest_improvements' => 'check_quality',
+						'document'             => 'suggest_improvements',
+					),
+					'tools'        => array( 'analyze_code_sequence', 'moderate_content', 'save_post' ),
 				),
 			),
+			// Management Professions
 			'project_manager'    => array(
-				'project_planning' => array(
+				'project_planning'   => array(
 					'steps'         => array( 'define_scope', 'break_down_tasks', 'assign_resources', 'create_timeline' ),
 					'parallel_safe' => true,
-					'tools'         => array( 'create_post', 'save_post' ),
+					'tools'         => array( 'create_agent_team', 'create_task_plan', 'generate_mermaid', 'create_post', 'save_post' ),
+				),
+				'workflow_execution' => array(
+					'steps'         => array( 'initialize_workflow', 'monitor_progress', 'handle_issues', 'complete' ),
+					'dependencies'  => array(
+						'monitor_progress' => 'initialize_workflow',
+						'handle_issues'    => 'monitor_progress',
+						'complete'         => 'handle_issues',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'execute_workflow', 'check_workflow_health', 'get_session_status', 'aggregate_agent_results' ),
 				),
 			),
+			// Quality Assurance Professions
 			'technical_editor'   => array(
-				'content_review' => array(
+				'content_review'    => array(
 					'steps'        => array( 'read_content', 'check_accuracy', 'verify_quality', 'provide_feedback' ),
 					'dependencies' => array(
 						'check_accuracy'   => 'read_content',
 						'verify_quality'   => 'read_content',
 						'provide_feedback' => array( 'check_accuracy', 'verify_quality' ),
 					),
-					'tools'        => array( 'get_post', 'save_post' ),
+					'tools'        => array( 'get_recent_posts', 'moderate_content', 'content_freshness_checker', 'save_post' ),
+				),
+				'editorial_workflow' => array(
+					'steps'         => array( 'review_submissions', 'categorize_content', 'schedule_publishing', 'notify' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'get_recent_posts', 'auto_categorize_content', 'create_cron_job', 'send_group_email' ),
 				),
 			),
+			// Research Professions
 			'research_analyst'   => array(
-				'research_task' => array(
+				'research_task'        => array(
 					'steps'         => array( 'gather_sources', 'analyze_data', 'synthesize_findings', 'document_results' ),
 					'dependencies'  => array(
 						'analyze_data'        => 'gather_sources',
@@ -557,7 +608,177 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 						'document_results'    => 'synthesize_findings',
 					),
 					'parallel_safe' => false,
-					'tools'         => array( 'web_search', 'crawl4ai', 'create_chart', 'save_post' ),
+					'tools'         => array( 'web_search', 'deep_research', 'run_crawl4ai_job', 'create_chart', 'save_post' ),
+				),
+				'competitive_analysis' => array(
+					'steps'         => array( 'identify_competitors', 'gather_data', 'analyze_trends', 'report_insights' ),
+					'dependencies'  => array(
+						'gather_data'     => 'identify_competitors',
+						'analyze_trends'  => 'gather_data',
+						'report_insights' => 'analyze_trends',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'scrape_product', 'crawl4ai_price_lookup', 'create_chart', 'save_post' ),
+				),
+			),
+			// E-commerce Professions
+			'ecommerce_manager'  => array(
+				'product_management' => array(
+					'steps'         => array( 'analyze_inventory', 'optimize_listings', 'update_pricing', 'monitor_orders' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'get_woo_products', 'create_woo_product', 'get_woo_recent_orders', 'generate_image_alt_text' ),
+				),
+				'customer_service'   => array(
+					'steps'         => array( 'review_orders', 'process_requests', 'send_updates', 'gather_feedback' ),
+					'dependencies'  => array(
+						'process_requests' => 'review_orders',
+						'send_updates'     => 'process_requests',
+						'gather_feedback'  => 'send_updates',
+					),
+					'tools'         => array( 'get_woo_recent_orders', 'send_group_email', 'client_analyze_sentiment' ),
+				),
+			),
+			// Media & Design Professions
+			'graphic_designer'   => array(
+				'image_creation' => array(
+					'steps'         => array( 'conceptualize', 'generate_image', 'edit_refine', 'optimize_export' ),
+					'dependencies'  => array(
+						'generate_image' => 'conceptualize',
+						'edit_refine'    => 'generate_image',
+						'optimize_export' => 'edit_refine',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'generate_gemini_image', 'edit_gemini_image', 'resize_image', 'convert_image_format', 'generate_image_alt_text' ),
+				),
+				'media_optimization' => array(
+					'steps'         => array( 'audit_library', 'optimize_images', 'generate_captions', 'update_metadata' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'search_attachments', 'image_alt_text_optimizer', 'generate_image_caption', 'media_library_optimizer' ),
+				),
+			),
+			'video_producer'     => array(
+				'video_production' => array(
+					'steps'         => array( 'script_planning', 'generate_video', 'add_captions', 'publish' ),
+					'dependencies'  => array(
+						'generate_video' => 'script_planning',
+						'add_captions'   => 'generate_video',
+						'publish'        => 'add_captions',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'generate_sora_video', 'generate_video_caption', 'check_video_status', 'save_post' ),
+				),
+			),
+			// Marketing Professions
+			'digital_marketer'   => array(
+				'campaign_management' => array(
+					'steps'         => array( 'plan_campaign', 'create_content', 'schedule_distribution', 'analyze_results' ),
+					'dependencies'  => array(
+						'create_content'        => 'plan_campaign',
+						'schedule_distribution' => 'create_content',
+						'analyze_results'       => 'schedule_distribution',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'newsletter_create_email', 'create_post', 'create_cron_job', 'sitekit_analytics', 'create_chart' ),
+				),
+				'email_marketing'     => array(
+					'steps'         => array( 'segment_audience', 'compose_email', 'send_campaign', 'track_engagement' ),
+					'dependencies'  => array(
+						'compose_email'   => 'segment_audience',
+						'send_campaign'   => 'compose_email',
+						'track_engagement' => 'send_campaign',
+					),
+					'tools'         => array( 'newsletter_get_subscribers', 'newsletter_create_email', 'send_group_email', 'newsletter_get_subscriber_stats' ),
+				),
+			),
+			// Security Professions
+			'security_specialist' => array(
+				'security_audit'   => array(
+					'steps'         => array( 'scan_vulnerabilities', 'assess_risks', 'recommend_fixes', 'monitor' ),
+					'dependencies'  => array(
+						'assess_risks'    => 'scan_vulnerabilities',
+						'recommend_fixes' => 'assess_risks',
+						'monitor'         => 'recommend_fixes',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'check_site_security', 'login_security_monitor', 'user_activity_auditor', 'get_system_logs', 'save_post' ),
+				),
+				'user_management'  => array(
+					'steps'         => array( 'review_accounts', 'setup_2fa', 'audit_activity', 'report' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'get_user_info', '2fa_setup_assistant', 'user_activity_auditor', 'password_strength_analyzer' ),
+				),
+			),
+			// Translation & Localization
+			'translator'         => array(
+				'content_translation' => array(
+					'steps'         => array( 'analyze_source', 'translate_content', 'review_quality', 'publish' ),
+					'dependencies'  => array(
+						'translate_content' => 'analyze_source',
+						'review_quality'    => 'translate_content',
+						'publish'           => 'review_quality',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'get_recent_posts', 'client_translate_text', 'moderate_content', 'save_post' ),
+				),
+			),
+			// AI/ML Specialist
+			'ai_engineer'        => array(
+				'model_optimization' => array(
+					'steps'         => array( 'research_models', 'test_performance', 'select_best', 'implement' ),
+					'dependencies'  => array(
+						'test_performance' => 'research_models',
+						'select_best'      => 'test_performance',
+						'implement'        => 'select_best',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'list_available_models', 'research_model', 'suggest_best_model', 'add_model_config' ),
+				),
+				'vector_management'  => array(
+					'steps'         => array( 'prepare_content', 'create_embeddings', 'build_store', 'query_test' ),
+					'dependencies'  => array(
+						'create_embeddings' => 'prepare_content',
+						'build_store'       => 'create_embeddings',
+						'query_test'        => 'build_store',
+					),
+					'tools'         => array( 'batch_embed_content', 'create_vector_store', 'manage_vector_store_files', 'semantic_content_search' ),
+				),
+			),
+			// Analytics Specialist
+			'analytics_specialist' => array(
+				'website_analytics' => array(
+					'steps'         => array( 'collect_data', 'analyze_metrics', 'visualize_trends', 'report_insights' ),
+					'dependencies'  => array(
+						'analyze_metrics'  => 'collect_data',
+						'visualize_trends' => 'analyze_metrics',
+						'report_insights'  => 'visualize_trends',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'sitekit_analytics', 'sitekit_search_console', 'sitekit_pagespeed', 'create_chart', 'save_post' ),
+				),
+			),
+			// Disaster Response Specialist
+			'disaster_coordinator' => array(
+				'emergency_monitoring' => array(
+					'steps'         => array( 'monitor_events', 'assess_impact', 'coordinate_response', 'report' ),
+					'dependencies'  => array(
+						'assess_impact'       => 'monitor_events',
+						'coordinate_response' => 'assess_impact',
+						'report'              => 'coordinate_response',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'geocode_address', 'create_chart', 'save_post' ),
+				),
+			),
+			// Customer Support
+			'customer_support'   => array(
+				'ticket_handling' => array(
+					'steps'         => array( 'review_ticket', 'analyze_sentiment', 'resolve_issue', 'follow_up' ),
+					'dependencies'  => array(
+						'analyze_sentiment' => 'review_ticket',
+						'resolve_issue'     => 'analyze_sentiment',
+						'follow_up'         => 'resolve_issue',
+					),
+					'tools'         => array( 'client_analyze_sentiment', 'client_question_answering', 'send_group_email' ),
 				),
 			),
 		);
