@@ -358,6 +358,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
 		}
 
+		// Load Architect Agent Toolkit if enabled (Pro feature).
+		// Self-editing capabilities with GitHub Copilot CLI parity.
+		if ( ! empty( $settings['enable_architect_agent_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/architect-agent-toolkit-init.php';
+		}
+
 		// Load Architectural Design Toolkit if enabled (Pro feature - Phase 2.10).
 		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';

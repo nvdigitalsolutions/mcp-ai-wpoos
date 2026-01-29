@@ -1042,8 +1042,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Project Management tools moved to Pro addon.
 			);
 
+			// Pro tools (only loaded when not in base version mode).
+			// NOTE: Architect Agent tools (manage_files, execute_shell_command, git_operations, search_codebase)
+			// are now loaded via the Architect Agent Toolkit (addons/pro/includes/architect-agent-toolkit-init.php).
+			$pro_tools = array();
+
 			// Combine tools based on version mode.
-			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools );
+			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools, $pro_tools );
 
 			/**
 			 * Filter the list of default tools to load.
