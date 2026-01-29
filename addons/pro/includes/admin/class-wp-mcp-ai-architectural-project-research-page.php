@@ -558,7 +558,6 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 			<div class="import-form">
 				<h3><?php esc_html_e( 'Upload File or Paste Data', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<form id="wp-mcp-ai-import-form" method="post" enctype="multipart/form-data">
-					<?php wp_nonce_field( 'wp_mcp_ai_import_arch_projects', 'import_nonce' ); ?>
 					
 					<div class="import-file-section">
 						<input type="file" id="wp-mcp-ai-import-file-input" name="import_file" accept=".csv,.json,.pdf,.docx,.txt" style="display: none;">
@@ -710,6 +709,3 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 		<?php
 	}
 }
-
-// Initialize.
-WP_MCP_AI_Architectural_Project_Research_Page::init();
