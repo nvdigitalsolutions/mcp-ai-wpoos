@@ -17405,10 +17405,12 @@
             }
 
             const counts = data.counts;
+            const systemStatus = data.system_status || {};
             const total = counts.total || 0;
 
-            // Hide if no jobs
-            if (total === 0) {
+            // Hide if no jobs and system status is not critical
+            const hasCriticalStatus = systemStatus.async && (systemStatus.async.stuck_jobs > 0 || systemStatus.async.status === 'warning');
+            if (total === 0 && !hasCriticalStatus) {
                 cronStatusEl.setAttribute('hidden', '');
                 return;
             }
@@ -17416,8 +17418,19 @@
             // Show and update counts
             cronStatusEl.removeAttribute('hidden');
 
+            const activeEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-active .wp-mcp-ai-chat__cron-status-count');
             const pendingEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-pending .wp-mcp-ai-chat__cron-status-count');
             const completedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-completed .wp-mcp-ai-chat__cron-status-count');
+            const failedEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-failed .wp-mcp-ai-chat__cron-status-count');
+            const healthEl = cronStatusEl.querySelector('.wp-mcp-ai-chat__cron-status-health');
+
+            if (activeEl) {
+                activeEl.textContent = counts.active || 0;
+                activeEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-active';
+                if (counts.active > 0) {
+                    activeEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-active--running';
+                }
+            }
 
             if (pendingEl) {
                 pendingEl.textContent = counts.pending || 0;
@@ -17432,6 +17445,27 @@
                 completedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-completed';
                 if (counts.completed > 0) {
                     completedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-completed--done';
+                }
+            }
+
+            if (failedEl) {
+                failedEl.textContent = counts.failed || 0;
+                failedEl.parentElement.className = 'wp-mcp-ai-chat__cron-status-failed';
+                if (counts.failed > 0) {
+                    failedEl.parentElement.className += ' wp-mcp-ai-chat__cron-status-failed--error';
+                }
+            }
+
+            // Update system health indicator
+            if (healthEl && systemStatus.health) {
+                const healthStatus = systemStatus.health.status || 'unknown';
+                healthEl.setAttribute('data-status', healthStatus);
+                healthEl.title = systemStatus.health.label || 'System Health: Unknown';
+                
+                // Add warning class if async has issues
+                if (systemStatus.async && systemStatus.async.stuck_jobs > 0) {
+                    healthEl.setAttribute('data-status', 'warning');
+                    healthEl.title = 'Warning: ' + systemStatus.async.stuck_jobs + ' stuck jobs';
                 }
             }
         }
