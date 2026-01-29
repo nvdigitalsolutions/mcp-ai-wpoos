@@ -345,10 +345,6 @@
 		grid-template-columns: 1fr;
 	}
 
-	.memory-stats-grid {
-		grid-template-columns: 1fr;
-	}
-
 	.role-bar-row {
 		grid-template-columns: 120px 1fr 80px;
 		gap: 10px;
@@ -496,6 +492,13 @@
 
 .memory-tool-info .button {
 	margin-right: 8px;
+}
+
+/* Agent Memory Section - Responsive */
+@media (max-width: 782px) {
+	.memory-stats-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 /* Workflows Section */
