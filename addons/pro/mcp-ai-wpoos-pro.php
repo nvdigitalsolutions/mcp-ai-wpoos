@@ -369,6 +369,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
 		}
 
+		// Load Site Creator Toolkit if enabled (Pro feature).
+		// Advanced site creation with page/section/widget builders and Architect Agent integration.
+		if ( ! empty( $settings['enable_site_creator_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/site-creator-toolkit-init.php';
+		}
+
 		// Load Password Vault Manager (Pro feature - Phase 2.11).
 		// Always enabled - provides secure password storage with AES-256-GCM encryption.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/password-vault-init.php';

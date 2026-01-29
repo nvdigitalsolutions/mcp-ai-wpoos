@@ -309,6 +309,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Site_Creator' ) ) {
 						);
 						?>
 					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Advanced Features:', 'mcp-ai-wpoos' ); ?></strong>
+						<?php
+						echo wp_kses_post(
+							__(
+								'For advanced page/section/widget building capabilities with AI-powered workflows and Architect Agent integration, enable the <strong>Site Creator Toolkit</strong> in the Pro Features section above. This provides 26 additional tools for automated site development.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
 				</td>
 			</tr>
 			<?php

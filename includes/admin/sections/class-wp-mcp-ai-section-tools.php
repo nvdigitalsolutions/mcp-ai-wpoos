@@ -641,6 +641,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 16 professional architectural tools: AI floor plan generation, space optimization, 3D modeling, photorealistic rendering, construction blueprints, code compliance checking, sustainability analysis, and cost estimation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Site Creator Toolkit - Advanced site creation capabilities.
+				'enable_site_creator_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Site Creator Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced AI-powered site creation with page/section/widget builders (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 26 site creation tools: research & best practices (4), page builders (5), section builders (6), widget builders (4), template management (4), and Architect Agent integration (3) for automated development workflows. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -896,6 +905,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
 				'enable_architect_agent_toolkit'      => 16,   // 4 self-editing tools (file, shell, git, search).
 				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
+				'enable_site_creator_toolkit'         => 104,  // 26 tools, page/section/widget builders, AI automation.
 			);
 		}
 
