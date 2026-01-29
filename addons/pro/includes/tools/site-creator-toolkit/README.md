@@ -74,9 +74,12 @@ Based on 2025 best practices research:
 - AI-enhanced workflows
 - Dynamic content controls
 - Block-based design (Gutenberg compatible)
+- **Comprehensive theme.json support (2025 standards)**
 - Dark mode support
-- Global design tokens
-- Theme building capabilities
+- Global design tokens and CSS variables
+- Theme building capabilities with full FSE support
+- Fluid typography and responsive spacing scales
+- Shadow and border presets for consistent elevation
 
 ### Integration & Compatibility
 - Elementor integration
