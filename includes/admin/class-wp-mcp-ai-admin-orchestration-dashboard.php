@@ -56,7 +56,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @return void
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook ) {
+		// WordPress generates submenu hooks as: {sanitized_parent_title}_page_{submenu_slug}
+		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
+		// Submenu slug: "mcp-ai-orchestration"
+		// Expected hook: "nv-oos_page_mcp-ai-orchestration"
+		// Also check alternate format just in case: "nvoos_page_mcp-ai-orchestration"
+		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook && 'nvoos_page_mcp-ai-orchestration' !== $hook ) {
 			return;
 		}
 
@@ -293,12 +298,94 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Count orchestration and agent-related tools.
+	 *
+	 * @return int Number of orchestration and agent tools.
+	 */
+	protected function count_orchestration_tools() {
+		$count = 0;
+
+		// Get tool registry.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		if ( ! $registry ) {
+			return 0;
+		}
+
+		$all_tools = $registry->get_tools();
+		if ( ! is_array( $all_tools ) ) {
+			return 0;
+		}
+
+		// Count tools with slugs that contain 'orchestration', 'agent', 'delegate', or 'team'.
+		$orchestration_keywords = array( 'orchestration', 'agent', 'delegate', 'team', 'autonomous' );
+
+		foreach ( $all_tools as $tool ) {
+			if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
+				continue;
+			}
+
+			$tool_slug = $tool->get_slug();
+			foreach ( $orchestration_keywords as $keyword ) {
+				if ( false !== strpos( $tool_slug, $keyword ) ) {
+					++$count;
+					break; // Count each tool only once.
+				}
+			}
+		}
+
+		return $count;
+	}
+
+	/**
+	 * Get agent tool names for display.
+	 *
+	 * @return array Array of agent tool slugs.
+	 */
+	protected function get_agent_tool_names() {
+		$agent_tools = array();
+
+		// Get tool registry.
+		$registry = WP_MCP_AI_Tool_Registry::get_instance();
+		if ( ! $registry ) {
+			return array();
+		}
+
+		$all_tools = $registry->get_tools();
+		if ( ! is_array( $all_tools ) ) {
+			return array();
+		}
+
+		// Get tools with slugs that contain 'agent', 'delegate', or 'team'.
+		$agent_keywords = array( 'agent', 'delegate', 'team' );
+
+		foreach ( $all_tools as $tool ) {
+			if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
+				continue;
+			}
+
+			$tool_slug = $tool->get_slug();
+			foreach ( $agent_keywords as $keyword ) {
+				if ( false !== strpos( $tool_slug, $keyword ) ) {
+					$agent_tools[] = $tool_slug;
+					break; // Add each tool only once.
+				}
+			}
+		}
+
+		return $agent_tools;
+	}
+
+	/**
 	 * Render statistics cards.
 	 *
 	 * @param array $stats Statistics data.
 	 * @return void
 	 */
 	protected function render_statistics_cards( $stats ) {
+		// Count orchestration and agent-related tools dynamically.
+		$orchestration_tool_count = $this->count_orchestration_tools();
+		$agent_tool_names         = $this->get_agent_tool_names();
+
 		$cards = array(
 			array(
 				'title' => __( 'Total Professions', 'mcp-ai-wpoos' ),
@@ -320,10 +407,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			),
 			array(
 				'title'       => __( 'Agent Tools', 'mcp-ai-wpoos' ),
-				'value'       => 3,
+				'value'       => $orchestration_tool_count,
 				'icon'        => 'admin-tools',
 				'color'       => '#8c8f94',
-				'description' => __( 'create_agent_team, delegate_to_agent, aggregate_agent_results', 'mcp-ai-wpoos' ),
+				'description' => esc_html( implode( ', ', $agent_tool_names ) ),
 			),
 		);
 
