@@ -82,8 +82,11 @@
 		},
 
 		updateDashboard: function(data) {
+			console.log('OrchestrationDashboard: Updating dashboard sections...');
+			
 			// Update overview cards.
 			if (data.overview) {
+				console.log('OrchestrationDashboard: Updating overview metrics', data.overview);
 				$('[data-metric="active_sessions"]').text(data.overview.active_sessions);
 				$('[data-metric="total_plans"]').text(data.overview.total_plans);
 				$('[data-metric="total_executions"]').text(data.overview.total_executions);
@@ -92,6 +95,7 @@
 
 			// Update capacity metrics.
 			if (data.capacity) {
+				console.log('OrchestrationDashboard: Updating capacity metrics', data.capacity);
 				$('[data-metric="utilization"]').text(data.capacity.utilization);
 				$('[data-metric="queue_length"]').text(data.capacity.queue_length);
 				
@@ -103,7 +107,10 @@
 
 			// Update system status if available.
 			if (data.system_status) {
+				console.log('OrchestrationDashboard: System status data found', data.system_status);
 				this.updateSystemStatus(data.system_status);
+			} else {
+				console.warn('OrchestrationDashboard: No system_status data in response!', data);
 			}
 
 			// Update sessions table.
@@ -128,15 +135,21 @@
 		 * @param {Object} systemStatus System status data.
 		 */
 		updateSystemStatus: function(systemStatus) {
+			console.log('OrchestrationDashboard: updateSystemStatus called with:', systemStatus);
+			
 			// Update cron status
 			if (systemStatus.cron) {
+				console.log('OrchestrationDashboard: Updating cron status', systemStatus.cron);
 				$('[data-system-status="cron_active"]').text(systemStatus.cron.active || 0);
 				$('[data-system-status="cron_pending"]').text(systemStatus.cron.pending || 0);
 				$('[data-system-status="cron_failed"]').text(systemStatus.cron.failed || 0);
+			} else {
+				console.warn('OrchestrationDashboard: No cron data in system_status');
 			}
 
 			// Update async status
 			if (systemStatus.async) {
+				console.log('OrchestrationDashboard: Updating async status', systemStatus.async);
 				const asyncStatus = systemStatus.async.status || 'unknown';
 				$('[data-system-status="async_status"]')
 					.text(asyncStatus)
@@ -144,27 +157,37 @@
 					.addClass('status-' + asyncStatus);
 				$('[data-system-status="async_stuck_jobs"]').text(systemStatus.async.stuck_jobs || 0);
 				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
+			} else {
+				console.warn('OrchestrationDashboard: No async data in system_status');
 			}
 
 			// Update health status
 			if (systemStatus.health) {
+				console.log('OrchestrationDashboard: Updating health status', systemStatus.health);
 				const healthStatus = systemStatus.health.status || 'unknown';
 				$('[data-system-status="health_status"]')
 					.text(systemStatus.health.icon + ' ' + healthStatus)
 					.removeClass('status-healthy status-good status-fair status-poor')
 					.addClass('status-' + healthStatus);
 				$('[data-system-status="health_label"]').text(systemStatus.health.label || 'Unknown');
+			} else {
+				console.warn('OrchestrationDashboard: No health data in system_status');
 			}
 
 			// Update SSE status
 			if (systemStatus.sse) {
+				console.log('OrchestrationDashboard: Updating SSE status', systemStatus.sse);
 				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
 				$('[data-system-status="sse_available"]')
 					.text(sseAvailable)
 					.removeClass('status-yes status-no')
 					.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
 				$('[data-system-status="sse_endpoint"]').text(systemStatus.sse.endpoint || 'N/A');
+			} else {
+				console.warn('OrchestrationDashboard: No SSE data in system_status');
 			}
+			
+			console.log('OrchestrationDashboard: System status update complete');
 		},
 
 		updateSessionsTable: function(sessions) {
