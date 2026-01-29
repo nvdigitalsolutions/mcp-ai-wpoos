@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Creator Menu - UI Mockup</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f1;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #1d2327;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+        .menu-preview {
+            background: #1d2327;
+            color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            width: 250px;
+        }
+        .menu-item {
+            padding: 8px 12px;
+            margin: 4px 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .menu-item.active {
+            background: #2271b1;
+        }
+        .menu-item.new {
+            background: #46b450;
+            font-weight: bold;
+        }
+        .menu-icon {
+            margin-right: 8px;
+        }
+        .submenu {
+            padding-left: 25px;
+            font-size: 13px;
+        }
+        .submenu .menu-item {
+            padding: 6px 12px;
+        }
+        .page-mockup {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 8px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .page-title {
+            font-size: 23px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #1d2327;
+        }
+        .card {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #1d2327;
+        }
+        .card h3 {
+            font-size: 16px;
+            color: #1d2327;
+            margin-top: 20px;
+        }
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .tool-card {
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 15px;
+        }
+        .tool-card h4 {
+            margin: 0 0 10px 0;
+            color: #2271b1;
+        }
+        .tool-icon {
+            font-size: 20px;
+            margin-right: 5px;
+        }
+        .button {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #2271b1;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .button:hover {
+            background: #135e96;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .status.enabled {
+            background: #d4f4dd;
+            color: #00a32a;
+        }
+        .status.disabled {
+            background: #f7dede;
+            color: #d63638;
+        }
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .notice {
+            background: #fff8e5;
+            border-left: 4px solid #dba617;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Site Creator Menu - UI Mockup</h1>
+        
+        <h2>WordPress Admin Sidebar</h2>
+        <div class="menu-preview">
+            <div class="menu-item">
+                <span class="menu-icon">📊</span> Dashboard
+            </div>
+            <div style="height: 1px; background: rgba(255,255,255,0.2); margin: 10px 0;"></div>
+            <div class="menu-item">
+                <span class="menu-icon">💬</span> NV oOS
+            </div>
+            <div class="submenu">
+                <div class="menu-item">General Settings</div>
+                <div class="menu-item">Orchestration Dashboard</div>
+                <div class="menu-item">Task Plans</div>
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🛡️</span> NV oOS Pro
+            </div>
+            <div class="submenu">
+                <div class="menu-item">Overview</div>
+                <div class="menu-item">ISO 27001</div>
+                <div class="menu-item">Reports</div>
+                <div class="menu-item">Monitoring</div>
+            </div>
+            <div class="menu-item new active">
+                <span class="menu-icon">🏗️</span> Site Creator ✨ NEW!
+            </div>
+            <div class="submenu">
+                <div class="menu-item active">Overview</div>
+                <div class="menu-item">Tools</div>
+                <div class="menu-item">Templates</div>
+            </div>
+            <div style="height: 1px; background: rgba(255,255,255,0.2); margin: 10px 0;"></div>
+            <div class="menu-item">
+                <span class="menu-icon">🎨</span> Appearance
+            </div>
+            <div class="menu-item">
+                <span class="menu-icon">🔌</span> Plugins
+            </div>
+        </div>
+
+        <h2>Page: Overview</h2>
+        <div class="page-mockup">
+            <div class="page-title">Site Creator Toolkit</div>
+            
+            <div class="card">
+                <h2>About Site Creator Toolkit</h2>
+                <p>The Site Creator Toolkit provides advanced AI-powered tools for automated WordPress site creation, following industry best practices and modern standards. It integrates with the Architect Agent for self-editing capabilities and automated development workflows.</p>
+                
+                <h3>Available Tool Categories</h3>
+                <ul>
+                    <li><strong>Research & Discovery (4 tools)</strong> - Web search for best practices, competitor analysis, site planning, template suggestions</li>
+                    <li><strong>Page Building (5 tools)</strong> - Landing pages, homepage layouts, about pages, service pages, blog layouts</li>
+                    <li><strong>Section Building (6 tools)</strong> - Hero sections, features, testimonials, CTAs, galleries, contact sections</li>
+                    <li><strong>Widget Building (4 tools)</strong> - Custom widgets, navigation menus, sidebar widgets, footer widgets</li>
+                    <li><strong>Template Management (4 tools)</strong> - Save/import/export templates, version control</li>
+                    <li><strong>Integration Tools (3 tools)</strong> - Architect Agent integration, theme scaffolding, automated workflows</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Configuration</h2>
+                <p>To enable or disable this toolkit, go to Settings → NV oOS → Tools and toggle the "Enable Site Creator Toolkit" option.</p>
+                <p>
+                    <a href="#" class="button">Go to Tools Settings</a>
+                </p>
+                <p>
+                    <strong>Current Status:</strong> 
+                    <span class="status enabled">✓ Enabled</span>
+                </p>
+            </div>
+        </div>
+
+        <h2>Page: Tools</h2>
+        <div class="page-mockup">
+            <div class="page-title">Site Creator Tools</div>
+            
+            <div class="card">
+                <h2>Available Tools</h2>
+                <p>The Site Creator Toolkit provides 26 specialized tools across 6 categories for automated WordPress site creation.</p>
+                
+                <h3>Tool Categories</h3>
+                <div class="tool-grid">
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">🔍</span> Research & Discovery</h4>
+                        <p>4 tools for best practices, competitor analysis, site planning, and template suggestions</p>
+                    </div>
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">📄</span> Page Building</h4>
+                        <p>5 tools for landing pages, homepage layouts, about pages, service pages, and blog layouts</p>
+                    </div>
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">🧩</span> Section Building</h4>
+                        <p>6 tools for hero sections, features, testimonials, CTAs, galleries, and contact sections</p>
+                    </div>
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">🎨</span> Widget Building</h4>
+                        <p>4 tools for custom widgets, navigation menus, sidebar widgets, and footer widgets</p>
+                    </div>
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">📦</span> Template Management</h4>
+                        <p>4 tools for saving, importing, exporting templates, and version control</p>
+                    </div>
+                    <div class="tool-card">
+                        <h4><span class="tool-icon">🔧</span> Integration Tools</h4>
+                        <p>3 tools for Architect Agent integration, theme scaffolding, and automated workflows</p>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px;">Tool Configuration</h3>
+                <p>To enable or disable individual tools, go to the main NV oOS Settings page.</p>
+                <p>
+                    <a href="#" class="button">Configure Tools</a>
+                </p>
+            </div>
+        </div>
+
+        <h2>Page: Templates</h2>
+        <div class="page-mockup">
+            <div class="page-title">Site Creator Templates</div>
+            
+            <div class="card">
+                <h2>Template Management</h2>
+                <p>Site templates, page templates, and reusable sections created by the Site Creator Toolkit are stored as custom post types.</p>
+                
+                <h3>Manage Templates</h3>
+                <p>
+                    <a href="#" class="button">View All Site Templates</a>
+                </p>
+                
+                <h3>Template Features</h3>
+                <ul>
+                    <li>Save templates from generated sites</li>
+                    <li>Import/export templates between sites</li>
+                    <li>Version control for template changes</li>
+                    <li>Reusable sections and components</li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <h2>Template Best Practices</h2>
+                <ul>
+                    <li>Use descriptive names for templates</li>
+                    <li>Test templates in staging before production</li>
+                    <li>Keep templates updated with latest best practices</li>
+                    <li>Document any custom modifications</li>
+                    <li>Use version control for tracking changes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
