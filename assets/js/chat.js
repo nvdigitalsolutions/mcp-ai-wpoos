@@ -9359,6 +9359,7 @@
             // Create SSE connection using service
             sseConnection = sseService.connect(url, {
                 eventHandlers: {
+                    // Existing cron_job_status handler
                     cron_job_status: function (payload) {
                         const status = typeof payload.status === 'string' ? payload.status.toLowerCase() : '';
 
@@ -9408,6 +9409,66 @@
                             updatePendingTaskEntry(pendingEntry, statusMessage);
                             setStatus(state.container, {
                                 message: statusMessage,
+                                type: 'text-stream',
+                                showTime: false
+                            });
+                        }
+                    },
+                    // New: Real-time cron job status updates
+                    cron_job_status_update: function (payload) {
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Cron job status update:', payload);
+                        }
+                        
+                        // Emit to job event bus for coordination with other components
+                        if (window.wpMcpAiJobBus && payload.job_id) {
+                            window.wpMcpAiJobBus.handleJobUpdate(payload.job_id, payload);
+                        }
+                        
+                        // Update UI with status message if available
+                        if (payload.message && state && state.container) {
+                            setStatus(state.container, {
+                                message: payload.message,
+                                type: 'text-stream',
+                                showTime: false
+                            });
+                        }
+                    },
+                    // New: Real-time crawl4ai job status updates
+                    crawl4ai_job_status_update: function (payload) {
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Crawl4AI job status update:', payload);
+                        }
+                        
+                        // Emit to job event bus for coordination
+                        if (window.wpMcpAiJobBus && payload.job_id) {
+                            window.wpMcpAiJobBus.handleJobUpdate(payload.job_id, payload);
+                        }
+                        
+                        // Update UI with status message if available
+                        if (payload.message && state && state.container) {
+                            setStatus(state.container, {
+                                message: payload.message,
+                                type: 'text-stream',
+                                showTime: false
+                            });
+                        }
+                    },
+                    // New: Generic job status updates (fallback)
+                    job_status_update: function (payload) {
+                        if (window.console && console.log) {
+                            console.log('[NV oOS] Job status update:', payload);
+                        }
+                        
+                        // Emit to job event bus
+                        if (window.wpMcpAiJobBus && payload.job_id) {
+                            window.wpMcpAiJobBus.handleJobUpdate(payload.job_id, payload);
+                        }
+                        
+                        // Update UI with status message if available
+                        if (payload.message && state && state.container) {
+                            setStatus(state.container, {
+                                message: payload.message,
                                 type: 'text-stream',
                                 showTime: false
                             });

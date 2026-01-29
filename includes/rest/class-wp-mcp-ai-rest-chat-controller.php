@@ -59,6 +59,9 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	public function __construct( $main_controller = null, $authenticator = null, $validator = null ) {
 		parent::__construct( $authenticator, $validator );
 		$this->main_controller = $main_controller;
+		
+		// Hook into SSE job status events to stream them to chat clients.
+		add_action( 'wp_mcp_ai_emit_sse_event', array( $this, 'handle_sse_job_event' ), 10, 2 );
 	}
 
 	/**
@@ -94,6 +97,36 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Handle SSE job event and stream to chat clients.
+	 *
+	 * This method is called when a job status update occurs and we're in an SSE context.
+	 * It streams the event to connected chat clients.
+	 *
+	 * @param string $event_name Event name (e.g., 'cron_job_status_update', 'crawl4ai_job_status_update').
+	 * @param array  $event_data Event data to stream.
+	 */
+	public function handle_sse_job_event( $event_name, $event_data ) {
+		// Only emit if we have an SSE handler available.
+		if ( ! class_exists( 'WP_MCP_AI_SSE_Handler' ) ) {
+			return;
+		}
+
+		// Get SSE handler instance.
+		$main_controller = $this->get_main_controller();
+		if ( null === $main_controller || ! method_exists( $main_controller, 'get_sse_handler' ) ) {
+			return;
+		}
+
+		$sse_handler = $main_controller->get_sse_handler();
+		if ( ! $sse_handler || ! method_exists( $sse_handler, 'send_sse_event' ) ) {
+			return;
+		}
+
+		// Stream the event.
+		$sse_handler->send_sse_event( $event_name, $event_data );
 	}
 
 	/**

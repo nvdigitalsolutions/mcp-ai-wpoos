@@ -32,6 +32,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_page' ), 15 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_crawl4ai_stats', array( $this, 'ajax_get_stats' ) );
 	}
 
 	/**
@@ -58,6 +59,14 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 			return;
 		}
 
+		// Enqueue shared admin monitor styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-admin-monitor-shared',
+			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			array(),
+			filemtime( WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css' )
+		);
+
 		$inline_css = '.wp-mcp-ai-crawl4ai-monitor__intro{margin:1.5rem 0;padding:1rem;background:#f0f6fc;border-left:4px solid #2271b1;}'
 			. '.wp-mcp-ai-crawl4ai-monitor__intro p{margin:0.5rem 0;}'
 			. '.wp-mcp-ai-crawl4ai-monitor__intro p:first-child{margin-top:0;}'
@@ -80,6 +89,27 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		wp_register_style( 'wp-mcp-ai-crawl4ai-monitor-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-crawl4ai-monitor-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-crawl4ai-monitor-inline', $inline_css );
+
+		// Enqueue JavaScript for auto-refresh functionality.
+		wp_enqueue_script(
+			'wp-mcp-ai-admin-crawl4ai-monitor',
+			plugins_url( 'assets/js/admin-crawl4ai-monitor.js', WP_MCP_AI_FILE ),
+			array( 'jquery' ),
+			filemtime( WP_MCP_AI_PATH . 'assets/js/admin-crawl4ai-monitor.js' ),
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-admin-crawl4ai-monitor',
+			'wpMcpAiCrawl4AI',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_crawl4ai_monitor' ),
+				'strings' => array(
+					'noJobs' => __( 'No crawl jobs found.', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -141,6 +171,31 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 	}
 
 	/**
+	 * AJAX handler for getting Crawl4AI statistics.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_stats() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_crawl4ai_monitor', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$stats = $this->get_statistics();
+		$jobs  = $this->get_recent_jobs();
+
+		wp_send_json_success(
+			array(
+				'stats' => $stats,
+				'jobs'  => $jobs,
+			)
+		);
+	}
+
+	/**
 	 * Render the Crawl4AI monitor page.
 	 */
 	public function render_page() {
@@ -153,6 +208,23 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Crawl4AI Monitor', 'mcp-ai-wpoos' ); ?></h1>
+
+			<div class="wp-mcp-ai-crawl4ai-monitor__notices"></div>
+
+			<div class="auto-refresh-controls">
+				<label for="toggle-auto-refresh">
+					<input type="checkbox" id="toggle-auto-refresh" checked />
+					<?php esc_html_e( 'Auto-refresh (every 10 seconds)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<button type="button" id="refresh-crawl4ai-stats" class="button button-secondary">
+					<span class="dashicons dashicons-update-alt"></span>
+					<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span class="last-refresh">
+					<?php esc_html_e( 'Last updated:', 'mcp-ai-wpoos' ); ?>
+					<strong id="last-refresh-time"><?php echo esc_html( wp_date( 'H:i:s' ) ); ?></strong>
+				</span>
+			</div>
 
 			<div class="wp-mcp-ai-crawl4ai-monitor__intro">
 				<p><strong><?php esc_html_e( 'About Crawl4AI Monitor', 'mcp-ai-wpoos' ); ?></strong></p>
@@ -188,23 +260,23 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 			<div class="wp-mcp-ai-crawl4ai-monitor__stats">
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Total Jobs', 'mcp-ai-wpoos' ); ?></div>
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['total_jobs'] ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value" data-stat="total_jobs"><?php echo esc_html( $stats['total_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Running', 'mcp-ai-wpoos' ); ?></div>
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['running_jobs'] ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value" data-stat="running_jobs"><?php echo esc_html( $stats['running_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Completed', 'mcp-ai-wpoos' ); ?></div>
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['completed_jobs'] ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value" data-stat="completed_jobs"><?php echo esc_html( $stats['completed_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Failed', 'mcp-ai-wpoos' ); ?></div>
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['failed_jobs'] ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value" data-stat="failed_jobs"><?php echo esc_html( $stats['failed_jobs'] ); ?></div>
 				</div>
 				<div class="wp-mcp-ai-crawl4ai-monitor__stat">
 					<div class="wp-mcp-ai-crawl4ai-monitor__stat-label"><?php esc_html_e( 'Browser Pools', 'mcp-ai-wpoos' ); ?></div>
-					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value"><?php echo esc_html( $stats['browser_pools'] ); ?></div>
+					<div class="wp-mcp-ai-crawl4ai-monitor__stat-value" data-stat="browser_pools"><?php echo esc_html( $stats['browser_pools'] ); ?></div>
 				</div>
 			</div>
 
@@ -228,7 +300,7 @@ class WP_MCP_AI_Admin_Crawl4AI_Monitor {
 							<th scope="col"><?php esc_html_e( 'Browser Pool', 'mcp-ai-wpoos' ); ?></th>
 						</tr>
 					</thead>
-					<tbody>
+					<tbody id="crawl4ai-jobs-table">
 						<?php foreach ( $jobs as $job ) : ?>
 							<tr>
 								<td><code><?php echo esc_html( $job['id'] ?? 'N/A' ); ?></code></td>

@@ -9,12 +9,17 @@
 	'use strict';
 
 	const OrchestrationDashboard = {
+		autoRefreshInterval: null,
+		autoRefreshEnabled: true,
+		refreshIntervalMs: 5000, // 5 seconds
+
 		/**
 		 * Initialize dashboard interactions.
 		 */
 		init: function() {
 			this.bindEvents();
 			this.loadWorkflows();
+			this.setupAutoRefresh();
 		},
 
 		/**
@@ -27,12 +32,129 @@
 			// Refresh stats button
 			$('#refresh-stats-btn').on('click', this.refreshStats.bind(this));
 
+			// Manual refresh button
+			$('#manual-refresh-btn').on('click', this.manualRefresh.bind(this));
+
+			// Auto-refresh toggle
+			$('#toggle-auto-refresh').on('change', this.toggleAutoRefresh.bind(this));
+
 			// Refresh workflows button
 			$('#refresh-workflows-btn').on('click', this.loadWorkflows.bind(this));
 
 			// Workflow action buttons (delegated for dynamically created elements)
 			$(document).on('click', '.workflow-action-continue', this.handleContinueWorkflow.bind(this));
 			$(document).on('click', '.workflow-action-restart', this.handleRestartWorkflow.bind(this));
+		},
+
+		/**
+		 * Setup auto-refresh functionality.
+		 */
+		setupAutoRefresh: function() {
+			const self = this;
+			
+			// Check if auto-refresh is enabled
+			const toggleCheckbox = $('#toggle-auto-refresh');
+			if (toggleCheckbox.length && toggleCheckbox.is(':checked')) {
+				this.autoRefreshEnabled = true;
+				this.startAutoRefresh();
+			}
+		},
+
+		/**
+		 * Start auto-refresh interval.
+		 */
+		startAutoRefresh: function() {
+			const self = this;
+			
+			if (this.autoRefreshInterval) {
+				clearInterval(this.autoRefreshInterval);
+			}
+
+			this.autoRefreshInterval = setInterval(function() {
+				if (self.autoRefreshEnabled) {
+					self.refreshStatsAndWorkflows();
+				}
+			}, this.refreshIntervalMs);
+		},
+
+		/**
+		 * Stop auto-refresh interval.
+		 */
+		stopAutoRefresh: function() {
+			if (this.autoRefreshInterval) {
+				clearInterval(this.autoRefreshInterval);
+				this.autoRefreshInterval = null;
+			}
+		},
+
+		/**
+		 * Toggle auto-refresh on/off.
+		 */
+		toggleAutoRefresh: function(e) {
+			this.autoRefreshEnabled = $(e.currentTarget).is(':checked');
+			
+			if (this.autoRefreshEnabled) {
+				this.startAutoRefresh();
+			} else {
+				this.stopAutoRefresh();
+			}
+		},
+
+		/**
+		 * Manual refresh button handler.
+		 */
+		manualRefresh: function(e) {
+			e.preventDefault();
+			this.refreshStatsAndWorkflows();
+		},
+
+		/**
+		 * Refresh both stats and workflows without page reload.
+		 */
+		refreshStatsAndWorkflows: function() {
+			this.updateStats();
+			this.loadWorkflows();
+		},
+
+		/**
+		 * Update statistics without page reload.
+		 */
+		updateStats: function() {
+			const self = this;
+
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_orchestration_stats',
+					nonce: wpMcpAiOrchestration.nonce
+				},
+				success: function(response) {
+					if (response.success && response.data) {
+						const stats = response.data;
+						
+						// Update stat cards
+						$('[data-stat="total_professions"]').text(stats.total_professions || 0);
+						$('[data-stat="seeded_professions"]').text(stats.seeded_professions || 0);
+						$('[data-stat="with_task_patterns"]').text(stats.with_task_patterns || 0);
+						
+						// Update last refresh time
+						self.updateLastRefreshTime();
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('[Orchestration Dashboard] Error updating stats:', error);
+				}
+			});
+		},
+
+		/**
+		 * Update last refresh timestamp.
+		 */
+		updateLastRefreshTime: function() {
+			const now = new Date();
+			const timeString = now.toLocaleTimeString();
+			$('#last-refresh-time').text(timeString);
 		},
 
 		/**

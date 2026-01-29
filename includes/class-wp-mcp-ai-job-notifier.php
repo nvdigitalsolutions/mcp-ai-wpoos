@@ -58,6 +58,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'started', $status );
+		self::emit_sse_event( $job_id, 'started', $status );
 	}
 
 	/**
@@ -83,6 +84,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'progress', $status );
+		self::emit_sse_event( $job_id, 'progress', $status );
 	}
 
 	/**
@@ -181,6 +183,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'completed', $status );
+		self::emit_sse_event( $job_id, 'completed', $status );
 	}
 
 	/**
@@ -206,6 +209,123 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'failed', $status );
+		self::emit_sse_event( $job_id, 'failed', $status );
+	}
+
+	/**
+	 * Emit SSE event for job status update.
+	 *
+	 * Emits a Server-Sent Event that can be consumed by chat clients
+	 * to display real-time job status updates in conversations.
+	 *
+	 * @param string $job_id     Job identifier.
+	 * @param string $event_type Event type (started, progress, completed, failed).
+	 * @param array  $status     Job status data.
+	 */
+	protected static function emit_sse_event( $job_id, $event_type, $status ) {
+		// Don't emit SSE events if we're not in an SSE context.
+		// This prevents errors when job status changes outside of an active SSE stream.
+		if ( ! defined( 'WP_MCP_AI_SSE_ACTIVE' ) || ! WP_MCP_AI_SSE_ACTIVE ) {
+			return;
+		}
+
+		// Determine the SSE event name based on job type.
+		$sse_event_name = self::get_sse_event_name_for_job( $job_id, $event_type );
+
+		// Build SSE event data.
+		$event_data = array(
+			'job_id'   => $job_id,
+			'status'   => isset( $status['status'] ) ? $status['status'] : $event_type,
+			'progress' => isset( $status['progress'] ) ? $status['progress'] : null,
+			'message'  => self::get_status_message( $status, $event_type ),
+			'metadata' => isset( $status['metadata'] ) ? $status['metadata'] : array(),
+		);
+
+		// Add result data for completed jobs.
+		if ( 'completed' === $event_type && isset( $status['result'] ) ) {
+			$event_data['result'] = $status['result'];
+		}
+
+		// Add error data for failed jobs.
+		if ( 'failed' === $event_type && isset( $status['error'] ) ) {
+			$event_data['error'] = $status['error'];
+		}
+
+		// Emit the SSE event using WordPress action.
+		// This allows the Chat Controller or other SSE handlers to catch and stream it.
+		do_action( 'wp_mcp_ai_emit_sse_event', $sse_event_name, $event_data );
+	}
+
+	/**
+	 * Get SSE event name for a job.
+	 *
+	 * Determines whether this is a cron job or crawl4ai job
+	 * and returns the appropriate SSE event name.
+	 *
+	 * @param string $job_id     Job identifier.
+	 * @param string $event_type Event type.
+	 * @return string SSE event name.
+	 */
+	protected static function get_sse_event_name_for_job( $job_id, $event_type ) {
+		// Check if this is a crawl4ai job.
+		if ( strpos( $job_id, 'crawl' ) === 0 || strpos( $job_id, 'crawl4ai' ) === 0 ) {
+			return 'crawl4ai_job_status_update';
+		}
+
+		// Check if this is a cron job.
+		if ( strpos( $job_id, 'cron' ) === 0 ) {
+			return 'cron_job_status_update';
+		}
+
+		// Check metadata for tool type.
+		$cached_status = self::get_job_status( $job_id );
+		if ( $cached_status && isset( $cached_status['metadata']['tool'] ) ) {
+			$tool = $cached_status['metadata']['tool'];
+			
+			if ( 'run_crawl4ai_job' === $tool || 'crawl4ai' === $tool ) {
+				return 'crawl4ai_job_status_update';
+			}
+			
+			if ( 'create_cron_job' === $tool || strpos( $tool, 'cron' ) !== false ) {
+				return 'cron_job_status_update';
+			}
+		}
+
+		// Default to generic job status update.
+		return 'job_status_update';
+	}
+
+	/**
+	 * Get human-readable status message.
+	 *
+	 * @param array  $status     Status data.
+	 * @param string $event_type Event type.
+	 * @return string Status message.
+	 */
+	protected static function get_status_message( $status, $event_type ) {
+		// Check for custom message in metadata.
+		if ( isset( $status['metadata']['message'] ) ) {
+			return sanitize_text_field( $status['metadata']['message'] );
+		}
+
+		// Generate default message based on event type.
+		switch ( $event_type ) {
+			case 'started':
+				return __( 'Job started', 'mcp-ai-wpoos' );
+			case 'progress':
+				$progress = isset( $status['progress'] ) ? absint( $status['progress'] ) : 0;
+				/* translators: %d: progress percentage */
+				return sprintf( __( 'Processing... %d%%', 'mcp-ai-wpoos' ), $progress );
+			case 'completed':
+				return __( 'Job completed successfully', 'mcp-ai-wpoos' );
+			case 'failed':
+				if ( isset( $status['error']['message'] ) ) {
+					return sanitize_text_field( $status['error']['message'] );
+				}
+				return __( 'Job failed', 'mcp-ai-wpoos' );
+			default:
+				return __( 'Job status update', 'mcp-ai-wpoos' );
+		}
 	}
 
 	/**

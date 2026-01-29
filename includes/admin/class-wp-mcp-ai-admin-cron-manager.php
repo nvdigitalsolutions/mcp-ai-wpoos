@@ -40,6 +40,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		add_action( 'admin_menu', array( $this, 'register_page' ), 15 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'admin_post_wp_mcp_ai_delete_cron', array( $this, 'handle_delete_cron' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_cron_manager_stats', array( $this, 'ajax_get_stats' ) );
 	}
 
 	/**
@@ -65,6 +66,14 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		if ( $this->page_hook !== $hook ) {
 			return;
 		}
+
+		// Enqueue shared admin monitor styles.
+		wp_enqueue_style(
+			'wp-mcp-ai-admin-monitor-shared',
+			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			array(),
+			filemtime( WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css' )
+		);
 
 		$inline_css = '.wp-mcp-ai-cron-manager__intro{margin:1.5rem 0;padding:1rem;background:#f0f6fc;border-left:4px solid #2271b1;}'
 			. '.wp-mcp-ai-cron-manager__intro p{margin:0.5rem 0;}'
@@ -92,6 +101,27 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		wp_register_style( 'wp-mcp-ai-cron-manager-inline', false );
 		wp_enqueue_style( 'wp-mcp-ai-cron-manager-inline' );
 		wp_add_inline_style( 'wp-mcp-ai-cron-manager-inline', $inline_css );
+
+		// Enqueue JavaScript for auto-refresh functionality.
+		wp_enqueue_script(
+			'wp-mcp-ai-admin-cron-manager',
+			plugins_url( 'assets/js/admin-cron-manager.js', WP_MCP_AI_FILE ),
+			array( 'jquery' ),
+			filemtime( WP_MCP_AI_PATH . 'assets/js/admin-cron-manager.js' ),
+			true
+		);
+
+		wp_localize_script(
+			'wp-mcp-ai-admin-cron-manager',
+			'wpMcpAiCronManager',
+			array(
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'nonce'   => wp_create_nonce( 'wp_mcp_ai_cron_manager' ),
+				'strings' => array(
+					'noJobs' => __( 'No cron events scheduled.', 'mcp-ai-wpoos' ),
+				),
+			)
+		);
 	}
 
 	/**
@@ -163,6 +193,82 @@ class WP_MCP_AI_Admin_Cron_Manager {
 	}
 
 	/**
+	 * AJAX handler for getting cron manager statistics.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_stats() {
+		// Verify nonce.
+		check_ajax_referer( 'wp_mcp_ai_cron_manager', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		WP_MCP_AI_Cron_Manager::maybe_prune_jobs();
+
+		$jobs      = WP_MCP_AI_Cron_Manager::get_jobs();
+		$stats     = $this->get_statistics( $jobs );
+		$dlq_stats = null;
+
+		// Get DLQ stats if available.
+		if ( class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
+			$dlq_stats = WP_MCP_AI_Dead_Letter_Queue::get_stats();
+		}
+
+		// Format jobs for AJAX response.
+		$formatted_jobs = array();
+		foreach ( $jobs as $job ) {
+			$event           = wp_get_scheduled_event( $job['hook'], $job['args'] );
+			$next_run        = $event ? $event->timestamp : false;
+			$schedule        = isset( $job['schedule'] ) ? $job['schedule'] : 'single';
+			$is_active       = (bool) $event;
+			$is_recurring    = ! ( 'single' === $schedule || '' === $schedule );
+			$first_timestamp = isset( $job['first_timestamp'] ) ? (int) $job['first_timestamp'] : 0;
+			$was_executed    = ! $is_active && $first_timestamp > 0 && $first_timestamp < time();
+
+			$creator    = '';
+			$created_by = isset( $job['created_by'] ) ? (int) $job['created_by'] : 0;
+
+			if ( $created_by > 0 ) {
+				$user = get_userdata( $created_by );
+				if ( $user ) {
+					$creator = $user->display_name;
+				}
+			}
+
+			if ( '' === $creator ) {
+				$creator = __( 'System', 'mcp-ai-wpoos' );
+			}
+
+			$formatted_jobs[] = array(
+				'hook'                => $job['hook'],
+				'args'                => $job['args'],
+				'schedule'            => $schedule,
+				'is_active'           => $is_active,
+				'is_recurring'        => $is_recurring,
+				'was_executed'        => $was_executed,
+				'next_run'            => $next_run,
+				'next_run_formatted'  => $next_run ? wp_date( 'Y-m-d H:i:s T', $next_run ) : null,
+				'creator'             => $creator,
+				'created_at_formatted' => isset( $job['created_at'] ) && $job['created_at'] ? wp_date( 'Y-m-d H:i:s T', (int) $job['created_at'] ) : __( 'Unknown', 'mcp-ai-wpoos' ),
+				'job_id'              => $job['job_id'],
+				'delete_nonce'        => wp_create_nonce( 'wp_mcp_ai_delete_cron_' . $job['job_id'] ),
+				'first_timestamp'     => $first_timestamp,
+			);
+		}
+
+		wp_send_json_success(
+			array(
+				'stats'     => $stats,
+				'jobs'      => $formatted_jobs,
+				'dlq_stats' => $dlq_stats,
+			)
+		);
+	}
+
+	/**
 	 * Render the cron manager page.
 	 */
 	public function render_page() {
@@ -177,6 +283,23 @@ class WP_MCP_AI_Admin_Cron_Manager {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'NV oOS Cron Manager', 'mcp-ai-wpoos' ); ?></h1>
+
+			<div class="wp-mcp-ai-cron-manager__notices"></div>
+
+			<div class="auto-refresh-controls">
+				<label for="toggle-auto-refresh">
+					<input type="checkbox" id="toggle-auto-refresh" checked />
+					<?php esc_html_e( 'Auto-refresh (every 15 seconds)', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<button type="button" id="refresh-cron-manager" class="button button-secondary">
+					<span class="dashicons dashicons-update-alt"></span>
+					<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span class="last-refresh">
+					<?php esc_html_e( 'Last updated:', 'mcp-ai-wpoos' ); ?>
+					<strong id="last-refresh-time"><?php echo esc_html( wp_date( 'H:i:s' ) ); ?></strong>
+				</span>
+			</div>
 
 			<div class="wp-mcp-ai-cron-manager__intro">
 				<p><strong><?php esc_html_e( 'About Cron Manager', 'mcp-ai-wpoos' ); ?></strong></p>
@@ -261,19 +384,19 @@ class WP_MCP_AI_Admin_Cron_Manager {
 				<div class="wp-mcp-ai-cron-manager__stats">
 					<div class="wp-mcp-ai-cron-manager__stat">
 						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Total Events', 'mcp-ai-wpoos' ); ?></div>
-						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['total'] ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-value" data-stat="total"><?php echo esc_html( $stats['total'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
 						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Active', 'mcp-ai-wpoos' ); ?></div>
-						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['active'] ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-value" data-stat="active"><?php echo esc_html( $stats['active'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
 						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'Recurring', 'mcp-ai-wpoos' ); ?></div>
-						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['recurring'] ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-value" data-stat="recurring"><?php echo esc_html( $stats['recurring'] ); ?></div>
 					</div>
 					<div class="wp-mcp-ai-cron-manager__stat">
 						<div class="wp-mcp-ai-cron-manager__stat-label"><?php esc_html_e( 'One-off', 'mcp-ai-wpoos' ); ?></div>
-						<div class="wp-mcp-ai-cron-manager__stat-value"><?php echo esc_html( $stats['one_off'] ); ?></div>
+						<div class="wp-mcp-ai-cron-manager__stat-value" data-stat="one_off"><?php echo esc_html( $stats['one_off'] ); ?></div>
 					</div>
 				</div>
 			<?php endif; ?>
@@ -298,7 +421,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 					<p><?php esc_html_e( 'Once the assistant creates scheduled events, they will appear here immediately for monitoring and management. Test jobs and completed one-time events will remain visible for the configured retention period, allowing you to verify successful execution.', 'mcp-ai-wpoos' ); ?></p>
 				</div>
 			<?php else : ?>
-				<table class="wp-mcp-ai-cron-manager__table">
+				<table class="wp-mcp-ai-cron-manager__table" id="cron-jobs-table">
 					<thead>
 						<tr>
 							<th scope="col"><?php esc_html_e( 'Hook', 'mcp-ai-wpoos' ); ?></th>
