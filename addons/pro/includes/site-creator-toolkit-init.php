@@ -101,6 +101,12 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-homepage-layout.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-about-page.php';
 
+	// Section Building Tools.
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-hero-section.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-feature-section.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-testimonial-section.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-cta-section.php';
+
 	// TODO: Add more tools as they are implemented.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
@@ -118,7 +124,13 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register( new WP_MCP_AI_Tool_Create_Homepage_Layout() );
 		$registry->register( new WP_MCP_AI_Tool_Build_About_Page() );
 
-		// Section Building - to be implemented.
+		// Section Building.
+		$registry->register( new WP_MCP_AI_Tool_Create_Hero_Section() );
+		$registry->register( new WP_MCP_AI_Tool_Generate_Feature_Section() );
+		$registry->register( new WP_MCP_AI_Tool_Build_Testimonial_Section() );
+		$registry->register( new WP_MCP_AI_Tool_Create_CTA_Section() );
+
+		// Widget Building - to be implemented.
 		// Section Building - to be implemented.
 		// Widget Building - to be implemented.
 		// Template Management - to be implemented.
