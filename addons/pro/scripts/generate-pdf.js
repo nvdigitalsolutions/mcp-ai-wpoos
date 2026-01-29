@@ -3,6 +3,7 @@
  * 
  * Standalone Node.js script for generating PDF documents using pdfkit.
  * This script is bundled with its dependencies to avoid requiring node_modules.
+ * Supports both plain text/sections and HTML input for professional document generation.
  * 
  * Usage: node generate-pdf.js <json_file> <output_file>
  * 
@@ -12,12 +13,274 @@
 
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
+const cheerio = require('cheerio');
 
 const [, , jsonFile, outputFile] = process.argv;
 
 if (!jsonFile || !outputFile) {
 	console.error('Usage: node generate-pdf.js <json_file> <output_file>');
 	process.exit(1);
+}
+
+/**
+ * Convert HTML to PDF content
+ */
+function htmlToPdf(html, doc) {
+	const $ = cheerio.load(html, { xmlMode: false, decodeEntities: true });
+	
+	const processNode = (node, parent = 'body') => {
+		const $node = $(node);
+		const tagName = node.name;
+
+		if (node.type === 'text') {
+			const text = $(node).text();
+			if (text.trim() && parent !== 'p') {
+				doc.fontSize(12).font('Helvetica').text(text, {
+					continued: true
+				});
+			}
+			return;
+		}
+
+		switch (tagName) {
+			case 'h1':
+				doc.fontSize(24).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'h2':
+				doc.fontSize(20).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'h3':
+				doc.fontSize(18).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'h4':
+				doc.fontSize(16).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'h5':
+				doc.fontSize(14).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'h6':
+				doc.fontSize(12).font('Helvetica-Bold').text($node.text().trim());
+				doc.moveDown(0.5);
+				break;
+
+			case 'p':
+				const text = $node.text().trim();
+				if (text) {
+					// Check for inline formatting
+					if ($node.find('strong, b, em, i, u').length > 0) {
+						processInlineFormatting($node, doc);
+					} else {
+						doc.fontSize(12).font('Helvetica').text(text, {
+							align: 'justify'
+						});
+					}
+					doc.moveDown(1);
+				}
+				break;
+
+			case 'ul':
+				$node.find('> li').each((i, li) => {
+					const itemText = $(li).text().trim();
+					if (itemText) {
+						doc.fontSize(12).font('Helvetica')
+							.text('• ' + itemText, {
+								indent: 20,
+								align: 'left'
+							});
+						doc.moveDown(0.3);
+					}
+				});
+				doc.moveDown(0.7);
+				break;
+
+			case 'ol':
+				$node.find('> li').each((i, li) => {
+					const itemText = $(li).text().trim();
+					if (itemText) {
+						doc.fontSize(12).font('Helvetica')
+							.text((i + 1) + '. ' + itemText, {
+								indent: 20,
+								align: 'left'
+							});
+						doc.moveDown(0.3);
+					}
+				});
+				doc.moveDown(0.7);
+				break;
+
+			case 'table':
+				processTable($node, doc, $);
+				doc.moveDown(1);
+				break;
+
+			case 'blockquote':
+				const quoteText = $node.text().trim();
+				if (quoteText) {
+					doc.fontSize(11).font('Helvetica-Oblique')
+						.fillColor('#666666')
+						.text(quoteText, {
+							indent: 30,
+							align: 'justify'
+						})
+						.fillColor('#333333');
+					doc.moveDown(1);
+				}
+				break;
+
+			case 'code':
+				const codeText = $node.text().trim();
+				if (codeText) {
+					doc.fontSize(10).font('Courier')
+						.fillColor('#000000')
+						.rect(doc.x, doc.y, doc.page.width - doc.x - 50, 20)
+						.fillAndStroke('#F5F5F5', '#DDDDDD')
+						.fillColor('#000000')
+						.text(codeText, {
+							indent: 5
+						});
+					doc.moveDown(0.5);
+				}
+				break;
+
+			case 'pre':
+				const preText = $node.text().trim();
+				if (preText) {
+					doc.fontSize(10).font('Courier')
+						.fillColor('#000000')
+						.text(preText, {
+							align: 'left'
+						});
+					doc.moveDown(1);
+				}
+				break;
+
+			case 'br':
+				doc.moveDown(0.5);
+				break;
+		}
+	};
+
+	const processInlineFormatting = ($node, doc) => {
+		$node.contents().each((i, child) => {
+			if (child.type === 'text') {
+				doc.fontSize(12).font('Helvetica').text($(child).text(), { continued: true });
+			} else {
+				const $child = $(child);
+				const tagName = child.name;
+				const text = $child.text();
+
+				switch (tagName) {
+					case 'strong':
+					case 'b':
+						doc.font('Helvetica-Bold').text(text, { continued: true });
+						doc.font('Helvetica');
+						break;
+					case 'em':
+					case 'i':
+						doc.font('Helvetica-Oblique').text(text, { continued: true });
+						doc.font('Helvetica');
+						break;
+					case 'u':
+						doc.underline().text(text, { continued: true });
+						doc.underline(false, {});
+						break;
+					case 'a':
+						doc.fillColor('#0066CC')
+							.underline()
+							.text(text, { continued: true, link: $child.attr('href') || '' })
+							.underline(false, {})
+							.fillColor('#333333');
+						break;
+					case 'code':
+						doc.font('Courier').text(text, { continued: true });
+						doc.font('Helvetica');
+						break;
+					default:
+						doc.text(text, { continued: true });
+						break;
+				}
+			}
+		});
+		doc.text(''); // End continued text
+	};
+
+	const processTable = ($table, doc, $) => {
+		const tableData = [];
+		let hasHeaders = false;
+
+		// Extract table data
+		$table.find('tr').each((i, tr) => {
+			const row = [];
+			$(tr).find('th, td').each((j, cell) => {
+				const $cell = $(cell);
+				row.push({
+					text: $cell.text().trim(),
+					isHeader: cell.name === 'th'
+				});
+				if (cell.name === 'th') hasHeaders = true;
+			});
+			if (row.length > 0) {
+				tableData.push(row);
+			}
+		});
+
+		if (tableData.length === 0) return;
+
+		// Calculate column widths
+		const numCols = tableData[0].length;
+		const tableWidth = doc.page.width - doc.x - 50;
+		const colWidth = tableWidth / numCols;
+
+		// Draw table
+		let currentY = doc.y;
+		const cellPadding = 5;
+		const rowHeight = 25;
+
+		tableData.forEach((row, rowIndex) => {
+			let currentX = doc.x;
+			
+			row.forEach((cell, cellIndex) => {
+				// Draw cell border
+				doc.rect(currentX, currentY, colWidth, rowHeight).stroke();
+				
+				// Draw cell background for headers
+				if (cell.isHeader) {
+					doc.rect(currentX, currentY, colWidth, rowHeight)
+						.fillAndStroke('#F2F2F2', '#DDDDDD');
+				}
+
+				// Draw cell text
+				doc.fontSize(10)
+					.font(cell.isHeader ? 'Helvetica-Bold' : 'Helvetica')
+					.fillColor('#000000')
+					.text(cell.text, currentX + cellPadding, currentY + cellPadding, {
+						width: colWidth - (cellPadding * 2),
+						height: rowHeight - (cellPadding * 2),
+						align: 'left'
+					});
+
+				currentX += colWidth;
+			});
+
+			currentY += rowHeight;
+			doc.y = currentY;
+		});
+	};
+
+	// Process all body elements
+	$('body').contents().each((i, node) => {
+		processNode(node);
+	});
 }
 
 try {
@@ -47,8 +310,12 @@ try {
 		doc.moveDown(2);
 	}
 
+	// Handle HTML content with priority
+	if (data.html_content) {
+		htmlToPdf(data.html_content, doc);
+	}
 	// Handle different content types.
-	if (data.sections && Array.isArray(data.sections)) {
+	else if (data.sections && Array.isArray(data.sections)) {
 		// Structured document with sections.
 		data.sections.forEach(section => {
 			if (section.heading) {

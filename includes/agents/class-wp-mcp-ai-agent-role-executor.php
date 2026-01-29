@@ -34,6 +34,27 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	protected $tool_registry;
 
 	/**
+	 * Tool failure tracking for circuit breaker pattern
+	 *
+	 * @var array
+	 */
+	protected $tool_failure_counts = array();
+
+	/**
+	 * Circuit breaker threshold
+	 *
+	 * @var int
+	 */
+	protected $circuit_breaker_threshold = 3;
+
+	/**
+	 * Cache for tool results
+	 *
+	 * @var array
+	 */
+	protected $tool_cache = array();
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -657,6 +678,12 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	/**
 	 * Execute a tool with proper context and error handling
 	 *
+	 * Industry best practices implementation (2026):
+	 * - Circuit breaker pattern for failure prevention
+	 * - Exponential backoff retry logic
+	 * - Tool result caching
+	 * - Structured logging with trace IDs
+	 *
 	 * @param string $tool_slug Tool identifier.
 	 * @param array  $arguments Tool arguments.
 	 * @param array  $context Execution context.
@@ -683,39 +710,260 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 			);
 		}
 
+		// Check circuit breaker before executing.
+		if ( ! $this->should_execute_tool( $tool_slug ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_circuit_breaker_open',
+				sprintf(
+					/* translators: %s: tool slug */
+					__( 'Circuit breaker is open for tool "%s" due to repeated failures. Temporarily blocking execution.', 'mcp-ai-wpoos' ),
+					$tool_slug
+				)
+			);
+		}
+
+		// Try to get cached result first (for cacheable tools).
+		$cached_result = $this->get_cached_tool_result( $tool_slug, $arguments );
+		if ( false !== $cached_result ) {
+			$this->log(
+				sprintf( 'Tool result served from cache: %s', $tool_slug ),
+				'debug',
+				array(
+					'tool'     => $tool_slug,
+					'trace_id' => $this->get_trace_id( $context ),
+				)
+			);
+			return $cached_result;
+		}
+
 		$this->log(
 			sprintf( 'Executing tool: %s', $tool_slug ),
 			'debug',
 			array(
 				'tool'      => $tool_slug,
 				'arguments' => $arguments,
+				'trace_id'  => $this->get_trace_id( $context ),
 			)
 		);
 
-		// Execute the tool.
-		$result = $this->tool_registry->execute_tool( $tool_slug, $arguments, $context );
+		// Execute with retry logic.
+		$result = $this->execute_with_retry( $tool_slug, $arguments, $context );
 
-		// Log result.
+		// Handle result.
 		if ( is_wp_error( $result ) ) {
+			$this->increment_tool_failure_count( $tool_slug );
 			$this->log(
 				sprintf( 'Tool execution failed: %s', $tool_slug ),
 				'error',
 				array(
-					'tool'  => $tool_slug,
-					'error' => $result->get_error_message(),
+					'tool'          => $tool_slug,
+					'error'         => $result->get_error_message(),
+					'failure_count' => $this->get_tool_failure_count( $tool_slug ),
+					'trace_id'      => $this->get_trace_id( $context ),
 				)
 			);
 		} else {
+			$this->reset_tool_failure_count( $tool_slug );
+			$this->cache_tool_result( $tool_slug, $arguments, $result );
 			$this->log(
 				sprintf( 'Tool execution succeeded: %s', $tool_slug ),
 				'debug',
 				array(
-					'tool'   => $tool_slug,
-					'result' => is_array( $result ) && isset( $result['message'] ) ? $result['message'] : 'Success',
+					'tool'     => $tool_slug,
+					'result'   => is_array( $result ) && isset( $result['message'] ) ? $result['message'] : 'Success',
+					'trace_id' => $this->get_trace_id( $context ),
 				)
 			);
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Check if tool should execute (circuit breaker pattern)
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @return bool True if tool should execute, false if circuit breaker is open.
+	 */
+	protected function should_execute_tool( $tool_slug ) {
+		$failure_count = $this->get_tool_failure_count( $tool_slug );
+
+		if ( $failure_count >= $this->circuit_breaker_threshold ) {
+			$this->log(
+				'Circuit breaker open for tool',
+				'warning',
+				array(
+					'tool'     => $tool_slug,
+					'failures' => $failure_count,
+				)
+			);
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Execute tool with exponential backoff retry
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context Execution context.
+	 * @param int    $max_retries Maximum retry attempts.
+	 * @return array|WP_Error Tool execution result or error.
+	 */
+	protected function execute_with_retry( $tool_slug, $arguments, $context, $max_retries = 3 ) {
+		$attempt = 0;
+		$delay   = 1; // seconds.
+
+		while ( $attempt < $max_retries ) {
+			$result = $this->tool_registry->execute_tool( $tool_slug, $arguments, $context );
+
+			if ( ! is_wp_error( $result ) ) {
+				if ( $attempt > 0 ) {
+					$this->log(
+						sprintf( 'Tool succeeded after %d retries', $attempt ),
+						'info',
+						array(
+							'tool'     => $tool_slug,
+							'attempts' => $attempt + 1,
+							'trace_id' => $this->get_trace_id( $context ),
+						)
+					);
+				}
+				return $result;
+			}
+
+			++$attempt;
+			if ( $attempt < $max_retries ) {
+				$this->log(
+					sprintf( 'Tool execution failed, retrying in %d seconds (attempt %d/%d)', $delay, $attempt + 1, $max_retries ),
+					'warning',
+					array(
+						'tool'     => $tool_slug,
+						'error'    => $result->get_error_message(),
+						'attempt'  => $attempt,
+						'trace_id' => $this->get_trace_id( $context ),
+					)
+				);
+				sleep( $delay );
+				$delay *= 2; // Exponential backoff.
+			}
+		}
+
+		return new WP_Error(
+			'wp_mcp_ai_tool_execution_failed_after_retries',
+			sprintf(
+				/* translators: 1: tool slug, 2: number of retries */
+				__( 'Tool "%1$s" execution failed after %2$d retry attempts.', 'mcp-ai-wpoos' ),
+				$tool_slug,
+				$max_retries
+			)
+		);
+	}
+
+	/**
+	 * Get tool failure count
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @return int Failure count.
+	 */
+	protected function get_tool_failure_count( $tool_slug ) {
+		return isset( $this->tool_failure_counts[ $tool_slug ] ) ? $this->tool_failure_counts[ $tool_slug ] : 0;
+	}
+
+	/**
+	 * Increment tool failure count
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 */
+	protected function increment_tool_failure_count( $tool_slug ) {
+		if ( ! isset( $this->tool_failure_counts[ $tool_slug ] ) ) {
+			$this->tool_failure_counts[ $tool_slug ] = 0;
+		}
+		++$this->tool_failure_counts[ $tool_slug ];
+	}
+
+	/**
+	 * Reset tool failure count
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 */
+	protected function reset_tool_failure_count( $tool_slug ) {
+		$this->tool_failure_counts[ $tool_slug ] = 0;
+	}
+
+	/**
+	 * Get cached tool result
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @return mixed|false Cached result or false if not found.
+	 */
+	protected function get_cached_tool_result( $tool_slug, $arguments ) {
+		$cache_key = $this->get_tool_cache_key( $tool_slug, $arguments );
+		return isset( $this->tool_cache[ $cache_key ] ) ? $this->tool_cache[ $cache_key ] : false;
+	}
+
+	/**
+	 * Cache tool result
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @param mixed  $result Tool result.
+	 */
+	protected function cache_tool_result( $tool_slug, $arguments, $result ) {
+		// Only cache successful, non-error results.
+		if ( is_wp_error( $result ) ) {
+			return;
+		}
+
+		// Check if tool is cacheable.
+		if ( ! $this->is_tool_cacheable( $tool_slug ) ) {
+			return;
+		}
+
+		$cache_key                       = $this->get_tool_cache_key( $tool_slug, $arguments );
+		$this->tool_cache[ $cache_key ] = $result;
+	}
+
+	/**
+	 * Check if tool results are cacheable
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @return bool True if cacheable, false otherwise.
+	 */
+	protected function is_tool_cacheable( $tool_slug ) {
+		// Tools that are safe to cache (read-only, deterministic).
+		$cacheable_tools = array(
+			'get_recent_posts',
+			'search_content',
+			'get_post',
+			'list_categories',
+			'get_user_info',
+		);
+
+		return in_array( $tool_slug, $cacheable_tools, true );
+	}
+
+	/**
+	 * Generate cache key for tool execution
+	 *
+	 * @param string $tool_slug Tool identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @return string Cache key.
+	 */
+	protected function get_tool_cache_key( $tool_slug, $arguments ) {
+		return md5( $tool_slug . wp_json_encode( $arguments ) );
+	}
+
+	/**
+	 * Get trace ID from context
+	 *
+	 * @param array $context Execution context.
+	 * @return string Trace ID.
+	 */
+	protected function get_trace_id( $context ) {
+		return isset( $context['trace_id'] ) ? $context['trace_id'] : uniqid( 'trace_', true );
 	}
 }

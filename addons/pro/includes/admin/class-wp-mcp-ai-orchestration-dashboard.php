@@ -25,6 +25,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_dashboard_data', array( $this, 'ajax_get_dashboard_data' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_control_session', array( $this, 'ajax_control_session' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_trigger_workflow', array( $this, 'ajax_trigger_workflow' ) );
 	}
 
 	/**
@@ -32,11 +33,11 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	public function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai-dashboard',
-			__( 'Orchestration Dashboard', 'mcp-ai-wpoos-pro' ),
-			__( 'Orchestration', 'mcp-ai-wpoos-pro' ),
+			'nvoos-pro-dashboard',
+			__( 'Real-Time Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ),
+			__( 'Orchestration Monitor', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
-			'mcp-ai-orchestration',
+			'mcp-ai-orchestration-pro',
 			array( $this, 'render_dashboard' )
 		);
 	}
@@ -47,7 +48,14 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_assets( $hook ) {
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook ) {
+		// Check for orchestration page.
+		// Hook format: 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro'
+		// Also check via $_GET for additional safety.
+		$is_orchestration_page = ( 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro' === $hook ) ||
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
+			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
+
+		if ( ! $is_orchestration_page ) {
 			return;
 		}
 
@@ -86,12 +94,18 @@ class WP_MCP_AI_Orchestration_Dashboard {
 				'nonce'           => wp_create_nonce( 'wp_mcp_ai_orchestration' ),
 				'refreshInterval' => 5000, // 5 seconds.
 				'strings'         => array(
-					'loading'       => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
-					'error'         => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
-					'noSessions'    => __( 'No active sessions', 'mcp-ai-wpoos-pro' ),
-					'pauseSession'  => __( 'Pause', 'mcp-ai-wpoos-pro' ),
-					'resumeSession' => __( 'Resume', 'mcp-ai-wpoos-pro' ),
-					'stopSession'   => __( 'Stop', 'mcp-ai-wpoos-pro' ),
+					'loading'         => __( 'Loading...', 'mcp-ai-wpoos-pro' ),
+					'error'           => __( 'Error loading data', 'mcp-ai-wpoos-pro' ),
+					'noSessions'      => __( 'No active sessions', 'mcp-ai-wpoos-pro' ),
+					'noWorkflows'     => __( 'No workflows found', 'mcp-ai-wpoos-pro' ),
+					'pauseSession'    => __( 'Pause', 'mcp-ai-wpoos-pro' ),
+					'resumeSession'   => __( 'Resume', 'mcp-ai-wpoos-pro' ),
+					'stopSession'     => __( 'Stop', 'mcp-ai-wpoos-pro' ),
+					'startWorkflow'   => __( 'Start Workflow', 'mcp-ai-wpoos-pro' ),
+					'viewWorkflow'    => __( 'View Details', 'mcp-ai-wpoos-pro' ),
+					'confirmStart'    => __( 'Are you sure you want to start this workflow?', 'mcp-ai-wpoos-pro' ),
+					'workflowStarted' => __( 'Workflow started successfully', 'mcp-ai-wpoos-pro' ),
+					'workflowError'   => __( 'Error starting workflow', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -103,9 +117,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	public function render_dashboard() {
 		?>
 		<div class="wrap wp-mcp-ai-orchestration-dashboard">
-			<h1><?php esc_html_e( 'Autonomous Orchestration Dashboard', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Orchestration Monitor (Pro)', 'mcp-ai-wpoos-pro' ); ?></h1>
 			<p class="description">
-				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with Ralph Wiggum patterns.', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Real-time monitoring and management of autonomous AI sessions with advanced analytics.', 'mcp-ai-wpoos-pro' ); ?>
 			</p>
 
 			<!-- Overview Cards -->
@@ -189,6 +203,35 @@ class WP_MCP_AI_Orchestration_Dashboard {
 				</div>
 			</div>
 
+			<!-- Team Workflows Table -->
+			<div class="orchestration-section">
+				<h2><?php esc_html_e( 'Team Workflows', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Monitor and manage multi-agent team workflows. Workflows in "initialized" state can be manually triggered if needed.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<div class="workflows-table-wrapper">
+					<table class="wp-list-table widefat fixed striped" id="workflows-table">
+						<thead>
+							<tr>
+								<th><?php esc_html_e( 'Workflow ID', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Team ID', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Task Type', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'State', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Age', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Tasks', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Created', 'mcp-ai-wpoos-pro' ); ?></th>
+								<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
+							</tr>
+						</thead>
+						<tbody id="workflows-table-body">
+							<tr class="no-items">
+								<td colspan="8"><?php esc_html_e( 'Loading workflows...', 'mcp-ai-wpoos-pro' ); ?></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+
 			<!-- Recent Activity -->
 			<div class="orchestration-section">
 				<h2><?php esc_html_e( 'Recent Activity', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -224,6 +267,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			'overview'  => $this->get_overview_metrics(),
 			'capacity'  => $this->get_capacity_metrics(),
 			'sessions'  => $this->get_active_sessions(),
+			'workflows' => $this->get_team_workflows(),
 			'activity'  => $this->get_recent_activity(),
 			'timestamp' => time(),
 		);
@@ -354,6 +398,113 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Get team workflows
+	 *
+	 * @return array
+	 */
+	private function get_team_workflows() {
+		global $wpdb;
+
+		$workflows = array();
+
+		// Get workflow transients.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value FROM {$wpdb->options}
+				WHERE option_name LIKE %s
+				AND option_name LIKE %s
+				ORDER BY option_id DESC
+				LIMIT 50",
+				'%transient%',
+				'%wp_mcp_ai_workflow_%'
+			)
+		);
+
+		foreach ( $transients as $transient ) {
+			// Skip timeout entries.
+			if ( strpos( $transient->option_name, '_transient_timeout_' ) !== false ) {
+				continue;
+			}
+
+			$workflow_data = maybe_unserialize( $transient->option_value );
+
+			if ( ! is_array( $workflow_data ) || ! isset( $workflow_data['workflow_id'] ) ) {
+				continue;
+			}
+
+			$created_time = isset( $workflow_data['created_at'] ) ? strtotime( $workflow_data['created_at'] ) : 0;
+			$age_seconds  = time() - $created_time;
+			$age_minutes  = round( $age_seconds / 60, 1 );
+
+			// Calculate task progress.
+			$tasks_total = isset( $workflow_data['tasks'] ) ? count( $workflow_data['tasks'] ) : 0;
+			$tasks_done  = 0;
+			if ( isset( $workflow_data['tasks'] ) && is_array( $workflow_data['tasks'] ) ) {
+				foreach ( $workflow_data['tasks'] as $task ) {
+					if ( isset( $task['status'] ) && 'completed' === $task['status'] ) {
+						++$tasks_done;
+					}
+				}
+			}
+
+			// Determine if workflow is stale.
+			$is_stale = false;
+			if ( 'initialized' === $workflow_data['state'] && $age_seconds > 300 ) {
+				$is_stale = true;
+			}
+
+			$workflows[] = array(
+				'workflow_id'  => $workflow_data['workflow_id'],
+				'team_id'      => $workflow_data['team_id'] ?? 'N/A',
+				'task_type'    => $workflow_data['task_type'] ?? 'generic',
+				'state'        => $workflow_data['state'],
+				'age_seconds'  => $age_seconds,
+				'age_minutes'  => $age_minutes,
+				'age_display'  => $this->format_age( $age_seconds ),
+				'tasks_total'  => $tasks_total,
+				'tasks_done'   => $tasks_done,
+				'created_at'   => $workflow_data['created_at'] ?? 'N/A',
+				'started_at'   => $workflow_data['started_at'] ?? null,
+				'completed_at' => $workflow_data['completed_at'] ?? null,
+				'is_stale'     => $is_stale,
+			);
+		}
+
+		return $workflows;
+	}
+
+	/**
+	 * Format age in human-readable form
+	 *
+	 * @param int $seconds Age in seconds.
+	 * @return string Formatted age.
+	 */
+	private function format_age( $seconds ) {
+		if ( $seconds < 60 ) {
+			return sprintf(
+				/* translators: %d: number of seconds */
+				_n( '%d second', '%d seconds', $seconds, 'mcp-ai-wpoos-pro' ),
+				$seconds
+			);
+		} elseif ( $seconds < 3600 ) {
+			$minutes = floor( $seconds / 60 );
+			return sprintf(
+				/* translators: %d: number of minutes */
+				_n( '%d minute', '%d minutes', $minutes, 'mcp-ai-wpoos-pro' ),
+				$minutes
+			);
+		} else {
+			$hours = floor( $seconds / 3600 );
+			return sprintf(
+				/* translators: %d: number of hours */
+				_n( '%d hour', '%d hours', $hours, 'mcp-ai-wpoos-pro' ),
+				$hours
+			);
+		}
+	}
+
+	/**
 	 * Get recent activity
 	 *
 	 * @return array
@@ -410,6 +561,63 @@ class WP_MCP_AI_Orchestration_Dashboard {
 				'session' => $session_data,
 			)
 		);
+	}
+
+	/**
+	 * AJAX: Trigger workflow execution
+	 */
+	public function ajax_trigger_workflow() {
+		check_ajax_referer( 'wp_mcp_ai_orchestration', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$workflow_id = isset( $_POST['workflow_id'] ) ? sanitize_text_field( wp_unslash( $_POST['workflow_id'] ) ) : '';
+
+		if ( empty( $workflow_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid workflow ID', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		// Check if Enhanced Workflow Coordinator is available.
+		if ( ! class_exists( 'WP_MCP_AI_Enhanced_Workflow_Coordinator' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Workflow coordinator not available', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		try {
+			$coordinator = new WP_MCP_AI_Enhanced_Workflow_Coordinator();
+
+			// Execute the workflow.
+			$result = $coordinator->execute_workflow( $workflow_id );
+
+			if ( is_wp_error( $result ) ) {
+				wp_send_json_error(
+					array(
+						'message' => $result->get_error_message(),
+						'code'    => $result->get_error_code(),
+					)
+				);
+			}
+
+			wp_send_json_success(
+				array(
+					'message'     => __( 'Workflow started successfully', 'mcp-ai-wpoos-pro' ),
+					'workflow_id' => $workflow_id,
+					'result'      => $result,
+				)
+			);
+
+		} catch ( Exception $e ) {
+			wp_send_json_error(
+				array(
+					'message' => sprintf(
+						/* translators: %s: error message */
+						__( 'Error starting workflow: %s', 'mcp-ai-wpoos-pro' ),
+						$e->getMessage()
+					),
+				)
+			);
+		}
 	}
 }
 

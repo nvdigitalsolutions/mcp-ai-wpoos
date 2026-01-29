@@ -233,7 +233,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 												absint( $expertise_count )
 											);
 										} else {
-											echo '—';
+											echo '—'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
 										}
 										?>
 									</td>
@@ -246,7 +246,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Profession' ) ) {
 												absint( $tools_count )
 											);
 										} else {
-											echo '—';
+											echo '—'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static em dash character.
 										}
 										?>
 									</td>

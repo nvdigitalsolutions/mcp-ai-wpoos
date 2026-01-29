@@ -149,6 +149,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 		if ( ! empty( $description ) ) {
 			$description_output = $this->format_text_block( $description );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $description_output ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-user-capabilities__description">' . $description_output . '</div>';
@@ -285,6 +286,7 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 			$jetengine_summary = $this->format_text_block( $jetengine_details['summary'] );
 		}
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 		if ( '' !== $jetengine_summary ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 			echo '<div class="wp-mcp-ai-user-capabilities__section-body">' . $jetengine_summary . '</div>';
@@ -537,7 +539,6 @@ class WP_MCP_AI_Elementor_Dashboard_User_Capability_Widget extends \Elementor\Wi
 
 		foreach ( $blogs as $blog ) {
 			$name = isset( $blog->blogname ) ? $blog->blogname : ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
-			$url  = isset( $blog->siteurl ) ? $blog->siteurl : ''; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.PropertyNotSnakeCase
 
 			if ( '' === $name && '' === $url ) {
 				continue;

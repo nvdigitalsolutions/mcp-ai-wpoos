@@ -50,11 +50,14 @@ Unlike simple chatbot plugins, oOS is a complete **AI orchestration system** des
 * Automatic provider fallback for maximum uptime
 
 **Built-in Tools:**
-* **Content Tools** - Search posts, save drafts, manage attachments
-* **Media Generation** - AI images, text-to-speech
-* **Research Tools** - Web search, weather, disaster alerts
-* **Site Operations** - Cache management, cron jobs, health checks
-* **Analytics** - Token usage tracking, cost attribution
+* **Content Tools** - Search posts, save drafts, manage attachments (15+ tools)
+* **Media Generation** - AI images (OpenAI, Gemini, Cloudflare), text-to-speech, vectorization, graphic editing (10+ tools)
+* **Research Tools** - Web search, weather, disaster alerts, Crawl4AI integration (8+ tools)
+* **Site Operations** - Cache management, cron jobs, health checks, WP-CLI integration (12+ tools)
+* **Analytics** - Token usage tracking, cost attribution, social media analytics (9+ tools)
+* **Social Media** - Publishing, insights, and analytics across Facebook, Instagram, Twitter, LinkedIn, YouTube, TikTok (19 Pro tools)
+* **E-commerce** - WooCommerce integration, product management, order processing (20 Pro tools)
+* **Multi-Agent Orchestration** - DeepSeek V4-inspired agent coordination with 3 specialized tools (NEW January 2026)
 
 **Chat Interface**
 * Modern, responsive chat UI
@@ -231,11 +234,46 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 1. **Assistant Editor** - Configure AI assistants with custom system prompts, model settings, and tool selection
 2. **Chat Interface** - Modern, responsive chat UI with file attachments and streaming responses
 3. **Settings Dashboard** - Configure API keys, default models, and plugin settings
-4. **Tool Registry** - 74+ built-in tools for content, media, research, and operations
+4. **Tool Registry** - 127+ base tools, 70 Pro tools (197 total) for content, media, research, and operations
 5. **Profession Templates** - 182 pre-built profession templates for quick assistant creation
 6. **MCP Server** - Connect Claude Desktop, LM Studio, and other MCP clients
 
 == Changelog ==
+
+= 1.1.0 - January 2026 =
+
+**New Features**
+
+* **DeepSeek V4 Multi-Agent Orchestration** - Comprehensive multi-agent coordination framework with 4 specialized agent roles (Planner, Executor, Critic, Specialist)
+* **Agent Team Orchestrator** - Manages team composition and coordinated workflow execution with 5 aggregation strategies
+* **3 New Agent Coordination Tools** - create_agent_team, delegate_to_agent, aggregate_agent_results
+* **Social Media Analytics Toolkit** - Added 4 new analytics tools:
+  * Get Cross-Platform Analytics - Unified metrics dashboard across Facebook, Instagram, Twitter, LinkedIn, YouTube
+  * Track Hashtag Performance - Hashtag analysis with reach and engagement tracking
+  * Competitor Analysis - Monitor and benchmark competitor social media metrics
+  * Influencer Identification - Discover brand influencers based on reach and engagement criteria
+* **Pro Toolkit Memory-Based Tracking** - Replaced hard 5-toolkit limit with transparent memory usage display
+* **Cloudflare Image Models** - Added support for Flux-2 Dev, Leonardo Lucid Origin, and Phoenix 1.0 models
+* **200+ Profession Orchestration** - Intelligent agent role assignment via WP-CLI commands
+
+**Bug Fixes**
+
+* Fixed tool settings not persisting on Token Manager page (triple-sanitization issue)
+* Fixed provider API keys being cleared on admin tab navigation (double-sanitization issue)
+* Fixed team chat transcript recording for unified team and member chats
+* Fixed "Apply Preset" button on Token Manager page
+* Fixed HuggingFace Qwen3-Coder token limit errors
+* Fixed Gmail OAuth redirect_uri_mismatch errors
+* Fixed model dropdown when both base and Pro plugins are active
+
+**Improvements**
+
+* Pro Toolkit Infrastructure Phase 3 complete - All 11 toolkit settings pages implemented
+* Social Media toolkit now includes 19 tools (15 publishing/insights + 4 new analytics)
+* Multi-agent functionality: Up to 5 concurrent specialized agents (one per active toolkit)
+* Documentation consolidation - Menu fixes consolidated, organized subdirectories
+* Created 6 detailed fix documentation files
+* Production-ready settings management with comprehensive backup and validation
 
 = 1.0.0 =
 
@@ -258,6 +296,9 @@ For more details, see our [CONTRIBUTING.md](https://github.com/nvdigitalsolution
 This plugin has been in active development since October 2024. See the complete [CHANGELOG.md](https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/CHANGELOG.md) for detailed development history.
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Major update with DeepSeek V4 multi-agent orchestration, 4 new Social Media Analytics tools, memory-based toolkit tracking, and 7 critical bug fixes. Recommended for all users.
 
 = 1.0.0 =
 Initial release. Welcome to Open Operator System!

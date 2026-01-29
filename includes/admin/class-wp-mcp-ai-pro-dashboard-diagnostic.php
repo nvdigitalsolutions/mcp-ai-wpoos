@@ -227,11 +227,11 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Diagnostic' ) ) {
 								<td style="text-align: center;">
 									<?php
 									if ( 'pass' === $test['status'] ) {
-										echo '<span style="color: #46b450; font-size: 20px;">✓</span>';
+										echo '<span style="color: #46b450; font-size: 20px;">✓</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML badge.
 									} elseif ( 'fail' === $test['status'] ) {
-										echo '<span style="color: #dc3232; font-size: 20px;">✗</span>';
+										echo '<span style="color: #dc3232; font-size: 20px;">✗</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML badge.
 									} else {
-										echo '<span style="color: #ffb900; font-size: 20px;">⚠</span>';
+										echo '<span style="color: #ffb900; font-size: 20px;">⚠</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML badge.
 									}
 									?>
 								</td>
@@ -277,6 +277,9 @@ Pro Dashboard initialization complete
 				</p>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for pro dashboard diagnostic layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-pro-dashboard-diagnostic h2 {
 					margin-top: 30px;

@@ -152,7 +152,6 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<h3 class="wp-mcp-ai-assistant-tools__title">' . $title_output . '</h3>';
 			}
 		}
@@ -258,6 +257,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 		$printed = true;
 
 		ob_start();
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor assistant tools widget layout and styling
 		?>
 <style>
 .wp-mcp-ai-assistant-tools__copy-button {
@@ -409,6 +409,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		// Fallback for older WordPress versions.
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript output is static content above.
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor assistant tools widget functionality with dynamic data
 		echo '<script>' . $script . '</script>';
 	}
 

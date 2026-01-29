@@ -184,6 +184,7 @@ class WP_MCP_AI_Elementor_Chat_Intro_Widget extends \Elementor\Widget_Base {
 		if ( ! empty( $description ) ) {
 			$description_output = $this->format_text_block( $description );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $description_output ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 				echo '<div class="wp-mcp-ai-chat-intro__description">' . $description_output . '</div>';

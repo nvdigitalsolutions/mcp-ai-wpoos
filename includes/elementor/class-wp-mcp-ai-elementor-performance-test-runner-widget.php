@@ -200,6 +200,7 @@ class WP_MCP_AI_Elementor_Performance_Test_Runner_Widget extends \Elementor\Widg
 	 * Enqueue the test runner JavaScript.
 	 */
 	protected function enqueue_test_runner_script() {
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
 		?>
 		<script>
 		(function($) {

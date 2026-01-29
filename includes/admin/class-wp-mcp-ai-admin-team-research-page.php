@@ -225,6 +225,7 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 								<?php
 								// Render chat interface with team-related tools.
 								// Includes search, web research, and content management tools.
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Shortcode output is already escaped.
 								echo do_shortcode(
 									'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="search_content,web_search,list_tools,create_agent_team"]'
 								);

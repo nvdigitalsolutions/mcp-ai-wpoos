@@ -333,7 +333,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Plugins_Integration' ) ) {
 
 			foreach ( $fields as $key => $field ) {
 				if ( 'html' === $field['type'] ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in helper methods.
 					echo $field['content'];
 				} else {
 					$this->render_field( $key, $field );

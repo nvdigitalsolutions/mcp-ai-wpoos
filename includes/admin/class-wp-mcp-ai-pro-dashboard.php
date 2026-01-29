@@ -1511,7 +1511,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					</div>
 				</div>
 			</div>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-framework-detail-tabs {
 					border-bottom: 1px solid #ddd;
@@ -1533,7 +1535,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					display: block;
 				}
 			</style>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				// Framework detail tabs
@@ -2301,6 +2305,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				</p>
 				<?php
 			endif;
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
 			?>
 			<style>
 				.wp-mcp-ai-chat-statistics-section {
@@ -2557,7 +2562,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-controls-filter {
 					margin-bottom: 20px;
@@ -2604,7 +2611,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					color: #383d41;
 				}
 			</style>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				// Filter controls
@@ -2916,7 +2925,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 				<span class="risk-badge risk-high"><?php esc_html_e( 'High', 'mcp-ai-wpoos' ); ?></span>
 				<span class="risk-badge risk-critical"><?php esc_html_e( 'Critical', 'mcp-ai-wpoos' ); ?></span>
 			</div>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for dashboard widget layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-risk-matrix-table {
 					width: 100%;
@@ -3327,7 +3338,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard' ) ) {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for dashboard chart initialization with dynamic data
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				var framework = '<?php echo esc_js( $framework ); ?>';

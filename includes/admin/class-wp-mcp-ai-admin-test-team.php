@@ -262,10 +262,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 												if ( count( $member_names ) > 3 ) {
 													echo ', ' . esc_html( sprintf( __( 'and %d more', 'mcp-ai-wpoos' ), count( $member_names ) - 3 ) );
 												}
-												echo '</small>';
+												echo '</small>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 											}
 										} else {
-											echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>';
+											echo '<span class="description">' . esc_html__( 'No members', 'mcp-ai-wpoos' ) . '</span>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 										}
 										?>
 									</td>

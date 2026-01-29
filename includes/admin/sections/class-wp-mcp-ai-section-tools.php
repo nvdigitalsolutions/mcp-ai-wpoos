@@ -959,6 +959,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</p>
 					</div>
 
+WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+					?>
 					<style>
 						.toolkit-limit-good { color: #00a32a; }
 						.toolkit-limit-warning { color: #dba617; }
@@ -968,7 +972,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
 						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
 					</style>
-
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+					?>
 					<script>
 					jQuery(document).ready(function($) {
 						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ) ?: '{}'; ?>;
@@ -1722,6 +1728,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render JavaScript for media library selection.
 		 */
 		protected function render_elementor_kit_import_script() {
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
 			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
@@ -1932,7 +1939,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php endif; ?>
 						</div>
 					</div>
-
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+					?>
 					<script>
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {

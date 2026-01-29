@@ -88,14 +88,15 @@ if ( $has_analytics ) {
 			</div>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js analytics trend visualization with dynamic data
+		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-analytics-trend-chart');
 				if (ctx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var dailyUsage = <?php echo wp_json_encode( $trend_data['daily_usage'] ); ?>;
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var trendInfo = <?php echo wp_json_encode( $trend_data['trend'] ); ?>;
 
 					// Prepare data points for chart.

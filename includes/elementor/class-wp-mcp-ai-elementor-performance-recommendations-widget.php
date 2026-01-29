@@ -293,6 +293,7 @@ class WP_MCP_AI_Elementor_Performance_Recommendations_Widget extends \Elementor\
 	 * Enqueue action button script.
 	 */
 	protected function enqueue_action_script() {
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
 		?>
 		<script>
 		(function($) {

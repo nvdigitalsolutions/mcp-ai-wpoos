@@ -195,8 +195,10 @@ if ( function_exists( 'get_block_wrapper_attributes' ) && isset( $block ) && is_
 
 	<div class="wp-block-mcp-ai-wpoos-tools-grid__groups">
 		<?php foreach ( $groups as $group ) : ?>
-			<?php $open_attr = $start_collapsed ? '' : ' open'; ?>
-			<details class="wp-block-mcp-ai-wpoos-tools-grid__group"<?php echo esc_attr( $open_attr ); ?>>
+			<?php
+			$open_attr = $start_collapsed ? '' : ' open';
+			?>
+			<details class="wp-block-mcp-ai-wpoos-tools-grid__group"<?php echo $open_attr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML structure. ?>>
 				<summary>
 					<span class="wp-block-mcp-ai-wpoos-tools-grid__group-title"><?php echo esc_html( $group['label'] ); ?></span>
 					<span class="wp-block-mcp-ai-wpoos-tools-grid__group-count">

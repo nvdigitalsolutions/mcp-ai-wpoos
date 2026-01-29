@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 109 tools with base features and Pro add-on (WooCommerce, social media, GitHub, Google services, FFmpeg, WP-CLI, and more).
+ * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 197 tools total (127 base + 70 Pro) with base features and Pro add-on (WooCommerce, social media analytics, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -483,6 +483,10 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php' 
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 }
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
+
+// Load WordPress integration enhancements (Privacy API and Site Health).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-site-health.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
 
@@ -1109,6 +1113,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Initialize Gutenberg blocks for AI Assistant Builder.
 			if ( class_exists( 'WP_MCP_AI_Assistant_Builder_Blocks' ) ) {
 				WP_MCP_AI_Assistant_Builder_Blocks::init();
+			}
+
+			// Initialize WordPress integration enhancements (Privacy API and Site Health).
+			if ( class_exists( 'WP_MCP_AI_Privacy' ) ) {
+				new WP_MCP_AI_Privacy();
+			}
+			if ( class_exists( 'WP_MCP_AI_Site_Health' ) ) {
+				new WP_MCP_AI_Site_Health();
 			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
