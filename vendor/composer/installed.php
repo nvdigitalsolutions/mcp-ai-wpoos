@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-site-creator-menu-item',
+        'version' => 'dev-copilot/add-site-creator-menu-item',
+        'reference' => '6183f84d7baa4cf0d4182d83a17350d3eca64d9b',
         'pretty_version' => 'dev-copilot/fix-asset-url-generation',
         'version' => 'dev-copilot/fix-asset-url-generation',
         'reference' => '4ce36eb032ed867b53d6ad074b9b212d1644baa5',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-site-creator-menu-item',
+            'version' => 'dev-copilot/add-site-creator-menu-item',
+            'reference' => '6183f84d7baa4cf0d4182d83a17350d3eca64d9b',
             'pretty_version' => 'dev-copilot/fix-asset-url-generation',
             'version' => 'dev-copilot/fix-asset-url-generation',
             'reference' => '4ce36eb032ed867b53d6ad074b9b212d1644baa5',
