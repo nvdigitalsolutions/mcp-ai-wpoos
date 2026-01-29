@@ -47,43 +47,43 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Media Library Optimizer', 'wp-mcp-ai' ),
-			'description'          => __( 'Bulk image compression, AVIF/WebP conversion, lazy loading, unused media detection, and CDN preparation following 2026 standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Media Library Optimizer', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Bulk image compression, AVIF/WebP conversion, lazy loading, unused media detection, and CDN preparation following 2026 standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'media',
 			'required_capability'  => 'upload_files',
 			'parameters'           => array(
 				'action'           => array(
 					'type'        => 'string',
-					'description' => __( 'Action: analyze, compress, convert, detect_unused, or configure_lazy_loading', 'wp-mcp-ai' ),
+					'description' => __( 'Action: analyze, compress, convert, detect_unused, or configure_lazy_loading', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'analyze', 'compress', 'convert', 'detect_unused', 'configure_lazy_loading' ),
 				),
 				'target_format'    => array(
 					'type'        => 'string',
-					'description' => __( 'Target format for conversion: avif, webp, or auto', 'wp-mcp-ai' ),
+					'description' => __( 'Target format for conversion: avif, webp, or auto', 'mcp-ai-wpoos' ),
 					'default'     => 'auto',
 					'enum'        => array( 'avif', 'webp', 'auto' ),
 				),
 				'quality'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Compression quality (1-100, default: 85)', 'wp-mcp-ai' ),
+					'description' => __( 'Compression quality (1-100, default: 85)', 'mcp-ai-wpoos' ),
 					'default'     => 85,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'limit'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of images to process (default: 50)', 'wp-mcp-ai' ),
+					'description' => __( 'Number of images to process (default: 50)', 'mcp-ai-wpoos' ),
 					'default'     => 50,
 				),
 				'age_days'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Age in days for unused media detection (default: 180)', 'wp-mcp-ai' ),
+					'description' => __( 'Age in days for unused media detection (default: 180)', 'mcp-ai-wpoos' ),
 					'default'     => 180,
 				),
 				'preserve_original' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Keep original files when converting', 'wp-mcp-ai' ),
+					'description' => __( 'Keep original files when converting', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -138,7 +138,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -205,7 +205,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'size'        => $file_size,
 					'size_human'  => size_format( $file_size ),
 					'format'      => $format,
-					'reason'      => __( 'Large file size', 'wp-mcp-ai' ),
+					'reason'      => __( 'Large file size', 'mcp-ai-wpoos' ),
 					'recommended' => $format === 'png' ? 'avif' : 'webp',
 				);
 			}
@@ -472,9 +472,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			'potential_savings'    => size_format( $total_size ),
 			'unused_media'         => array_slice( $unused, 0, 100 ), // First 100.
 			'recommendations'      => array(
-				__( 'Review unused media before deletion', 'wp-mcp-ai' ),
-				__( 'Consider backup before bulk deletion', 'wp-mcp-ai' ),
-				__( 'Some media may be used in widgets or theme templates', 'wp-mcp-ai' ),
+				__( 'Review unused media before deletion', 'mcp-ai-wpoos' ),
+				__( 'Consider backup before bulk deletion', 'mcp-ai-wpoos' ),
+				__( 'Some media may be used in widgets or theme templates', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -493,13 +493,13 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			'success'               => true,
 			'wordpress_native'      => $wp_lazy_loading,
 			'status'                => $wp_lazy_loading
-				? __( 'WordPress native lazy loading is enabled', 'wp-mcp-ai' )
-				: __( 'Consider upgrading WordPress for native lazy loading', 'wp-mcp-ai' ),
+				? __( 'WordPress native lazy loading is enabled', 'mcp-ai-wpoos' )
+				: __( 'Consider upgrading WordPress for native lazy loading', 'mcp-ai-wpoos' ),
 			'recommendations'       => array(
-				__( 'WordPress 5.5+ includes native lazy loading', 'wp-mcp-ai' ),
-				__( 'Add loading="lazy" attribute to images automatically', 'wp-mcp-ai' ),
-				__( 'Consider plugins like Lazy Load by WP Rocket for advanced features', 'wp-mcp-ai' ),
-				__( 'Test Core Web Vitals after enabling', 'wp-mcp-ai' ),
+				__( 'WordPress 5.5+ includes native lazy loading', 'mcp-ai-wpoos' ),
+				__( 'Add loading="lazy" attribute to images automatically', 'mcp-ai-wpoos' ),
+				__( 'Consider plugins like Lazy Load by WP Rocket for advanced features', 'mcp-ai-wpoos' ),
+				__( 'Test Core Web Vitals after enabling', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -634,24 +634,24 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$recommendations = array();
 
 		if ( $format_counts['png'] > $total_images * 0.3 ) {
-			$recommendations[] = __( 'High PNG usage detected. Consider converting to AVIF for 85% size reduction.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'High PNG usage detected. Consider converting to AVIF for 85% size reduction.', 'mcp-ai-wpoos' );
 		}
 
 		if ( $format_counts['jpeg'] > $total_images * 0.5 ) {
-			$recommendations[] = __( 'Many JPEG images detected. WebP conversion can save ~30% file size.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Many JPEG images detected. WebP conversion can save ~30% file size.', 'mcp-ai-wpoos' );
 		}
 
 		if ( $format_counts['gif'] > 0 ) {
-			$recommendations[] = __( 'GIF images detected. Consider converting to video formats (MP4, WebM) for animations.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'GIF images detected. Consider converting to video formats (MP4, WebM) for animations.', 'mcp-ai-wpoos' );
 		}
 
 		if ( $format_counts['avif'] === 0 && $format_counts['webp'] === 0 ) {
-			$recommendations[] = __( 'No modern formats detected. AVIF/WebP conversion highly recommended.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'No modern formats detected. AVIF/WebP conversion highly recommended.', 'mcp-ai-wpoos' );
 		}
 
-		$recommendations[] = __( 'Enable lazy loading for images below the fold (WordPress 5.5+).', 'wp-mcp-ai' );
-		$recommendations[] = __( 'Consider CDN for image delivery to reduce server load.', 'wp-mcp-ai' );
-		$recommendations[] = __( 'Regularly audit and remove unused media files.', 'wp-mcp-ai' );
+		$recommendations[] = __( 'Enable lazy loading for images below the fold (WordPress 5.5+).', 'mcp-ai-wpoos' );
+		$recommendations[] = __( 'Consider CDN for image delivery to reduce server load.', 'mcp-ai-wpoos' );
+		$recommendations[] = __( 'Regularly audit and remove unused media files.', 'mcp-ai-wpoos' );
 
 		return $recommendations;
 	}

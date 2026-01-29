@@ -273,7 +273,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( ! isset( $saved_connections[ $connection_id ] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_save_failed',
-					__( 'Failed to save connection. Please try again.', 'wp-mcp-ai-pro' )
+					__( 'Failed to save connection. Please try again.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -317,7 +317,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( null === $connection ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_invalid_connection',
-					__( 'Connection not found.', 'wp-mcp-ai-pro' )
+					__( 'Connection not found.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -353,7 +353,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'woocommerce' => false,
 			'site_name'   => '',
 			'site_url'    => $connection['url'],
-			'message'     => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
+			'message'     => __( 'Connection successful.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Test WooCommerce API access if enabled.
@@ -401,14 +401,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$results = array(
 			'success' => true,
 			'flowhub' => true,
-			'message' => __( 'Flowhub connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+			'message' => __( 'Flowhub connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Add inventory count if available.
 		if ( isset( $response['total'] ) ) {
 			$results['inventory_count'] = absint( $response['total'] );
 			/* translators: %d: number of inventory items */
-			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'wp-mcp-ai-pro' ), $results['inventory_count'] );
+			$results['message'] = sprintf( __( 'Flowhub connection successful. Found %d inventory items.', 'mcp-ai-wpoos-pro' ), $results['inventory_count'] );
 		}
 
 		return $results;
@@ -429,14 +429,14 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( empty( $connection['url'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_url',
-				__( 'EZuite API URL is required.', 'wp-mcp-ai-pro' )
+				__( 'EZuite API URL is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $connection['api_key'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_key',
-				__( 'EZuite API key is required.', 'wp-mcp-ai-pro' )
+				__( 'EZuite API key is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -446,7 +446,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_api_key',
-				__( 'Invalid or corrupted API key.', 'wp-mcp-ai-pro' )
+				__( 'Invalid or corrupted API key.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -481,7 +481,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'wp_mcp_ai_pro_connection_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to connect to EZuite API: %s', 'wp-mcp-ai-pro' ),
+					__( 'Failed to connect to EZuite API: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -495,7 +495,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'wp_mcp_ai_pro_api_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'EZuite API returned error status %d. Please check your API URL and credentials.', 'wp-mcp-ai-pro' ),
+					__( 'EZuite API returned error status %d. Please check your API URL and credentials.', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				)
 			);
@@ -507,7 +507,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( null === $data || ! is_array( $data ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_response',
-				__( 'EZuite API returned invalid JSON response.', 'wp-mcp-ai-pro' )
+				__( 'EZuite API returned invalid JSON response.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -515,12 +515,12 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		$ezuite_status = isset( $data['Status_Code'] ) ? absint( $data['Status_Code'] ) : 0;
 
 		if ( 200 !== $ezuite_status ) {
-			$error_message = isset( $data['Message'] ) ? sanitize_text_field( $data['Message'] ) : __( 'Unknown error', 'wp-mcp-ai-pro' );
+			$error_message = isset( $data['Message'] ) ? sanitize_text_field( $data['Message'] ) : __( 'Unknown error', 'mcp-ai-wpoos-pro' );
 			return new WP_Error(
 				'wp_mcp_ai_pro_ezuite_error',
 				sprintf(
 					/* translators: 1: status code, 2: error message */
-					__( 'EZuite API error (Status: %1$d): %2$s', 'wp-mcp-ai-pro' ),
+					__( 'EZuite API error (Status: %1$d): %2$s', 'mcp-ai-wpoos-pro' ),
 					$ezuite_status,
 					$error_message
 				)
@@ -532,7 +532,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			'success'    => true,
 			'ezuite_erp' => true,
 			'api_url'    => $connection['url'],
-			'message'    => __( 'EZuite ERP connection successful. API credentials verified.', 'wp-mcp-ai-pro' ),
+			'message'    => __( 'EZuite ERP connection successful. API credentials verified.', 'mcp-ai-wpoos-pro' ),
 		);
 
 		// Add item count if available in response.
@@ -540,7 +540,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			$item_count = count( $data['Response_Body'] );
 			if ( $item_count > 0 ) {
 				/* translators: %d: number of items retrieved */
-				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'wp-mcp-ai-pro' ), $item_count );
+				$results['message'] = sprintf( __( 'EZuite ERP connection successful. Retrieved %d test item(s).', 'mcp-ai-wpoos-pro' ), $item_count );
 			}
 		}
 
@@ -644,7 +644,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Request failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -659,7 +659,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
-				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
+				__( 'HTTP error %d', 'mcp-ai-wpoos-pro' ),
 				$status_code
 			);
 
@@ -680,7 +680,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 
 			return new WP_Error(
 				'wp_mcp_ai_pro_json_error',
-				__( 'Invalid JSON response from remote site.', 'wp-mcp-ai-pro' )
+				__( 'Invalid JSON response from remote site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -799,21 +799,21 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( empty( $connection['name'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_name',
-				__( 'Connection name is required.', 'wp-mcp-ai-pro' )
+				__( 'Connection name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $connection['url'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_url',
-				__( 'Connection URL is required.', 'wp-mcp-ai-pro' )
+				__( 'Connection URL is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( ! filter_var( $connection['url'], FILTER_VALIDATE_URL ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_url',
-				__( 'Connection URL is not valid.', 'wp-mcp-ai-pro' )
+				__( 'Connection URL is not valid.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -822,7 +822,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( ! in_array( $auth_type, self::AUTH_TYPES, true ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_auth',
-				__( 'Invalid authentication type.', 'wp-mcp-ai-pro' )
+				__( 'Invalid authentication type.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -830,7 +830,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['username'] ) || empty( $connection['password'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_credentials',
-					__( 'Username and password are required for this authentication type.', 'wp-mcp-ai-pro' )
+					__( 'Username and password are required for this authentication type.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -838,7 +838,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 		if ( 'jwt' === $auth_type && empty( $connection['token'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_token',
-				__( 'JWT token is required for JWT authentication.', 'wp-mcp-ai-pro' )
+				__( 'JWT token is required for JWT authentication.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -846,7 +846,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['consumer_key'] ) || empty( $connection['consumer_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_wc_keys',
-					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'wp-mcp-ai-pro' )
+					__( 'Consumer key and consumer secret are required for WooCommerce authentication.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -858,7 +858,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['api_key'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_ezuite_credentials',
-					__( 'API key is required for EZuite ERP connections.', 'wp-mcp-ai-pro' )
+					__( 'API key is required for EZuite ERP connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -867,7 +867,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['api_key'] ) || empty( $connection['api_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_isams_credentials',
-					__( 'API key and API secret are required for iSAMS connections.', 'wp-mcp-ai-pro' )
+					__( 'API key and API secret are required for iSAMS connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -876,7 +876,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['api_key'] ) || empty( $connection['client_id'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_flowhub_credentials',
-					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'wp-mcp-ai-pro' )
+					__( 'API key (key header) and client ID (clientId header) are required for Flowhub connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -885,7 +885,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['app_id'] ) || empty( $connection['app_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_payhere_credentials',
-					__( 'App ID and app secret are required for PayHere connections.', 'wp-mcp-ai-pro' )
+					__( 'App ID and app secret are required for PayHere connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -894,7 +894,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_quickbooks_credentials',
-					__( 'Client ID and client secret are required for QuickBooks connections.', 'wp-mcp-ai-pro' )
+					__( 'Client ID and client secret are required for QuickBooks connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -903,7 +903,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_gmail_credentials',
-					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'wp-mcp-ai-pro' )
+					__( 'OAuth Client ID and client secret are required for Gmail connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow
@@ -913,7 +913,7 @@ class WP_MCP_AI_Pro_Remote_Site_Manager {
 			if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_pro_missing_google_drive_credentials',
-					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'wp-mcp-ai-pro' )
+					__( 'OAuth Client ID and client secret are required for Google Drive connections.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			// Note: refresh_token is optional during initial setup as it's obtained through OAuth flow

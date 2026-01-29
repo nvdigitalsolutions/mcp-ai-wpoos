@@ -32,14 +32,14 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Generic REST API', 'wp-mcp-ai-pro' );
+		return __( 'Generic REST API', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Connect to any REST API with full support for custom endpoints, headers, and authentication. Includes caching, retry logic, health monitoring, and request deduplication.', 'wp-mcp-ai-pro' );
+		return __( 'Connect to any REST API with full support for custom endpoints, headers, and authentication. Includes caching, retry logic, health monitoring, and request deduplication.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'list_connections',
 						'test_connection',
@@ -84,29 +84,29 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'REQUIRED (except for list_connections). The connection ID obtained from calling list_connections first.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'REQUIRED (except for list_connections). The connection ID obtained from calling list_connections first.', 'mcp-ai-wpoos-pro' ),
 				),
 				'method'        => array(
 					'type'        => 'string',
-					'description' => __( 'HTTP method for make_request action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'HTTP method for make_request action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS' ),
 					'default'     => 'GET',
 				),
 				'endpoint'      => array(
 					'type'        => 'string',
-					'description' => __( 'API endpoint path (e.g., /api/v1/users or /users). For make_request action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'API endpoint path (e.g., /api/v1/users or /users). For make_request action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'headers'       => array(
 					'type'        => 'object',
-					'description' => __( 'Custom headers to send with the request (optional). Example: {"X-Custom-Header": "value"}', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Custom headers to send with the request (optional). Example: {"X-Custom-Header": "value"}', 'mcp-ai-wpoos-pro' ),
 				),
 				'body'          => array(
 					'type'        => 'object',
-					'description' => __( 'Request body for POST/PUT/PATCH requests (optional). Will be JSON-encoded.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Request body for POST/PUT/PATCH requests (optional). Will be JSON-encoded.', 'mcp-ai-wpoos-pro' ),
 				),
 				'query_params'  => array(
 					'type'        => 'object',
-					'description' => __( 'URL query parameters (optional). Example: {"page": 1, "limit": 10}', 'wp-mcp-ai-pro' ),
+					'description' => __( 'URL query parameters (optional). Example: {"page": 1, "limit": 10}', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -128,14 +128,14 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access REST APIs.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to access REST APIs.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_pro_missing_connection',
 				sprintf(
 					/* translators: 1: action name, 2: list of available connections */
-					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter.', 'wp-mcp-ai-pro' ),
+					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter.', 'mcp-ai-wpoos-pro' ),
 					$action,
 					$connection_list
 				)
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_pro_connection_not_found',
 				sprintf(
 					/* translators: %s: connection ID */
-					__( 'Connection "%s" not found. Call list_connections to see available connections.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" not found. Call list_connections to see available connections.', 'mcp-ai-wpoos-pro' ),
 					$connection_id
 				)
 			);
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $connection['connection_type'] ) || 'generic' !== $connection['connection_type'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
-				__( 'This connection is not a generic REST API connection. Use the remote_wp_connection tool for WordPress/WooCommerce connections.', 'wp-mcp-ai-pro' )
+				__( 'This connection is not a generic REST API connection. Use the remote_wp_connection tool for WordPress/WooCommerce connections.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -207,7 +207,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_pro_connection_disabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is disabled.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is disabled.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_pro_connection_not_enabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is not enabled for this assistant.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is not enabled for this assistant.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -238,7 +238,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 					'wp_mcp_ai_pro_invalid_action',
 					sprintf(
 						/* translators: %s: action name */
-						__( 'Invalid action: %s', 'wp-mcp-ai-pro' ),
+						__( 'Invalid action: %s', 'mcp-ai-wpoos-pro' ),
 						$action
 					)
 				);
@@ -298,7 +298,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		$response = array(
 			'summary'     => sprintf(
 				/* translators: %d: number of connections */
-				__( 'Found %d generic REST API connection(s)', 'wp-mcp-ai-pro' ),
+				__( 'Found %d generic REST API connection(s)', 'mcp-ai-wpoos-pro' ),
 				count( $result )
 			),
 			'connections' => $result,
@@ -337,7 +337,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Connection test failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Connection test failed: %s', 'mcp-ai-wpoos-pro' ),
 					$result->get_error_message()
 				),
 			);
@@ -345,7 +345,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		return array(
 			'success' => true,
-			'message' => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
+			'message' => __( 'Connection successful.', 'mcp-ai-wpoos-pro' ),
 			'url'     => $connection['url'],
 		);
 	}
@@ -366,7 +366,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $endpoint ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_endpoint',
-				__( 'Endpoint parameter is required for make_request action.', 'wp-mcp-ai-pro' )
+				__( 'Endpoint parameter is required for make_request action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -459,7 +459,7 @@ class WP_MCP_AI_Tool_Generic_REST_API implements WP_MCP_AI_Tool_Interface, WP_MC
 				'wp_mcp_ai_pro_rate_limit_exceeded',
 				sprintf(
 					/* translators: %d: maximum requests allowed per minute */
-					__( 'Generic REST API rate limit exceeded. Maximum %d requests per minute allowed.', 'wp-mcp-ai-pro' ),
+					__( 'Generic REST API rate limit exceeded. Maximum %d requests per minute allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_minute
 				)
 			);

@@ -81,7 +81,7 @@ class WP_MCP_AI_Site_Health {
 	 * @return array Modified debug information
 	 */
 	public function register_debug_info( $debug_info ) {
-		$debug_info['wp-mcp-ai'] = array(
+		$debug_info['mcp-ai-wpoos'] = array(
 			'label'  => __( 'NV oOS', 'mcp-ai-wpoos' ),
 			'fields' => $this->get_debug_fields(),
 		);

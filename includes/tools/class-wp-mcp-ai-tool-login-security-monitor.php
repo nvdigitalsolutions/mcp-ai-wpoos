@@ -46,45 +46,45 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Login Security Monitor', 'wp-mcp-ai' ),
-			'description'          => __( 'Monitors login attempts and detects security threats including brute force attacks, suspicious patterns, and geographic anomalies.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Login Security Monitor', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Monitors login attempts and detects security threats including brute force attacks, suspicious patterns, and geographic anomalies.', 'mcp-ai-wpoos' ),
 			'category'             => 'security',
 			'required_capability'  => 'manage_options',
 			'parameters'           => array(
 				'time_period'      => array(
 					'type'        => 'string',
-					'description' => __( 'Time period to analyze: 1hour, 24hours, 7days, 30days, or custom', 'wp-mcp-ai' ),
+					'description' => __( 'Time period to analyze: 1hour, 24hours, 7days, 30days, or custom', 'mcp-ai-wpoos' ),
 					'default'     => '24hours',
 					'enum'        => array( '1hour', '24hours', '7days', '30days', 'custom' ),
 				),
 				'start_date'       => array(
 					'type'        => 'string',
-					'description' => __( 'Start date for custom period (Y-m-d format)', 'wp-mcp-ai' ),
+					'description' => __( 'Start date for custom period (Y-m-d format)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'end_date'         => array(
 					'type'        => 'string',
-					'description' => __( 'End date for custom period (Y-m-d format)', 'wp-mcp-ai' ),
+					'description' => __( 'End date for custom period (Y-m-d format)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'username'         => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by specific username', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by specific username', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'ip_address'       => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by specific IP address', 'wp-mcp-ai' ),
+					'description' => __( 'Filter by specific IP address', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'threats_only'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Show only suspicious/threat activity', 'wp-mcp-ai' ),
+					'description' => __( 'Show only suspicious/threat activity', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'include_analysis' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include AI-powered threat analysis', 'wp-mcp-ai' ),
+					'description' => __( 'Include AI-powered threat analysis', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -189,7 +189,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			if ( empty( $start_date ) || empty( $end_date ) ) {
 				return new WP_Error(
 					'invalid_dates',
-					__( 'Start and end dates required for custom period', 'wp-mcp-ai' )
+					__( 'Start and end dates required for custom period', 'mcp-ai-wpoos' )
 				);
 			}
 
@@ -199,7 +199,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			if ( false === $start || false === $end ) {
 				return new WP_Error(
 					'invalid_date_format',
-					__( 'Invalid date format. Use Y-m-d format', 'wp-mcp-ai' )
+					__( 'Invalid date format. Use Y-m-d format', 'mcp-ai-wpoos' )
 				);
 			}
 		} else {
@@ -351,7 +351,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 					'timestamp'  => $last_login,
 					'username'   => $user->user_login,
 					'status'     => 'success',
-					'ip_address' => __( 'Unknown', 'wp-mcp-ai' ),
+					'ip_address' => __( 'Unknown', 'mcp-ai-wpoos' ),
 				);
 			}
 		}
@@ -458,7 +458,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 				'severity'    => $severity,
 				'description' => sprintf(
 					/* translators: %d: number of failed attempts */
-					__( 'High number of failed login attempts detected: %d', 'wp-mcp-ai' ),
+					__( 'High number of failed login attempts detected: %d', 'mcp-ai-wpoos' ),
 					$login_data['failed']
 				),
 				'score'       => $threat_score,
@@ -476,7 +476,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 				'severity'    => $severity,
 				'description' => sprintf(
 					/* translators: %d: number of unique IPs */
-					__( 'Login attempts from %d unique IP addresses', 'wp-mcp-ai' ),
+					__( 'Login attempts from %d unique IP addresses', 'mcp-ai-wpoos' ),
 					$login_data['unique_ips']
 				),
 				'score'       => $threat_score,
@@ -492,7 +492,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			$threats[] = array(
 				'type'        => 'credential_stuffing',
 				'severity'    => $severity,
-				'description' => __( 'Possible credential stuffing attack detected', 'wp-mcp-ai' ),
+				'description' => __( 'Possible credential stuffing attack detected', 'mcp-ai-wpoos' ),
 				'score'       => $threat_score,
 			);
 		}
@@ -532,8 +532,8 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		if ( empty( $threat_analysis['threats'] ) ) {
 			$recommendations[] = array(
 				'priority'    => 'low',
-				'action'      => __( 'Continue monitoring', 'wp-mcp-ai' ),
-				'description' => __( 'No immediate threats detected. Continue regular security monitoring.', 'wp-mcp-ai' ),
+				'action'      => __( 'Continue monitoring', 'mcp-ai-wpoos' ),
+				'description' => __( 'No immediate threats detected. Continue regular security monitoring.', 'mcp-ai-wpoos' ),
 			);
 			return $recommendations;
 		}
@@ -543,39 +543,39 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 				case 'brute_force':
 					$recommendations[] = array(
 						'priority'    => 'high',
-						'action'      => __( 'Enable rate limiting', 'wp-mcp-ai' ),
-						'description' => __( 'Implement login rate limiting to prevent brute force attacks. Consider using Wordfence or Limit Login Attempts.', 'wp-mcp-ai' ),
+						'action'      => __( 'Enable rate limiting', 'mcp-ai-wpoos' ),
+						'description' => __( 'Implement login rate limiting to prevent brute force attacks. Consider using Wordfence or Limit Login Attempts.', 'mcp-ai-wpoos' ),
 					);
 					$recommendations[] = array(
 						'priority'    => 'high',
-						'action'      => __( 'Enable 2FA', 'wp-mcp-ai' ),
-						'description' => __( 'Require two-factor authentication for administrator accounts.', 'wp-mcp-ai' ),
+						'action'      => __( 'Enable 2FA', 'mcp-ai-wpoos' ),
+						'description' => __( 'Require two-factor authentication for administrator accounts.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'distributed_attack':
 					$recommendations[] = array(
 						'priority'    => 'medium',
-						'action'      => __( 'Enable geo-blocking', 'wp-mcp-ai' ),
-						'description' => __( 'Consider blocking login attempts from suspicious geographic locations.', 'wp-mcp-ai' ),
+						'action'      => __( 'Enable geo-blocking', 'mcp-ai-wpoos' ),
+						'description' => __( 'Consider blocking login attempts from suspicious geographic locations.', 'mcp-ai-wpoos' ),
 					);
 					$recommendations[] = array(
 						'priority'    => 'medium',
-						'action'      => __( 'Implement CAPTCHA', 'wp-mcp-ai' ),
-						'description' => __( 'Add CAPTCHA to login form to prevent automated attacks.', 'wp-mcp-ai' ),
+						'action'      => __( 'Implement CAPTCHA', 'mcp-ai-wpoos' ),
+						'description' => __( 'Add CAPTCHA to login form to prevent automated attacks.', 'mcp-ai-wpoos' ),
 					);
 					break;
 
 				case 'credential_stuffing':
 					$recommendations[] = array(
 						'priority'    => 'critical',
-						'action'      => __( 'Force password reset', 'wp-mcp-ai' ),
-						'description' => __( 'Force password reset for all users, especially administrators.', 'wp-mcp-ai' ),
+						'action'      => __( 'Force password reset', 'mcp-ai-wpoos' ),
+						'description' => __( 'Force password reset for all users, especially administrators.', 'mcp-ai-wpoos' ),
 					);
 					$recommendations[] = array(
 						'priority'    => 'critical',
-						'action'      => __( 'Check for compromised credentials', 'wp-mcp-ai' ),
-						'description' => __( 'Check user credentials against known breach databases.', 'wp-mcp-ai' ),
+						'action'      => __( 'Check for compromised credentials', 'mcp-ai-wpoos' ),
+						'description' => __( 'Check user credentials against known breach databases.', 'mcp-ai-wpoos' ),
 					);
 					break;
 			}
@@ -597,7 +597,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		if ( empty( $context['ai_client'] ) ) {
 			return array(
 				'available' => false,
-				'message'   => __( 'AI analysis not available', 'wp-mcp-ai' ),
+				'message'   => __( 'AI analysis not available', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -656,11 +656,11 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		}
 
 		$data = array(
-			'group_label' => __( 'Login Security Monitoring', 'wp-mcp-ai' ),
+			'group_label' => __( 'Login Security Monitoring', 'mcp-ai-wpoos' ),
 			'items'       => array(
 				array(
-					'name'  => __( 'Login Activity', 'wp-mcp-ai' ),
-					'value' => __( 'Your login attempts are monitored for security purposes', 'wp-mcp-ai' ),
+					'name'  => __( 'Login Activity', 'mcp-ai-wpoos' ),
+					'value' => __( 'Your login attempts are monitored for security purposes', 'mcp-ai-wpoos' ),
 				),
 			),
 		);

@@ -1324,8 +1324,8 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		// Deactivate self and show error.
 		deactivate_plugins( plugin_basename( WP_MCP_AI_PRO_FILE ) );
 		wp_die(
-			esc_html__( 'Open Operator System Pro requires Open Operator System (WP oOS) to be installed and activated first.', 'wp-mcp-ai-pro' ),
-			esc_html__( 'Plugin Activation Error', 'wp-mcp-ai-pro' ),
+			esc_html__( 'Open Operator System Pro requires Open Operator System (WP oOS) to be installed and activated first.', 'mcp-ai-wpoos-pro' ),
+			esc_html__( 'Plugin Activation Error', 'mcp-ai-wpoos-pro' ),
 			array( 'back_link' => true )
 		);
 	}
