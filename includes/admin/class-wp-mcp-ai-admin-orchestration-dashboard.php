@@ -1067,14 +1067,43 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<div class="memory-tool-info">
 				<h4><?php esc_html_e( 'Agent Memory Tools (Phase 4/5)', 'mcp-ai-wpoos' ); ?></h4>
 				<ul>
-					<li>
-						<strong>store_agent_context:</strong>
-						<?php esc_html_e( 'Store important context with 10 types, TTL, importance levels, and tags', 'mcp-ai-wpoos' ); ?>
-					</li>
-					<li>
-						<strong>retrieve_agent_memory:</strong>
-						<?php esc_html_e( 'Retrieve contexts with semantic search, filtering, and relevance scoring', 'mcp-ai-wpoos' ); ?>
-					</li>
+					<?php
+					// Get agent memory tools from registry dynamically.
+					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory' );
+					$registry          = WP_MCP_AI_Tool_Registry::get_instance();
+
+					if ( $registry ) {
+						$all_tools = $registry->get_tools();
+						foreach ( $memory_tool_slugs as $tool_slug ) {
+							foreach ( $all_tools as $tool ) {
+								if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
+									continue;
+								}
+								if ( $tool->get_slug() === $tool_slug ) {
+									?>
+									<li>
+										<strong><?php echo esc_html( $tool_slug ); ?>:</strong>
+										<?php echo esc_html( $tool->get_description() ); ?>
+									</li>
+									<?php
+									break;
+								}
+							}
+						}
+					} else {
+						// Fallback if registry is not available.
+						?>
+						<li>
+							<strong>store_agent_context:</strong>
+							<?php esc_html_e( 'Store important context with 10 types, TTL, importance levels, and tags', 'mcp-ai-wpoos' ); ?>
+						</li>
+						<li>
+							<strong>retrieve_agent_memory:</strong>
+							<?php esc_html_e( 'Retrieve contexts with semantic search, filtering, and relevance scoring', 'mcp-ai-wpoos' ); ?>
+						</li>
+						<?php
+					}
+					?>
 				</ul>
 				<p>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=mcp-ai-settings#tools' ) ); ?>" class="button">
