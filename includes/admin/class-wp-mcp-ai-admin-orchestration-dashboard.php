@@ -65,18 +65,24 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			return;
 		}
 
+		// Use file modification time for cache busting to ensure CSS/JS updates are loaded.
+		$css_path    = WP_MCP_AI_PATH . 'assets/css/admin-orchestration-dashboard.css';
+		$js_path     = WP_MCP_AI_PATH . 'assets/js/admin-orchestration-dashboard.js';
+		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
+		$js_version  = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
+
 		wp_enqueue_style(
 			'wp-mcp-ai-orchestration-dashboard',
 			plugins_url( 'assets/css/admin-orchestration-dashboard.css', WP_MCP_AI_FILE ),
 			array(),
-			WP_MCP_AI_VERSION
+			$css_version
 		);
 
 		wp_enqueue_script(
 			'wp-mcp-ai-orchestration-dashboard',
 			plugins_url( 'assets/js/admin-orchestration-dashboard.js', WP_MCP_AI_FILE ),
 			array( 'jquery' ),
-			WP_MCP_AI_VERSION,
+			$js_version,
 			true
 		);
 
