@@ -138,6 +138,11 @@
 						$('[data-stat="seeded_professions"]').text(stats.seeded_professions || 0);
 						$('[data-stat="with_task_patterns"]').text(stats.with_task_patterns || 0);
 						
+						// Update system status if available
+						if (stats.system_status) {
+							self.updateSystemStatus(stats.system_status);
+						}
+						
 						// Update last refresh time
 						self.updateLastRefreshTime();
 					}
@@ -146,6 +151,51 @@
 					console.error('[Orchestration Dashboard] Error updating stats:', error);
 				}
 			});
+		},
+
+		/**
+		 * Update system status display.
+		 *
+		 * @param {Object} systemStatus System status data.
+		 */
+		updateSystemStatus: function(systemStatus) {
+			// Update cron status
+			if (systemStatus.cron) {
+				$('[data-system-status="cron_active"]').text(systemStatus.cron.active || 0);
+				$('[data-system-status="cron_pending"]').text(systemStatus.cron.pending || 0);
+				$('[data-system-status="cron_failed"]').text(systemStatus.cron.failed || 0);
+			}
+
+			// Update async status
+			if (systemStatus.async) {
+				const asyncStatus = systemStatus.async.status || 'unknown';
+				$('[data-system-status="async_status"]')
+					.text(asyncStatus)
+					.removeClass('status-healthy status-warning status-error')
+					.addClass('status-' + asyncStatus);
+				$('[data-system-status="async_stuck_jobs"]').text(systemStatus.async.stuck_jobs || 0);
+				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
+			}
+
+			// Update health status
+			if (systemStatus.health) {
+				const healthStatus = systemStatus.health.status || 'unknown';
+				$('[data-system-status="health_status"]')
+					.text(systemStatus.health.icon + ' ' + healthStatus)
+					.removeClass('status-healthy status-good status-fair status-poor')
+					.addClass('status-' + healthStatus);
+				$('[data-system-status="health_label"]').text(systemStatus.health.label || 'Unknown');
+			}
+
+			// Update SSE status
+			if (systemStatus.sse) {
+				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
+				$('[data-system-status="sse_available"]')
+					.text(sseAvailable)
+					.removeClass('status-yes status-no')
+					.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
+				$('[data-system-status="sse_endpoint"]').text(systemStatus.sse.endpoint || 'N/A');
+			}
 		},
 
 		/**

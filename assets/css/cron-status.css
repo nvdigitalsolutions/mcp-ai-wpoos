@@ -30,8 +30,10 @@
 }
 
 /* Status Badges */
+.wp-mcp-ai-chat__cron-status-active,
 .wp-mcp-ai-chat__cron-status-pending,
-.wp-mcp-ai-chat__cron-status-completed {
+.wp-mcp-ai-chat__cron-status-completed,
+.wp-mcp-ai-chat__cron-status-failed {
 	display: inline-flex;
 	align-items: center;
 	gap: 4px;
@@ -41,10 +43,21 @@
 	font-weight: 600;
 }
 
-/* Pending Jobs - Blue */
-.wp-mcp-ai-chat__cron-status-pending--active {
+/* Active Jobs - Blue/Running */
+.wp-mcp-ai-chat__cron-status-active--running {
 	background: #2271b1;
 	color: #fff;
+}
+
+.wp-mcp-ai-chat__cron-status-active--running::before {
+	content: '▶';
+	margin-right: 2px;
+}
+
+/* Pending Jobs - Blue */
+.wp-mcp-ai-chat__cron-status-pending--active {
+	background: #72aee6;
+	color: #000;
 }
 
 .wp-mcp-ai-chat__cron-status-pending--active::before {
@@ -63,6 +76,52 @@
 	margin-right: 2px;
 }
 
+/* Failed Jobs - Red */
+.wp-mcp-ai-chat__cron-status-failed--error {
+	background: #d63638;
+	color: #fff;
+}
+
+.wp-mcp-ai-chat__cron-status-failed--error::before {
+	content: '✗';
+	margin-right: 2px;
+}
+
+/* System Health Indicator */
+.wp-mcp-ai-chat__cron-status-health {
+	display: inline-flex;
+	align-items: center;
+	margin-left: 4px;
+	cursor: help;
+}
+
+.wp-mcp-ai-chat__cron-status-icon {
+	font-size: 14px;
+	line-height: 1;
+}
+
+/* Health status colors */
+.wp-mcp-ai-chat__cron-status-health[data-status="healthy"] .wp-mcp-ai-chat__cron-status-icon {
+	color: #00a32a;
+}
+
+.wp-mcp-ai-chat__cron-status-health[data-status="good"] .wp-mcp-ai-chat__cron-status-icon {
+	color: #00a32a;
+}
+
+.wp-mcp-ai-chat__cron-status-health[data-status="warning"] .wp-mcp-ai-chat__cron-status-icon {
+	color: #dba617;
+}
+
+.wp-mcp-ai-chat__cron-status-health[data-status="error"] .wp-mcp-ai-chat__cron-status-icon,
+.wp-mcp-ai-chat__cron-status-health[data-status="critical"] .wp-mcp-ai-chat__cron-status-icon {
+	color: #d63638;
+}
+
+.wp-mcp-ai-chat__cron-status-health[data-status="unknown"] .wp-mcp-ai-chat__cron-status-icon {
+	color: #8c8f94;
+}
+
 /* Count Display */
 .wp-mcp-ai-chat__cron-status-count {
 	font-variant-numeric: tabular-nums;
@@ -76,8 +135,10 @@
 		padding: 3px 6px;
 	}
 
+	.wp-mcp-ai-chat__cron-status-active,
 	.wp-mcp-ai-chat__cron-status-pending,
-	.wp-mcp-ai-chat__cron-status-completed {
+	.wp-mcp-ai-chat__cron-status-completed,
+	.wp-mcp-ai-chat__cron-status-failed {
 		padding: 1px 4px;
 		gap: 2px;
 	}
@@ -90,7 +151,9 @@
 	}
 
 	.wp-mcp-ai-chat__cron-status-pending--active,
-	.wp-mcp-ai-chat__cron-status-completed--done {
+	.wp-mcp-ai-chat__cron-status-completed--done,
+	.wp-mcp-ai-chat__cron-status-active--running,
+	.wp-mcp-ai-chat__cron-status-failed--error {
 		border: 1px solid #000;
 	}
 }
@@ -102,16 +165,26 @@
 		color: #e0e0e0;
 	}
 
+	.wp-mcp-ai-chat__cron-status-active,
 	.wp-mcp-ai-chat__cron-status-pending,
-	.wp-mcp-ai-chat__cron-status-completed {
+	.wp-mcp-ai-chat__cron-status-completed,
+	.wp-mcp-ai-chat__cron-status-failed {
 		background: #2d2d2d;
 	}
 
-	.wp-mcp-ai-chat__cron-status-pending--active {
+	.wp-mcp-ai-chat__cron-status-active--running {
 		background: #3582c4;
+	}
+
+	.wp-mcp-ai-chat__cron-status-pending--active {
+		background: #4f94d4;
 	}
 
 	.wp-mcp-ai-chat__cron-status-completed--done {
 		background: #00ba37;
+	}
+
+	.wp-mcp-ai-chat__cron-status-failed--error {
+		background: #e65054;
 	}
 }

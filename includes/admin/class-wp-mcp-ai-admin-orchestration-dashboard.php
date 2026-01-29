@@ -161,6 +161,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<?php $this->render_statistics_cards( $stats ); ?>
 			</div>
 
+			<!-- System Status Monitor -->
+			<div class="orchestration-system-status-container">
+				<h2><?php esc_html_e( 'System Status', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_system_status(); ?>
+			</div>
+
 			<!-- Agent Memory Usage (NEW - Phase 4/5) -->
 			<div class="orchestration-memory-container">
 				<h2><?php esc_html_e( 'Agent Memory Usage', 'mcp-ai-wpoos' ); ?></h2>
@@ -475,6 +481,85 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Render system status section.
+	 *
+	 * @return void
+	 */
+	protected function render_system_status() {
+		?>
+		<div class="system-status-grid">
+			<!-- Cron Jobs Status -->
+			<div class="status-card" id="cron-status-card">
+				<h3><span class="dashicons dashicons-clock"></span> <?php esc_html_e( 'Cron Jobs', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Active:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="cron_active">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Pending:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="cron_pending">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Failed:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value error" data-system-status="cron_failed">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Async Operations Status -->
+			<div class="status-card" id="async-status-card">
+				<h3><span class="dashicons dashicons-update"></span> <?php esc_html_e( 'Async Operations', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value status-badge" data-system-status="async_status">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Stuck Jobs:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value warning" data-system-status="async_stuck_jobs">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Long Running:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="async_long_running">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- System Health Status -->
+			<div class="status-card" id="health-status-card">
+				<h3><span class="dashicons dashicons-heart"></span> <?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Overall:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value status-badge" data-system-status="health_status">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Label:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="health_label">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- SSE Connectivity -->
+			<div class="status-card" id="sse-status-card">
+				<h3><span class="dashicons dashicons-update-alt"></span> <?php esc_html_e( 'SSE Streaming', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Available:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="sse_available">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Endpoint:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value small" data-system-status="sse_endpoint">-</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
 	 * Render role distribution chart.
 	 *
 	 * @param array $stats Statistics data.
@@ -696,6 +781,105 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
+	 * Get system status information for dashboard updates.
+	 *
+	 * Includes cron status, async job health, orchestration health, and SSE connectivity.
+	 *
+	 * @return array System status data.
+	 */
+	protected function get_system_status() {
+		$status = array(
+			'cron'   => array(),
+			'async'  => array(),
+			'sse'    => array(),
+			'health' => array(),
+		);
+
+		// Get cron job status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			try {
+				$cron_service    = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary    = $cron_service->get_status_summary( 0, 5 );
+				$status['cron']  = array(
+					'total'     => count( $cron_summary ),
+					'active'    => 0,
+					'completed' => 0,
+					'pending'   => 0,
+					'failed'    => 0,
+					'jobs'      => array(),
+				);
+
+				foreach ( $cron_summary as $job ) {
+					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
+					
+					if ( 'active' === $job_status || 'running' === $job_status ) {
+						++$status['cron']['active'];
+					} elseif ( 'completed' === $job_status ) {
+						++$status['cron']['completed'];
+					} elseif ( 'pending' === $job_status ) {
+						++$status['cron']['pending'];
+					} elseif ( 'failed' === $job_status ) {
+						++$status['cron']['failed'];
+					}
+
+					// Include recent jobs for display.
+					if ( count( $status['cron']['jobs'] ) < 5 ) {
+						$status['cron']['jobs'][] = array(
+							'job_id' => isset( $job['job_id'] ) ? $job['job_id'] : '',
+							'title'  => isset( $job['title'] ) ? $job['title'] : 'Unknown',
+							'status' => $job_status,
+						);
+					}
+				}
+			} catch ( Exception $e ) {
+				// Silently fail - status monitoring should not break the dashboard.
+				$status['cron']['error'] = $e->getMessage();
+			}
+		}
+
+		// Get async health status if monitor is available.
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				$async_health     = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async']  = array(
+					'status'         => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
+					'stuck_jobs'     => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
+					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
+					'pending_jobs'   => isset( $async_health['pending_jobs'] ) ? $async_health['pending_jobs'] : 0,
+					'failed_jobs'    => isset( $async_health['failed_jobs'] ) ? $async_health['failed_jobs'] : 0,
+					'cron_scheduled' => isset( $async_health['cron_scheduled'] ) ? $async_health['cron_scheduled'] : false,
+					'issues'         => isset( $async_health['issues'] ) ? $async_health['issues'] : array(),
+				);
+			} catch ( Exception $e ) {
+				$status['async']['error'] = $e->getMessage();
+			}
+		}
+
+		// Get orchestration health status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status'  => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
+					'label'   => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
+					'icon'    => isset( $health_status['icon'] ) ? $health_status['icon'] : '❓',
+					'metrics' => isset( $health_status['metrics'] ) ? $health_status['metrics'] : array(),
+				);
+			} catch ( Exception $e ) {
+				$status['health']['error'] = $e->getMessage();
+			}
+		}
+
+		// SSE connectivity check - basic check if SSE endpoint is configured.
+		$status['sse'] = array(
+			'available' => class_exists( 'WP_MCP_AI_SSE_Stream' ),
+			'endpoint'  => rest_url( 'mcp-ai/v1/jobs' ),
+		);
+
+		return $status;
+	}
+
+	/**
 	 * AJAX handler: Get orchestration statistics.
 	 *
 	 * @return void
@@ -708,6 +892,10 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		}
 
 		$stats = $this->get_orchestration_statistics();
+
+		// Add system status information.
+		$stats['system_status'] = $this->get_system_status();
+
 		wp_send_json_success( $stats );
 	}
 
