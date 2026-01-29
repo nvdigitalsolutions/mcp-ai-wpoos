@@ -8,9 +8,15 @@
 
 	const OrchestrationDashboard = {
 		refreshInterval: null,
-		config: wpMcpAiOrchestration || {},
+		config: typeof wpMcpAiOrchestration !== 'undefined' ? wpMcpAiOrchestration : {},
 
 		init: function() {
+			// Check if config is properly loaded.
+			if (!this.config.ajaxUrl || !this.config.nonce) {
+				console.error('OrchestrationDashboard: Configuration not loaded properly', this.config);
+				return;
+			}
+			
 			this.bindEvents();
 			this.startAutoRefresh();
 			this.loadDashboardData();
@@ -48,10 +54,16 @@
 				success: (response) => {
 					if (response.success && response.data) {
 						this.updateDashboard(response.data);
+					} else {
+						console.error('Dashboard data load failed:', response);
 					}
 				},
-				error: () => {
-					console.error('Failed to load dashboard data');
+				error: (xhr, status, error) => {
+					console.error('Failed to load dashboard data:', {
+						status: status,
+						error: error,
+						response: xhr.responseText
+					});
 				}
 			});
 		},
