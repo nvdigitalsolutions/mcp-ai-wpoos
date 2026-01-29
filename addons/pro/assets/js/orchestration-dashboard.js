@@ -146,6 +146,16 @@
 				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
 			}
 
+			// Update health status
+			if (systemStatus.health) {
+				const healthStatus = systemStatus.health.status || 'unknown';
+				$('[data-system-status="health_status"]')
+					.text(systemStatus.health.icon + ' ' + healthStatus)
+					.removeClass('status-healthy status-good status-fair status-poor')
+					.addClass('status-' + healthStatus);
+				$('[data-system-status="health_label"]').text(systemStatus.health.label || 'Unknown');
+			}
+
 			// Update SSE status
 			if (systemStatus.sse) {
 				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';

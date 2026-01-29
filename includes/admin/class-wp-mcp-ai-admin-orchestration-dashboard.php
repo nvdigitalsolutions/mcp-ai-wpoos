@@ -481,9 +481,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	}
 
 	/**
-	 * Render role distribution chart.
+	 * Render system status section.
 	 *
-	 * @param array $stats Statistics data.
 	 * @return void
 	 */
 	protected function render_system_status() {
@@ -791,7 +790,6 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	protected function get_system_status() {
 		$status = array(
 			'cron'   => array(),
-			'jobs'   => array(),
 			'async'  => array(),
 			'sse'    => array(),
 			'health' => array(),

@@ -224,6 +224,21 @@ class WP_MCP_AI_Orchestration_Dashboard {
 						</div>
 					</div>
 
+					<!-- System Health Status -->
+					<div class="status-card">
+						<h3><span class="dashicons dashicons-heart"></span> <?php esc_html_e( 'System Health', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="status-metrics">
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Overall:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value status-badge" data-system-status="health_status">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Label:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="health_label">-</span>
+							</div>
+						</div>
+					</div>
+
 					<!-- SSE Connectivity -->
 					<div class="status-card">
 						<h3><span class="dashicons dashicons-update-alt"></span> <?php esc_html_e( 'SSE Streaming', 'mcp-ai-wpoos-pro' ); ?></h3>
@@ -351,7 +366,6 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	private function get_system_status() {
 		$status = array(
 			'cron'   => array(),
-			'jobs'   => array(),
 			'async'  => array(),
 			'sse'    => array(),
 			'health' => array(),

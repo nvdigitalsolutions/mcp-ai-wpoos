@@ -1081,9 +1081,11 @@ class WP_MCP_AI_Chat_Service {
 	private function get_system_status() {
 		$status = array(
 			'cron'   => array(
-				'active'  => 0,
-				'pending' => 0,
-				'failed'  => 0,
+				'total'     => 0,
+				'active'    => 0,
+				'completed' => 0,
+				'pending'   => 0,
+				'failed'    => 0,
 			),
 			'async'  => array(
 				'status'         => 'unknown',
@@ -1100,15 +1102,9 @@ class WP_MCP_AI_Chat_Service {
 		// Get cron job status if service is available.
 		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
 			try {
-				$cron_service   = new WP_MCP_AI_Cron_Status_Service();
-				$cron_summary   = $cron_service->get_status_summary( 0, 5 );
-				$status['cron'] = array(
-					'total'     => count( $cron_summary ),
-					'active'    => 0,
-					'completed' => 0,
-					'pending'   => 0,
-					'failed'    => 0,
-				);
+				$cron_service            = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary            = $cron_service->get_status_summary( 0, 5 );
+				$status['cron']['total'] = count( $cron_summary );
 
 				foreach ( $cron_summary as $job ) {
 					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
