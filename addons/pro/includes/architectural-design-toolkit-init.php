@@ -31,17 +31,17 @@ if ( is_admin() ) {
 		// Load Project Settings and Research & Add pages (under Design Projects menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-research-page.php';
-		new WP_MCP_AI_Architectural_Project_Research_Page();
+		WP_MCP_AI_Architectural_Project_Research_Page::init();
 
 		// Load Drawing Settings and Research & Add pages (under Drawings menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-research-page.php';
-		new WP_MCP_AI_Architectural_Drawing_Research_Page();
+		WP_MCP_AI_Architectural_Drawing_Research_Page::init();
 
 		// Load Specification Settings and Research & Add pages (under Specifications menu).
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-settings-page.php';
 		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-research-page.php';
-		new WP_MCP_AI_Architectural_Specification_Research_Page();
+		WP_MCP_AI_Architectural_Specification_Research_Page::init();
 	}
 }
 

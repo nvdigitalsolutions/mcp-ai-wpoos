@@ -482,7 +482,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'design_professional'      => array(
 				'name'        => __( '🎨 Design Professional', 'mcp-ai-wpoos' ),
-				'description' => __( 'Visual design, rendering, branding, and creative production tools', 'mcp-ai-wpoos' ),
+				'description' => __( 'Visual design, rendering, branding, creative production, and architectural design tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Image generation.
 					'generate_openai_image',
@@ -519,6 +519,23 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_elementor_templates',
 					'import_elementor_template_kit',
 					'elementor',
+					// Architectural Design (Pro).
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'create_floor_plan_variations',
+					'convert_sketch_to_floor_plan',
+					'generate_3d_model',
+					'render_architectural_view',
+					'create_walkthrough_animation',
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
 				),
 			),
 
@@ -977,6 +994,944 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// SEO.
 					'get_rankmath_seo',
 					// Social media.
+					'post_facebook_instagram',
+					'post_google_business_update',
+				),
+			),
+
+			'architect'                => array(
+				'name'        => __( '🏗️ Architect', 'mcp-ai-wpoos' ),
+				'description' => __( 'Architectural design, planning, building codes, and construction documentation tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Architectural Design (Pro) - Floor Planning & Space Design.
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'create_floor_plan_variations',
+					'convert_sketch_to_floor_plan',
+					// 3D Modeling & Visualization.
+					'generate_3d_model',
+					'render_architectural_view',
+					'create_walkthrough_animation',
+					// Documentation & Blueprints.
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					// Analysis & Compliance.
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					// Estimation & Scheduling.
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					// Visual Design & Rendering.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'generate_veo_video',
+					'create_walkthrough_animation',
+					// Image Processing.
+					'resize_image',
+					'crop_image',
+					'remove_background',
+					// Research & Analysis.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'submit_document_prompt',
+					'pro_pdf',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// Data & Charts.
+					'create_chart',
+					'pro_excel',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					// Communication.
+					'send_group_email',
+					'create_google_calendar_event',
+					// CAD/BIM Integration.
+					'get_elementor_templates',
+					'elementor',
+				),
+			),
+
+			'engineering'              => array(
+				'name'        => __( '⚙️ Engineering Professional', 'mcp-ai-wpoos' ),
+				'description' => __( 'Civil, structural, MEP engineering with analysis, calculations, and technical documentation', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Structural Analysis & Building Code Compliance.
+					'analyze_structural_feasibility',
+					'check_building_code_compliance',
+					'calculate_sustainability_metrics',
+					// Architectural Design Tools (for coordination).
+					'generate_floor_plan',
+					'generate_3d_model',
+					'render_architectural_view',
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					// Material & Cost Estimation.
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					// Mathematical & Scientific Tools.
+					'solve_equation',
+					'simplify_expression',
+					'calculate_derivative',
+					'calculate_integral',
+					'matrix_operations',
+					'render_math_equation',
+					// Data Analysis & Visualization.
+					'create_chart',
+					'analyze_data_patterns',
+					'pro_excel',
+					// Geospatial Analysis.
+					'geocode_address',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Research & Technical Documentation.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'submit_document_prompt',
+					// Document Generation.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// File Management.
+					'search_attachments',
+					'list_openai_files',
+					'get_openai_file_details',
+					// Communication & Collaboration.
+					'send_group_email',
+					'create_google_calendar_event',
+				),
+			),
+
+			'construction_management'  => array(
+				'name'        => __( '👷 Construction Management', 'mcp-ai-wpoos' ),
+				'description' => __( 'Construction planning, scheduling, cost estimation, and project coordination tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Cost Estimation & Scheduling.
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					'generate_material_schedule',
+					// Building Code & Safety Compliance.
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					'calculate_sustainability_metrics',
+					// Project Management & Coordination.
+					'create_project',
+					'update_project',
+					'delete_project',
+					'list_projects',
+					'research_project',
+					// Task Management & Scheduling.
+					'create_task',
+					'update_task',
+					'delete_task',
+					'list_tasks',
+					'create_task_plan',
+					'get_task_plan',
+					// Calendar & Events.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Documentation & Drawings (for review).
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					'generate_floor_plan',
+					'generate_3d_model',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'submit_document_prompt',
+					'pro_pdf',
+					'pro_excel',
+					// Analytics & Reporting.
+					'create_chart',
+					'analyze_data_patterns',
+					// Communication & Team Coordination.
+					'send_group_email',
+					'schedule_notify_sms',
+					'send_telegram_message',
+					'send_whatsapp_message',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'get_open_meteo_forecast',
+					// Research & Information.
+					'web_search',
+					'search_content',
+					'semantic_content_search',
+					// Forms & Data Collection.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Agent Coordination (for complex projects).
+					'create_agent_team',
+					'delegate_to_agent',
+					'execute_workflow',
+				),
+			),
+
+			'interior_designer'        => array(
+				'name'        => __( '🛋️ Interior Designer', 'mcp-ai-wpoos' ),
+				'description' => __( 'Interior space planning, FF&E specification, material selection, and design visualization', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Space Planning & Layout.
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'create_floor_plan_variations',
+					// 3D Visualization & Rendering.
+					'generate_3d_model',
+					'render_architectural_view',
+					'create_walkthrough_animation',
+					// Visual Design & Mood Boards.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'cloudflareai_text_to_image',
+					// Image Processing.
+					'resize_image',
+					'crop_image',
+					'rotate_image',
+					'convert_image_format',
+					'remove_background',
+					'create_image_variation',
+					// Image Analysis (for materials & finishes).
+					'vision_object_localization',
+					'vision_product_search',
+					'generate_image_caption',
+					'generate_image_alt_text',
+					// Material & Product Specifications.
+					'generate_material_schedule',
+					'scrape_product',
+					'product_actualization',
+					// Cost Estimation.
+					'estimate_construction_cost',
+					// Compliance & Analysis.
+					'check_building_code_compliance',
+					'calculate_sustainability_metrics',
+					// Documentation.
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					'pro_pdf',
+					// Charts & Design Boards.
+					'create_chart',
+					// Research & Inspiration.
+					'web_search',
+					'search_content',
+					'crawl4ai_price_lookup',
+					// Content Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// Communication.
+					'send_group_email',
+					'create_google_calendar_event',
+					// E-commerce (for furniture/decor).
+					'get_woo_products',
+					'create_woo_product',
+					// Forms & Client Data.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+				),
+			),
+
+			'landscape_architect'      => array(
+				'name'        => __( '🌳 Landscape Architect', 'mcp-ai-wpoos' ),
+				'description' => __( 'Site design, planting plans, hardscape design, and sustainable landscape solutions', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Site Planning & Design.
+					'generate_floor_plan',
+					'optimize_space_layout',
+					'generate_3d_model',
+					'render_architectural_view',
+					// Visualization & Rendering.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'generate_veo_video',
+					'create_walkthrough_animation',
+					// Documentation & Drawings.
+					'generate_construction_drawings',
+					'generate_detail_drawings',
+					'export_architectural_documents',
+					// Geospatial & Location Analysis.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Environmental & Weather Data.
+					'get_open_meteo_forecast',
+					'get_gdacs_events',
+					// Sustainability Analysis.
+					'calculate_sustainability_metrics',
+					'check_building_code_compliance',
+					// Material & Cost Estimation.
+					'generate_material_schedule',
+					'estimate_construction_cost',
+					'generate_construction_timeline',
+					// Research & Plant Selection.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					// Image Analysis (for site conditions).
+					'vision_object_localization',
+					'generate_image_caption',
+					// Image Processing.
+					'resize_image',
+					'crop_image',
+					'remove_background',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'submit_document_prompt',
+					'pro_pdf',
+					// Data & Charts.
+					'create_chart',
+					'pro_excel',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// Communication.
+					'send_group_email',
+					'create_google_calendar_event',
+					// Forms & Client Data.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+				),
+			),
+
+			'urban_planner'            => array(
+				'name'        => __( '🏙️ Urban Planner', 'mcp-ai-wpoos' ),
+				'description' => __( 'Comprehensive planning, zoning, land use policy, and community development tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Geospatial Analysis & Mapping.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Data Analysis & Demographics.
+					'analyze_data_patterns',
+					'create_chart',
+					'pro_excel',
+					'huggingface_dataset_search',
+					'huggingface_dataset_get_info',
+					'huggingface_dataset_get_statistics',
+					// Policy & Document Management.
+					'create_policy',
+					'update_policy',
+					'delete_policy',
+					'get_policy',
+					'list_policies',
+					'search_policies',
+					'research_policy',
+					// Research & Analysis.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'submit_document_prompt',
+					// Document Generation.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					'pro_excel',
+					// Project & Development Review.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'research_project',
+					// Place Management.
+					'create_place',
+					'update_place',
+					'get_place',
+					'list_places',
+					'research_place',
+					// Environmental & Disaster Planning.
+					'get_gdacs_events',
+					'get_nhc_active_storms',
+					'reliefweb_reports',
+					'get_open_meteo_forecast',
+					// Community Engagement Tools.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					'send_group_email',
+					'newsletter_add_subscriber',
+					'newsletter_create_email',
+					// Public Meeting & Calendar Management.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Task & Timeline Management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Content Management (public outreach).
+					'search_attachments',
+					'moderate_content',
+					// Visualization (for presentations).
+					'generate_openai_image',
+					'generate_gemini_image',
+					'render_architectural_view',
+					// Building Code Reference (for zoning).
+					'check_building_code_compliance',
+					'analyze_structural_feasibility',
+					// File Management.
+					'list_openai_files',
+					'get_openai_file_details',
+				),
+			),
+
+			'dj_musician'              => array(
+				'name'        => __( '🎵 DJ & Music Professional', 'mcp-ai-wpoos' ),
+				'description' => __( 'DJ services, music production, event management, and audio engineering', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// DJ Management Tools (Pro).
+					'create_playlist',
+					'generate_playlist_ai',
+					'manage_music_library',
+					'analyze_track_bpm',
+					'mix_transition_planner',
+					// Event Management.
+					'create_event_booking',
+					'update_event_details',
+					'send_event_confirmation',
+					'generate_event_timeline',
+					// Client Management.
+					'create_client_profile',
+					'client_communication_log',
+					'generate_dj_contract',
+					'send_client_invoice',
+					'track_event_payments',
+					// Equipment Management.
+					'add_equipment_item',
+					'reserve_equipment',
+					'track_equipment_maintenance',
+					'equipment_inventory_report',
+					// Music Production.
+					'generate_music',
+					'generate_jukebox_music',
+					'check_jukebox_status',
+					// Audio Processing.
+					'transcribe_openai_audio',
+					'generate_openai_speech',
+					// Event Planning.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					// Communication.
+					'send_group_email',
+					'send_whatsapp_message',
+					'schedule_notify_sms',
+					// Forms & Client Data.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Document Generation.
+					'pro_pdf',
+					'save_post',
+					'create_post',
+					// Social Media.
+					'post_facebook_instagram',
+					'post_tiktok_video',
+					// Media.
+					'generate_image_caption',
+					'generate_openai_image',
+				),
+			),
+
+			'sales_crm'                => array(
+				'name'        => __( '💼 Sales & CRM Professional', 'mcp-ai-wpoos' ),
+				'description' => __( 'Sales pipeline, CRM management, lead tracking, and customer relationships', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// CRM Tools (Pro).
+					'manage_crm_contact',
+					// Project & Client Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Task & Follow-up Management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Calendar & Scheduling.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Communication.
+					'send_group_email',
+					'send_mailjet_email',
+					'search_gmail',
+					'send_whatsapp_message',
+					'send_telegram_message',
+					'schedule_notify_sms',
+					// Newsletter & Marketing.
+					'newsletter_add_subscriber',
+					'newsletter_create_email',
+					'newsletter_get_subscribers',
+					// Forms & Lead Capture.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// E-commerce Integration.
+					'get_woo_products',
+					'get_woo_recent_orders',
+					'create_woo_product',
+					// Analytics & Reporting.
+					'create_chart',
+					'pro_excel',
+					'analyze_data_patterns',
+					'revenue_forecast',
+					'churn_prediction',
+					'cohort_analysis',
+					// Social Media Outreach.
+					'post_facebook_instagram',
+					'post_linkedin_update',
+					'get_facebook_instagram_insights',
+					'get_linkedin_insights',
+					// Research & Prospecting.
+					'web_search',
+					'search_content',
+					'crawl4ai_price_lookup',
+					'scrape_product',
+					// Document Management.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					// SEO & Marketing.
+					'get_rankmath_seo',
+					'google_analytics_report',
+				),
+			),
+
+			'film_video_production'    => array(
+				'name'        => __( '🎬 Film & Video Production', 'mcp-ai-wpoos' ),
+				'description' => __( 'Film production, video editing, cinematography, and post-production', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Video Generation & Editing.
+					'generate_veo_video',
+					'generate_sora_video',
+					'check_video_status',
+					// Video Processing (Pro).
+					'analyze_video',
+					'extract_video_frames',
+					'get_video_metadata',
+					'transcode_video',
+					'generate_video_caption',
+					// Storyboarding & Visualization.
+					'generate_openai_image',
+					'generate_gemini_image',
+					'edit_gemini_image',
+					'create_image_variation',
+					// Image Processing.
+					'resize_image',
+					'crop_image',
+					'rotate_image',
+					'convert_image_format',
+					'remove_background',
+					// Audio.
+					'transcribe_openai_audio',
+					'generate_openai_speech',
+					'generate_music',
+					// Script & Content Writing.
+					'save_post',
+					'create_post',
+					'search_content',
+					'submit_document_prompt',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'create_task',
+					'list_tasks',
+					'create_task_plan',
+					// Scheduling & Calendar.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Communication & Collaboration.
+					'send_group_email',
+					'send_whatsapp_message',
+					// Document Generation.
+					'pro_pdf',
+					'pro_word',
+					// Social Media Distribution.
+					'post_facebook_instagram',
+					'post_tiktok_video',
+					'post_linkedin_update',
+					// Forms & Casting.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Location Scouting.
+					'geocode_address',
+					'search_places',
+					'get_open_meteo_forecast',
+					// Asset Management.
+					'search_attachments',
+					'list_openai_files',
+				),
+			),
+
+			'agriculture_environmental' => array(
+				'name'        => __( '🌾 Agriculture & Environmental', 'mcp-ai-wpoos' ),
+				'description' => __( 'Agriculture, environmental science, forestry, wildlife management, and sustainability', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Geospatial Analysis.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Weather & Climate.
+					'get_open_meteo_forecast',
+					'get_gdacs_events',
+					// Environmental Data.
+					'get_nhc_active_storms',
+					'reliefweb_reports',
+					// Sustainability Analysis.
+					'calculate_sustainability_metrics',
+					// Research & Data.
+					'web_search',
+					'deep_research',
+					'search_content',
+					'semantic_content_search',
+					'huggingface_dataset_search',
+					'huggingface_dataset_get_info',
+					'huggingface_dataset_get_statistics',
+					// Data Analysis.
+					'analyze_data_patterns',
+					'create_chart',
+					'pro_excel',
+					// Image Analysis (for crop/land assessment).
+					'vision_object_localization',
+					'generate_image_caption',
+					'analyze_video',
+					// Project Management (for land/farm management).
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Place Management (for sites/plots).
+					'create_place',
+					'update_place',
+					'list_places',
+					'research_place',
+					// Task Planning.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Documentation.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_excel',
+					// Communication.
+					'send_group_email',
+					'newsletter_add_subscriber',
+					// Calendar.
+					'create_event',
+					'update_event',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Forms & Surveys.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+				),
+			),
+
+			'emergency_services'       => array(
+				'name'        => __( '🚨 Emergency Services & Public Safety', 'mcp-ai-wpoos' ),
+				'description' => __( 'Emergency response, disaster management, public safety, and first responders', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Emergency & Disaster Data.
+					'get_gdacs_events',
+					'get_nhc_active_storms',
+					'reliefweb_reports',
+					// Weather & Hazards.
+					'get_open_meteo_forecast',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Communication & Alerts.
+					'send_group_email',
+					'schedule_notify_sms',
+					'send_telegram_message',
+					'send_whatsapp_message',
+					// Incident Management.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					// Task Coordination.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Project Management (operations).
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Documentation & Reporting.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					// Forms & Data Collection.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Research & Intelligence.
+					'web_search',
+					'search_content',
+					// Image Analysis (for damage assessment).
+					'vision_object_localization',
+					'generate_image_caption',
+					'analyze_video',
+					// Charts & Reporting.
+					'create_chart',
+					'analyze_data_patterns',
+					// Calendar.
+					'create_google_calendar_event',
+					// Team Coordination.
+					'create_agent_team',
+					'delegate_to_agent',
+					'execute_workflow',
+				),
+			),
+
+			'maritime_aviation'        => array(
+				'name'        => __( '✈️ Maritime, Aviation & Transportation', 'mcp-ai-wpoos' ),
+				'description' => __( 'Maritime operations, aviation, logistics, and transportation management', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Weather & Environmental.
+					'get_open_meteo_forecast',
+					'get_nhc_active_storms',
+					'get_gdacs_events',
+					// Location & Navigation.
+					'geocode_address',
+					'search_places',
+					'gemini_geospatial_query',
+					'analyze_geospatial',
+					// Scheduling & Operations.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					'export_calendar_ics',
+					// Task Management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Communication.
+					'send_group_email',
+					'schedule_notify_sms',
+					'send_telegram_message',
+					'send_whatsapp_message',
+					// Documentation & Logs.
+					'save_post',
+					'create_post',
+					'pro_pdf',
+					'pro_word',
+					'pro_excel',
+					// Forms & Checklists.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Safety & Compliance.
+					'check_site_security',
+					'get_site_health',
+					// Research & Information.
+					'web_search',
+					'search_content',
+					// Analytics & Reporting.
+					'create_chart',
+					'analyze_data_patterns',
+					// Crew Management.
+					'create_agent_team',
+					'delegate_to_agent',
+				),
+			),
+
+			'food_service'             => array(
+				'name'        => __( '👨‍🍳 Food Service & Culinary', 'mcp-ai-wpoos' ),
+				'description' => __( 'Restaurant management, culinary arts, food service, and hospitality', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Menu & Recipe Management.
+					'save_post',
+					'create_post',
+					'search_content',
+					// Image Generation (for menu/food photos).
+					'generate_openai_image',
+					'generate_gemini_image',
+					'generate_image_caption',
+					'vision_product_search',
+					// E-commerce (online ordering).
+					'get_woo_products',
+					'create_woo_product',
+					'get_woo_recent_orders',
+					// Inventory & Supplies.
+					'create_project',
+					'update_project',
+					'list_projects',
+					// Task Management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					// Scheduling & Staffing.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Customer Communication.
+					'send_group_email',
+					'send_whatsapp_message',
+					'schedule_notify_sms',
+					'newsletter_add_subscriber',
+					'newsletter_create_email',
+					// Reservations & Bookings.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Social Media & Marketing.
+					'post_facebook_instagram',
+					'post_tiktok_video',
+					'post_google_business_update',
+					'get_facebook_instagram_insights',
+					'get_google_business_insights',
+					// Reviews & Reputation.
+					'moderate_content',
+					'analyze_comment_content',
+					// Analytics.
+					'google_analytics_report',
+					'create_chart',
+					// Document Management.
+					'pro_pdf',
+					'search_attachments',
+					// Research (recipes, trends).
+					'web_search',
+					'search_content',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'post_google_business_update',
+				),
+			),
+
+			'skilled_trades'           => array(
+				'name'        => __( '🔧 Skilled Trades & Construction', 'mcp-ai-wpoos' ),
+				'description' => __( 'Electricians, plumbers, HVAC, carpenters, welders, and skilled tradespeople', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Project Management.
+					'create_project',
+					'update_project',
+					'list_projects',
+					'research_project',
+					// Task & Job Management.
+					'create_task',
+					'update_task',
+					'list_tasks',
+					'create_task_plan',
+					// Scheduling & Appointments.
+					'create_event',
+					'update_event',
+					'list_events',
+					'get_calendar_view',
+					'create_google_calendar_event',
+					// Cost Estimation.
+					'estimate_construction_cost',
+					'generate_material_schedule',
+					// Building Codes & Compliance.
+					'check_building_code_compliance',
+					// Documentation & Photos.
+					'save_post',
+					'create_post',
+					'search_attachments',
+					'generate_image_caption',
+					// Image Processing (before/after photos).
+					'resize_image',
+					'crop_image',
+					// Invoicing & Payments.
+					'pro_pdf',
+					'pro_excel',
+					// Communication.
+					'send_group_email',
+					'send_whatsapp_message',
+					'schedule_notify_sms',
+					// Location Services.
+					'geocode_address',
+					'search_places',
+					'get_open_meteo_forecast',
+					// Forms & Customer Data.
+					'get_jetformbuilder_forms',
+					'get_jetformbuilder_submissions',
+					// Research & Technical Info.
+					'web_search',
+					'search_content',
+					// Equipment & Inventory.
+					'create_place',
+					'update_place',
+					'list_places',
+					// Analytics & Reporting.
+					'create_chart',
+					// Social Media & Marketing.
 					'post_facebook_instagram',
 					'post_google_business_update',
 				),

@@ -1190,6 +1190,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['pro_excel_document'] = 'external-tools';
 		}
 
+		// Add Architectural Design Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
+			// Floor Planning & Space Design tools.
+			$pro_tools['generate_floor_plan']           = 'external-tools';
+			$pro_tools['optimize_space_layout']         = 'external-tools';
+			$pro_tools['create_floor_plan_variations']  = 'external-tools';
+			$pro_tools['convert_sketch_to_floor_plan']  = 'external-tools';
+			// 3D Modeling & Visualization tools.
+			$pro_tools['generate_3d_model']             = 'external-tools';
+			$pro_tools['render_architectural_view']     = 'external-tools';
+			$pro_tools['create_walkthrough_animation']  = 'external-tools';
+			// Documentation & Blueprints tools.
+			$pro_tools['generate_construction_drawings'] = 'external-tools';
+			$pro_tools['generate_detail_drawings']      = 'external-tools';
+			$pro_tools['export_architectural_documents'] = 'external-tools';
+			// Analysis & Compliance tools.
+			$pro_tools['check_building_code_compliance'] = 'external-tools';
+			$pro_tools['analyze_structural_feasibility'] = 'external-tools';
+			$pro_tools['calculate_sustainability_metrics'] = 'external-tools';
+			// Estimation & Scheduling tools.
+			$pro_tools['generate_material_schedule']    = 'external-tools';
+			$pro_tools['estimate_construction_cost']    = 'external-tools';
+			$pro_tools['generate_construction_timeline'] = 'external-tools';
+		}
+
 		/**
 		 * Filter the Pro tool group assignments.
 		 *
