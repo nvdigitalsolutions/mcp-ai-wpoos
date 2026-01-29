@@ -74,7 +74,7 @@ class Test_Multi_Agent_Orchestration_Integration extends WP_UnitTestCase {
 	 */
 	public function test_agent_coordination_tools_registered() {
 		$tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$all_tools     = $tool_registry->get_all_tools();
+		$all_tools     = $tool_registry->get_tools();
 
 		$this->assertArrayHasKey( 'create_agent_team', $all_tools );
 		$this->assertArrayHasKey( 'delegate_to_agent', $all_tools );

@@ -215,6 +215,18 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve all registered tools as an associative array keyed by slug.
+		 *
+		 * @return WP_MCP_AI_Tool_Interface[]
+		 */
+		public function get_all_tools() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
+			return $this->tools;
+		}
+
+		/**
 		 * Execute a tool.
 		 *
 		 * @param string $slug      Tool slug.

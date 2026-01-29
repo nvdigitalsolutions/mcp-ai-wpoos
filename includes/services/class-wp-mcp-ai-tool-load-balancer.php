@@ -248,7 +248,7 @@ class WP_MCP_AI_Tool_Load_Balancer {
 		}
 
 		// Get all available tools.
-		$tools = $registry->get_all_tools();
+		$tools = $registry->get_tools();
 		if ( empty( $tools ) ) {
 			return array();
 		}

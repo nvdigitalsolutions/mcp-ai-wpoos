@@ -364,7 +364,7 @@ class WP_MCP_AI_Site_Health {
 			return $result;
 		}
 
-		$tools = $registry->get_all_tools();
+		$tools = $registry->get_tools();
 		$count = is_array( $tools ) ? count( $tools ) : 0;
 
 		if ( $count > 0 ) {
@@ -503,7 +503,7 @@ class WP_MCP_AI_Site_Health {
 		$tool_count = 0;
 		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 			$registry   = WP_MCP_AI_Tool_Registry::get_instance();
-			$tools      = $registry ? $registry->get_all_tools() : array();
+			$tools      = $registry ? $registry->get_tools() : array();
 			$tool_count = is_array( $tools ) ? count( $tools ) : 0;
 		}
 		$fields['tool_count'] = array(
