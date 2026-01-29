@@ -95,6 +95,7 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-research-site-best-practices.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-competitor-sites.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-site-plan.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
 	// Page Building Tools.
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-landing-page.php';
