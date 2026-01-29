@@ -67,14 +67,28 @@ rsync -av --quiet addons/pro/ "$PRO_BUILD_DIR/" \
 echo "Step 3: Transforming text domain..."
 BEFORE_COUNT=$(grep -r "'mcp-ai-wpoos'" "$PRO_BUILD_DIR" --include="*.php" 2>/dev/null | wc -l)
 
-# Transform Pro text domain
+# Transform Pro-specific text domains to WordPress.org compliant version
+# Transform 'mcp-ai-wpoos-pro' → 'nvdigital-open-operator-system-oos'
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+
+# Transform 'wp-mcp-ai-pro' → 'nvdigital-open-operator-system-oos'
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'wp-mcp-ai-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"wp-mcp-ai-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+
+# Transform base text domain 'mcp-ai-wpoos' → 'nvdigital-open-operator-system-oos'
 find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
 find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
+
+# Transform JavaScript files
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
 find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
 find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
 
 AFTER_COUNT=$(grep -r "'mcp-ai-wpoos'" "$PRO_BUILD_DIR" --include="*.php" 2>/dev/null | wc -l)
 echo "   Transformed: $((BEFORE_COUNT - AFTER_COUNT)) instances"
+echo "   Text domain: nvdigital-open-operator-system-oos"
 
 # Add plugin header to make it a standalone plugin
 echo "Step 4: Adding plugin header..."
