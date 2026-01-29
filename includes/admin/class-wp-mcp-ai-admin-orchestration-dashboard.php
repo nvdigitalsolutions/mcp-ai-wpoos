@@ -59,9 +59,15 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// WordPress generates submenu hooks as: {sanitized_parent_title}_page_{submenu_slug}
 		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Submenu slug: "mcp-ai-orchestration"
-		// Check if this is the orchestration page by looking for the submenu slug in the hook
-		// Exclude the Pro version (-pro suffix) to avoid conflicts
-		if ( false === strpos( $hook, 'mcp-ai-orchestration' ) || false !== strpos( $hook, 'mcp-ai-orchestration-pro' ) ) {
+		// Expected hook: nv-oos_page_mcp-ai-orchestration (or variants like toplevel_page_mcp-ai-orchestration)
+		
+		// Check if this is the base orchestration page (not the Pro version).
+		// Pro version uses slug 'mcp-ai-orchestration-pro', we want to exclude that.
+		$is_orchestration_page = false !== strpos( $hook, 'mcp-ai-orchestration' );
+		$is_pro_page           = false !== strpos( $hook, 'mcp-ai-orchestration-pro' );
+		
+		// Only enqueue on base orchestration page, not Pro page or other pages.
+		if ( ! $is_orchestration_page || $is_pro_page ) {
 			return;
 		}
 

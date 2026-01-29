@@ -35,8 +35,10 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 		$admin_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $admin_id );
 
-		// Initialize the dashboard class.
-		$this->dashboard = new WP_MCP_AI_Admin_Orchestration_Dashboard();
+		// Use reflection to create an instance without running constructor hooks.
+		// The file auto-instantiates the class at the bottom, but we need a reference for testing.
+		$class            = new ReflectionClass( 'WP_MCP_AI_Admin_Orchestration_Dashboard' );
+		$this->dashboard = $class->newInstanceWithoutConstructor();
 	}
 
 	/**
