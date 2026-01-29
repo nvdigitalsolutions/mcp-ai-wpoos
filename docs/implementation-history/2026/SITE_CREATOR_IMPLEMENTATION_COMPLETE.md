@@ -71,7 +71,7 @@ Site Creator (Top-level menu)
 **Documentation Created:**
 - `SITE_CREATOR_MENU_CHANGES.md` - Detailed before/after comparison
 - `SITE_CREATOR_MENU_UI_PREVIEW.md` - Visual descriptions of each page
-- `SITE_CREATOR_MENU_MOCKUP.html` - Interactive HTML mockup
+- `docs/visual-guides/SITE_CREATOR_MENU_MOCKUP.html` - Interactive HTML mockup
 - `SITE_CREATOR_IMPLEMENTATION_COMPLETE.md` - This file
 
 ### 5. Visual Representation
@@ -115,7 +115,7 @@ The changes maintain backward compatibility:
    - `tests/test-site-creator-menu-registration.php`
    - `SITE_CREATOR_MENU_CHANGES.md`
    - `SITE_CREATOR_MENU_UI_PREVIEW.md`
-   - `SITE_CREATOR_MENU_MOCKUP.html`
+   - `docs/visual-guides/SITE_CREATOR_MENU_MOCKUP.html`
    - `SITE_CREATOR_IMPLEMENTATION_COMPLETE.md`
 
 ## Testing Recommendations
