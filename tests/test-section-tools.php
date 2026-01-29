@@ -96,15 +96,8 @@ class Test_Section_Tools extends WP_UnitTestCase {
 			$this->assertArrayHasKey( $expected_subtab, $subtabs, "Subtab '$expected_subtab' should exist" );
 		}
 
-		// Site Creator subtab should only exist if toolkit is enabled.
-		$settings  = get_option( 'wp_mcp_ai_settings', array() );
-		$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
-
-		if ( $is_enabled ) {
-			$this->assertArrayHasKey( 'site_creator', $subtabs, "Site Creator subtab should exist when toolkit is enabled" );
-		} else {
-			$this->assertArrayNotHasKey( 'site_creator', $subtabs, "Site Creator subtab should not exist when toolkit is disabled" );
-		}
+		// Site Creator subtab should NOT exist here - it has its own separate admin page.
+		$this->assertArrayNotHasKey( 'site_creator', $subtabs, "Site Creator subtab should not exist in Tools page" );
 	}
 
 	/**
@@ -562,9 +555,10 @@ class Test_Section_Tools extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that site creator subtab visibility is controlled by enable_site_creator_toolkit setting.
+	 * Test that site creator subtab does not exist in Tools section.
+	 * Site Creator has its own separate admin page.
 	 */
-	public function test_site_creator_subtab_visibility_controlled_by_setting() {
+	public function test_site_creator_subtab_does_not_exist() {
 		$section = WP_MCP_AI_Settings_Registry::get_section( 'tools' );
 
 		// Use reflection to access private method.
@@ -572,30 +566,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 
-		// Test 1: When toolkit is disabled, site_creator subtab should not exist.
-		$settings                                = get_option( 'wp_mcp_ai_settings', array() );
-		$settings['enable_site_creator_toolkit'] = false;
-		update_option( 'wp_mcp_ai_settings', $settings );
-
 		$subtabs = $method->invoke( $section );
-		$this->assertArrayNotHasKey( 'site_creator', $subtabs, 'Site Creator subtab should not exist when toolkit is disabled' );
-
-		// Test 2: When toolkit is enabled, site_creator subtab should exist.
-		$settings['enable_site_creator_toolkit'] = true;
-		update_option( 'wp_mcp_ai_settings', $settings );
-
-		$subtabs = $method->invoke( $section );
-		$this->assertArrayHasKey( 'site_creator', $subtabs, 'Site Creator subtab should exist when toolkit is enabled' );
-
-		// Verify the subtab has expected properties.
-		$this->assertEquals( 'site_creator', $subtabs['site_creator']['id'] );
-		$this->assertEquals( 'Site Creator', $subtabs['site_creator']['label'] );
-		$this->assertEquals( 'dashicons-admin-site', $subtabs['site_creator']['icon'] );
-		$this->assertIsArray( $subtabs['site_creator']['fields'] );
-		$this->assertContains( 'enable_site_creator', $subtabs['site_creator']['fields'] );
-
-		// Clean up: reset settings.
-		$settings['enable_site_creator_toolkit'] = false;
-		update_option( 'wp_mcp_ai_settings', $settings );
+		$this->assertArrayNotHasKey( 'site_creator', $subtabs, 'Site Creator subtab should not exist in Tools section - it has its own admin page' );
 	}
 }
