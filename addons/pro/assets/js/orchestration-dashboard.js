@@ -8,9 +8,25 @@
 
 	const OrchestrationDashboard = {
 		refreshInterval: null,
-		config: wpMcpAiOrchestration || {},
+		config: typeof wpMcpAiOrchestration !== 'undefined' ? wpMcpAiOrchestration : {},
 
 		init: function() {
+			console.log('OrchestrationDashboard: Initializing...', this.config);
+			
+			// Check if config is properly loaded.
+			if (!this.config.ajaxUrl || !this.config.nonce) {
+				console.error('OrchestrationDashboard: Configuration not loaded properly', this.config);
+				// Show user-friendly error message on the page.
+				$('.wp-mcp-ai-orchestration-dashboard').prepend(
+					'<div class="notice notice-error"><p>' +
+					'<strong>Configuration Error:</strong> The orchestration dashboard could not load properly. ' +
+					'Please check that the plugin is activated correctly and try refreshing the page.' +
+					'</p></div>'
+				);
+				return;
+			}
+			
+			console.log('OrchestrationDashboard: Configuration loaded successfully');
 			this.bindEvents();
 			this.startAutoRefresh();
 			this.loadDashboardData();
@@ -38,6 +54,7 @@
 		},
 
 		loadDashboardData: function() {
+			console.log('OrchestrationDashboard: Loading dashboard data...');
 			$.ajax({
 				url: this.config.ajaxUrl,
 				type: 'POST',
@@ -46,12 +63,20 @@
 					nonce: this.config.nonce
 				},
 				success: (response) => {
+					console.log('OrchestrationDashboard: AJAX response received', response);
 					if (response.success && response.data) {
+						console.log('OrchestrationDashboard: Updating dashboard with data', response.data);
 						this.updateDashboard(response.data);
+					} else {
+						console.error('Dashboard data load failed:', response);
 					}
 				},
-				error: () => {
-					console.error('Failed to load dashboard data');
+				error: (xhr, status, error) => {
+					console.error('Failed to load dashboard data:', {
+						status: status,
+						error: error,
+						response: xhr.responseText
+					});
 				}
 			});
 		},
@@ -154,13 +179,16 @@
 		getSessionActions: function(session) {
 			let actions = '';
 			
+			// Escape session_id for safe insertion into HTML attributes
+			const escapedSessionId = this.escapeHtmlAttribute(session.session_id);
+			
 			if (session.status === 'active') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="pause">⏸ Pause</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="pause">⏸ Pause</button> ';
 			} else if (session.status === 'paused') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="resume">▶ Resume</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="resume">▶ Resume</button> ';
 			}
 			
-			actions += '<button class="button button-small button-link-delete session-action" data-session="' + session.session_id + '" data-action="stop">⏹ Stop</button>';
+			actions += '<button class="button button-small button-link-delete session-action" data-session="' + escapedSessionId + '" data-action="stop">⏹ Stop</button>';
 			
 			return actions;
 		},
@@ -214,6 +242,21 @@
 			return div.innerHTML;
 		},
 
+		/**
+		 * Escape HTML attribute value
+		 * 
+		 * @param {string} text Text to escape for use in HTML attribute.
+		 * @return {string} Escaped text safe for HTML attributes.
+		 */
+		escapeHtmlAttribute: function(text) {
+			return String(text)
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		},
+
 		updateWorkflowsTable: function(workflows) {
 			const $tbody = $('#workflows-table-body');
 			
@@ -247,6 +290,9 @@
 		getWorkflowActions: function(workflow) {
 			let actions = '';
 			
+			// Escape workflow_id for safe insertion into HTML attributes
+			const escapedWorkflowId = this.escapeHtmlAttribute(workflow.workflow_id);
+			
 			// Show "Continue" button for initialized or failed workflows
 			if (workflow.state === 'initialized' || workflow.state === 'failed') {
 				const buttonText = workflow.is_stale ? 
@@ -254,7 +300,7 @@
 					'▶ ' + (this.config.strings.startWorkflow || 'Continue');
 				const buttonClass = workflow.is_stale ? 'button-primary' : 'button';
 				actions += '<button class="button button-small ' + buttonClass + ' workflow-trigger" ' +
-					'data-workflow="' + workflow.workflow_id + '" ' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
 					'title="Continue this workflow">' +
 					buttonText + '</button> ';
 			}
@@ -262,7 +308,7 @@
 			// Show "Restart" button for completed or failed workflows
 			if (workflow.state === 'completed' || workflow.state === 'failed') {
 				actions += '<button class="button button-small workflow-restart" ' +
-					'data-workflow="' + workflow.workflow_id + '" ' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
 					'title="Restart this workflow from beginning">' +
 					'<span class="dashicons dashicons-update"></span> Restart</button>';
 			}
@@ -275,7 +321,7 @@
 			}
 			
 			// View details link (future enhancement)
-			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + workflow.workflow_id + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
+			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + escapedWorkflowId + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
 			
 			return actions;
 		},

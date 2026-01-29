@@ -55,6 +55,12 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
 
+		// Debug logging for troubleshooting asset enqueue issues.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Orchestration Dashboard: Hook=%s, GET page=%s, Is orchestration page=%s', $hook, isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : 'not set', $is_orchestration_page ? 'YES' : 'NO' ) );
+		}
+
 		if ( ! $is_orchestration_page ) {
 			return;
 		}
