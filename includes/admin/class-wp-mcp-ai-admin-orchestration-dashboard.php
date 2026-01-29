@@ -161,6 +161,12 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				<?php $this->render_statistics_cards( $stats ); ?>
 			</div>
 
+			<!-- System Status Monitor -->
+			<div class="orchestration-system-status-container">
+				<h2><?php esc_html_e( 'System Status', 'mcp-ai-wpoos' ); ?></h2>
+				<?php $this->render_system_status(); ?>
+			</div>
+
 			<!-- Agent Memory Usage (NEW - Phase 4/5) -->
 			<div class="orchestration-memory-container">
 				<h2><?php esc_html_e( 'Agent Memory Usage', 'mcp-ai-wpoos' ); ?></h2>
@@ -472,6 +478,86 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			</div>
 			<?php
 		endforeach;
+	}
+
+	/**
+	 * Render role distribution chart.
+	 *
+	 * @param array $stats Statistics data.
+	 * @return void
+	 */
+	protected function render_system_status() {
+		?>
+		<div class="system-status-grid">
+			<!-- Cron Jobs Status -->
+			<div class="status-card" id="cron-status-card">
+				<h3><span class="dashicons dashicons-clock"></span> <?php esc_html_e( 'Cron Jobs', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Active:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="cron_active">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Pending:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="cron_pending">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Failed:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value error" data-system-status="cron_failed">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Async Operations Status -->
+			<div class="status-card" id="async-status-card">
+				<h3><span class="dashicons dashicons-update"></span> <?php esc_html_e( 'Async Operations', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Status:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value status-badge" data-system-status="async_status">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Stuck Jobs:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value warning" data-system-status="async_stuck_jobs">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Long Running:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="async_long_running">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- System Health Status -->
+			<div class="status-card" id="health-status-card">
+				<h3><span class="dashicons dashicons-heart"></span> <?php esc_html_e( 'System Health', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Overall:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value status-badge" data-system-status="health_status">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Label:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="health_label">-</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- SSE Connectivity -->
+			<div class="status-card" id="sse-status-card">
+				<h3><span class="dashicons dashicons-update-alt"></span> <?php esc_html_e( 'SSE Streaming', 'mcp-ai-wpoos' ); ?></h3>
+				<div class="status-metrics">
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Available:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value" data-system-status="sse_available">-</span>
+					</div>
+					<div class="metric">
+						<span class="label"><?php esc_html_e( 'Endpoint:', 'mcp-ai-wpoos' ); ?></span>
+						<span class="value small" data-system-status="sse_endpoint">-</span>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
 	}
 
 	/**

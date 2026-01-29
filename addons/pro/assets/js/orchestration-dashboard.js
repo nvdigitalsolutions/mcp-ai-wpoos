@@ -101,6 +101,11 @@
 				$statusBadge.addClass('status-' + data.capacity.load_status.toLowerCase());
 			}
 
+			// Update system status if available.
+			if (data.system_status) {
+				this.updateSystemStatus(data.system_status);
+			}
+
 			// Update sessions table.
 			if (data.sessions) {
 				this.updateSessionsTable(data.sessions);
@@ -114,6 +119,41 @@
 			// Update activity feed.
 			if (data.activity) {
 				this.updateActivityFeed(data.activity);
+			}
+		},
+
+		/**
+		 * Update system status display.
+		 *
+		 * @param {Object} systemStatus System status data.
+		 */
+		updateSystemStatus: function(systemStatus) {
+			// Update cron status
+			if (systemStatus.cron) {
+				$('[data-system-status="cron_active"]').text(systemStatus.cron.active || 0);
+				$('[data-system-status="cron_pending"]').text(systemStatus.cron.pending || 0);
+				$('[data-system-status="cron_failed"]').text(systemStatus.cron.failed || 0);
+			}
+
+			// Update async status
+			if (systemStatus.async) {
+				const asyncStatus = systemStatus.async.status || 'unknown';
+				$('[data-system-status="async_status"]')
+					.text(asyncStatus)
+					.removeClass('status-healthy status-warning status-error')
+					.addClass('status-' + asyncStatus);
+				$('[data-system-status="async_stuck_jobs"]').text(systemStatus.async.stuck_jobs || 0);
+				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
+			}
+
+			// Update SSE status
+			if (systemStatus.sse) {
+				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
+				$('[data-system-status="sse_available"]')
+					.text(sseAvailable)
+					.removeClass('status-yes status-no')
+					.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
+				$('[data-system-status="sse_endpoint"]').text(systemStatus.sse.endpoint || 'N/A');
 			}
 		},
 
