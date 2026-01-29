@@ -75,6 +75,21 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Features to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
+				'industry'   => array(
+					'type'        => 'string',
+					'description' => __( 'Industry type for color palette (technology, healthcare, finance, ecommerce)', 'mcp-ai-wpoos-pro' ),
+					'enum'        => array( 'technology', 'healthcare', 'finance', 'ecommerce' ),
+				),
+				'custom_templates' => array(
+					'type'        => 'array',
+					'description' => __( 'Custom page templates to include', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'object' ),
+				),
+				'patterns'   => array(
+					'type'        => 'array',
+					'description' => __( 'Block pattern slugs to register', 'mcp-ai-wpoos-pro' ),
+					'items'       => array( 'type' => 'string' ),
+				),
 			),
 			'required'             => array( 'theme_name' ),
 			'additionalProperties' => false,
@@ -104,30 +119,68 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Sanitize arguments.
-		$theme_name = isset( $arguments['theme_name'] ) ? sanitize_text_field( $arguments['theme_name'] ) : '';
-		$theme_type = isset( $arguments['theme_type'] ) ? sanitize_text_field( $arguments['theme_type'] ) : 'block';
-		$features   = isset( $arguments['features'] ) && is_array( $arguments['features'] ) ?
+		$theme_name       = isset( $arguments['theme_name'] ) ? sanitize_text_field( $arguments['theme_name'] ) : '';
+		$theme_type       = isset( $arguments['theme_type'] ) ? sanitize_text_field( $arguments['theme_type'] ) : 'block';
+		$features         = isset( $arguments['features'] ) && is_array( $arguments['features'] ) ?
 			array_map( 'sanitize_text_field', $arguments['features'] ) : array();
+		$industry         = isset( $arguments['industry'] ) ? sanitize_key( $arguments['industry'] ) : '';
+		$custom_templates = isset( $arguments['custom_templates'] ) && is_array( $arguments['custom_templates'] ) ?
+			$arguments['custom_templates'] : array();
+		$patterns         = isset( $arguments['patterns'] ) && is_array( $arguments['patterns'] ) ?
+			array_map( 'sanitize_text_field', $arguments['patterns'] ) : array();
 
 		if ( empty( $theme_name ) ) {
 			return new WP_Error( 'wp_mcp_ai_missing_required', __( 'Theme name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		// Generate comprehensive theme.json if block or hybrid theme.
+		$theme_json = null;
+		if ( 'block' === $theme_type || 'hybrid' === $theme_type ) {
+			// Load theme.json generator if not already loaded.
+			if ( ! class_exists( 'WP_MCP_AI_Theme_JSON_Generator' ) ) {
+				require_once dirname( dirname( dirname( __FILE__ ) ) ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
+			}
+
+			$theme_json_args = array(
+				'theme_name'       => $theme_name,
+				'theme_type'       => $theme_type,
+				'custom_templates' => $custom_templates,
+				'patterns'         => $patterns,
+			);
+
+			// Add industry-specific color palette if provided.
+			if ( ! empty( $industry ) ) {
+				$theme_json_args['color_palette'] = WP_MCP_AI_Theme_JSON_Generator::get_industry_color_palette( $industry );
+			}
+
+			$theme_json_data = WP_MCP_AI_Theme_JSON_Generator::generate( $theme_json_args );
+
+			// Validate theme.json.
+			$validation = WP_MCP_AI_Theme_JSON_Generator::validate( $theme_json_data );
+			if ( is_wp_error( $validation ) ) {
+				return $validation;
+			}
+
+			// Convert to JSON string.
+			$theme_json = WP_MCP_AI_Theme_JSON_Generator::to_json( $theme_json_data, true );
+		}
+
 		// Generate theme structure.
 		$theme_structure = array(
-			'name'      => $theme_name,
-			'type'      => $theme_type,
-			'slug'      => sanitize_title( $theme_name ),
-			'files'     => $this->get_theme_files( $theme_type ),
-			'templates' => $this->get_theme_templates( $theme_type ),
-			'features'  => $this->get_theme_features( $features ),
+			'name'       => $theme_name,
+			'type'       => $theme_type,
+			'slug'       => sanitize_title( $theme_name ),
+			'files'      => $this->get_theme_files( $theme_type ),
+			'templates'  => $this->get_theme_templates( $theme_type ),
+			'features'   => $this->get_theme_features( $features ),
+			'theme_json' => $theme_json,
 		);
 
 		return array(
 			'success'         => true,
 			'theme_structure' => $theme_structure,
 			/* translators: 1: theme type, 2: theme name */
-			'summary'         => sprintf( __( 'Generated %1$s theme structure for "%2$s".', 'mcp-ai-wpoos-pro' ), $theme_type, $theme_name ),
+			'summary'         => sprintf( __( 'Generated %1$s theme structure for "%2$s" with comprehensive theme.json following 2025 best practices.', 'mcp-ai-wpoos-pro' ), $theme_type, $theme_name ),
 			'timestamp'       => current_time( 'mysql' ),
 		);
 	}
