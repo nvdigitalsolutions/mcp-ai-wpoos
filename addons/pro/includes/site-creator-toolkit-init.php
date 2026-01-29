@@ -111,6 +111,12 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-gallery-section.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-contact-section.php';
 
+	// Widget Building Tools.
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-custom-widget.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-navigation-menu.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-sidebar-widget.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-footer-widget.php';
+
 	// TODO: Add more tools as they are implemented.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
@@ -138,7 +144,13 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register( new WP_MCP_AI_Tool_Generate_Gallery_Section() );
 		$registry->register( new WP_MCP_AI_Tool_Build_Contact_Section() );
 
-		// Widget Building - to be implemented.
+		// Widget Building.
+		$registry->register( new WP_MCP_AI_Tool_Create_Custom_Widget() );
+		$registry->register( new WP_MCP_AI_Tool_Build_Navigation_Menu() );
+		$registry->register( new WP_MCP_AI_Tool_Generate_Sidebar_Widget() );
+		$registry->register( new WP_MCP_AI_Tool_Create_Footer_Widget() );
+
+		// Template Management - to be implemented.
 		// Section Building - to be implemented.
 		// Widget Building - to be implemented.
 		// Template Management - to be implemented.
