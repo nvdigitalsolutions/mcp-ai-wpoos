@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-loading-issues-section',
-        'version' => 'dev-copilot/fix-loading-issues-section',
-        'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
+        'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+        'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+        'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-loading-issues-section',
-            'version' => 'dev-copilot/fix-loading-issues-section',
-            'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
+            'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+            'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
+            'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
