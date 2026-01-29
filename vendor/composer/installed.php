@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/refactor-architectural-toolkit',
-        'version' => 'dev-copilot/refactor-architectural-toolkit',
-        'reference' => '66fcee73745b43cacd6f4cac27d421c069beb460',
+        'pretty_version' => 'dev-copilot/fix-research-add-page-visibility',
+        'version' => 'dev-copilot/fix-research-add-page-visibility',
+        'reference' => '4aa32f396cee8a99f0b6e64cd6a78dff5884d840',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/refactor-architectural-toolkit',
-            'version' => 'dev-copilot/refactor-architectural-toolkit',
-            'reference' => '66fcee73745b43cacd6f4cac27d421c069beb460',
+            'pretty_version' => 'dev-copilot/fix-research-add-page-visibility',
+            'version' => 'dev-copilot/fix-research-add-page-visibility',
+            'reference' => '4aa32f396cee8a99f0b6e64cd6a78dff5884d840',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
