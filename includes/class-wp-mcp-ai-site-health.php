@@ -160,7 +160,7 @@ class WP_MCP_AI_Site_Health {
 			);
 			$result['actions'] = sprintf(
 				'<p><a href="%s">%s</a></p>',
-				esc_url( admin_url( 'admin.php?page=mcp-ai-settings' ) ),
+				esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ),
 				__( 'Configure AI Providers', 'mcp-ai-wpoos' )
 			);
 		} elseif ( $providers_working === $providers_configured ) {
@@ -191,7 +191,7 @@ class WP_MCP_AI_Site_Health {
 			);
 			$result['actions'] = sprintf(
 				'<p><a href="%s">%s</a></p>',
-				esc_url( admin_url( 'admin.php?page=mcp-ai-settings' ) ),
+				esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ),
 				__( 'Check AI Provider Settings', 'mcp-ai-wpoos' )
 			);
 		}
