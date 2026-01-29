@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+        'version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+        'reference' => '7454717cdadb7d7d1dbe40cf30d6a4d24151281f',
         'pretty_version' => 'dev-copilot/add-architectural-toolkit-research',
         'version' => 'dev-copilot/add-architectural-toolkit-research',
         'reference' => 'eec87d2310a359db9831867c3609f83c84cf787b',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+            'version' => 'dev-copilot/fix-85486977-1080917120-918bf00c-f6ae-4891-90e7-8c07796597d3',
+            'reference' => '7454717cdadb7d7d1dbe40cf30d6a4d24151281f',
             'pretty_version' => 'dev-copilot/add-architectural-toolkit-research',
             'version' => 'dev-copilot/add-architectural-toolkit-research',
             'reference' => 'eec87d2310a359db9831867c3609f83c84cf787b',
