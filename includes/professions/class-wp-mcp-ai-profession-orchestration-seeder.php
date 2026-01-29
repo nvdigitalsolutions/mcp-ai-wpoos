@@ -769,14 +769,281 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'geocode_address', 'create_chart', 'save_post' ),
 				),
 			),
-			// Customer Support
-			'customer_support'   => array(
-				'ticket_handling' => array(
-					'steps'         => array( 'review_ticket', 'analyze_sentiment', 'resolve_issue', 'follow_up' ),
+			// Real professions from the database
+			'web_developer'      => array(
+				'website_development' => array(
+					'steps'         => array( 'plan_structure', 'develop_site', 'test_functionality', 'deploy' ),
 					'dependencies'  => array(
-						'analyze_sentiment' => 'review_ticket',
-						'resolve_issue'     => 'analyze_sentiment',
-						'follow_up'         => 'resolve_issue',
+						'develop_site'       => 'plan_structure',
+						'test_functionality' => 'develop_site',
+						'deploy'             => 'test_functionality',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'get_elementor_templates', 'import_elementor_template_kit', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			'ui_ux_designer'     => array(
+				'design_workflow' => array(
+					'steps'         => array( 'research_users', 'create_wireframes', 'design_mockups', 'prototype' ),
+					'dependencies'  => array(
+						'create_wireframes' => 'research_users',
+						'design_mockups'    => 'create_wireframes',
+						'prototype'         => 'design_mockups',
+					),
+					'tools'         => array( 'generate_gemini_image', 'edit_gemini_image', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			'devops_engineer'    => array(
+				'deployment_pipeline' => array(
+					'steps'         => array( 'setup_infrastructure', 'configure_cicd', 'monitor_health', 'optimize' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'get_site_health', 'check_workflow_health', 'get_system_logs', 'performance_optimizer_assistant' ),
+				),
+			),
+			'cybersecurity_specialist' => array(
+				'security_assessment' => array(
+					'steps'         => array( 'scan_vulnerabilities', 'analyze_threats', 'implement_fixes', 'monitor' ),
+					'dependencies'  => array(
+						'analyze_threats'   => 'scan_vulnerabilities',
+						'implement_fixes'   => 'analyze_threats',
+						'monitor'           => 'implement_fixes',
+					),
+					'tools'         => array( 'check_site_security', 'login_security_monitor', 'user_activity_auditor', 'password_strength_analyzer', 'save_post' ),
+				),
+			),
+			'content_creator'    => array(
+				'content_production' => array(
+					'steps'         => array( 'ideate', 'create_content', 'optimize', 'publish' ),
+					'dependencies'  => array(
+						'create_content' => 'ideate',
+						'optimize'       => 'create_content',
+						'publish'        => 'optimize',
+					),
+					'tools'         => array( 'web_search', 'generate_gemini_image', 'generate_video_caption', 'create_post', 'save_post' ),
+				),
+			),
+			'social_media_manager' => array(
+				'social_campaign' => array(
+					'steps'         => array( 'plan_content', 'create_posts', 'schedule', 'analyze_metrics' ),
+					'dependencies'  => array(
+						'create_posts'    => 'plan_content',
+						'schedule'        => 'create_posts',
+						'analyze_metrics' => 'schedule',
+					),
+					'tools'         => array( 'create_post', 'generate_gemini_image', 'create_cron_job', 'sitekit_analytics' ),
+				),
+			),
+			'journalist'         => array(
+				'news_reporting' => array(
+					'steps'         => array( 'research_story', 'conduct_interviews', 'write_article', 'publish' ),
+					'dependencies'  => array(
+						'conduct_interviews' => 'research_story',
+						'write_article'      => 'conduct_interviews',
+						'publish'            => 'write_article',
+					),
+					'tools'         => array( 'web_search', 'deep_research', 'create_post', 'save_post' ),
+				),
+			),
+			'photographer'       => array(
+				'photo_workflow' => array(
+					'steps'         => array( 'capture_images', 'edit_photos', 'optimize', 'publish' ),
+					'dependencies'  => array(
+						'edit_photos' => 'capture_images',
+						'optimize'    => 'edit_photos',
+						'publish'     => 'optimize',
+					),
+					'tools'         => array( 'edit_gemini_image', 'resize_image', 'convert_image_format', 'generate_image_alt_text', 'generate_image_caption' ),
+				),
+			),
+			'video_editor'       => array(
+				'video_editing' => array(
+					'steps'         => array( 'review_footage', 'edit_sequence', 'add_effects', 'export' ),
+					'dependencies'  => array(
+						'edit_sequence' => 'review_footage',
+						'add_effects'   => 'edit_sequence',
+						'export'        => 'add_effects',
+					),
+					'tools'         => array( 'analyze_video', 'generate_video_caption', 'check_video_status', 'save_post' ),
+				),
+			),
+			'accountant'         => array(
+				'financial_reporting' => array(
+					'steps'         => array( 'collect_data', 'analyze_finances', 'create_reports', 'advise' ),
+					'dependencies'  => array(
+						'analyze_finances' => 'collect_data',
+						'create_reports'   => 'analyze_finances',
+						'advise'           => 'create_reports',
+					),
+					'tools'         => array( 'create_chart', 'generate_post_excerpt', 'save_post' ),
+				),
+			),
+			'business_consultant' => array(
+				'business_analysis' => array(
+					'steps'         => array( 'assess_situation', 'identify_issues', 'recommend_solutions', 'implement' ),
+					'dependencies'  => array(
+						'identify_issues'      => 'assess_situation',
+						'recommend_solutions'  => 'identify_issues',
+						'implement'            => 'recommend_solutions',
+					),
+					'tools'         => array( 'web_search', 'create_chart', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			'marketing_consultant' => array(
+				'marketing_strategy' => array(
+					'steps'         => array( 'analyze_market', 'develop_strategy', 'plan_campaigns', 'measure_results' ),
+					'dependencies'  => array(
+						'develop_strategy' => 'analyze_market',
+						'plan_campaigns'   => 'develop_strategy',
+						'measure_results'  => 'plan_campaigns',
+					),
+					'tools'         => array( 'sitekit_analytics', 'sitekit_search_console', 'create_chart', 'save_post' ),
+				),
+			),
+			'sales_manager'      => array(
+				'sales_management' => array(
+					'steps'         => array( 'set_targets', 'track_pipeline', 'coach_team', 'analyze_performance' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'get_woo_recent_orders', 'create_chart', 'send_group_email', 'save_post' ),
+				),
+			),
+			'hr_manager'         => array(
+				'recruitment_workflow' => array(
+					'steps'         => array( 'define_role', 'source_candidates', 'conduct_interviews', 'onboard' ),
+					'dependencies'  => array(
+						'source_candidates'   => 'define_role',
+						'conduct_interviews'  => 'source_candidates',
+						'onboard'             => 'conduct_interviews',
+					),
+					'tools'         => array( 'create_post', 'send_group_email', 'save_post' ),
+				),
+			),
+			'lawyer'             => array(
+				'legal_research' => array(
+					'steps'         => array( 'research_law', 'analyze_case', 'prepare_documents', 'advise_client' ),
+					'dependencies'  => array(
+						'analyze_case'       => 'research_law',
+						'prepare_documents'  => 'analyze_case',
+						'advise_client'      => 'prepare_documents',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'deep_research', 'create_post', 'save_post' ),
+				),
+			),
+			'teacher'            => array(
+				'lesson_planning' => array(
+					'steps'         => array( 'define_objectives', 'create_materials', 'deliver_lesson', 'assess_learning' ),
+					'dependencies'  => array(
+						'create_materials' => 'define_objectives',
+						'deliver_lesson'   => 'create_materials',
+						'assess_learning'  => 'deliver_lesson',
+					),
+					'tools'         => array( 'create_post', 'generate_gemini_image', 'create_chart', 'save_post' ),
+				),
+			),
+			'architect'          => array(
+				'design_development' => array(
+					'steps'         => array( 'conceptualize', 'draft_plans', 'model_3d', 'finalize' ),
+					'dependencies'  => array(
+						'draft_plans' => 'conceptualize',
+						'model_3d'    => 'draft_plans',
+						'finalize'    => 'model_3d',
+					),
+					'tools'         => array( 'generate_gemini_image', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			'civil_engineer'     => array(
+				'engineering_project' => array(
+					'steps'         => array( 'survey_site', 'design_structure', 'calculate_loads', 'prepare_specs' ),
+					'dependencies'  => array(
+						'design_structure' => 'survey_site',
+						'calculate_loads'  => 'design_structure',
+						'prepare_specs'    => 'calculate_loads',
+					),
+					'tools'         => array( 'create_chart', 'generate_mermaid', 'save_post' ),
+				),
+			),
+			'nurse_practitioner' => array(
+				'patient_care' => array(
+					'steps'         => array( 'assess_patient', 'diagnose', 'prescribe_treatment', 'follow_up' ),
+					'dependencies'  => array(
+						'diagnose'            => 'assess_patient',
+						'prescribe_treatment' => 'diagnose',
+						'follow_up'           => 'prescribe_treatment',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'web_search', 'create_post', 'save_post' ),
+				),
+			),
+			'restaurant_manager' => array(
+				'restaurant_operations' => array(
+					'steps'         => array( 'plan_menu', 'manage_inventory', 'schedule_staff', 'monitor_quality' ),
+					'parallel_safe' => true,
+					'tools'         => array( 'create_post', 'create_cron_job', 'save_post' ),
+				),
+			),
+			'real_estate_agent'  => array(
+				'property_marketing' => array(
+					'steps'         => array( 'list_property', 'create_marketing', 'show_property', 'negotiate' ),
+					'dependencies'  => array(
+						'create_marketing' => 'list_property',
+						'show_property'    => 'create_marketing',
+						'negotiate'        => 'show_property',
+					),
+					'tools'         => array( 'create_post', 'generate_gemini_image', 'search_places', 'send_group_email' ),
+				),
+			),
+			'writer'             => array(
+				'writing_workflow' => array(
+					'steps'         => array( 'research', 'outline', 'draft', 'revise' ),
+					'dependencies'  => array(
+						'outline' => 'research',
+						'draft'   => 'outline',
+						'revise'  => 'draft',
+					),
+					'tools'         => array( 'web_search', 'create_post', 'moderate_content', 'save_post' ),
+				),
+			),
+			'filmmaker'          => array(
+				'film_production' => array(
+					'steps'         => array( 'develop_script', 'plan_shots', 'film', 'post_production' ),
+					'dependencies'  => array(
+						'plan_shots'      => 'develop_script',
+						'film'            => 'plan_shots',
+						'post_production' => 'film',
+					),
+					'tools'         => array( 'generate_sora_video', 'generate_video_caption', 'analyze_video', 'save_post' ),
+				),
+			),
+			'event_planner'      => array(
+				'event_coordination' => array(
+					'steps'         => array( 'plan_event', 'coordinate_vendors', 'execute_event', 'follow_up' ),
+					'dependencies'  => array(
+						'coordinate_vendors' => 'plan_event',
+						'execute_event'      => 'coordinate_vendors',
+						'follow_up'          => 'execute_event',
+					),
+					'tools'         => array( 'create_post', 'create_cron_job', 'send_group_email', 'save_post' ),
+				),
+			),
+			'disaster_response_coordinator' => array(
+				'emergency_response' => array(
+					'steps'         => array( 'monitor_threats', 'activate_response', 'coordinate_resources', 'report_status' ),
+					'dependencies'  => array(
+						'activate_response'    => 'monitor_threats',
+						'coordinate_resources' => 'activate_response',
+						'report_status'        => 'coordinate_resources',
+					),
+					'parallel_safe' => false,
+					'tools'         => array( 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'geocode_address', 'send_group_email', 'save_post' ),
+				),
+			),
+			'customer_service_rep' => array(
+				'customer_support' => array(
+					'steps'         => array( 'receive_inquiry', 'analyze_issue', 'resolve', 'follow_up' ),
+					'dependencies'  => array(
+						'analyze_issue' => 'receive_inquiry',
+						'resolve'       => 'analyze_issue',
+						'follow_up'     => 'resolve',
 					),
 					'tools'         => array( 'client_analyze_sentiment', 'client_question_answering', 'send_group_email' ),
 				),
