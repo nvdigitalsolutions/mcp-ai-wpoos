@@ -89,6 +89,9 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-enhanced-wo
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
+// Load cron status service (for admin dashboard monitoring).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cron-status-service.php';
+
 // Load agent context management service (DeepSeek V4 enhancements - Phase 5).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-context-manager.php';
 
