@@ -1317,11 +1317,11 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<?php endif; ?>
 
 			<div class="memory-tool-info">
-				<h4><?php esc_html_e( 'Agent Memory Tools (Phase 4/5)', 'mcp-ai-wpoos' ); ?></h4>
+				<h4><?php esc_html_e( 'Agent Memory Tools (Phase 5)', 'mcp-ai-wpoos' ); ?></h4>
 				<ul>
 					<?php
 					// Get agent memory tools from registry dynamically.
-					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory' );
+					$memory_tool_slugs = array( 'store_agent_context', 'retrieve_agent_memory', 'prioritize_context', 'semantic_context_search' );
 					$registry          = WP_MCP_AI_Tool_Registry::get_instance();
 
 					if ( $registry ) {
@@ -1352,6 +1352,14 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 						<li>
 							<strong>retrieve_agent_memory:</strong>
 							<?php esc_html_e( 'Retrieve contexts with semantic search, filtering, and relevance scoring', 'mcp-ai-wpoos' ); ?>
+						</li>
+						<li>
+							<strong>prioritize_context:</strong>
+							<?php esc_html_e( 'Prioritize contexts within token budgets using relevance, importance, and recency scoring', 'mcp-ai-wpoos' ); ?>
+						</li>
+						<li>
+							<strong>semantic_context_search:</strong>
+							<?php esc_html_e( 'Search contexts using vector embeddings for superior semantic understanding', 'mcp-ai-wpoos' ); ?>
 						</li>
 						<?php
 					}
