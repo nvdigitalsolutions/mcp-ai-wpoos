@@ -137,9 +137,14 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'optimize_for_web',
 					'batch_process_images',
 					'generate_responsive_images',
+					// Image optimization (NEW - Phase 5).
+					'media_library_optimizer',
+					'image_format_batch_converter',
+					'responsive_image_validator',
 					// Image analysis.
 					'generate_image_alt_text',
 					'generate_image_alt_text_validated',
+					'image_alt_text_optimizer',
 					'generate_image_caption',
 					'generate_image_caption_validated',
 					'vision_object_localization',
@@ -194,6 +199,13 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'save_post_validated',
 					'create_post',
 					'create_post_validated',
+					// Content optimization (Phase 2).
+					'generate_post_excerpt',
+					'auto_categorize_content',
+					'suggest_internal_links',
+					'content_freshness_checker',
+					// Content recommendations (Phase 6).
+					'content_recommendation_engine',
 					// Research.
 					'web_search',
 					'web_search_validated',
@@ -312,8 +324,21 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '📈 SEO & Marketing', 'mcp-ai-wpoos' ),
 				'description' => __( 'SEO analysis, social media management, and marketing automation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// SEO.
+					// SEO tools (Phase 3).
+					'seo_meta_optimizer',
 					'get_rankmath_seo',
+					'multilingual_seo_audit',
+					// Content optimization for SEO (Phase 2).
+					'generate_post_excerpt',
+					'suggest_internal_links',
+					'content_freshness_checker',
+					// Image SEO (Phase 3).
+					'generate_image_alt_text',
+					'image_alt_text_optimizer',
+					// Performance optimization (Phase 6).
+					'performance_optimizer_assistant',
+					'responsive_image_validator',
+					// Research & analysis.
 					'web_search',
 					// Social media.
 					'post_facebook_instagram',
@@ -343,6 +368,23 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'newsletter_get_subscriber_stats',
 					'newsletter_get_subscribers',
 					'newsletter_unsubscribe',
+				),
+			),
+
+			'gutenberg_blocks'         => array(
+				'name'        => __( '🧱 Gutenberg & Blocks', 'mcp-ai-wpoos' ),
+				'description' => __( 'Gutenberg block patterns, FSE, and WordPress editor tools', 'mcp-ai-wpoos' ),
+				'tools'       => array(
+					// Block pattern generation (Phase 5).
+					'gutenberg_block_pattern_generator',
+					// Image optimization for blocks.
+					'responsive_image_validator',
+					'image_format_batch_converter',
+					'media_library_optimizer',
+					// Content for blocks.
+					'generate_post_excerpt',
+					'generate_image_caption',
+					'image_alt_text_optimizer',
 				),
 			),
 
@@ -556,6 +598,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Security checks.
 					'check_site_security',
 					'get_site_health',
+					// User security (Phase 4).
+					'user_activity_auditor',
+					'password_strength_analyzer',
+					'login_security_monitor',
+					'2fa_setup_assistant',
 					// Content moderation.
 					'moderate_content',
 					'analyze_comment_content',

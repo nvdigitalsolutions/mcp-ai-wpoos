@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/enhance-wordpress-integration-again',
+        'version' => 'dev-copilot/enhance-wordpress-integration-again',
+        'reference' => 'fd0a937ec467c8f804b96adb50c4dcafc0448dd0',
         'pretty_version' => 'dev-copilot/review-embedded-llm-provider',
         'version' => 'dev-copilot/review-embedded-llm-provider',
         'reference' => 'caeac4a6e5ecafc4d0577d7e2e2afd0b2536e181',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/enhance-wordpress-integration-again',
+            'version' => 'dev-copilot/enhance-wordpress-integration-again',
+            'reference' => 'fd0a937ec467c8f804b96adb50c4dcafc0448dd0',
             'pretty_version' => 'dev-copilot/review-embedded-llm-provider',
             'version' => 'dev-copilot/review-embedded-llm-provider',
             'reference' => 'caeac4a6e5ecafc4d0577d7e2e2afd0b2536e181',
