@@ -624,6 +624,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Architect Agent Toolkit (Self-Editing Capabilities).
+				'enable_architect_agent_toolkit'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI self-editing with GitHub Copilot CLI parity (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 4 self-editing tools for AI agents: file management (read/write/list), shell command execution, git operations, and code search. Provides GitHub Copilot CLI-level capabilities for autonomous development. Requires edit_plugins capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Architectural Design Toolkit (Phase 2.10).
 				'enable_architectural_design_toolkit'  => array(
 					'type'           => 'checkbox',
@@ -700,7 +709,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architectural_design_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -885,6 +894,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_dj_management_toolkit'        => 72,   // 15-18 tools, music APIs, contracts.
 				'enable_image_production_toolkit'     => 192,  // 12-15 tools, AI generation, GPU processing.
 				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
+				'enable_architect_agent_toolkit'      => 16,   // 4 self-editing tools (file, shell, git, search).
 				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
 			);
 		}
@@ -1004,6 +1014,7 @@ WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for 
 							'input[name="wp_mcp_ai_settings[enable_dj_management_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_architect_agent_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
 						);
 
