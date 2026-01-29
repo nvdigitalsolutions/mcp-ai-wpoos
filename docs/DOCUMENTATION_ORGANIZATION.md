@@ -315,10 +315,11 @@ All documentation files should include:
 
 ## See Also
 
-- [Documentation Index](docs/DOCUMENTATION_INDEX.md) - Complete file listing
-- [Quick Reference](docs/QUICK_REFERENCE.md) - Fast reference guide
-- [Documentation Review](docs/DOCUMENTATION_REVIEW_SUMMARY.md) - Quality assessment
-- [README](README.md) - Project overview
+- [Documentation Index](DOCUMENTATION_INDEX.md) - Complete file listing
+- [Quick Reference](QUICK_REFERENCE.md) - Fast reference guide
+- [Documentation Review](DOCUMENTATION_REVIEW_SUMMARY.md) - Quality assessment
+- [README](../README.md) - Project overview
+- [Documentation Directory README](README.md) - Quick navigation
 
 ---
 
