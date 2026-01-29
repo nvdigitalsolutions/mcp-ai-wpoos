@@ -26,7 +26,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	/**
 	 * Version of the seeder (for tracking migrations).
 	 */
-	const SEEDER_VERSION = '1.0.0';
+	const SEEDER_VERSION = '1.0.1';
 
 	/**
 	 * Option key for tracking seeder version.
@@ -90,13 +90,19 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	 * @return array Results with count and errors.
 	 */
 	public function seed_agent_roles() {
-		$professions = get_posts(
+		// Use WP_Query with 'nopaging' for reliable fetching of all posts.
+		// get_posts() with posts_per_page => -1 can be unreliable with 200+ posts.
+		$query = new WP_Query(
 			array(
-				'post_type'      => 'mcp_ai_profession',
-				'posts_per_page' => -1,
-				'post_status'    => 'publish',
+				'post_type'   => 'mcp_ai_profession',
+				'post_status' => 'publish',
+				'nopaging'    => true,
+				'fields'      => 'all',
 			)
 		);
+
+		$professions = $query->posts;
+		wp_reset_postdata();
 
 		$seeded = 0;
 		$errors = array();
