@@ -96,6 +96,9 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-competitor-sites.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-site-plan.php';
 
+	// Page Building Tools.
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-landing-page.php';
+
 	// TODO: Add more tools as they are implemented.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
@@ -108,7 +111,10 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register( new WP_MCP_AI_Tool_Analyze_Competitor_Sites() );
 		$registry->register( new WP_MCP_AI_Tool_Generate_Site_Plan() );
 
-		// Page Building - to be implemented.
+		// Page Building.
+		$registry->register( new WP_MCP_AI_Tool_Generate_Landing_Page() );
+
+		// Section Building - to be implemented.
 		// Section Building - to be implemented.
 		// Widget Building - to be implemented.
 		// Template Management - to be implemented.
