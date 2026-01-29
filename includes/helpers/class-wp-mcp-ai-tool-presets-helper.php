@@ -140,6 +140,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Image analysis.
 					'generate_image_alt_text',
 					'generate_image_alt_text_validated',
+					'image_alt_text_optimizer',
 					'generate_image_caption',
 					'generate_image_caption_validated',
 					'vision_object_localization',
@@ -194,6 +195,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'save_post_validated',
 					'create_post',
 					'create_post_validated',
+					// Content optimization (NEW).
+					'generate_post_excerpt',
+					'auto_categorize_content',
+					'suggest_internal_links',
+					'content_freshness_checker',
 					// Research.
 					'web_search',
 					'web_search_validated',
@@ -312,8 +318,18 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '📈 SEO & Marketing', 'mcp-ai-wpoos' ),
 				'description' => __( 'SEO analysis, social media management, and marketing automation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
-					// SEO.
+					// SEO tools (NEW).
+					'seo_meta_optimizer',
 					'get_rankmath_seo',
+					'multilingual_seo_audit',
+					// Content optimization for SEO.
+					'generate_post_excerpt',
+					'suggest_internal_links',
+					'content_freshness_checker',
+					// Image SEO.
+					'generate_image_alt_text',
+					'image_alt_text_optimizer',
+					// Research & analysis.
 					'web_search',
 					// Social media.
 					'post_facebook_instagram',
