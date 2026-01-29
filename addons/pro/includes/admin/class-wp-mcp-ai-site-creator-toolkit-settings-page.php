@@ -41,13 +41,46 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 	 * @since 1.2.0
 	 */
 	public function add_settings_page() {
-		add_submenu_page(
-			'nvoos-pro-dashboard',
-			__( 'Site Creator Toolkit', 'mcp-ai-wpoos-pro' ),
+		// Add top-level menu page for Site Creator.
+		add_menu_page(
+			__( 'Site Creator', 'mcp-ai-wpoos-pro' ),
 			__( 'Site Creator', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
-			'nvoos-site-creator-toolkit',
+			'nvoos-site-creator',
+			array( $this, 'render_settings_page' ),
+			'dashicons-admin-site-alt3',
+			31
+		);
+
+		// Remove the auto-generated submenu item (has same title as top-level menu).
+		remove_submenu_page( 'nvoos-site-creator', 'nvoos-site-creator' );
+
+		// Add submenu items for Site Creator.
+		add_submenu_page(
+			'nvoos-site-creator',
+			__( 'Overview', 'mcp-ai-wpoos-pro' ),
+			__( 'Overview', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'nvoos-site-creator',
 			array( $this, 'render_settings_page' )
+		);
+
+		add_submenu_page(
+			'nvoos-site-creator',
+			__( 'Tools', 'mcp-ai-wpoos-pro' ),
+			__( 'Tools', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'nvoos-site-creator-tools',
+			array( $this, 'render_tools_page' )
+		);
+
+		add_submenu_page(
+			'nvoos-site-creator',
+			__( 'Templates', 'mcp-ai-wpoos-pro' ),
+			__( 'Templates', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'nvoos-site-creator-templates',
+			array( $this, 'render_templates_page' )
 		);
 	}
 
@@ -216,6 +249,149 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 					);
 					?>
 				</p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the tools page.
+	 *
+	 * @since 1.2.0
+	 */
+	public function render_tools_page() {
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Site Creator Tools', 'mcp-ai-wpoos-pro' ); ?></h1>
+
+			<div class="card">
+				<h2><?php esc_html_e( 'Available Tools', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					esc_html_e(
+						'The Site Creator Toolkit provides 26 specialized tools across 6 categories for automated WordPress site creation.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+
+				<h3><?php esc_html_e( 'Tool Categories', 'mcp-ai-wpoos-pro' ); ?></h3>
+
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-search" style="color: #2271b1;"></span> <?php esc_html_e( 'Research & Discovery', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '4 tools for best practices, competitor analysis, site planning, and template suggestions', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-admin-page" style="color: #2271b1;"></span> <?php esc_html_e( 'Page Building', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '5 tools for landing pages, homepage layouts, about pages, service pages, and blog layouts', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-editor-table" style="color: #2271b1;"></span> <?php esc_html_e( 'Section Building', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '6 tools for hero sections, features, testimonials, CTAs, galleries, and contact sections', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-layout" style="color: #2271b1;"></span> <?php esc_html_e( 'Widget Building', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '4 tools for custom widgets, navigation menus, sidebar widgets, and footer widgets', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-portfolio" style="color: #2271b1;"></span> <?php esc_html_e( 'Template Management', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '4 tools for saving, importing, exporting templates, and version control', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+
+					<div class="card" style="margin: 0;">
+						<h4><span class="dashicons dashicons-admin-tools" style="color: #2271b1;"></span> <?php esc_html_e( 'Integration Tools', 'mcp-ai-wpoos-pro' ); ?></h4>
+						<p><?php esc_html_e( '3 tools for Architect Agent integration, theme scaffolding, and automated workflows', 'mcp-ai-wpoos-pro' ); ?></p>
+					</div>
+				</div>
+
+				<h3 style="margin-top: 30px;"><?php esc_html_e( 'Tool Configuration', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<?php
+					esc_html_e(
+						'To enable or disable individual tools, go to the main NV oOS Settings page.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+				<p>
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=site_creator' ) ); ?>" class="button button-primary">
+						<?php esc_html_e( 'Configure Tools', 'mcp-ai-wpoos-pro' ); ?>
+					</a>
+				</p>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the templates page.
+	 *
+	 * @since 1.2.0
+	 */
+	public function render_templates_page() {
+		$settings   = get_option( 'wp_mcp_ai_settings', array() );
+		$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Site Creator Templates', 'mcp-ai-wpoos-pro' ); ?></h1>
+
+			<?php if ( ! $is_enabled ) : ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<strong><?php esc_html_e( 'Site Creator Toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( 'Enable it in the main settings to use template features.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=site_creator' ) ); ?>" class="button">
+							<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<div class="card">
+				<h2><?php esc_html_e( 'Template Management', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					esc_html_e(
+						'Site templates, page templates, and reusable sections created by the Site Creator Toolkit are stored as custom post types.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+
+				<?php if ( $is_enabled ) : ?>
+					<h3><?php esc_html_e( 'Manage Templates', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=wp_site_template' ) ); ?>" class="button button-primary">
+							<?php esc_html_e( 'View All Site Templates', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+
+					<h3 style="margin-top: 30px;"><?php esc_html_e( 'Template Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<ul>
+						<li><?php esc_html_e( 'Save templates from generated sites', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Import/export templates between sites', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Version control for template changes', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Reusable sections and components', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ul>
+				<?php endif; ?>
+			</div>
+
+			<div class="card">
+				<h2><?php esc_html_e( 'Template Best Practices', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<ul>
+					<li><?php esc_html_e( 'Use descriptive names for templates', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Test templates in staging before production', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Keep templates updated with latest best practices', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Document any custom modifications', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><?php esc_html_e( 'Use version control for tracking changes', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
 			</div>
 		</div>
 		<?php
