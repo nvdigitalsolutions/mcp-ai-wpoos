@@ -188,6 +188,7 @@ class WP_MCP_AI_Profession_Search_Helper {
 	 * @return void
 	 */
 	public static function render_search_styles() {
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for profession search helper UI.
 		?>
 		<style>
 			.wp-mcp-ai-profession-search-wrapper {

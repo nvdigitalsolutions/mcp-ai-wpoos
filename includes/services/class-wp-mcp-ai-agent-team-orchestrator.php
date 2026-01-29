@@ -55,6 +55,27 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	protected $team_templates = array();
 
 	/**
+	 * Workflow state for context propagation
+	 *
+	 * @var array
+	 */
+	protected $workflow_state = array();
+
+	/**
+	 * Completed workflow steps
+	 *
+	 * @var array
+	 */
+	protected $completed_steps = array();
+
+	/**
+	 * Execution history tracking
+	 *
+	 * @var array
+	 */
+	protected $execution_history = array();
+
+	/**
 	 * Constructor
 	 *
 	 * @param WP_MCP_AI_Agent_Communication_Service|null $communication_service Communication service.
@@ -131,6 +152,9 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		// Store team configuration.
 		$this->store_team( $team );
 
+		// Also store as workflow for orchestration dashboard tracking.
+		$this->save_team_as_workflow( $team );
+
 		$this->log_team_action( $team['team_id'], 'composed', array( 'member_count' => count( $team_members ) ) );
 
 		return $team;
@@ -155,27 +179,84 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		$team_id  = $team['team_id'];
 		$workflow = isset( $team['workflow'] ) ? $team['workflow'] : array();
 
-		$this->log_team_action( $team_id, 'execution_started' );
+		// Generate workflow ID for tracking.
+		$workflow_id = 'wf_' . $team_id . '_' . time();
+		$trace_id    = isset( $context['trace_id'] ) ? $context['trace_id'] : uniqid( 'trace_', true );
+
+		// Add workflow tracking data to context for tool execution.
+		$context['workflow_id'] = $workflow_id;
+		$context['team_id']     = $team_id;
+		$context['trace_id']    = $trace_id;
+
+		// Initialize workflow tracking data for dashboard.
+		$workflow_data = array(
+			'workflow_id'  => $workflow_id,
+			'team_id'      => $team_id,
+			'state'        => 'running',
+			'task'         => isset( $task['description'] ) ? $task['description'] : 'Unnamed task',
+			'tasks'        => array(),
+			'created_at'   => current_time( 'mysql' ),
+			'updated_at'   => current_time( 'mysql' ),
+			'started_at'   => current_time( 'mysql' ),
+			'completed_at' => null,
+			'trace_id'     => $trace_id,
+		);
+
+		// Save initial workflow state to dashboard.
+		$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
+
+		$this->log_team_action( $team_id, 'execution_started', array( 'workflow_id' => $workflow_id, 'trace_id' => $trace_id ) );
 
 		$execution_start = microtime( true );
 		$results         = array();
+		$tasks_completed = 0;
+		$tasks_failed    = 0;
 
 		// Execute workflow steps.
 		foreach ( $workflow as $step ) {
+			// Add current step name to context for workflow task tracking.
+			$step_name            = isset( $step['name'] ) ? $step['name'] : 'unnamed_step';
+			$context['task_name'] = $step_name;
+			
+			$step_start  = microtime( true );
 			$step_result = $this->execute_workflow_step( $team, $step, $task, $context, $results );
+			$step_time   = microtime( true ) - $step_start;
+
+			// Track step execution.
+			$step_data = array(
+				'name'           => $step_name,
+				'type'           => isset( $step['type'] ) ? $step['type'] : 'execute',
+				'status'         => is_wp_error( $step_result ) ? 'failed' : 'completed',
+				'execution_time' => $step_time,
+				'completed_at'   => current_time( 'mysql' ),
+			);
 
 			if ( is_wp_error( $step_result ) ) {
+				$step_data['error'] = $step_result->get_error_message();
+				++$tasks_failed;
+
 				$this->log_team_action(
 					$team_id,
 					'step_failed',
 					array(
-						'step'  => $step['name'],
-						'error' => $step_result->get_error_message(),
+						'step'        => $step['name'],
+						'error'       => $step_result->get_error_message(),
+						'workflow_id' => $workflow_id,
+						'trace_id'    => $trace_id,
 					)
 				);
 
+				// Add failed step to workflow tracking.
+				$workflow_data['tasks'][]    = $step_data;
+				$workflow_data['updated_at'] = current_time( 'mysql' );
+
 				// Handle failure based on criticality.
 				if ( isset( $step['critical'] ) && $step['critical'] ) {
+					// Update workflow as failed.
+					$workflow_data['state']        = 'failed';
+					$workflow_data['error']        = $step_result->get_error_message();
+					$workflow_data['completed_at'] = current_time( 'mysql' );
+					$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
 					return $step_result; // Stop on critical failure.
 				}
 
@@ -184,13 +265,36 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 					'status' => 'failed',
 					'error'  => $step_result,
 				);
+
+				// Update dashboard with failed step.
+				$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
 				continue;
 			}
 
+			// Success - track it.
+			++$tasks_completed;
 			$results[ $step['name'] ] = $step_result;
+
+			// Add successful step to workflow tracking.
+			$workflow_data['tasks'][]    = $step_data;
+			$workflow_data['updated_at'] = current_time( 'mysql' );
+			$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
 		}
 
 		$execution_time = microtime( true ) - $execution_start;
+
+		// Update final workflow state for dashboard.
+		$workflow_data['state']          = $tasks_failed > 0 ? 'completed_with_errors' : 'completed';
+		$workflow_data['execution_time'] = $execution_time;
+		$workflow_data['completed_at']   = current_time( 'mysql' );
+		$workflow_data['updated_at']     = current_time( 'mysql' );
+		$workflow_data['summary']        = array(
+			'total_tasks'     => count( $workflow ),
+			'tasks_completed' => $tasks_completed,
+			'tasks_failed'    => $tasks_failed,
+			'execution_time'  => round( $execution_time, 2 ),
+		);
+		$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
 
 		// Update team status.
 		$team['status']         = 'completed';
@@ -203,15 +307,19 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			array(
 				'execution_time' => $execution_time,
 				'steps'          => count( $workflow ),
+				'workflow_id'    => $workflow_id,
+				'trace_id'       => $trace_id,
 			)
 		);
 
 		return array(
+			'workflow_id'    => $workflow_id,
 			'team_id'        => $team_id,
 			'status'         => 'completed',
 			'results'        => $results,
 			'execution_time' => $execution_time,
 			'completed_at'   => current_time( 'mysql' ),
+			'trace_id'       => $trace_id,
 		);
 	}
 
@@ -283,6 +391,12 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * Execute a delegation step
 	 *
 	 * Delegates a subtask to a specialized agent and executes it.
+	 * Industry best practices (2026):
+	 * - Full conversation context propagation
+	 * - Workflow state management
+	 * - Execution history tracking
+	 * - Idempotency through task IDs
+	 * - Trace ID for debugging
 	 *
 	 * @param array $agent Agent data.
 	 * @param array $step Step definition.
@@ -315,26 +429,73 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			);
 		}
 
+		// Generate task ID for idempotency.
+		$task_id = isset( $step['name'] ) ? $step['name'] : uniqid( 'subtask_', true );
+
+		// Check if task already completed (idempotency).
+		if ( $this->is_task_completed( $task_id ) ) {
+			return $this->get_cached_task_result( $task_id );
+		}
+
 		// Prepare task data for agent execution.
 		$agent_task = array(
 			'description' => isset( $subtask['description'] ) ? $subtask['description'] : ( isset( $task['description'] ) ? $task['description'] : '' ),
 			'type'        => isset( $subtask['type'] ) ? $subtask['type'] : ( isset( $task['type'] ) ? $task['type'] : 'generic' ),
 			'parameters'  => isset( $subtask['parameters'] ) ? $subtask['parameters'] : array(),
-			'id'          => isset( $step['name'] ) ? $step['name'] : uniqid( 'subtask_', true ),
+			'id'          => $task_id,
 		);
 
-		// Prepare execution context.
+		// Prepare execution context with full workflow state.
+		$trace_id      = isset( $context['trace_id'] ) ? $context['trace_id'] : uniqid( 'trace_', true );
 		$agent_context = array_merge(
 			$context,
 			array(
-				'assistant_id' => $agent['id'],
-				'delegated_by' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
-				'parent_task'  => isset( $task['id'] ) ? $task['id'] : null,
+				'assistant_id'   => $agent['id'],
+				'delegated_by'   => isset( $context['assistant_id'] ) ? $context['assistant_id'] : 0,
+				'parent_task'    => isset( $task['id'] ) ? $task['id'] : null,
+				'workflow_state' => $this->get_workflow_state(),
+				'previous_steps' => $this->get_completed_steps(),
+				'trace_id'       => $trace_id,
+			)
+		);
+
+		// Log delegation start.
+		$this->log_execution(
+			'delegation_started',
+			array(
+				'agent_id'   => $agent['id'],
+				'agent_role' => $agent['role'],
+				'task_id'    => $task_id,
+				'trace_id'   => $trace_id,
 			)
 		);
 
 		// Execute the task using the agent's role.
 		$result = $agent_role->execute_role_task( $agent_task, $agent_context );
+
+		// Cache result for idempotency.
+		$this->cache_task_result( $task_id, $result );
+
+		// Update workflow state.
+		$this->update_workflow_state( $task_id, $result );
+		$this->add_completed_step( $task_id, array(
+			'agent_id'   => $agent['id'],
+			'agent_role' => $agent['role'],
+			'task'       => $agent_task['description'],
+			'result'     => $result,
+		) );
+
+		// Log delegation completion.
+		$this->log_execution(
+			'delegation_completed',
+			array(
+				'agent_id'   => $agent['id'],
+				'agent_role' => $agent['role'],
+				'task_id'    => $task_id,
+				'status'     => is_wp_error( $result ) ? 'failed' : 'completed',
+				'trace_id'   => $trace_id,
+			)
+		);
 
 		// Wrap result with delegation metadata.
 		return array(
@@ -346,6 +507,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			'status'       => is_wp_error( $result ) ? 'failed' : 'completed',
 			'result'       => $result,
 			'delegated_at' => current_time( 'mysql' ),
+			'trace_id'     => $trace_id,
 		);
 	}
 
@@ -838,7 +1000,8 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	protected function log_team_action( $team_id, $action, $data = array() ) {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				sprintf( 'Team %s: %s', $team_id, $action ),
 				array_merge(
 					array(
@@ -846,8 +1009,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 						'action'  => $action,
 					),
 					$data
-				),
-				'info'
+				)
 			);
 		}
 	}
@@ -1103,4 +1265,344 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		return $monitor->get_system_load_metrics();
 	}
+
+	/**
+	 * Get workflow state
+	 *
+	 * @return array Current workflow state.
+	 */
+	protected function get_workflow_state() {
+		return $this->workflow_state;
+	}
+
+	/**
+	 * Update workflow state
+	 *
+	 * @param string $task_id Task identifier.
+	 * @param mixed  $result Task result.
+	 */
+	protected function update_workflow_state( $task_id, $result ) {
+		$this->workflow_state[ $task_id ] = array(
+			'result'       => $result,
+			'completed_at' => current_time( 'mysql' ),
+			'status'       => is_wp_error( $result ) ? 'failed' : 'completed',
+		);
+	}
+
+	/**
+	 * Get completed steps
+	 *
+	 * @return array Completed workflow steps.
+	 */
+	protected function get_completed_steps() {
+		return $this->completed_steps;
+	}
+
+	/**
+	 * Add completed step
+	 *
+	 * @param string $task_id Task identifier.
+	 * @param array  $step_data Step data.
+	 */
+	protected function add_completed_step( $task_id, $step_data ) {
+		$this->completed_steps[ $task_id ] = $step_data;
+	}
+
+	/**
+	 * Check if task is completed (idempotency)
+	 *
+	 * @param string $task_id Task identifier.
+	 * @return bool True if task is completed, false otherwise.
+	 */
+	protected function is_task_completed( $task_id ) {
+		return isset( $this->workflow_state[ $task_id ] );
+	}
+
+	/**
+	 * Get cached task result (idempotency)
+	 *
+	 * @param string $task_id Task identifier.
+	 * @return mixed|null Cached result or null.
+	 */
+	protected function get_cached_task_result( $task_id ) {
+		if ( isset( $this->workflow_state[ $task_id ] ) ) {
+			return $this->workflow_state[ $task_id ]['result'];
+		}
+		return null;
+	}
+
+	/**
+	 * Cache task result (idempotency)
+	 *
+	 * @param string $task_id Task identifier.
+	 * @param mixed  $result Task result.
+	 */
+	protected function cache_task_result( $task_id, $result ) {
+		$this->update_workflow_state( $task_id, $result );
+	}
+
+	/**
+	 * Log execution event
+	 *
+	 * @param string $event_type Event type.
+	 * @param array  $data Event data.
+	 */
+	protected function log_execution( $event_type, $data = array() ) {
+		$this->execution_history[] = array_merge(
+			array(
+				'event'     => $event_type,
+				'timestamp' => current_time( 'mysql' ),
+			),
+			$data
+		);
+
+		// Also log to WordPress logger if available.
+		if ( function_exists( 'wp_mcp_ai_log' ) ) {
+			wp_mcp_ai_log(
+				sprintf( 'Orchestrator: %s', $event_type ),
+				'debug',
+				$data
+			);
+		}
+	}
+
+	/**
+	 * Get execution history
+	 *
+	 * @return array Execution history.
+	 */
+	public function get_execution_history() {
+		return $this->execution_history;
+	}
+
+	/**
+	 * Save workflow data to dashboard transient
+	 *
+	 * Stores workflow execution data so it appears on the orchestration dashboard.
+	 *
+	 * @param string $workflow_id Unique workflow identifier.
+	 * @param array  $workflow_data Workflow execution data.
+	 * @return bool True on success, false on failure.
+	 */
+	protected function save_workflow_to_dashboard( $workflow_id, $workflow_data ) {
+		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );
+		
+		// Store workflow data for 7 days.
+		return set_transient( $transient_key, $workflow_data, 7 * DAY_IN_SECONDS );
+	}
+
+	/**
+	 * Save team as workflow for dashboard tracking
+	 *
+	 * Converts a team composition into a workflow record so it appears
+	 * on the orchestration dashboard even before workflow execution begins.
+	 *
+	 * @param array $team Team configuration.
+	 * @return bool True on success, false on failure.
+	 */
+	protected function save_team_as_workflow( $team ) {
+		if ( empty( $team['team_id'] ) ) {
+			return false;
+		}
+
+		// Create workflow tasks from team members and workflow steps.
+		$tasks = array();
+		
+		// Add team composition as initial task.
+		$tasks[] = array(
+			'task_id'      => 'compose_' . $team['team_id'],
+			'name'         => __( 'Team Composition', 'mcp-ai-wpoos' ),
+			'type'         => 'composition',
+			'status'       => 'completed',
+			'completed_at' => $team['created_at'],
+		);
+
+		// Add workflow steps as pending tasks.
+		if ( isset( $team['workflow'] ) && is_array( $team['workflow'] ) ) {
+			foreach ( $team['workflow'] as $index => $step ) {
+				$tasks[] = array(
+					'task_id' => 'step_' . $index . '_' . $team['team_id'],
+					'name'    => $step['name'],
+					'type'    => $step['type'],
+					'role'    => isset( $step['role'] ) ? $step['role'] : null,
+					'status'  => 'pending',
+				);
+			}
+		}
+
+		// Build workflow data structure.
+		$workflow_data = array(
+			'workflow_id'  => 'wf_' . $team['team_id'],
+			'team_id'      => $team['team_id'],
+			'task_type'    => $team['task_type'],
+			'state'        => 'initialized',
+			'tasks'        => $tasks,
+			'members'      => $team['members'],
+			'created_at'   => $team['created_at'],
+			'updated_at'   => $team['created_at'],
+			'started_at'   => null,
+			'completed_at' => null,
+		);
+
+		return $this->save_workflow_to_dashboard( $workflow_data['workflow_id'], $workflow_data );
+	}
+
+	/**
+	 * Get workflow by ID
+	 *
+	 * Retrieves workflow data from transient storage.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @return array|null Workflow data or null if not found.
+	 */
+	public function get_workflow( $workflow_id ) {
+		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );
+		$workflow_data = get_transient( $transient_key );
+
+		return $workflow_data ? $workflow_data : null;
+	}
+
+	/**
+	 * Check workflow health status
+	 *
+	 * Checks if workflow is stale (stuck in initialized state for too long).
+	 * Important for WordPress plugins where workflows may wait for cron/async processing.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @return array Health status with recommendations.
+	 */
+	public function check_workflow_health( $workflow_id ) {
+		$workflow = $this->get_workflow( $workflow_id );
+
+		if ( ! $workflow ) {
+			return array(
+				'status'  => 'error',
+				'message' => __( 'Workflow not found.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$current_time = time();
+		$created_time = strtotime( $workflow['created_at'] );
+		$age_seconds  = $current_time - $created_time;
+		$age_minutes  = round( $age_seconds / 60, 1 );
+
+		$health = array(
+			'workflow_id'  => $workflow_id,
+			'state'        => $workflow['state'],
+			'age_seconds'  => $age_seconds,
+			'age_minutes'  => $age_minutes,
+			'created_at'   => $workflow['created_at'],
+			'started_at'   => $workflow['started_at'] ?? null,
+			'completed_at' => $workflow['completed_at'] ?? null,
+			'status'       => 'healthy',
+			'warnings'     => array(),
+			'recommendations' => array(),
+		);
+
+		// Check for workflows stuck in initialized state.
+		// WordPress plugins need time for cron setup, so we allow 5 minutes.
+		$initialized_timeout = 300; // 5 minutes.
+
+		if ( 'initialized' === $workflow['state'] ) {
+			if ( $age_seconds > $initialized_timeout ) {
+				$health['status']     = 'warning';
+				$health['warnings'][] = sprintf(
+					/* translators: %s: age in minutes */
+					__( 'Workflow has been initialized for %s minutes without starting.', 'mcp-ai-wpoos' ),
+					$age_minutes
+				);
+				$health['recommendations'][] = __( 'Call execute_workflow() to start the workflow, or use delegate_to_agent to assign tasks to team members.', 'mcp-ai-wpoos' );
+				$health['recommendations'][] = __( 'For WordPress plugins, ensure wp-cron is running: wp cron event run --due-now', 'mcp-ai-wpoos' );
+			} else {
+				$health['status']  = 'pending';
+				$health['message'] = sprintf(
+					/* translators: 1: age in minutes, 2: timeout in minutes */
+					__( 'Workflow is waiting to start (%1$s minutes old, timeout at %2$s minutes).', 'mcp-ai-wpoos' ),
+					$age_minutes,
+					round( $initialized_timeout / 60, 1 )
+				);
+			}
+		}
+
+		return $health;
+	}
+
+	/**
+	 * Update workflow task status
+	 *
+	 * Updates a specific task's status within a workflow and recalculates overall workflow state.
+	 * Used when tasks are completed via delegation or other async mechanisms.
+	 *
+	 * @param string $workflow_id Workflow ID.
+	 * @param string $task_name   Task name or identifier.
+	 * @param string $status      New status: 'pending', 'completed', 'failed'.
+	 * @param array  $task_data   Optional additional task data (error, result, etc.).
+	 * @return bool True on success, false if workflow not found.
+	 */
+	public function update_workflow_task_status( $workflow_id, $task_name, $status, $task_data = array() ) {
+		$workflow = $this->get_workflow( $workflow_id );
+		
+		if ( ! $workflow ) {
+			return false;
+		}
+
+		// Update task status in workflow tasks array.
+		if ( isset( $workflow['tasks'] ) && is_array( $workflow['tasks'] ) ) {
+			foreach ( $workflow['tasks'] as $key => $task ) {
+				if ( isset( $task['name'] ) && $task['name'] === $task_name ) {
+					$workflow['tasks'][ $key ]['status']       = $status;
+					$workflow['tasks'][ $key ]['updated_at']   = current_time( 'mysql' );
+					
+					// Add completion timestamp for completed/failed tasks.
+					if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
+						$workflow['tasks'][ $key ]['completed_at'] = current_time( 'mysql' );
+					}
+					
+					// Merge additional task data.
+					if ( ! empty( $task_data ) ) {
+						$workflow['tasks'][ $key ] = array_merge( $workflow['tasks'][ $key ], $task_data );
+					}
+					
+					break;
+				}
+			}
+		}
+
+		// Recalculate workflow state based on task statuses.
+		$total_tasks      = count( $workflow['tasks'] );
+		$completed_tasks  = 0;
+		$failed_tasks     = 0;
+		
+		foreach ( $workflow['tasks'] as $task ) {
+			if ( isset( $task['status'] ) ) {
+				if ( 'completed' === $task['status'] ) {
+					++$completed_tasks;
+				} elseif ( 'failed' === $task['status'] ) {
+					++$failed_tasks;
+				}
+			}
+		}
+
+		// Update workflow state.
+		if ( $completed_tasks === $total_tasks ) {
+			$workflow['state']        = 'completed';
+			$workflow['completed_at'] = current_time( 'mysql' );
+		} elseif ( $failed_tasks > 0 && ( $completed_tasks + $failed_tasks ) === $total_tasks ) {
+			$workflow['state']        = 'completed_with_errors';
+			$workflow['completed_at'] = current_time( 'mysql' );
+		} elseif ( $completed_tasks > 0 || $failed_tasks > 0 ) {
+			// Some tasks done, update state to running if still initialized.
+			if ( 'initialized' === $workflow['state'] ) {
+				$workflow['state']      = 'running';
+				$workflow['started_at'] = current_time( 'mysql' );
+			}
+		}
+
+		// Update timestamp and save.
+		$workflow['updated_at'] = current_time( 'mysql' );
+		$this->save_workflow_to_dashboard( $workflow_id, $workflow );
+
+		return true;
+	}
 }
+

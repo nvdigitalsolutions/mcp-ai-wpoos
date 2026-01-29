@@ -2107,7 +2107,8 @@ class WP_MCP_AI_Tool_Token_Limits {
 			);
 		}
 
-		// Convert to CSV string.
+		// Output buffering for CSV generation - buffer is closed with ob_get_clean() at line 2118.
+		// Uses PHP output stream for efficient CSV writing.
 		ob_start();
 		$output = fopen( 'php://output', 'w' );
 		foreach ( $csv as $row ) {

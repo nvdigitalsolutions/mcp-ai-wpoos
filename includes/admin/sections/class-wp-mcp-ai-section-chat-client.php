@@ -549,9 +549,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 
 			// Render presets UI if we're on the presets sub-tab.
 			if ( 'presets' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_presets_ui();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 		}
 
@@ -740,7 +740,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 				$groups      = WP_MCP_AI_Admin_Settings::get_chat_color_groups();
 
 				ob_start();
-				echo '<div class="wp-mcp-ai-chat-colors">';
+				echo '<div class="wp-mcp-ai-chat-colors">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 				echo '<p class="description">' . esc_html__( 'Customize the colors used throughout the chat interface. Leave fields empty to use default values.', 'mcp-ai-wpoos' ) . '</p>';
 
 				foreach ( $groups as $group_key => $group_label ) {
@@ -756,7 +756,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 						continue;
 					}
 
-					echo '<fieldset class="wp-mcp-ai-chat-colors__group">';
+					echo '<fieldset class="wp-mcp-ai-chat-colors__group">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					echo '<legend>' . esc_html( $group_label ) . '</legend>';
 
 					foreach ( $group_colors as $color_key => $definition ) {
@@ -773,7 +773,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							$descriptions[] = __( 'Enter a value in rgba(R, G, B, A) format.', 'mcp-ai-wpoos' );
 						}
 
-						echo '<div class="wp-mcp-ai-chat-colors__field">';
+						echo '<div class="wp-mcp-ai-chat-colors__field">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						echo '<label for="' . esc_attr( $input_id ) . '">' . esc_html( $definition['label'] ) . '</label>';
 						echo '<input type="text" id="' . esc_attr( $input_id ) . '" class="regular-text wp-mcp-ai-color-field" name="wp_mcp_ai_settings[chat_colors][' . esc_attr( $color_key ) . ']" value="' . esc_attr( $value ) . '" data-format="' . esc_attr( $format ) . '" data-default-color="' . esc_attr( $definition['default'] ) . '" />';
 
@@ -781,13 +781,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Chat_Client' ) ) {
 							echo '<p class="description">' . esc_html( $text ) . '</p>';
 						}
 
-						echo '</div>';
+						echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 
-					echo '</fieldset>';
+					echo '</fieldset>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 				}
 
-				echo '</div>';
+				echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 				return ob_get_clean();
 			}
 

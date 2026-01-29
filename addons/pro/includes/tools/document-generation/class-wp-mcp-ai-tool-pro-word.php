@@ -16,6 +16,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Load the document response trait from base plugin.
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-response.php';
 
+// Load HTML formatter class.
+require_once __DIR__ . '/class-wp-mcp-ai-html-formatter.php';
+
 /**
  * Pro Word tool for AI-powered Word document generation.
  *
@@ -32,6 +35,20 @@ require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-document-resp
 class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 	use WP_MCP_AI_Tool_Document_Response;
+
+	/**
+	 * HTML formatter instance.
+	 *
+	 * @var WP_MCP_AI_HTML_Formatter
+	 */
+	protected $html_formatter;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->html_formatter = new WP_MCP_AI_HTML_Formatter();
+	}
 
 	/**
 	 * {@inheritdoc}
@@ -559,6 +576,43 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	}
 
 	/**
+	 * Convert document data to well-formatted HTML.
+	 *
+	 * @param array $document_data Document data with content/sections.
+	 * @return string Formatted HTML content.
+	 */
+	protected function convert_to_html( array $document_data ) {
+		$html_content = '';
+
+		// Handle sections if provided.
+		if ( ! empty( $document_data['sections'] ) && is_array( $document_data['sections'] ) ) {
+			$html_content = $this->html_formatter->sections_to_html( $document_data['sections'] );
+		} elseif ( ! empty( $document_data['content'] ) ) {
+			// Convert plain text content to HTML.
+			$html_content = $this->html_formatter->text_to_html( $document_data['content'] );
+		}
+
+		// Wrap in a complete HTML document with proper structure.
+		$options = array(
+			'title'       => ! empty( $document_data['title'] ) ? $document_data['title'] : 'Document',
+			'author'      => ! empty( $document_data['author'] ) ? $document_data['author'] : '',
+			'orientation' => ! empty( $document_data['orientation'] ) ? $document_data['orientation'] : 'portrait',
+		);
+
+		// Apply formatting options if provided.
+		if ( ! empty( $document_data['formatting'] ) ) {
+			if ( isset( $document_data['formatting']['font_family'] ) ) {
+				$options['font_family'] = $document_data['formatting']['font_family'];
+			}
+			if ( isset( $document_data['formatting']['font_size'] ) ) {
+				$options['font_size'] = $document_data['formatting']['font_size'];
+			}
+		}
+
+		return $this->html_formatter->create_document( $html_content, $options );
+	}
+
+	/**
 	 * Generate Word document.
 	 *
 	 * This method creates a Word document using Node.js/docx via a shell command.
@@ -570,6 +624,10 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 * @return array|WP_Error Array with file, url, attachment_id or WP_Error.
 	 */
 	protected function generate_word_document( array $document_data, array $arguments, array $context ) {
+		// Convert content to HTML for improved formatting.
+		$html_content = $this->convert_to_html( $document_data );
+		$document_data['html_content'] = $html_content;
+
 		// Create temporary file for document output.
 		$upload_dir = wp_upload_dir();
 		$temp_file  = wp_tempnam( 'docx-' . time() );

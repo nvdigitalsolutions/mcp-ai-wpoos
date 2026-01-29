@@ -1,6 +1,64 @@
-# Gmail OAuth Fix Summary
+# Gmail OAuth Fix Summary - Complete History
 
-## Latest Fix - HTML Entity Encoding Issue (January 13, 2026) 🎉 **NEWEST**
+## Latest Fix - Google API Client Library Integration (January 27, 2026) 🎉 **NEWEST**
+
+### What Changed
+**"Integrate Google API Client library to fix redirect_uri_mismatch errors"**
+
+Integrated the official **Google API Client library (google/apiclient v2.19.0)** to handle OAuth flows using Google's specification-compliant implementation, ensuring exact URL normalization.
+
+### Problem
+Users reported persistent `redirect_uri_mismatch` errors when connecting Gmail accounts via OAuth, despite previous fixes. The issue stemmed from subtle URL encoding differences between authorization and token exchange requests. While WordPress's `add_query_arg()` properly encodes URLs, minor encoding variations (like `+` vs `%20` for spaces) can cause OAuth to reject the redirect URI as mismatched.
+
+Reference: https://developers.google.com/identity/protocols/oauth2/web-server#authorization-errors-redirect-uri-mismatch
+
+### Solution
+Integrated Google's official library to handle OAuth flows with guaranteed URL normalization consistency:
+
+**Authorization URL Generation:**
+```php
+if ( class_exists( 'Google_Client' ) ) {
+    $client = new Google_Client();
+    $client->setClientId( $client_id );
+    $client->setClientSecret( $client_secret );
+    $client->setRedirectUri( $redirect_uri );
+    $client->addScope( $scope );
+    $client->setAccessType( 'offline' );
+    $client->setPrompt( 'consent' );
+    $client->setState( $state );
+    $authorize_url = $client->createAuthUrl();
+}
+```
+
+**Token Exchange:**
+```php
+if ( class_exists( 'Google_Client' ) ) {
+    $client = new Google_Client();
+    $client->setClientId( $client_id );
+    $client->setClientSecret( $client_secret );
+    $client->setRedirectUri( $redirect_uri );
+    $token_data = $client->fetchAccessTokenWithAuthCode( $code );
+}
+```
+
+### Files Modified
+- `composer.json` - Added google/apiclient dependency
+- `includes/integrations/class-wp-mcp-ai-oauth-manager.php` - Integrated Google_Client with fallback methods
+
+### Documentation
+- **Detailed Implementation Guide:** [gmail-oauth-google-client-integration-2026-01-27.md](gmail-oauth-google-client-integration-2026-01-27.md)
+- **Google OAuth Reference:** https://developers.google.com/identity/protocols/oauth2/web-server#authorization-errors-redirect-uri-mismatch
+- **Google API Client Library:** https://github.com/googleapis/google-api-php-client
+
+### User Benefits
+- **Fixes redirect_uri_mismatch:** Google_Client ensures consistent URL normalization
+- **Better OAuth Compliance:** Uses Google's official, well-tested library
+- **Future-Proof:** Automatically adapts to Google OAuth specification changes
+- **Improved Error Handling:** Better error messages with graceful fallback
+
+---
+
+## Previous Fix - HTML Entity Encoding Issue (January 13, 2026)
 
 ### What Changed
 **"Fix HTML entity encoding in OAuth redirect URI display"**
