@@ -93,10 +93,10 @@ function wp_mcp_ai_load_site_creator_tools() {
 
 	// Research & Discovery Tools.
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-research-site-best-practices.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-competitor-sites.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-site-plan.php';
 
 	// TODO: Add more tools as they are implemented.
-	// require_once $tools_dir . 'class-wp-mcp-ai-tool-analyze-competitor-sites.php';
-	// require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-site-plan.php';
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
 
 	// Get registry and register tools.
@@ -105,6 +105,8 @@ function wp_mcp_ai_load_site_creator_tools() {
 	if ( $registry ) {
 		// Research & Discovery.
 		$registry->register( new WP_MCP_AI_Tool_Research_Site_Best_Practices() );
+		$registry->register( new WP_MCP_AI_Tool_Analyze_Competitor_Sites() );
+		$registry->register( new WP_MCP_AI_Tool_Generate_Site_Plan() );
 
 		// Page Building - to be implemented.
 		// Section Building - to be implemented.
