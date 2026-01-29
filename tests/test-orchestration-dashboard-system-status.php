@@ -96,6 +96,33 @@ class Test_Orchestration_Dashboard_System_Status extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that Cron Status Service can be instantiated successfully.
+	 */
+	public function test_cron_status_service_instantiation() {
+		if ( ! class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			$this->markTestSkipped( 'Cron Status Service not available' );
+		}
+
+		// Verify the service can be instantiated without errors.
+		try {
+			$service = new WP_MCP_AI_Cron_Status_Service();
+			$this->assertInstanceOf( 'WP_MCP_AI_Cron_Status_Service', $service, 'Service should be instantiable' );
+
+			// Verify the service has the expected method.
+			$this->assertTrue(
+				method_exists( $service, 'get_status_summary' ),
+				'Service should have get_status_summary method'
+			);
+
+			// Verify calling the method doesn't throw an exception.
+			$result = $service->get_status_summary( 0, 5 );
+			$this->assertIsArray( $result, 'get_status_summary should return an array' );
+		} catch ( Exception $e ) {
+			$this->fail( 'Cron Status Service instantiation failed: ' . $e->getMessage() );
+		}
+	}
+
+	/**
 	 * Test async status section structure.
 	 */
 	public function test_async_status_structure() {

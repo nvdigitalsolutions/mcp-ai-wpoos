@@ -1,6 +1,11 @@
 #!/bin/bash
 # Verify System Status Implementation
 # Tests that the orchestration dashboard system status is properly connected
+#
+# USAGE:
+#   ./verify-system-status-implementation.sh [path-to-wordpress-root]
+#
+# If no path is provided, script will attempt to find WordPress in common locations.
 
 set -e
 
@@ -19,16 +24,46 @@ NC='\033[0m' # No Color
 echo "1. Checking if service classes are loaded..."
 echo ""
 
+# Determine WordPress root
+WP_ROOT=""
+if [ -n "$1" ]; then
+    WP_ROOT="$1"
+elif [ -f "../../wp-load.php" ]; then
+    WP_ROOT="../.."
+elif [ -f "../../../wp-load.php" ]; then
+    WP_ROOT="../../.."
+elif [ -f "../../../../wp-load.php" ]; then
+    WP_ROOT="../../../.."
+fi
+
 # Create PHP script to check class availability
-php << 'EOPHP'
+php << EOPHP
 <?php
 // Bootstrap WordPress
 define('WP_USE_THEMES', false);
-$wordpress_root = dirname(__DIR__);
-if (file_exists($wordpress_root . '/wp-load.php')) {
-    require_once $wordpress_root . '/wp-load.php';
-} else {
+
+// Try multiple WordPress root locations
+\$wp_paths = array(
+    '$WP_ROOT/wp-load.php',
+    dirname(__DIR__) . '/wp-load.php',
+    dirname(dirname(__DIR__)) . '/wp-load.php',
+    dirname(dirname(dirname(__DIR__))) . '/wp-load.php',
+);
+
+\$wp_loaded = false;
+foreach (\$wp_paths as \$wp_path) {
+    if (file_exists(\$wp_path)) {
+        require_once \$wp_path;
+        \$wp_loaded = true;
+        echo "✓ WordPress loaded from: " . dirname(\$wp_path) . "\n\n";
+        break;
+    }
+}
+
+if (!\$wp_loaded) {
     echo "ERROR: Could not find WordPress installation\n";
+    echo "Please run this script from the plugin directory or provide WordPress root path:\n";
+    echo "  ./verify-system-status-implementation.sh /path/to/wordpress\n";
     exit(1);
 }
 
