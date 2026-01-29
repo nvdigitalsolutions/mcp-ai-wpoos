@@ -381,7 +381,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<?php
 			// Render filter bar if component is available.
 			if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer.
 				echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
 					array(
 						'tab'          => 'token_manager',
@@ -801,6 +800,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</div>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+		?>
 		<style>
 			.wp-mcp-ai-tool-row-recommended {
 				background-color: #fffbf0 !important;
@@ -1161,11 +1163,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
 			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
 
 			// Output JavaScript for inline editing.
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JavaScript is properly escaped in renderer.
 			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
 		}
 
@@ -1286,6 +1286,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 			.wp-mcp-ai-model-manager__actions {
 				display: grid;
@@ -1370,6 +1373,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 			</style>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script>
 			jQuery(document).ready(function($) {
 				// Discover models action

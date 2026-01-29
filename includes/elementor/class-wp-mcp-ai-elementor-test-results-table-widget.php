@@ -303,6 +303,7 @@ class WP_MCP_AI_Elementor_Test_Results_Table_Widget extends \Elementor\Widget_Ba
 	 * Enqueue details modal script.
 	 */
 	protected function enqueue_details_modal_script() {
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
 		?>
 		<script>
 		(function($) {

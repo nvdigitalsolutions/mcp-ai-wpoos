@@ -35,6 +35,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 				return self::render_empty_state();
 			}
 
+			// Output buffering for model configuration table rendering - buffer is closed with ob_get_clean() at line 226.
 			ob_start();
 			?>
 			<div class="wp-mcp-ai-model-config-table-wrapper wp-mcp-ai-table-wrapper">
@@ -114,7 +115,9 @@ class WP_MCP_AI_Model_Config_Renderer {
 
 				<?php echo self::render_legend(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 			</div>
-
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for model config table layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-model-config-table-wrapper {
 					background: #fff;
@@ -418,6 +421,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 	 */
 	public static function render_javascript() {
 		ob_start();
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for model config inline editing functionality on this admin page only
 		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {

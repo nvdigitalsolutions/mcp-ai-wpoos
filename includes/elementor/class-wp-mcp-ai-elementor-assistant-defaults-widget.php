@@ -160,7 +160,6 @@ class WP_MCP_AI_Elementor_Assistant_Defaults_Widget extends \Elementor\Widget_Ba
 			$empty_output = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $empty_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-assistant-defaults__notice">' . $empty_output . '</p>';
 			}
 

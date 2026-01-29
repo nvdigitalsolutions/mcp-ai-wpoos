@@ -177,6 +177,17 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 			}
 		}
 
+		// Build delegation examples for clarity.
+		$delegation_examples = array();
+		foreach ( $formatted_members as $member ) {
+			$delegation_examples[] = sprintf(
+				/* translators: 1: agent role, 2: agent_id value */
+				__( 'Delegate to %1$s using agent_id: "%2$s"', 'mcp-ai-wpoos' ),
+				$member['role'],
+				$member['agent_id']
+			);
+		}
+
 		return array(
 			'success'    => true,
 			'message'    => __( 'Agent team created successfully.', 'mcp-ai-wpoos' ),
@@ -191,9 +202,12 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 				'created_at'   => $team['created_at'],
 			),
 			'next_steps' => array(
-				__( 'Use delegate_to_agent to assign subtasks to team members', 'mcp-ai-wpoos' ),
+				__( 'IMPORTANT: Use the agent_id field (not profession) when calling delegate_to_agent', 'mcp-ai-wpoos' ),
+				__( 'Example: delegate_to_agent with agent_id from the members array above', 'mcp-ai-wpoos' ),
+				__( 'When delegating, include team_id in the context parameter for virtual agents', 'mcp-ai-wpoos' ),
 				__( 'Use aggregate_agent_results to combine outputs from multiple agents', 'mcp-ai-wpoos' ),
 			),
+			'delegation_examples' => $delegation_examples,
 		);
 	}
 

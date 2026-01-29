@@ -405,9 +405,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_General' ) ) {
 
 			// Render logging table if we're on the log management sub-tab.
 			if ( 'logs' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_logging_table();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 		}
 

@@ -12,7 +12,7 @@
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.0  
-**Release Date:** 2025-12-25  
+**Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -93,9 +93,9 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **66 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **193 built-in tools**.
+The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **70 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management and 4 new Social Media Analytics tools added January 2026) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **197 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 66 Pro tools (total 217 tool files across base and Pro).
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 70 Pro tools (total 221 tool files across base and Pro).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -256,7 +256,108 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
-### Critical Fixes & Enhancements (January 15-22, 2026) ⭐ **LATEST**
+### Security Hardening & Entity Tracking (January 29, 2026) ⭐ **NEW**
+
+**Major Security Update: 4 vulnerabilities resolved + comprehensive entity tracking for multi-agent workflows**
+
+**Security Fixes (4 Critical/High Issues):**
+
+1. **SSRF Vulnerability in Webhook Registration (Critical)** - `includes/class-wp-mcp-ai-job-notifier.php`
+   - Fixed webhook URL validation to block private IP ranges (127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16)
+   - Blocks AWS metadata endpoint access (169.254.169.254)
+   - Restricts to http/https protocols only
+   - Impact: Prevents Server-Side Request Forgery attacks on internal networks
+
+2. **Broken CSRF Protection in Cron Delete (Critical)** - `assets/js/admin-cron-manager.js`
+   - Fixed AJAX refresh rendering non-functional delete links without nonce validation
+   - Solution: Render complete HTML form with hidden nonce field after refresh
+   - Impact: Restores delete functionality with proper CSRF protection
+
+3. **XSS in AJAX Error Messages (High)** - `assets/js/admin-cron-manager.js`, `assets/js/admin-crawl4ai-monitor.js`
+   - Fixed unescaped error messages inserted into DOM
+   - All error messages now escaped before insertion
+   - Impact: Eliminates XSS attack vector in admin error handling
+
+4. **Missing Job Authorization Checks (High)** - `includes/class-wp-mcp-ai-job-notifier-rest.php`
+   - Fixed users accessing other users' job data via ID enumeration
+   - Implemented comprehensive multi-level authorization
+   - Impact: Prevents unauthorized job data access
+
+**Comprehensive Entity Tracking (11 Types):**
+- Added `ensure_tracking_ids()` helper capturing all entity IDs in job metadata
+- **Tracked Entities**: user_id, assistant_id, team_id, profession_id, agent_id, agent_role, virtual_agent_id, virtual_id, workflow_id, parent_job_id, profession_slug
+- **Benefits**: Complete audit trail for multi-agent workflows; critical for debugging complex orchestrations
+- Applied to all job events: started, progress, completed, failed
+
+**Multi-Level Authorization (7 Paths):**
+- Implemented `is_user_authorized_for_job()` with comprehensive ownership checks
+- **Authorization Paths**: Admin capability, direct user ownership, assistant ownership, team membership, profession ownership, agent ownership, virtual agent via team
+- **Benefits**: Flexible multi-tenant access control; team collaboration support; proper data isolation
+- Enforced in `handle_job_status()` and `handle_job_stream()` REST endpoints
+
+**Documentation Consolidation:**
+- Moved 23 files from root to organized subdirectories
+- Root now contains 6 essential docs + 2 supporting files (down from 31)
+- Created comprehensive security report: [CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md](docs/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md)
+- All implementation summaries organized in `docs/implementation-history/2026/`
+
+**Files Changed**: 6 modified (~400 lines added)  
+**Security Posture**: 100% critical/high issues resolved (2 medium remain)
+
+### DeepSeek V4 Multi-Agent Orchestration (January 2026) ⭐ **NEW**
+
+**Major Feature: Comprehensive multi-agent coordination framework** inspired by DeepSeek V4's orchestration patterns:
+
+**Key Components:**
+- **Agent Role System** - Four specialized roles (Planner, Executor, Critic, Specialist) with role-specific capabilities and workflows
+- **Agent Team Orchestrator** - Manages team composition, coordinated workflow execution, and performance tracking (921 lines)
+- **Agent Communication Service** - Structured message passing and result aggregation with 5 aggregation strategies (consensus, weighted, hierarchical, first, best)
+- **Agent Coordination Tools** - Three new MCP-compliant tools:
+  - `create_agent_team` - Compose multi-agent teams based on task requirements
+  - `delegate_to_agent` - Delegate subtasks to specialized agents
+  - `aggregate_agent_results` - Combine results from multiple agents with configurable strategies
+- **Profession CPT Integration** - 8 new orchestration meta fields for agent roles, capabilities, task patterns, and performance metrics
+- **Team CPT Integration** - 3 new orchestration meta fields for execution modes (single/sequential/parallel/swarm), workflow templates (JSON), and aggregation strategies
+- **Orchestration Seeder** - Intelligent agent role assignment for 200+ professions with WP-CLI commands (`wp profession seed-orchestration`, `wp profession orchestration-stats`)
+- **Multi-Agent Workflows** - Predefined team templates for research, content, e-commerce, and development workflows
+- **Implementation Status** - 85-90% complete with comprehensive test suite (12 PHPUnit tests, 9 integration tests)
+- **Documentation** - Complete documentation suite (55.3KB across 6 files):
+  - [DEEPSEEK-V4-README.md](docs/DEEPSEEK-V4-README.md) - Documentation suite overview
+  - [DEEPSEEK-V4-USAGE-GUIDE.md](docs/DEEPSEEK-V4-USAGE-GUIDE.md) - Practical examples and usage patterns
+  - [Multi-Agent Orchestration](docs/architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md#-6-multi-agent-orchestration-deepseek-v4-inspired-enhancement) - Complete technical documentation
+
+### Pro Toolkit Memory-Based Tracking (January 22, 2026) ⭐ **NEW**
+
+**User-Facing Change: Replaced hard toolkit limit with transparent memory-based tracking:**
+- **Previous**: Hard limit of 5 pro toolkits; checkboxes disabled when limit reached; artificial restriction
+- **New**: Memory-based tracking showing estimated MB usage; no hard limits; all toolkits can be enabled
+- **UI Changes**: "Pro Toolkit Memory Usage" heading displays "X MB estimated memory usage (Y toolkits enabled)" with status badges (Low/Moderate/High Usage)
+- **Memory Requirements**: 20 toolkits mapped to memory usage (24 MB - 256 MB range); total 1,844 MB if all enabled
+- **Status Thresholds**: Low (<500MB), Moderate (500-799MB), High (≥800MB) - informational only, no enforcement
+- **Benefits**: Transparency for resource planning; flexibility without artificial limits; informed decision-making
+- [Documentation →](docs/features/TOOLKIT_MEMORY_TRACKING.md)
+
+### Social Media Analytics Tools (January 15-22, 2026) ⭐ **NEW**
+
+**4 New Analytics Tools Added to Social Media Toolkit:**
+- **Get Cross-Platform Analytics** (`get_cross_platform_analytics`) - Unified metrics dashboard aggregating data from Facebook, Instagram, Twitter, LinkedIn, and YouTube (623 lines)
+- **Track Hashtag Performance** (`track_hashtag_performance`) - Hashtag analysis with reach, engagement, and trend data across all platforms (586 lines)
+- **Competitor Analysis** (`analyze_competitor_social`) - Track competitor metrics and compare performance (711 lines)
+- **Influencer Identification** (`identify_influencers`) - Find brand influencers based on reach and engagement criteria (759 lines)
+- All tools support built-in caching (12-hour default) and comprehensive error handling
+- Social Media toolkit now includes **19 tools** (15 publishing/insights tools + 4 new analytics tools)
+
+### Cloudflare Image Generation Models (January 11, 2026)
+
+**3 New Cloudflare Workers AI Image Models:**
+- **Flux-2 Dev** (`@cf/black-forest-labs/flux-2-dev`) - Advanced image generation model
+- **Leonardo AI Models**:
+  - Lucid Origin (`@cf/leonardo/lucid-origin`)
+  - Phoenix 1.0 (`@cf/leonardo/phoenix-1.0`)
+- All models support configurable dimensions (256-2048px), diffusion steps (1-20), and guidance parameters
+- Compatible with existing `cloudflareai_text_to_image` tool
+
+### Critical Fixes & Enhancements (January 15-22, 2026)
 
 **7 Critical Fixes Implemented:**
 
@@ -296,15 +397,16 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
    - [Details →](docs/fixes/model-dropdown-base-pro-mode-fix-2026-01-16.md)
 
 **Pro Toolkit Infrastructure - Phase 3 Complete:**
-- ✅ All 11 Pro toolkit settings pages implemented
-- ✅ 7 Active toolkits: E-commerce, Social Media, Analytics, Multilingual, Video Production, Financial Planner, Media
-- ✅ 4 new Social Media Analytics tools (cross-platform analytics, hashtag tracking, competitor analysis, influencer identification)
-- ✅ Multi-agent functionality: Each toolkit can have dedicated AI assistant (up to 5 concurrent agents)
+- ✅ All 13 Pro toolkit settings pages implemented
+- ✅ **13 Active Toolkits**: E-commerce (20), Social Media (19), Analytics (12), Multilingual (10), Video Production (12), Financial Planner (24), Document Generation (3), Calendar Booking (15), DJ Management (18), Image Production (15), AI Tool Builder (10), Architectural Design (16), CRM (1)
+- ✅ **Total: 175 Pro toolkit tools** across 13 specialized domains
+- ✅ **All "planned" toolkits implemented**: Calendar Booking, DJ Management, Image Production, and AI Tool Builder are fully functional (not planned!)
+- ✅ Multi-agent functionality: Each toolkit can have dedicated AI assistant (up to 13 concurrent specialized agents)
 - [Phase 3 Details →](docs/implementation-history/2026/january/PHASE_3_IMPLEMENTATION_COMPLETE.md)
 
 **Documentation Updates:**
 - ✅ Code review completed (Jan 18) - All changes production ready
-- ✅ Root directory reorganization (Jan 13) - 20+ files moved to organized subdirectories
+- ✅ Documentation consolidation (Jan 22) - Menu fixes consolidated, TOOLKIT_MEMORY_TRACKING moved to docs/features/
 - ✅ 6 detailed fix documentation files created
 - [Code Review →](docs/implementation-history/2026/CODE_REVIEW_DOCUMENTATION_UPDATE_2026-01-18.md)
 
@@ -637,6 +739,10 @@ The assistant registry ships with a comprehensive catalogue of editorial, market
 | Meta Social Insights | `get_facebook_instagram_insights` | Pulls Facebook Page or Instagram business metrics via the Graph API with selectable periods and metric sets. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-facebook-instagram-insights.php†L15-L146】|
 | LinkedIn Insights | `get_linkedin_insights` | Queries LinkedIn organizational share statistics with optional timeframe and granularity filters. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-linkedin-insights.php†L15-L138】|
 | TikTok Insights | `get_tiktok_insights` | Calls the TikTok Open API to return account performance metrics across configurable windows and granularities. **Pro addon tool**.【F:addons/pro/includes/src/Tools/class-wp-mcp-ai-pro-tool-get-tiktok-insights.php†L15-L136】|
+| Get Cross-Platform Analytics 🌟 | `get_cross_platform_analytics` | **[NEW Jan 2026]** Unified social media metrics dashboard aggregating data from Facebook, Instagram, Twitter, LinkedIn, and YouTube. Provides engagement rates, follower growth, post performance, and comparative analytics across all platforms. Built-in 12-hour caching. **Pro addon tool** (623 lines).|
+| Track Hashtag Performance 🌟 | `track_hashtag_performance` | **[NEW Jan 2026]** Comprehensive hashtag analysis tracking reach, engagement, impressions, and trend data across Facebook, Instagram, Twitter, LinkedIn, and YouTube. Identifies top-performing hashtags and provides optimization recommendations. **Pro addon tool** (586 lines).|
+| Competitor Analysis 🌟 | `analyze_competitor_social` | **[NEW Jan 2026]** Track competitor social media metrics and benchmark performance against your profiles. Monitors follower growth, engagement rates, posting frequency, and content strategies across all major platforms. **Pro addon tool** (711 lines).|
+| Influencer Identification 🌟 | `identify_influencers` | **[NEW Jan 2026]** Discover brand influencers and potential collaboration partners based on reach, engagement criteria, audience demographics, and content relevance. Searches across Facebook, Instagram, Twitter, LinkedIn, and YouTube. **Pro addon tool** (759 lines).|
 
 ### Publishing & outreach
 | Tool | Slug | Summary |

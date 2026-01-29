@@ -215,6 +215,27 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		}
 
 		/**
+		 * Retrieve all registered tools as an associative array keyed by slug.
+		 *
+		 * Use this method when you need to:
+		 * - Look up tools by slug using array key access
+		 * - Iterate over tools with slug keys (foreach $tools as $slug => $tool)
+		 * - Get tool slugs using array_keys()
+		 *
+		 * Use get_tools() instead when you only need to:
+		 * - Count the number of tools
+		 * - Iterate over tool objects without needing slugs
+		 *
+		 * @return WP_MCP_AI_Tool_Interface[] Associative array with slugs as keys.
+		 */
+		public function get_all_tools() {
+			// Ensure registry is initialized before retrieving tools.
+			$this->init();
+
+			return $this->tools;
+		}
+
+		/**
 		 * Execute a tool.
 		 *
 		 * @param string $slug      Tool slug.
@@ -427,6 +448,15 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'get_profession'                     => 'wordpress-core',
 				'save_profession'                    => 'wordpress-core',
 				'get_profession_stats'               => 'wordpress-core',
+
+				// Multi-agent orchestration (DeepSeek V4 Phase 1 & 5).
+				'create_agent_team'                  => 'wordpress-core',
+				'delegate_to_agent'                  => 'wordpress-core',
+				'aggregate_agent_results'            => 'wordpress-core',
+				'store_agent_context'                => 'wordpress-core',
+				'retrieve_agent_memory'              => 'wordpress-core',
+				'prioritize_context'                 => 'wordpress-core',
+				'semantic_context_search'            => 'external-tools',
 
 				// Project Management - Pro feature tools for managing projects, tasks, and events.
 				'create_project'                     => 'project-management',
@@ -935,7 +965,17 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
 				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
 				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
+				// Agent memory tools (DeepSeek V4 Phase 5: State Management & Memory).
+				'WP_MCP_AI_Tool_Store_Agent_Context'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-store-agent-context.php',
+				'WP_MCP_AI_Tool_Retrieve_Agent_Memory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php',
+				'WP_MCP_AI_Tool_Prioritize_Context'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-prioritize-context.php',
+				'WP_MCP_AI_Tool_Semantic_Context_Search'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-semantic-context-search.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
+				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
+				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
+				'WP_MCP_AI_Tool_Enable_Reasoning_Mode'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-enable-reasoning-mode.php',
+				'WP_MCP_AI_Tool_Analyze_Code_Sequence'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-code-sequence.php',
+				'WP_MCP_AI_Tool_Validate_Reasoning_Chain'  => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-validate-reasoning-chain.php',
 				// Google Maps Platform tools.
 				'WP_MCP_AI_Tool_Geocode_Address'           => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-geocode-address.php',
 				'WP_MCP_AI_Tool_Search_Places'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-search-places.php',
@@ -1013,8 +1053,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				// Project Management tools moved to Pro addon.
 			);
 
+			// Pro tools (only loaded when not in base version mode).
+			// NOTE: Architect Agent tools (manage_files, execute_shell_command, git_operations, search_codebase)
+			// are now loaded via the Architect Agent Toolkit (addons/pro/includes/architect-agent-toolkit-init.php).
+			$pro_tools = array();
+
 			// Combine tools based on version mode.
-			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools );
+			$default_tools = $is_base_version ? $base_tools : array_merge( $base_tools, $extended_tools, $pro_tools );
 
 			/**
 			 * Filter the list of default tools to load.
