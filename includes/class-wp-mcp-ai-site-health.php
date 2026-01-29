@@ -340,7 +340,18 @@ class WP_MCP_AI_Site_Health {
 			'test'        => 'wp_mcp_ai_tool_functionality',
 		);
 
-		// Get tool registry.
+		// Get tool registry - check if class exists first.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$result['status'] = 'recommended';
+			/* translators: Tool registry not available */
+			$result['label']       = __( 'Tool registry not yet available', 'mcp-ai-wpoos' );
+			$result['description'] = sprintf(
+				'<p>%s</p>',
+				__( 'The tool registry is initializing. This is normal during plugin activation.', 'mcp-ai-wpoos' )
+			);
+			return $result;
+		}
+
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 		if ( ! $registry ) {
 			$result['status'] = 'critical';
@@ -488,12 +499,16 @@ class WP_MCP_AI_Site_Health {
 			'value' => isset( $assistants->publish ) ? $assistants->publish : 0,
 		);
 
-		// Tool count.
-		$registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tools    = $registry ? $registry->get_all_tools() : array();
+		// Tool count - check if class exists and registry is initialized.
+		$tool_count = 0;
+		if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+			$registry   = WP_MCP_AI_Tool_Registry::get_instance();
+			$tools      = $registry ? $registry->get_all_tools() : array();
+			$tool_count = is_array( $tools ) ? count( $tools ) : 0;
+		}
 		$fields['tool_count'] = array(
 			'label' => __( 'Tools Available', 'mcp-ai-wpoos' ),
-			'value' => is_array( $tools ) ? count( $tools ) : 0,
+			'value' => $tool_count,
 		);
 
 		// JetEngine integration.
