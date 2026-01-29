@@ -39,7 +39,13 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 	define( 'WP_MCP_AI_PRO_PATH', plugin_dir_path( WP_MCP_AI_PRO_FILE ) );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
-	define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
+	// If loaded as part of main plugin, build URL from main plugin's URL.
+	if ( defined( 'WP_MCP_AI_URL' ) ) {
+		define( 'WP_MCP_AI_PRO_URL', WP_MCP_AI_URL . 'addons/pro/' );
+	} else {
+		// If loaded as standalone plugin, use standard plugin_dir_url().
+		define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
+	}
 }
 
 /**
