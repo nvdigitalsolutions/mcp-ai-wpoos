@@ -479,21 +479,108 @@ class WP_MCP_AI_Job_Notifier_REST {
 			);
 		}
 
-		// Authorization check: Verify user owns this job or is admin.
+		// Comprehensive authorization check across all entity types.
 		$current_user_id = get_current_user_id();
-		$job_user_id     = isset( $initial_status['metadata']['user_id'] ) ?
-			absint( $initial_status['metadata']['user_id'] ) : 0;
+		$job_metadata    = isset( $initial_status['metadata'] ) ? $initial_status['metadata'] : array();
 
-		// Allow access if: user owns job OR user is admin.
-		if ( $job_user_id && $job_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
+		if ( ! self::is_user_authorized_for_job( $job_metadata, $current_user_id ) ) {
 			return new WP_Error(
 				'unauthorized',
-				__( 'You do not have permission to access this job.', 'mcp-ai-wpoos' ),
+				__( 'You do not have permission to access this job. Authorization can be granted through user, assistant, team, profession, or agent ownership.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}
 
 		return WP_MCP_AI_SSE_Stream::stream_job_status( $job_id, $max_duration, $poll_interval );
+	}
+
+	/**
+	 * Check if current user is authorized to access a job.
+	 *
+	 * Authorization is granted if ANY of the following is true:
+	 * - User is an admin (manage_options capability)
+	 * - User ID matches job's user_id
+	 * - User owns the assistant that created the job
+	 * - User is member of the team that created the job
+	 * - User owns the profession that created the job
+	 * - User owns the agent that executed the job
+	 *
+	 * @param array $job_metadata Job metadata containing various IDs.
+	 * @param int   $current_user_id Current user ID making the request.
+	 * @return bool True if authorized, false otherwise.
+	 */
+	private static function is_user_authorized_for_job( $job_metadata, $current_user_id ) {
+		// Admin can access all jobs.
+		if ( current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+
+		// Check direct user ownership.
+		if ( isset( $job_metadata['user_id'] ) && absint( $job_metadata['user_id'] ) === $current_user_id ) {
+			return true;
+		}
+
+		// Check assistant ownership.
+		if ( isset( $job_metadata['assistant_id'] ) ) {
+			$assistant_id = absint( $job_metadata['assistant_id'] );
+			if ( $assistant_id > 0 ) {
+				$assistant = get_post( $assistant_id );
+				if ( $assistant && absint( $assistant->post_author ) === $current_user_id ) {
+					return true;
+				}
+			}
+		}
+
+		// Check team membership (teams are stored as posts with members in meta).
+		if ( isset( $job_metadata['team_id'] ) ) {
+			$team_id = absint( $job_metadata['team_id'] );
+			if ( $team_id > 0 ) {
+				$team = get_post( $team_id );
+				// Check if user is team owner.
+				if ( $team && absint( $team->post_author ) === $current_user_id ) {
+					return true;
+				}
+				// Check if user is team member.
+				$team_members = get_post_meta( $team_id, 'team_members', true );
+				if ( is_array( $team_members ) && in_array( $current_user_id, array_map( 'absint', $team_members ), true ) ) {
+					return true;
+				}
+			}
+		}
+
+		// Check profession/professional ownership.
+		$profession_id = 0;
+		if ( isset( $job_metadata['professional_id'] ) ) {
+			$profession_id = absint( $job_metadata['professional_id'] );
+		} elseif ( isset( $job_metadata['profession_id'] ) ) {
+			$profession_id = absint( $job_metadata['profession_id'] );
+		}
+
+		if ( $profession_id > 0 ) {
+			$profession = get_post( $profession_id );
+			if ( $profession && absint( $profession->post_author ) === $current_user_id ) {
+				return true;
+			}
+		}
+
+		// Check agent ownership (agents may be associated with assistants/professions).
+		if ( isset( $job_metadata['agent_id'] ) ) {
+			// Agent IDs might be string identifiers like "agent-123".
+			// Extract numeric ID if possible and check ownership.
+			$agent_id_str = sanitize_text_field( $job_metadata['agent_id'] );
+			if ( preg_match( '/(\d+)/', $agent_id_str, $matches ) ) {
+				$agent_numeric_id = absint( $matches[1] );
+				if ( $agent_numeric_id > 0 ) {
+					$agent = get_post( $agent_numeric_id );
+					if ( $agent && absint( $agent->post_author ) === $current_user_id ) {
+						return true;
+					}
+				}
+			}
+		}
+
+		// No authorization criteria met.
+		return false;
 	}
 
 	/**
@@ -514,16 +601,14 @@ class WP_MCP_AI_Job_Notifier_REST {
 			);
 		}
 
-		// Authorization check: Verify user owns this job or is admin.
+		// Comprehensive authorization check across all entity types.
 		$current_user_id = get_current_user_id();
-		$job_user_id     = isset( $status['metadata']['user_id'] ) ?
-			absint( $status['metadata']['user_id'] ) : 0;
+		$job_metadata    = isset( $status['metadata'] ) ? $status['metadata'] : array();
 
-		// Allow access if: user owns job OR user is admin.
-		if ( $job_user_id && $job_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
+		if ( ! self::is_user_authorized_for_job( $job_metadata, $current_user_id ) ) {
 			return new WP_Error(
 				'unauthorized',
-				__( 'You do not have permission to access this job.', 'mcp-ai-wpoos' ),
+				__( 'You do not have permission to access this job. Authorization can be granted through user, assistant, team, profession, or agent ownership.', 'mcp-ai-wpoos' ),
 				array( 'status' => 403 )
 			);
 		}

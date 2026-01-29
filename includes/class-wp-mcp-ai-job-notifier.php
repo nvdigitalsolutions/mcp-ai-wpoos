@@ -43,16 +43,77 @@ class WP_MCP_AI_Job_Notifier {
 	}
 
 	/**
-	 * Handle job started event.
+	 * Ensure all relevant context IDs are captured in metadata for authorization and audit trails.
 	 *
-	 * @param string $job_id   Job identifier.
-	 * @param array  $metadata Job metadata.
+	 * This ensures we track:
+	 * - user_id: WordPress user who initiated the job
+	 * - assistant_id: Assistant that triggered the job
+	 * - team_id: Team workflow that triggered the job
+	 * - professional_id/profession_id: Professional that triggered the job
+	 * - agent_id: Specific agent that executed the job (in multi-agent workflows)
+	 * - virtual_id: Virtual assistant that triggered the job
+	 *
+	 * @param array $metadata Job metadata.
+	 * @param array $context Optional execution context to extract IDs from.
+	 * @return array Enhanced metadata with all available IDs.
 	 */
-	public static function handle_job_started( $job_id, $metadata = array() ) {
-		// Ensure user_id is always stored for authorization checks.
+	private static function ensure_tracking_ids( $metadata, $context = array() ) {
+		// Ensure user_id is always stored.
 		if ( ! isset( $metadata['user_id'] ) ) {
 			$metadata['user_id'] = get_current_user_id();
 		}
+
+		// Extract assistant_id from context if available.
+		if ( ! isset( $metadata['assistant_id'] ) && isset( $context['assistant_id'] ) ) {
+			$metadata['assistant_id'] = absint( $context['assistant_id'] );
+		}
+
+		// Extract team_id from context if available.
+		if ( ! isset( $metadata['team_id'] ) && isset( $context['team_id'] ) ) {
+			$metadata['team_id'] = absint( $context['team_id'] );
+		}
+
+		// Extract professional_id or profession_id from context if available.
+		if ( ! isset( $metadata['professional_id'] ) && ! isset( $metadata['profession_id'] ) ) {
+			if ( isset( $context['professional_id'] ) ) {
+				$metadata['professional_id'] = absint( $context['professional_id'] );
+			} elseif ( isset( $context['profession_id'] ) ) {
+				$metadata['profession_id'] = absint( $context['profession_id'] );
+			} elseif ( isset( $context['profession_slug'] ) ) {
+				$metadata['profession_slug'] = sanitize_key( $context['profession_slug'] );
+			}
+		}
+
+		// Extract agent_id from context if available (multi-agent workflows).
+		if ( ! isset( $metadata['agent_id'] ) && isset( $context['agent_id'] ) ) {
+			$metadata['agent_id'] = sanitize_text_field( $context['agent_id'] );
+		}
+
+		// Extract agent_role from context if available (for agent role tracking).
+		if ( ! isset( $metadata['agent_role'] ) && isset( $context['agent_role'] ) ) {
+			$metadata['agent_role'] = sanitize_key( $context['agent_role'] );
+		}
+
+		// Extract virtual_id from context if available.
+		if ( ! isset( $metadata['virtual_id'] ) && isset( $context['virtual_id'] ) ) {
+			$metadata['virtual_id'] = absint( $context['virtual_id'] );
+		}
+
+		return $metadata;
+	}
+
+	/**
+	 * Handle job started event.
+	 *
+	 * @param string $job_id   Job identifier.
+	 * @param array  $metadata Job metadata (may contain context).
+	 */
+	public static function handle_job_started( $job_id, $metadata = array() ) {
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
 
 		$status = array(
 			'job_id'     => $job_id,
@@ -71,7 +132,7 @@ class WP_MCP_AI_Job_Notifier {
 	 *
 	 * @param string $job_id   Job identifier.
 	 * @param float  $progress Progress percentage (0-100).
-	 * @param array  $metadata Additional metadata.
+	 * @param array  $metadata Additional metadata (may contain context).
 	 */
 	public static function handle_job_progress( $job_id, $progress, $metadata = array() ) {
 		$status = self::get_job_status( $job_id );
@@ -83,10 +144,11 @@ class WP_MCP_AI_Job_Notifier {
 			);
 		}
 
-		// Ensure user_id is always stored for authorization checks.
-		if ( ! isset( $metadata['user_id'] ) ) {
-			$metadata['user_id'] = get_current_user_id();
-		}
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
 
 		$status['progress']   = max( 0, min( 100, floatval( $progress ) ) );
 		$status['updated_at'] = current_time( 'mysql', true );
@@ -124,8 +186,8 @@ class WP_MCP_AI_Job_Notifier {
 			'tool'     => 'web_search',
 			'query'    => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
 			'provider' => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : '',
-			'user_id'  => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
 			'cached'   => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+			'context'  => $context, // Embed context for ID extraction.
 		);
 
 		// Delegate to the standard job completion handler.
@@ -183,10 +245,11 @@ class WP_MCP_AI_Job_Notifier {
 		// preventing JSON encoding failures when the status is retrieved.
 		$result = self::normalize_data_recursive( $result );
 
-		// Ensure user_id is always stored for authorization checks.
-		if ( ! isset( $metadata['user_id'] ) ) {
-			$metadata['user_id'] = get_current_user_id();
-		}
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
 
 		$status = array(
 			'job_id'       => $job_id,
@@ -206,7 +269,7 @@ class WP_MCP_AI_Job_Notifier {
 	 *
 	 * @param string         $job_id Job identifier.
 	 * @param WP_Error|array $error  Error information.
-	 * @param array          $metadata Job metadata.
+	 * @param array          $metadata Job metadata (may contain context).
 	 */
 	public static function handle_job_failed( $job_id, $error, $metadata = array() ) {
 		$error_data = array(
@@ -214,10 +277,11 @@ class WP_MCP_AI_Job_Notifier {
 			'code'    => is_wp_error( $error ) ? $error->get_error_code() : 'unknown_error',
 		);
 
-		// Ensure user_id is always stored for authorization checks.
-		if ( ! isset( $metadata['user_id'] ) ) {
-			$metadata['user_id'] = get_current_user_id();
-		}
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
 
 		$status = array(
 			'job_id'    => $job_id,
