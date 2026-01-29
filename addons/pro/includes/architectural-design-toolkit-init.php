@@ -19,6 +19,11 @@ require_once __DIR__ . '/class-wp-mcp-ai-architectural-project-cpt.php';
 require_once __DIR__ . '/class-wp-mcp-ai-architectural-drawing-cpt.php';
 require_once __DIR__ . '/class-wp-mcp-ai-architectural-specification-cpt.php';
 
+// Initialize CPTs - they have their own checks for enabled/base version.
+WP_MCP_AI_Architectural_Project_CPT::init();
+WP_MCP_AI_Architectural_Drawing_CPT::init();
+WP_MCP_AI_Architectural_Specification_CPT::init();
+
 // Load Research & Add and Settings pages for admin.
 if ( is_admin() ) {
 	// Check if architectural design toolkit is enabled and not in base version (unless Pro addon is active).

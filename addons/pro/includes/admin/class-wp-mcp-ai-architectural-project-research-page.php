@@ -51,7 +51,7 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 		add_submenu_page(
 			'edit.php?post_type=mcp_ai_arch_proj',
 			__( 'Research & Add Design Projects', 'mcp-ai-wpoos-pro' ),
-			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
+			__( 'Research Projects', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )

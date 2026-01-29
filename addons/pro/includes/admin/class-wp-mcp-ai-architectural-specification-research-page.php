@@ -45,13 +45,13 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 	}
 
 	/**
-	 * Add submenu page under Specifications menu.
+	 * Add submenu page under Design Projects menu (same parent as Project research).
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_arch_spec',
+			'edit.php?post_type=mcp_ai_arch_proj',
 			__( 'Research & Add Specifications', 'mcp-ai-wpoos-pro' ),
-			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
+			__( 'Research Specifications', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			self::PAGE_SLUG,
 			array( __CLASS__, 'render_page' )
@@ -65,7 +65,8 @@ class WP_MCP_AI_Architectural_Specification_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'mcp_ai_arch_spec_page_' . self::PAGE_SLUG !== $hook ) {
+		// Now under mcp_ai_arch_proj parent menu like all other research pages.
+		if ( 'mcp_ai_arch_proj_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
