@@ -100,12 +100,16 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-landing-page.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-homepage-layout.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-about-page.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-service-pages.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-blog-layout.php';
 
 	// Section Building Tools.
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-hero-section.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-feature-section.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-testimonial-section.php';
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-create-cta-section.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-generate-gallery-section.php';
+	require_once $tools_dir . 'class-wp-mcp-ai-tool-build-contact-section.php';
 
 	// TODO: Add more tools as they are implemented.
 	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
@@ -123,12 +127,16 @@ function wp_mcp_ai_load_site_creator_tools() {
 		$registry->register( new WP_MCP_AI_Tool_Generate_Landing_Page() );
 		$registry->register( new WP_MCP_AI_Tool_Create_Homepage_Layout() );
 		$registry->register( new WP_MCP_AI_Tool_Build_About_Page() );
+		$registry->register( new WP_MCP_AI_Tool_Create_Service_Pages() );
+		$registry->register( new WP_MCP_AI_Tool_Generate_Blog_Layout() );
 
 		// Section Building.
 		$registry->register( new WP_MCP_AI_Tool_Create_Hero_Section() );
 		$registry->register( new WP_MCP_AI_Tool_Generate_Feature_Section() );
 		$registry->register( new WP_MCP_AI_Tool_Build_Testimonial_Section() );
 		$registry->register( new WP_MCP_AI_Tool_Create_CTA_Section() );
+		$registry->register( new WP_MCP_AI_Tool_Generate_Gallery_Section() );
+		$registry->register( new WP_MCP_AI_Tool_Build_Contact_Section() );
 
 		// Widget Building - to be implemented.
 		// Section Building - to be implemented.
