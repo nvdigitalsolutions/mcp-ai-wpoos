@@ -44,12 +44,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 
 			'agentic_workflow'         => array(
 				'name'        => __( '🤖 Agentic Workflow', 'mcp-ai-wpoos' ),
-				'description' => __( 'DeepSeek V4 multi-agent orchestration tools for team composition, delegation, and result aggregation', 'mcp-ai-wpoos' ),
+				'description' => __( 'DeepSeek V4 multi-agent orchestration tools for team composition, delegation, memory management, and result aggregation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
 					// Agent coordination tools (DeepSeek V4).
 					'create_agent_team',
 					'delegate_to_agent',
 					'aggregate_agent_results',
+					// Agent memory tools (Phase 4/5).
+					'store_agent_context',
+					'retrieve_agent_memory',
 					'execute_workflow',
 					// Supporting tools for agentic operations.
 					'list_professions',
@@ -650,6 +653,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_agent_team',
 					'delegate_to_agent',
 					'aggregate_agent_results',
+					'store_agent_context',
+					'retrieve_agent_memory',
+					'store_agent_context',
+					'retrieve_agent_memory',
 					'execute_workflow',
 				),
 			),
