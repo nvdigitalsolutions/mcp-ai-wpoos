@@ -449,6 +449,14 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'save_profession'                    => 'wordpress-core',
 				'get_profession_stats'               => 'wordpress-core',
 
+				// Multi-agent orchestration (DeepSeek V4 Phase 1 & 5).
+				'create_agent_team'                  => 'wordpress-core',
+				'delegate_to_agent'                  => 'wordpress-core',
+				'aggregate_agent_results'            => 'wordpress-core',
+				'store_agent_context'                => 'wordpress-core',
+				'retrieve_agent_memory'              => 'wordpress-core',
+				'prioritize_context'                 => 'wordpress-core',
+
 				// Project Management - Pro feature tools for managing projects, tasks, and events.
 				'create_project'                     => 'project-management',
 				'update_project'                     => 'project-management',
@@ -956,9 +964,10 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Create_Agent_Team'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-create-agent-team.php',
 				'WP_MCP_AI_Tool_Delegate_To_Agent'         => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-delegate-to-agent.php',
 				'WP_MCP_AI_Tool_Aggregate_Agent_Results'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-aggregate-agent-results.php',
-				// Agent memory tools (DeepSeek V4 Phase 4/5: State Management & Memory).
+				// Agent memory tools (DeepSeek V4 Phase 5: State Management & Memory).
 				'WP_MCP_AI_Tool_Store_Agent_Context'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-store-agent-context.php',
 				'WP_MCP_AI_Tool_Retrieve_Agent_Memory'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-retrieve-agent-memory.php',
+				'WP_MCP_AI_Tool_Prioritize_Context'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-prioritize-context.php',
 				'WP_MCP_AI_Tool_Execute_Workflow'          => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-execute-workflow.php',
 				'WP_MCP_AI_Tool_Check_Workflow_Health'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-workflow-health.php',
 				// Advanced reasoning tools (DeepSeek V4 Phase 3: Reasoning Support).
