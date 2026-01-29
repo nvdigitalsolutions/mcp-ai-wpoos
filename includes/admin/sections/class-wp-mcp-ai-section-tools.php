@@ -124,6 +124,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'step'        => 10,
 					'placeholder' => '100',
 				),
+				'search_gmail_capability'              => array(
+					'type'        => 'select',
+					'label'       => __( 'Search Gmail Capability', 'mcp-ai-wpoos' ),
+					'description' => __( 'WordPress capability required to use the Search Gmail tool. Controls who can search Gmail messages through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
+					'options'     => $wp_capabilities,
+					'default'     => 'manage_options',
+				),
+				'search_gmail_max_results'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Gmail Search Results', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of Gmail messages that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
+					'default'     => 50,
+					'min'         => 1,
+					'max'         => 100,
+					'step'        => 5,
+					'placeholder' => '50',
+				),
+				'search_drive_capability'              => array(
+					'type'        => 'select',
+					'label'       => __( 'Search Google Drive Capability', 'mcp-ai-wpoos' ),
+					'description' => __( 'WordPress capability required to use the Search Google Drive tool. Controls who can search Drive files through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
+					'options'     => $wp_capabilities,
+					'default'     => 'manage_options',
+				),
+				'search_drive_max_results'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Drive Search Results', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of Google Drive files that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
+					'default'     => 50,
+					'min'         => 1,
+					'max'         => 100,
+					'step'        => 5,
+					'placeholder' => '50',
+				),
 
 				// External Tools fields.
 				'gmail_client_id'                      => array(
@@ -724,7 +758,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
+					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
 				),
 				'document_generation' => array(
 					'id'     => 'document_generation',
