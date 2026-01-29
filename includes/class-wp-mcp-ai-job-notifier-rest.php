@@ -461,12 +461,37 @@ class WP_MCP_AI_Job_Notifier_REST {
 	 * Handle SSE job stream request.
 	 *
 	 * @param WP_REST_Request $request REST request.
-	 * @return WP_REST_Response
+	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function handle_job_stream( WP_REST_Request $request ) {
 		$job_id        = $request->get_param( 'job_id' );
 		$max_duration  = $request->get_param( 'max_duration' );
 		$poll_interval = $request->get_param( 'poll_interval' );
+
+		// Get initial status to check authorization.
+		$initial_status = WP_MCP_AI_Job_Notifier::get_job_status( $job_id );
+
+		if ( ! $initial_status ) {
+			return new WP_Error(
+				'job_not_found',
+				__( 'Job not found.', 'mcp-ai-wpoos' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		// Authorization check: Verify user owns this job or is admin.
+		$current_user_id = get_current_user_id();
+		$job_user_id     = isset( $initial_status['metadata']['user_id'] ) ?
+			absint( $initial_status['metadata']['user_id'] ) : 0;
+
+		// Allow access if: user owns job OR user is admin.
+		if ( $job_user_id && $job_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'You do not have permission to access this job.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
+			);
+		}
 
 		return WP_MCP_AI_SSE_Stream::stream_job_status( $job_id, $max_duration, $poll_interval );
 	}
@@ -486,6 +511,20 @@ class WP_MCP_AI_Job_Notifier_REST {
 				'job_not_found',
 				__( 'Job status not found or expired.', 'mcp-ai-wpoos' ),
 				array( 'status' => 404 )
+			);
+		}
+
+		// Authorization check: Verify user owns this job or is admin.
+		$current_user_id = get_current_user_id();
+		$job_user_id     = isset( $status['metadata']['user_id'] ) ?
+			absint( $status['metadata']['user_id'] ) : 0;
+
+		// Allow access if: user owns job OR user is admin.
+		if ( $job_user_id && $job_user_id !== $current_user_id && ! current_user_can( 'manage_options' ) ) {
+			return new WP_Error(
+				'unauthorized',
+				__( 'You do not have permission to access this job.', 'mcp-ai-wpoos' ),
+				array( 'status' => 403 )
 			);
 		}
 

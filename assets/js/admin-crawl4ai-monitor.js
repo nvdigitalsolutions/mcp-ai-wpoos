@@ -105,7 +105,9 @@
 						this.updateJobs(response.data.jobs);
 						this.updateLastRefresh();
 					} else {
-						this.showNotice('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+						// Escape error message to prevent XSS
+						const errorMsg = this.escapeHtml(response.data?.message || 'Unknown error');
+						this.showNotice('Error: ' + errorMsg, 'error');
 					}
 				},
 				error: (xhr, status, error) => {
@@ -199,7 +201,10 @@
 			const $notices = $('.wp-mcp-ai-crawl4ai-monitor__notices');
 			const noticeClass = 'notice-' + type;
 			
-			const $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
+			// Escape message to prevent XSS
+			const escapedMessage = this.escapeHtml(message);
+			
+			const $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + escapedMessage + '</p></div>');
 			$notices.html($notice);
 			
 			// Auto-dismiss after 3 seconds

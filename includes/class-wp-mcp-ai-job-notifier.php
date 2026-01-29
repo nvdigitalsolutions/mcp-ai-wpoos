@@ -49,6 +49,11 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param array  $metadata Job metadata.
 	 */
 	public static function handle_job_started( $job_id, $metadata = array() ) {
+		// Ensure user_id is always stored for authorization checks.
+		if ( ! isset( $metadata['user_id'] ) ) {
+			$metadata['user_id'] = get_current_user_id();
+		}
+
 		$status = array(
 			'job_id'     => $job_id,
 			'status'     => 'started',
@@ -76,6 +81,11 @@ class WP_MCP_AI_Job_Notifier {
 				'job_id' => $job_id,
 				'status' => 'running',
 			);
+		}
+
+		// Ensure user_id is always stored for authorization checks.
+		if ( ! isset( $metadata['user_id'] ) ) {
+			$metadata['user_id'] = get_current_user_id();
 		}
 
 		$status['progress']   = max( 0, min( 100, floatval( $progress ) ) );
@@ -173,6 +183,11 @@ class WP_MCP_AI_Job_Notifier {
 		// preventing JSON encoding failures when the status is retrieved.
 		$result = self::normalize_data_recursive( $result );
 
+		// Ensure user_id is always stored for authorization checks.
+		if ( ! isset( $metadata['user_id'] ) ) {
+			$metadata['user_id'] = get_current_user_id();
+		}
+
 		$status = array(
 			'job_id'       => $job_id,
 			'status'       => 'completed',
@@ -198,6 +213,11 @@ class WP_MCP_AI_Job_Notifier {
 			'message' => is_wp_error( $error ) ? $error->get_error_message() : 'Unknown error',
 			'code'    => is_wp_error( $error ) ? $error->get_error_code() : 'unknown_error',
 		);
+
+		// Ensure user_id is always stored for authorization checks.
+		if ( ! isset( $metadata['user_id'] ) ) {
+			$metadata['user_id'] = get_current_user_id();
+		}
 
 		$status = array(
 			'job_id'    => $job_id,
@@ -498,8 +518,42 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function register_webhook( $job_id, $webhook_url, $events = array() ) {
+		// Basic URL format validation.
 		if ( ! is_string( $webhook_url ) || ! filter_var( $webhook_url, FILTER_VALIDATE_URL ) ) {
 			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'mcp-ai-wpoos' ) );
+		}
+
+		// SSRF Protection: Parse and validate URL components.
+		$parsed_url = wp_parse_url( $webhook_url );
+
+		// Only allow http/https protocols.
+		if ( ! isset( $parsed_url['scheme'] ) || ! in_array( $parsed_url['scheme'], array( 'http', 'https' ), true ) ) {
+			return new WP_Error(
+				'invalid_webhook_scheme',
+				__( 'Only http and https protocols are allowed for webhooks.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Block private/internal IP ranges to prevent SSRF attacks.
+		if ( isset( $parsed_url['host'] ) ) {
+			$host = $parsed_url['host'];
+			$ip   = gethostbyname( $host );
+
+			// Check for private IP ranges (RFC 1918, loopback, link-local).
+			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+				return new WP_Error(
+					'private_ip_blocked',
+					__( 'Webhooks to private IP addresses, localhost, or internal networks are not allowed for security reasons.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		// Use WordPress built-in URL validation for additional security.
+		if ( ! wp_http_validate_url( $webhook_url ) ) {
+			return new WP_Error(
+				'webhook_validation_failed',
+				__( 'Webhook URL failed security validation.', 'mcp-ai-wpoos' )
+			);
 		}
 
 		$job_id = sanitize_text_field( $job_id );

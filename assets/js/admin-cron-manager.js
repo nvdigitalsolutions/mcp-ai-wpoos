@@ -106,7 +106,9 @@
 						this.updateDLQStats(response.data.dlq_stats);
 						this.updateLastRefresh();
 					} else {
-						this.showNotice('Error: ' + (response.data?.message || 'Unknown error'), 'error');
+						// Escape error message to prevent XSS
+						const errorMsg = this.escapeHtml(response.data?.message || 'Unknown error');
+						this.showNotice('Error: ' + errorMsg, 'error');
 					}
 				},
 				error: (xhr, status, error) => {
@@ -226,14 +228,19 @@
 		},
 
 		/**
-		 * Render action buttons.
+		 * Render action buttons with proper form for CSRF protection.
 		 *
 		 * @param {Object} job Job object.
 		 * @return {string} HTML for actions.
 		 */
 		renderActions: function(job) {
-			// Return a link to trigger delete via traditional form submit
-			return '<a href="#" class="button delete-cron-job" data-job-id="' + this.escapeHtml(job.job_id) + '" data-nonce="' + this.escapeHtml(job.delete_nonce || '') + '">Delete</a>';
+			// Render proper form with nonce to maintain CSRF protection after AJAX refresh
+			return '<form method="post" style="display:inline;" class="delete-job-form">' +
+				'<input type="hidden" name="action" value="delete_cron_job" />' +
+				'<input type="hidden" name="job_id" value="' + this.escapeHtml(job.job_id) + '" />' +
+				'<input type="hidden" name="delete_nonce" value="' + this.escapeHtml(job.delete_nonce || '') + '" />' +
+				'<button type="submit" class="button delete-cron-job">Delete</button>' +
+				'</form>';
 		},
 
 		/**
@@ -276,7 +283,10 @@
 			const $notices = $('.wp-mcp-ai-cron-manager__notices');
 			const noticeClass = 'notice-' + type;
 			
-			const $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + message + '</p></div>');
+			// Escape message to prevent XSS
+			const escapedMessage = this.escapeHtml(message);
+			
+			const $notice = $('<div class="notice ' + noticeClass + ' is-dismissible"><p>' + escapedMessage + '</p></div>');
 			$notices.html($notice);
 			
 			// Auto-dismiss after 3 seconds
