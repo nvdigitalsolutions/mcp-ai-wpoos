@@ -39,11 +39,11 @@ The investigation revealed that **system prompts ARE correctly propagated** to b
    embedded-llm-client.js receives and uses system prompt
    ```
 
-### ⚠️ Bug Found: Missing `get_client()` Method
+### ⚠️ Bug Found and Fixed: Missing `get_client()` Method
 
 While investigating, discovered that `WP_MCP_AI_Chat_Service` (line 174) calls `$this->router->get_client($assistant_config)`, but this method didn't exist on `WP_MCP_AI_Language_Model_Router`.
 
-**Note**: The chat service is not currently used in production (work-in-progress refactoring), so this bug doesn't affect current functionality. However, it prevents future use of the chat service.
+**Impact**: The chat service is used in production via the dependency injection container (`WP_MCP_AI_Container`). This missing method was blocking chat service functionality.
 
 ## Changes Made
 
@@ -66,6 +66,7 @@ public function get_client( array $assistant_config ) {
 - Returns `$this` to enable method chaining
 - Assistant configuration is passed via `$options` to `create_chat_completion()`
 - Comprehensive logging added for diagnostic purposes
+- Required for production Chat Service functionality
 
 ### 2. Added Integration Tests
 **File**: `tests/test-language-model-router-get-client.php`
@@ -250,18 +251,19 @@ composer run test -- tests/test-language-model-router-get-client.php
 
 ## Impact Assessment
 
-### ✅ No Breaking Changes
-- Existing functionality remains unchanged
-- System prompt flow was already working correctly
-- Added missing method enables future chat service use
+### ✅ Critical Fix for Production
+- Chat service is used in production via the dependency injection container
+- Missing method was blocking chat service functionality
+- System prompt flow was already working correctly via REST API direct calls
+- Added method enables proper chat service architecture
 
 ### ✅ Enhanced Diagnostics
 - `get_client()` method adds comprehensive logging
 - Easier to diagnose system prompt propagation issues
 - Clear audit trail for assistant configuration
 
-### ✅ Future-Proofing
-- Chat service can now be used when refactoring is complete
+### ✅ Improved Architecture
+- Chat service now properly supported
 - Consistent pattern for all LLM provider interactions
 - Extensible for additional providers
 
@@ -280,4 +282,4 @@ composer run test -- tests/test-language-model-router-get-client.php
 
 The investigation confirmed that assistant details (system prompts, instructions, roles) ARE being correctly included in calls to both embedded and server-side LLM providers. The system has comprehensive logging at multiple levels to verify this propagation.
 
-The only issue found was a missing `get_client()` method in the Language Model Router, which has now been implemented with proper logging and test coverage. This enables future use of the Chat Service class for improved code organization and maintainability.
+The critical issue found was a missing `get_client()` method in the Language Model Router, which was preventing the Chat Service (used in production) from functioning properly. This has now been implemented with proper logging and test coverage, restoring full chat service functionality.
