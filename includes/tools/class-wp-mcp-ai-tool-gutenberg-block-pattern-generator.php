@@ -47,64 +47,64 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Gutenberg Block Pattern Generator', 'wp-mcp-ai' ),
-			'description'          => __( 'AI-powered block pattern creation with theme.json integration, FSE support, pattern categories, and responsive design following 2026 WordPress standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Gutenberg Block Pattern Generator', 'mcp-ai-wpoos' ),
+			'description'          => __( 'AI-powered block pattern creation with theme.json integration, FSE support, pattern categories, and responsive design following 2026 WordPress standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'content',
 			'required_capability'  => 'edit_posts',
 			'parameters'           => array(
 				'action'           => array(
 					'type'        => 'string',
-					'description' => __( 'Action: generate_pattern, list_patterns, sync_theme_json, or validate_pattern', 'wp-mcp-ai' ),
+					'description' => __( 'Action: generate_pattern, list_patterns, sync_theme_json, or validate_pattern', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'generate_pattern', 'list_patterns', 'sync_theme_json', 'validate_pattern' ),
 				),
 				'pattern_type'     => array(
 					'type'        => 'string',
-					'description' => __( 'Pattern type: hero, call-to-action, testimonial, pricing, gallery, team, or custom', 'wp-mcp-ai' ),
+					'description' => __( 'Pattern type: hero, call-to-action, testimonial, pricing, gallery, team, or custom', 'mcp-ai-wpoos' ),
 					'default'     => 'hero',
 					'enum'        => array( 'hero', 'call-to-action', 'testimonial', 'pricing', 'gallery', 'team', 'custom' ),
 				),
 				'title'            => array(
 					'type'        => 'string',
-					'description' => __( 'Pattern title', 'wp-mcp-ai' ),
+					'description' => __( 'Pattern title', 'mcp-ai-wpoos' ),
 				),
 				'description'      => array(
 					'type'        => 'string',
-					'description' => __( 'Pattern description', 'wp-mcp-ai' ),
+					'description' => __( 'Pattern description', 'mcp-ai-wpoos' ),
 				),
 				'categories'       => array(
 					'type'        => 'array',
-					'description' => __( 'Pattern categories (featured, buttons, columns, text, etc.)', 'wp-mcp-ai' ),
+					'description' => __( 'Pattern categories (featured, buttons, columns, text, etc.)', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array( 'featured' ),
 				),
 				'keywords'         => array(
 					'type'        => 'array',
-					'description' => __( 'Search keywords for pattern discovery', 'wp-mcp-ai' ),
+					'description' => __( 'Search keywords for pattern discovery', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 				'content'          => array(
 					'type'        => 'string',
-					'description' => __( 'Custom block content (HTML or block markup)', 'wp-mcp-ai' ),
+					'description' => __( 'Custom block content (HTML or block markup)', 'mcp-ai-wpoos' ),
 				),
 				'viewport_width'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Pattern preview viewport width (default: 1280)', 'wp-mcp-ai' ),
+					'description' => __( 'Pattern preview viewport width (default: 1280)', 'mcp-ai-wpoos' ),
 					'default'     => 1280,
 				),
 				'block_types'      => array(
 					'type'        => 'array',
-					'description' => __( 'Restrict pattern to specific block types', 'wp-mcp-ai' ),
+					'description' => __( 'Restrict pattern to specific block types', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
 				'inserter'         => array(
 					'type'        => 'boolean',
-					'description' => __( 'Show pattern in inserter (default: true)', 'wp-mcp-ai' ),
+					'description' => __( 'Show pattern in inserter (default: true)', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'sync_theme'       => array(
 					'type'        => 'boolean',
-					'description' => __( 'Sync with active theme.json settings', 'wp-mcp-ai' ),
+					'description' => __( 'Sync with active theme.json settings', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -159,7 +159,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -230,11 +230,11 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			'pattern'    => $pattern_properties,
 			'preview'    => $this->generate_pattern_preview( $content ),
 			'usage'      => array(
-				'inserter'   => __( 'Pattern is available in the block inserter', 'wp-mcp-ai' ),
+				'inserter'   => __( 'Pattern is available in the block inserter', 'mcp-ai-wpoos' ),
 				'shortcode'  => sprintf( '[pattern slug="%s"]', $slug ),
 				'php'        => sprintf( "<?php echo do_blocks('<!-- wp:pattern {\"slug\":\"%s\"} /-->'); ?>", $slug ),
 			),
-			'theme_json' => $sync_theme ? __( 'Synced with theme.json settings', 'wp-mcp-ai' ) : __( 'Independent styling', 'wp-mcp-ai' ),
+			'theme_json' => $sync_theme ? __( 'Synced with theme.json settings', 'mcp-ai-wpoos' ) : __( 'Independent styling', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -279,7 +279,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		if ( empty( $theme_json ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No theme.json found in active theme', 'wp-mcp-ai' ),
+				'error'   => __( 'No theme.json found in active theme', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -308,7 +308,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		if ( empty( $content ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No content provided for validation', 'wp-mcp-ai' ),
+				'error'   => __( 'No content provided for validation', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -319,7 +319,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		if ( ! has_blocks( $content ) ) {
 			$validation_results[] = array(
 				'type'    => 'error',
-				'message' => __( 'Content does not contain valid block markup', 'wp-mcp-ai' ),
+				'message' => __( 'Content does not contain valid block markup', 'mcp-ai-wpoos' ),
 			);
 			$is_valid = false;
 		}
@@ -332,7 +332,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			if ( empty( $block['blockName'] ) && ! empty( trim( $block['innerHTML'] ) ) ) {
 				$validation_results[] = array(
 					'type'    => 'warning',
-					'message' => __( 'Found content outside of blocks', 'wp-mcp-ai' ),
+					'message' => __( 'Found content outside of blocks', 'mcp-ai-wpoos' ),
 				);
 			}
 
@@ -342,7 +342,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 					'type'    => 'warning',
 					'message' => sprintf(
 						/* translators: %s: block name */
-						__( 'Block %s is deprecated', 'wp-mcp-ai' ),
+						__( 'Block %s is deprecated', 'mcp-ai-wpoos' ),
 						$block['blockName']
 					),
 				);
@@ -354,7 +354,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		if ( ! $has_responsive ) {
 			$validation_results[] = array(
 				'type'    => 'info',
-				'message' => __( 'Consider adding responsive attributes for mobile optimization', 'wp-mcp-ai' ),
+				'message' => __( 'Consider adding responsive attributes for mobile optimization', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -582,13 +582,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	private function get_default_title( $pattern_type ) {
 		$titles = array(
-			'hero'           => __( 'Hero Section', 'wp-mcp-ai' ),
-			'call-to-action' => __( 'Call to Action', 'wp-mcp-ai' ),
-			'testimonial'    => __( 'Testimonials', 'wp-mcp-ai' ),
-			'pricing'        => __( 'Pricing Table', 'wp-mcp-ai' ),
-			'gallery'        => __( 'Image Gallery', 'wp-mcp-ai' ),
-			'team'           => __( 'Team Members', 'wp-mcp-ai' ),
-			'custom'         => __( 'Custom Pattern', 'wp-mcp-ai' ),
+			'hero'           => __( 'Hero Section', 'mcp-ai-wpoos' ),
+			'call-to-action' => __( 'Call to Action', 'mcp-ai-wpoos' ),
+			'testimonial'    => __( 'Testimonials', 'mcp-ai-wpoos' ),
+			'pricing'        => __( 'Pricing Table', 'mcp-ai-wpoos' ),
+			'gallery'        => __( 'Image Gallery', 'mcp-ai-wpoos' ),
+			'team'           => __( 'Team Members', 'mcp-ai-wpoos' ),
+			'custom'         => __( 'Custom Pattern', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $titles[ $pattern_type ] ) ? $titles[ $pattern_type ] : $titles['custom'];
@@ -603,13 +603,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	private function get_default_description( $pattern_type ) {
 		$descriptions = array(
-			'hero'           => __( 'A full-width hero section with heading, description, and call-to-action button', 'wp-mcp-ai' ),
-			'call-to-action' => __( 'Engaging call-to-action section to drive conversions', 'wp-mcp-ai' ),
-			'testimonial'    => __( 'Customer testimonials in a multi-column layout', 'wp-mcp-ai' ),
-			'pricing'        => __( 'Pricing tables with features and call-to-action buttons', 'wp-mcp-ai' ),
-			'gallery'        => __( 'Responsive image gallery with grid layout', 'wp-mcp-ai' ),
-			'team'           => __( 'Team member profiles with images and descriptions', 'wp-mcp-ai' ),
-			'custom'         => __( 'Custom block pattern', 'wp-mcp-ai' ),
+			'hero'           => __( 'A full-width hero section with heading, description, and call-to-action button', 'mcp-ai-wpoos' ),
+			'call-to-action' => __( 'Engaging call-to-action section to drive conversions', 'mcp-ai-wpoos' ),
+			'testimonial'    => __( 'Customer testimonials in a multi-column layout', 'mcp-ai-wpoos' ),
+			'pricing'        => __( 'Pricing tables with features and call-to-action buttons', 'mcp-ai-wpoos' ),
+			'gallery'        => __( 'Responsive image gallery with grid layout', 'mcp-ai-wpoos' ),
+			'team'           => __( 'Team member profiles with images and descriptions', 'mcp-ai-wpoos' ),
+			'custom'         => __( 'Custom block pattern', 'mcp-ai-wpoos' ),
 		);
 
 		return isset( $descriptions[ $pattern_type ] ) ? $descriptions[ $pattern_type ] : $descriptions['custom'];
@@ -749,7 +749,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 				if ( empty( $block['attrs']['alt'] ) ) {
 					$issues[] = array(
 						'type'    => 'warning',
-						'message' => __( 'Image missing alt text', 'wp-mcp-ai' ),
+						'message' => __( 'Image missing alt text', 'mcp-ai-wpoos' ),
 					);
 				}
 			}
@@ -759,7 +759,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 				if ( ! isset( $block['attrs']['level'] ) ) {
 					$issues[] = array(
 						'type'    => 'info',
-						'message' => __( 'Heading level not explicitly set', 'wp-mcp-ai' ),
+						'message' => __( 'Heading level not explicitly set', 'mcp-ai-wpoos' ),
 					);
 				}
 			}

@@ -47,20 +47,20 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Image Format Batch Converter', 'wp-mcp-ai' ),
-			'description'          => __( 'Batch convert images to AVIF/WebP/JPEG XL with responsive srcset generation, automatic fallback chains, and Art Direction support for 2026 standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Image Format Batch Converter', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Batch convert images to AVIF/WebP/JPEG XL with responsive srcset generation, automatic fallback chains, and Art Direction support for 2026 standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'media',
 			'required_capability'  => 'upload_files',
 			'parameters'           => array(
 				'action'               => array(
 					'type'        => 'string',
-					'description' => __( 'Action: convert_batch, generate_srcset, create_picture_element, or validate_support', 'wp-mcp-ai' ),
+					'description' => __( 'Action: convert_batch, generate_srcset, create_picture_element, or validate_support', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'convert_batch', 'generate_srcset', 'create_picture_element', 'validate_support' ),
 				),
 				'target_formats'       => array(
 					'type'        => 'array',
-					'description' => __( 'Target formats in priority order: avif, webp, jxl (JPEG XL)', 'wp-mcp-ai' ),
+					'description' => __( 'Target formats in priority order: avif, webp, jxl (JPEG XL)', 'mcp-ai-wpoos' ),
 					'default'     => array( 'avif', 'webp' ),
 					'items'       => array(
 						'type' => 'string',
@@ -69,35 +69,35 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 				),
 				'quality'              => array(
 					'type'        => 'integer',
-					'description' => __( 'Conversion quality (1-100, default: 85)', 'wp-mcp-ai' ),
+					'description' => __( 'Conversion quality (1-100, default: 85)', 'mcp-ai-wpoos' ),
 					'default'     => 85,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'image_ids'            => array(
 					'type'        => 'array',
-					'description' => __( 'Specific image IDs to convert (optional, processes all if empty)', 'wp-mcp-ai' ),
+					'description' => __( 'Specific image IDs to convert (optional, processes all if empty)', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'generate_sizes'       => array(
 					'type'        => 'array',
-					'description' => __( 'Responsive sizes to generate (widths in pixels)', 'wp-mcp-ai' ),
+					'description' => __( 'Responsive sizes to generate (widths in pixels)', 'mcp-ai-wpoos' ),
 					'default'     => array( 320, 640, 768, 1024, 1280, 1920, 2560 ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'art_direction'        => array(
 					'type'        => 'boolean',
-					'description' => __( 'Enable Art Direction (different crops for mobile/desktop)', 'wp-mcp-ai' ),
+					'description' => __( 'Enable Art Direction (different crops for mobile/desktop)', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'preserve_original'    => array(
 					'type'        => 'boolean',
-					'description' => __( 'Keep original files when converting', 'wp-mcp-ai' ),
+					'description' => __( 'Keep original files when converting', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'limit'                => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of images to process per batch (default: 25)', 'wp-mcp-ai' ),
+					'description' => __( 'Number of images to process per batch (default: 25)', 'mcp-ai-wpoos' ),
 					'default'     => 25,
 				),
 			),
@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -287,7 +287,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 		if ( empty( $image_ids ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No image IDs provided', 'wp-mcp-ai' ),
+				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -330,7 +330,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 		if ( empty( $image_ids ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No image IDs provided', 'wp-mcp-ai' ),
+				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -352,11 +352,11 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'count'          => count( $results ),
 			'results'        => $results,
 			'implementation' => array(
-				'description' => __( 'Use the <picture> element for modern image delivery', 'wp-mcp-ai' ),
+				'description' => __( 'Use the <picture> element for modern image delivery', 'mcp-ai-wpoos' ),
 				'benefits'    => array(
-					__( 'Automatic format fallback for browser support', 'wp-mcp-ai' ),
-					__( 'Art Direction for mobile/desktop optimization', 'wp-mcp-ai' ),
-					__( 'Better Core Web Vitals (LCP, CLS)', 'wp-mcp-ai' ),
+					__( 'Automatic format fallback for browser support', 'mcp-ai-wpoos' ),
+					__( 'Art Direction for mobile/desktop optimization', 'mcp-ai-wpoos' ),
+					__( 'Better Core Web Vitals (LCP, CLS)', 'mcp-ai-wpoos' ),
 				),
 			),
 		);
@@ -386,14 +386,14 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'success'         => true,
 			'format_support'  => $support,
 			'recommendations' => array(
-				__( 'AVIF provides best compression (85% smaller than PNG, 50% smaller than JPEG)', 'wp-mcp-ai' ),
-				__( 'WebP is universally supported as fallback (99%+ browser coverage)', 'wp-mcp-ai' ),
-				__( 'JPEG XL offers superior quality but limited browser support (Chrome 127+)', 'wp-mcp-ai' ),
-				__( 'Always include JPEG/PNG fallback for older browsers', 'wp-mcp-ai' ),
+				__( 'AVIF provides best compression (85% smaller than PNG, 50% smaller than JPEG)', 'mcp-ai-wpoos' ),
+				__( 'WebP is universally supported as fallback (99%+ browser coverage)', 'mcp-ai-wpoos' ),
+				__( 'JPEG XL offers superior quality but limited browser support (Chrome 127+)', 'mcp-ai-wpoos' ),
+				__( 'Always include JPEG/PNG fallback for older browsers', 'mcp-ai-wpoos' ),
 			),
 			'best_practice'   => array(
 				'format_chain' => array( 'avif', 'webp', 'jpeg' ),
-				'explanation'  => __( 'Serve AVIF first, fallback to WebP, then JPEG for maximum compatibility and performance', 'wp-mcp-ai' ),
+				'explanation'  => __( 'Serve AVIF first, fallback to WebP, then JPEG for maximum compatibility and performance', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -685,20 +685,20 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 		$recommendations = array();
 
 		if ( $converted > 0 ) {
-			$recommendations[] = __( 'Successfully converted images to modern formats.', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Successfully converted images to modern formats.', 'mcp-ai-wpoos' );
 		}
 
 		if ( isset( $format_stats['avif'] ) ) {
 			$recommendations[] = sprintf(
 				/* translators: %s: number of AVIF conversions */
-				__( 'Generated %s AVIF images (best compression).', 'wp-mcp-ai' ),
+				__( 'Generated %s AVIF images (best compression).', 'mcp-ai-wpoos' ),
 				$format_stats['avif']['count']
 			);
 		}
 
-		$recommendations[] = __( 'Use <picture> element for format fallback chains.', 'wp-mcp-ai' );
-		$recommendations[] = __( 'Enable lazy loading for below-the-fold images.', 'wp-mcp-ai' );
-		$recommendations[] = __( 'Monitor Core Web Vitals (LCP) after deployment.', 'wp-mcp-ai' );
+		$recommendations[] = __( 'Use <picture> element for format fallback chains.', 'mcp-ai-wpoos' );
+		$recommendations[] = __( 'Enable lazy loading for below-the-fold images.', 'mcp-ai-wpoos' );
+		$recommendations[] = __( 'Monitor Core Web Vitals (LCP) after deployment.', 'mcp-ai-wpoos' );
 
 		return $recommendations;
 	}
