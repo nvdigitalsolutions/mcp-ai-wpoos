@@ -4,7 +4,7 @@ This guide explains the organization of documentation in the NV oOS repository.
 
 ## Root Directory Documentation
 
-The root directory contains **9 essential documentation files** that every developer/user should see first:
+The root directory contains **6 essential documentation files** plus supporting files that every developer/user should see first:
 
 ### 📘 Essential Files
 
@@ -15,43 +15,43 @@ The root directory contains **9 essential documentation files** that every devel
    - Development setup
    - API documentation
 
-2. **readme.txt** (23KB) - WordPress.org plugin description
-   - WordPress plugin repository format
-   - Short description for plugin directory
-   - Installation instructions
-   - FAQ and changelog
-
-3. **CHANGELOG.md** (59KB) - Version history and release notes
+2. **CHANGELOG.md** (59KB) - Version history and release notes
    - Chronological list of changes
    - Bug fixes and enhancements
    - Breaking changes
    - Deprecations
 
-4. **CONTRIBUTING.md** (6KB) - Developer contribution guide
+3. **CONTRIBUTING.md** (6KB) - Developer contribution guide
    - Getting started
    - Development workflow
    - Testing requirements
    - Pull request process
 
-5. **SECURITY.md** (7KB) - Security policy and reporting
+4. **SECURITY.md** (7KB) - Security policy and reporting
    - Supported versions
    - Vulnerability reporting
    - Security best practices
    - Security checklist
 
-6. **BUILD.md** (19KB) - Build and deployment process
+5. **BUILD.md** (19KB) - Build and deployment process
    - Build commands
    - Asset compilation
    - PHP dependencies (Composer)
    - Release process
 
-7. **DEPENDENCIES_BUNDLING.md** (10KB) - Dependency management
+6. **DEPENDENCIES_BUNDLING.md** (10KB) - Dependency management
    - NPM dependencies
    - Pro addon dependencies
    - Vendor directory pattern
    - Git strategy
 
 ### 📝 Supporting Files
+
+- **readme.txt** (23KB) - WordPress.org plugin description
+  - WordPress plugin repository format
+  - Short description for plugin directory
+  - Installation instructions
+  - FAQ and changelog
 
 - **tool-status.txt** (7KB) - Tool status labels
   - 215 tools with status indicators
@@ -89,6 +89,45 @@ Total: 650+ files
 ```
 
 ## Recent Reorganizations
+
+### January 29, 2026 - Root Directory Documentation Consolidation
+
+**Consolidated**: 22 summary and implementation files moved from root to organized subdirectories
+
+**Moved from root to docs/implementation-history/2026/**:
+- ADMIN_PAGES_ENHANCEMENT.md
+- ADMIN_PAGE_JOB_TRACKING_TEST_COVERAGE.md
+- ADMIN_PAGE_TEST_FLOW_VISUAL.md
+- AJAX_TEST_IMPLEMENTATION_SUMMARY.md
+- CHAT_JOB_STATUS_SSE_IMPLEMENTATION.md
+- DEEPSEEK-V4-COMPLETION-SUMMARY.md
+- ENHANCEMENT_SUMMARY.md
+- IMPLEMENTATION_SUMMARY.md
+- SITE_CREATOR_CLEANUP_SUMMARY.md
+- SITE_CREATOR_IMPLEMENTATION_COMPLETE.md
+- SITE_CREATOR_MENU_CHANGES.md
+- SITE_CREATOR_MENU_UI_PREVIEW.md
+- SITE_CREATOR_SETTINGS_REORGANIZATION.md
+- SITE_CREATOR_TOOLKIT_COMPLETE.md
+- SITE_CREATOR_TOOLKIT_IMPLEMENTATION.md
+- SITE_CREATOR_TOOLKIT_VISUAL_SUMMARY.md
+- SYSTEM-STATUS-PR-SUMMARY.md
+- SYSTEM-STATUS-SUMMARY.md
+- TASK_SUMMARY.md
+
+**Moved from root to docs/deployment/**:
+- PRODUCTION_DEPLOYMENT.md
+- PRODUCTION_READY.md
+
+**Moved from root to docs/security/**:
+- SECURITY_COMPLIANCE_REPORT.md
+
+**Result**: 
+- Root directory now contains only 6 essential documentation files plus 2 supporting files (readme.txt, tool-status.txt)
+- Implementation summaries properly grouped by year (2026)
+- Deployment and security documentation in appropriate subdirectories
+- No information lost
+- Cleaner, more maintainable root directory
 
 ### January 26, 2026 - Implementation History & Fix Documentation Consolidation
 
@@ -255,10 +294,10 @@ All documentation files should include:
 
 ### Documentation Quality
 
-### Metrics (as of January 26, 2026)
+### Metrics (as of January 29, 2026)
 
 - **Total Files**: 650+
-- **Root Files**: 9 essential
+- **Root Files**: 6 essential + 2 supporting
 - **Documentation Grade**: A (96/100)
 - **Feature Coverage**: 100%
 - **Organization Quality**: Excellent
@@ -272,15 +311,17 @@ All documentation files should include:
 5. ✅ Implementation history archived (Jan 2026)
 6. ✅ 17 files moved from root to organized subdirectories (Jan 26, 2026)
 7. ✅ WebLLM proposal status updated (Jan 26, 2026)
+8. ✅ 22 files consolidated from root to docs/ subdirectories (Jan 29, 2026)
 
 ## See Also
 
-- [Documentation Index](docs/DOCUMENTATION_INDEX.md) - Complete file listing
-- [Quick Reference](docs/QUICK_REFERENCE.md) - Fast reference guide
-- [Documentation Review](docs/DOCUMENTATION_REVIEW_SUMMARY.md) - Quality assessment
-- [README](README.md) - Project overview
+- [Documentation Index](DOCUMENTATION_INDEX.md) - Complete file listing
+- [Quick Reference](QUICK_REFERENCE.md) - Fast reference guide
+- [Documentation Review](DOCUMENTATION_REVIEW_SUMMARY.md) - Quality assessment
+- [README](../README.md) - Project overview
+- [Documentation Directory README](README.md) - Quick navigation
 
 ---
 
-**Last Updated**: January 26, 2026  
+**Last Updated**: January 29, 2026  
 **Maintained By**: NV Digital Solutions

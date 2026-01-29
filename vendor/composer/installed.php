@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-documentation-and-readme-again',
+        'version' => 'dev-copilot/update-documentation-and-readme-again',
+        'reference' => '5409d073e67d1e789cfeea56b774968517c8ab87',
         'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
         'version' => 'dev-copilot/add-diagnostic-instrumentation',
         'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',
@@ -56,6 +59,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-documentation-and-readme-again',
+            'version' => 'dev-copilot/update-documentation-and-readme-again',
+            'reference' => '5409d073e67d1e789cfeea56b774968517c8ab87',
             'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
             'version' => 'dev-copilot/add-diagnostic-instrumentation',
             'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',

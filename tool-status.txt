@@ -17,11 +17,11 @@
 # NOTE: Tools marked with "bug" status are automatically disabled
 # to prevent usage until issues are resolved.
 #
-# Last Updated: January 23, 2026
-# Total Tools: 517 (Base: 165, Pro: 348, Core: 4)
+# Last Updated: January 29, 2026
+# Total Tools: 519 (Base: 165, Pro: 348, Core: 4, Memory: 2)
 
 
-# STABLE (81 tools)
+# STABLE (83 tools)
 convert_image_format = stable
 count_tokens = stable
 create_assistant_validated = stable
@@ -88,6 +88,7 @@ media = stable
 posts = stable
 purge_cache = stable
 resize_image = stable
+retrieve_agent_memory = stable
 rotate_image = stable
 run_crawl4ai_job_validated = stable
 save_post = stable
@@ -97,6 +98,7 @@ search_attachments = stable
 search_content = stable
 search_content_validated = stable
 send_group_email_validated = stable
+store_agent_context = stable
 suggest_best_model = stable
 taxonomies = stable
 transcribe_openai_audio_validated = stable
@@ -547,4 +549,129 @@ get_profession_stats = bug
 probe_chat = bug
 probe_remote_mcp = bug
 update_option = bug
+
+
+# ========================================
+# PRACTICAL SETTINGS & RECOMMENDATIONS
+# ========================================
+#
+# This section provides recommended settings and usage guidelines
+# for key tools, especially new additions and complex features.
+#
+
+# --- Agent Memory Tools (DeepSeek V4 Phase 4/5) ---
+#
+# store_agent_context:
+#   Purpose: Store important context, learnings, or information for agents to remember across sessions
+#   Status: stable (comprehensive PHPUnit test coverage)
+#   Recommended Settings:
+#     - TTL: 30 days (default), adjust based on use case (1 hour - 1 year)
+#     - Importance: Use 'high' or 'critical' for key learnings that should persist
+#     - Context Types: learning, fact, preference, pattern, workflow, decision, result, insight, note, generic
+#     - Tags: Use descriptive tags for easy retrieval (e.g., 'customer-preference', 'workflow-optimization')
+#   Use Cases:
+#     - Store user preferences across chat sessions
+#     - Remember workflow decisions for consistency
+#     - Capture important patterns discovered during analysis
+#     - Save critical facts for future reference
+#   Tool Presets: agentic_workflow, general_purpose, operations_management
+#   Token Cost: Low (storage operation only)
+#
+# retrieve_agent_memory:
+#   Purpose: Retrieve previously stored agent context with advanced search and filtering
+#   Status: stable (comprehensive PHPUnit test coverage)
+#   Recommended Settings:
+#     - Limit: 10-20 results (default: 10, max: 50)
+#     - Search Query: Use semantic search for natural language matching
+#     - Filters: Combine context types, tags, importance levels for precision
+#     - Include Expired: false (default) - set true only when debugging
+#   Use Cases:
+#     - Recall user preferences at session start
+#     - Find relevant past decisions for consistency
+#     - Search workflow patterns for optimization
+#     - Audit agent learning history
+#   Search Methods:
+#     - By ID: Exact lookup for known context
+#     - Semantic: Natural language query with relevance scoring
+#     - Filtered: Combine multiple filters for precision
+#   Tool Presets: agentic_workflow, general_purpose, operations_management
+#   Token Cost: Low (retrieval operation), increases with result count
+#
+# Integration Recommendations:
+#   - Use store_agent_context after important decisions or discoveries
+#   - Call retrieve_agent_memory at session start to restore context
+#   - Set appropriate TTL based on information stability
+#   - Use high importance for critical learnings
+#   - Tag systematically for effective filtering
+#   - Monitor transient storage usage in high-volume scenarios
+#
+
+# --- Multi-Agent Coordination Tools (DeepSeek V4) ---
+#
+# create_agent_team:
+#   Purpose: Compose multi-agent teams based on task requirements
+#   Status: beta
+#   Recommended Settings:
+#     - Team Size: 2-5 agents for most tasks (avoid over-staffing)
+#     - Role Distribution: Include planner, executor, and critic for complex tasks
+#     - Execution Mode: sequential (default), parallel (independent tasks), swarm (emergent)
+#   Use Cases:
+#     - Research projects (planner + researchers + analyst)
+#     - Content creation (planner + writer + editor + critic)
+#     - E-commerce (analyst + product specialist + marketing)
+#   Token Cost: Medium (team composition overhead)
+#
+# delegate_to_agent:
+#   Purpose: Delegate subtasks to specialized agents
+#   Status: beta
+#   Recommended Settings:
+#     - Clear Task Description: Be specific about what the agent should do
+#     - Context Passing: Include relevant workflow_id for coordination
+#     - Timeout: Set appropriate timeouts for complex tasks
+#   Use Cases:
+#     - Offload research to specialist agent
+#     - Delegate analysis to domain expert
+#     - Route customer queries to appropriate agent
+#   Token Cost: Medium (delegation overhead + agent execution)
+#
+# aggregate_agent_results:
+#   Purpose: Combine results from multiple agents with configurable strategies
+#   Status: beta
+#   Recommended Settings:
+#     - Strategy: consensus (voting), weighted (prioritize experts), hierarchical (ranked), first, best
+#     - Consensus Threshold: 0.7 (70% agreement) for critical decisions
+#     - Weights: Assign based on agent expertise and reliability
+#   Use Cases:
+#     - Combine research findings from multiple agents
+#     - Aggregate predictions with confidence scoring
+#     - Merge content drafts into final version
+#   Token Cost: Low (aggregation logic only)
+#
+
+# --- Best Practices for New Tools ---
+#
+# 1. Agent Memory:
+#    - Start with default 30-day TTL, adjust based on experience
+#    - Use semantic search for natural queries
+#    - Tag consistently for effective filtering
+#    - Monitor storage with importance-based cleanup
+#
+# 2. Multi-Agent Coordination:
+#    - Keep teams small (2-5 agents) for better coordination
+#    - Use sequential mode for dependent tasks
+#    - Apply consensus strategy for critical decisions
+#    - Pass workflow_id for tracking and debugging
+#
+# 3. Performance:
+#    - Batch memory operations when possible
+#    - Cache retrieved context for session duration
+#    - Monitor token usage with multi-agent workflows
+#    - Use appropriate importance levels to prioritize storage
+#
+# 4. Security:
+#    - Validate all context data before storage
+#    - Sanitize user inputs in memory queries
+#    - Respect user privacy in stored context
+#    - Implement appropriate TTL for sensitive data
+#
 
