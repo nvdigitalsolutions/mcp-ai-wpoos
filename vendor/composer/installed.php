@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-css-js-loading-issues-again',
+        'version' => 'dev-copilot/fix-css-js-loading-issues-again',
+        'reference' => '5e3f234434de941b15edba5909b819e885f043aa',
         'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
         'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
         'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
@@ -71,6 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-css-js-loading-issues-again',
+            'version' => 'dev-copilot/fix-css-js-loading-issues-again',
+            'reference' => '5e3f234434de941b15edba5909b819e885f043aa',
             'pretty_version' => 'dev-copilot/fix-pro-dashboard-chart-error',
             'version' => 'dev-copilot/fix-pro-dashboard-chart-error',
             'reference' => 'a7a42717002aaa7e15817a85ab3f817f060e3cfa',
