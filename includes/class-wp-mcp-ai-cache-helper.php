@@ -95,17 +95,17 @@ class WP_MCP_AI_Cache_Helper {
 			return false;
 		}
 
+		$cache_key = self::build_cache_key( $key );
+
 		// Try object cache first (Redis/Memcached).
 		if ( self::has_object_cache() ) {
-			$cache_key = self::build_cache_key( $key );
-			$value     = wp_cache_get( $cache_key, self::CACHE_GROUP );
+			$value = wp_cache_get( $cache_key, self::CACHE_GROUP );
 			if ( false !== $value ) {
 				return $value;
 			}
 		}
 
 		// Fallback to transients.
-		$cache_key = self::build_cache_key( $key );
 		return get_transient( $cache_key );
 	}
 
@@ -456,6 +456,7 @@ class WP_MCP_AI_Cache_Helper {
 	 * Remember callback result with automatic cache management.
 	 *
 	 * Implements cache-aside pattern: check cache, execute callback if miss, store result.
+	 * Note: Uses a wrapper to distinguish between cache miss and cached false values.
 	 *
 	 * @param string   $key        Cache key.
 	 * @param callable $callback   Callback to execute on cache miss.
@@ -464,12 +465,16 @@ class WP_MCP_AI_Cache_Helper {
 	 */
 	public static function remember( $key, $callback, $expiration = self::DEFAULT_EXPIRATION ) {
 		$cached = self::get( $key );
-		if ( false !== $cached ) {
-			return $cached;
+		
+		// Check if cache exists (wrapped in array).
+		if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
+			return $cached['__cached_value__'];
 		}
 
 		$value = call_user_func( $callback );
-		self::set( $key, $value, $expiration );
+		
+		// Wrap value to distinguish from cache miss.
+		self::set( $key, array( '__cached_value__' => $value ), $expiration );
 
 		return $value;
 	}
@@ -479,6 +484,7 @@ class WP_MCP_AI_Cache_Helper {
 	 *
 	 * Multiple concurrent requests for the same uncached data can cause
 	 * stampede effect. This method uses a lock to prevent it.
+	 * Note: Uses a wrapper to distinguish between cache miss and cached false values.
 	 *
 	 * @param string   $key        Cache key.
 	 * @param callable $callback   Callback to execute on cache miss.
@@ -489,8 +495,10 @@ class WP_MCP_AI_Cache_Helper {
 	public static function remember_with_lock( $key, $callback, $expiration = self::DEFAULT_EXPIRATION, $lock_ttl = 30 ) {
 		// Try to get from cache.
 		$cached = self::get( $key );
-		if ( false !== $cached ) {
-			return $cached;
+		
+		// Check if cache exists (wrapped in array).
+		if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
+			return $cached['__cached_value__'];
 		}
 
 		// Try to acquire lock.
@@ -501,8 +509,10 @@ class WP_MCP_AI_Cache_Helper {
 			// Lock exists, wait briefly and try to get cached value.
 			usleep( 100000 ); // 100ms.
 			$cached = self::get( $key );
-			if ( false !== $cached ) {
-				return $cached;
+			
+			// Check if cache was populated while waiting.
+			if ( is_array( $cached ) && array_key_exists( '__cached_value__', $cached ) ) {
+				return $cached['__cached_value__'];
 			}
 
 			// Still not cached, execute anyway to prevent hanging.
@@ -516,8 +526,8 @@ class WP_MCP_AI_Cache_Helper {
 		// Execute callback.
 		$value = call_user_func( $callback );
 
-		// Store result.
-		self::set( $key, $value, $expiration );
+		// Store result (wrapped).
+		self::set( $key, array( '__cached_value__' => $value ), $expiration );
 
 		// Release lock.
 		self::delete( $lock_key );

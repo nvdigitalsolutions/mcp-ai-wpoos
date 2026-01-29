@@ -229,11 +229,7 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	 * @return bool True if confirmed.
 	 */
 	protected function confirm( $question, $assoc_args = array() ) {
-		// Skip confirmation if --yes flag is set.
-		if ( isset( $assoc_args['yes'] ) ) {
-			return true;
-		}
-
+		// Use WP-CLI utility to check for yes flag or prompt user.
 		return WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ) || 
 			   WP_CLI\Utils\get_flag_value( $assoc_args, 'y', false );
 	}

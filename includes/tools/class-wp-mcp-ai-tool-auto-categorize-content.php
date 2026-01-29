@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 		$available_categories = $this->get_available_categories( $taxonomy );
 
 		// Analyze content and suggest categories.
-		$suggestions = $this->analyze_and_suggest( $content_data, $available_categories, $arguments );
+		$suggestions = $this->analyze_and_suggest( $content_data, $available_categories, $arguments, $context );
 		if ( is_wp_error( $suggestions ) ) {
 			return $suggestions;
 		}
@@ -314,14 +314,15 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	 * @param array $content_data Content to analyze.
 	 * @param array $categories   Available categories.
 	 * @param array $arguments    Tool arguments.
+	 * @param array $context      Execution context.
 	 * @return array|WP_Error Category suggestions with confidence scores.
 	 */
-	private function analyze_and_suggest( $content_data, $categories, $arguments ) {
+	private function analyze_and_suggest( $content_data, $categories, $arguments, $context = array() ) {
 		// Build AI prompt.
 		$prompt = $this->build_analysis_prompt( $content_data, $categories );
 
 		// Get AI client.
-		$client = $this->get_ai_client( $arguments, $context ?? array() );
+		$client = $this->get_ai_client( $arguments, $context );
 		if ( is_wp_error( $client ) ) {
 			return $client;
 		}

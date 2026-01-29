@@ -220,9 +220,15 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	/**
 	 * Test tool execution with post_id.
 	 *
-	 * Note: This is a mock test as it requires AI client which isn't available in unit tests.
+	 * Note: This test validates the tool can access post data correctly.
+	 * AI client is not available in unit tests, so we expect an error.
 	 */
 	public function test_execution_with_post_id() {
+		// Verify post exists and is accessible.
+		$post = get_post( $this->post_id );
+		$this->assertNotNull( $post );
+		$this->assertEquals( 'Getting Started with WordPress Development', $post->post_title );
+
 		$arguments = array(
 			'post_id'        => $this->post_id,
 			'auto_assign'    => false,
@@ -230,13 +236,17 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 			'max_categories' => 3,
 		);
 
-		// Since we don't have a real AI client in tests, we expect this to fail.
+		// Since we don't have a real AI client in tests, we expect this to fail
+		// with no_ai_client or ai_analysis_failed error.
 		$result = $this->tool->execute( $arguments );
 
-		// Verify post exists and is accessible.
-		$post = get_post( $this->post_id );
-		$this->assertNotNull( $post );
-		$this->assertEquals( 'Getting Started with WordPress Development', $post->post_title );
+		// Verify error is related to AI client, not post access.
+		if ( is_wp_error( $result ) ) {
+			$this->assertTrue(
+				in_array( $result->get_error_code(), array( 'no_ai_client', 'ai_analysis_failed' ), true ),
+				'Expected AI client error, got: ' . $result->get_error_code()
+			);
+		}
 	}
 
 	/**
@@ -269,32 +279,17 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content_Tests extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test filter hook is applied.
+	 * Test filter hook is registered.
+	 *
+	 * This test validates the filter hook is properly registered in WordPress.
 	 */
 	public function test_filter_hook_applied() {
-		$filter_applied = false;
+		// Verify the filter is registered correctly.
+		$this->assertTrue( has_filter( 'wp_mcp_ai_auto_categorize_categories' ), 
+			'Filter hook wp_mcp_ai_auto_categorize_categories should be registered' );
 
-		// Add filter to test if it's applied.
-		add_filter(
-			'wp_mcp_ai_auto_categorize_categories',
-			function ( $categories, $post_id, $analysis ) use ( &$filter_applied ) {
-				$filter_applied = true;
-				return $categories;
-			},
-			10,
-			3
-		);
-
-		// Even if execution fails due to missing AI client, the filter structure is tested.
-		$result = $this->tool->execute(
-			array(
-				'post_id'     => $this->post_id,
-				'auto_assign' => false,
-			)
-		);
-
-		// Note: filter_applied will be false because execution fails before reaching the filter,
-		// but the test verifies the filter is registered correctly.
-		$this->assertTrue( has_filter( 'wp_mcp_ai_auto_categorize_categories' ) );
+		// Note: We cannot test if the filter is actually called during execution
+		// because the tool requires an AI client which is not available in unit tests.
+		// The filter would be applied in the execute() method if execution succeeded.
 	}
 }

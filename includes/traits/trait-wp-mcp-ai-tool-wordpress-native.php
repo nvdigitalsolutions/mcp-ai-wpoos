@@ -52,10 +52,9 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 	 * @since 1.0.0
 	 *
 	 * @param array $arguments Tool arguments used to generate cache key.
-	 * @param int   $expiration Cache expiration in seconds (default: 1 hour).
 	 * @return mixed|false Cached value or false if not found.
 	 */
-	protected function get_cached_result( $arguments, $expiration = HOUR_IN_SECONDS ) {
+	protected function get_cached_result( $arguments ) {
 		$cache_key = $this->generate_cache_key( $arguments );
 		return WP_MCP_AI_Cache_Helper::get( $cache_key );
 	}
