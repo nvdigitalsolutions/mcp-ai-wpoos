@@ -183,6 +183,11 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		$workflow_id = 'wf_' . $team_id . '_' . time();
 		$trace_id    = isset( $context['trace_id'] ) ? $context['trace_id'] : uniqid( 'trace_', true );
 
+		// Add workflow tracking data to context for tool execution.
+		$context['workflow_id'] = $workflow_id;
+		$context['team_id']     = $team_id;
+		$context['trace_id']    = $trace_id;
+
 		// Initialize workflow tracking data for dashboard.
 		$workflow_data = array(
 			'workflow_id'  => $workflow_id,
@@ -209,13 +214,17 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Execute workflow steps.
 		foreach ( $workflow as $step ) {
+			// Add current step name to context for workflow task tracking.
+			$step_name            = isset( $step['name'] ) ? $step['name'] : 'unnamed_step';
+			$context['task_name'] = $step_name;
+			
 			$step_start  = microtime( true );
 			$step_result = $this->execute_workflow_step( $team, $step, $task, $context, $results );
 			$step_time   = microtime( true ) - $step_start;
 
 			// Track step execution.
 			$step_data = array(
-				'name'           => isset( $step['name'] ) ? $step['name'] : 'unnamed_step',
+				'name'           => $step_name,
 				'type'           => isset( $step['type'] ) ? $step['type'] : 'execute',
 				'status'         => is_wp_error( $step_result ) ? 'failed' : 'completed',
 				'execution_time' => $step_time,
