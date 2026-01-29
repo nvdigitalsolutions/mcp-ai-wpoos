@@ -74,13 +74,23 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Use file modification time for cache busting to ensure CSS/JS updates are loaded.
 		$css_path    = WP_MCP_AI_PATH . 'assets/css/admin-orchestration-dashboard.css';
 		$js_path     = WP_MCP_AI_PATH . 'assets/js/admin-orchestration-dashboard.js';
+		$shared_css_path = WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css';
 		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
 		$js_version  = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
+		$shared_css_version = file_exists( $shared_css_path ) ? filemtime( $shared_css_path ) : WP_MCP_AI_VERSION;
+
+		// Enqueue shared monitor CSS for auto-refresh controls.
+		wp_enqueue_style(
+			'wp-mcp-ai-admin-monitor-shared',
+			plugins_url( 'assets/css/admin-monitor-shared.css', WP_MCP_AI_FILE ),
+			array(),
+			$shared_css_version
+		);
 
 		wp_enqueue_style(
 			'wp-mcp-ai-orchestration-dashboard',
 			plugins_url( 'assets/css/admin-orchestration-dashboard.css', WP_MCP_AI_FILE ),
-			array(),
+			array( 'wp-mcp-ai-admin-monitor-shared' ),
 			$css_version
 		);
 
@@ -124,6 +134,22 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			<p class="description">
 				<?php esc_html_e( 'Manage and monitor your multi-agent orchestration system. View statistics, configure agent roles, and seed orchestration metadata.', 'mcp-ai-wpoos' ); ?>
 			</p>
+
+			<!-- Auto-Refresh Controls -->
+			<div class="auto-refresh-controls">
+				<label>
+					<input type="checkbox" id="toggle-auto-refresh" checked />
+					<?php esc_html_e( 'Auto-refresh', 'mcp-ai-wpoos' ); ?>
+				</label>
+				<button type="button" class="button button-secondary" id="manual-refresh-btn">
+					<span class="dashicons dashicons-update"></span>
+					<?php esc_html_e( 'Refresh Now', 'mcp-ai-wpoos' ); ?>
+				</button>
+				<span class="last-refresh-time">
+					<?php esc_html_e( 'Last updated:', 'mcp-ai-wpoos' ); ?>
+					<strong id="last-refresh-time"><?php echo esc_html( current_time( 'H:i:s' ) ); ?></strong>
+				</span>
+			</div>
 
 			<!-- Status Banner -->
 			<div class="orchestration-status-banner">
@@ -400,22 +426,25 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		$cards = array(
 			array(
-				'title' => __( 'Total Professions', 'mcp-ai-wpoos' ),
-				'value' => $stats['total_professions'],
-				'icon'  => 'groups',
-				'color' => '#2271b1',
+				'title'     => __( 'Total Professions', 'mcp-ai-wpoos' ),
+				'value'     => $stats['total_professions'],
+				'icon'      => 'groups',
+				'color'     => '#2271b1',
+				'data_attr' => 'total_professions',
 			),
 			array(
-				'title' => __( 'Seeded Professions', 'mcp-ai-wpoos' ),
-				'value' => $stats['seeded_professions'],
-				'icon'  => 'yes-alt',
-				'color' => '#00a32a',
+				'title'     => __( 'Seeded Professions', 'mcp-ai-wpoos' ),
+				'value'     => $stats['seeded_professions'],
+				'icon'      => 'yes-alt',
+				'color'     => '#00a32a',
+				'data_attr' => 'seeded_professions',
 			),
 			array(
-				'title' => __( 'With Task Patterns', 'mcp-ai-wpoos' ),
-				'value' => $stats['with_task_patterns'],
-				'icon'  => 'list-view',
-				'color' => '#f0b849',
+				'title'     => __( 'With Task Patterns', 'mcp-ai-wpoos' ),
+				'value'     => $stats['with_task_patterns'],
+				'icon'      => 'list-view',
+				'color'     => '#f0b849',
+				'data_attr' => 'with_task_patterns',
 			),
 			array(
 				'title'       => __( 'Agent Tools', 'mcp-ai-wpoos' ),
@@ -423,6 +452,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				'icon'        => 'admin-tools',
 				'color'       => '#8c8f94',
 				'description' => esc_html( implode( ', ', $agent_tool_names ) ),
+				'data_attr'   => 'agent_tools',
 			),
 		);
 
@@ -434,7 +464,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				</div>
 				<div class="stat-content">
 					<h3><?php echo esc_html( $card['title'] ); ?></h3>
-					<div class="stat-value"><?php echo esc_html( $card['value'] ); ?></div>
+					<div class="stat-value" data-stat="<?php echo esc_attr( $card['data_attr'] ); ?>"><?php echo esc_html( $card['value'] ); ?></div>
 					<?php if ( isset( $card['description'] ) ) : ?>
 						<p class="stat-description"><?php echo esc_html( $card['description'] ); ?></p>
 					<?php endif; ?>
