@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-agent-memory-display-issue',
-        'version' => 'dev-copilot/fix-agent-memory-display-issue',
-        'reference' => '05cb18c038853c5d9bd2d880cf135d8848d4e8ce',
+        'pretty_version' => 'dev-copilot/fix-url-link-orchestration',
+        'version' => 'dev-copilot/fix-url-link-orchestration',
+        'reference' => '9fc285abdd7a7c28fc307ab30cde80ebf89bdd3c',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-agent-memory-display-issue',
-            'version' => 'dev-copilot/fix-agent-memory-display-issue',
-            'reference' => '05cb18c038853c5d9bd2d880cf135d8848d4e8ce',
+            'pretty_version' => 'dev-copilot/fix-url-link-orchestration',
+            'version' => 'dev-copilot/fix-url-link-orchestration',
+            'reference' => '9fc285abdd7a7c28fc307ab30cde80ebf89bdd3c',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
