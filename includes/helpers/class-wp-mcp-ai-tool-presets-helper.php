@@ -655,8 +655,6 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'aggregate_agent_results',
 					'store_agent_context',
 					'retrieve_agent_memory',
-					'store_agent_context',
-					'retrieve_agent_memory',
 					'execute_workflow',
 				),
 			),
@@ -669,6 +667,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚕️ Healthcare Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Medical, clinical, and healthcare management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for patient context and medical history.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Health & Wellness Management (Pro).
 					'create_member',
 					'update_member',
@@ -737,6 +738,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚖️ Legal Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Legal research, document management, and compliance tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for case context and precedents.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Research.
 					'web_search',
 					'deep_research',
@@ -771,6 +775,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🎓 Education Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Educational content, course management, and learning tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for student progress and course context.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Quiz Management (Pro).
 					'create_quiz',
 					'update_quiz',
@@ -845,6 +852,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '💼 Finance & Business', 'mcp-ai-wpoos' ),
 				'description' => __( 'Financial analysis, business intelligence, and reporting tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for financial context and client information.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Financial Planning Toolkit tools.
 					'financial_health_score',
 					'budget_planner',
@@ -891,6 +901,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🔬 Science & Research', 'mcp-ai-wpoos' ),
 				'description' => __( 'Scientific research, data analysis, and academic tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for research contexts.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Research.
 					'web_search',
 					'deep_research',
@@ -1051,6 +1064,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🎯 Autonomous Orchestration', 'mcp-ai-wpoos' ),
 				'description' => __( 'Task planning, autonomous sessions, health monitoring, and capacity management for continuous AI workflow loops', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent coordination and memory.
+					'create_agent_team',
+					'delegate_to_agent',
+					'aggregate_agent_results',
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Core orchestration tools (Base plugin).
 					'create_task_plan',
 					'update_task_plan',
@@ -1099,6 +1118,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🔍 Research Automation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Multi-source research with aggregation, verification, and professional report generation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent coordination and memory.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Research enhancement.
 					'aggregate_research_data',
 					'extract_structured_data',
@@ -1444,6 +1466,9 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '🔬 Research & Analysis', 'mcp-ai-wpoos' ),
 				'description' => __( 'Research tools for posts, products, projects, places, policies, and more', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent memory for research contexts.
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Research tools (Pro).
 					'research_post',
 					'research_product',
@@ -1583,6 +1608,12 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				'name'        => __( '⚙️ Developer Advanced Tools', 'mcp-ai-wpoos' ),
 				'description' => __( 'Advanced development, API integration, and system management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
+					// Agent coordination for development workflows.
+					'create_agent_team',
+					'delegate_to_agent',
+					'aggregate_agent_results',
+					'store_agent_context',
+					'retrieve_agent_memory',
 					// Generic integrations (Pro).
 					'generic_rest_api',
 					'remote_wp_connection',
