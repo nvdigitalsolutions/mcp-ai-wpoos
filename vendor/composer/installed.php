@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
+        'version' => 'dev-copilot/add-diagnostic-instrumentation',
+        'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',
         'pretty_version' => 'dev-copilot/complete-deepseekv4-enhancements',
         'version' => 'dev-copilot/complete-deepseekv4-enhancements',
         'reference' => '944f7ff7a1c21cbe0a05848816092c6c862a4b9c',
@@ -53,6 +56,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-diagnostic-instrumentation',
+            'version' => 'dev-copilot/add-diagnostic-instrumentation',
+            'reference' => 'fcf598d421689d9ccb0ab69626face0c5bacab6c',
             'pretty_version' => 'dev-copilot/complete-deepseekv4-enhancements',
             'version' => 'dev-copilot/complete-deepseekv4-enhancements',
             'reference' => '944f7ff7a1c21cbe0a05848816092c6c862a4b9c',

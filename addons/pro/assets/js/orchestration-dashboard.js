@@ -140,9 +140,38 @@
 			// Update cron status
 			if (systemStatus.cron) {
 				console.log('OrchestrationDashboard: Updating cron status', systemStatus.cron);
-				$('[data-system-status="cron_active"]').text(systemStatus.cron.active || 0);
-				$('[data-system-status="cron_pending"]').text(systemStatus.cron.pending || 0);
-				$('[data-system-status="cron_failed"]').text(systemStatus.cron.failed || 0);
+				
+				// Defensive check - verify elements exist
+				const $cronActive = $('[data-system-status="cron_active"]');
+				const $cronPending = $('[data-system-status="cron_pending"]');
+				const $cronFailed = $('[data-system-status="cron_failed"]');
+				
+				console.log('OrchestrationDashboard: Found cron elements:', {
+					active: $cronActive.length,
+					pending: $cronPending.length,
+					failed: $cronFailed.length
+				});
+				
+				if ($cronActive.length) {
+					$cronActive.text(systemStatus.cron.active || 0);
+					console.log('OrchestrationDashboard: Set cron_active to', systemStatus.cron.active || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_active"] not found in DOM!');
+				}
+				
+				if ($cronPending.length) {
+					$cronPending.text(systemStatus.cron.pending || 0);
+					console.log('OrchestrationDashboard: Set cron_pending to', systemStatus.cron.pending || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_pending"] not found in DOM!');
+				}
+				
+				if ($cronFailed.length) {
+					$cronFailed.text(systemStatus.cron.failed || 0);
+					console.log('OrchestrationDashboard: Set cron_failed to', systemStatus.cron.failed || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_failed"] not found in DOM!');
+				}
 			} else {
 				console.warn('OrchestrationDashboard: No cron data in system_status');
 			}
@@ -150,13 +179,41 @@
 			// Update async status
 			if (systemStatus.async) {
 				console.log('OrchestrationDashboard: Updating async status', systemStatus.async);
+				
 				const asyncStatus = systemStatus.async.status || 'unknown';
-				$('[data-system-status="async_status"]')
-					.text(asyncStatus)
-					.removeClass('status-healthy status-warning status-error')
-					.addClass('status-' + asyncStatus);
-				$('[data-system-status="async_stuck_jobs"]').text(systemStatus.async.stuck_jobs || 0);
-				$('[data-system-status="async_long_running"]').text(systemStatus.async.long_running || 0);
+				const $asyncStatus = $('[data-system-status="async_status"]');
+				const $asyncStuckJobs = $('[data-system-status="async_stuck_jobs"]');
+				const $asyncLongRunning = $('[data-system-status="async_long_running"]');
+				
+				console.log('OrchestrationDashboard: Found async elements:', {
+					status: $asyncStatus.length,
+					stuck_jobs: $asyncStuckJobs.length,
+					long_running: $asyncLongRunning.length
+				});
+				
+				if ($asyncStatus.length) {
+					$asyncStatus
+						.text(asyncStatus)
+						.removeClass('status-healthy status-warning status-error')
+						.addClass('status-' + asyncStatus);
+					console.log('OrchestrationDashboard: Set async_status to', asyncStatus);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_status"] not found in DOM!');
+				}
+				
+				if ($asyncStuckJobs.length) {
+					$asyncStuckJobs.text(systemStatus.async.stuck_jobs || 0);
+					console.log('OrchestrationDashboard: Set async_stuck_jobs to', systemStatus.async.stuck_jobs || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_stuck_jobs"] not found in DOM!');
+				}
+				
+				if ($asyncLongRunning.length) {
+					$asyncLongRunning.text(systemStatus.async.long_running || 0);
+					console.log('OrchestrationDashboard: Set async_long_running to', systemStatus.async.long_running || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_long_running"] not found in DOM!');
+				}
 			} else {
 				console.warn('OrchestrationDashboard: No async data in system_status');
 			}
@@ -164,12 +221,32 @@
 			// Update health status
 			if (systemStatus.health) {
 				console.log('OrchestrationDashboard: Updating health status', systemStatus.health);
+				
 				const healthStatus = systemStatus.health.status || 'unknown';
-				$('[data-system-status="health_status"]')
-					.text(systemStatus.health.icon + ' ' + healthStatus)
-					.removeClass('status-healthy status-good status-fair status-poor')
-					.addClass('status-' + healthStatus);
-				$('[data-system-status="health_label"]').text(systemStatus.health.label || 'Unknown');
+				const $healthStatus = $('[data-system-status="health_status"]');
+				const $healthLabel = $('[data-system-status="health_label"]');
+				
+				console.log('OrchestrationDashboard: Found health elements:', {
+					status: $healthStatus.length,
+					label: $healthLabel.length
+				});
+				
+				if ($healthStatus.length) {
+					$healthStatus
+						.text(systemStatus.health.icon + ' ' + healthStatus)
+						.removeClass('status-healthy status-good status-fair status-poor')
+						.addClass('status-' + healthStatus);
+					console.log('OrchestrationDashboard: Set health_status to', systemStatus.health.icon + ' ' + healthStatus);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="health_status"] not found in DOM!');
+				}
+				
+				if ($healthLabel.length) {
+					$healthLabel.text(systemStatus.health.label || 'Unknown');
+					console.log('OrchestrationDashboard: Set health_label to', systemStatus.health.label || 'Unknown');
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="health_label"] not found in DOM!');
+				}
 			} else {
 				console.warn('OrchestrationDashboard: No health data in system_status');
 			}
@@ -177,12 +254,32 @@
 			// Update SSE status
 			if (systemStatus.sse) {
 				console.log('OrchestrationDashboard: Updating SSE status', systemStatus.sse);
+				
 				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
-				$('[data-system-status="sse_available"]')
-					.text(sseAvailable)
-					.removeClass('status-yes status-no')
-					.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
-				$('[data-system-status="sse_endpoint"]').text(systemStatus.sse.endpoint || 'N/A');
+				const $sseAvailable = $('[data-system-status="sse_available"]');
+				const $sseEndpoint = $('[data-system-status="sse_endpoint"]');
+				
+				console.log('OrchestrationDashboard: Found SSE elements:', {
+					available: $sseAvailable.length,
+					endpoint: $sseEndpoint.length
+				});
+				
+				if ($sseAvailable.length) {
+					$sseAvailable
+						.text(sseAvailable)
+						.removeClass('status-yes status-no')
+						.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
+					console.log('OrchestrationDashboard: Set sse_available to', sseAvailable);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="sse_available"] not found in DOM!');
+				}
+				
+				if ($sseEndpoint.length) {
+					$sseEndpoint.text(systemStatus.sse.endpoint || 'N/A');
+					console.log('OrchestrationDashboard: Set sse_endpoint to', systemStatus.sse.endpoint || 'N/A');
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="sse_endpoint"] not found in DOM!');
+				}
 			} else {
 				console.warn('OrchestrationDashboard: No SSE data in system_status');
 			}
