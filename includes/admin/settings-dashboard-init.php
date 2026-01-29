@@ -54,7 +54,6 @@ spl_autoload_register(
 			'WP_MCP_AI_Section_Advanced'            => 'includes/admin/sections/class-wp-mcp-ai-section-advanced.php',
 			'WP_MCP_AI_Section_Media'               => 'includes/admin/sections/class-wp-mcp-ai-section-media.php',
 			'WP_MCP_AI_Section_Comments'            => 'includes/admin/sections/class-wp-mcp-ai-section-comments.php',
-			'WP_MCP_AI_Section_Site_Creator'        => 'includes/admin/sections/class-wp-mcp-ai-section-site-creator.php',
 		);
 
 		// Check if this is a section class we should autoload.
