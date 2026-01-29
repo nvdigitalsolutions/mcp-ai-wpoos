@@ -67,34 +67,35 @@ rsync -av --quiet addons/pro/ "$PRO_BUILD_DIR/" \
 echo "Step 3: Transforming text domain..."
 BEFORE_COUNT=$(grep -r "'mcp-ai-wpoos-pro'\|'mcp-ai-pro'\|'wp-mcp-ai-pro'" "$PRO_BUILD_DIR" --include="*.php" 2>/dev/null | wc -l)
 
-# Transform ALL Pro text domain variations to WordPress.org compliant version
-# Transform 'mcp-ai-wpoos-pro' → 'nvdigital-open-operator-system-oos'
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+# Transform Pro text domains to WordPress.org compliant version (base + -pro)
+# Transform 'mcp-ai-wpoos-pro' → 'nvdigital-open-operator-system-oos-pro'
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
 
-# Transform 'mcp-ai-pro' → 'nvdigital-open-operator-system-oos'
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+# Transform 'mcp-ai-pro' → 'nvdigital-open-operator-system-oos-pro'
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
 
-# Transform 'wp-mcp-ai-pro' → 'nvdigital-open-operator-system-oos'
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'wp-mcp-ai-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
-find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"wp-mcp-ai-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+# Transform 'wp-mcp-ai-pro' → 'nvdigital-open-operator-system-oos-pro'
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'wp-mcp-ai-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"wp-mcp-ai-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
 
-# Transform base text domain 'mcp-ai-wpoos' → 'nvdigital-open-operator-system-oos'
+# Transform base text domain 'mcp-ai-wpoos' → 'nvdigital-open-operator-system-oos' (for any base references)
 find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
 find "$PRO_BUILD_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
 
 # Transform JavaScript files
-find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
-find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
-find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-pro'/'nvdigital-open-operator-system-oos'/g" {} \;
-find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-pro"/"nvdigital-open-operator-system-oos"/g' {} \;
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
 find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
 find "$PRO_BUILD_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
 
 AFTER_COUNT=$(grep -r "'mcp-ai-wpoos-pro'\|'mcp-ai-pro'\|'wp-mcp-ai-pro'" "$PRO_BUILD_DIR" --include="*.php" 2>/dev/null | wc -l)
 echo "   Transformed: $((BEFORE_COUNT - AFTER_COUNT)) instances"
-echo "   Text domain: nvdigital-open-operator-system-oos"
+echo "   Pro text domain: nvdigital-open-operator-system-oos-pro"
+echo "   Base text domain: nvdigital-open-operator-system-oos"
 
 # Add plugin header to make it a standalone plugin
 echo "Step 4: Adding plugin header..."
@@ -110,7 +111,7 @@ cat > "$PRO_BUILD_DIR/mcp-ai-wpoos-pro-temp.php" << 'EOPHP'
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: Proprietary
- * Text Domain: nvdigital-open-operator-system-oos
+ * Text Domain: nvdigital-open-operator-system-oos-pro
  * Domain Path: /languages
  *
  * @package WP_MCP_AI_Pro
