@@ -807,13 +807,18 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - always show tab.
-			$subtab_groups['site_creator'] = array(
-				'id'     => 'site_creator',
-				'label'  => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'icon'   => 'dashicons-admin-site',
-				'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
-			);
+			// Site Creator is a Pro feature - only show tab if toolkit is enabled.
+			$settings  = get_option( 'wp_mcp_ai_settings', array() );
+			$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
+			
+			if ( $is_enabled ) {
+				$subtab_groups['site_creator'] = array(
+					'id'     => 'site_creator',
+					'label'  => __( 'Site Creator', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-site',
+					'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
+				);
+			}
 
 			return $subtab_groups;
 		}
