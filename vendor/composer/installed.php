@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/review-ajax-endpoints-testing',
+        'version' => 'dev-copilot/review-ajax-endpoints-testing',
+        'reference' => 'a1b238a60469286452276f4719f02067198c81da',
         'pretty_version' => 'dev-copilot/fix-loading-issues-section',
         'version' => 'dev-copilot/fix-loading-issues-section',
         'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/review-ajax-endpoints-testing',
+            'version' => 'dev-copilot/review-ajax-endpoints-testing',
+            'reference' => 'a1b238a60469286452276f4719f02067198c81da',
             'pretty_version' => 'dev-copilot/fix-loading-issues-section',
             'version' => 'dev-copilot/fix-loading-issues-section',
             'reference' => '02acedcf6bec0238665ed6b89c62ff038b19a347',
