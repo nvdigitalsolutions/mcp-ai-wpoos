@@ -1111,7 +1111,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					?>
 				</ul>
 				<p>
-					<a href="<?php echo esc_url( admin_url( 'admin.php?page=mcp-ai-settings#tools' ) ); ?>" class="button">
+					<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools' ) ); ?>" class="button">
 						<?php esc_html_e( 'Configure Tools', 'mcp-ai-wpoos' ); ?>
 					</a>
 					<a href="https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/DEEPSEEK-V4-USAGE-GUIDE.md#using-agent-memory-tools" class="button button-secondary" target="_blank">
