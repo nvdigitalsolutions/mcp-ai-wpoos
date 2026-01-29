@@ -230,23 +230,23 @@ class WP_MCP_AI_Architectural_Project_CPT {
 	 * @since 2.10.0
 	 */
 	public static function register_meta() {
-		// Text fields.
+		// Text fields with descriptions.
 		$text_fields = array(
-			'_arch_client_name',
-			'_arch_location',
-			'_arch_start_date',
-			'_arch_completion_date',
-			'_arch_unit_system',
-			'_arch_building_code',
+			'_arch_client_name'     => 'Client or owner name',
+			'_arch_location'        => 'Project location (city, state/province, country)',
+			'_arch_start_date'      => 'Project start date',
+			'_arch_completion_date' => 'Target completion date',
+			'_arch_unit_system'     => 'Measurement system (imperial or metric)',
+			'_arch_building_code'   => 'Building code standard (ibc, irc, or local)',
 		);
 
-		foreach ( $text_fields as $meta_key ) {
+		foreach ( $text_fields as $meta_key => $description ) {
 			register_post_meta(
 				self::POST_TYPE,
 				$meta_key,
 				array(
 					'type'              => 'string',
-					'description'       => '',
+					'description'       => $description,
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => 'sanitize_text_field',
@@ -254,19 +254,19 @@ class WP_MCP_AI_Architectural_Project_CPT {
 			);
 		}
 
-		// Numeric fields.
+		// Numeric fields with descriptions.
 		$numeric_fields = array(
-			'_arch_budget',
-			'_arch_square_footage',
+			'_arch_budget'         => 'Project budget in USD',
+			'_arch_square_footage' => 'Total square footage or area',
 		);
 
-		foreach ( $numeric_fields as $meta_key ) {
+		foreach ( $numeric_fields as $meta_key => $description ) {
 			register_post_meta(
 				self::POST_TYPE,
 				$meta_key,
 				array(
 					'type'              => 'number',
-					'description'       => '',
+					'description'       => $description,
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => 'floatval',

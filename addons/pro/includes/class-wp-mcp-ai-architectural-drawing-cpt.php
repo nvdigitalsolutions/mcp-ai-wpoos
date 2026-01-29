@@ -97,22 +97,22 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 	 * @since 2.10.0
 	 */
 	public static function register_meta() {
-		// Text fields.
+		// Text fields with descriptions.
 		$text_fields = array(
-			'_arch_drawing_number',
-			'_arch_scale',
-			'_arch_revision',
-			'_arch_file_url',
-			'_arch_file_format',
+			'_arch_drawing_number' => 'AIA standard drawing number (e.g., A-101)',
+			'_arch_scale'          => 'Drawing scale notation (e.g., 1/4" = 1\'-0" or 1:100)',
+			'_arch_revision'       => 'Revision letter or number',
+			'_arch_file_url'       => 'URL to the drawing file',
+			'_arch_file_format'    => 'File format (pdf, dwg, ifc, svg, png, jpg)',
 		);
 
-		foreach ( $text_fields as $meta_key ) {
+		foreach ( $text_fields as $meta_key => $description ) {
 			register_post_meta(
 				self::POST_TYPE,
 				$meta_key,
 				array(
 					'type'              => 'string',
-					'description'       => '',
+					'description'       => $description,
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => 'sanitize_text_field',
@@ -126,7 +126,7 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 			'_arch_project_id',
 			array(
 				'type'              => 'integer',
-				'description'       => 'Parent project ID',
+				'description'       => 'Parent architectural design project ID',
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'absint',

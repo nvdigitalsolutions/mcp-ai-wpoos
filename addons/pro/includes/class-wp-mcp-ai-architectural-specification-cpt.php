@@ -103,7 +103,7 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 			'_arch_spec_number',
 			array(
 				'type'              => 'string',
-				'description'       => 'CSI MasterFormat specification number',
+				'description'       => 'CSI MasterFormat specification number (e.g., 03 30 00)',
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'sanitize_text_field',
@@ -116,7 +116,7 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 			'_arch_project_id',
 			array(
 				'type'              => 'integer',
-				'description'       => 'Parent project ID',
+				'description'       => 'Parent architectural design project ID',
 				'single'            => true,
 				'show_in_rest'      => true,
 				'sanitize_callback' => 'absint',
@@ -125,18 +125,18 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 
 		// Three-part specification format fields.
 		$spec_parts = array(
-			'_arch_spec_part_1',
-			'_arch_spec_part_2',
-			'_arch_spec_part_3',
+			'_arch_spec_part_1' => 'Part 1 - General: Administrative and procedural requirements',
+			'_arch_spec_part_2' => 'Part 2 - Products: Material and product specifications',
+			'_arch_spec_part_3' => 'Part 3 - Execution: Installation and workmanship requirements',
 		);
 
-		foreach ( $spec_parts as $meta_key ) {
+		foreach ( $spec_parts as $meta_key => $description ) {
 			register_post_meta(
 				self::POST_TYPE,
 				$meta_key,
 				array(
 					'type'              => 'string',
-					'description'       => '',
+					'description'       => $description,
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => 'wp_kses_post',
