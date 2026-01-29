@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/add-self-editing-capability-again',
-        'version' => 'dev-copilot/add-self-editing-capability-again',
-        'reference' => '6da9edb64ade519b7eb475cb998dda2c3a56d16c',
+        'pretty_version' => 'dev-copilot/review-enhancement-pages',
+        'version' => 'dev-copilot/review-enhancement-pages',
+        'reference' => '3148e9bf440f776dbe0e20ad7c6e3803bda734ea',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/add-self-editing-capability-again',
-            'version' => 'dev-copilot/add-self-editing-capability-again',
-            'reference' => '6da9edb64ade519b7eb475cb998dda2c3a56d16c',
+            'pretty_version' => 'dev-copilot/review-enhancement-pages',
+            'version' => 'dev-copilot/review-enhancement-pages',
+            'reference' => '3148e9bf440f776dbe0e20ad7c6e3803bda734ea',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
