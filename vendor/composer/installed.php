@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/remove-old-settings-page',
+        'version' => 'dev-copilot/remove-old-settings-page',
+        'reference' => '9c1ee9f1196f53441e4aac3b883473adb97a90f4',
         'pretty_version' => 'dev-copilot/review-tools-settings-plugin',
         'version' => 'dev-copilot/review-tools-settings-plugin',
         'reference' => '8171bc02a67c9151ff2645377a2daed79b775de7',
@@ -71,6 +74,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/remove-old-settings-page',
+            'version' => 'dev-copilot/remove-old-settings-page',
+            'reference' => '9c1ee9f1196f53441e4aac3b883473adb97a90f4',
             'pretty_version' => 'dev-copilot/review-tools-settings-plugin',
             'version' => 'dev-copilot/review-tools-settings-plugin',
             'reference' => '8171bc02a67c9151ff2645377a2daed79b775de7',
