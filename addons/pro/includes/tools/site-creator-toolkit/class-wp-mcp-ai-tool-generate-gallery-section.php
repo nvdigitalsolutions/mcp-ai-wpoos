@@ -60,30 +60,30 @@ class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'            => array(
+				'title'           => array(
 					'type'        => 'string',
 					'description' => __( 'Gallery title', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Our Portfolio',
 				),
-				'layout'           => array(
+				'layout'          => array(
 					'type'        => 'string',
 					'description' => __( 'Gallery layout', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'grid', 'masonry', 'carousel', 'justified' ),
 					'default'     => 'grid',
 				),
-				'columns'          => array(
+				'columns'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of columns (2-5)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 3,
 					'minimum'     => 2,
 					'maximum'     => 5,
 				),
-				'include_filters'  => array(
+				'include_filters' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include category filters', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'lightbox'         => array(
+				'lightbox'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable lightbox on click', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -130,7 +130,7 @@ class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interfac
 			'layout'  => $layout,
 			'columns' => $columns,
 			'options' => array(
-				'lightbox' => $lightbox,
+				'lightbox'  => $lightbox,
 				'lazy_load' => true,
 			),
 		);
@@ -147,6 +147,7 @@ class WP_MCP_AI_Tool_Generate_Gallery_Section implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'success'         => true,
 			'gallery_section' => $gallery_section,
+			/* translators: %s: layout type */
 			'summary'         => sprintf( __( 'Generated %s gallery section with filters and lightbox.', 'mcp-ai-wpoos-pro' ), $layout ),
 			'timestamp'       => current_time( 'mysql' ),
 		);

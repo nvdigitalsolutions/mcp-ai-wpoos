@@ -68,7 +68,7 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'urls'          => array(
+				'urls'           => array(
 					'type'        => 'array',
 					'description' => __( 'Array of competitor website URLs to analyze (max 5)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 					),
 					'maxItems'    => 5,
 				),
-				'focus_areas'   => array(
+				'focus_areas'    => array(
 					'type'        => 'array',
 					'description' => __( 'Specific aspects to analyze', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Validate and sanitize arguments.
-		$urls = isset( $arguments['urls'] ) && is_array( $arguments['urls'] ) ?
+		$urls           = isset( $arguments['urls'] ) && is_array( $arguments['urls'] ) ?
 			array_map( 'esc_url_raw', array_slice( $arguments['urls'], 0, 5 ) ) : array();
 		$focus_areas    = isset( $arguments['focus_areas'] ) && is_array( $arguments['focus_areas'] ) ?
 			array_map( 'sanitize_text_field', $arguments['focus_areas'] ) : array( 'design', 'structure', 'features' );
@@ -186,12 +186,12 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 		$this->log_analysis_activity( $user_id, $valid_urls, $focus_areas );
 
 		return array(
-			'success'       => true,
+			'success'        => true,
 			'sites_analyzed' => count( $analyses ),
-			'analyses'      => $analyses,
-			'insights'      => $insights,
-			'summary'       => $this->generate_summary( $analyses, $insights ),
-			'timestamp'     => current_time( 'mysql' ),
+			'analyses'       => $analyses,
+			'insights'       => $insights,
+			'summary'        => $this->generate_summary( $analyses, $insights ),
+			'timestamp'      => current_time( 'mysql' ),
 		);
 	}
 
@@ -303,8 +303,8 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	private function analyze_structure( $url, $analysis_depth ) {
 		return array(
 			'page_hierarchy' => array(
-				'levels'        => 3,
-				'organization'  => 'Logical grouping',
+				'levels'       => 3,
+				'organization' => 'Logical grouping',
 			),
 			'sections'       => array(
 				'hero',
@@ -329,12 +329,12 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function analyze_navigation( $url, $analysis_depth ) {
 		return array(
-			'menu_type'      => 'Horizontal top navigation',
-			'menu_items'     => 5-7,
-			'mobile_menu'    => 'Hamburger menu',
-			'footer_menu'    => true,
-			'search'         => true,
-			'breadcrumbs'    => true,
+			'menu_type'   => 'Horizontal top navigation',
+			'menu_items'  => 5 - 7,
+			'mobile_menu' => 'Hamburger menu',
+			'footer_menu' => true,
+			'search'      => true,
+			'breadcrumbs' => true,
 		);
 	}
 
@@ -368,7 +368,7 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function analyze_features( $url, $analysis_depth ) {
 		return array(
-			'core_features'     => array(
+			'core_features'        => array(
 				'Contact forms',
 				'Newsletter signup',
 				'Social media integration',
@@ -379,8 +379,8 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 				'Forms',
 				'Animations',
 			),
-			'ecommerce'         => false,
-			'membership'        => false,
+			'ecommerce'            => false,
+			'membership'           => false,
 		);
 	}
 
@@ -414,12 +414,12 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function analyze_accessibility( $url, $analysis_depth ) {
 		return array(
-			'semantic_html'     => true,
-			'aria_labels'       => true,
-			'keyboard_nav'      => true,
-			'color_contrast'    => 'Good',
-			'screen_reader'     => 'Compatible',
-			'wcag_level'        => 'AA estimated',
+			'semantic_html'  => true,
+			'aria_labels'    => true,
+			'keyboard_nav'   => true,
+			'color_contrast' => 'Good',
+			'screen_reader'  => 'Compatible',
+			'wcag_level'     => 'AA estimated',
 		);
 	}
 
@@ -434,11 +434,11 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 */
 	private function analyze_technology( $url, $analysis_depth ) {
 		return array(
-			'cms'             => 'WordPress (detected)',
-			'page_builder'    => 'Unknown',
-			'frameworks'      => array(),
-			'analytics'       => 'Likely Google Analytics',
-			'hosting'         => 'Unknown',
+			'cms'          => 'WordPress (detected)',
+			'page_builder' => 'Unknown',
+			'frameworks'   => array(),
+			'analytics'    => 'Likely Google Analytics',
+			'hosting'      => 'Unknown',
 		);
 	}
 
@@ -506,9 +506,9 @@ class WP_MCP_AI_Tool_Analyze_Competitor_Sites implements WP_MCP_AI_Tool_Interfac
 	 *
 	 * @since 1.2.0
 	 *
-	 * @param int    $user_id     User ID.
-	 * @param array  $urls        Analyzed URLs.
-	 * @param array  $focus_areas Focus areas.
+	 * @param int   $user_id     User ID.
+	 * @param array $urls        Analyzed URLs.
+	 * @param array $focus_areas Focus areas.
 	 */
 	private function log_analysis_activity( $user_id, $urls, $focus_areas ) {
 		if ( ! function_exists( 'wp_mcp_ai_log_activity' ) ) {

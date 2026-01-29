@@ -59,11 +59,11 @@ class WP_MCP_AI_Tool_Import_Site_Template implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'template_id'      => array(
+				'template_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Template post ID', 'mcp-ai-wpoos-pro' ),
 				),
-				'import_mode'      => array(
+				'import_mode' => array(
 					'type'        => 'string',
 					'description' => __( 'Import mode', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'replace', 'merge', 'preview' ),
@@ -141,7 +141,8 @@ class WP_MCP_AI_Tool_Import_Site_Template implements WP_MCP_AI_Tool_Interface, W
 			'mode'           => $import_mode,
 			'template_name'  => $template_post->post_title,
 			'imported_items' => $imported_items,
-			'summary'        => sprintf( __( 'Imported template "%s" in %s mode.', 'mcp-ai-wpoos-pro' ), $template_post->post_title, $import_mode ),
+			/* translators: 1: template name, 2: import mode */
+			'summary'        => sprintf( __( 'Imported template "%1$s" in %2$s mode.', 'mcp-ai-wpoos-pro' ), $template_post->post_title, $import_mode ),
 			'timestamp'      => current_time( 'mysql' ),
 		);
 	}

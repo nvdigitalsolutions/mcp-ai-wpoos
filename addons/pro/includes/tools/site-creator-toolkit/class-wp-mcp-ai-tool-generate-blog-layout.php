@@ -60,25 +60,25 @@ class WP_MCP_AI_Tool_Generate_Blog_Layout implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'layout_style'     => array(
+				'layout_style'    => array(
 					'type'        => 'string',
 					'description' => __( 'Blog listing layout', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'grid', 'list', 'masonry', 'featured' ),
 					'default'     => 'grid',
 				),
-				'include_sidebar'  => array(
+				'include_sidebar' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include sidebar', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'posts_per_page'   => array(
+				'posts_per_page'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Posts per page', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 5,
 					'maximum'     => 20,
 				),
-				'show_featured'    => array(
+				'show_featured'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Show featured posts section', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -156,7 +156,8 @@ class WP_MCP_AI_Tool_Generate_Blog_Layout implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'success'     => true,
 			'blog_layout' => $blog_layout,
-			'summary'     => sprintf( __( 'Generated %s blog layout with %d sections.', 'mcp-ai-wpoos-pro' ), $layout_style, count( $blog_layout['listing_page']['sections'] ) ),
+			/* translators: 1: layout style, 2: number of sections */
+			'summary'     => sprintf( __( 'Generated %1$s blog layout with %2$d sections.', 'mcp-ai-wpoos-pro' ), $layout_style, count( $blog_layout['listing_page']['sections'] ) ),
 			'timestamp'   => current_time( 'mysql' ),
 		);
 	}

@@ -68,11 +68,11 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'query'        => array(
+				'query'       => array(
 					'type'        => 'string',
 					'description' => __( 'Search query for best practices (e.g., "WordPress page builder best practices 2025")', 'mcp-ai-wpoos-pro' ),
 				),
-				'focus_areas'  => array(
+				'focus_areas' => array(
 					'type'        => 'array',
 					'description' => __( 'Specific areas to focus on', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -89,12 +89,12 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 						),
 					),
 				),
-				'site_type'    => array(
+				'site_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Type of site to research (e.g., ecommerce, blog, portfolio, business)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'ecommerce', 'blog', 'portfolio', 'business', 'landing-page', 'membership', 'directory', 'general' ),
 				),
-				'max_results'  => array(
+				'max_results' => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of best practice items to return (default: 10)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
@@ -166,15 +166,15 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		$this->log_research_activity( $user_id, $query, $focus_areas, count( $structured_results ) );
 
 		return array(
-			'success'         => true,
-			'query'           => $query,
-			'enhanced_query'  => $enhanced_query,
-			'focus_areas'     => $focus_areas,
-			'site_type'       => $site_type,
-			'results_count'   => count( $structured_results ),
-			'best_practices'  => $structured_results,
-			'summary'         => $this->generate_summary( $structured_results ),
-			'timestamp'       => current_time( 'mysql' ),
+			'success'        => true,
+			'query'          => $query,
+			'enhanced_query' => $enhanced_query,
+			'focus_areas'    => $focus_areas,
+			'site_type'      => $site_type,
+			'results_count'  => count( $structured_results ),
+			'best_practices' => $structured_results,
+			'summary'        => $this->generate_summary( $structured_results ),
+			'timestamp'      => current_time( 'mysql' ),
 		);
 	}
 
@@ -348,7 +348,11 @@ class WP_MCP_AI_Tool_Research_Site_Best_Practices implements WP_MCP_AI_Tool_Inte
 		usort(
 			$structured,
 			function ( $a, $b ) {
-				$priority_order = array( 'high' => 1, 'medium' => 2, 'low' => 3 );
+				$priority_order = array(
+					'high'   => 1,
+					'medium' => 2,
+					'low'    => 3,
+				);
 				$a_val          = isset( $priority_order[ $a['priority'] ] ) ? $priority_order[ $a['priority'] ] : 4;
 				$b_val          = isset( $priority_order[ $b['priority'] ] ) ? $priority_order[ $b['priority'] ] : 4;
 				return $a_val - $b_val;

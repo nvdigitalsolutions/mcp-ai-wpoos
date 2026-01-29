@@ -60,12 +60,12 @@ class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'            => array(
+				'title'    => array(
 					'type'        => 'string',
 					'description' => __( 'Section title', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Our Features',
 				),
-				'features'         => array(
+				'features' => array(
 					'type'        => 'array',
 					'description' => __( 'Array of features to showcase', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -76,13 +76,13 @@ class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interfac
 						),
 					),
 				),
-				'layout'           => array(
+				'layout'   => array(
 					'type'        => 'string',
 					'description' => __( 'Layout style', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'grid', 'list', 'cards' ),
 					'default'     => 'grid',
 				),
-				'columns'          => array(
+				'columns'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of columns (2-4)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 3,
@@ -132,10 +132,10 @@ class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interfac
 
 		// Generate feature section.
 		$feature_section = array(
-			'type'    => 'features',
-			'title'   => $title,
-			'layout'  => $layout,
-			'columns' => $columns,
+			'type'     => 'features',
+			'title'    => $title,
+			'layout'   => $layout,
+			'columns'  => $columns,
 			'features' => array_map(
 				function ( $feature ) {
 					return array(
@@ -151,7 +151,8 @@ class WP_MCP_AI_Tool_Generate_Feature_Section implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'success'         => true,
 			'feature_section' => $feature_section,
-			'summary'         => sprintf( __( 'Generated feature section with %d features in %s layout.', 'mcp-ai-wpoos-pro' ), count( $features ), $layout ),
+			/* translators: 1: number of features, 2: layout type */
+			'summary'         => sprintf( __( 'Generated feature section with %1$d features in %2$s layout.', 'mcp-ai-wpoos-pro' ), count( $features ), $layout ),
 			'timestamp'       => current_time( 'mysql' ),
 		);
 	}

@@ -60,27 +60,27 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'            => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Section title', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get in Touch',
 				),
-				'include_form'     => array(
+				'include_form'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include contact form', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_map'      => array(
+				'include_map'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include location map', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_social'   => array(
+				'include_social' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include social media links', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'layout'           => array(
+				'layout'         => array(
 					'type'        => 'string',
 					'description' => __( 'Section layout', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'split', 'stacked', 'sidebar' ),
@@ -144,8 +144,8 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 		// Add map if requested.
 		if ( $include_map ) {
 			$contact_section['content']['map'] = array(
-				'type'       => 'embed',
-				'provider'   => 'google-maps',
+				'type'        => 'embed',
+				'provider'    => 'google-maps',
 				'coordinates' => array(
 					'lat' => 0,
 					'lng' => 0,
@@ -156,16 +156,29 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 		// Add social links if requested.
 		if ( $include_social ) {
 			$contact_section['content']['social'] = array(
-				array( 'platform' => 'facebook', 'url' => '#' ),
-				array( 'platform' => 'twitter', 'url' => '#' ),
-				array( 'platform' => 'linkedin', 'url' => '#' ),
-				array( 'platform' => 'instagram', 'url' => '#' ),
+				array(
+					'platform' => 'facebook',
+					'url'      => '#',
+				),
+				array(
+					'platform' => 'twitter',
+					'url'      => '#',
+				),
+				array(
+					'platform' => 'linkedin',
+					'url'      => '#',
+				),
+				array(
+					'platform' => 'instagram',
+					'url'      => '#',
+				),
 			);
 		}
 
 		return array(
 			'success'         => true,
 			'contact_section' => $contact_section,
+			/* translators: %s: layout type */
 			'summary'         => sprintf( __( 'Generated %s contact section with form and map.', 'mcp-ai-wpoos-pro' ), $layout ),
 			'timestamp'       => current_time( 'mysql' ),
 		);
@@ -180,7 +193,7 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function generate_contact_form() {
 		return array(
-			'fields' => array(
+			'fields'  => array(
 				array(
 					'type'        => 'text',
 					'name'        => 'name',
@@ -215,7 +228,7 @@ class WP_MCP_AI_Tool_Build_Contact_Section implements WP_MCP_AI_Tool_Interface, 
 				'text' => 'Send Message',
 			),
 			'options' => array(
-				'privacy_policy' => true,
+				'privacy_policy'  => true,
 				'spam_protection' => 'recaptcha',
 			),
 		);

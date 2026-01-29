@@ -60,21 +60,21 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'service_name'     => array(
+				'service_name' => array(
 					'type'        => 'string',
 					'description' => __( 'Service or product name', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'      => array(
+				'description'  => array(
 					'type'        => 'string',
 					'description' => __( 'Service description', 'mcp-ai-wpoos-pro' ),
 				),
-				'benefits'         => array(
+				'benefits'     => array(
 					'type'        => 'array',
 					'description' => __( 'Key benefits (max 6)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 					'maxItems'    => 6,
 				),
-				'pricing'          => array(
+				'pricing'      => array(
 					'type'        => 'object',
 					'description' => __( 'Pricing information', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
@@ -83,12 +83,12 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 						'period'   => array( 'type' => 'string' ),
 					),
 				),
-				'include_faq'      => array(
+				'include_faq'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include FAQ section', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'cta_text'         => array(
+				'cta_text'     => array(
 					'type'        => 'string',
 					'description' => __( 'Call-to-action button text', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get Started',
@@ -162,7 +162,8 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'success'      => true,
 			'service_page' => $service_page,
-			'summary'      => sprintf( __( 'Generated service page for %s with %d sections.', 'mcp-ai-wpoos-pro' ), $service_name, count( $service_page['sections'] ) ),
+			/* translators: 1: service name, 2: number of sections */
+			'summary'      => sprintf( __( 'Generated service page for %1$s with %2$d sections.', 'mcp-ai-wpoos-pro' ), $service_name, count( $service_page['sections'] ) ),
 			'timestamp'    => current_time( 'mysql' ),
 		);
 	}
@@ -267,9 +268,18 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 			'content' => array(
 				'title' => 'How It Works',
 				'steps' => array(
-					array( 'title' => 'Step 1: Consultation', 'description' => 'We understand your needs' ),
-					array( 'title' => 'Step 2: Planning', 'description' => 'We create a tailored strategy' ),
-					array( 'title' => 'Step 3: Execution', 'description' => 'We deliver results' ),
+					array(
+						'title'       => 'Step 1: Consultation',
+						'description' => 'We understand your needs',
+					),
+					array(
+						'title'       => 'Step 2: Planning',
+						'description' => 'We create a tailored strategy',
+					),
+					array(
+						'title'       => 'Step 3: Execution',
+						'description' => 'We deliver results',
+					),
 				),
 			),
 		);
@@ -289,9 +299,18 @@ class WP_MCP_AI_Tool_Create_Service_Pages implements WP_MCP_AI_Tool_Interface, W
 			'content' => array(
 				'title' => 'Frequently Asked Questions',
 				'faqs'  => array(
-					array( 'question' => "What is included in {$service_name}?", 'answer' => 'Our service includes comprehensive support and all essential features.' ),
-					array( 'question' => 'How long does it take?', 'answer' => 'Typical delivery time is 2-4 weeks depending on scope.' ),
-					array( 'question' => 'Do you offer support?', 'answer' => 'Yes, we provide ongoing support and maintenance.' ),
+					array(
+						'question' => "What is included in {$service_name}?",
+						'answer'   => 'Our service includes comprehensive support and all essential features.',
+					),
+					array(
+						'question' => 'How long does it take?',
+						'answer'   => 'Typical delivery time is 2-4 weeks depending on scope.',
+					),
+					array(
+						'question' => 'Do you offer support?',
+						'answer'   => 'Yes, we provide ongoing support and maintenance.',
+					),
 				),
 			),
 		);

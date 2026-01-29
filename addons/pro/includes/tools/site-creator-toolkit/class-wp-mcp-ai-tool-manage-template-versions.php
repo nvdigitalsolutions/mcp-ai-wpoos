@@ -59,16 +59,16 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'template_id'      => array(
+				'template_id'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Template ID', 'mcp-ai-wpoos-pro' ),
 				),
-				'action'           => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Version action', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list', 'create', 'rollback', 'compare' ),
 				),
-				'version_number'   => array(
+				'version_number' => array(
 					'type'        => 'string',
 					'description' => __( 'Version number for rollback/compare', 'mcp-ai-wpoos-pro' ),
 				),
@@ -154,6 +154,7 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 			'success'         => true,
 			'current_version' => $current_version ? $current_version : '1.0.0',
 			'versions'        => $version_history,
+			/* translators: %d: number of versions */
 			'summary'         => sprintf( __( 'Found %d version(s).', 'mcp-ai-wpoos-pro' ), count( $version_history ) ),
 		);
 	}
@@ -189,6 +190,7 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'success'     => true,
 			'new_version' => $new_version,
+			/* translators: %s: version number */
 			'summary'     => sprintf( __( 'Created version %s.', 'mcp-ai-wpoos-pro' ), $new_version ),
 		);
 	}
@@ -213,6 +215,7 @@ class WP_MCP_AI_Tool_Manage_Template_Versions implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'success' => true,
 			'version' => $version_number,
+			/* translators: %s: version number */
 			'summary' => sprintf( __( 'Rolled back to version %s.', 'mcp-ai-wpoos-pro' ), $version_number ),
 		);
 	}

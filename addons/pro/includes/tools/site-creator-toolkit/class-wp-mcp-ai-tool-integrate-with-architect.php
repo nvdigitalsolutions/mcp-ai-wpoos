@@ -60,16 +60,16 @@ class WP_MCP_AI_Tool_Integrate_With_Architect implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'workflow_type'    => array(
+				'workflow_type'  => array(
 					'type'        => 'string',
 					'description' => __( 'Workflow type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'generate', 'modify', 'optimize', 'test' ),
 				),
-				'target'           => array(
+				'target'         => array(
 					'type'        => 'string',
 					'description' => __( 'Target (theme, plugin, component)', 'mcp-ai-wpoos-pro' ),
 				),
-				'specifications'   => array(
+				'specifications' => array(
 					'type'        => 'object',
 					'description' => __( 'Detailed specifications for Architect', 'mcp-ai-wpoos-pro' ),
 				),
@@ -120,11 +120,12 @@ class WP_MCP_AI_Tool_Integrate_With_Architect implements WP_MCP_AI_Tool_Interfac
 		);
 
 		return array(
-			'success'  => true,
-			'workflow' => $workflow,
-			'summary'  => sprintf( __( 'Prepared %s workflow for %s.', 'mcp-ai-wpoos-pro' ), $workflow_type, $target ),
+			'success'    => true,
+			'workflow'   => $workflow,
+			/* translators: 1: workflow type, 2: target */
+			'summary'    => sprintf( __( 'Prepared %1$s workflow for %2$s.', 'mcp-ai-wpoos-pro' ), $workflow_type, $target ),
 			'next_steps' => __( 'Workflow ready for Architect Agent execution.', 'mcp-ai-wpoos-pro' ),
-			'timestamp' => current_time( 'mysql' ),
+			'timestamp'  => current_time( 'mysql' ),
 		);
 	}
 

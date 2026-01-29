@@ -60,11 +60,11 @@ class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'menu_name'        => array(
+				'menu_name'  => array(
 					'type'        => 'string',
 					'description' => __( 'Menu name', 'mcp-ai-wpoos-pro' ),
 				),
-				'menu_items'       => array(
+				'menu_items' => array(
 					'type'        => 'array',
 					'description' => __( 'Menu items', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -75,13 +75,13 @@ class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'style'            => array(
+				'style'      => array(
 					'type'        => 'string',
 					'description' => __( 'Menu style', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'horizontal', 'vertical', 'mega', 'hamburger' ),
 					'default'     => 'horizontal',
 				),
-				'sticky'           => array(
+				'sticky'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Enable sticky navigation', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -127,11 +127,26 @@ class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, 
 		// Use default items if none provided.
 		if ( empty( $menu_items ) ) {
 			$menu_items = array(
-				array( 'label' => 'Home', 'url' => '/' ),
-				array( 'label' => 'About', 'url' => '/about' ),
-				array( 'label' => 'Services', 'url' => '/services' ),
-				array( 'label' => 'Blog', 'url' => '/blog' ),
-				array( 'label' => 'Contact', 'url' => '/contact' ),
+				array(
+					'label' => 'Home',
+					'url'   => '/',
+				),
+				array(
+					'label' => 'About',
+					'url'   => '/about',
+				),
+				array(
+					'label' => 'Services',
+					'url'   => '/services',
+				),
+				array(
+					'label' => 'Blog',
+					'url'   => '/blog',
+				),
+				array(
+					'label' => 'Contact',
+					'url'   => '/contact',
+				),
 			);
 		}
 
@@ -150,16 +165,17 @@ class WP_MCP_AI_Tool_Build_Navigation_Menu implements WP_MCP_AI_Tool_Interface, 
 				$menu_items
 			),
 			'features' => array(
-				'responsive'   => true,
+				'responsive'    => true,
 				'accessibility' => true,
-				'search'       => 'horizontal' === $style,
+				'search'        => 'horizontal' === $style,
 			),
 		);
 
 		return array(
 			'success'   => true,
 			'nav_menu'  => $nav_menu,
-			'summary'   => sprintf( __( 'Generated %s navigation menu with %d items.', 'mcp-ai-wpoos-pro' ), $style, count( $menu_items ) ),
+			/* translators: 1: navigation menu style, 2: number of menu items */
+			'summary'   => sprintf( __( 'Generated %1$s navigation menu with %2$d items.', 'mcp-ai-wpoos-pro' ), $style, count( $menu_items ) ),
 			'timestamp' => current_time( 'mysql' ),
 		);
 	}

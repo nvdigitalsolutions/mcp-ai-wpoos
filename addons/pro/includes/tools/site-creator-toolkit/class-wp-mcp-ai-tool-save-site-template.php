@@ -60,19 +60,19 @@ class WP_MCP_AI_Tool_Save_Site_Template implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'template_name'    => array(
+				'template_name' => array(
 					'type'        => 'string',
 					'description' => __( 'Template name', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'      => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Template description', 'mcp-ai-wpoos-pro' ),
 				),
-				'template_data'    => array(
+				'template_data' => array(
 					'type'        => 'object',
 					'description' => __( 'Complete template structure', 'mcp-ai-wpoos-pro' ),
 				),
-				'category'         => array(
+				'category'      => array(
 					'type'        => 'string',
 					'description' => __( 'Template category', 'mcp-ai-wpoos-pro' ),
 				),
@@ -140,7 +140,8 @@ class WP_MCP_AI_Tool_Save_Site_Template implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'     => true,
 			'template_id' => $template_id,
-			'summary'     => sprintf( __( 'Saved template "%s" (ID: %d).', 'mcp-ai-wpoos-pro' ), $template_name, $template_id ),
+			/* translators: 1: template name, 2: template ID */
+			'summary'     => sprintf( __( 'Saved template "%1$s" (ID: %2$d).', 'mcp-ai-wpoos-pro' ), $template_name, $template_id ),
 			'timestamp'   => current_time( 'mysql' ),
 		);
 	}

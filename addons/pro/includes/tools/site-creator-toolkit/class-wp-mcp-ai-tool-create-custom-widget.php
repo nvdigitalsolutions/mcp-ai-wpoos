@@ -60,16 +60,16 @@ class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'widget_name'      => array(
+				'widget_name'          => array(
 					'type'        => 'string',
 					'description' => __( 'Widget name', 'mcp-ai-wpoos-pro' ),
 				),
-				'widget_type'      => array(
+				'widget_type'          => array(
 					'type'        => 'string',
 					'description' => __( 'Widget type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'content', 'cta', 'social', 'newsletter', 'recent-posts', 'custom' ),
 				),
-				'description'      => array(
+				'description'          => array(
 					'type'        => 'string',
 					'description' => __( 'Widget description', 'mcp-ai-wpoos-pro' ),
 				),
@@ -130,6 +130,7 @@ class WP_MCP_AI_Tool_Create_Custom_Widget implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'success'   => true,
 			'widget'    => $widget,
+			/* translators: %s: widget type */
 			'summary'   => sprintf( __( 'Generated %s widget with customizable settings.', 'mcp-ai-wpoos-pro' ), $widget_type ),
 			'timestamp' => current_time( 'mysql' ),
 		);

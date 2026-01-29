@@ -68,20 +68,20 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'company_name'    => array(
+				'company_name' => array(
 					'type'        => 'string',
 					'description' => __( 'Company or brand name', 'mcp-ai-wpoos-pro' ),
 				),
-				'tagline'         => array(
+				'tagline'      => array(
 					'type'        => 'string',
 					'description' => __( 'Company tagline or value proposition', 'mcp-ai-wpoos-pro' ),
 				),
-				'industry'        => array(
+				'industry'     => array(
 					'type'        => 'string',
 					'description' => __( 'Industry or business type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'technology', 'consulting', 'ecommerce', 'healthcare', 'education', 'finance', 'creative', 'other' ),
 				),
-				'key_features'    => array(
+				'key_features' => array(
 					'type'        => 'array',
 					'description' => __( 'Key features or services to highlight (max 6)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -89,21 +89,21 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 					),
 					'maxItems'    => 6,
 				),
-				'about_text'      => array(
+				'about_text'   => array(
 					'type'        => 'string',
 					'description' => __( 'Brief about/company description', 'mcp-ai-wpoos-pro' ),
 				),
-				'show_blog'       => array(
+				'show_blog'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include latest blog posts section', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'cta_text'        => array(
+				'cta_text'     => array(
 					'type'        => 'string',
 					'description' => __( 'Primary call-to-action text', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get Started',
 				),
-				'style'           => array(
+				'style'        => array(
 					'type'        => 'string',
 					'description' => __( 'Visual style preference', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'modern', 'corporate', 'creative', 'minimal' ),
@@ -175,7 +175,7 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 
 		// Build homepage sections.
 		$homepage['sections'][] = $this->generate_hero_section( $company_name, $tagline, $cta_text, $style );
-		
+
 		if ( ! empty( $key_features ) ) {
 			$homepage['sections'][] = $this->generate_features_section( $key_features, $style );
 		}
@@ -200,9 +200,9 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 		$this->log_generation_activity( $user_id, $company_name );
 
 		return array(
-			'success'  => true,
-			'homepage' => $homepage,
-			'summary'  => $this->generate_summary( $homepage ),
+			'success'   => true,
+			'homepage'  => $homepage,
+			'summary'   => $this->generate_summary( $homepage ),
 			'timestamp' => current_time( 'mysql' ),
 		);
 	}
@@ -222,10 +222,10 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'    => 'hero',
 			'content' => array(
-				'headline'     => "Welcome to {$company_name}",
-				'tagline'      => $tagline,
-				'description'  => "Discover how {$company_name} can help you achieve your goals",
-				'cta_primary'  => array(
+				'headline'      => "Welcome to {$company_name}",
+				'tagline'       => $tagline,
+				'description'   => "Discover how {$company_name} can help you achieve your goals",
+				'cta_primary'   => array(
 					'text' => $cta_text,
 					'type' => 'primary',
 				),
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 					'text' => 'Learn More',
 					'type' => 'secondary',
 				),
-				'media'        => array(
+				'media'         => array(
 					'type'        => 'image',
 					'placeholder' => true,
 					'alt'         => $company_name . ' hero image',
@@ -328,13 +328,13 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function generate_services_overview_section( $industry, $style ) {
 		$services = array(
-			'technology'  => array( 'Software Development', 'Cloud Solutions', 'IT Consulting' ),
-			'consulting'  => array( 'Strategy Consulting', 'Business Analysis', 'Process Optimization' ),
-			'ecommerce'   => array( 'Online Store Setup', 'Payment Integration', 'Inventory Management' ),
-			'healthcare'  => array( 'Patient Care', 'Health Technology', 'Medical Services' ),
-			'education'   => array( 'Online Courses', 'Training Programs', 'Educational Resources' ),
-			'finance'     => array( 'Financial Planning', 'Investment Advice', 'Risk Management' ),
-			'creative'    => array( 'Design Services', 'Branding', 'Creative Solutions' ),
+			'technology' => array( 'Software Development', 'Cloud Solutions', 'IT Consulting' ),
+			'consulting' => array( 'Strategy Consulting', 'Business Analysis', 'Process Optimization' ),
+			'ecommerce'  => array( 'Online Store Setup', 'Payment Integration', 'Inventory Management' ),
+			'healthcare' => array( 'Patient Care', 'Health Technology', 'Medical Services' ),
+			'education'  => array( 'Online Courses', 'Training Programs', 'Educational Resources' ),
+			'finance'    => array( 'Financial Planning', 'Investment Advice', 'Risk Management' ),
+			'creative'   => array( 'Design Services', 'Branding', 'Creative Solutions' ),
 		);
 
 		$service_list = isset( $services[ $industry ] ) ? $services[ $industry ] : array( 'Service 1', 'Service 2', 'Service 3' );
@@ -416,25 +416,25 @@ class WP_MCP_AI_Tool_Create_Homepage_Layout implements WP_MCP_AI_Tool_Interface,
 				'subtitle' => 'Stay updated with our latest news and articles',
 				'posts'    => array(
 					array(
-						'title'       => 'How to Succeed in Your Industry',
-						'excerpt'     => 'Discover the key strategies for achieving success...',
-						'date'        => current_time( 'Y-m-d' ),
-						'author'      => 'Admin',
-						'category'    => 'Business',
+						'title'    => 'How to Succeed in Your Industry',
+						'excerpt'  => 'Discover the key strategies for achieving success...',
+						'date'     => current_time( 'Y-m-d' ),
+						'author'   => 'Admin',
+						'category' => 'Business',
 					),
 					array(
-						'title'       => 'Latest Trends and Innovations',
-						'excerpt'     => 'Stay ahead of the curve with these emerging trends...',
-						'date'        => current_time( 'Y-m-d' ),
-						'author'      => 'Admin',
-						'category'    => 'Technology',
+						'title'    => 'Latest Trends and Innovations',
+						'excerpt'  => 'Stay ahead of the curve with these emerging trends...',
+						'date'     => current_time( 'Y-m-d' ),
+						'author'   => 'Admin',
+						'category' => 'Technology',
 					),
 					array(
-						'title'       => 'Best Practices for Growth',
-						'excerpt'     => 'Learn the proven methods for sustainable growth...',
-						'date'        => current_time( 'Y-m-d' ),
-						'author'      => 'Admin',
-						'category'    => 'Strategy',
+						'title'    => 'Best Practices for Growth',
+						'excerpt'  => 'Learn the proven methods for sustainable growth...',
+						'date'     => current_time( 'Y-m-d' ),
+						'author'   => 'Admin',
+						'category' => 'Strategy',
 					),
 				),
 				'cta'      => array(

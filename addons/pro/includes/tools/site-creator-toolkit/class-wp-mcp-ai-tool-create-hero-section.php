@@ -67,36 +67,36 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'headline'         => array(
+				'headline'             => array(
 					'type'        => 'string',
 					'description' => __( 'Main headline text', 'mcp-ai-wpoos-pro' ),
 				),
-				'subheadline'      => array(
+				'subheadline'          => array(
 					'type'        => 'string',
 					'description' => __( 'Supporting subheadline text', 'mcp-ai-wpoos-pro' ),
 				),
-				'cta_primary'      => array(
+				'cta_primary'          => array(
 					'type'        => 'string',
 					'description' => __( 'Primary CTA button text', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get Started',
 				),
-				'cta_secondary'    => array(
+				'cta_secondary'        => array(
 					'type'        => 'string',
 					'description' => __( 'Secondary CTA button text (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'layout'           => array(
+				'layout'               => array(
 					'type'        => 'string',
 					'description' => __( 'Hero layout style', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'centered', 'split', 'full-width', 'minimal', 'video-background' ),
 					'default'     => 'centered',
 				),
-				'media_type'       => array(
+				'media_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Type of media to include', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'image', 'video', 'illustration', 'none' ),
 					'default'     => 'image',
 				),
-				'color_scheme'     => array(
+				'color_scheme'         => array(
 					'type'        => 'string',
 					'description' => __( 'Color scheme preference', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'light', 'dark', 'gradient', 'brand' ),
@@ -142,14 +142,14 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Validate and sanitize arguments.
-		$headline          = isset( $arguments['headline'] ) ? sanitize_text_field( $arguments['headline'] ) : '';
-		$subheadline       = isset( $arguments['subheadline'] ) ? sanitize_textarea_field( $arguments['subheadline'] ) : '';
-		$cta_primary       = isset( $arguments['cta_primary'] ) ? sanitize_text_field( $arguments['cta_primary'] ) : 'Get Started';
-		$cta_secondary     = isset( $arguments['cta_secondary'] ) ? sanitize_text_field( $arguments['cta_secondary'] ) : '';
-		$layout            = isset( $arguments['layout'] ) ? sanitize_text_field( $arguments['layout'] ) : 'centered';
-		$media_type        = isset( $arguments['media_type'] ) ? sanitize_text_field( $arguments['media_type'] ) : 'image';
-		$color_scheme      = isset( $arguments['color_scheme'] ) ? sanitize_text_field( $arguments['color_scheme'] ) : 'light';
-		$include_trust     = isset( $arguments['include_trust_badges'] ) ? (bool) $arguments['include_trust_badges'] : false;
+		$headline      = isset( $arguments['headline'] ) ? sanitize_text_field( $arguments['headline'] ) : '';
+		$subheadline   = isset( $arguments['subheadline'] ) ? sanitize_textarea_field( $arguments['subheadline'] ) : '';
+		$cta_primary   = isset( $arguments['cta_primary'] ) ? sanitize_text_field( $arguments['cta_primary'] ) : 'Get Started';
+		$cta_secondary = isset( $arguments['cta_secondary'] ) ? sanitize_text_field( $arguments['cta_secondary'] ) : '';
+		$layout        = isset( $arguments['layout'] ) ? sanitize_text_field( $arguments['layout'] ) : 'centered';
+		$media_type    = isset( $arguments['media_type'] ) ? sanitize_text_field( $arguments['media_type'] ) : 'image';
+		$color_scheme  = isset( $arguments['color_scheme'] ) ? sanitize_text_field( $arguments['color_scheme'] ) : 'light';
+		$include_trust = isset( $arguments['include_trust_badges'] ) ? (bool) $arguments['include_trust_badges'] : false;
 
 		if ( empty( $headline ) ) {
 			return new WP_Error(
@@ -235,10 +235,10 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 		switch ( $media_type ) {
 			case 'image':
 				$media['properties'] = array(
-					'placeholder'    => true,
-					'alt'            => 'Hero image',
-					'aspect_ratio'   => 'split' === $layout ? '16:9' : '21:9',
-					'optimization'   => 'lazy-load',
+					'placeholder'  => true,
+					'alt'          => 'Hero image',
+					'aspect_ratio' => 'split' === $layout ? '16:9' : '21:9',
+					'optimization' => 'lazy-load',
 				);
 				break;
 
@@ -253,9 +253,9 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 
 			case 'illustration':
 				$media['properties'] = array(
-					'style'       => 'modern',
-					'animated'    => true,
-					'svg_based'   => true,
+					'style'     => 'modern',
+					'animated'  => true,
+					'svg_based' => true,
 				);
 				break;
 		}
@@ -273,19 +273,19 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 	private function generate_trust_badges() {
 		return array(
 			array(
-				'type'  => 'rating',
-				'text'  => '4.9/5 stars',
-				'icon'  => 'star',
+				'type' => 'rating',
+				'text' => '4.9/5 stars',
+				'icon' => 'star',
 			),
 			array(
-				'type'  => 'social-proof',
-				'text'  => '10,000+ customers',
-				'icon'  => 'users',
+				'type' => 'social-proof',
+				'text' => '10,000+ customers',
+				'icon' => 'users',
 			),
 			array(
-				'type'  => 'guarantee',
-				'text'  => '30-day money back',
-				'icon'  => 'shield',
+				'type' => 'guarantee',
+				'text' => '30-day money back',
+				'icon' => 'shield',
 			),
 		);
 	}
@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 				break;
 
 			case 'split':
-				$base_styles['layout']    = 'two-column';
+				$base_styles['layout']     = 'two-column';
 				$base_styles['text_align'] = 'left';
 				break;
 
@@ -385,9 +385,9 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 	private function generate_html_snippet( $hero_section ) {
 		$layout = isset( $hero_section['layout'] ) ? $hero_section['layout'] : 'centered';
 		return '<!-- Hero Section: ' . esc_attr( $layout ) . ' -->' . "\n" .
-			   '<section class="hero-section hero-' . esc_attr( $layout ) . '">' . "\n" .
-			   '  <!-- Hero content here -->' . "\n" .
-			   '</section>';
+				'<section class="hero-section hero-' . esc_attr( $layout ) . '">' . "\n" .
+				'  <!-- Hero content here -->' . "\n" .
+				'</section>';
 	}
 
 	/**
@@ -400,7 +400,8 @@ class WP_MCP_AI_Tool_Create_Hero_Section implements WP_MCP_AI_Tool_Interface, WP
 	 */
 	private function generate_summary( $hero_section ) {
 		return sprintf(
-			__( 'Generated %s hero section with headline, CTAs, and %s media.', 'mcp-ai-wpoos-pro' ),
+			/* translators: 1: hero section layout, 2: media type */
+			__( 'Generated %1$s hero section with headline, CTAs, and %2$s media.', 'mcp-ai-wpoos-pro' ),
 			$hero_section['layout'],
 			isset( $hero_section['content']['media']['type'] ) ? $hero_section['content']['media']['type'] : 'no'
 		);

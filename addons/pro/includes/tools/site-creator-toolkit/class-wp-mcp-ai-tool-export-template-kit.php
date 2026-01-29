@@ -141,7 +141,8 @@ class WP_MCP_AI_Tool_Export_Template_Kit implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'success'     => true,
 			'export_data' => $export_data,
-			'file_name'   => 'template-kit-' . date( 'Y-m-d' ) . '.json',
+			'file_name'   => 'template-kit-' . gmdate( 'Y-m-d' ) . '.json',
+			/* translators: %d: number of templates exported */
 			'summary'     => sprintf( __( 'Exported %d template(s).', 'mcp-ai-wpoos-pro' ), count( $export_data['templates'] ) ),
 			'timestamp'   => current_time( 'mysql' ),
 		);

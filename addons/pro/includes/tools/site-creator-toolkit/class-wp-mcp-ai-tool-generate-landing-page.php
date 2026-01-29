@@ -68,20 +68,20 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'page_goal'     => array(
+				'page_goal'       => array(
 					'type'        => 'string',
 					'description' => __( 'Primary goal of the landing page', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'lead_generation', 'product_launch', 'event_registration', 'download', 'signup', 'sales' ),
 				),
-				'headline'      => array(
+				'headline'        => array(
 					'type'        => 'string',
 					'description' => __( 'Main headline for the landing page', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_name'  => array(
+				'product_name'    => array(
 					'type'        => 'string',
 					'description' => __( 'Product, service, or offer name', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'   => array(
+				'description'     => array(
 					'type'        => 'string',
 					'description' => __( 'Brief description of the offer or product', 'mcp-ai-wpoos-pro' ),
 				),
@@ -89,24 +89,24 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 					'type'        => 'string',
 					'description' => __( 'Target audience for this landing page', 'mcp-ai-wpoos-pro' ),
 				),
-				'key_benefits'  => array(
+				'key_benefits'    => array(
 					'type'        => 'array',
 					'description' => __( 'Key benefits or features to highlight', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'cta_text'      => array(
+				'cta_text'        => array(
 					'type'        => 'string',
 					'description' => __( 'Call-to-action button text', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get Started',
 				),
-				'include_form'  => array(
+				'include_form'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include a lead capture form', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'style'         => array(
+				'style'           => array(
 					'type'        => 'string',
 					'description' => __( 'Visual style preference', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'modern', 'minimal', 'bold', 'elegant' ),
@@ -167,11 +167,11 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 
 		// Generate landing page structure.
 		$landing_page = array(
-			'title'      => $headline,
-			'goal'       => $page_goal,
-			'style'      => $style,
-			'sections'   => array(),
-			'meta'       => array(
+			'title'    => $headline,
+			'goal'     => $page_goal,
+			'style'    => $style,
+			'sections' => array(),
+			'meta'     => array(
 				'seo_title'       => $headline . ' | ' . $product_name,
 				'seo_description' => ! empty( $description ) ? substr( $description, 0, 160 ) : '',
 			),
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 
 		// Build landing page sections.
 		$landing_page['sections'][] = $this->generate_hero_section( $headline, $product_name, $description, $cta_text, $style );
-		
+
 		if ( ! empty( $key_benefits ) ) {
 			$landing_page['sections'][] = $this->generate_benefits_section( $key_benefits, $style );
 		}
@@ -223,9 +223,9 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'    => 'hero',
 			'content' => array(
-				'headline'     => $headline,
-				'subheadline'  => ! empty( $description ) ? $description : "Discover {$product_name} and transform your experience",
-				'cta_primary'  => array(
+				'headline'      => $headline,
+				'subheadline'   => ! empty( $description ) ? $description : "Discover {$product_name} and transform your experience",
+				'cta_primary'   => array(
 					'text' => $cta_text,
 					'type' => 'primary',
 				),
@@ -233,7 +233,7 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 					'text' => 'Learn More',
 					'type' => 'secondary',
 				),
-				'image'        => array(
+				'image'         => array(
 					'type'        => 'placeholder',
 					'alt'         => $product_name . ' hero image',
 					'description' => 'High-quality hero image showcasing the product',
@@ -456,7 +456,7 @@ class WP_MCP_AI_Tool_Generate_Landing_Page implements WP_MCP_AI_Tool_Interface, 
 	 */
 	private function generate_section_html( $section ) {
 		$type = isset( $section['type'] ) ? $section['type'] : 'generic';
-		
+
 		$html  = '<!-- Section: ' . esc_html( $type ) . ' -->' . "\n";
 		$html .= '<section class="landing-section landing-' . esc_attr( $type ) . '">' . "\n";
 		$html .= '  <!-- Content for ' . esc_html( $type ) . ' section -->' . "\n";

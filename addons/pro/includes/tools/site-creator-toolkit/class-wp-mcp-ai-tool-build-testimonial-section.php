@@ -60,7 +60,7 @@ class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'            => array(
+				'title'             => array(
 					'type'        => 'string',
 					'description' => __( 'Section title', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'What Our Customers Say',
@@ -72,13 +72,13 @@ class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interfa
 					'minimum'     => 2,
 					'maximum'     => 6,
 				),
-				'layout'           => array(
+				'layout'            => array(
 					'type'        => 'string',
 					'description' => __( 'Layout style', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'slider', 'grid', 'masonry' ),
 					'default'     => 'slider',
 				),
-				'show_ratings'     => array(
+				'show_ratings'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include star ratings', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -112,9 +112,9 @@ class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Sanitize arguments.
-		$title      = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : 'What Our Customers Say';
-		$count      = isset( $arguments['testimonial_count'] ) ? min( 6, max( 2, absint( $arguments['testimonial_count'] ) ) ) : 3;
-		$layout     = isset( $arguments['layout'] ) ? sanitize_text_field( $arguments['layout'] ) : 'slider';
+		$title       = isset( $arguments['title'] ) ? sanitize_text_field( $arguments['title'] ) : 'What Our Customers Say';
+		$count       = isset( $arguments['testimonial_count'] ) ? min( 6, max( 2, absint( $arguments['testimonial_count'] ) ) ) : 3;
+		$layout      = isset( $arguments['layout'] ) ? sanitize_text_field( $arguments['layout'] ) : 'slider';
 		$show_rating = isset( $arguments['show_ratings'] ) ? (bool) $arguments['show_ratings'] : true;
 
 		// Generate testimonials.
@@ -144,7 +144,8 @@ class WP_MCP_AI_Tool_Build_Testimonial_Section implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'success'             => true,
 			'testimonial_section' => $testimonial_section,
-			'summary'             => sprintf( __( 'Generated testimonial section with %d testimonials in %s layout.', 'mcp-ai-wpoos-pro' ), $count, $layout ),
+			/* translators: 1: number of testimonials, 2: layout type */
+			'summary'             => sprintf( __( 'Generated testimonial section with %1$d testimonials in %2$s layout.', 'mcp-ai-wpoos-pro' ), $count, $layout ),
 			'timestamp'           => current_time( 'mysql' ),
 		);
 	}

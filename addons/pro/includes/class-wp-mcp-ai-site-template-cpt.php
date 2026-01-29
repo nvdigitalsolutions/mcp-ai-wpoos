@@ -167,7 +167,7 @@ class WP_MCP_AI_Site_Template_CPT {
 			'show_in_rest'       => true,
 		);
 
-		register_post_type( 'wp_site_template', $args );
+		register_post_type( 'mcp_site_template', $args );
 	}
 
 	/**
@@ -213,15 +213,15 @@ class WP_MCP_AI_Site_Template_CPT {
 
 		// Template Style taxonomy.
 		$style_labels = array(
-			'name'              => _x( 'Template Styles', 'taxonomy general name', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => _x( 'Template Style', 'taxonomy singular name', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Template Styles', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Template Styles', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Template Style', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Template Style', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Template Style', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Template Style Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Styles', 'mcp-ai-wpoos-pro' ),
+			'name'          => _x( 'Template Styles', 'taxonomy general name', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => _x( 'Template Style', 'taxonomy singular name', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Template Styles', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Template Styles', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Template Style', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Template Style', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Template Style', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Template Style Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Styles', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(
@@ -240,15 +240,15 @@ class WP_MCP_AI_Site_Template_CPT {
 
 		// Template Purpose taxonomy.
 		$purpose_labels = array(
-			'name'              => _x( 'Template Purposes', 'taxonomy general name', 'mcp-ai-wpoos-pro' ),
-			'singular_name'     => _x( 'Template Purpose', 'taxonomy singular name', 'mcp-ai-wpoos-pro' ),
-			'search_items'      => __( 'Search Template Purposes', 'mcp-ai-wpoos-pro' ),
-			'all_items'         => __( 'All Template Purposes', 'mcp-ai-wpoos-pro' ),
-			'edit_item'         => __( 'Edit Template Purpose', 'mcp-ai-wpoos-pro' ),
-			'update_item'       => __( 'Update Template Purpose', 'mcp-ai-wpoos-pro' ),
-			'add_new_item'      => __( 'Add New Template Purpose', 'mcp-ai-wpoos-pro' ),
-			'new_item_name'     => __( 'New Template Purpose Name', 'mcp-ai-wpoos-pro' ),
-			'menu_name'         => __( 'Purposes', 'mcp-ai-wpoos-pro' ),
+			'name'          => _x( 'Template Purposes', 'taxonomy general name', 'mcp-ai-wpoos-pro' ),
+			'singular_name' => _x( 'Template Purpose', 'taxonomy singular name', 'mcp-ai-wpoos-pro' ),
+			'search_items'  => __( 'Search Template Purposes', 'mcp-ai-wpoos-pro' ),
+			'all_items'     => __( 'All Template Purposes', 'mcp-ai-wpoos-pro' ),
+			'edit_item'     => __( 'Edit Template Purpose', 'mcp-ai-wpoos-pro' ),
+			'update_item'   => __( 'Update Template Purpose', 'mcp-ai-wpoos-pro' ),
+			'add_new_item'  => __( 'Add New Template Purpose', 'mcp-ai-wpoos-pro' ),
+			'new_item_name' => __( 'New Template Purpose Name', 'mcp-ai-wpoos-pro' ),
+			'menu_name'     => __( 'Purposes', 'mcp-ai-wpoos-pro' ),
 		);
 
 		register_taxonomy(

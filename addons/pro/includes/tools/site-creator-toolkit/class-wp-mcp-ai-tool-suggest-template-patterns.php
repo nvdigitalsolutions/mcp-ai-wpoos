@@ -49,39 +49,39 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Suggest Template Patterns', 'mcp-ai-wpoos' ),
-			'description'          => __( 'Get AI-powered template pattern recommendations based on site requirements, industry standards, and best practices. Suggests optimal combinations of page layouts, sections, and widgets.', 'mcp-ai-wpoos' ),
-			'category'             => 'site-creator-toolkit',
-			'subcategory'          => 'research',
-			'required_capability'  => 'edit_posts',
-			'supports_async'       => true,
-			'supports_web_search'  => true,
-			'token_estimate'       => 3000,
-			'input_schema'         => array(
+			'name'                => __( 'Suggest Template Patterns', 'mcp-ai-wpoos' ),
+			'description'         => __( 'Get AI-powered template pattern recommendations based on site requirements, industry standards, and best practices. Suggests optimal combinations of page layouts, sections, and widgets.', 'mcp-ai-wpoos' ),
+			'category'            => 'site-creator-toolkit',
+			'subcategory'         => 'research',
+			'required_capability' => 'edit_posts',
+			'supports_async'      => true,
+			'supports_web_search' => true,
+			'token_estimate'      => 3000,
+			'input_schema'        => array(
 				'type'       => 'object',
 				'properties' => array(
-					'site_type'       => array(
+					'site_type'        => array(
 						'type'        => 'string',
 						'description' => __( 'Type of site (e.g., business, portfolio, blog, ecommerce, nonprofit)', 'mcp-ai-wpoos' ),
 						'required'    => true,
 					),
-					'industry'        => array(
+					'industry'         => array(
 						'type'        => 'string',
 						'description' => __( 'Industry or niche (e.g., technology, healthcare, education)', 'mcp-ai-wpoos' ),
 						'required'    => false,
 					),
-					'goals'           => array(
+					'goals'            => array(
 						'type'        => 'array',
 						'description' => __( 'Primary site goals (e.g., lead generation, sales, information)', 'mcp-ai-wpoos' ),
 						'items'       => array( 'type' => 'string' ),
 						'required'    => false,
 					),
-					'target_audience' => array(
+					'target_audience'  => array(
 						'type'        => 'string',
 						'description' => __( 'Target audience description', 'mcp-ai-wpoos' ),
 						'required'    => false,
 					),
-					'pages_needed'    => array(
+					'pages_needed'     => array(
 						'type'        => 'array',
 						'description' => __( 'List of pages needed (e.g., home, about, services, contact)', 'mcp-ai-wpoos' ),
 						'items'       => array( 'type' => 'string' ),
@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 						'default'     => false,
 						'required'    => false,
 					),
-					'budget_level'    => array(
+					'budget_level'     => array(
 						'type'        => 'string',
 						'description' => __( 'Development budget level (low, medium, high)', 'mcp-ai-wpoos' ),
 						'enum'        => array( 'low', 'medium', 'high' ),
@@ -129,12 +129,12 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		// Validate and sanitize inputs.
 		$site_type        = isset( $arguments['site_type'] ) ? sanitize_text_field( $arguments['site_type'] ) : '';
 		$industry         = isset( $arguments['industry'] ) ? sanitize_text_field( $arguments['industry'] ) : '';
-		$goals            = isset( $arguments['goals'] ) && is_array( $arguments['goals'] ) 
-			? array_map( 'sanitize_text_field', $arguments['goals'] ) 
+		$goals            = isset( $arguments['goals'] ) && is_array( $arguments['goals'] )
+			? array_map( 'sanitize_text_field', $arguments['goals'] )
 			: array();
 		$target_audience  = isset( $arguments['target_audience'] ) ? sanitize_text_field( $arguments['target_audience'] ) : '';
-		$pages_needed     = isset( $arguments['pages_needed'] ) && is_array( $arguments['pages_needed'] ) 
-			? array_map( 'sanitize_text_field', $arguments['pages_needed'] ) 
+		$pages_needed     = isset( $arguments['pages_needed'] ) && is_array( $arguments['pages_needed'] )
+			? array_map( 'sanitize_text_field', $arguments['pages_needed'] )
 			: array();
 		$style_preference = isset( $arguments['style_preference'] ) ? sanitize_text_field( $arguments['style_preference'] ) : 'modern';
 		$existing_content = isset( $arguments['existing_content'] ) ? (bool) $arguments['existing_content'] : false;
@@ -173,11 +173,11 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		}
 
 		return array(
-			'success'      => true,
-			'site_type'    => $site_type,
-			'industry'     => $industry,
-			'suggestions'  => $suggestions,
-			'timestamp'    => current_time( 'mysql' ),
+			'success'     => true,
+			'site_type'   => $site_type,
+			'industry'    => $industry,
+			'suggestions' => $suggestions,
+			'timestamp'   => current_time( 'mysql' ),
 		);
 	}
 
@@ -230,14 +230,14 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		$best_practices = $this->get_best_practices( $site_type, $industry );
 
 		return array(
-			'recommended_patterns'     => $recommended_patterns,
-			'page_templates'           => $page_templates,
-			'section_recommendations'  => $section_recommendations,
-			'widget_recommendations'   => $widget_recommendations,
-			'implementation_roadmap'   => $implementation_roadmap,
-			'best_practices'           => $best_practices,
-			'estimated_complexity'     => $this->calculate_complexity( $site_type, count( $pages_needed ), $budget_level ),
-			'estimated_timeline'       => $this->estimate_timeline( $site_type, count( $pages_needed ), $budget_level ),
+			'recommended_patterns'    => $recommended_patterns,
+			'page_templates'          => $page_templates,
+			'section_recommendations' => $section_recommendations,
+			'widget_recommendations'  => $widget_recommendations,
+			'implementation_roadmap'  => $implementation_roadmap,
+			'best_practices'          => $best_practices,
+			'estimated_complexity'    => $this->calculate_complexity( $site_type, count( $pages_needed ), $budget_level ),
+			'estimated_timeline'      => $this->estimate_timeline( $site_type, count( $pages_needed ), $budget_level ),
 		);
 	}
 
@@ -254,7 +254,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 
 		// Common patterns by site type.
 		$type_patterns = array(
-			'business'   => array(
+			'business'  => array(
 				array(
 					'name'        => 'Professional Business',
 					'description' => 'Clean, professional layout with emphasis on services and testimonials',
@@ -263,7 +263,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 					'sections'    => array( 'Hero', 'Services Grid', 'Testimonials', 'CTA' ),
 				),
 			),
-			'portfolio'  => array(
+			'portfolio' => array(
 				array(
 					'name'        => 'Creative Portfolio',
 					'description' => 'Visual-first design showcasing work with minimal distractions',
@@ -272,7 +272,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 					'sections'    => array( 'Hero', 'Featured Work', 'Gallery', 'Bio' ),
 				),
 			),
-			'blog'       => array(
+			'blog'      => array(
 				array(
 					'name'        => 'Modern Blog',
 					'description' => 'Content-focused design with excellent readability and navigation',
@@ -281,7 +281,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 					'sections'    => array( 'Hero', 'Recent Posts', 'Categories', 'Newsletter' ),
 				),
 			),
-			'ecommerce'  => array(
+			'ecommerce' => array(
 				array(
 					'name'        => 'Conversion-Optimized Store',
 					'description' => 'Product showcase with streamlined checkout and trust elements',
@@ -290,7 +290,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 					'sections'    => array( 'Hero', 'Featured Products', 'Categories', 'Testimonials' ),
 				),
 			),
-			'nonprofit'  => array(
+			'nonprofit' => array(
 				array(
 					'name'        => 'Impact-Driven Nonprofit',
 					'description' => 'Story-focused design emphasizing mission and donation opportunities',
@@ -467,6 +467,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param string $page      Page type.
 	 * @param string $site_type Site type.
 	 * @return string Template name.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	private function get_template_for_page( $page, $site_type ) {
 		$templates = array(
@@ -488,18 +489,43 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param string $site_type Site type.
 	 * @param array  $goals     Site goals.
 	 * @return array Section recommendations.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	private function get_section_recommendations( $site_type, $goals ) {
 		$essential_sections = array(
-			array( 'name' => 'Hero Section', 'tool' => 'create_hero_section', 'priority' => 'high' ),
-			array( 'name' => 'Feature Section', 'tool' => 'generate_feature_section', 'priority' => 'high' ),
-			array( 'name' => 'CTA Section', 'tool' => 'create_cta_section', 'priority' => 'high' ),
+			array(
+				'name'     => 'Hero Section',
+				'tool'     => 'create_hero_section',
+				'priority' => 'high',
+			),
+			array(
+				'name'     => 'Feature Section',
+				'tool'     => 'generate_feature_section',
+				'priority' => 'high',
+			),
+			array(
+				'name'     => 'CTA Section',
+				'tool'     => 'create_cta_section',
+				'priority' => 'high',
+			),
 		);
 
 		$optional_sections = array(
-			array( 'name' => 'Testimonials', 'tool' => 'build_testimonial_section', 'priority' => 'medium' ),
-			array( 'name' => 'Gallery', 'tool' => 'generate_gallery_section', 'priority' => 'medium' ),
-			array( 'name' => 'Contact', 'tool' => 'build_contact_section', 'priority' => 'medium' ),
+			array(
+				'name'     => 'Testimonials',
+				'tool'     => 'build_testimonial_section',
+				'priority' => 'medium',
+			),
+			array(
+				'name'     => 'Gallery',
+				'tool'     => 'generate_gallery_section',
+				'priority' => 'medium',
+			),
+			array(
+				'name'     => 'Contact',
+				'tool'     => 'build_contact_section',
+				'priority' => 'medium',
+			),
 		);
 
 		return array(
@@ -515,13 +541,30 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param string $site_type Site type.
 	 * @param array  $goals     Site goals.
 	 * @return array Widget recommendations.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	private function get_widget_recommendations( $site_type, $goals ) {
 		return array(
-			array( 'name' => 'Navigation Menu', 'tool' => 'build_navigation_menu', 'priority' => 'high' ),
-			array( 'name' => 'Footer Widget', 'tool' => 'create_footer_widget', 'priority' => 'high' ),
-			array( 'name' => 'Sidebar Widget', 'tool' => 'generate_sidebar_widget', 'priority' => 'medium' ),
-			array( 'name' => 'Custom Widget', 'tool' => 'create_custom_widget', 'priority' => 'low' ),
+			array(
+				'name'     => 'Navigation Menu',
+				'tool'     => 'build_navigation_menu',
+				'priority' => 'high',
+			),
+			array(
+				'name'     => 'Footer Widget',
+				'tool'     => 'create_footer_widget',
+				'priority' => 'high',
+			),
+			array(
+				'name'     => 'Sidebar Widget',
+				'tool'     => 'generate_sidebar_widget',
+				'priority' => 'medium',
+			),
+			array(
+				'name'     => 'Custom Widget',
+				'tool'     => 'create_custom_widget',
+				'priority' => 'low',
+			),
 		);
 	}
 
@@ -593,7 +636,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 
 		// Adjust for existing content.
 		if ( $existing_content ) {
-			$phases[1]['tasks'][] = 'Content audit and migration planning';
+			$phases[1]['tasks'][]  = 'Content audit and migration planning';
 			$phases[2]['duration'] = '3-5 days';
 		}
 
@@ -607,6 +650,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 	 * @param string $site_type Site type.
 	 * @param string $industry  Industry.
 	 * @return array Best practices.
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	private function get_best_practices( $site_type, $industry ) {
 		return array(
@@ -656,7 +700,7 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		$complexity_score = 0;
 
 		// Site type complexity.
-		$type_complexity = array(
+		$type_complexity   = array(
 			'ecommerce' => 3,
 			'nonprofit' => 2,
 			'business'  => 2,
@@ -671,14 +715,14 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		} elseif ( $page_count > 5 ) {
 			$complexity_score += 2;
 		} else {
-			$complexity_score += 1;
+			$complexity_score++;
 		}
 
 		// Budget level complexity.
 		if ( 'high' === $budget_level ) {
 			$complexity_score += 2;
 		} elseif ( 'medium' === $budget_level ) {
-			$complexity_score += 1;
+			$complexity_score++;
 		}
 
 		// Determine level.

@@ -60,13 +60,13 @@ class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'layout'           => array(
+				'layout'             => array(
 					'type'        => 'string',
 					'description' => __( 'Footer layout', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'single', '2-column', '3-column', '4-column' ),
 					'default'     => '3-column',
 				),
-				'include_social'   => array(
+				'include_social'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include social media links', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Include newsletter signup', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'copyright_text'   => array(
+				'copyright_text'     => array(
 					'type'        => 'string',
 					'description' => __( 'Copyright text', 'mcp-ai-wpoos-pro' ),
 				),
@@ -125,15 +125,25 @@ class WP_MCP_AI_Tool_Create_Footer_Widget implements WP_MCP_AI_Tool_Interface, W
 
 		if ( $include_social ) {
 			$footer_widget['bottom']['social'] = array(
-				array( 'platform' => 'facebook', 'url' => '#' ),
-				array( 'platform' => 'twitter', 'url' => '#' ),
-				array( 'platform' => 'linkedin', 'url' => '#' ),
+				array(
+					'platform' => 'facebook',
+					'url'      => '#',
+				),
+				array(
+					'platform' => 'twitter',
+					'url'      => '#',
+				),
+				array(
+					'platform' => 'linkedin',
+					'url'      => '#',
+				),
 			);
 		}
 
 		return array(
 			'success'       => true,
 			'footer_widget' => $footer_widget,
+			/* translators: %s: layout type */
 			'summary'       => sprintf( __( 'Generated %s footer widget.', 'mcp-ai-wpoos-pro' ), $layout ),
 			'timestamp'     => current_time( 'mysql' ),
 		);

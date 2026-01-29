@@ -60,16 +60,16 @@ class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'widget_type'      => array(
+				'widget_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Sidebar widget type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'recent-posts', 'categories', 'tags', 'search', 'custom-html', 'newsletter' ),
 				),
-				'title'            => array(
+				'title'       => array(
 					'type'        => 'string',
 					'description' => __( 'Widget title', 'mcp-ai-wpoos-pro' ),
 				),
-				'count'            => array(
+				'count'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of items to display (for lists)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 5,
@@ -119,6 +119,7 @@ class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface
 		return array(
 			'success'        => true,
 			'sidebar_widget' => $sidebar_widget,
+			/* translators: %s: widget type */
 			'summary'        => sprintf( __( 'Generated %s sidebar widget.', 'mcp-ai-wpoos-pro' ), $widget_type ),
 			'timestamp'      => current_time( 'mysql' ),
 		);
@@ -168,17 +169,17 @@ class WP_MCP_AI_Tool_Generate_Sidebar_Widget implements WP_MCP_AI_Tool_Interface
 
 			case 'categories':
 				$settings = array(
-					'show_count'     => true,
-					'hierarchical'   => true,
-					'dropdown'       => false,
+					'show_count'   => true,
+					'hierarchical' => true,
+					'dropdown'     => false,
 				);
 				break;
 
 			case 'tags':
 				$settings = array(
-					'count'     => $count,
+					'count'      => $count,
 					'show_count' => true,
-					'style'     => 'cloud',
+					'style'      => 'cloud',
 				);
 				break;
 

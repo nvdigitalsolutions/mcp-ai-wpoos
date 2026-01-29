@@ -130,7 +130,7 @@ function wp_mcp_ai_load_site_creator_tools() {
 	require_once $tools_dir . 'class-wp-mcp-ai-tool-automate-development-workflow.php';
 
 	// All tools loaded successfully.
-	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php';
+	// require_once $tools_dir . 'class-wp-mcp-ai-tool-suggest-template-patterns.php'.
 
 	// Get registry and register tools.
 	$registry = wp_mcp_ai_get_tool_registry();
@@ -186,7 +186,7 @@ function wp_mcp_ai_load_site_creator_tools() {
  *
  * @since 1.2.0
  *
- * @param string $hook Current admin page hook (unused).
+ * @param string $hook Current admin page hook.
  */
 function wp_mcp_ai_enqueue_site_creator_toolkit_admin_styles( $hook ) {
 	// Only load if toolkit is enabled.

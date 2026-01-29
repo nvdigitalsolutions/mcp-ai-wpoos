@@ -60,17 +60,17 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'theme_name'       => array(
+				'theme_name' => array(
 					'type'        => 'string',
 					'description' => __( 'Theme name', 'mcp-ai-wpoos-pro' ),
 				),
-				'theme_type'       => array(
+				'theme_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Theme type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'classic', 'block', 'hybrid' ),
 					'default'     => 'block',
 				),
-				'features'         => array(
+				'features'   => array(
 					'type'        => 'array',
 					'description' => __( 'Features to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -126,7 +126,8 @@ class WP_MCP_AI_Tool_Scaffold_Theme_Structure implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'success'         => true,
 			'theme_structure' => $theme_structure,
-			'summary'         => sprintf( __( 'Generated %s theme structure for "%s".', 'mcp-ai-wpoos-pro' ), $theme_type, $theme_name ),
+			/* translators: 1: theme type, 2: theme name */
+			'summary'         => sprintf( __( 'Generated %1$s theme structure for "%2$s".', 'mcp-ai-wpoos-pro' ), $theme_type, $theme_name ),
 			'timestamp'       => current_time( 'mysql' ),
 		);
 	}

@@ -69,27 +69,27 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'site_type'        => array(
+				'site_type'           => array(
 					'type'        => 'string',
 					'description' => __( 'Type of site to plan', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'business', 'ecommerce', 'blog', 'portfolio', 'landing-page', 'membership', 'directory', 'nonprofit', 'education' ),
 				),
-				'requirements'     => array(
+				'requirements'        => array(
 					'type'        => 'string',
 					'description' => __( 'Business and functional requirements description', 'mcp-ai-wpoos-pro' ),
 				),
-				'target_audience'  => array(
+				'target_audience'     => array(
 					'type'        => 'string',
 					'description' => __( 'Target audience description', 'mcp-ai-wpoos-pro' ),
 				),
-				'key_features'     => array(
+				'key_features'        => array(
 					'type'        => 'array',
 					'description' => __( 'Key features to include', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'string',
 					),
 				),
-				'best_practices'   => array(
+				'best_practices'      => array(
 					'type'        => 'object',
 					'description' => __( 'Best practices data from research_site_best_practices tool', 'mcp-ai-wpoos-pro' ),
 				),
@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'object',
 					'description' => __( 'Competitor analysis data from analyze_competitor_sites tool', 'mcp-ai-wpoos-pro' ),
 				),
-				'timeline'         => array(
+				'timeline'            => array(
 					'type'        => 'string',
 					'description' => __( 'Desired launch timeline', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'rush', 'standard', 'extended' ),
@@ -180,10 +180,10 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 		$this->log_planning_activity( $user_id, $site_type );
 
 		return array(
-			'success'    => true,
-			'site_plan'  => $plan,
-			'summary'    => $this->generate_summary( $plan ),
-			'timestamp'  => current_time( 'mysql' ),
+			'success'   => true,
+			'site_plan' => $plan,
+			'summary'   => $this->generate_summary( $plan ),
+			'timestamp' => current_time( 'mysql' ),
 		);
 	}
 
@@ -217,17 +217,17 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function generate_site_structure( $site_type, $key_features ) {
 		$structures = array(
-			'business'     => array(
-				'header'  => array( 'logo', 'navigation', 'cta_button' ),
-				'hero'    => array( 'headline', 'subheadline', 'cta', 'hero_image' ),
-				'features' => array( 'feature_grid', 'descriptions' ),
-				'about'    => array( 'company_info', 'team', 'values' ),
-				'services' => array( 'service_list', 'details' ),
+			'business'  => array(
+				'header'       => array( 'logo', 'navigation', 'cta_button' ),
+				'hero'         => array( 'headline', 'subheadline', 'cta', 'hero_image' ),
+				'features'     => array( 'feature_grid', 'descriptions' ),
+				'about'        => array( 'company_info', 'team', 'values' ),
+				'services'     => array( 'service_list', 'details' ),
 				'testimonials' => array( 'customer_quotes', 'ratings' ),
-				'contact'  => array( 'form', 'location', 'social' ),
-				'footer'   => array( 'links', 'copyright', 'social_icons' ),
+				'contact'      => array( 'form', 'location', 'social' ),
+				'footer'       => array( 'links', 'copyright', 'social_icons' ),
 			),
-			'ecommerce'    => array(
+			'ecommerce' => array(
 				'header'       => array( 'logo', 'search', 'cart', 'account' ),
 				'hero'         => array( 'banner', 'featured_products' ),
 				'categories'   => array( 'product_grid' ),
@@ -236,12 +236,12 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 				'newsletter'   => array( 'signup_form' ),
 				'footer'       => array( 'links', 'policies', 'payment_icons' ),
 			),
-			'blog'         => array(
-				'header'   => array( 'logo', 'navigation', 'search' ),
-				'hero'     => array( 'featured_post' ),
-				'posts'    => array( 'post_grid', 'pagination' ),
-				'sidebar'  => array( 'categories', 'recent', 'newsletter' ),
-				'footer'   => array( 'links', 'social', 'copyright' ),
+			'blog'      => array(
+				'header'  => array( 'logo', 'navigation', 'search' ),
+				'hero'    => array( 'featured_post' ),
+				'posts'   => array( 'post_grid', 'pagination' ),
+				'sidebar' => array( 'categories', 'recent', 'newsletter' ),
+				'footer'  => array( 'links', 'social', 'copyright' ),
 			),
 		);
 
@@ -261,17 +261,17 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function generate_page_hierarchy( $site_type, $key_features ) {
 		$hierarchies = array(
-			'business'     => array(
-				'Home'         => array(
-					'About Us'   => array( 'Our Team', 'Our Story', 'Values' ),
-					'Services'   => array( 'Service 1', 'Service 2', 'Service 3' ),
-					'Portfolio'  => array(),
-					'Blog'       => array(),
-					'Contact'    => array(),
+			'business'  => array(
+				'Home' => array(
+					'About Us'  => array( 'Our Team', 'Our Story', 'Values' ),
+					'Services'  => array( 'Service 1', 'Service 2', 'Service 3' ),
+					'Portfolio' => array(),
+					'Blog'      => array(),
+					'Contact'   => array(),
 				),
 			),
-			'ecommerce'    => array(
-				'Home'         => array(
+			'ecommerce' => array(
+				'Home' => array(
 					'Shop'       => array( 'Category 1', 'Category 2', 'All Products' ),
 					'About'      => array(),
 					'Cart'       => array(),
@@ -280,8 +280,8 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 					'Contact'    => array(),
 				),
 			),
-			'blog'         => array(
-				'Home'     => array(
+			'blog'      => array(
+				'Home' => array(
 					'Blog'    => array( 'Category 1', 'Category 2' ),
 					'About'   => array(),
 					'Contact' => array(),
@@ -336,16 +336,20 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 			'typography'    => array(
 				'headings' => 'Sans-serif (e.g., Montserrat, Open Sans)',
 				'body'     => 'Readable serif or sans-serif (e.g., Lato, Roboto)',
-				'sizes'    => array( 'h1' => '2.5rem', 'h2' => '2rem', 'body' => '1rem' ),
+				'sizes'    => array(
+					'h1'   => '2.5rem',
+					'h2'   => '2rem',
+					'body' => '1rem',
+				),
 			),
 			'spacing'       => array(
 				'base_unit' => '8px',
 				'scale'     => array( '0.5x', '1x', '1.5x', '2x', '3x', '4x' ),
 			),
 			'components'    => array(
-				'buttons'    => 'Rounded corners, bold text, hover states',
-				'forms'      => 'Clean, accessible, validated',
-				'cards'      => 'Shadow on hover, consistent padding',
+				'buttons' => 'Rounded corners, bold text, hover states',
+				'forms'   => 'Clean, accessible, validated',
+				'cards'   => 'Shadow on hover, consistent padding',
 			),
 		);
 	}
@@ -361,7 +365,7 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function generate_feature_list( $site_type, $key_features ) {
 		$base_features = array(
-			'core'     => array(
+			'core'       => array(
 				'Responsive design',
 				'Mobile-first approach',
 				'SEO optimization',
@@ -374,7 +378,7 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 				'Social media integration',
 				'Blog functionality',
 			),
-			'technical' => array(
+			'technical'  => array(
 				'SSL certificate',
 				'Regular backups',
 				'Security measures',
@@ -396,17 +400,17 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 */
 	private function generate_technical_stack( $site_type, $key_features ) {
 		return array(
-			'cms'           => 'WordPress (latest version)',
-			'theme'         => 'Custom or premium theme (e.g., Astra, GeneratePress)',
-			'page_builder'  => 'Elementor or Gutenberg blocks',
-			'plugins'       => array(
-				'seo'        => 'Rank Math or Yoast SEO',
-				'security'   => 'Wordfence or Sucuri',
+			'cms'          => 'WordPress (latest version)',
+			'theme'        => 'Custom or premium theme (e.g., Astra, GeneratePress)',
+			'page_builder' => 'Elementor or Gutenberg blocks',
+			'plugins'      => array(
+				'seo'         => 'Rank Math or Yoast SEO',
+				'security'    => 'Wordfence or Sucuri',
 				'performance' => 'WP Rocket or W3 Total Cache',
-				'forms'      => 'Contact Form 7 or WPForms',
+				'forms'       => 'Contact Form 7 or WPForms',
 			),
-			'hosting'       => 'Managed WordPress hosting (recommended)',
-			'cdn'           => 'Cloudflare or similar',
+			'hosting'      => 'Managed WordPress hosting (recommended)',
+			'cdn'          => 'Cloudflare or similar',
 		);
 	}
 
@@ -563,7 +567,7 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 	 * @return string Summary text.
 	 */
 	private function generate_summary( $plan ) {
-		$site_type = isset( $plan['site_info']['type'] ) ? $plan['site_info']['type'] : 'site';
+		$site_type  = isset( $plan['site_info']['type'] ) ? $plan['site_info']['type'] : 'site';
 		$page_count = isset( $plan['page_hierarchy'] ) ? count( $plan['page_hierarchy'], COUNT_RECURSIVE ) : 0;
 
 		return sprintf(

@@ -60,26 +60,26 @@ class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'headline'         => array(
+				'headline'    => array(
 					'type'        => 'string',
 					'description' => __( 'CTA headline', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'      => array(
+				'description' => array(
 					'type'        => 'string',
 					'description' => __( 'Supporting description text', 'mcp-ai-wpoos-pro' ),
 				),
-				'button_text'      => array(
+				'button_text' => array(
 					'type'        => 'string',
 					'description' => __( 'Button text', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'Get Started Now',
 				),
-				'style'            => array(
+				'style'       => array(
 					'type'        => 'string',
 					'description' => __( 'CTA style', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'bold', 'subtle', 'gradient', 'minimal' ),
 					'default'     => 'bold',
 				),
-				'urgency'          => array(
+				'urgency'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include urgency elements', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -124,9 +124,9 @@ class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$cta_section = array(
-			'type'        => 'cta',
-			'style'       => $style,
-			'content'     => array(
+			'type'    => 'cta',
+			'style'   => $style,
+			'content' => array(
 				'headline'    => $headline,
 				'description' => ! empty( $description ) ? $description : 'Take action today and transform your experience',
 				'button'      => array(
@@ -146,6 +146,7 @@ class WP_MCP_AI_Tool_Create_CTA_Section implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'     => true,
 			'cta_section' => $cta_section,
+			/* translators: %s: CTA style */
 			'summary'     => sprintf( __( 'Generated %s CTA section with headline and button.', 'mcp-ai-wpoos-pro' ), $style ),
 			'timestamp'   => current_time( 'mysql' ),
 		);

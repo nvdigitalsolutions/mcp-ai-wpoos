@@ -172,7 +172,7 @@ class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Build about page sections.
 		$about_page['sections'][] = $this->generate_hero_section( $company_name, $story, $style );
 		$about_page['sections'][] = $this->generate_story_section( $company_name, $story, $founded_year, $style );
-		
+
 		if ( ! empty( $mission ) || ! empty( $values ) ) {
 			$about_page['sections'][] = $this->generate_mission_values_section( $mission, $values, $style );
 		}
@@ -268,7 +268,7 @@ class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function generate_mission_values_section( $mission, $values, $style ) {
 		$value_items = ! empty( $values ) ? $values : array( 'Integrity', 'Innovation', 'Excellence', 'Collaboration' );
-		
+
 		return array(
 			'type'    => 'mission-values',
 			'content' => array(
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MC
 		);
 
 		$count = isset( $member_count[ $team_size ] ) ? $member_count[ $team_size ] : 3;
-		
+
 		$members = array();
 		for ( $i = 1; $i <= $count; $i++ ) {
 			$members[] = array(
@@ -431,7 +431,8 @@ class WP_MCP_AI_Tool_Build_About_Page implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	private function generate_summary( $about_page ) {
 		return sprintf(
-			__( 'Generated about page for %s with %d sections including story, mission/values, timeline, team, and culture.', 'mcp-ai-wpoos-pro' ),
+			/* translators: 1: about page title, 2: number of sections */
+			__( 'Generated about page for %1$s with %2$d sections including story, mission/values, timeline, team, and culture.', 'mcp-ai-wpoos-pro' ),
 			$about_page['title'],
 			count( $about_page['sections'] )
 		);

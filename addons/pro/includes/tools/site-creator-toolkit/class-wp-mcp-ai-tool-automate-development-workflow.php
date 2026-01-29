@@ -60,16 +60,16 @@ class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'project_type'     => array(
+				'project_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Project type', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'site', 'theme', 'plugin', 'component' ),
 				),
-				'requirements'     => array(
+				'requirements'    => array(
 					'type'        => 'string',
 					'description' => __( 'Project requirements', 'mcp-ai-wpoos-pro' ),
 				),
-				'workflow_stages'  => array(
+				'workflow_stages' => array(
 					'type'        => 'array',
 					'description' => __( 'Stages to include in workflow', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -128,9 +128,10 @@ class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Int
 		}
 
 		return array(
-			'success'  => true,
-			'workflow' => $workflow,
-			'summary'  => sprintf( __( 'Generated automated workflow for %s project with %d stages.', 'mcp-ai-wpoos-pro' ), $project_type, count( $workflow_stages ) ),
+			'success'   => true,
+			'workflow'  => $workflow,
+			/* translators: 1: project type, 2: number of workflow stages */
+			'summary'   => sprintf( __( 'Generated automated workflow for %1$s project with %2$d stages.', 'mcp-ai-wpoos-pro' ), $project_type, count( $workflow_stages ) ),
 			'timestamp' => current_time( 'mysql' ),
 		);
 	}
@@ -147,33 +148,33 @@ class WP_MCP_AI_Tool_Automate_Development_Workflow implements WP_MCP_AI_Tool_Int
 	private function generate_stage_plan( $stage, $project_type ) {
 		$stage_plans = array(
 			'research' => array(
-				'name'  => 'Research',
-				'tools' => array( 'research_site_best_practices', 'analyze_competitor_sites' ),
+				'name'   => 'Research',
+				'tools'  => array( 'research_site_best_practices', 'analyze_competitor_sites' ),
 				'output' => 'Best practices and competitive analysis',
 			),
 			'plan'     => array(
-				'name'  => 'Planning',
-				'tools' => array( 'generate_site_plan' ),
+				'name'   => 'Planning',
+				'tools'  => array( 'generate_site_plan' ),
 				'output' => 'Comprehensive project plan',
 			),
 			'design'   => array(
-				'name'  => 'Design',
-				'tools' => array( 'create_hero_section', 'generate_feature_section' ),
+				'name'   => 'Design',
+				'tools'  => array( 'create_hero_section', 'generate_feature_section' ),
 				'output' => 'Design components and layouts',
 			),
 			'develop'  => array(
-				'name'  => 'Development',
-				'tools' => array( 'integrate_with_architect', 'scaffold_theme_structure' ),
+				'name'   => 'Development',
+				'tools'  => array( 'integrate_with_architect', 'scaffold_theme_structure' ),
 				'output' => 'Code implementation',
 			),
 			'test'     => array(
-				'name'  => 'Testing',
-				'tools' => array( 'execute_shell_command' ),
+				'name'   => 'Testing',
+				'tools'  => array( 'execute_shell_command' ),
 				'output' => 'Test results and validation',
 			),
 			'deploy'   => array(
-				'name'  => 'Deployment',
-				'tools' => array( 'save_site_template' ),
+				'name'   => 'Deployment',
+				'tools'  => array( 'save_site_template' ),
 				'output' => 'Deployed project',
 			),
 		);
