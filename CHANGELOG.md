@@ -2,7 +2,48 @@
 
 ## [Unreleased]
 
+### Security
+- **Security Hardening (January 29, 2026)**: Fixed 4 critical and high severity vulnerabilities
+  - **SSRF in Webhook Registration (Critical)**: Fixed webhook URL validation to block private IP ranges, AWS metadata endpoints, and restrict to http/https protocols only
+    - File: `includes/class-wp-mcp-ai-job-notifier.php`
+    - Impact: Prevents Server-Side Request Forgery attacks on internal networks and cloud metadata services
+    - Added protocol validation, IP range filtering (RFC 1918, loopback, link-local), and WordPress `wp_http_validate_url()` checks
+  - **Broken CSRF Protection (Critical)**: Fixed AJAX refresh rendering non-functional delete links in Cron Manager
+    - File: `assets/js/admin-cron-manager.js`
+    - Impact: Restores delete functionality with proper nonce-based CSRF protection after page refresh
+    - Solution: Render complete HTML form with hidden nonce field instead of broken link
+  - **XSS in Error Messages (High)**: Fixed unescaped error messages in admin AJAX handlers
+    - Files: `assets/js/admin-cron-manager.js`, `assets/js/admin-crawl4ai-monitor.js`
+    - Impact: Eliminates XSS attack vector in admin error message display
+    - All error messages now escaped via `escapeHtml()` before DOM insertion
+  - **Missing Authorization (High)**: Implemented comprehensive job authorization across multiple entity types
+    - File: `includes/class-wp-mcp-ai-job-notifier-rest.php`
+    - Impact: Prevents users from accessing other users' job data via ID enumeration
+    - Added `is_user_authorized_for_job()` with 7 authorization paths (admin, user, assistant, team, profession, agent, virtual agent)
+  - **Security Report**: Complete vulnerability analysis and remediation guide in `docs/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md`
+  - **Files Changed**: 4 files modified, ~400 lines of security hardening code added
+  - **Result**: 100% of critical/high vulnerabilities resolved; 2 medium severity issues remain (CORS policy, rate limiting)
+
 ### Added
+- **Comprehensive Entity Tracking (January 29, 2026)**: Added tracking for 11 entity types in job metadata
+  - **New Helper Method**: `ensure_tracking_ids()` automatically captures all relevant context IDs
+  - **Tracked Entities**: user_id, assistant_id, team_id, profession_id, agent_id, agent_role, virtual_agent_id, virtual_id, workflow_id, parent_job_id, profession_slug
+  - **Applied To**: All job event handlers (started, progress, completed, failed)
+  - **Benefits**: Complete audit trail for multi-agent workflows; essential for debugging complex orchestrations; supports team collaboration and multi-tenant scenarios
+  - **Files**: `includes/class-wp-mcp-ai-job-notifier.php` (tracking logic), `includes/class-wp-mcp-ai-job-notifier-rest.php` (authorization)
+
+- **Multi-Level Job Authorization (January 29, 2026)**: Implemented flexible authorization system for job access
+  - **Authorization Paths**: 7 different ways to authorize job access
+    1. Admin capability (`manage_options`)
+    2. Direct user ownership (`user_id` match)
+    3. Assistant ownership (user owns the assistant)
+    4. Team membership (user is team owner or member)
+    5. Profession ownership (user owns the profession)
+    6. Agent ownership (user owns the agent)
+    7. Virtual agent (user is member of parent team)
+  - **Enforced In**: `handle_job_status()` and `handle_job_stream()` REST API endpoints
+  - **Benefits**: Proper multi-tenant isolation; team collaboration support; flexible access control for complex workflows
+
 - **DeepSeek V4 Agent Memory Tools (January 29, 2026)**: Phase 4/5 state management and memory enhancements
   - **store_agent_context Tool**: Stores important context, learnings, or information for agents to remember across sessions
     - Supports 10 context types: learning, fact, preference, pattern, workflow, decision, result, insight, note, generic
