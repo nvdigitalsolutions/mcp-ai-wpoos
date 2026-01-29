@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-url-link-orchestration',
+        'version' => 'dev-copilot/fix-url-link-orchestration',
+        'reference' => '9fc285abdd7a7c28fc307ab30cde80ebf89bdd3c',
         'pretty_version' => 'dev-copilot/fix-wrong-link-navigation',
         'version' => 'dev-copilot/fix-wrong-link-navigation',
         'reference' => '3e687d8436ad54eba859bf8c59680684e9a3d57c',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-url-link-orchestration',
+            'version' => 'dev-copilot/fix-url-link-orchestration',
+            'reference' => '9fc285abdd7a7c28fc307ab30cde80ebf89bdd3c',
             'pretty_version' => 'dev-copilot/fix-wrong-link-navigation',
             'version' => 'dev-copilot/fix-wrong-link-navigation',
             'reference' => '3e687d8436ad54eba859bf8c59680684e9a3d57c',
