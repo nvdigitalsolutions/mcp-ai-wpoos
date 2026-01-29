@@ -42,14 +42,14 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Publish Google Business Update', 'wp-mcp-ai-pro' );
+		return __( 'Publish Google Business Update', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a local post on a Google Business Profile location via the My Business API.', 'wp-mcp-ai-pro' );
+		return __( 'Creates a local post on a Google Business Profile location via the My Business API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -61,27 +61,27 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 			'properties'           => array(
 				'access_token'   => array(
 					'type'        => 'string',
-					'description' => __( 'OAuth access token authorised for the Business Profile API.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'OAuth access token authorised for the Business Profile API.', 'mcp-ai-wpoos-pro' ),
 				),
 				'location'       => array(
 					'type'        => 'string',
-					'description' => __( 'Resource name for the location (e.g. accounts/123/locations/456).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Resource name for the location (e.g. accounts/123/locations/456).', 'mcp-ai-wpoos-pro' ),
 				),
 				'summary'        => array(
 					'type'        => 'string',
-					'description' => __( 'Primary text content for the business update.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Primary text content for the business update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'language_code'  => array(
 					'type'        => 'string',
-					'description' => __( 'BCP 47 language code for the post content.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'BCP 47 language code for the post content.', 'mcp-ai-wpoos-pro' ),
 				),
 				'call_to_action' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional call to action type (e.g. LEARN_MORE, BOOK, ORDER).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional call to action type (e.g. LEARN_MORE, BOOK, ORDER).', 'mcp-ai-wpoos-pro' ),
 				),
 				'action_url'     => array(
 					'type'        => 'string',
-					'description' => __( 'Destination URL for the call to action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Destination URL for the call to action.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'location', 'summary' ),
@@ -103,11 +103,11 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 		$required_capability = apply_filters( 'wp_mcp_ai_post_google_business_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish Google Business updates.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish Google Business updates.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$access_token  = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
@@ -118,15 +118,15 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 		$action_url    = isset( $arguments['action_url'] ) ? $this->sanitize_url( $arguments['action_url'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_google_token', __( 'A valid Google OAuth access token is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_google_token', __( 'A valid Google OAuth access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $location ) {
-			return new WP_Error( 'wp_mcp_ai_missing_google_location', __( 'A valid Business Profile location resource name is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_google_location', __( 'A valid Business Profile location resource name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $summary ) {
-			return new WP_Error( 'wp_mcp_ai_missing_google_summary', __( 'A summary must be provided for the business update.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_google_summary', __( 'A summary must be provided for the business update.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$endpoint = sprintf( 'https://mybusiness.googleapis.com/v4/%s/localPosts', $location );
@@ -147,7 +147,7 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 		$body = wp_json_encode( $payload );
 
 		if ( false === $body ) {
-			return new WP_Error( 'wp_mcp_ai_google_business_encoding_error', __( 'Failed to encode the Google Business request payload.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_google_business_encoding_error', __( 'Failed to encode the Google Business request payload.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -177,7 +177,7 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 
 			return new WP_Error(
 				'wp_mcp_ai_google_business_http_error',
-				__( 'The Google Business API request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The Google Business API request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -191,7 +191,7 @@ class WP_MCP_AI_Pro_Tool_Post_Google_Business_Update implements WP_MCP_AI_Tool_I
 		}
 
 		if ( 200 !== $code && 201 !== $code ) {
-			$message = __( 'Google Business API returned an error.', 'wp-mcp-ai-pro' );
+			$message = __( 'Google Business API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $decoded['error']['message'] ) ) {
 				$message = $decoded['error']['message'];

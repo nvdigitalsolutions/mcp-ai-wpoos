@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'JetEngine tool requires JetEngine to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'JetEngine tool requires JetEngine to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'JetEngine CCT', 'wp-mcp-ai-pro' );
+		return __( 'JetEngine CCT', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query and manage JetEngine Custom Content Type items. Supports CRUD operations on CCT data.', 'wp-mcp-ai-pro' );
+		return __( 'Query and manage JetEngine Custom Content Type items. Supports CRUD operations on CCT data.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -83,32 +83,32 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'action'   => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list_types, list_items, get_item, create_item, update_item.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: list_types, list_items, get_item, create_item, update_item.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list_types', 'list_items', 'get_item', 'create_item', 'update_item' ),
 					'default'     => 'list_types',
 				),
 				'cct_slug' => array(
 					'type'        => 'string',
-					'description' => __( 'CCT type slug.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'CCT type slug.', 'mcp-ai-wpoos-pro' ),
 				),
 				'item_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'CCT item ID for get/update actions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'CCT item ID for get/update actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page' => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of items to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of items to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 				'fields'   => array(
 					'type'        => 'object',
-					'description' => __( 'Field values for create/update operations.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Field values for create/update operations.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array(),
@@ -142,7 +142,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'jetengine_not_active',
-				__( 'JetEngine is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'JetEngine is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -162,7 +162,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -204,7 +204,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['cct_slug'] ) ) {
 			return new WP_Error(
 				'missing_cct_slug',
-				__( 'CCT slug is required for list_items action.', 'wp-mcp-ai-pro' )
+				__( 'CCT slug is required for list_items action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -213,7 +213,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $module || ! $module->instance ) {
 			return new WP_Error(
 				'cct_not_available',
-				__( 'Custom Content Types module is not available.', 'wp-mcp-ai-pro' )
+				__( 'Custom Content Types module is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -222,7 +222,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $type ) {
 			return new WP_Error(
 				'cct_not_found',
-				__( 'CCT type not found.', 'wp-mcp-ai-pro' )
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['cct_slug'] ) || empty( $arguments['item_id'] ) ) {
 			return new WP_Error(
 				'missing_params',
-				__( 'CCT slug and item ID are required for get_item action.', 'wp-mcp-ai-pro' )
+				__( 'CCT slug and item ID are required for get_item action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -266,7 +266,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $module || ! $module->instance ) {
 			return new WP_Error(
 				'cct_not_available',
-				__( 'Custom Content Types module is not available.', 'wp-mcp-ai-pro' )
+				__( 'Custom Content Types module is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -275,7 +275,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $type ) {
 			return new WP_Error(
 				'cct_not_found',
-				__( 'CCT type not found.', 'wp-mcp-ai-pro' )
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -284,7 +284,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $item ) {
 			return new WP_Error(
 				'item_not_found',
-				__( 'CCT item not found.', 'wp-mcp-ai-pro' )
+				__( 'CCT item not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -302,7 +302,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['cct_slug'] ) ) {
 			return new WP_Error(
 				'missing_cct_slug',
-				__( 'CCT slug is required for create_item action.', 'wp-mcp-ai-pro' )
+				__( 'CCT slug is required for create_item action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -311,7 +311,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to create CCT items.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to create CCT items.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -320,7 +320,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $module || ! $module->instance ) {
 			return new WP_Error(
 				'cct_not_available',
-				__( 'Custom Content Types module is not available.', 'wp-mcp-ai-pro' )
+				__( 'Custom Content Types module is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -329,7 +329,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $type ) {
 			return new WP_Error(
 				'cct_not_found',
-				__( 'CCT type not found.', 'wp-mcp-ai-pro' )
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -340,7 +340,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $item_id ) {
 			return new WP_Error(
 				'create_failed',
-				__( 'Failed to create CCT item.', 'wp-mcp-ai-pro' )
+				__( 'Failed to create CCT item.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -358,7 +358,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['cct_slug'] ) || empty( $arguments['item_id'] ) ) {
 			return new WP_Error(
 				'missing_params',
-				__( 'CCT slug and item ID are required for update_item action.', 'wp-mcp-ai-pro' )
+				__( 'CCT slug and item ID are required for update_item action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -367,7 +367,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to update CCT items.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to update CCT items.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -376,7 +376,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $module || ! $module->instance ) {
 			return new WP_Error(
 				'cct_not_available',
-				__( 'Custom Content Types module is not available.', 'wp-mcp-ai-pro' )
+				__( 'Custom Content Types module is not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $type ) {
 			return new WP_Error(
 				'cct_not_found',
-				__( 'CCT type not found.', 'wp-mcp-ai-pro' )
+				__( 'CCT type not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -397,7 +397,7 @@ class WP_MCP_AI_Pro_Tool_JetEngine implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $result ) {
 			return new WP_Error(
 				'update_failed',
-				__( 'Failed to update CCT item.', 'wp-mcp-ai-pro' )
+				__( 'Failed to update CCT item.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

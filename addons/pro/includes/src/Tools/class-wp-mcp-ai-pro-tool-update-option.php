@@ -38,14 +38,14 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Update Option', 'wp-mcp-ai-pro' );
+		return __( 'Update Option', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Updates a WordPress option value. Can also be used to create a new option.', 'wp-mcp-ai-pro' );
+		return __( 'Updates a WordPress option value. Can also be used to create a new option.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -57,11 +57,11 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties'           => array(
 				'option_name'  => array(
 					'type'        => 'string',
-					'description' => __( 'The name of the option to update (e.g., "blogname").', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The name of the option to update (e.g., "blogname").', 'mcp-ai-wpoos-pro' ),
 				),
 				'option_value' => array(
 					'type'        => 'mixed',
-					'description' => __( 'The new value for the option.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The new value for the option.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'option_name', 'option_value' ),
@@ -82,7 +82,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_option_updates'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The update_option tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai-pro' )
+				__( 'The update_option tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -91,7 +91,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to manage options.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to manage options.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -100,7 +100,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $option_name ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_option_name',
-				__( 'Option name not provided.', 'wp-mcp-ai-pro' )
+				__( 'Option name not provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -117,12 +117,12 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 			'message'      => $updated
 				? sprintf(
 					/* translators: %s: option name */
-					__( 'Option "%s" updated successfully.', 'wp-mcp-ai-pro' ),
+					__( 'Option "%s" updated successfully.', 'mcp-ai-wpoos-pro' ),
 					$option_name
 				)
 				: sprintf(
 					/* translators: %s: option name */
-					__( 'Option "%s" was not updated (the new value may be the same as the old value).', 'wp-mcp-ai-pro' ),
+					__( 'Option "%s" was not updated (the new value may be the same as the old value).', 'mcp-ai-wpoos-pro' ),
 					$option_name
 				),
 		);

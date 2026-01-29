@@ -41,7 +41,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'Elementor tool requires Elementor to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'Elementor tool requires Elementor to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Elementor Templates', 'wp-mcp-ai-pro' );
+		return __( 'Elementor Templates', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -68,7 +68,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Query Elementor templates. List and search saved templates, sections, and pages.', 'wp-mcp-ai-pro' );
+		return __( 'Query Elementor templates. List and search saved templates, sections, and pages.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -82,33 +82,33 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'properties' => array(
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: list, get, search.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: list, get, search.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'list', 'get', 'search' ),
 					'default'     => 'list',
 				),
 				'template_id'   => array(
 					'type'        => 'integer',
-					'description' => __( 'Template ID for get action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Template ID for get action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'template_type' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by template type.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by template type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'page', 'section', 'header', 'footer', 'single', 'archive' ),
 				),
 				'per_page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of templates to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of templates to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 				'search'        => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter templates.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Search term to filter templates.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'   => array(),
@@ -141,7 +141,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'elementor_not_active',
-				__( 'Elementor is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'Elementor is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -157,7 +157,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -219,7 +219,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['template_id'] ) ) {
 			return new WP_Error(
 				'missing_template_id',
-				__( 'Template ID is required for get action.', 'wp-mcp-ai-pro' )
+				__( 'Template ID is required for get action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -228,7 +228,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( ! $template || 'elementor_library' !== $template->post_type ) {
 			return new WP_Error(
 				'template_not_found',
-				__( 'Template not found.', 'wp-mcp-ai-pro' )
+				__( 'Template not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -245,7 +245,7 @@ class WP_MCP_AI_Pro_Tool_Elementor implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-pro' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

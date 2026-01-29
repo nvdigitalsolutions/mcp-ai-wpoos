@@ -52,14 +52,14 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Web Browser Automation', 'wp-mcp-ai-pro' );
+		return __( 'Web Browser Automation', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Automate web browsers to navigate JavaScript-heavy sites, take screenshots, generate PDFs, fill forms, and extract dynamic content. Supports both remote Playwright service and local HTTP fallback.', 'wp-mcp-ai-pro' );
+		return __( 'Automate web browsers to navigate JavaScript-heavy sites, take screenshots, generate PDFs, fill forms, and extract dynamic content. Supports both remote Playwright service and local HTTP fallback.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -72,38 +72,38 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'url'                => array(
 					'type'        => 'string',
 					'format'      => 'uri',
-					'description' => __( 'The URL to navigate to.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The URL to navigate to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'action'             => array(
 					'type'        => 'string',
 					'enum'        => array( 'navigate', 'screenshot', 'pdf', 'extract', 'click', 'type', 'submit' ),
-					'description' => __( 'The action to perform.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'navigate',
 				),
 				'selector'           => array(
 					'type'        => 'string',
-					'description' => __( 'CSS selector for element-specific actions (click, type, extract).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'CSS selector for element-specific actions (click, type, extract).', 'mcp-ai-wpoos-pro' ),
 				),
 				'text'               => array(
 					'type'        => 'string',
-					'description' => __( 'Text to type into an element (for type action).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Text to type into an element (for type action).', 'mcp-ai-wpoos-pro' ),
 				),
 				'wait_for'           => array(
 					'type'        => 'string',
 					'enum'        => array( 'load', 'domcontentloaded', 'networkidle' ),
-					'description' => __( 'When to consider navigation complete.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'When to consider navigation complete.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'load',
 				),
 				'timeout'            => array(
 					'type'        => 'integer',
 					'minimum'     => 5,
 					'maximum'     => self::MAX_TIMEOUT,
-					'description' => __( 'Operation timeout in seconds.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Operation timeout in seconds.', 'mcp-ai-wpoos-pro' ),
 					'default'     => self::DEFAULT_TIMEOUT,
 				),
 				'screenshot_options' => array(
 					'type'        => 'object',
-					'description' => __( 'Screenshot configuration (for screenshot action).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Screenshot configuration (for screenshot action).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'full_page' => array(
 							'type'    => 'boolean',
@@ -118,7 +118,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'pdf_options'        => array(
 					'type'        => 'object',
-					'description' => __( 'PDF generation configuration (for pdf action).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'PDF generation configuration (for pdf action).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'format'    => array(
 							'type'    => 'string',
@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				),
 				'extract_content'    => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to extract page content after navigation.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether to extract page content after navigation.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -183,7 +183,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * @return string
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'The Web Browser tool is disabled. Configure a Playwright service URL or enable local fallback.', 'wp-mcp-ai-pro' );
+		return __( 'The Web Browser tool is disabled. Configure a Playwright service URL or enable local fallback.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -237,7 +237,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'wp_mcp_ai_web_browser_unavailable',
-				__( 'Web Browser automation is not available on this site.', 'wp-mcp-ai-pro' )
+				__( 'Web Browser automation is not available on this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -247,14 +247,14 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to use browser automation.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to use browser automation.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -263,7 +263,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( empty( $url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_url',
-				__( 'A valid URL is required.', 'wp-mcp-ai-pro' )
+				__( 'A valid URL is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( $this->is_internal_url( $url ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden_url',
-				__( 'Access to internal URLs is not allowed for security reasons.', 'wp-mcp-ai-pro' )
+				__( 'Access to internal URLs is not allowed for security reasons.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -375,7 +375,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_service_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Playwright service request failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Playwright service request failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -389,7 +389,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_service_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'Playwright service returned error status: %d', 'wp-mcp-ai-pro' ),
+					__( 'Playwright service returned error status: %d', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				)
 			);
@@ -400,7 +400,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		if ( null === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_response',
-				__( 'Invalid response from Playwright service.', 'wp-mcp-ai-pro' )
+				__( 'Invalid response from Playwright service.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -429,7 +429,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_unsupported_action',
 				sprintf(
 					/* translators: %s: action name */
-					__( 'Action "%s" requires a Playwright service. Only navigate and extract are available in local fallback mode.', 'wp-mcp-ai-pro' ),
+					__( 'Action "%s" requires a Playwright service. Only navigate and extract are available in local fallback mode.', 'mcp-ai-wpoos-pro' ),
 					$action
 				)
 			);
@@ -454,7 +454,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_fetch_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to fetch URL: %s', 'wp-mcp-ai-pro' ),
+					__( 'Failed to fetch URL: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -467,7 +467,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_http_error',
 				sprintf(
 					/* translators: %d: HTTP status code */
-					__( 'HTTP request failed with status: %d', 'wp-mcp-ai-pro' ),
+					__( 'HTTP request failed with status: %d', 'mcp-ai-wpoos-pro' ),
 					$status_code
 				)
 			);
@@ -489,7 +489,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'status_code'  => $status_code,
 			'html'         => $html,
 			'text_content' => $text_content,
-			'note'         => __( 'Local fallback mode: Limited to simple HTTP fetch. For full browser automation (JavaScript, screenshots, PDFs), configure a Playwright service URL in settings.', 'wp-mcp-ai-pro' ),
+			'note'         => __( 'Local fallback mode: Limited to simple HTTP fetch. For full browser automation (JavaScript, screenshots, PDFs), configure a Playwright service URL in settings.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -579,7 +579,7 @@ class WP_MCP_AI_Tool_Web_Browser implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 				'wp_mcp_ai_rate_limit_exceeded',
 				sprintf(
 					/* translators: %d: maximum actions allowed per hour */
-					__( 'Browser automation rate limit exceeded. Maximum %d actions per hour allowed.', 'wp-mcp-ai-pro' ),
+					__( 'Browser automation rate limit exceeded. Maximum %d actions per hour allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_hour
 				)
 			);
