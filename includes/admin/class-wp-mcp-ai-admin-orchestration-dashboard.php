@@ -59,24 +59,29 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// WordPress generates submenu hooks as: {sanitized_parent_title}_page_{submenu_slug}
 		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Submenu slug: "mcp-ai-orchestration"
-		// Expected hook: "nv-oos_page_mcp-ai-orchestration"
-		// Also check alternate format just in case: "nvoos_page_mcp-ai-orchestration"
-		if ( 'nv-oos_page_mcp-ai-orchestration' !== $hook && 'nvoos_page_mcp-ai-orchestration' !== $hook ) {
+		// Check if this is the orchestration page by looking for the submenu slug in the hook
+		if ( false === strpos( $hook, 'mcp-ai-orchestration' ) ) {
 			return;
 		}
+
+		// Use file modification time for cache busting to ensure CSS/JS updates are loaded.
+		$css_path    = WP_MCP_AI_PATH . 'assets/css/admin-orchestration-dashboard.css';
+		$js_path     = WP_MCP_AI_PATH . 'assets/js/admin-orchestration-dashboard.js';
+		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
+		$js_version  = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
 
 		wp_enqueue_style(
 			'wp-mcp-ai-orchestration-dashboard',
 			plugins_url( 'assets/css/admin-orchestration-dashboard.css', WP_MCP_AI_FILE ),
 			array(),
-			WP_MCP_AI_VERSION
+			$css_version
 		);
 
 		wp_enqueue_script(
 			'wp-mcp-ai-orchestration-dashboard',
 			plugins_url( 'assets/js/admin-orchestration-dashboard.js', WP_MCP_AI_FILE ),
 			array( 'jquery' ),
-			WP_MCP_AI_VERSION,
+			$js_version,
 			true
 		);
 
