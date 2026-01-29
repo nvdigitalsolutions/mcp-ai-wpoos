@@ -12,7 +12,7 @@
 [![Documentation](https://img.shields.io/badge/Docs-Grade%20A%20(95/100)-green)](docs/DOCUMENTATION_REVIEW_SUMMARY.md)
 
 **Version:** 1.1.0  
-**Release Date:** 2026-01-28 (January 2026 update with DeepSeek V4 orchestration and Social Media Analytics)  
+**Release Date:** 2026-01-29 (January 2026 update with security hardening, entity tracking, and DeepSeek V4 orchestration)  
 **MCP Specification:** 2024-11-05  
 **Maintained by [NV Digital](https://nvdigitalsolutions.com/wpoos)**  
 **License:** GPLv3 or later  
@@ -255,6 +255,54 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 ---
 
 ## 🆕 Latest Updates (January 2026)
+
+### Security Hardening & Entity Tracking (January 29, 2026) ⭐ **NEW**
+
+**Major Security Update: 4 vulnerabilities resolved + comprehensive entity tracking for multi-agent workflows**
+
+**Security Fixes (4 Critical/High Issues):**
+
+1. **SSRF Vulnerability in Webhook Registration (Critical)** - `includes/class-wp-mcp-ai-job-notifier.php`
+   - Fixed webhook URL validation to block private IP ranges (127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16)
+   - Blocks AWS metadata endpoint access (169.254.169.254)
+   - Restricts to http/https protocols only
+   - Impact: Prevents Server-Side Request Forgery attacks on internal networks
+
+2. **Broken CSRF Protection in Cron Delete (Critical)** - `assets/js/admin-cron-manager.js`
+   - Fixed AJAX refresh rendering non-functional delete links without nonce validation
+   - Solution: Render complete HTML form with hidden nonce field after refresh
+   - Impact: Restores delete functionality with proper CSRF protection
+
+3. **XSS in AJAX Error Messages (High)** - `assets/js/admin-cron-manager.js`, `assets/js/admin-crawl4ai-monitor.js`
+   - Fixed unescaped error messages inserted into DOM
+   - All error messages now escaped before insertion
+   - Impact: Eliminates XSS attack vector in admin error handling
+
+4. **Missing Job Authorization Checks (High)** - `includes/class-wp-mcp-ai-job-notifier-rest.php`
+   - Fixed users accessing other users' job data via ID enumeration
+   - Implemented comprehensive multi-level authorization
+   - Impact: Prevents unauthorized job data access
+
+**Comprehensive Entity Tracking (11 Types):**
+- Added `ensure_tracking_ids()` helper capturing all entity IDs in job metadata
+- **Tracked Entities**: user_id, assistant_id, team_id, profession_id, agent_id, agent_role, virtual_agent_id, virtual_id, workflow_id, parent_job_id, profession_slug
+- **Benefits**: Complete audit trail for multi-agent workflows; critical for debugging complex orchestrations
+- Applied to all job events: started, progress, completed, failed
+
+**Multi-Level Authorization (7 Paths):**
+- Implemented `is_user_authorized_for_job()` with comprehensive ownership checks
+- **Authorization Paths**: Admin capability, direct user ownership, assistant ownership, team membership, profession ownership, agent ownership, virtual agent via team
+- **Benefits**: Flexible multi-tenant access control; team collaboration support; proper data isolation
+- Enforced in `handle_job_status()` and `handle_job_stream()` REST endpoints
+
+**Documentation Consolidation:**
+- Moved 23 files from root to organized subdirectories
+- Root now contains 6 essential docs + 2 supporting files (down from 31)
+- Created comprehensive security report: [CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md](docs/security/CODE_REVIEW_SECURITY_FINDINGS_2026-01-29.md)
+- All implementation summaries organized in `docs/implementation-history/2026/`
+
+**Files Changed**: 6 modified (~400 lines added)  
+**Security Posture**: 100% critical/high issues resolved (2 medium remain)
 
 ### DeepSeek V4 Multi-Agent Orchestration (January 2026) ⭐ **NEW**
 

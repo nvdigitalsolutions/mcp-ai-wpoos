@@ -5,7 +5,7 @@
  * Loads the Architectural Design Toolkit system for AI-powered floor plan generation,
  * 3D modeling, blueprint creation, code compliance, and cost estimation.
  *
- * Phase 2.10 - Implementation in Progress
+ * Implements CPT-based structure following industry standards (AIA, CSI MasterFormat).
  *
  * @package WP_MCP_AI
  */
@@ -14,23 +14,75 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Check if Architectural Design toolkit is enabled.
+// Load CPT classes.
+require_once __DIR__ . '/class-wp-mcp-ai-architectural-project-cpt.php';
+require_once __DIR__ . '/class-wp-mcp-ai-architectural-drawing-cpt.php';
+require_once __DIR__ . '/class-wp-mcp-ai-architectural-specification-cpt.php';
+
+// Initialize CPTs - they have their own checks for enabled/base version.
+WP_MCP_AI_Architectural_Project_CPT::init();
+WP_MCP_AI_Architectural_Drawing_CPT::init();
+WP_MCP_AI_Architectural_Specification_CPT::init();
+
+// Load Research & Add and Settings pages for admin.
+if ( is_admin() ) {
+	// Check if architectural design toolkit is enabled and not in base version (unless Pro addon is active).
+	$settings      = get_option( 'wp_mcp_ai_settings', array() );
+	$is_enabled    = ! empty( $settings['enable_architectural_design_toolkit'] );
+	$is_base       = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+
+	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+		// Load Project Settings and Research & Add pages (under Design Projects menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-settings-page.php';
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-research-page.php';
+		WP_MCP_AI_Architectural_Project_Research_Page::init();
+
+		// Load Drawing Settings and Research & Add pages (under Drawings menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-settings-page.php';
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-research-page.php';
+		WP_MCP_AI_Architectural_Drawing_Research_Page::init();
+
+		// Load Specification Settings and Research & Add pages (under Specifications menu).
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-settings-page.php';
+		require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-research-page.php';
+		WP_MCP_AI_Architectural_Specification_Research_Page::init();
+	}
+}
+
+/**
+ * Initialize architectural design admin interface.
+ */
+function wp_mcp_ai_init_architectural_design_admin() {
+	// Only load in admin context.
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	// Check if architectural design toolkit is enabled.
+	$settings = get_option( 'wp_mcp_ai_settings', array() );
+	if ( empty( $settings['enable_architectural_design_toolkit'] ) ) {
+		return;
+	}
+
+	// Load metabox classes.
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-project-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-drawing-metabox.php';
+	require_once __DIR__ . '/admin/class-wp-mcp-ai-architectural-specification-metabox.php';
+
+	// Initialize metaboxes.
+	WP_MCP_AI_Architectural_Project_Metabox::init();
+	WP_MCP_AI_Architectural_Drawing_Metabox::init();
+	WP_MCP_AI_Architectural_Specification_Metabox::init();
+}
+add_action( 'admin_init', 'wp_mcp_ai_init_architectural_design_admin' );
+
+// Only load tools if enabled and not in base version.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_architectural_design_toolkit'] );
 $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
 
-// Only load if enabled and not in base version.
 if ( $is_enabled && ! $is_base ) {
-
-	// Load Architectural Design admin pages.
-	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architectural-design-settings-page.php';
-	}
-
-	// Load Research & Add for CCT/CPT integration.
-	require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-architectural-design-research-add.php';
-	new WP_MCP_AI_Architectural_Design_Research_Add();
-
 	// Load Architectural Design tools.
 	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_architectural_design_tools' );
 }

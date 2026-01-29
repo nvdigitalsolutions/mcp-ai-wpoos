@@ -14,10 +14,10 @@
 #   ./bin/build-plugin-zip.sh --version 1.0.0    # Specify version number
 #
 # Output:
-#   build/mcp-ai-wpoos-base-X.Y.Z.zip       (standalone base version - works alone)
-#   build/mcp-ai-wpoos-pro-X.Y.Z.zip        (pro add-on - requires base)
-#   build/mcp-ai-wpoos-X.Y.Z.zip            (base + pro combined)
-#   build/mcp-ai-wpoos-core-X.Y.Z.zip       (lightweight core plugin - 4 basic tools)
+#   build/nvdigital-open-operator-system-oos-X.Y.Z.zip       (standard/WordPress.org version)
+#   build/nvdigital-open-operator-system-oos-pro-X.Y.Z.zip   (pro add-on - requires base)
+#   build/nvdigital-open-operator-system-oos-complete-X.Y.Z.zip (base + pro combined)
+#   build/nvdigital-open-operator-system-oos-core-X.Y.Z.zip  (lightweight core plugin - 4 basic tools)
 #
 # Requirements:
 #   - Node.js and npm (for asset building)
@@ -97,11 +97,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# If no build type specified, build base, pro, and combined (but not core-only)
+# If no build type specified, build all versions (base, pro, combined, and core-only)
 if [ "$BUILD_BASE" = false ] && [ "$BUILD_PRO" = false ] && [ "$BUILD_COMBINED" = false ] && [ "$BUILD_CORE_ONLY" = false ]; then
     BUILD_BASE=true
     BUILD_PRO=true
     BUILD_COMBINED=true
+    BUILD_CORE_ONLY=true
 fi
 
 # Get version if not specified
@@ -167,7 +168,7 @@ mkdir -p build
 if [ "$BUILD_BASE" = true ]; then
     echo "Step 3a: Building Base version (standalone)..."
     
-    BASE_SLUG="mcp-ai-wpoos-base"
+    BASE_SLUG="nvdigital-open-operator-system-oos"
     mkdir -p "build/${BASE_SLUG}"
     
     # Copy full plugin files EXCEPT pro addons
@@ -306,8 +307,9 @@ if [ "$BUILD_BASE" = true ]; then
     # Remove plugin header from mcp-ai-wpoos.php to prevent WordPress from detecting it as a separate plugin
     # Only mcp-ai-wpoos-base.php should have the plugin header in the base version
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos.php" ]; then
-        # Replace the plugin header comment block with a regular comment
-        sed -i '1,/\*\//c\
+        # Replace the plugin header comment block (lines 1-24) with a regular comment
+        # Use line number range for consistency and to prevent accidentally removing code
+        sed -i '1,24c\
 <?php\
 /**\
  * WP MCP AI - Main Plugin File\
@@ -324,8 +326,9 @@ if [ "$BUILD_BASE" = true ]; then
     # Add plugin header to mcp-ai-wpoos-base.php for base version distribution
     # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
     if [ -f "build/${BASE_SLUG}/mcp-ai-wpoos-base.php" ]; then
-        # Replace the comment block with a full plugin header
-        sed -i '1,/\*\//c\
+        # Replace the comment block (lines 1-17) with a full plugin header
+        # Use line number range to avoid accidentally removing code after the comment
+        sed -i '1,17c\
 <?php\
 /**\
  * Plugin Name: NV Digital Open Operator System (oOS)\
@@ -415,7 +418,7 @@ fi
 if [ "$BUILD_PRO" = true ]; then
     echo "Step 3b: Building Pro add-on..."
     
-    PRO_SLUG="mcp-ai-wpoos-pro"
+    PRO_SLUG="nvdigital-open-operator-system-oos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
     # Copy pro addon files
@@ -445,8 +448,9 @@ if [ "$BUILD_PRO" = true ]; then
         # Add plugin header to mcp-ai-wpoos-pro.php for standalone Pro addon distribution
         # In the repository, this file doesn't have a plugin header to prevent duplicate plugin detection
         if [ -f "build/${PRO_SLUG}/mcp-ai-wpoos-pro.php" ]; then
-            # Replace the comment block with a full plugin header
-            sed -i '1,/\*\//c\
+            # Replace the comment block (lines 1-25) with a full plugin header
+            # Use line number range to avoid accidentally removing constants after the comment
+            sed -i '1,25c\
 <?php\
 /**\
  * Plugin Name: NV Digital Open Operator System Pro (oOS Pro)\
@@ -493,7 +497,7 @@ fi
 if [ "$BUILD_CORE_ONLY" = true ]; then
     echo "Step 3c: Building Core plugin (lightweight)..."
     
-    CORE_SLUG="mcp-ai-wpoos-core"
+    CORE_SLUG="nvdigital-open-operator-system-oos-core"
     mkdir -p "build/${CORE_SLUG}"
     
     # Copy core plugin files
@@ -534,7 +538,7 @@ fi
 if [ "$BUILD_COMBINED" = true ]; then
     echo "Step 3d: Building Base + Pro combined version..."
     
-    COMBINED_SLUG="mcp-ai-wpoos"
+    COMBINED_SLUG="nvdigital-open-operator-system-oos-complete"
     mkdir -p "build/${COMBINED_SLUG}"
     
     # Copy all plugin files (includes both base and pro)
@@ -688,12 +692,12 @@ echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
 echo "  2. Upload the appropriate ZIP file:"
-[ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Standalone base plugin)"
-[ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on, requires base)"
-[ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Base + Pro combined)"
+[ "$BUILD_BASE" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (Standard/WordPress.org version)"
+[ "$BUILD_PRO" = true ] && echo "     - nvdigital-open-operator-system-oos-pro-${VERSION}.zip (Pro add-on, requires base)"
+[ "$BUILD_COMBINED" = true ] && echo "     - nvdigital-open-operator-system-oos-complete-${VERSION}.zip (Complete: Base + Pro combined)"
 if [ "$BUILD_CORE_ONLY" = true ]; then
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
-    echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
+    echo "     - nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
 fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""

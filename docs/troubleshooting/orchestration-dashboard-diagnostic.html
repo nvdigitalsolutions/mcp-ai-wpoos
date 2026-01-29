@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orchestration Dashboard Diagnostic Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .test-section { background: white; padding: 20px; margin: 20px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .pass { background: #d4edda; color: #155724; }
+        .fail { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { background: #0073aa; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a87; }
+        h2 { color: #333; border-bottom: 2px solid #0073aa; padding-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Orchestration Dashboard Diagnostic Test</h1>
+    <p>This page tests the components needed for the orchestration dashboard to work properly.</p>
+    
+    <div class="test-section">
+        <h2>1. Environment Check</h2>
+        <div id="env-test">Running tests...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. WordPress Globals</h2>
+        <div id="wp-test">Running tests...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Plugin Configuration</h2>
+        <div id="config-test">Running tests...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>4. AJAX Endpoint Test</h2>
+        <button onclick="testAjax()">Test AJAX Endpoint</button>
+        <div id="ajax-test"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>5. Asset Loading Test</h2>
+        <div id="asset-test">Running tests...</div>
+    </div>
+
+    <script>
+        // Test 1: Environment
+        function testEnvironment() {
+            let html = '';
+            
+            // Check jQuery
+            if (typeof jQuery !== 'undefined') {
+                html += '<div class="test-result pass">✓ jQuery is loaded (version: ' + jQuery.fn.jquery + ')</div>';
+            } else {
+                html += '<div class="test-result fail">✗ jQuery is NOT loaded</div>';
+            }
+            
+            // Check $
+            if (typeof $ !== 'undefined') {
+                html += '<div class="test-result pass">✓ $ (jQuery alias) is available</div>';
+            } else {
+                html += '<div class="test-result fail">✗ $ is NOT available (jQuery may be in noConflict mode)</div>';
+            }
+            
+            // Check console
+            if (typeof console !== 'undefined') {
+                html += '<div class="test-result pass">✓ Console is available for debugging</div>';
+            } else {
+                html += '<div class="test-result fail">✗ Console is NOT available</div>';
+            }
+            
+            document.getElementById('env-test').innerHTML = html;
+        }
+        
+        // Test 2: WordPress Globals
+        function testWordPress() {
+            let html = '';
+            
+            // Check ajaxurl
+            if (typeof ajaxurl !== 'undefined') {
+                html += '<div class="test-result pass">✓ ajaxurl is defined: <code>' + ajaxurl + '</code></div>';
+            } else {
+                html += '<div class="test-result fail">✗ ajaxurl is NOT defined (this is normal on front-end)</div>';
+            }
+            
+            // Check admin page classes
+            const bodyClasses = document.body.className;
+            if (bodyClasses.includes('wp-admin')) {
+                html += '<div class="test-result pass">✓ Running in WordPress admin (body has wp-admin class)</div>';
+            } else {
+                html += '<div class="test-result info">ℹ Not in WordPress admin area</div>';
+            }
+            
+            document.getElementById('wp-test').innerHTML = html;
+        }
+        
+        // Test 3: Plugin Configuration
+        function testConfiguration() {
+            let html = '';
+            
+            // Check wpMcpAiOrchestration
+            if (typeof wpMcpAiOrchestration !== 'undefined') {
+                html += '<div class="test-result pass">✓ wpMcpAiOrchestration is defined</div>';
+                html += '<pre>' + JSON.stringify(wpMcpAiOrchestration, null, 2) + '</pre>';
+                
+                // Check required properties
+                if (wpMcpAiOrchestration.ajaxUrl) {
+                    html += '<div class="test-result pass">✓ ajaxUrl is set: <code>' + wpMcpAiOrchestration.ajaxUrl + '</code></div>';
+                } else {
+                    html += '<div class="test-result fail">✗ ajaxUrl is NOT set</div>';
+                }
+                
+                if (wpMcpAiOrchestration.nonce) {
+                    html += '<div class="test-result pass">✓ nonce is set: <code>' + wpMcpAiOrchestration.nonce + '</code></div>';
+                } else {
+                    html += '<div class="test-result fail">✗ nonce is NOT set</div>';
+                }
+                
+                if (wpMcpAiOrchestration.refreshInterval) {
+                    html += '<div class="test-result pass">✓ refreshInterval is set: ' + wpMcpAiOrchestration.refreshInterval + 'ms</div>';
+                }
+            } else {
+                html += '<div class="test-result fail">✗ wpMcpAiOrchestration is NOT defined</div>';
+                html += '<div class="test-result info">ℹ This means wp_localize_script() was not called or the script handle is incorrect</div>';
+            }
+            
+            // Check OrchestrationDashboard object
+            if (typeof window.OrchestrationDashboard !== 'undefined') {
+                html += '<div class="test-result pass">✓ OrchestrationDashboard object is available</div>';
+            } else {
+                html += '<div class="test-result fail">✗ OrchestrationDashboard object is NOT available</div>';
+                html += '<div class="test-result info">ℹ The orchestration-dashboard.js file may not be loaded</div>';
+            }
+            
+            document.getElementById('config-test').innerHTML = html;
+        }
+        
+        // Test 4: AJAX
+        function testAjax() {
+            const resultDiv = document.getElementById('ajax-test');
+            resultDiv.innerHTML = '<div class="test-result info">⏳ Testing AJAX endpoint...</div>';
+            
+            if (typeof wpMcpAiOrchestration === 'undefined') {
+                resultDiv.innerHTML = '<div class="test-result fail">✗ Cannot test: wpMcpAiOrchestration is not defined</div>';
+                return;
+            }
+            
+            jQuery.ajax({
+                url: wpMcpAiOrchestration.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_get_dashboard_data',
+                    nonce: wpMcpAiOrchestration.nonce
+                },
+                success: function(response) {
+                    let html = '<div class="test-result pass">✓ AJAX request succeeded</div>';
+                    html += '<pre>' + JSON.stringify(response, null, 2) + '</pre>';
+                    
+                    if (response.success) {
+                        html += '<div class="test-result pass">✓ Response indicates success</div>';
+                        
+                        if (response.data) {
+                            html += '<div class="test-result pass">✓ Response contains data</div>';
+                            
+                            // Check data structure
+                            const requiredKeys = ['overview', 'capacity', 'sessions', 'workflows', 'activity'];
+                            requiredKeys.forEach(key => {
+                                if (response.data[key]) {
+                                    html += '<div class="test-result pass">✓ Data has "' + key + '" key</div>';
+                                } else {
+                                    html += '<div class="test-result fail">✗ Data missing "' + key + '" key</div>';
+                                }
+                            });
+                        } else {
+                            html += '<div class="test-result fail">✗ Response does not contain data</div>';
+                        }
+                    } else {
+                        html += '<div class="test-result fail">✗ Response indicates failure</div>';
+                    }
+                    
+                    resultDiv.innerHTML = html;
+                },
+                error: function(xhr, status, error) {
+                    let html = '<div class="test-result fail">✗ AJAX request failed</div>';
+                    html += '<div class="test-result fail">Status: ' + status + '</div>';
+                    html += '<div class="test-result fail">Error: ' + error + '</div>';
+                    html += '<pre>Response: ' + xhr.responseText + '</pre>';
+                    resultDiv.innerHTML = html;
+                }
+            });
+        }
+        
+        // Test 5: Assets
+        function testAssets() {
+            let html = '';
+            
+            // Check for dashboard element
+            const dashboardEl = document.querySelector('.wp-mcp-ai-orchestration-dashboard');
+            if (dashboardEl) {
+                html += '<div class="test-result pass">✓ Dashboard element (.wp-mcp-ai-orchestration-dashboard) found</div>';
+            } else {
+                html += '<div class="test-result fail">✗ Dashboard element NOT found</div>';
+                html += '<div class="test-result info">ℹ This test page may not be the actual dashboard page</div>';
+            }
+            
+            // Check metric elements
+            const metricElements = document.querySelectorAll('[data-metric]');
+            if (metricElements.length > 0) {
+                html += '<div class="test-result pass">✓ Found ' + metricElements.length + ' metric elements with data-metric attribute</div>';
+                
+                // List the metrics
+                const metrics = Array.from(metricElements).map(el => el.getAttribute('data-metric'));
+                html += '<div class="test-result info">Metrics: ' + metrics.join(', ') + '</div>';
+            } else {
+                html += '<div class="test-result fail">✗ No metric elements found</div>';
+            }
+            
+            // Check tables
+            const sessionsTable = document.getElementById('sessions-table-body');
+            if (sessionsTable) {
+                html += '<div class="test-result pass">✓ Sessions table body found</div>';
+            } else {
+                html += '<div class="test-result fail">✗ Sessions table body NOT found</div>';
+            }
+            
+            const workflowsTable = document.getElementById('workflows-table-body');
+            if (workflowsTable) {
+                html += '<div class="test-result pass">✓ Workflows table body found</div>';
+            } else {
+                html += '<div class="test-result fail">✗ Workflows table body NOT found</div>';
+            }
+            
+            document.getElementById('asset-test').innerHTML = html;
+        }
+        
+        // Run tests on load
+        window.addEventListener('DOMContentLoaded', function() {
+            testEnvironment();
+            testWordPress();
+            testConfiguration();
+            testAssets();
+        });
+    </script>
+    
+    <div class="test-section">
+        <h2>Console Output</h2>
+        <p>Open your browser's developer console (F12) to see additional diagnostic information that may have been logged by the orchestration dashboard JavaScript.</p>
+    </div>
+</body>
+</html>

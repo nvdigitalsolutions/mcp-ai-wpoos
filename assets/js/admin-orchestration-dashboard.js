@@ -9,12 +9,18 @@
 	'use strict';
 
 	const OrchestrationDashboard = {
+		autoRefreshInterval: null,
+		autoRefreshEnabled: true,
+		refreshIntervalMs: 5000, // 5 seconds
+
 		/**
 		 * Initialize dashboard interactions.
 		 */
 		init: function() {
 			this.bindEvents();
+			this.updateStats(); // Load initial system status data
 			this.loadWorkflows();
+			this.setupAutoRefresh();
 		},
 
 		/**
@@ -27,12 +33,305 @@
 			// Refresh stats button
 			$('#refresh-stats-btn').on('click', this.refreshStats.bind(this));
 
+			// Manual refresh button
+			$('#manual-refresh-btn').on('click', this.manualRefresh.bind(this));
+
+			// Auto-refresh toggle
+			$('#toggle-auto-refresh').on('change', this.toggleAutoRefresh.bind(this));
+
 			// Refresh workflows button
 			$('#refresh-workflows-btn').on('click', this.loadWorkflows.bind(this));
 
 			// Workflow action buttons (delegated for dynamically created elements)
 			$(document).on('click', '.workflow-action-continue', this.handleContinueWorkflow.bind(this));
 			$(document).on('click', '.workflow-action-restart', this.handleRestartWorkflow.bind(this));
+		},
+
+		/**
+		 * Setup auto-refresh functionality.
+		 */
+		setupAutoRefresh: function() {
+			const self = this;
+			
+			// Check if auto-refresh is enabled
+			const toggleCheckbox = $('#toggle-auto-refresh');
+			if (toggleCheckbox.length && toggleCheckbox.is(':checked')) {
+				this.autoRefreshEnabled = true;
+				this.startAutoRefresh();
+			}
+		},
+
+		/**
+		 * Start auto-refresh interval.
+		 */
+		startAutoRefresh: function() {
+			const self = this;
+			
+			if (this.autoRefreshInterval) {
+				clearInterval(this.autoRefreshInterval);
+			}
+
+			this.autoRefreshInterval = setInterval(function() {
+				if (self.autoRefreshEnabled) {
+					self.refreshStatsAndWorkflows();
+				}
+			}, this.refreshIntervalMs);
+		},
+
+		/**
+		 * Stop auto-refresh interval.
+		 */
+		stopAutoRefresh: function() {
+			if (this.autoRefreshInterval) {
+				clearInterval(this.autoRefreshInterval);
+				this.autoRefreshInterval = null;
+			}
+		},
+
+		/**
+		 * Toggle auto-refresh on/off.
+		 */
+		toggleAutoRefresh: function(e) {
+			this.autoRefreshEnabled = $(e.currentTarget).is(':checked');
+			
+			if (this.autoRefreshEnabled) {
+				this.startAutoRefresh();
+			} else {
+				this.stopAutoRefresh();
+			}
+		},
+
+		/**
+		 * Manual refresh button handler.
+		 */
+		manualRefresh: function(e) {
+			e.preventDefault();
+			this.refreshStatsAndWorkflows();
+		},
+
+		/**
+		 * Refresh both stats and workflows without page reload.
+		 */
+		refreshStatsAndWorkflows: function() {
+			this.updateStats();
+			this.loadWorkflows();
+		},
+
+		/**
+		 * Update statistics without page reload.
+		 */
+		updateStats: function() {
+			const self = this;
+
+			$.ajax({
+				url: wpMcpAiOrchestration.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_orchestration_stats',
+					nonce: wpMcpAiOrchestration.nonce
+				},
+				success: function(response) {
+					console.log('[Admin Dashboard] AJAX response received:', response);
+					
+					if (response.success && response.data) {
+						const stats = response.data;
+						
+						console.log('[Admin Dashboard] Stats data:', stats);
+						console.log('[Admin Dashboard] Has system_status:', !!stats.system_status);
+						if (stats.system_status) {
+							console.log('[Admin Dashboard] System status keys:', Object.keys(stats.system_status));
+							console.log('[Admin Dashboard] System status data:', stats.system_status);
+						}
+						
+						// Update stat cards
+						$('[data-stat="total_professions"]').text(stats.total_professions || 0);
+						$('[data-stat="seeded_professions"]').text(stats.seeded_professions || 0);
+						$('[data-stat="with_task_patterns"]').text(stats.with_task_patterns || 0);
+						
+						// Update system status if available
+						if (stats.system_status) {
+							self.updateSystemStatus(stats.system_status);
+						} else {
+							console.warn('[Admin Dashboard] No system_status in response');
+						}
+						
+						// Update last refresh time
+						self.updateLastRefreshTime();
+					} else {
+						console.warn('[Admin Dashboard] Response not successful or no data', response);
+					}
+				},
+				error: function(xhr, status, error) {
+					console.error('[Orchestration Dashboard] Error updating stats:', error);
+				}
+			});
+		},
+
+		/**
+		 * Update system status display.
+		 *
+		 * @param {Object} systemStatus System status data.
+		 */
+		updateSystemStatus: function(systemStatus) {
+			console.log('[Admin Dashboard] updateSystemStatus called with:', systemStatus);
+			
+			// Update cron status
+			if (systemStatus.cron) {
+				console.log('[Admin Dashboard] Updating cron status:', systemStatus.cron);
+				
+				// Defensive check - verify elements exist
+				const $cronActive = $('[data-system-status="cron_active"]');
+				const $cronPending = $('[data-system-status="cron_pending"]');
+				const $cronFailed = $('[data-system-status="cron_failed"]');
+				
+				console.log('[Admin Dashboard] Found cron elements:', {
+					active: $cronActive.length,
+					pending: $cronPending.length,
+					failed: $cronFailed.length
+				});
+				
+				if ($cronActive.length) {
+					$cronActive.text(systemStatus.cron.active || 0);
+					console.log('[Admin Dashboard] Set cron_active to', systemStatus.cron.active || 0);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="cron_active"] not found in DOM!');
+				}
+				
+				if ($cronPending.length) {
+					$cronPending.text(systemStatus.cron.pending || 0);
+					console.log('[Admin Dashboard] Set cron_pending to', systemStatus.cron.pending || 0);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="cron_pending"] not found in DOM!');
+				}
+				
+				if ($cronFailed.length) {
+					$cronFailed.text(systemStatus.cron.failed || 0);
+					console.log('[Admin Dashboard] Set cron_failed to', systemStatus.cron.failed || 0);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="cron_failed"] not found in DOM!');
+				}
+			} else {
+				console.warn('[Admin Dashboard] No cron data in systemStatus');
+			}
+
+			// Update async status
+			if (systemStatus.async) {
+				console.log('[Admin Dashboard] Updating async status:', systemStatus.async);
+				
+				const asyncStatus = systemStatus.async.status || 'unknown';
+				const $asyncStatus = $('[data-system-status="async_status"]');
+				const $asyncStuckJobs = $('[data-system-status="async_stuck_jobs"]');
+				const $asyncLongRunning = $('[data-system-status="async_long_running"]');
+				
+				console.log('[Admin Dashboard] Found async elements:', {
+					status: $asyncStatus.length,
+					stuck_jobs: $asyncStuckJobs.length,
+					long_running: $asyncLongRunning.length
+				});
+				
+				if ($asyncStatus.length) {
+					$asyncStatus
+						.text(asyncStatus)
+						.removeClass('status-healthy status-warning status-error')
+						.addClass('status-' + asyncStatus);
+					console.log('[Admin Dashboard] Set async_status to', asyncStatus);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="async_status"] not found in DOM!');
+				}
+				
+				if ($asyncStuckJobs.length) {
+					$asyncStuckJobs.text(systemStatus.async.stuck_jobs || 0);
+					console.log('[Admin Dashboard] Set async_stuck_jobs to', systemStatus.async.stuck_jobs || 0);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="async_stuck_jobs"] not found in DOM!');
+				}
+				
+				if ($asyncLongRunning.length) {
+					$asyncLongRunning.text(systemStatus.async.long_running || 0);
+					console.log('[Admin Dashboard] Set async_long_running to', systemStatus.async.long_running || 0);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="async_long_running"] not found in DOM!');
+				}
+			} else {
+				console.warn('[Admin Dashboard] No async data in systemStatus');
+			}
+
+			// Update health status
+			if (systemStatus.health) {
+				console.log('[Admin Dashboard] Updating health status:', systemStatus.health);
+				
+				const healthStatus = systemStatus.health.status || 'unknown';
+				const $healthStatus = $('[data-system-status="health_status"]');
+				const $healthLabel = $('[data-system-status="health_label"]');
+				
+				console.log('[Admin Dashboard] Found health elements:', {
+					status: $healthStatus.length,
+					label: $healthLabel.length
+				});
+				
+				if ($healthStatus.length) {
+					$healthStatus
+						.text(systemStatus.health.icon + ' ' + healthStatus)
+						.removeClass('status-healthy status-good status-fair status-poor')
+						.addClass('status-' + healthStatus);
+					console.log('[Admin Dashboard] Set health_status to', systemStatus.health.icon + ' ' + healthStatus);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="health_status"] not found in DOM!');
+				}
+				
+				if ($healthLabel.length) {
+					$healthLabel.text(systemStatus.health.label || 'Unknown');
+					console.log('[Admin Dashboard] Set health_label to', systemStatus.health.label || 'Unknown');
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="health_label"] not found in DOM!');
+				}
+			} else {
+				console.warn('[Admin Dashboard] No health data in systemStatus');
+			}
+
+			// Update SSE status
+			if (systemStatus.sse) {
+				console.log('[Admin Dashboard] Updating SSE status:', systemStatus.sse);
+				
+				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
+				const $sseAvailable = $('[data-system-status="sse_available"]');
+				const $sseEndpoint = $('[data-system-status="sse_endpoint"]');
+				
+				console.log('[Admin Dashboard] Found SSE elements:', {
+					available: $sseAvailable.length,
+					endpoint: $sseEndpoint.length
+				});
+				
+				if ($sseAvailable.length) {
+					$sseAvailable
+						.text(sseAvailable)
+						.removeClass('status-yes status-no')
+						.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
+					console.log('[Admin Dashboard] Set sse_available to', sseAvailable);
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="sse_available"] not found in DOM!');
+				}
+				
+				if ($sseEndpoint.length) {
+					$sseEndpoint.text(systemStatus.sse.endpoint || 'N/A');
+					console.log('[Admin Dashboard] Set sse_endpoint to', systemStatus.sse.endpoint || 'N/A');
+				} else {
+					console.error('[Admin Dashboard] Element [data-system-status="sse_endpoint"] not found in DOM!');
+				}
+			} else {
+				console.warn('[Admin Dashboard] No sse data in systemStatus');
+			}
+			
+			console.log('[Admin Dashboard] System status update complete');
+		},
+
+		/**
+		 * Update last refresh timestamp.
+		 */
+		updateLastRefreshTime: function() {
+			const now = new Date();
+			const timeString = now.toLocaleTimeString();
+			$('#last-refresh-time').text(timeString);
 		},
 
 		/**

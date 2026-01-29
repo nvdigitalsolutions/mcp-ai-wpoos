@@ -47,6 +47,41 @@ abstract class WP_MCP_AI_Research_Add_Base {
 	protected $current_entity;
 
 	/**
+	 * Post type slug (set by child classes).
+	 *
+	 * @var string
+	 */
+	protected $post_type;
+
+	/**
+	 * Page title (set by child classes).
+	 *
+	 * @var string
+	 */
+	protected $page_title;
+
+	/**
+	 * Menu title (set by child classes).
+	 *
+	 * @var string
+	 */
+	protected $menu_title;
+
+	/**
+	 * Page slug (set by child classes).
+	 *
+	 * @var string
+	 */
+	protected $page_slug;
+
+	/**
+	 * Required capability (set by child classes).
+	 *
+	 * @var string
+	 */
+	protected $capability;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $toolkit_slug Toolkit identifier.
@@ -59,12 +94,41 @@ abstract class WP_MCP_AI_Research_Add_Base {
 		// Get current entity from query string.
 		$this->current_entity = isset( $_GET['entity'] ) ? sanitize_key( $_GET['entity'] ) : $this->get_default_entity(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
+		// Register admin menu page.
+		add_action( 'admin_menu', array( $this, 'add_research_page' ), 25 );
+
 		// Handle AJAX actions.
 		add_action( 'wp_ajax_wp_mcp_ai_research_add_item', array( $this, 'ajax_add_item' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_research_delete_item', array( $this, 'ajax_delete_item' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_research_get_item', array( $this, 'ajax_get_item' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_research_ai_generate', array( $this, 'ajax_ai_generate' ) );
 		add_action( 'admin_init', array( $this, 'handle_form_submission' ) );
+	}
+
+	/**
+	 * Add Research & Add submenu page.
+	 */
+	public function add_research_page() {
+		// Skip if required properties are not set.
+		if ( empty( $this->post_type ) || empty( $this->page_title ) || empty( $this->menu_title ) || empty( $this->page_slug ) ) {
+			return;
+		}
+
+		// For the built-in 'post' post type, the parent slug is just 'edit.php'.
+		// For all other post types, it's 'edit.php?post_type={post_type}'.
+		$parent_slug = ( 'post' === $this->post_type ) ? 'edit.php' : 'edit.php?post_type=' . $this->post_type;
+
+		// Use 'edit_posts' as default capability if not set.
+		$capability = ! empty( $this->capability ) ? $this->capability : 'edit_posts';
+
+		add_submenu_page(
+			$parent_slug,
+			$this->page_title,
+			$this->menu_title,
+			$capability,
+			$this->page_slug,
+			array( $this, 'render' )
+		);
 	}
 
 	/**

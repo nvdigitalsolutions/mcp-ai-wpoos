@@ -370,6 +370,303 @@
 	}
 }
 
+/* Agent Memory Section */
+.orchestration-memory-container {
+	background: #fff;
+	padding: 25px;
+	margin: 25px 0;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.orchestration-memory-container h2 {
+	margin-top: 0;
+	margin-bottom: 20px;
+	font-size: 18px;
+}
+
+.agent-memory-stats-widget {
+	padding: 10px 0;
+}
+
+.memory-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 20px;
+	margin-bottom: 25px;
+}
+
+.memory-stat-card {
+	background: #fff;
+	padding: 20px;
+	border-left: 4px solid #2271b1;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+	display: flex;
+	gap: 15px;
+	align-items: center;
+}
+
+.memory-stat-card .stat-icon {
+	font-size: 36px;
+	line-height: 1;
+}
+
+.memory-stat-card .stat-content {
+	flex: 1;
+}
+
+.memory-stat-card .stat-content h3 {
+	margin: 0 0 5px 0;
+	font-size: 28px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.memory-stat-card .stat-content p {
+	margin: 0;
+	font-size: 13px;
+	color: #646970;
+}
+
+.memory-contexts-breakdown {
+	margin: 25px 0;
+	padding: 20px;
+	background: #f9f9f9;
+	border-radius: 4px;
+}
+
+.memory-contexts-breakdown h4 {
+	margin: 0 0 15px 0;
+	font-size: 16px;
+}
+
+.memory-contexts-breakdown table {
+	margin-top: 10px;
+}
+
+.memory-empty-state {
+	text-align: center;
+	padding: 40px 20px;
+	background: #f9f9f9;
+	border-radius: 4px;
+	margin: 25px 0;
+}
+
+.memory-empty-state p {
+	margin: 0;
+	color: #646970;
+	font-size: 14px;
+}
+
+.memory-tool-info {
+	margin: 25px 0;
+	padding: 20px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	border-radius: 4px;
+}
+
+.memory-tool-info h4 {
+	margin: 0 0 15px 0;
+	font-size: 16px;
+	color: #1d2327;
+}
+
+.memory-tool-info ul {
+	margin: 0 0 15px 0;
+	padding-left: 20px;
+}
+
+.memory-tool-info ul li {
+	margin-bottom: 12px;
+	line-height: 1.6;
+	color: #1d2327;
+}
+
+.memory-tool-info ul li strong {
+	color: #2271b1;
+}
+
+.memory-tool-info p {
+	margin: 15px 0 0 0;
+}
+
+.memory-tool-info .button {
+	margin-right: 8px;
+}
+
+/* Agent Memory Section - Responsive */
+@media (max-width: 782px) {
+	.memory-stats-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* System Status Section */
+.orchestration-system-status-container {
+	background: #fff;
+	padding: 25px;
+	margin: 25px 0;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.orchestration-system-status-container h2 {
+	margin-top: 0;
+	margin-bottom: 20px;
+	font-size: 18px;
+}
+
+.system-status-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 20px;
+}
+
+.status-card {
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.status-card h3 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 15px 0;
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.status-card h3 .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	color: #2271b1;
+}
+
+.status-metrics {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.status-metrics .metric {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid #f0f0f1;
+}
+
+.status-metrics .metric:last-child {
+	border-bottom: none;
+}
+
+.status-metrics .label {
+	font-size: 13px;
+	color: #646970;
+	font-weight: 500;
+}
+
+.status-metrics .value {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1d2327;
+}
+
+.status-metrics .value.error {
+	color: #d63638;
+}
+
+.status-metrics .value.warning {
+	color: #f0b849;
+}
+
+.status-metrics .value.success {
+	color: #00a32a;
+}
+
+.status-metrics .value.status-yes {
+	color: #00a32a;
+}
+
+.status-metrics .value.status-no {
+	color: #d63638;
+}
+
+.status-metrics .value.small {
+	font-size: 12px;
+	font-weight: 400;
+	word-break: break-all;
+}
+
+.status-metrics .status-badge {
+	display: inline-block;
+	padding: 4px 10px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.status-metrics .status-badge.status-healthy {
+	background: #d5f3e0;
+	color: #00a32a;
+}
+
+.status-metrics .status-badge.status-good {
+	background: #d5f3e0;
+	color: #00a32a;
+}
+
+.status-metrics .status-badge.status-fair {
+	background: #fcf3cd;
+	color: #996800;
+}
+
+.status-metrics .status-badge.status-warning {
+	background: #fcf3cd;
+	color: #996800;
+}
+
+.status-metrics .status-badge.status-poor {
+	background: #fce4e6;
+	color: #d63638;
+}
+
+.status-metrics .status-badge.status-critical {
+	background: #fce4e6;
+	color: #d63638;
+}
+
+.status-metrics .status-badge.status-error {
+	background: #fce4e6;
+	color: #d63638;
+}
+
+.status-metrics .status-badge.status-unknown {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+/* System Status - Responsive */
+@media (max-width: 782px) {
+	.system-status-grid {
+		grid-template-columns: 1fr;
+	}
+	
+	.status-card {
+		padding: 15px;
+	}
+	
+	.status-metrics .value.small {
+		font-size: 11px;
+	}
+}
+
 /* Workflows Section */
 .orchestration-workflows-container {
 	background: #fff;

@@ -1212,11 +1212,20 @@ class WP_MCP_AI_Shortcode {
 				<div class="wp-mcp-ai-chat__quota-monitor" role="status" aria-live="polite" aria-atomic="true"></div>
 				<div class="wp-mcp-ai-chat__cron-status" role="status" aria-live="polite" aria-atomic="true" hidden>
 					<span class="wp-mcp-ai-chat__cron-status-label"><?php esc_html_e( 'Jobs:', 'mcp-ai-wpoos' ); ?></span>
+					<span class="wp-mcp-ai-chat__cron-status-active" title="<?php esc_attr_e( 'Active jobs', 'mcp-ai-wpoos' ); ?>">
+						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
+					</span>
 					<span class="wp-mcp-ai-chat__cron-status-pending" title="<?php esc_attr_e( 'Pending jobs', 'mcp-ai-wpoos' ); ?>">
 						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
 					</span>
 					<span class="wp-mcp-ai-chat__cron-status-completed" title="<?php esc_attr_e( 'Completed jobs', 'mcp-ai-wpoos' ); ?>">
 						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
+					</span>
+					<span class="wp-mcp-ai-chat__cron-status-failed" title="<?php esc_attr_e( 'Failed jobs', 'mcp-ai-wpoos' ); ?>">
+						<span class="wp-mcp-ai-chat__cron-status-count">0</span>
+					</span>
+					<span class="wp-mcp-ai-chat__cron-status-health" title="<?php esc_attr_e( 'System health', 'mcp-ai-wpoos' ); ?>" data-status="unknown">
+						<span class="wp-mcp-ai-chat__cron-status-icon">●</span>
 					</span>
 				</div>
 				<div class="wp-mcp-ai-chat__control-buttons">

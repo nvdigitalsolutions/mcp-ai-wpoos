@@ -55,6 +55,12 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
 			( isset( $_GET['page'] ) && 'mcp-ai-orchestration-pro' === $_GET['page'] );
 
+		// Debug logging for troubleshooting asset enqueue issues.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG && defined( 'WP_DEBUG_LOG' ) && WP_DEBUG_LOG ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Intentional debug logging when WP_DEBUG is enabled.
+			error_log( sprintf( 'Orchestration Dashboard: Hook=%s, GET page=%s, Is orchestration page=%s', $hook, isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : 'not set', $is_orchestration_page ? 'YES' : 'NO' ) );
+		}
+
 		if ( ! $is_orchestration_page ) {
 			return;
 		}
@@ -176,6 +182,80 @@ class WP_MCP_AI_Orchestration_Dashboard {
 				</div>
 			</div>
 
+			<!-- System Status Monitor -->
+			<div class="orchestration-section">
+				<h2><?php esc_html_e( 'System Status', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<div class="system-status-grid">
+					<!-- Cron Jobs Status -->
+					<div class="status-card">
+						<h3><span class="dashicons dashicons-clock"></span> <?php esc_html_e( 'Cron Jobs', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="status-metrics">
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Active:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="cron_active">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Pending:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="cron_pending">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Failed:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value error" data-system-status="cron_failed">-</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Async Operations Status -->
+					<div class="status-card">
+						<h3><span class="dashicons dashicons-update"></span> <?php esc_html_e( 'Async Operations', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="status-metrics">
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Status:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value status-badge" data-system-status="async_status">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Stuck Jobs:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value warning" data-system-status="async_stuck_jobs">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Long Running:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="async_long_running">-</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- System Health Status -->
+					<div class="status-card">
+						<h3><span class="dashicons dashicons-heart"></span> <?php esc_html_e( 'System Health', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="status-metrics">
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Overall:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value status-badge" data-system-status="health_status">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Label:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="health_label">-</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- SSE Connectivity -->
+					<div class="status-card">
+						<h3><span class="dashicons dashicons-update-alt"></span> <?php esc_html_e( 'SSE Streaming', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<div class="status-metrics">
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Available:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value" data-system-status="sse_available">-</span>
+							</div>
+							<div class="metric">
+								<span class="label"><?php esc_html_e( 'Endpoint:', 'mcp-ai-wpoos-pro' ); ?></span>
+								<span class="value small" data-system-status="sse_endpoint">-</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
 			<!-- Active Sessions Table -->
 			<div class="orchestration-section">
 				<h2><?php esc_html_e( 'Active Sessions', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -253,7 +333,15 @@ class WP_MCP_AI_Orchestration_Dashboard {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 		}
 
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] AJAX get_dashboard_data called' );
+
 		$data = $this->get_dashboard_data();
+
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Dashboard data prepared', array(
+			'has_system_status' => isset( $data['system_status'] ),
+			'system_status_keys' => isset( $data['system_status'] ) ? array_keys( $data['system_status'] ) : array(),
+		) );
+
 		wp_send_json_success( $data );
 	}
 
@@ -264,15 +352,138 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	private function get_dashboard_data() {
 		$data = array(
-			'overview'  => $this->get_overview_metrics(),
-			'capacity'  => $this->get_capacity_metrics(),
-			'sessions'  => $this->get_active_sessions(),
-			'workflows' => $this->get_team_workflows(),
-			'activity'  => $this->get_recent_activity(),
-			'timestamp' => time(),
+			'overview'       => $this->get_overview_metrics(),
+			'capacity'       => $this->get_capacity_metrics(),
+			'sessions'       => $this->get_active_sessions(),
+			'workflows'      => $this->get_team_workflows(),
+			'activity'       => $this->get_recent_activity(),
+			'system_status'  => $this->get_system_status(),
+			'timestamp'      => time(),
 		);
 
 		return $data;
+	}
+
+	/**
+	 * Get system status information for dashboard updates.
+	 *
+	 * Includes cron status, async job health, orchestration health, and SSE connectivity.
+	 *
+	 * @return array System status data.
+	 */
+	private function get_system_status() {
+		$status = array(
+			'cron'   => array(),
+			'async'  => array(),
+			'sse'    => array(),
+			'health' => array(),
+		);
+
+		// Diagnostic: Log start of status collection.
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Starting system status collection' );
+
+		// Get cron job status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
+			try {
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting cron status' );
+				$cron_service    = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary    = $cron_service->get_status_summary( 0, 5 );
+				$status['cron']  = array(
+					'total'     => count( $cron_summary ),
+					'active'    => 0,
+					'completed' => 0,
+					'pending'   => 0,
+					'failed'    => 0,
+					'jobs'      => array(),
+				);
+
+				foreach ( $cron_summary as $job ) {
+					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
+					
+					if ( 'active' === $job_status || 'running' === $job_status ) {
+						++$status['cron']['active'];
+					} elseif ( 'completed' === $job_status ) {
+						++$status['cron']['completed'];
+					} elseif ( 'pending' === $job_status ) {
+						++$status['cron']['pending'];
+					} elseif ( 'failed' === $job_status ) {
+						++$status['cron']['failed'];
+					}
+
+					// Include recent jobs for display.
+					if ( count( $status['cron']['jobs'] ) < 5 ) {
+						$status['cron']['jobs'][] = array(
+							'job_id' => isset( $job['job_id'] ) ? $job['job_id'] : '',
+							'title'  => isset( $job['title'] ) ? $job['title'] : 'Unknown',
+							'status' => $job_status,
+						);
+					}
+				}
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Cron status collected', $status['cron'] );
+			} catch ( Exception $e ) {
+				// Silently fail - status monitoring should not break the dashboard.
+				$status['cron']['error'] = $e->getMessage();
+				WP_MCP_AI_Logger::log_error( '[Pro Dashboard] Failed to collect cron status: ' . $e->getMessage() );
+			}
+		} else {
+			WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] WP_MCP_AI_Cron_Status_Service class not available' );
+		}
+
+		// Get async health status if monitor is available.
+		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
+			try {
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting async status' );
+				$async_health     = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async']  = array(
+					'status'         => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
+					'stuck_jobs'     => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
+					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
+					'pending_jobs'   => isset( $async_health['pending_jobs'] ) ? $async_health['pending_jobs'] : 0,
+					'failed_jobs'    => isset( $async_health['failed_jobs'] ) ? $async_health['failed_jobs'] : 0,
+					'cron_scheduled' => isset( $async_health['cron_scheduled'] ) ? $async_health['cron_scheduled'] : false,
+					'issues'         => isset( $async_health['issues'] ) ? $async_health['issues'] : array(),
+				);
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Async status collected', $status['async'] );
+			} catch ( Exception $e ) {
+				$status['async']['error'] = $e->getMessage();
+				WP_MCP_AI_Logger::log_error( '[Pro Dashboard] Failed to collect async status: ' . $e->getMessage() );
+			}
+		} else {
+			WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] WP_MCP_AI_Async_Health_Monitor class not available' );
+		}
+
+		// Get orchestration health status if service is available.
+		if ( class_exists( 'WP_MCP_AI_Orchestration_Health_Service' ) ) {
+			try {
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting health status' );
+				$health_status    = WP_MCP_AI_Orchestration_Health_Service::get_health_status();
+				$status['health'] = array(
+					'status'  => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
+					'label'   => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
+					'icon'    => isset( $health_status['icon'] ) ? $health_status['icon'] : '❓',
+					'metrics' => isset( $health_status['metrics'] ) ? $health_status['metrics'] : array(),
+				);
+				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Health status collected', $status['health'] );
+			} catch ( Exception $e ) {
+				$status['health']['error'] = $e->getMessage();
+				WP_MCP_AI_Logger::log_error( '[Pro Dashboard] Failed to collect health status: ' . $e->getMessage() );
+			}
+		} else {
+			WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] WP_MCP_AI_Orchestration_Health_Service class not available' );
+		}
+
+		// SSE connectivity check - basic check if SSE endpoint is configured.
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting SSE status' );
+		$status['sse'] = array(
+			'available' => class_exists( 'WP_MCP_AI_SSE_Stream' ),
+			'endpoint'  => rest_url( 'mcp-ai/v1/jobs' ),
+		);
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] SSE status collected', $status['sse'] );
+
+		// Diagnostic: Log final collected status.
+		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] System status collection complete', $status );
+
+		return $status;
 	}
 
 	/**

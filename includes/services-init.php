@@ -89,6 +89,15 @@ require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-enhanced-wo
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-async-executor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-async-health-monitor.php';
 
+// Load cron status service (for admin dashboard monitoring).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-cron-status-service.php';
+
+// Load agent context management service (DeepSeek V4 enhancements - Phase 5).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-agent-context-manager.php';
+
+// Load vector context service (DeepSeek V4 enhancements - Phase 5.5).
+require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-vector-context-service.php';
+
 // Load tool orchestration and efficiency services (DeepSeek V4 enhancements - Phase 2).
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-monitor.php';
 require_once plugin_dir_path( __FILE__ ) . 'services/class-wp-mcp-ai-tool-load-balancer.php';
@@ -365,6 +374,32 @@ function wp_mcp_ai_get_enhanced_workflow_coordinator() {
 	}
 
 	return $coordinator;
+}
+
+/**
+ * Get agent context manager instance
+ *
+ * Helper function to get the agent context manager for managing
+ * agent memory, context storage, and session recovery.
+ *
+ * @since 1.1.0
+ * @return WP_MCP_AI_Agent_Context_Manager Context manager instance.
+ */
+function wp_mcp_ai_get_agent_context_manager() {
+	return WP_MCP_AI_Agent_Context_Manager::get_instance();
+}
+
+/**
+ * Get vector context service instance
+ *
+ * Helper function to get the vector context service for semantic
+ * search using OpenAI embeddings.
+ *
+ * @since 1.1.0
+ * @return WP_MCP_AI_Vector_Context_Service Vector context service instance.
+ */
+function wp_mcp_ai_get_vector_context_service() {
+	return WP_MCP_AI_Vector_Context_Service::get_instance();
 }
 
 /**
