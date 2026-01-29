@@ -1221,10 +1221,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</p>
 
 				<?php if ( isset( $packages['error'] ) ) : ?>
-					<div class="notice notice-error">
+					<div class="notice notice-info">
 						<p>
-							<strong><?php esc_html_e( 'Error reading package.json:', 'mcp-ai-wpoos' ); ?></strong>
-							<?php echo esc_html( $packages['error'] ); ?>
+							<strong><?php esc_html_e( 'NPM Package Information:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Not available in this installation (package.json not found). This is normal for WordPress.org and production builds where development files are excluded.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p style="margin: 5px 0 0 0;">
+							<em><?php esc_html_e( 'Your plugin is fully functional. NPM package information is only needed for development purposes.', 'mcp-ai-wpoos' ); ?></em>
 						</p>
 					</div>
 				<?php else : ?>
@@ -1265,6 +1268,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 									<p style="margin: 0;">
 										<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
 										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment.', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</div>
+							<?php else : ?>
+								<div style="padding: 20px; background: #f0f0f1; border-left: 4px solid #72aee6; text-align: center;">
+									<p style="margin: 0 0 10px 0;">
+										<span class="dashicons dashicons-info" style="font-size: 48px; width: 48px; height: 48px; color: #72aee6;"></span>
+									</p>
+									<p style="margin: 0 0 5px 0; font-weight: 600;">
+										<?php esc_html_e( 'NPM Package Information Not Available', 'mcp-ai-wpoos' ); ?>
+									</p>
+									<p style="margin: 0; color: #666;">
+										<?php esc_html_e( 'This is normal for WordPress.org and production builds.', 'mcp-ai-wpoos' ); ?>
+									</p>
+									<p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+										<?php esc_html_e( 'Your plugin functionality is not affected. Package information is only for development reference.', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
 							<?php endif; ?>
