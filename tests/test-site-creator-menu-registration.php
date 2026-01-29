@@ -79,9 +79,11 @@ class Test_Site_Creator_Menu_Registration extends WP_UnitTestCase {
 
 		// Check for expected submenu items.
 		$expected_items = array(
-			'nvoos-site-creator'           => 'Overview',
-			'nvoos-site-creator-tools'     => 'Tools',
-			'nvoos-site-creator-templates' => 'Templates',
+			'nvoos-site-creator'             => 'Overview',
+			'nvoos-site-creator-tools'       => 'Tools',
+			'nvoos-site-creator-templates'   => 'Templates',
+			'nvoos-site-creator-research'    => 'Research & Add',
+			'nvoos-site-creator-consolidate' => 'Consolidate & Add',
 		);
 
 		foreach ( $expected_items as $slug => $title ) {

@@ -19,7 +19,9 @@ Changed Site Creator from a submenu item under Pro Dashboard to its own top-leve
 Site Creator (Top-level menu)
 ├── Overview
 ├── Tools
-└── Templates
+├── Templates
+├── Research & Add
+└── Consolidate & Add
 ```
 
 ### 2. Technical Changes

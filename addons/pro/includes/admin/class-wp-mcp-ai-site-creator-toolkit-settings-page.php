@@ -82,6 +82,24 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 			'nvoos-site-creator-templates',
 			array( $this, 'render_templates_page' )
 		);
+
+		add_submenu_page(
+			'nvoos-site-creator',
+			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
+			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'nvoos-site-creator-research',
+			array( $this, 'render_research_page' )
+		);
+
+		add_submenu_page(
+			'nvoos-site-creator',
+			__( 'Consolidate & Add', 'mcp-ai-wpoos-pro' ),
+			__( 'Consolidate & Add', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'nvoos-site-creator-consolidate',
+			array( $this, 'render_consolidate_page' )
+		);
 	}
 
 	/**
@@ -393,6 +411,256 @@ class WP_MCP_AI_Site_Creator_Toolkit_Settings_Page {
 					<li><?php esc_html_e( 'Use version control for tracking changes', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ul>
 			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the research & add page.
+	 *
+	 * @since 1.2.0
+	 */
+	public function render_research_page() {
+		$settings   = get_option( 'wp_mcp_ai_settings', array() );
+		$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Research & Add Site Templates', 'mcp-ai-wpoos-pro' ); ?></h1>
+
+			<?php if ( ! $is_enabled ) : ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<strong><?php esc_html_e( 'Site Creator Toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( 'Enable it in the main settings to use research features.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=site_creator' ) ); ?>" class="button">
+							<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<div class="card">
+				<h2><?php esc_html_e( 'AI-Powered Site Research', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					esc_html_e(
+						'Use AI assistance to research and plan site templates before creating them. The AI can help you discover best practices, analyze competitor sites, suggest layouts, and plan complete site structures.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+
+				<h3><?php esc_html_e( 'Research Capabilities', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li><strong><?php esc_html_e( 'Best Practices Research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Discover industry standards and modern web design principles', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Competitor Analysis:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Analyze competitor websites for inspiration and insights', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Site Planning:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Generate comprehensive site plans and architecture', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Template Suggestions:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Get AI-powered template and pattern recommendations', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Content Strategy:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Plan content structure and information architecture', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<?php if ( $is_enabled ) : ?>
+					<h3><?php esc_html_e( 'How to Use', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<ol>
+						<li><?php esc_html_e( 'Start a conversation with the AI assistant below', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Describe your site requirements or ask research questions', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Review AI suggestions and research findings', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Refine your requirements through conversation', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Create site templates directly from the research insights', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ol>
+
+					<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 4px;">
+						<h3 style="margin-top: 0;"><?php esc_html_e( 'AI Assistant', 'mcp-ai-wpoos-pro' ); ?></h3>
+						<p><?php esc_html_e( 'Chat with the AI assistant to research and plan your site templates:', 'mcp-ai-wpoos-pro' ); ?></p>
+						
+						<?php
+						// Render the chat interface.
+						if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+							echo do_shortcode( '[nvoos-ai-chat assistant="site-creator-research" mode="inline"]' );
+						} else {
+							?>
+							<div class="notice notice-info inline">
+								<p><?php esc_html_e( 'Chat interface not available. Please ensure NV oOS is properly configured.', 'mcp-ai-wpoos-pro' ); ?></p>
+							</div>
+							<?php
+						}
+						?>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php if ( $is_enabled ) : ?>
+				<div class="card">
+					<h2><?php esc_html_e( 'Example Research Questions', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<ul>
+						<li>"What are the best practices for e-commerce homepage design in 2025?"</li>
+						<li>"Analyze the top 3 SaaS landing pages and suggest a layout"</li>
+						<li>"Create a site plan for a restaurant website with online ordering"</li>
+						<li>"What sections should I include in a professional services website?"</li>
+						<li>"Suggest template patterns for a portfolio website"</li>
+					</ul>
+				</div>
+			<?php endif; ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render the consolidate & add page.
+	 *
+	 * @since 1.2.0
+	 */
+	public function render_consolidate_page() {
+		$settings   = get_option( 'wp_mcp_ai_settings', array() );
+		$is_enabled = ! empty( $settings['enable_site_creator_toolkit'] );
+		?>
+		<div class="wrap">
+			<h1><?php esc_html_e( 'Consolidate & Add Site Templates', 'mcp-ai-wpoos-pro' ); ?></h1>
+
+			<?php if ( ! $is_enabled ) : ?>
+				<div class="notice notice-warning inline">
+					<p>
+						<strong><?php esc_html_e( 'Site Creator Toolkit is not enabled.', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( 'Enable it in the main settings to use consolidation features.', 'mcp-ai-wpoos-pro' ); ?>
+					</p>
+					<p>
+						<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=site_creator' ) ); ?>" class="button">
+							<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos-pro' ); ?>
+						</a>
+					</p>
+				</div>
+			<?php endif; ?>
+
+			<div class="card">
+				<h2><?php esc_html_e( 'Bulk Import & Consolidation', 'mcp-ai-wpoos-pro' ); ?></h2>
+				<p>
+					<?php
+					esc_html_e(
+						'Import and consolidate site templates from various sources. Batch process multiple templates, validate data quality, and streamline your template library management.',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+
+				<h3><?php esc_html_e( 'Import Options', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<ul>
+					<li><strong><?php esc_html_e( 'JSON Import:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Import site templates from JSON files', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'ZIP Archives:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Import complete template kits from ZIP files', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'XML Import:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Import from XML format (WordPress export compatible)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'URL Import:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Import templates directly from remote URLs', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong><?php esc_html_e( 'Batch Processing:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Process multiple templates in a single operation', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
+				<?php if ( $is_enabled ) : ?>
+					<h3><?php esc_html_e( 'Consolidation Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+					<ul>
+						<li><?php esc_html_e( 'Duplicate detection and merging', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Data quality validation', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Automatic categorization', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Preview before importing', 'mcp-ai-wpoos-pro' ); ?></li>
+						<li><?php esc_html_e( 'Rollback support for failed imports', 'mcp-ai-wpoos-pro' ); ?></li>
+					</ul>
+
+					<div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 4px;">
+						<h3 style="margin-top: 0;"><?php esc_html_e( 'Import Templates', 'mcp-ai-wpoos-pro' ); ?></h3>
+						
+						<form method="post" enctype="multipart/form-data" style="max-width: 600px;">
+							<?php wp_nonce_field( 'wp_mcp_ai_template_import', 'wp_mcp_ai_template_import_nonce' ); ?>
+							
+							<table class="form-table" role="presentation">
+								<tr>
+									<th scope="row">
+										<label for="import_type"><?php esc_html_e( 'Import Type', 'mcp-ai-wpoos-pro' ); ?></label>
+									</th>
+									<td>
+										<select name="import_type" id="import_type" class="regular-text">
+											<option value="json"><?php esc_html_e( 'JSON File', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="zip"><?php esc_html_e( 'ZIP Archive', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="xml"><?php esc_html_e( 'XML File', 'mcp-ai-wpoos-pro' ); ?></option>
+											<option value="url"><?php esc_html_e( 'Remote URL', 'mcp-ai-wpoos-pro' ); ?></option>
+										</select>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">
+										<label for="import_file"><?php esc_html_e( 'File', 'mcp-ai-wpoos-pro' ); ?></label>
+									</th>
+									<td>
+										<input type="file" name="import_file" id="import_file" class="regular-text" accept=".json,.zip,.xml" />
+										<p class="description"><?php esc_html_e( 'Select a file to import', 'mcp-ai-wpoos-pro' ); ?></p>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row">
+										<label for="import_url"><?php esc_html_e( 'URL', 'mcp-ai-wpoos-pro' ); ?></label>
+									</th>
+									<td>
+										<input type="url" name="import_url" id="import_url" class="regular-text" placeholder="https://example.com/template.json" />
+										<p class="description"><?php esc_html_e( 'Or enter a URL to import from', 'mcp-ai-wpoos-pro' ); ?></p>
+									</td>
+								</tr>
+								<tr>
+									<th scope="row"><?php esc_html_e( 'Options', 'mcp-ai-wpoos-pro' ); ?></th>
+									<td>
+										<label style="display: block; margin-bottom: 8px;">
+											<input type="checkbox" name="validate_data" value="1" checked />
+											<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
+										</label>
+										<label style="display: block; margin-bottom: 8px;">
+											<input type="checkbox" name="check_duplicates" value="1" checked />
+											<?php esc_html_e( 'Check for duplicates', 'mcp-ai-wpoos-pro' ); ?>
+										</label>
+										<label style="display: block; margin-bottom: 8px;">
+											<input type="checkbox" name="auto_categorize" value="1" checked />
+											<?php esc_html_e( 'Automatically categorize templates', 'mcp-ai-wpoos-pro' ); ?>
+										</label>
+										<label style="display: block;">
+											<input type="checkbox" name="preview_mode" value="1" />
+											<?php esc_html_e( 'Preview only (do not import)', 'mcp-ai-wpoos-pro' ); ?>
+										</label>
+									</td>
+								</tr>
+							</table>
+
+							<p class="submit">
+								<button type="submit" name="action" value="import" class="button button-primary">
+									<span class="dashicons dashicons-download" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Import Templates', 'mcp-ai-wpoos-pro' ); ?>
+								</button>
+							</p>
+						</form>
+
+						<div style="margin-top: 20px; padding: 15px; background: #fff8e5; border-left: 4px solid #dba617; border-radius: 4px;">
+							<p style="margin: 0;">
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php esc_html_e( 'Large imports may take several minutes. Please do not close this page during import.', 'mcp-ai-wpoos-pro' ); ?>
+							</p>
+						</div>
+					</div>
+				<?php endif; ?>
+			</div>
+
+			<?php if ( $is_enabled ) : ?>
+				<div class="card">
+					<h2><?php esc_html_e( 'AI-Assisted Consolidation', 'mcp-ai-wpoos-pro' ); ?></h2>
+					<p><?php esc_html_e( 'Use the AI assistant to help with template consolidation and data cleanup:', 'mcp-ai-wpoos-pro' ); ?></p>
+					
+					<?php
+					// Render the chat interface.
+					if ( class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+						echo do_shortcode( '[nvoos-ai-chat assistant="site-creator-consolidate" mode="inline"]' );
+					} else {
+						?>
+						<div class="notice notice-info inline">
+							<p><?php esc_html_e( 'Chat interface not available. Please ensure NV oOS is properly configured.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</div>
+						<?php
+					}
+					?>
+				</div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}

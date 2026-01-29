@@ -39,7 +39,9 @@ WordPress Admin Menu
 └── 🆕 Site Creator (nvoos-site-creator) ← NEW TOP-LEVEL MENU
     ├── Overview (/admin.php?page=nvoos-site-creator)
     ├── Tools (/admin.php?page=nvoos-site-creator-tools)
-    └── Templates (/admin.php?page=nvoos-site-creator-templates)
+    ├── Templates (/admin.php?page=nvoos-site-creator-templates)
+    ├── Research & Add (/admin.php?page=nvoos-site-creator-research)
+    └── Consolidate & Add (/admin.php?page=nvoos-site-creator-consolidate)
 ```
 
 ## Changes Made
