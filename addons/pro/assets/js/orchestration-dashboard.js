@@ -11,12 +11,22 @@
 		config: typeof wpMcpAiOrchestration !== 'undefined' ? wpMcpAiOrchestration : {},
 
 		init: function() {
+			console.log('OrchestrationDashboard: Initializing...', this.config);
+			
 			// Check if config is properly loaded.
 			if (!this.config.ajaxUrl || !this.config.nonce) {
 				console.error('OrchestrationDashboard: Configuration not loaded properly', this.config);
+				// Show user-friendly error message on the page.
+				$('.wp-mcp-ai-orchestration-dashboard').prepend(
+					'<div class="notice notice-error"><p>' +
+					'<strong>Configuration Error:</strong> The orchestration dashboard could not load properly. ' +
+					'Please check that the plugin is activated correctly and try refreshing the page.' +
+					'</p></div>'
+				);
 				return;
 			}
 			
+			console.log('OrchestrationDashboard: Configuration loaded successfully');
 			this.bindEvents();
 			this.startAutoRefresh();
 			this.loadDashboardData();
@@ -44,6 +54,7 @@
 		},
 
 		loadDashboardData: function() {
+			console.log('OrchestrationDashboard: Loading dashboard data...');
 			$.ajax({
 				url: this.config.ajaxUrl,
 				type: 'POST',
@@ -52,7 +63,9 @@
 					nonce: this.config.nonce
 				},
 				success: (response) => {
+					console.log('OrchestrationDashboard: AJAX response received', response);
 					if (response.success && response.data) {
+						console.log('OrchestrationDashboard: Updating dashboard with data', response.data);
 						this.updateDashboard(response.data);
 					} else {
 						console.error('Dashboard data load failed:', response);
