@@ -242,19 +242,19 @@ cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 
 This build creates **8 ZIP files** for distribution:
 
-### Original Packages (4 files)
-Built by \`build-plugin-zip.sh\` with correct plugin headers:
-1. \`nvdigital-open-operator-system-oos-${VERSION}.zip\` - Base version
-2. \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\` - Pro add-on
-3. \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\` - Combined (Base + Pro)
-4. \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\` - Core (lightweight)
+### Original Packages (4 files) - Repository Text Domains
+Built by \`build-plugin-zip.sh\` with repository text domains for internal development:
+1. \`nvdigital-open-operator-system-oos-${VERSION}.zip\` - Base version (text domain: \`mcp-ai-wpoos-base\`)
+2. \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\` - Pro add-on (text domain: \`mcp-ai-wpoos-pro\`)
+3. \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\` - Combined (text domain: \`mcp-ai-wpoos\`)
+4. \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\` - Core (text domain: \`mcp-ai-wpoos-core\`)
 
-### WordPress.org Transformed Packages (4 files)
-Built by \`build-wordpress-org-from-base.sh\` with all text domains transformed:
-5. \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\` - Base (WordPress.org ready)
-6. \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\` - Pro (WordPress.org ready)
-7. \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\` - Combined (WordPress.org ready)
-8. \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\` - Core (WordPress.org ready)
+### WordPress.org Packages (4 files) - WordPress Text Domains
+Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains transformed throughout:
+5. \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\` - Base (text domain: \`nvdigital-open-operator-system-oos\`)
+6. \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\` - Pro (text domain: \`nvdigital-open-operator-system-oos-pro\`)
+7. \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\` - Combined (text domain: \`nvdigital-open-operator-system-oos\`)
+8. \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\` - Core (text domain: \`nvdigital-open-operator-system-oos-core\`)
 
 ---
 
@@ -344,13 +344,23 @@ Built by \`build-wordpress-org-from-base.sh\` with all text domains transformed:
 
 | Aspect | Original Packages | WordPress.org Packages (-wporg) |
 |--------|-------------------|----------------------------------|
-| **Plugin Headers** | Text domains set | Text domains set |
-| **Code Text Domains** | Original (mcp-ai-wpoos*) | Transformed (nvdigital-open-operator-system-oos*) |
-| **Translation Files** | Original names | Renamed to match new text domains |
-| **Use Case** | Development, testing | Production, WordPress.org submission |
-| **Recommended For** | Internal use | Public distribution |
+| **Plugin Headers** | Repository text domains (mcp-ai-wpoos-base, mcp-ai-wpoos-pro, etc.) | WordPress text domains (nvdigital-open-operator-system-oos, nvdigital-open-operator-system-oos-pro) |
+| **Code Text Domains** | Repository text domains (__('text', 'mcp-ai-wpoos')) | WordPress text domains (__('text', 'nvdigital-open-operator-system-oos')) |
+| **Translation Files** | Repository names (mcp-ai-wpoos-base.pot) | WordPress names (nvdigital-open-operator-system-oos.pot) |
+| **Use Case** | Development, testing, internal builds | Production, WordPress.org submission, public distribution |
+| **Recommended For** | Internal repository development | End users and WordPress.org |
 
-**Important:** For WordPress.org submission or public distribution, **always use the -wporg versions** which have all text domains fully transformed throughout the codebase.
+**Important:** For WordPress.org submission or public distribution, **always use the -wporg versions** which have all text domains fully transformed throughout the codebase (both headers and code).
+
+**Original packages** maintain repository text domains for development consistency and are useful for:
+- Local development and testing
+- Internal CI/CD pipelines
+- Developer debugging and troubleshooting
+
+**WordPress.org packages (-wporg)** use production-ready text domains and are required for:
+- WordPress.org plugin directory submission
+- Public distribution to end users
+- Production deployments
 
 ---
 
@@ -381,18 +391,25 @@ Built by \`build-wordpress-org-from-base.sh\` with all text domains transformed:
 
 ## Compliance
 
-All WordPress.org packages (-wporg suffix) are:
-- ✅ Text domains fully transformed in headers and code
-- ✅ Translation files renamed to match text domains
+**Original Packages (no -wporg suffix):**
+- ✅ Use repository text domains (mcp-ai-wpoos*)
+- ✅ Maintain development consistency
+- ✅ Fully functional for internal testing
+- ⚠️ Not suitable for WordPress.org submission or public distribution
+
+**WordPress.org Packages (-wporg suffix):**
+- ✅ Text domains fully transformed to WordPress.org standards in headers and code
+- ✅ Translation files renamed to match WordPress text domains
 - ✅ No .backup files
 - ✅ No broken references
-- ✅ Fully functional
-- ✅ Ready for distribution
+- ✅ Fully functional and production-ready
+- ✅ Ready for WordPress.org submission and public distribution
 
-**BASE -wporg package:** WordPress.org submission ready  
-**PRO -wporg package:** Self-hosted add-on distribution  
-**COMPLETE -wporg package:** Self-hosted distribution only (includes proprietary Pro features)  
-**CORE -wporg package:** Lightweight WordPress.org or self-hosted distribution
+**Submission Guidelines:**
+- **BASE -wporg package:** WordPress.org submission ready ✅
+- **PRO -wporg package:** Self-hosted add-on distribution (requires base plugin)
+- **COMPLETE -wporg package:** Self-hosted distribution only ⚠️ (includes proprietary Pro features - cannot submit to WordPress.org)
+- **CORE -wporg package:** Lightweight WordPress.org or self-hosted distribution ✅
 
 ---
 
