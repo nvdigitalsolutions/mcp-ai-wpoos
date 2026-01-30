@@ -899,6 +899,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Validate_Document_Checklist' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-document-checklist.php',
 				'WP_MCP_AI_Tool_Generate_Submission_Pack' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-submission-pack.php',
 				'WP_MCP_AI_Tool_Track_Document_Version' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-track-document-version.php',
+				// Compliance Tools.
+				'WP_MCP_AI_Tool_Add_Regulatory_Requirement' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-add-regulatory-requirement.php',
+				'WP_MCP_AI_Tool_Get_Regulatory_Requirements' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-regulatory-requirements.php',
+				'WP_MCP_AI_Tool_Check_Product_Compliance' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-product-compliance.php',
+				'WP_MCP_AI_Tool_Validate_INCI_Ingredients' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-inci-ingredients.php',
+				'WP_MCP_AI_Tool_Check_HS_Code'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-hs-code.php',
+				'WP_MCP_AI_Tool_Get_Regulatory_Updates' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-regulatory-updates.php',
 			);
 			$pro_tools                         = array_merge( $pro_tools, $regulatory_registration_tools );
 		}
