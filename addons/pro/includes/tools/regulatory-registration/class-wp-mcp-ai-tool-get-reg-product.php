@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'         => array(
+				'product_id'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -137,7 +137,7 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 		// Get category.
 		$categories = wp_get_post_terms( $product->ID, 'mcp_ai_reg_category' );
 		if ( ! empty( $categories ) && ! is_wp_error( $categories ) ) {
-			$product_data['category'] = $categories[0]->name;
+			$product_data['category']   = $categories[0]->name;
 			$product_data['categories'] = wp_list_pluck( $categories, 'name' );
 		}
 
@@ -168,15 +168,15 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 			if ( $registrations_query->have_posts() ) {
 				foreach ( $registrations_query->posts as $reg_post ) {
 					$reg_data = array(
-						'id'              => $reg_post->ID,
-						'title'           => $reg_post->post_title,
-						'country'         => get_post_meta( $reg_post->ID, 'country', true ),
-						'authority'       => get_post_meta( $reg_post->ID, 'authority', true ),
+						'id'                => $reg_post->ID,
+						'title'             => $reg_post->post_title,
+						'country'           => get_post_meta( $reg_post->ID, 'country', true ),
+						'authority'         => get_post_meta( $reg_post->ID, 'authority', true ),
 						'registration_type' => get_post_meta( $reg_post->ID, 'registration_type', true ),
-						'cos_number'      => get_post_meta( $reg_post->ID, 'cos_number', true ),
-						'submission_date' => get_post_meta( $reg_post->ID, 'submission_date', true ),
-						'approval_date'   => get_post_meta( $reg_post->ID, 'approval_date', true ),
-						'expiry_date'     => get_post_meta( $reg_post->ID, 'expiry_date', true ),
+						'cos_number'        => get_post_meta( $reg_post->ID, 'cos_number', true ),
+						'submission_date'   => get_post_meta( $reg_post->ID, 'submission_date', true ),
+						'approval_date'     => get_post_meta( $reg_post->ID, 'approval_date', true ),
+						'expiry_date'       => get_post_meta( $reg_post->ID, 'expiry_date', true ),
 					);
 
 					// Get status.
@@ -189,7 +189,7 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 				}
 			}
 
-			$product_data['registrations'] = $registrations;
+			$product_data['registrations']      = $registrations;
 			$product_data['registration_count'] = count( $registrations );
 		}
 

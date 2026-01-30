@@ -43,17 +43,17 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country'        => array(
+				'country'              => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by country (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'status'         => array(
+				'status'               => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by status (draft, pending_documents, ready_for_submission, submitted, under_review, approved, rejected, on_hold, renewal_due) (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'draft', 'pending_documents', 'ready_for_submission', 'submitted', 'under_review', 'approved', 'rejected', 'on_hold', 'renewal_due' ),
 				),
-				'product_id'     => array(
+				'product_id'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by product ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -64,19 +64,19 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 					'minimum'     => 1,
 					'maximum'     => 365,
 				),
-				'registration_type' => array(
+				'registration_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by registration type: new, renewal, or variation (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'new', 'renewal', 'variation' ),
 				),
-				'limit'          => array(
+				'limit'                => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of registrations to return (default: 20, max: 100) (optional)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 20,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'offset'         => array(
+				'offset'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of registrations to skip for pagination (optional)', 'mcp-ai-wpoos-pro' ),
 					'default'     => 0,
@@ -129,13 +129,13 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Parse arguments.
-		$country                = ! empty( $arguments['country'] ) ? sanitize_text_field( $arguments['country'] ) : '';
-		$status                 = ! empty( $arguments['status'] ) ? sanitize_text_field( $arguments['status'] ) : '';
-		$product_id             = ! empty( $arguments['product_id'] ) ? absint( $arguments['product_id'] ) : 0;
-		$expiring_within_days   = ! empty( $arguments['expiring_within_days'] ) ? absint( $arguments['expiring_within_days'] ) : 0;
-		$registration_type      = ! empty( $arguments['registration_type'] ) ? sanitize_text_field( $arguments['registration_type'] ) : '';
-		$limit                  = ! empty( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
-		$offset                 = ! empty( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
+		$country              = ! empty( $arguments['country'] ) ? sanitize_text_field( $arguments['country'] ) : '';
+		$status               = ! empty( $arguments['status'] ) ? sanitize_text_field( $arguments['status'] ) : '';
+		$product_id           = ! empty( $arguments['product_id'] ) ? absint( $arguments['product_id'] ) : 0;
+		$expiring_within_days = ! empty( $arguments['expiring_within_days'] ) ? absint( $arguments['expiring_within_days'] ) : 0;
+		$registration_type    = ! empty( $arguments['registration_type'] ) ? sanitize_text_field( $arguments['registration_type'] ) : '';
+		$limit                = ! empty( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 20;
+		$offset               = ! empty( $arguments['offset'] ) ? absint( $arguments['offset'] ) : 0;
 
 		// Enforce max limit.
 		$limit = min( $limit, 100 );
@@ -178,7 +178,7 @@ class WP_MCP_AI_Tool_List_Registrations implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		if ( $expiring_within_days > 0 ) {
-			$expiry_date = gmdate( 'Y-m-d', strtotime( "+{$expiring_within_days} days" ) );
+			$expiry_date  = gmdate( 'Y-m-d', strtotime( "+{$expiring_within_days} days" ) );
 			$meta_query[] = array(
 				'key'     => 'expiry_date',
 				'value'   => $expiry_date,
