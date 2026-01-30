@@ -403,7 +403,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 						case 'textarea':
 							// Handle array values - convert to JSON string for display.
-							$textarea_value = is_array( $value ) ? wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) : $value;
+							if ( is_array( $value ) ) {
+								$json_value = wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+								// Handle encoding failure gracefully.
+								$textarea_value = ( false !== $json_value ) ? $json_value : wp_json_encode( $value );
+							} else {
+								$textarea_value = $value;
+							}
 							?>
 							<textarea
 								id="<?php echo esc_attr( $key ); ?>"
