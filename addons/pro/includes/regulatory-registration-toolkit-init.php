@@ -32,11 +32,13 @@ if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php';
 
-		// Load Registration tracking dashboard.
+		// Load Registration tracking dashboard and research page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-dashboard-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-research-page.php';
 
-		// Load Document management page.
+		// Load Document management and research pages.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-document-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-document-research-page.php';
 
 		// Load Country requirements configuration page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-country-config-page.php';
