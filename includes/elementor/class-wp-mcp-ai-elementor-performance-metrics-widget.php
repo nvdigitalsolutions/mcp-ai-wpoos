@@ -365,6 +365,7 @@ class WP_MCP_AI_Elementor_Performance_Metrics_Widget extends \Elementor\Widget_B
 	 * Enqueue auto-refresh script.
 	 */
 	protected function enqueue_auto_refresh_script() {
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
 		?>
 		<script>
 		(function($) {

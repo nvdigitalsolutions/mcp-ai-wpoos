@@ -39,6 +39,7 @@ if ( ! class_exists( 'WP_MCP_AI_Editable_Capability_Flags_Renderer' ) ) {
 			$grouped_flags   = self::group_capability_flags( $capability_flags );
 			$available_flags = WP_MCP_AI_Tool_Settings_Manager::get_available_capability_flags();
 
+			// Output buffering for capability flags rendering - buffer is closed with ob_get_clean() at line 133.
 			ob_start();
 			?>
 			<div class="wp-mcp-ai-capability-flags-container" data-tool-slug="<?php echo esc_attr( $tool_slug ); ?>">

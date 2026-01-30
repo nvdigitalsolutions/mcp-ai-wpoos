@@ -679,6 +679,9 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for provider diagnostics real-time testing functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			/* global ajaxurl */
 			jQuery(document).ready(function($) {

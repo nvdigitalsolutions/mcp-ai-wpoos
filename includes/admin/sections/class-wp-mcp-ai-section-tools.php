@@ -124,6 +124,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'step'        => 10,
 					'placeholder' => '100',
 				),
+				'search_gmail_capability'              => array(
+					'type'        => 'select',
+					'label'       => __( 'Search Gmail Capability', 'mcp-ai-wpoos' ),
+					'description' => __( 'WordPress capability required to use the Search Gmail tool. Controls who can search Gmail messages through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
+					'options'     => $wp_capabilities,
+					'default'     => 'manage_options',
+				),
+				'search_gmail_max_results'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Gmail Search Results', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of Gmail messages that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
+					'default'     => 50,
+					'min'         => 1,
+					'max'         => 100,
+					'step'        => 5,
+					'placeholder' => '50',
+				),
+				'search_drive_capability'              => array(
+					'type'        => 'select',
+					'label'       => __( 'Search Google Drive Capability', 'mcp-ai-wpoos' ),
+					'description' => __( 'WordPress capability required to use the Search Google Drive tool. Controls who can search Drive files through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
+					'options'     => $wp_capabilities,
+					'default'     => 'manage_options',
+				),
+				'search_drive_max_results'             => array(
+					'type'        => 'number',
+					'label'       => __( 'Max Drive Search Results', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of Google Drive files that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
+					'default'     => 50,
+					'min'         => 1,
+					'max'         => 100,
+					'step'        => 5,
+					'placeholder' => '50',
+				),
 
 				// External Tools fields.
 				'gmail_client_id'                      => array(
@@ -624,12 +658,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => false,
 				),
 
+				// Architect Agent Toolkit (Self-Editing Capabilities).
+				'enable_architect_agent_toolkit'       => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable AI self-editing with GitHub Copilot CLI parity (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 4 self-editing tools for AI agents: file management (read/write/list), shell command execution, git operations, and code search. Provides GitHub Copilot CLI-level capabilities for autonomous development. Requires edit_plugins capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
 				// Architectural Design Toolkit (Phase 2.10).
 				'enable_architectural_design_toolkit'  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enables 16 professional architectural tools: AI floor plan generation, space optimization, 3D modeling, photorealistic rendering, construction blueprints, code compliance checking, sustainability analysis, and cost estimation. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+
+				// Site Creator Toolkit - Advanced site creation capabilities.
+				'enable_site_creator_toolkit'          => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Site Creator Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable advanced AI-powered site creation with page/section/widget builders (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 26 site creation tools: research & best practices (4), page builders (5), section builders (6), widget builders (4), template management (4), and Architect Agent integration (3) for automated development workflows. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 			);
@@ -700,13 +752,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architectural_design_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
 					'label'  => __( 'Configuration', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-settings',
-					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients' ),
+					'fields' => array( 'web_search_provider', 'enable_varnish_purge', 'group_email_capability', 'group_email_max_recipients', 'search_gmail_capability', 'search_gmail_max_results', 'search_drive_capability', 'search_drive_max_results' ),
 				),
 				'document_generation' => array(
 					'id'     => 'document_generation',
@@ -755,13 +807,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 			);
 
-			// Site Creator is a Pro feature - always show tab.
-			$subtab_groups['site_creator'] = array(
-				'id'     => 'site_creator',
-				'label'  => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'icon'   => 'dashicons-admin-site',
-				'fields' => array( 'enable_site_creator', 'site_creator_allow_plugin_install', 'site_creator_allow_theme_install', 'site_creator_allow_option_updates', 'site_creator_allow_wp_cli_tools', 'site_creator_allow_elementor_kit_import' ),
-			);
+			// Note: Site Creator settings have been moved to their own separate admin page.
+			// See: addons/pro/includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php
 
 			return $subtab_groups;
 		}
@@ -885,7 +932,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_dj_management_toolkit'        => 72,   // 15-18 tools, music APIs, contracts.
 				'enable_image_production_toolkit'     => 192,  // 12-15 tools, AI generation, GPU processing.
 				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
+				'enable_architect_agent_toolkit'      => 16,   // 4 self-editing tools (file, shell, git, search).
 				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
+				'enable_site_creator_toolkit'         => 104,  // 26 tools, page/section/widget builders, AI automation.
 			);
 		}
 
@@ -959,6 +1008,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</p>
 					</div>
 
+WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+					?>
 					<style>
 						.toolkit-limit-good { color: #00a32a; }
 						.toolkit-limit-warning { color: #dba617; }
@@ -968,7 +1021,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						.toolkit-limit-warning + .toolkit-status-badge { background: #fff3cd; color: #856404; }
 						.toolkit-limit-maximum + .toolkit-status-badge { background: #f8d7da; color: #721c24; }
 					</style>
-
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+					?>
 					<script>
 					jQuery(document).ready(function($) {
 						var toolkitMemory = <?php echo wp_json_encode( $this->get_toolkit_memory_requirements() ) ?: '{}'; ?>;
@@ -998,6 +1053,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_dj_management_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_architect_agent_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
 						);
 
@@ -1722,6 +1778,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 * Render JavaScript for media library selection.
 		 */
 		protected function render_elementor_kit_import_script() {
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
 			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
@@ -1932,7 +1989,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							<?php endif; ?>
 						</div>
 					</div>
-
+					<?php
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+					?>
 					<script>
 					(function($) {
 						$('#wp-mcp-ai-filter-tools').on('click', function() {

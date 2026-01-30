@@ -166,7 +166,7 @@
 			const checkChartJS = function() {
 				if (typeof Chart !== 'undefined') {
 				console.log('Chart.js loaded successfully');
-					self.initializeCharts();
+					self.initializeChartsIfNeeded();
 				} else if (attempts < maxAttempts) {
 					attempts++;
 					setTimeout(checkChartJS, 100);
@@ -177,6 +177,21 @@
 			};
 
 			checkChartJS();
+		},
+
+		/**
+		 * Check if charts should be initialized (only on overview tab).
+		 */
+		initializeChartsIfNeeded: function() {
+			// Check if we're on the overview tab by looking for chart canvas elements
+			const controlsCanvas = document.getElementById('wpMcpAiControlsChart');
+			if (controlsCanvas) {
+				// Canvas exists, we're on the overview tab, initialize charts
+				this.initializeCharts();
+			} else {
+				// Not on overview tab, skip chart initialization
+				console.log('Not on overview tab, skipping chart initialization');
+			}
 		},
 
 		/**

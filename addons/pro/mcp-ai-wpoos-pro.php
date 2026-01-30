@@ -39,7 +39,13 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 	define( 'WP_MCP_AI_PRO_PATH', plugin_dir_path( WP_MCP_AI_PRO_FILE ) );
 }
 if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
-	define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
+	// If loaded as part of main plugin, build URL from main plugin's URL.
+	if ( defined( 'WP_MCP_AI_URL' ) ) {
+		define( 'WP_MCP_AI_PRO_URL', WP_MCP_AI_URL . 'addons/pro/' );
+	} else {
+		// If loaded as standalone plugin, use standard plugin_dir_url().
+		define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
+	}
 }
 
 /**
@@ -283,6 +289,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 		// NOTE: Orchestration Dashboard moved to base plugin (includes/admin/class-wp-mcp-ai-orchestration-dashboard.php)
 		// It's accessible at NV oOS → Orchestration for all users.
 
+		// Load Pro Orchestration Dashboard (real-time monitoring with SSE).
+		if ( is_admin() ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
+			new WP_MCP_AI_Orchestration_Dashboard();
+		}
+
 		// Load Places Management CPT registration (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/places-management-init.php';
 
@@ -346,9 +358,21 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/ai-tool-builder-toolkit-init.php';
 		}
 
+		// Load Architect Agent Toolkit if enabled (Pro feature).
+		// Self-editing capabilities with GitHub Copilot CLI parity.
+		if ( ! empty( $settings['enable_architect_agent_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/architect-agent-toolkit-init.php';
+		}
+
 		// Load Architectural Design Toolkit if enabled (Pro feature - Phase 2.10).
 		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/architectural-design-toolkit-init.php';
+		}
+
+		// Load Site Creator Toolkit if enabled (Pro feature).
+		// Advanced site creation with page/section/widget builders and Architect Agent integration.
+		if ( ! empty( $settings['enable_site_creator_toolkit'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/site-creator-toolkit-init.php';
 		}
 
 		// Load Password Vault Manager (Pro feature - Phase 2.11).
@@ -1182,6 +1206,31 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['pro_pdf']            = 'external-tools';
 			$pro_tools['pro_word']           = 'external-tools';
 			$pro_tools['pro_excel_document'] = 'external-tools';
+		}
+
+		// Add Architectural Design Toolkit tool mappings if enabled.
+		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
+			// Floor Planning & Space Design tools.
+			$pro_tools['generate_floor_plan']           = 'external-tools';
+			$pro_tools['optimize_space_layout']         = 'external-tools';
+			$pro_tools['create_floor_plan_variations']  = 'external-tools';
+			$pro_tools['convert_sketch_to_floor_plan']  = 'external-tools';
+			// 3D Modeling & Visualization tools.
+			$pro_tools['generate_3d_model']             = 'external-tools';
+			$pro_tools['render_architectural_view']     = 'external-tools';
+			$pro_tools['create_walkthrough_animation']  = 'external-tools';
+			// Documentation & Blueprints tools.
+			$pro_tools['generate_construction_drawings'] = 'external-tools';
+			$pro_tools['generate_detail_drawings']      = 'external-tools';
+			$pro_tools['export_architectural_documents'] = 'external-tools';
+			// Analysis & Compliance tools.
+			$pro_tools['check_building_code_compliance'] = 'external-tools';
+			$pro_tools['analyze_structural_feasibility'] = 'external-tools';
+			$pro_tools['calculate_sustainability_metrics'] = 'external-tools';
+			// Estimation & Scheduling tools.
+			$pro_tools['generate_material_schedule']    = 'external-tools';
+			$pro_tools['estimate_construction_cost']    = 'external-tools';
+			$pro_tools['generate_construction_timeline'] = 'external-tools';
 		}
 
 		/**

@@ -122,7 +122,7 @@ Some professions are assigned multiple roles:
 
 ## Using Agent Coordination Tools
 
-The system provides three MCP-compliant tools for agent coordination:
+The system provides five MCP-compliant tools for agent coordination and memory management:
 
 ### 1. Create Agent Team
 
@@ -252,6 +252,232 @@ $result = $tool->execute(
 
 ---
 
+## Using Agent Memory Tools
+
+The system provides two tools for persistent agent memory and context management.
+
+### 4. Store Agent Context
+
+Store important information for agents to remember across sessions.
+
+#### Usage
+
+```php
+$tool = $tool_registry->get_tool( 'store_agent_context' );
+
+$result = $tool->execute(
+    array(
+        'agent_id'     => 123,  // Agent assistant ID
+        'context_type' => 'learning',  // learning, fact, preference, pattern, workflow, decision, result, insight, note, generic
+        'context_data' => array(
+            'title'      => 'Customer Communication Preference',
+            'content'    => 'Client Jane Smith prefers email communication over phone calls. Responds best to emails sent in the morning.',
+            'importance' => 'high',  // low, medium, high, critical
+            'tags'       => array( 'communication', 'preference', 'customer-service' ),
+            'metadata'   => array(
+                'customer_id' => 'cust_12345',
+                'last_updated' => '2026-01-29',
+            ),
+            'source_task' => 'initial-consultation',
+        ),
+        'ttl'          => 2592000,  // 30 days (default)
+    ),
+    array( 'assistant_id' => 1, 'user_id' => get_current_user_id() )
+);
+
+// Result structure
+if ( $result['success'] ) {
+    echo "Context stored with ID: " . $result['context_id'];
+    echo "Expires at: " . $result['expires_at'];
+}
+```
+
+#### Context Types
+
+| Type | Description | Use Case |
+|------|-------------|----------|
+| **learning** | Knowledge gained from interactions | Customer preferences, lessons learned |
+| **fact** | Verified factual information | Data points, statistics, references |
+| **preference** | User or system preferences | Settings, choices, configurations |
+| **pattern** | Recurring patterns discovered | Trends, common issues, behaviors |
+| **workflow** | Process or workflow definitions | Standard procedures, templates |
+| **decision** | Decisions made and rationale | Past choices, criteria applied |
+| **result** | Task or analysis results | Outputs, findings, outcomes |
+| **insight** | Analysis or understanding | Interpretations, conclusions |
+| **note** | General notes or reminders | Miscellaneous information |
+| **generic** | Uncategorized context | Default catch-all type |
+
+#### Importance Levels
+
+- **low**: General information, not time-critical
+- **medium**: Standard information, moderate importance (default)
+- **high**: Important information, prioritized in retrieval
+- **critical**: Essential information, always prioritized
+
+### 5. Retrieve Agent Memory
+
+Retrieve stored context using semantic search and advanced filtering.
+
+#### Basic Retrieval by Context ID
+
+```php
+$tool = $tool_registry->get_tool( 'retrieve_agent_memory' );
+
+$result = $tool->execute(
+    array(
+        'agent_id'   => 123,
+        'context_id' => 'ctx_abc123xyz456',
+    ),
+    array( 'assistant_id' => 1 )
+);
+
+if ( $result['success'] ) {
+    $context = $result['contexts'][0];
+    echo "Title: " . $context['title'];
+    echo "Content: " . $context['content'];
+    echo "Stored at: " . $context['stored_at'];
+}
+```
+
+#### Semantic Search
+
+```php
+$result = $tool->execute(
+    array(
+        'agent_id' => 123,
+        'query'    => 'customer communication preferences',  // Semantic search query
+        'limit'    => 10,  // Return top 10 results
+    ),
+    array( 'assistant_id' => 1 )
+);
+
+// Results ranked by relevance
+foreach ( $result['contexts'] as $context ) {
+    echo "Relevance: " . $context['relevance_score'];  // 0-1 scale
+    echo "Title: " . $context['title'];
+}
+```
+
+#### Advanced Filtering
+
+```php
+$result = $tool->execute(
+    array(
+        'agent_id' => 123,
+        'query'    => 'customer service',
+        'filters'  => array(
+            'context_types' => array( 'learning', 'preference' ),  // Only these types
+            'tags'          => array( 'customer-service', 'communication' ),  // Any of these tags
+            'importance'    => array( 'high', 'critical' ),  // Only important contexts
+            'after_date'    => '2026-01-01',  // Only contexts stored after this date
+            'before_date'   => '2026-01-31',  // Only contexts stored before this date
+        ),
+        'limit'    => 20,
+    ),
+    array( 'assistant_id' => 1 )
+);
+```
+
+#### Practical Examples
+
+**Example 1: Store and Retrieve Customer Preference**
+
+```php
+// Store customer preference
+$store_result = $tool_registry->execute_tool(
+    'store_agent_context',
+    array(
+        'agent_id'     => 456,
+        'context_type' => 'preference',
+        'context_data' => array(
+            'title'      => 'John Doe Email Preferences',
+            'content'    => 'Prefers HTML emails with images. Unsubscribed from promotional content. Only wants product updates and security alerts.',
+            'importance' => 'high',
+            'tags'       => array( 'email', 'preferences', 'customer' ),
+        ),
+    ),
+    $context
+);
+
+// Later, retrieve when sending email
+$retrieve_result = $tool_registry->execute_tool(
+    'retrieve_agent_memory',
+    array(
+        'agent_id' => 456,
+        'query'    => 'email preferences',
+        'filters'  => array(
+            'tags' => array( 'email', 'preferences' ),
+        ),
+    ),
+    $context
+);
+```
+
+**Example 2: Track Project Decisions**
+
+```php
+// Store project decision
+$tool_registry->execute_tool(
+    'store_agent_context',
+    array(
+        'agent_id'     => 789,
+        'context_type' => 'decision',
+        'context_data' => array(
+            'title'      => 'Framework Selection - React vs Vue',
+            'content'    => 'Decided on React for the new dashboard project. Rationale: Team expertise, component library availability, better TypeScript integration.',
+            'importance' => 'critical',
+            'tags'       => array( 'project', 'architecture', 'frontend' ),
+            'metadata'   => array(
+                'project_id' => 'proj_2026_dashboard',
+                'decided_by' => 'Tech Team',
+                'alternatives_considered' => array( 'Vue', 'Angular', 'Svelte' ),
+            ),
+        ),
+        'ttl'          => 31536000,  // 1 year
+    ),
+    $context
+);
+
+// Retrieve all project decisions
+$decisions = $tool_registry->execute_tool(
+    'retrieve_agent_memory',
+    array(
+        'agent_id' => 789,
+        'filters'  => array(
+            'context_types' => array( 'decision' ),
+            'tags'          => array( 'project' ),
+        ),
+    ),
+    $context
+);
+```
+
+**Example 3: Research Pattern Recognition**
+
+```php
+// Store discovered pattern
+$tool_registry->execute_tool(
+    'store_agent_context',
+    array(
+        'agent_id'     => 999,
+        'context_type' => 'pattern',
+        'context_data' => array(
+            'title'      => 'Support Ticket Peak Times',
+            'content'    => 'Analysis shows support tickets spike on Monday mornings (9-11 AM) and after product releases. Tickets are 40% higher during these periods.',
+            'importance' => 'high',
+            'tags'       => array( 'support', 'analytics', 'patterns' ),
+            'metadata'   => array(
+                'data_range' => '2025-Q4',
+                'confidence' => 0.87,
+            ),
+        ),
+    ),
+    $context
+);
+```
+
+---
+
 ## Creating Multi-Agent Workflows
 
 ### Example 1: Research Workflow
@@ -363,6 +589,96 @@ $task = array(
 );
 
 $result = $orchestrator->execute_team_workflow( $team, $task, $context );
+```
+
+### Example 4: Multi-Agent Workflow with Memory
+
+Complete workflow showing agent coordination with persistent memory.
+
+```php
+// Step 1: Retrieve relevant context from previous work
+$tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
+$memory_result = $tool_registry->execute_tool(
+    'retrieve_agent_memory',
+    array(
+        'agent_id' => 123,
+        'query'    => 'customer preferences communication style',
+        'filters'  => array(
+            'importance' => array( 'high', 'critical' ),
+        ),
+        'limit'    => 5,
+    ),
+    $context
+);
+
+// Step 2: Use retrieved context in team composition
+$team = $orchestrator->compose_team(
+    array(
+        'task_type' => 'content',
+    )
+);
+
+// Step 3: Execute content creation with context awareness
+$task = array(
+    'description' => 'Create personalized email campaign based on customer preferences',
+    'type'        => 'creation',
+    'parameters'  => array(
+        'target_audience' => 'premium_customers',
+        'tone'            => 'professional',
+        'include_images'  => true,
+        // Pass retrieved memories as context
+        'customer_context' => $memory_result['contexts'],
+    ),
+);
+
+$workflow_result = $orchestrator->execute_team_workflow( $team, $task, $context );
+
+// Step 4: Store new learnings from the workflow
+if ( $workflow_result['success'] ) {
+    // Store what we learned from this campaign
+    $tool_registry->execute_tool(
+        'store_agent_context',
+        array(
+            'agent_id'     => 123,
+            'context_type' => 'result',
+            'context_data' => array(
+                'title'      => 'Email Campaign Results - Premium Customers Q1 2026',
+                'content'    => sprintf(
+                    'Campaign achieved %d%% open rate and %d%% click-through rate. Best performing subject line: "%s"',
+                    $workflow_result['metrics']['open_rate'],
+                    $workflow_result['metrics']['ctr'],
+                    $workflow_result['metrics']['best_subject']
+                ),
+                'importance' => 'high',
+                'tags'       => array( 'email-campaign', 'results', 'premium-customers' ),
+                'metadata'   => $workflow_result['metrics'],
+                'source_task' => $workflow_result['task_id'],
+            ),
+            'ttl'          => 7776000,  // 90 days
+        ),
+        $context
+    );
+    
+    // Store discovered patterns
+    if ( isset( $workflow_result['insights']['patterns'] ) ) {
+        foreach ( $workflow_result['insights']['patterns'] as $pattern ) {
+            $tool_registry->execute_tool(
+                'store_agent_context',
+                array(
+                    'agent_id'     => 123,
+                    'context_type' => 'pattern',
+                    'context_data' => array(
+                        'title'      => 'Discovered Pattern: ' . $pattern['title'],
+                        'content'    => $pattern['description'],
+                        'importance' => 'medium',
+                        'tags'       => array_merge( array( 'pattern', 'discovered' ), $pattern['tags'] ),
+                    ),
+                ),
+                $context
+            );
+        }
+    }
+}
 ```
 
 ---

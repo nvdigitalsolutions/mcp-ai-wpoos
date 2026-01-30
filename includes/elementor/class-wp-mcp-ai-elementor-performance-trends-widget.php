@@ -258,6 +258,8 @@ class WP_MCP_AI_Elementor_Performance_Trends_Widget extends \Elementor\Widget_Ba
 	 */
 	protected function enqueue_chart_script( $trends, $chart_height, $chart_id ) {
 		// Chart.js is loaded via get_script_depends().
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor widget functionality with dynamic data
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor widget layout and styling
 		?>
 		<script>
 		(function() {

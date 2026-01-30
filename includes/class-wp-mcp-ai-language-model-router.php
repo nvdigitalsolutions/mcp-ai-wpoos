@@ -178,6 +178,44 @@ if ( ! class_exists( 'WP_MCP_AI_Language_Model_Router' ) ) {
 		}
 
 		/**
+		 * Get a configured language model client for the given assistant.
+		 *
+		 * This method prepares the router with assistant-specific configuration
+		 * and returns the router instance which can then be used to make chat completion requests.
+		 *
+		 * @param array $assistant_config Assistant configuration including system_prompt, model, provider, etc.
+		 * @return WP_MCP_AI_Language_Model_Router|WP_Error Returns self for method chaining, or WP_Error on failure.
+		 */
+		public function get_client( array $assistant_config ) {
+			// Validate that we have required configuration.
+			// The router itself doesn't need specific validation since it delegates to provider clients.
+			// Provider-specific validation happens in individual client implementations.
+
+			// Log client initialization for diagnostic purposes.
+			if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
+				WP_MCP_AI_Logger::log_event(
+					'router_get_client',
+					'Language Model Router: Preparing client for assistant',
+					array(
+						'has_system_prompt' => ! empty( $assistant_config['system_prompt'] ),
+						'system_prompt_len' => ! empty( $assistant_config['system_prompt'] ) ? strlen( (string) $assistant_config['system_prompt'] ) : 0,
+						'has_provider'      => ! empty( $assistant_config['provider'] ),
+						'provider'          => ! empty( $assistant_config['provider'] ) ? $assistant_config['provider'] : 'default',
+						'has_model'         => ! empty( $assistant_config['model'] ),
+						'model'             => ! empty( $assistant_config['model'] ) ? $assistant_config['model'] : 'default',
+						'has_tools'         => ! empty( $assistant_config['tools'] ),
+						'tools_count'       => ! empty( $assistant_config['tools'] ) && is_array( $assistant_config['tools'] ) ? count( $assistant_config['tools'] ) : 0,
+					)
+				);
+			}
+
+			// Return the router instance itself.
+			// The router's create_chat_completion method will handle the assistant config via options.
+			// This allows the chat service to call: $client->create_chat_completion($messages, $options).
+			return $this;
+		}
+
+		/**
 		 * Route a request to a specific provider.
 		 *
 		 * @param string $provider Provider key.

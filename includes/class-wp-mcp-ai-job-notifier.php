@@ -43,12 +43,96 @@ class WP_MCP_AI_Job_Notifier {
 	}
 
 	/**
+	 * Ensure all relevant context IDs are captured in metadata for authorization and audit trails.
+	 *
+	 * This ensures we track:
+	 * - user_id: WordPress user who initiated the job
+	 * - assistant_id: Assistant that triggered the job
+	 * - team_id: Team workflow that triggered the job
+	 * - professional_id/profession_id: Professional that triggered the job
+	 * - agent_id: Specific agent that executed the job (in multi-agent workflows)
+	 * - virtual_agent_id: Virtual agent identifier (dynamically created agents)
+	 * - virtual_id: Virtual assistant that triggered the job
+	 * - workflow_id: Orchestration workflow identifier
+	 * - parent_job_id: Parent job ID for nested/child jobs
+	 *
+	 * @param array $metadata Job metadata.
+	 * @param array $context Optional execution context to extract IDs from.
+	 * @return array Enhanced metadata with all available IDs.
+	 */
+	private static function ensure_tracking_ids( $metadata, $context = array() ) {
+		// Ensure user_id is always stored.
+		if ( ! isset( $metadata['user_id'] ) ) {
+			$metadata['user_id'] = get_current_user_id();
+		}
+
+		// Extract assistant_id from context if available.
+		if ( ! isset( $metadata['assistant_id'] ) && isset( $context['assistant_id'] ) ) {
+			$metadata['assistant_id'] = absint( $context['assistant_id'] );
+		}
+
+		// Extract team_id from context if available.
+		if ( ! isset( $metadata['team_id'] ) && isset( $context['team_id'] ) ) {
+			$metadata['team_id'] = absint( $context['team_id'] );
+		}
+
+		// Extract professional_id or profession_id from context if available.
+		if ( ! isset( $metadata['professional_id'] ) && ! isset( $metadata['profession_id'] ) ) {
+			if ( isset( $context['professional_id'] ) ) {
+				$metadata['professional_id'] = absint( $context['professional_id'] );
+			} elseif ( isset( $context['profession_id'] ) ) {
+				$metadata['profession_id'] = absint( $context['profession_id'] );
+			} elseif ( isset( $context['profession_slug'] ) ) {
+				$metadata['profession_slug'] = sanitize_key( $context['profession_slug'] );
+			}
+		}
+
+		// Extract agent_id from context if available (multi-agent workflows).
+		if ( ! isset( $metadata['agent_id'] ) && isset( $context['agent_id'] ) ) {
+			$metadata['agent_id'] = sanitize_text_field( $context['agent_id'] );
+		}
+
+		// Extract agent_role from context if available (for agent role tracking).
+		if ( ! isset( $metadata['agent_role'] ) && isset( $context['agent_role'] ) ) {
+			$metadata['agent_role'] = sanitize_key( $context['agent_role'] );
+		}
+
+		// Extract virtual_agent_id from context if available (dynamically created agents).
+		if ( ! isset( $metadata['virtual_agent_id'] ) && isset( $context['virtual_agent_id'] ) ) {
+			$metadata['virtual_agent_id'] = sanitize_text_field( $context['virtual_agent_id'] );
+		}
+
+		// Extract virtual_id from context if available.
+		if ( ! isset( $metadata['virtual_id'] ) && isset( $context['virtual_id'] ) ) {
+			$metadata['virtual_id'] = absint( $context['virtual_id'] );
+		}
+
+		// Extract workflow_id from context if available (orchestration workflows).
+		if ( ! isset( $metadata['workflow_id'] ) && isset( $context['workflow_id'] ) ) {
+			$metadata['workflow_id'] = sanitize_text_field( $context['workflow_id'] );
+		}
+
+		// Extract parent_job_id from context if available (nested jobs).
+		if ( ! isset( $metadata['parent_job_id'] ) && isset( $context['parent_job_id'] ) ) {
+			$metadata['parent_job_id'] = sanitize_text_field( $context['parent_job_id'] );
+		}
+
+		return $metadata;
+	}
+
+	/**
 	 * Handle job started event.
 	 *
 	 * @param string $job_id   Job identifier.
-	 * @param array  $metadata Job metadata.
+	 * @param array  $metadata Job metadata (may contain context).
 	 */
 	public static function handle_job_started( $job_id, $metadata = array() ) {
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
+
 		$status = array(
 			'job_id'     => $job_id,
 			'status'     => 'started',
@@ -58,6 +142,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'started', $status );
+		self::emit_sse_event( $job_id, 'started', $status );
 	}
 
 	/**
@@ -65,7 +150,7 @@ class WP_MCP_AI_Job_Notifier {
 	 *
 	 * @param string $job_id   Job identifier.
 	 * @param float  $progress Progress percentage (0-100).
-	 * @param array  $metadata Additional metadata.
+	 * @param array  $metadata Additional metadata (may contain context).
 	 */
 	public static function handle_job_progress( $job_id, $progress, $metadata = array() ) {
 		$status = self::get_job_status( $job_id );
@@ -77,12 +162,19 @@ class WP_MCP_AI_Job_Notifier {
 			);
 		}
 
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
+
 		$status['progress']   = max( 0, min( 100, floatval( $progress ) ) );
 		$status['updated_at'] = current_time( 'mysql', true );
 		$status['metadata']   = $metadata;
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'progress', $status );
+		self::emit_sse_event( $job_id, 'progress', $status );
 	}
 
 	/**
@@ -112,8 +204,8 @@ class WP_MCP_AI_Job_Notifier {
 			'tool'     => 'web_search',
 			'query'    => isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '',
 			'provider' => isset( $result['provider'] ) ? sanitize_key( $result['provider'] ) : '',
-			'user_id'  => isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0,
 			'cached'   => isset( $result['cached'] ) ? (bool) $result['cached'] : false,
+			'context'  => $context, // Embed context for ID extraction.
 		);
 
 		// Delegate to the standard job completion handler.
@@ -171,6 +263,12 @@ class WP_MCP_AI_Job_Notifier {
 		// preventing JSON encoding failures when the status is retrieved.
 		$result = self::normalize_data_recursive( $result );
 
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
+
 		$status = array(
 			'job_id'       => $job_id,
 			'status'       => 'completed',
@@ -181,6 +279,7 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'completed', $status );
+		self::emit_sse_event( $job_id, 'completed', $status );
 	}
 
 	/**
@@ -188,13 +287,19 @@ class WP_MCP_AI_Job_Notifier {
 	 *
 	 * @param string         $job_id Job identifier.
 	 * @param WP_Error|array $error  Error information.
-	 * @param array          $metadata Job metadata.
+	 * @param array          $metadata Job metadata (may contain context).
 	 */
 	public static function handle_job_failed( $job_id, $error, $metadata = array() ) {
 		$error_data = array(
 			'message' => is_wp_error( $error ) ? $error->get_error_message() : 'Unknown error',
 			'code'    => is_wp_error( $error ) ? $error->get_error_code() : 'unknown_error',
 		);
+
+		// Extract context if embedded in metadata for ID tracking.
+		$context = isset( $metadata['context'] ) ? $metadata['context'] : array();
+
+		// Ensure all relevant IDs are captured for authorization and audit.
+		$metadata = self::ensure_tracking_ids( $metadata, $context );
 
 		$status = array(
 			'job_id'    => $job_id,
@@ -206,6 +311,123 @@ class WP_MCP_AI_Job_Notifier {
 
 		self::cache_job_status( $job_id, $status );
 		self::dispatch_webhooks( $job_id, 'failed', $status );
+		self::emit_sse_event( $job_id, 'failed', $status );
+	}
+
+	/**
+	 * Emit SSE event for job status update.
+	 *
+	 * Emits a Server-Sent Event that can be consumed by chat clients
+	 * to display real-time job status updates in conversations.
+	 *
+	 * @param string $job_id     Job identifier.
+	 * @param string $event_type Event type (started, progress, completed, failed).
+	 * @param array  $status     Job status data.
+	 */
+	protected static function emit_sse_event( $job_id, $event_type, $status ) {
+		// Don't emit SSE events if we're not in an SSE context.
+		// This prevents errors when job status changes outside of an active SSE stream.
+		if ( ! defined( 'WP_MCP_AI_SSE_ACTIVE' ) || ! WP_MCP_AI_SSE_ACTIVE ) {
+			return;
+		}
+
+		// Determine the SSE event name based on job type.
+		$sse_event_name = self::get_sse_event_name_for_job( $job_id, $event_type );
+
+		// Build SSE event data.
+		$event_data = array(
+			'job_id'   => $job_id,
+			'status'   => isset( $status['status'] ) ? $status['status'] : $event_type,
+			'progress' => isset( $status['progress'] ) ? $status['progress'] : null,
+			'message'  => self::get_status_message( $status, $event_type ),
+			'metadata' => isset( $status['metadata'] ) ? $status['metadata'] : array(),
+		);
+
+		// Add result data for completed jobs.
+		if ( 'completed' === $event_type && isset( $status['result'] ) ) {
+			$event_data['result'] = $status['result'];
+		}
+
+		// Add error data for failed jobs.
+		if ( 'failed' === $event_type && isset( $status['error'] ) ) {
+			$event_data['error'] = $status['error'];
+		}
+
+		// Emit the SSE event using WordPress action.
+		// This allows the Chat Controller or other SSE handlers to catch and stream it.
+		do_action( 'wp_mcp_ai_emit_sse_event', $sse_event_name, $event_data );
+	}
+
+	/**
+	 * Get SSE event name for a job.
+	 *
+	 * Determines whether this is a cron job or crawl4ai job
+	 * and returns the appropriate SSE event name.
+	 *
+	 * @param string $job_id     Job identifier.
+	 * @param string $event_type Event type.
+	 * @return string SSE event name.
+	 */
+	protected static function get_sse_event_name_for_job( $job_id, $event_type ) {
+		// Check if this is a crawl4ai job.
+		if ( strpos( $job_id, 'crawl' ) === 0 || strpos( $job_id, 'crawl4ai' ) === 0 ) {
+			return 'crawl4ai_job_status_update';
+		}
+
+		// Check if this is a cron job.
+		if ( strpos( $job_id, 'cron' ) === 0 ) {
+			return 'cron_job_status_update';
+		}
+
+		// Check metadata for tool type.
+		$cached_status = self::get_job_status( $job_id );
+		if ( $cached_status && isset( $cached_status['metadata']['tool'] ) ) {
+			$tool = $cached_status['metadata']['tool'];
+			
+			if ( 'run_crawl4ai_job' === $tool || 'crawl4ai' === $tool ) {
+				return 'crawl4ai_job_status_update';
+			}
+			
+			if ( 'create_cron_job' === $tool || strpos( $tool, 'cron' ) !== false ) {
+				return 'cron_job_status_update';
+			}
+		}
+
+		// Default to generic job status update.
+		return 'job_status_update';
+	}
+
+	/**
+	 * Get human-readable status message.
+	 *
+	 * @param array  $status     Status data.
+	 * @param string $event_type Event type.
+	 * @return string Status message.
+	 */
+	protected static function get_status_message( $status, $event_type ) {
+		// Check for custom message in metadata.
+		if ( isset( $status['metadata']['message'] ) ) {
+			return sanitize_text_field( $status['metadata']['message'] );
+		}
+
+		// Generate default message based on event type.
+		switch ( $event_type ) {
+			case 'started':
+				return __( 'Job started', 'mcp-ai-wpoos' );
+			case 'progress':
+				$progress = isset( $status['progress'] ) ? absint( $status['progress'] ) : 0;
+				/* translators: %d: progress percentage */
+				return sprintf( __( 'Processing... %d%%', 'mcp-ai-wpoos' ), $progress );
+			case 'completed':
+				return __( 'Job completed successfully', 'mcp-ai-wpoos' );
+			case 'failed':
+				if ( isset( $status['error']['message'] ) ) {
+					return sanitize_text_field( $status['error']['message'] );
+				}
+				return __( 'Job failed', 'mcp-ai-wpoos' );
+			default:
+				return __( 'Job status update', 'mcp-ai-wpoos' );
+		}
 	}
 
 	/**
@@ -378,8 +600,42 @@ class WP_MCP_AI_Job_Notifier {
 	 * @return bool|WP_Error True on success, WP_Error on failure.
 	 */
 	public static function register_webhook( $job_id, $webhook_url, $events = array() ) {
+		// Basic URL format validation.
 		if ( ! is_string( $webhook_url ) || ! filter_var( $webhook_url, FILTER_VALIDATE_URL ) ) {
 			return new WP_Error( 'invalid_webhook_url', __( 'Invalid webhook URL provided.', 'mcp-ai-wpoos' ) );
+		}
+
+		// SSRF Protection: Parse and validate URL components.
+		$parsed_url = wp_parse_url( $webhook_url );
+
+		// Only allow http/https protocols.
+		if ( ! isset( $parsed_url['scheme'] ) || ! in_array( $parsed_url['scheme'], array( 'http', 'https' ), true ) ) {
+			return new WP_Error(
+				'invalid_webhook_scheme',
+				__( 'Only http and https protocols are allowed for webhooks.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		// Block private/internal IP ranges to prevent SSRF attacks.
+		if ( isset( $parsed_url['host'] ) ) {
+			$host = $parsed_url['host'];
+			$ip   = gethostbyname( $host );
+
+			// Check for private IP ranges (RFC 1918, loopback, link-local).
+			if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) === false ) {
+				return new WP_Error(
+					'private_ip_blocked',
+					__( 'Webhooks to private IP addresses, localhost, or internal networks are not allowed for security reasons.', 'mcp-ai-wpoos' )
+				);
+			}
+		}
+
+		// Use WordPress built-in URL validation for additional security.
+		if ( ! wp_http_validate_url( $webhook_url ) ) {
+			return new WP_Error(
+				'webhook_validation_failed',
+				__( 'Webhook URL failed security validation.', 'mcp-ai-wpoos' )
+			);
 		}
 
 		$job_id = sanitize_text_field( $job_id );

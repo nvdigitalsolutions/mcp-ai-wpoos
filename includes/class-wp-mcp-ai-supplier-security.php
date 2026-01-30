@@ -414,7 +414,7 @@ class WP_MCP_AI_Supplier_Security {
 
 		// Log review notification.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
 				'info',
 				sprintf(
 					'%d supplier(s) due for security review: %s',
@@ -579,7 +579,7 @@ class WP_MCP_AI_Supplier_Security {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 			$total_vulns = ( $results['composer']['vulnerabilities'] ?? 0 ) + ( $results['npm']['vulnerabilities'] ?? 0 );
 
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
 				$total_vulns > 0 ? 'warning' : 'info',
 				sprintf( 'Dependency vulnerability scan completed: %d vulnerabilities found', $total_vulns ),
 				array(

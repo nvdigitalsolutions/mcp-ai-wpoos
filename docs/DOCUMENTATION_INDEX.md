@@ -1,6 +1,6 @@
 # NV oOS Documentation Index
 
-**Last Updated:** January 22, 2026  
+**Last Updated:** January 28, 2026  
 **Plugin Version:** 1.1.0  
 **MCP Version:** 2024-11-05
 
@@ -63,6 +63,87 @@ This document provides a comprehensive index of all documentation available for 
 ---
 
 ## 🆕 Latest Updates - January 2026 ⭐ **LATEST UPDATES**
+
+### WordPress Integration Enhancement Proposal (January 28, 2026) 🔧 **LATEST** ⭐
+
+**NEW:** Comprehensive WordPress integration gap analysis and enhancement proposal:
+
+- **[WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md](proposals/WORDPRESS_INTEGRATION_ENHANCEMENT_PROPOSAL.md)** ⭐ **NEW (Jan 28)**
+  - Complete technical specification for 24 WordPress integration improvements
+  - Current state: 82/100 → Target: 95/100 integration score
+  - **Critical gaps identified:** 82 output escaping issues, 97 enqueue violations
+  - 4-phase implementation roadmap (6-7 weeks)
+  - Phase 1: WordPress.org compliance (100% approval)
+  - Phase 2: Core features (Site Health, Blocks, Privacy API, WP-CLI, Widgets)
+  - Phase 3: Developer experience (Taxonomies, Multisite)
+  - Phase 4: Testing & documentation
+  - Complete code examples and acceptance criteria
+  - Risk assessment and resource requirements
+
+- **[WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md](WORDPRESS_INTEGRATION_GAPS_EXECUTIVE_SUMMARY.md)** ⭐ **NEW (Jan 28)**
+  - Executive overview for decision makers
+  - Business impact and ROI analysis
+  - Quick wins: Site Health (6-8h), Privacy API (1d), Dashboard widgets (1-2d)
+  - Visual progress indicators and score breakdown
+  - Timeline and resource requirements
+  - Decision framework for stakeholders
+
+- **[WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md](WORDPRESS_INTEGRATION_IMPLEMENTATION_CHECKLIST.md)** ⭐ **NEW (Jan 28)**
+  - Step-by-step developer implementation guide
+  - Phase-by-phase checklist with testing requirements
+  - Code examples and testing commands
+  - Success metrics and validation checklist
+  - Known issues and gotchas
+  - Support resources and references
+
+**Key Findings:**
+- 🔴 **WordPress.org Status:** 82% compliant (14/17 requirements met)
+- 🔴 **Critical Security:** 82 unescaped output statements across 35+ files
+- 🟡 **Standards Violation:** 97 direct script/style tags need enqueue compliance
+- ✅ **Quick Wins Available:** 4-5 high-impact improvements (1-2 days each)
+- 📊 **Target Improvement:** +13 points overall integration score
+
+**Expected Benefits:**
+- ✅ 100% WordPress.org compliance (submission approved)
+- ✅ Enhanced security with complete output escaping
+- ✅ Better UX with native WordPress patterns (Blocks, Site Health, Widgets)
+- ✅ GDPR compliance via Privacy API
+- ✅ Professional monitoring via Site Health integration
+- ✅ Expanded WP-CLI (1 → 15+ commands)
+- ✅ Enterprise-ready multisite improvements
+
+---
+
+### Documentation Organization & Proposals Consolidation (January 28, 2026) 📁 ⭐
+
+**NEW:** Major reorganization of root documentation files and proposals directory:
+
+- **Root Documentation Files Organized:**
+  - ✅ **WPCODE_QUICK_START.md** → `docs/guides/developer/wpcode-snippet-activation-tracking-quick-start.md`
+  - ✅ **GMAIL_OAUTH_FIX_SUMMARY.md** → Consolidated with `docs/fixes/gmail-oauth-fix-summary.md` (added Jan 27 Google API Client library fix)
+
+- **Proposals Directory Consolidated (37 files → 37 files with 5 consolidated master documents):**
+  - **[proposals/README.md](proposals/README.md)** ⭐ **NEW** - Comprehensive index and organization
+  - **[DEEPSEEK-V4-STATUS-AND-ROADMAP.md](proposals/DEEPSEEK-V4-STATUS-AND-ROADMAP.md)** ⭐ **NEW** - Consolidates 8 DeepSeek files into single status document
+  - **[WEBLLM-ROADMAP-AND-STATUS.md](proposals/WEBLLM-ROADMAP-AND-STATUS.md)** ⭐ **NEW** - Consolidates 5 WebLLM files
+  - **[PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md](proposals/PLAYWRIGHT-WEB-BROWSER-PRO-TOOL-STATUS.md)** ⭐ **NEW** - Consolidates 3 Playwright files
+  - **[BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](proposals/BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)** ⭐ **NEW** - Consolidates 3 Bitwarden files
+  - **[RALPH-WIGGUM-CCT-ORCHESTRATION.md](proposals/RALPH-WIGGUM-CCT-ORCHESTRATION.md)** ⭐ **NEW** - Consolidates 4 Ralph/CCT files
+
+**Key Improvements:**
+- 📊 Clear status tracking (✅ Implemented, ⏳ Active, 🔮 Pending, 📚 Reference)
+- 🎯 Consolidated status documents as primary references
+- 📁 Better organization by feature area and priority
+- 🔗 Improved cross-referencing between related documents
+- ⏱️ Implementation timeline and decision framework
+
+**Proposals Status Overview:**
+- **Implemented:** Playwright Web Browser, WebLLM Phases 1-3, DeepSeek V4 (85-90%)
+- **Active:** DeepSeek V4 completion (13-17h), Ralph Wiggum (80-120h)
+- **Pending:** Bitwarden/Vaultwarden, WebLLM Phases 4-8
+- **Reference:** Size reduction, NPM packages, CLI integration
+
+---
 
 ### Web Browser Pro Tool Proposal (January 9, 2026) 🌐 **NEW PROPOSAL** ⭐
 

@@ -70,6 +70,7 @@ Historical reference (244 documents from 2024-2025)
 ## 📌 Essential Documents
 
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Complete navigation
+- **[Documentation Organization](DOCUMENTATION_ORGANIZATION.md)** - How documentation is organized
 - **[Quick Reference](QUICK_REFERENCE.md)** - Fast lookup
 - **[Master Consolidation 2025](implementation-history/2025/summaries/MASTER_CONSOLIDATION_2025.md)** - 2025 single source of truth
 - **[Best Practices](guides/developer/best-practices/BEST_PRACTICES.md)** - Coding standards

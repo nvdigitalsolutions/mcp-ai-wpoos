@@ -174,9 +174,10 @@ class WP_MCP_AI_Elementor_Integration {
 
 			// Log the error if WP_DEBUG is enabled and the logger is available.
 			if ( defined( 'WP_DEBUG' ) && WP_DEBUG && class_exists( 'WP_MCP_AI_Logger' ) ) {
-				WP_MCP_AI_Logger::log(
+				WP_MCP_AI_Logger::log_event(
+					'error',
 					'Elementor widget registration failed: ' . $e->getMessage(),
-					'error'
+					array()
 				);
 			}
 		}

@@ -300,14 +300,14 @@ class WP_MCP_AI_Security_Training {
 
 		// Log completion.
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				'Security training completed',
 				array(
 					'user_id'   => $user_id,
 					'module_id' => $module_id,
 					'score'     => $score,
-				),
-				'info'
+				)
 			);
 		}
 

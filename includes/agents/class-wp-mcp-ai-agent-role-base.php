@@ -203,15 +203,15 @@ abstract class WP_MCP_AI_Agent_Role_Base implements WP_MCP_AI_Agent_Role_Interfa
 	 */
 	protected function log( $message, $level = 'info', $data = array() ) {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				$level,
 				$message,
 				array_merge(
 					$data,
 					array(
 						'role_type' => $this->role_type,
 					)
-				),
-				$level
+				)
 			);
 		}
 	}

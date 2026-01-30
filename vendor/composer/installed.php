@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
+        'version' => 'dev-copilot/fix-activation-error-pro-plugin',
+        'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',
         'pretty_version' => 'dev-copilot/run-composer-install-production-please-work',
         'version' => 'dev-copilot/run-composer-install-production-please-work',
         'reference' => '9376258eecd6a4d4abd8851a1aa2dce28b359c1f',
@@ -50,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
+            'version' => 'dev-copilot/fix-activation-error-pro-plugin',
+            'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',
             'pretty_version' => 'dev-copilot/run-composer-install-production-please-work',
             'version' => 'dev-copilot/run-composer-install-production-please-work',
             'reference' => '9376258eecd6a4d4abd8851a1aa2dce28b359c1f',
