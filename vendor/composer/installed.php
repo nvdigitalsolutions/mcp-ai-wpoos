@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-incomplete-pages',
-        'version' => 'dev-copilot/review-incomplete-pages',
-        'reference' => '077abedf8907f8bbd57b344244b69797ad700eaa',
+        'pretty_version' => 'dev-copilot/rebuild-zip-files-again',
+        'version' => 'dev-copilot/rebuild-zip-files-again',
+        'reference' => '275912ad9bc3c3b36775486116c4a3a613b72e65',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-incomplete-pages',
-            'version' => 'dev-copilot/review-incomplete-pages',
-            'reference' => '077abedf8907f8bbd57b344244b69797ad700eaa',
+            'pretty_version' => 'dev-copilot/rebuild-zip-files-again',
+            'version' => 'dev-copilot/rebuild-zip-files-again',
+            'reference' => '275912ad9bc3c3b36775486116c4a3a613b72e65',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
