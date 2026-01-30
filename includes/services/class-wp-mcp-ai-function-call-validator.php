@@ -66,6 +66,7 @@ class WP_MCP_AI_Function_Call_Validator {
 			if ( ! $tool ) {
 				return array(
 					'valid'           => false,
+					/* translators: %s: Tool slug */
 					'errors'          => array( sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $tool_slug ) ),
 					'normalized_args' => array(),
 				);
@@ -339,6 +340,7 @@ class WP_MCP_AI_Function_Call_Validator {
 				if ( ! $tool ) {
 					$level_results[ $call_id ] = new WP_Error(
 						'tool_not_found',
+						/* translators: %s: Tool slug */
 						sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $call_data['tool_slug'] )
 					);
 					continue;
@@ -371,6 +373,7 @@ class WP_MCP_AI_Function_Call_Validator {
 			if ( ! $tool ) {
 				$errors[ $call_id ] = new WP_Error(
 					'tool_not_found',
+					/* translators: %s: Tool slug */
 					sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $call_data['tool_slug'] )
 				);
 				continue;

@@ -123,6 +123,7 @@ class WP_MCP_AI_Site_Health {
 			if ( $openai_test['success'] ) {
 				$providers_working++;
 			} else {
+				/* translators: %s: OpenAI error message */
 				$issues[] = sprintf( __( 'OpenAI: %s', 'mcp-ai-wpoos' ), $openai_test['message'] );
 			}
 		}
@@ -134,6 +135,7 @@ class WP_MCP_AI_Site_Health {
 			if ( $gemini_test['success'] ) {
 				$providers_working++;
 			} else {
+				/* translators: %s: Gemini error message */
 				$issues[] = sprintf( __( 'Gemini: %s', 'mcp-ai-wpoos' ), $gemini_test['message'] );
 			}
 		}
@@ -145,6 +147,7 @@ class WP_MCP_AI_Site_Health {
 			if ( $ollama_test['success'] ) {
 				$providers_working++;
 			} else {
+				/* translators: %s: Ollama error message */
 				$issues[] = sprintf( __( 'Ollama: %s', 'mcp-ai-wpoos' ), $ollama_test['message'] );
 			}
 		}

@@ -1168,6 +1168,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		);
 
 		$definition = isset( $role_definitions[ $role ] ) ? $role_definitions[ $role ] : array(
+			/* translators: %s: Role name */
 			'name'      => sprintf( __( 'Virtual %s', 'mcp-ai-wpoos' ), ucfirst( $role ) ),
 			'expertise' => array(),
 		);

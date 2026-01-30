@@ -138,6 +138,7 @@ trait WP_MCP_AI_Tool_Chart_Accessibility {
 
 				// Add dataset summaries.
 				foreach ( $datasets as $index => $dataset ) {
+					/* translators: %d: Dataset index number */
 					$label = isset( $dataset['label'] ) ? $dataset['label'] : sprintf( __( 'Dataset %d', 'mcp-ai-wpoos' ), $index + 1 );
 					$data  = isset( $dataset['data'] ) ? $dataset['data'] : array();
 

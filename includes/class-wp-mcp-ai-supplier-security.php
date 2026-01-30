@@ -460,6 +460,7 @@ class WP_MCP_AI_Supplier_Security {
 		}
 
 		$message .= sprintf(
+			/* translators: %s: Admin URL for suppliers page */
 			"\n" . __( 'Review suppliers at: %s', 'mcp-ai-wpoos' ),
 			admin_url( 'admin.php?page=nvoos-pro-dashboard-suppliers' )
 		);
