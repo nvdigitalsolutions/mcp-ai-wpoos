@@ -47,36 +47,36 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Media Library Optimizer', 'mcp-ai-wpoos' ),
-			'description'          => __( 'Bulk image compression, AVIF/WebP conversion, lazy loading, unused media detection, and CDN preparation following 2026 standards.', 'mcp-ai-wpoos' ),
-			'category'             => 'media',
-			'required_capability'  => 'upload_files',
-			'parameters'           => array(
-				'action'           => array(
+			'name'                => __( 'Media Library Optimizer', 'mcp-ai-wpoos' ),
+			'description'         => __( 'Bulk image compression, AVIF/WebP conversion, lazy loading, unused media detection, and CDN preparation following 2026 standards.', 'mcp-ai-wpoos' ),
+			'category'            => 'media',
+			'required_capability' => 'upload_files',
+			'parameters'          => array(
+				'action'            => array(
 					'type'        => 'string',
 					'description' => __( 'Action: analyze, compress, convert, detect_unused, or configure_lazy_loading', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'analyze', 'compress', 'convert', 'detect_unused', 'configure_lazy_loading' ),
 				),
-				'target_format'    => array(
+				'target_format'     => array(
 					'type'        => 'string',
 					'description' => __( 'Target format for conversion: avif, webp, or auto', 'mcp-ai-wpoos' ),
 					'default'     => 'auto',
 					'enum'        => array( 'avif', 'webp', 'auto' ),
 				),
-				'quality'          => array(
+				'quality'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Compression quality (1-100, default: 85)', 'mcp-ai-wpoos' ),
 					'default'     => 85,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
-				'limit'            => array(
+				'limit'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of images to process (default: 50)', 'mcp-ai-wpoos' ),
 					'default'     => 50,
 				),
-				'age_days'         => array(
+				'age_days'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Age in days for unused media detection (default: 180)', 'mcp-ai-wpoos' ),
 					'default'     => 180,
@@ -169,11 +169,11 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$total_images  = count( $images );
 		$total_size    = 0;
 		$format_counts = array(
-			'jpeg' => 0,
-			'png'  => 0,
-			'gif'  => 0,
-			'webp' => 0,
-			'avif' => 0,
+			'jpeg'  => 0,
+			'png'   => 0,
+			'gif'   => 0,
+			'webp'  => 0,
+			'avif'  => 0,
 			'other' => 0,
 		);
 
@@ -185,16 +185,16 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				continue;
 			}
 
-			$file_size = filesize( $file_path );
+			$file_size   = filesize( $file_path );
 			$total_size += $file_size;
 
 			// Determine format.
 			$mime_type = get_post_mime_type( $image_id );
 			$format    = $this->mime_to_format( $mime_type );
 			if ( isset( $format_counts[ $format ] ) ) {
-				$format_counts[ $format ]++;
+				++$format_counts[ $format ];
 			} else {
-				$format_counts['other']++;
+				++$format_counts['other'];
 			}
 
 			// Check for optimization opportunities.
@@ -220,11 +220,11 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		return array(
 			'success'                     => true,
 			'summary'                     => array(
-				'total_images'                => $total_images,
-				'total_size'                  => $total_size,
-				'total_size_human'            => size_format( $total_size ),
-				'average_size'                => $total_images > 0 ? round( $total_size / $total_images ) : 0,
-				'average_size_human'          => size_format( $total_images > 0 ? round( $total_size / $total_images ) : 0 ),
+				'total_images'       => $total_images,
+				'total_size'         => $total_size,
+				'total_size_human'   => size_format( $total_size ),
+				'average_size'       => $total_images > 0 ? round( $total_size / $total_images ) : 0,
+				'average_size_human' => size_format( $total_images > 0 ? round( $total_size / $total_images ) : 0 ),
 			),
 			'format_distribution'         => $format_counts,
 			'optimization_opportunities'  => array_slice( $optimization_opportunities, 0, 20 ), // Top 20.
@@ -260,15 +260,15 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			)
 		);
 
-		$compressed    = 0;
-		$failed        = 0;
-		$total_saved   = 0;
-		$details       = array();
+		$compressed  = 0;
+		$failed      = 0;
+		$total_saved = 0;
+		$details     = array();
 
 		foreach ( $images as $image_id ) {
 			$file_path = get_attached_file( $image_id );
 			if ( ! file_exists( $file_path ) ) {
-				$failed++;
+				++$failed;
 				continue;
 			}
 
@@ -278,8 +278,8 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			$compressed_result = $this->compress_image( $file_path, $quality );
 
 			if ( $compressed_result['success'] ) {
-				$new_size = filesize( $file_path );
-				$saved    = $original_size - $new_size;
+				$new_size     = filesize( $file_path );
+				$saved        = $original_size - $new_size;
 				$total_saved += $saved;
 
 				update_post_meta( $image_id, '_wp_mcp_ai_compressed', true );
@@ -294,9 +294,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'reduction'     => round( ( $saved / $original_size ) * 100, 2 ) . '%',
 				);
 
-				$compressed++;
+				++$compressed;
 			} else {
-				$failed++;
+				++$failed;
 			}
 		}
 
@@ -340,15 +340,15 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			)
 		);
 
-		$converted  = 0;
-		$failed     = 0;
+		$converted   = 0;
+		$failed      = 0;
 		$total_saved = 0;
-		$details    = array();
+		$details     = array();
 
 		foreach ( $images as $image_id ) {
 			$file_path = get_attached_file( $image_id );
 			if ( ! file_exists( $file_path ) ) {
-				$failed++;
+				++$failed;
 				continue;
 			}
 
@@ -358,9 +358,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			$convert_result = $this->convert_image_format( $file_path, $target_format, $quality, $preserve_original );
 
 			if ( $convert_result['success'] ) {
-				$new_file = $convert_result['new_file'];
-				$new_size = filesize( $new_file );
-				$saved    = $original_size - $new_size;
+				$new_file     = $convert_result['new_file'];
+				$new_size     = filesize( $new_file );
+				$saved        = $original_size - $new_size;
 				$total_saved += $saved;
 
 				// Update attachment.
@@ -383,9 +383,9 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'reduction'     => round( ( $saved / $original_size ) * 100, 2 ) . '%',
 				);
 
-				$converted++;
+				++$converted;
 			} else {
-				$failed++;
+				++$failed;
 			}
 		}
 
@@ -429,8 +429,8 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			)
 		);
 
-		$unused         = array();
-		$total_size     = 0;
+		$unused     = array();
+		$total_size = 0;
 
 		foreach ( $attachments as $attachment_id ) {
 			// Check if attached to any post.
@@ -450,13 +450,13 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 				$file_size = file_exists( $file_path ) ? filesize( $file_path ) : 0;
 
 				$unused[] = array(
-					'id'              => $attachment_id,
-					'title'           => get_the_title( $attachment_id ),
-					'url'             => wp_get_attachment_url( $attachment_id ),
-					'file'            => basename( $file_path ),
-					'size'            => size_format( $file_size ),
-					'uploaded_date'   => get_the_date( 'Y-m-d', $attachment_id ),
-					'age_days'        => floor( ( time() - get_post_time( 'U', false, $attachment_id ) ) / DAY_IN_SECONDS ),
+					'id'            => $attachment_id,
+					'title'         => get_the_title( $attachment_id ),
+					'url'           => wp_get_attachment_url( $attachment_id ),
+					'file'          => basename( $file_path ),
+					'size'          => size_format( $file_size ),
+					'uploaded_date' => get_the_date( 'Y-m-d', $attachment_id ),
+					'age_days'      => floor( ( time() - get_post_time( 'U', false, $attachment_id ) ) / DAY_IN_SECONDS ),
 				);
 
 				$total_size += $file_size;
@@ -464,14 +464,14 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		}
 
 		return array(
-			'success'              => true,
-			'age_threshold_days'   => $age_days,
-			'total_checked'        => count( $attachments ),
-			'unused_count'         => count( $unused ),
-			'unused_total_size'    => size_format( $total_size ),
-			'potential_savings'    => size_format( $total_size ),
-			'unused_media'         => array_slice( $unused, 0, 100 ), // First 100.
-			'recommendations'      => array(
+			'success'            => true,
+			'age_threshold_days' => $age_days,
+			'total_checked'      => count( $attachments ),
+			'unused_count'       => count( $unused ),
+			'unused_total_size'  => size_format( $total_size ),
+			'potential_savings'  => size_format( $total_size ),
+			'unused_media'       => array_slice( $unused, 0, 100 ), // First 100.
+			'recommendations'    => array(
 				__( 'Review unused media before deletion', 'mcp-ai-wpoos' ),
 				__( 'Consider backup before bulk deletion', 'mcp-ai-wpoos' ),
 				__( 'Some media may be used in widgets or theme templates', 'mcp-ai-wpoos' ),
@@ -490,12 +490,12 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 		$wp_lazy_loading = version_compare( get_bloginfo( 'version' ), '5.5', '>=' );
 
 		return array(
-			'success'               => true,
-			'wordpress_native'      => $wp_lazy_loading,
-			'status'                => $wp_lazy_loading
+			'success'          => true,
+			'wordpress_native' => $wp_lazy_loading,
+			'status'           => $wp_lazy_loading
 				? __( 'WordPress native lazy loading is enabled', 'mcp-ai-wpoos' )
 				: __( 'Consider upgrading WordPress for native lazy loading', 'mcp-ai-wpoos' ),
-			'recommendations'       => array(
+			'recommendations'  => array(
 				__( 'WordPress 5.5+ includes native lazy loading', 'mcp-ai-wpoos' ),
 				__( 'Add loading="lazy" attribute to images automatically', 'mcp-ai-wpoos' ),
 				__( 'Consider plugins like Lazy Load by WP Rocket for advanced features', 'mcp-ai-wpoos' ),

@@ -56,7 +56,10 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 				'recipients'     => array(
 					'type'        => 'array',
 					'description' => __( 'Email addresses to notify (optional, uses configured recipients if not provided)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array( 'type' => 'string', 'format' => 'email' ),
+					'items'       => array(
+						'type'   => 'string',
+						'format' => 'email',
+					),
 				),
 				'countries'      => array(
 					'type'        => 'array',
@@ -157,7 +160,7 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 		$expiring_query = new WP_Query( $query_args );
 
 		$expiring_registrations = array();
-		$today = time();
+		$today                  = time();
 
 		if ( $expiring_query->have_posts() ) {
 			foreach ( $expiring_query->posts as $post ) {
@@ -186,7 +189,7 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 				count( $expiring_registrations )
 			);
 
-			$message  = __( 'The following registrations are expiring soon:', 'mcp-ai-wpoos-pro' ) . "\n\n";
+			$message = __( 'The following registrations are expiring soon:', 'mcp-ai-wpoos-pro' ) . "\n\n";
 			foreach ( $expiring_registrations as $reg ) {
 				$message .= sprintf(
 					"%s (%s) - Expires: %s (%d days)\n",
@@ -200,18 +203,18 @@ class WP_MCP_AI_Tool_Send_Expiry_Alerts implements WP_MCP_AI_Tool_Interface, WP_
 			// Send emails.
 			foreach ( $recipients as $recipient ) {
 				if ( wp_mail( $recipient, $subject, $message ) ) {
-					$emails_sent++;
+					++$emails_sent;
 				}
 			}
 
 			// Log sent alerts.
-			$alert_log = get_option( 'wp_mcp_ai_expiry_alert_log', array() );
+			$alert_log   = get_option( 'wp_mcp_ai_expiry_alert_log', array() );
 			$alert_log[] = array(
-				'timestamp'       => current_time( 'mysql' ),
-				'user_id'         => $current_user_id,
-				'recipients'      => $recipients,
-				'registrations'   => count( $expiring_registrations ),
-				'days_threshold'  => $days_threshold,
+				'timestamp'      => current_time( 'mysql' ),
+				'user_id'        => $current_user_id,
+				'recipients'     => $recipients,
+				'registrations'  => count( $expiring_registrations ),
+				'days_threshold' => $days_threshold,
 			);
 			update_option( 'wp_mcp_ai_expiry_alert_log', array_slice( $alert_log, -50 ) );
 		}

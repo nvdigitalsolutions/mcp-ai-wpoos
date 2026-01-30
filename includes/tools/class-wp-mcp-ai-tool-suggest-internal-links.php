@@ -53,30 +53,30 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'post_id'           => array(
+				'post_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Post ID to analyze for internal link suggestions.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'content'           => array(
+				'content'         => array(
 					'type'        => 'string',
 					'description' => __( 'Content to analyze (if post_id not provided).', 'mcp-ai-wpoos' ),
 				),
-				'max_suggestions'   => array(
+				'max_suggestions' => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of link suggestions to return.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 20,
 					'default'     => 5,
 				),
-				'min_relevance'     => array(
+				'min_relevance'   => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum relevance score (0-1) for suggestions.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 1,
 					'default'     => 0.5,
 				),
-				'post_types'        => array(
+				'post_types'      => array(
 					'type'        => 'array',
 					'description' => __( 'Post types to search for link targets.', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 					),
 					'default'     => array( 'post', 'page' ),
 				),
-				'exclude_posts'     => array(
+				'exclude_posts'   => array(
 					'type'        => 'array',
 					'description' => __( 'Post IDs to exclude from suggestions.', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -92,7 +92,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 						'minimum' => 1,
 					),
 				),
-				'include_anchors'   => array(
+				'include_anchors' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to generate suggested anchor text.', 'mcp-ai-wpoos' ),
 					'default'     => true,
@@ -109,17 +109,11 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -137,7 +131,6 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -291,8 +284,8 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 	 * @return array Array of post data.
 	 */
 	private function get_link_candidates( $arguments ) {
-		$post_types     = $arguments['post_types'] ?? array( 'post', 'page' );
-		$exclude_posts  = $arguments['exclude_posts'] ?? array();
+		$post_types      = $arguments['post_types'] ?? array( 'post', 'page' );
+		$exclude_posts   = $arguments['exclude_posts'] ?? array();
 		$current_post_id = $arguments['post_id'] ?? 0;
 
 		// Exclude current post.
@@ -390,7 +383,7 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 
 		$candidate_list = array();
 		foreach ( $candidates as $candidate ) {
-			$excerpt = ! empty( $candidate['excerpt'] ) ? $candidate['excerpt'] : wp_trim_words( $candidate['content'], 30 );
+			$excerpt          = ! empty( $candidate['excerpt'] ) ? $candidate['excerpt'] : wp_trim_words( $candidate['content'], 30 );
 			$candidate_list[] = sprintf(
 				'%d. "%s" - %s',
 				$candidate['id'],
@@ -399,10 +392,10 @@ class WP_MCP_AI_Tool_Suggest_Internal_Links implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$prompt = "Analyze the following content and suggest relevant internal links from the available posts.\n\n";
+		$prompt  = "Analyze the following content and suggest relevant internal links from the available posts.\n\n";
 		$prompt .= "Current Content:\n";
 		$prompt .= "Title: {$content_data['title']}\n";
-		$prompt .= "Content: " . wp_trim_words( $content_data['content'], 200 ) . "\n\n";
+		$prompt .= 'Content: ' . wp_trim_words( $content_data['content'], 200 ) . "\n\n";
 		$prompt .= "Available Posts for Linking:\n" . implode( "\n", array_slice( $candidate_list, 0, 50 ) ) . "\n\n";
 
 		if ( $include_anchors ) {

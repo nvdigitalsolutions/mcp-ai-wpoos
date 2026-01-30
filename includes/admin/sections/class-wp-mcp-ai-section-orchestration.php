@@ -3892,7 +3892,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									++$mode_counts[ $mode ];
 								}
 							}
-							$unique_modes_used = count( $mode_counts );
+							$unique_modes_used     = count( $mode_counts );
 							$total_available_modes = 4; // single, sequential, parallel, swarm.
 							echo esc_html( $unique_modes_used . '/' . $total_available_modes );
 							?>
@@ -3900,7 +3900,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<div class="wp-mcp-ai-metric-subtitle">
 							<?php
 							if ( ! empty( $mode_counts ) ) {
-								$mode_labels = array(
+								$mode_labels  = array(
 									'single'     => __( 'Single', 'mcp-ai-wpoos' ),
 									'sequential' => __( 'Sequential', 'mcp-ai-wpoos' ),
 									'parallel'   => __( 'Parallel', 'mcp-ai-wpoos' ),
@@ -3908,7 +3908,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								);
 								$mode_display = array();
 								foreach ( $mode_counts as $mode => $count ) {
-									$label = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
+									$label          = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
 									$mode_display[] = sprintf( '%s (%d)', $label, $count );
 								}
 								echo esc_html( implode( ', ', $mode_display ) );

@@ -381,10 +381,10 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 				'drawing_number' => __( 'Drawing Number', 'mcp-ai-wpoos-pro' ),
 			),
 			'recommended_fields' => array(
-				'scale'         => __( 'Scale', 'mcp-ai-wpoos-pro' ),
-				'project_id'    => __( 'Project', 'mcp-ai-wpoos-pro' ),
-				'revision'      => __( 'Revision', 'mcp-ai-wpoos-pro' ),
-				'layer_naming'  => __( 'Layer Naming', 'mcp-ai-wpoos-pro' ),
+				'scale'        => __( 'Scale', 'mcp-ai-wpoos-pro' ),
+				'project_id'   => __( 'Project', 'mcp-ai-wpoos-pro' ),
+				'revision'     => __( 'Revision', 'mcp-ai-wpoos-pro' ),
+				'layer_naming' => __( 'Layer Naming', 'mcp-ai-wpoos-pro' ),
 			),
 			'validation_rules'   => array(
 				'drawing_number' => array( 'max_length' => 50 ),
@@ -420,7 +420,7 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 			$drawing_type   = get_post_meta( $drawing->ID, 'drawing_type', true );
 			$drawing_number = get_post_meta( $drawing->ID, 'drawing_number', true );
 			$scale          = get_post_meta( $drawing->ID, 'scale', true );
-			
+
 			if ( ! empty( $drawing_type ) && ! empty( $drawing_number ) && ! empty( $scale ) && ! empty( $drawing->post_content ) ) {
 				++$complete;
 			}
@@ -621,9 +621,9 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get drawing statistics.
-		$total_drawings = wp_count_posts( 'mcp_ai_arch_draw' );
+		$total_drawings  = wp_count_posts( 'mcp_ai_arch_draw' );
 		$published_count = isset( $total_drawings->publish ) ? $total_drawings->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$drawings = get_posts(
 			array(
@@ -634,28 +634,28 @@ class WP_MCP_AI_Architectural_Drawing_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_type = 0;
-		$with_number = 0;
+		$with_type      = 0;
+		$with_number    = 0;
 
 		foreach ( $drawings as $drawing ) {
 			$drawing_type   = get_post_meta( $drawing->ID, 'drawing_type', true );
 			$drawing_number = get_post_meta( $drawing->ID, 'drawing_number', true );
 			$scale          = get_post_meta( $drawing->ID, 'scale', true );
 			$has_desc       = ! empty( $drawing->post_content );
-			
+
 			if ( ! empty( $drawing_type ) ) {
-				$with_type++;
+				++$with_type;
 			}
 			if ( ! empty( $drawing_number ) ) {
-				$with_number++;
+				++$with_number;
 			}
 			if ( ! empty( $drawing_type ) && ! empty( $drawing_number ) && ! empty( $scale ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Drawing Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

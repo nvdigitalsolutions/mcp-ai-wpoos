@@ -156,15 +156,15 @@ function wp_mcp_ai_reg_add_default_statuses() {
 
 	// Add default statuses based on industry best practices.
 	$default_statuses = array(
-		'Draft'              => 'Initial registration draft',
-		'Pending Documents'  => 'Waiting for required documents',
+		'Draft'                => 'Initial registration draft',
+		'Pending Documents'    => 'Waiting for required documents',
 		'Ready for Submission' => 'All documents ready, awaiting submission',
-		'Submitted'          => 'Application submitted to authority',
-		'Under Review'       => 'Under review by regulatory authority',
-		'Approved'           => 'Registration approved',
-		'Rejected'           => 'Registration rejected',
-		'On Hold'            => 'Registration on hold',
-		'Renewal Due'        => 'Registration renewal required',
+		'Submitted'            => 'Application submitted to authority',
+		'Under Review'         => 'Under review by regulatory authority',
+		'Approved'             => 'Registration approved',
+		'Rejected'             => 'Registration rejected',
+		'On Hold'              => 'Registration on hold',
+		'Renewal Due'          => 'Registration renewal required',
 	);
 
 	foreach ( $default_statuses as $name => $description ) {
@@ -204,19 +204,19 @@ function wp_mcp_ai_reg_add_default_document_types() {
 
 	// Add default document types based on common regulatory requirements.
 	$default_doc_types = array(
-		'LOA'                         => 'Letter of Authorization',
-		'Manufacturer Declaration'    => 'Manufacturer declaration document',
-		'Artwork'                     => 'Product artwork and labeling',
-		'Formula Certificate'         => 'Product formula certificate',
-		'Certificate of Analysis'     => 'Certificate of Analysis (CoA)',
-		'Free Sale Certificate'       => 'Certificate of Free Sale',
-		'Sample Import License'       => 'License for importing product samples',
-		'MSDS'                        => 'Material Safety Data Sheet',
-		'GMP Certificate'             => 'Good Manufacturing Practice certificate',
-		'ISO Certificate'             => 'ISO certification document',
-		'Registration Certificate'    => 'Official registration certificate',
-		'Payment Receipt'             => 'Payment receipt or proof',
-		'INCI List'                   => 'International Nomenclature Cosmetic Ingredient list',
+		'LOA'                      => 'Letter of Authorization',
+		'Manufacturer Declaration' => 'Manufacturer declaration document',
+		'Artwork'                  => 'Product artwork and labeling',
+		'Formula Certificate'      => 'Product formula certificate',
+		'Certificate of Analysis'  => 'Certificate of Analysis (CoA)',
+		'Free Sale Certificate'    => 'Certificate of Free Sale',
+		'Sample Import License'    => 'License for importing product samples',
+		'MSDS'                     => 'Material Safety Data Sheet',
+		'GMP Certificate'          => 'Good Manufacturing Practice certificate',
+		'ISO Certificate'          => 'ISO certification document',
+		'Registration Certificate' => 'Official registration certificate',
+		'Payment Receipt'          => 'Payment receipt or proof',
+		'INCI List'                => 'International Nomenclature Cosmetic Ingredient list',
 	);
 
 	foreach ( $default_doc_types as $name => $description ) {
@@ -294,7 +294,7 @@ function wp_mcp_ai_reg_add_default_countries() {
 				'post_type'    => 'mcp_ai_reg_country',
 				'post_status'  => 'publish',
 				'meta_input'   => array(
-					'country_code'        => $country['code'],
+					'country_code'         => $country['code'],
 					'regulatory_authority' => $country['authority'],
 				),
 			)

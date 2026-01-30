@@ -53,19 +53,19 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'agent_id'      => array(
+				'agent_id'        => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Agent assistant ID (post ID) or virtual agent identifier', 'mcp-ai-wpoos' ),
 				),
-				'context_id'    => array(
+				'context_id'      => array(
 					'type'        => 'string',
 					'description' => __( 'Specific context ID to retrieve (if known)', 'mcp-ai-wpoos' ),
 				),
-				'query'         => array(
+				'query'           => array(
 					'type'        => 'string',
 					'description' => __( 'Search query for semantic matching against stored contexts', 'mcp-ai-wpoos' ),
 				),
-				'filters'       => array(
+				'filters'         => array(
 					'type'        => 'object',
 					'description' => __( 'Optional filters to narrow results', 'mcp-ai-wpoos' ),
 					'properties'  => array(
@@ -100,7 +100,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 						),
 					),
 				),
-				'limit'         => array(
+				'limit'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results to return', 'mcp-ai-wpoos' ),
 					'default'     => 10,
@@ -135,12 +135,12 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		// Sanitize inputs.
-		$agent_id         = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
-		$context_id       = isset( $arguments['context_id'] ) ? sanitize_text_field( $arguments['context_id'] ) : null;
-		$query            = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
-		$filters          = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
-		$limit            = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
-		$include_expired  = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : false;
+		$agent_id        = is_numeric( $arguments['agent_id'] ) ? absint( $arguments['agent_id'] ) : sanitize_text_field( $arguments['agent_id'] );
+		$context_id      = isset( $arguments['context_id'] ) ? sanitize_text_field( $arguments['context_id'] ) : null;
+		$query           = isset( $arguments['query'] ) ? sanitize_text_field( $arguments['query'] ) : '';
+		$filters         = isset( $arguments['filters'] ) && is_array( $arguments['filters'] ) ? $arguments['filters'] : array();
+		$limit           = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 10;
+		$include_expired = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : false;
 
 		// Validate limit bounds.
 		$limit = max( 1, min( 50, $limit ) );
@@ -345,12 +345,12 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			return 0.5; // Neutral relevance.
 		}
 
-		$score          = 0.0;
-		$query_lower    = strtolower( $query );
-		$query_words    = explode( ' ', $query_lower );
-		$title          = isset( $context_record['data']['title'] ) ? strtolower( $context_record['data']['title'] ) : '';
-		$content        = isset( $context_record['data']['content'] ) ? strtolower( $context_record['data']['content'] ) : '';
-		$tags           = isset( $context_record['data']['tags'] ) ? array_map( 'strtolower', $context_record['data']['tags'] ) : array();
+		$score       = 0.0;
+		$query_lower = strtolower( $query );
+		$query_words = explode( ' ', $query_lower );
+		$title       = isset( $context_record['data']['title'] ) ? strtolower( $context_record['data']['title'] ) : '';
+		$content     = isset( $context_record['data']['content'] ) ? strtolower( $context_record['data']['content'] ) : '';
+		$tags        = isset( $context_record['data']['tags'] ) ? array_map( 'strtolower', $context_record['data']['tags'] ) : array();
 
 		// Exact title match (high score).
 		if ( strpos( $title, $query_lower ) !== false ) {
@@ -457,17 +457,11 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -485,7 +479,6 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

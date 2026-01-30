@@ -305,7 +305,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// All settings pages in this plugin use tabs/subtabs that only show partial fields.
 			// The Simple Settings Saver's checkbox handling (setting all unposted checkboxes to false)
 			// causes data loss when saving from tabs/subtabs. Use section-based sanitization instead.
-			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX
+			// See: https://github.com/nvdigitalsolutions/mcp-ai-wpoos/issues/XXXX.
 			$use_simple_settings_saver = false; // Force disabled.
 
 			if ( $use_simple_settings_saver && $save_all_tabs && empty( $active_subtab ) && class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
@@ -345,7 +345,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// - Section-based sanitization knows which fields belong to each subtab
 				// - The merge strategy below (line 326+) preserves data from OTHER subtabs
 				// - Sensitive key protection (line 329+) prevents empty values from overwriting existing keys
-				// - This ensures subtabbed views with important tables save correctly without data loss
+				// - This ensures subtabbed views with important tables save correctly without data loss.
 				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
 				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved   = false;
@@ -1069,6 +1069,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			header( 'Pragma: no-cache' );
 			header( 'Expires: 0' );
 
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON output for file download.
 			echo $json;
 			exit;
 		}
@@ -1086,10 +1087,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			}
 
 			// Check if file was uploaded.
-			if ( ! isset( $_FILES['settings_file'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Checking existence only, not using the value.
+			if ( ! isset( $_FILES['settings_file'] ) || ! isset( $_FILES['settings_file']['error'] ) || UPLOAD_ERR_OK !== $_FILES['settings_file']['error'] ) {
 				wp_send_json_error( array( 'message' => __( 'No file uploaded or upload error occurred.', 'mcp-ai-wpoos' ) ) );
 			}
 
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- File data validated below.
 			$file = $_FILES['settings_file'];
 
 			// Validate file size (max 5MB for settings file).
@@ -1313,7 +1316,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Check 5: Cache status.
 			$cache_exists = false !== wp_cache_get( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
 			/* translators: %s: cache status (Active or Not cached) */
-			$info[]       = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
+			$info[] = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
 
 			// Check 6: Backup count.
 			global $wpdb;
@@ -1324,7 +1327,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				)
 			);
 			/* translators: %d: number of settings backups */
-			$info[]       = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
+			$info[] = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
 
 			// Prepare response.
 			$health_status = 'good';

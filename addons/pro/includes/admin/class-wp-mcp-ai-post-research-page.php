@@ -613,9 +613,9 @@ class WP_MCP_AI_Post_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get post statistics.
-		$total_posts = wp_count_posts( 'post' );
+		$total_posts     = wp_count_posts( 'post' );
 		$published_count = isset( $total_posts->publish ) ? $total_posts->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$posts = get_posts(
 			array(
@@ -626,27 +626,27 @@ class WP_MCP_AI_Post_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_image = 0;
-		$with_excerpt = 0;
+		$with_image     = 0;
+		$with_excerpt   = 0;
 
 		foreach ( $posts as $post ) {
 			$has_image    = has_post_thumbnail( $post->ID );
 			$has_excerpt  = ! empty( $post->post_excerpt );
 			$has_category = ! empty( wp_get_post_categories( $post->ID ) );
-			
+
 			if ( $has_image ) {
-				$with_image++;
+				++$with_image;
 			}
 			if ( $has_excerpt ) {
-				$with_excerpt++;
+				++$with_excerpt;
 			}
 			if ( $has_image && $has_excerpt && $has_category ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Post Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

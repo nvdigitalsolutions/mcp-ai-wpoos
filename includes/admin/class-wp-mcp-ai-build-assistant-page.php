@@ -328,7 +328,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 			if ( $screen && isset( $screen->id ) ) {
 				// The screen ID for submenus is typically parent-page_page_menu-slug.
 				// Check for exact match or if it ends with our page slug.
-				return $screen->id === 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant'
+				return 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant' === $screen->id
 					|| false !== strpos( $screen->id, '_page_wp-mcp-ai-build-assistant' );
 			}
 		}

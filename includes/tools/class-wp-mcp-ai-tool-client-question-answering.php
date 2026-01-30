@@ -69,17 +69,11 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -97,7 +91,6 @@ class WP_MCP_AI_Tool_Client_Question_Answering implements WP_MCP_AI_Tool_Interfa
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

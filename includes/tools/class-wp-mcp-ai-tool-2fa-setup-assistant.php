@@ -46,39 +46,39 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( '2FA Setup Assistant', 'mcp-ai-wpoos' ),
-			'description'          => __( 'Guides users through two-factor authentication setup with TOTP, email, or SMS methods. Includes QR code generation and backup codes.', 'mcp-ai-wpoos' ),
-			'category'             => 'security',
-			'required_capability'  => 'read', // Users can set up their own 2FA.
-			'parameters'           => array(
-				'action'           => array(
+			'name'                => __( '2FA Setup Assistant', 'mcp-ai-wpoos' ),
+			'description'         => __( 'Guides users through two-factor authentication setup with TOTP, email, or SMS methods. Includes QR code generation and backup codes.', 'mcp-ai-wpoos' ),
+			'category'            => 'security',
+			'required_capability' => 'read', // Users can set up their own 2FA.
+			'parameters'          => array(
+				'action'       => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: setup, status, enable, disable, generate_backup, or bulk_enforce', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'setup', 'status', 'enable', 'disable', 'generate_backup', 'bulk_enforce' ),
 				),
-				'user_id'          => array(
+				'user_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'User ID (defaults to current user)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'method'           => array(
+				'method'       => array(
 					'type'        => 'string',
 					'description' => __( 'Authentication method: totp, email, or sms', 'mcp-ai-wpoos' ),
 					'default'     => 'totp',
 					'enum'        => array( 'totp', 'email', 'sms' ),
 				),
-				'role'             => array(
+				'role'         => array(
 					'type'        => 'string',
 					'description' => __( 'User role for bulk enforcement', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'phone_number'     => array(
+				'phone_number' => array(
 					'type'        => 'string',
 					'description' => __( 'Phone number for SMS method', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
-				'force_reset'      => array(
+				'force_reset'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Force users to set up 2FA on next login', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -198,7 +198,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		}
 
 		// Generate backup codes.
-		$backup_codes         = $this->generate_backup_codes( $user_id );
+		$backup_codes           = $this->generate_backup_codes( $user_id );
 		$result['backup_codes'] = $backup_codes;
 
 		// Check for plugin integration.
@@ -228,9 +228,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false ); // Not enabled until verified.
 
 		// Generate QR code data.
-		$issuer    = get_bloginfo( 'name' );
-		$account   = $user->user_email;
-		$qr_data   = sprintf(
+		$issuer  = get_bloginfo( 'name' );
+		$account = $user->user_email;
+		$qr_data = sprintf(
 			'otpauth://totp/%s:%s?secret=%s&issuer=%s',
 			rawurlencode( $issuer ),
 			rawurlencode( $account ),
@@ -245,9 +245,9 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		);
 
 		return array(
-			'secret'      => $secret,
-			'qr_code_url' => $qr_code_url,
-			'qr_data'     => $qr_data,
+			'secret'       => $secret,
+			'qr_code_url'  => $qr_code_url,
+			'qr_data'      => $qr_data,
 			'manual_entry' => sprintf(
 				/* translators: %s: secret key */
 				__( 'Manual entry key: %s', 'mcp-ai-wpoos' ),
@@ -326,11 +326,11 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		$method  = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
 
 		return array(
-			'success'        => true,
-			'user_id'        => $user_id,
-			'username'       => $user->user_login,
-			'2fa_enabled'    => $enabled,
-			'2fa_method'     => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
+			'success'          => true,
+			'user_id'          => $user_id,
+			'username'         => $user->user_login,
+			'2fa_enabled'      => $enabled,
+			'2fa_method'       => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
 			'has_backup_codes' => $this->has_backup_codes( $user_id ),
 		);
 	}
@@ -455,15 +455,15 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 				update_user_meta( $user->ID, 'wp_mcp_ai_2fa_force_setup', true );
 			}
 
-			$enforced++;
+			++$enforced;
 		}
 
 		return array(
-			'success'       => true,
-			'role'          => $role,
+			'success'        => true,
+			'role'           => $role,
 			'users_affected' => $enforced,
-			'force_reset'   => $force_reset,
-			'message'       => sprintf(
+			'force_reset'    => $force_reset,
+			'message'        => sprintf(
 				/* translators: 1: number of users, 2: role name */
 				__( '2FA enforcement enabled for %1$d users with role: %2$s', 'mcp-ai-wpoos' ),
 				$enforced,

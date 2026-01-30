@@ -316,7 +316,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	protected function format_research_content( $query, $sources ) {
 		/* translators: %s: Research query */
-		$content  = '<h2>' . esc_html( sprintf( __( 'Research Results: %s', 'mcp-ai-wpoos' ), $query ) ) . '</h2>';
+		$content = '<h2>' . esc_html( sprintf( __( 'Research Results: %s', 'mcp-ai-wpoos' ), $query ) ) . '</h2>';
 		/* translators: %d: Number of sources found */
 		$content .= '<p>' . esc_html( sprintf( __( 'Found %d relevant sources:', 'mcp-ai-wpoos' ), count( $sources ) ) ) . '</p>';
 		$content .= '<ol>';
@@ -926,7 +926,7 @@ class WP_MCP_AI_Agent_Role_Executor extends WP_MCP_AI_Agent_Role_Base {
 			return;
 		}
 
-		$cache_key                       = $this->get_tool_cache_key( $tool_slug, $arguments );
+		$cache_key                      = $this->get_tool_cache_key( $tool_slug, $arguments );
 		$this->tool_cache[ $cache_key ] = $result;
 	}
 

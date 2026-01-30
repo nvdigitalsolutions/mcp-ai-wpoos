@@ -68,7 +68,7 @@ class WP_MCP_AI_Architectural_Project_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type             = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type            = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_arch_project_page = ( self::POST_TYPE === $post_type );
 		if ( ! $is_arch_project_page ) {
 			return;
@@ -308,13 +308,13 @@ class WP_MCP_AI_Architectural_Project_CPT {
 
 		// Register default project types based on industry standards.
 		$default_project_types = array(
-			'residential'   => __( 'Residential', 'mcp-ai-wpoos-pro' ),
-			'commercial'    => __( 'Commercial', 'mcp-ai-wpoos-pro' ),
-			'industrial'    => __( 'Industrial', 'mcp-ai-wpoos-pro' ),
-			'institutional' => __( 'Institutional', 'mcp-ai-wpoos-pro' ),
-			'mixed-use'     => __( 'Mixed-Use', 'mcp-ai-wpoos-pro' ),
+			'residential'    => __( 'Residential', 'mcp-ai-wpoos-pro' ),
+			'commercial'     => __( 'Commercial', 'mcp-ai-wpoos-pro' ),
+			'industrial'     => __( 'Industrial', 'mcp-ai-wpoos-pro' ),
+			'institutional'  => __( 'Institutional', 'mcp-ai-wpoos-pro' ),
+			'mixed-use'      => __( 'Mixed-Use', 'mcp-ai-wpoos-pro' ),
 			'infrastructure' => __( 'Infrastructure', 'mcp-ai-wpoos-pro' ),
-			'recreational'  => __( 'Recreational', 'mcp-ai-wpoos-pro' ),
+			'recreational'   => __( 'Recreational', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_project_types as $slug => $name ) {
@@ -380,9 +380,9 @@ class WP_MCP_AI_Architectural_Project_CPT {
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$new_columns['project_type'] = __( 'Type', 'mcp-ai-wpoos-pro' );
+				$new_columns['project_type']   = __( 'Type', 'mcp-ai-wpoos-pro' );
 				$new_columns['project_status'] = __( 'Status', 'mcp-ai-wpoos-pro' );
-				$new_columns['client'] = __( 'Client', 'mcp-ai-wpoos-pro' );
+				$new_columns['client']         = __( 'Client', 'mcp-ai-wpoos-pro' );
 			}
 		}
 		return $new_columns;
@@ -401,7 +401,7 @@ class WP_MCP_AI_Architectural_Project_CPT {
 				$types = get_the_terms( $post_id, 'mcp_ai_arch_proj_type' );
 				if ( $types && ! is_wp_error( $types ) ) {
 					$type_names = array_map(
-						function( $term ) {
+						function ( $term ) {
 							return $term->name;
 						},
 						$types
@@ -416,7 +416,7 @@ class WP_MCP_AI_Architectural_Project_CPT {
 				$statuses = get_the_terms( $post_id, 'mcp_ai_arch_proj_status' );
 				if ( $statuses && ! is_wp_error( $statuses ) ) {
 					$status_names = array_map(
-						function( $term ) {
+						function ( $term ) {
 							return $term->name;
 						},
 						$statuses
@@ -442,7 +442,7 @@ class WP_MCP_AI_Architectural_Project_CPT {
 	 * @return array Modified sortable columns.
 	 */
 	public static function sortable_columns( $columns ) {
-		$columns['project_type'] = 'project_type';
+		$columns['project_type']   = 'project_type';
 		$columns['project_status'] = 'project_status';
 		return $columns;
 	}

@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 
 			$fields = array(
 				// Tool Configuration.
-				'web_search_provider'                  => array(
+				'web_search_provider'                    => array(
 					'type'        => 'select',
 					'label'       => __( 'Web Search Provider', 'mcp-ai-wpoos' ),
 					'description' => __( 'Choose the search engine to use for web search tool. DuckDuckGo is free but has rate limits. Brave Search requires an API key but offers higher limits and better results.', 'mcp-ai-wpoos' ),
@@ -100,21 +100,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'duckduckgo',
 				),
-				'enable_varnish_purge'                 => array(
+				'enable_varnish_purge'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Varnish Purge Tool', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Varnish cache purging functionality', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allows AI assistants to purge Varnish cache when making content changes. Requires Varnish HTTP cache to be configured on your server. Only enable if you have Varnish installed.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'group_email_capability'               => array(
+				'group_email_capability'                 => array(
 					'type'        => 'select',
 					'label'       => __( 'Send Group Email Capability', 'mcp-ai-wpoos' ),
 					'description' => __( 'WordPress capability required to use the Send Group Email tool. Controls who can send bulk emails through AI assistants. Higher capabilities = more restricted access.', 'mcp-ai-wpoos' ),
 					'options'     => $wp_capabilities,
 					'default'     => 'publish_posts',
 				),
-				'group_email_max_recipients'           => array(
+				'group_email_max_recipients'             => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Email Recipients', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum number of recipients allowed in a single group email. Higher limits increase the risk of spam. Consider your server\'s email sending limits.', 'mcp-ai-wpoos' ),
@@ -124,14 +124,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'step'        => 10,
 					'placeholder' => '100',
 				),
-				'search_gmail_capability'              => array(
+				'search_gmail_capability'                => array(
 					'type'        => 'select',
 					'label'       => __( 'Search Gmail Capability', 'mcp-ai-wpoos' ),
 					'description' => __( 'WordPress capability required to use the Search Gmail tool. Controls who can search Gmail messages through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
 					'options'     => $wp_capabilities,
 					'default'     => 'manage_options',
 				),
-				'search_gmail_max_results'             => array(
+				'search_gmail_max_results'               => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Gmail Search Results', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum number of Gmail messages that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
@@ -141,14 +141,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'step'        => 5,
 					'placeholder' => '50',
 				),
-				'search_drive_capability'              => array(
+				'search_drive_capability'                => array(
 					'type'        => 'select',
 					'label'       => __( 'Search Google Drive Capability', 'mcp-ai-wpoos' ),
 					'description' => __( 'WordPress capability required to use the Search Google Drive tool. Controls who can search Drive files through AI assistants. Default is Manage Options (Administrator) for security.', 'mcp-ai-wpoos' ),
 					'options'     => $wp_capabilities,
 					'default'     => 'manage_options',
 				),
-				'search_drive_max_results'             => array(
+				'search_drive_max_results'               => array(
 					'type'        => 'number',
 					'label'       => __( 'Max Drive Search Results', 'mcp-ai-wpoos' ),
 					'description' => __( 'Maximum number of Google Drive files that can be returned in a single search. Lower values improve performance and reduce API usage.', 'mcp-ai-wpoos' ),
@@ -160,31 +160,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// External Tools fields.
-				'gmail_client_id'                      => array(
+				'gmail_client_id'                        => array(
 					'type'         => 'text',
 					'label'        => __( 'Gmail OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client ID from Google Cloud Console for Gmail integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'gmail_client_secret'                  => array(
+				'gmail_client_secret'                    => array(
 					'type'         => 'password',
 					'label'        => __( 'Gmail OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'gmail_refresh_token'                  => array(
+				'gmail_refresh_token'                    => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'gmail_user_email'                     => array(
+				'gmail_user_email'                       => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'brave_search_api_key'                 => array(
+				'brave_search_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Brave Search API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -195,73 +195,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_api_token'                 => array(
+				'cloudflare_api_token'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudflare API Token', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API token for Cloudflare integration. Create a token in your Cloudflare dashboard.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudflare_zone_id'                   => array(
+				'cloudflare_zone_id'                     => array(
 					'type'        => 'text',
 					'label'       => __( 'Cloudflare Zone ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Your Cloudflare zone ID for cache management.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'cloudways_api_key'                    => array(
+				'cloudways_api_key'                      => array(
 					'type'         => 'password',
 					'label'        => __( 'Cloudways API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Cloudways hosting integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'cloudways_email'                      => array(
+				'cloudways_email'                        => array(
 					'type'        => 'email',
 					'label'       => __( 'Cloudways Account Email', 'mcp-ai-wpoos' ),
 					'description' => __( 'Email address associated with your Cloudways account.', 'mcp-ai-wpoos' ),
 					'placeholder' => 'you@example.com',
 				),
-				'mailjet_api_key'                      => array(
+				'mailjet_api_key'                        => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for Mailjet email service integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'mailjet_api_secret'                   => array(
+				'mailjet_api_secret'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API secret for Mailjet email service.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'quickbooks_api_key'                   => array(
+				'quickbooks_api_key'                     => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks API Key', 'mcp-ai-wpoos' ),
 					'description'  => __( 'API key for QuickBooks integration.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'quickbooks_client_id'                 => array(
+				'quickbooks_client_id'                   => array(
 					'type'        => 'text',
 					'label'       => __( 'QuickBooks Client ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'OAuth 2.0 Client ID from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder' => '',
 				),
-				'quickbooks_client_secret'             => array(
+				'quickbooks_client_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'QuickBooks Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from QuickBooks developer portal.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'google_analytics_property_id'         => array(
+				'google_analytics_property_id'           => array(
 					'type'        => 'text',
 					'label'       => __( 'Google Analytics Property ID', 'mcp-ai-wpoos' ),
 					'description' => __( 'Google Analytics 4 Property ID (e.g., 123456789).', 'mcp-ai-wpoos' ),
 					'placeholder' => '123456789',
 				),
-				'google_analytics_credentials'         => array(
+				'google_analytics_credentials'           => array(
 					'type'        => 'textarea',
 					'label'       => __( 'Google Analytics Service Account JSON', 'mcp-ai-wpoos' ),
 					'description' => __( 'Service account credentials in JSON format from Google Cloud Console.', 'mcp-ai-wpoos' ),
@@ -269,7 +269,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// remove.bg API.
-				'removebg_api_key'                     => array(
+				'removebg_api_key'                       => array(
 					'type'         => 'password',
 					'label'        => __( 'remove.bg API Key', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -282,7 +282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// GitHub Integration fields.
-				'github_client_id'                     => array(
+				'github_client_id'                       => array(
 					'type'         => 'text',
 					'label'        => __( 'GitHub OAuth Client ID', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
@@ -293,54 +293,54 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 				),
-				'github_client_secret'                 => array(
+				'github_client_secret'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'GitHub OAuth Client Secret', 'mcp-ai-wpoos' ),
 					'description'  => __( 'OAuth 2.0 Client Secret from GitHub Developer Settings.', 'mcp-ai-wpoos' ),
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 				),
-				'github_access_token'                  => array(
+				'github_access_token'                    => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
-				'github_username'                      => array(
+				'github_username'                        => array(
 					'type'        => 'hidden',
 					'label'       => '',
 					'description' => '',
 				),
 
 				// Plugins Integration fields.
-				'enable_jetengine_cct'                 => array(
+				'enable_jetengine_cct'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable JetEngine CCT Storage', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable JetEngine CCT storage', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Use JetEngine Custom Content Types for efficient chat transcript and assistant data storage.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_jetengine_tools'               => array(
+				'enable_jetengine_tools'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable JetEngine AI Tools', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable JetEngine AI tools', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Activate JetEngine-specific tools for post type management, taxonomy operations, and CCT queries.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_woocommerce_tools'             => array(
+				'enable_woocommerce_tools'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable WooCommerce AI Tools', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable WooCommerce AI tools', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Activate WooCommerce-specific tools for managing products, orders, and customers.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_elementor_widgets'             => array(
+				'enable_elementor_widgets'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Elementor AI Widgets', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Elementor AI widgets', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Add AI-powered chat widgets and other AI elements to Elementor page builder.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'enable_sitekit_integration'           => array(
+				'enable_sitekit_integration'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Google Site Kit Integration', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Google Site Kit integration', 'mcp-ai-wpoos' ),
@@ -349,35 +349,35 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Features fields.
-				'enable_mesh'                          => array(
+				'enable_mesh'                            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_federation'                    => array(
+				'enable_federation'                      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allows this instance to be discovered by and connect to other NV oOS instances.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_quiz_system'                   => array(
+				'enable_quiz_system'                     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Quiz System', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable quiz creation and assessment tools (Pro Version only)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enables the quiz/assessment system for tutors. Provides 7 tools for creating quizzes, managing submissions, and grading. Includes automatic JetEngine CCT synchronization when available. Requires edit_posts capability to create quizzes. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_media_toolkit'                 => array(
+				'enable_media_toolkit'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Media Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable media template management (Pro Version only)', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Enables the Media Toolkit for creating and managing reusable templates for the Graphic Editor Plus tool. Templates allow you to save operation configurations (logo positions, resize settings, AI prompts) and apply them to multiple images via AI assistants or batch operations. Requires upload_files capability. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'enable_document_generation_toolkit'   => array(
+				'enable_document_generation_toolkit'     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Document Generation Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered PDF, Word, and Excel document generation (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -386,7 +386,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Excel and Document Generation Settings (Pro).
-				'excel_default_version'                => array(
+				'excel_default_version'                  => array(
 					'type'        => 'select',
 					'label'       => __( 'Excel Version Target', 'mcp-ai-wpoos' ),
 					'description' => __( 'Default Excel version for formula generation. Modern (Excel 2021+/Microsoft 365) supports LAMBDA, LET, XLOOKUP, and other advanced functions. Legacy (Excel 2019 and earlier) uses traditional formulas. Excel Online supports cloud-specific features.', 'mcp-ai-wpoos' ),
@@ -398,7 +398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'     => 'modern',
 					'pro_badge'   => true,
 				),
-				'excel_enable_lambda'                  => array(
+				'excel_enable_lambda'                    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable LAMBDA Functions', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Generate LAMBDA and custom functions for advanced Excel scenarios', 'mcp-ai-wpoos' ),
@@ -406,7 +406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => true,
 					'pro_badge'      => true,
 				),
-				'excel_max_complexity'                 => array(
+				'excel_max_complexity'                   => array(
 					'type'        => 'select',
 					'label'       => __( 'Maximum Formula Complexity', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls the complexity level for generated formulas. Simple formulas are easier to understand and maintain. Complex formulas offer more sophisticated solutions but may be harder to debug. Advanced formulas use cutting-edge Excel features.', 'mcp-ai-wpoos' ),
@@ -419,7 +419,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'     => 'moderate',
 					'pro_badge'   => true,
 				),
-				'excel_include_comments'               => array(
+				'excel_include_comments'                 => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Include Formula Comments', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Add explanatory comments to generated formulas', 'mcp-ai-wpoos' ),
@@ -427,7 +427,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'default'        => true,
 					'pro_badge'      => true,
 				),
-				'excel_optimization_level'             => array(
+				'excel_optimization_level'               => array(
 					'type'        => 'select',
 					'label'       => __( 'Formula Optimization', 'mcp-ai-wpoos' ),
 					'description' => __( 'Choose how formulas are optimized. Readability prioritizes clear, maintainable code. Performance focuses on calculation speed and efficiency. Balanced provides a compromise between the two.', 'mcp-ai-wpoos' ),
@@ -441,28 +441,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Media fields.
-				'enable_ai_media_library'              => array(
+				'enable_ai_media_library'                => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Media Library', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Automatically analyze images on upload', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, newly uploaded images will be automatically analyzed by AI to generate alt text and captions. This feature uses vision-capable AI models (requires OpenAI or Gemini API key).', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'ai_media_generate_alt_text'           => array(
+				'ai_media_generate_alt_text'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Alt Text', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Automatically generate alt text for accessibility', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Generate descriptive alt text for images to improve accessibility for screen readers and SEO.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'ai_media_generate_caption'            => array(
+				'ai_media_generate_caption'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Generate Captions', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Automatically generate image captions', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Generate detailed captions for images to provide context and enhance content.', 'mcp-ai-wpoos' ),
 					'default'        => true,
 				),
-				'ai_media_overwrite_existing'          => array(
+				'ai_media_overwrite_existing'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Overwrite Existing', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Replace existing alt text and captions', 'mcp-ai-wpoos' ),
@@ -471,14 +471,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Comments fields.
-				'enable_ai_comments_moderation'        => array(
+				'enable_ai_comments_moderation'          => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Comments Moderation', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Automatically analyze comments for spam and toxicity', 'mcp-ai-wpoos' ),
 					'description'    => __( 'When enabled, incoming comments will be automatically analyzed by AI to detect spam, toxic content, and other moderation concerns before they are published.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
-				'ai_comments_sensitivity'              => array(
+				'ai_comments_sensitivity'                => array(
 					'type'        => 'select',
 					'label'       => __( 'Moderation Sensitivity', 'mcp-ai-wpoos' ),
 					'description' => __( 'Controls how strict the AI moderation should be. Low = permissive (only flag obvious violations), Medium = balanced (flag clear issues), High = strict (flag anything questionable).', 'mcp-ai-wpoos' ),
@@ -489,7 +489,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => 'medium',
 				),
-				'ai_comments_min_confidence'           => array(
+				'ai_comments_min_confidence'             => array(
 					'type'        => 'select',
 					'label'       => __( 'Minimum Confidence Level', 'mcp-ai-wpoos' ),
 					'description' => __( 'Only apply AI recommendations when confidence is at or above this threshold. Lower values trust AI more, higher values require more certainty.', 'mcp-ai-wpoos' ),
@@ -502,7 +502,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					),
 					'default'     => '0.7',
 				),
-				'ai_comments_auto_hold_low_confidence' => array(
+				'ai_comments_auto_hold_low_confidence'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Hold Low Confidence Comments', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Hold comments for manual review when AI confidence is below threshold', 'mcp-ai-wpoos' ),
@@ -511,7 +511,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Project Management fields.
-				'enable_project_management'            => array(
+				'enable_project_management'              => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Project Management', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered project, task, and event management (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -520,7 +520,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// AI CPT Management Interface.
-				'enable_ai_cpt_management'             => array(
+				'enable_ai_cpt_management'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI CPT Management', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Add AI assistant to WordPress post/page/product/term edit screens (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -529,7 +529,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Places Management fields.
-				'enable_places_management'             => array(
+				'enable_places_management'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Places Management', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered places and location management (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -538,7 +538,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// ECA Management fields.
-				'enable_eca_management'                => array(
+				'enable_eca_management'                  => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable ECA Pro Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Extra-Curricular Activities (ECA) management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -547,7 +547,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Health and Wellness Management fields.
-				'enable_health_wellness_management'    => array(
+				'enable_health_wellness_management'      => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Health & Wellness Pro Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Health and Wellness management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -556,7 +556,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Cloudways Pro Toolkit fields.
-				'enable_cloudways_toolkit'             => array(
+				'enable_cloudways_toolkit'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Cloudways Pro Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable Cloudways server and application management toolkit (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -569,7 +569,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				// ========================================================================
 
 				// E-commerce Toolkit.
-				'enable_ecommerce_toolkit'             => array(
+				'enable_ecommerce_toolkit'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable E-commerce Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable advanced WooCommerce and e-commerce tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -578,7 +578,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Social Media Management Toolkit.
-				'enable_social_media_toolkit'          => array(
+				'enable_social_media_toolkit'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Social Media Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable social media management and content tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -587,7 +587,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Advanced Analytics Toolkit.
-				'enable_analytics_toolkit'             => array(
+				'enable_analytics_toolkit'               => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Analytics Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable advanced analytics and reporting tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -596,7 +596,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Multilingual Content Toolkit.
-				'enable_multilingual_toolkit'          => array(
+				'enable_multilingual_toolkit'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Multilingual Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable multilingual content management tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -605,7 +605,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Video Production Toolkit.
-				'enable_video_production_toolkit'      => array(
+				'enable_video_production_toolkit'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Video Production Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable video editing and production tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -614,7 +614,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Financial Planner Toolkit.
-				'enable_financial_planner_toolkit'     => array(
+				'enable_financial_planner_toolkit'       => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable financial planning and analysis tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -623,7 +623,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Calendar Booking Toolkit (Phase 2.6).
-				'enable_calendar_booking_toolkit'      => array(
+				'enable_calendar_booking_toolkit'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable appointment scheduling and booking tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -632,7 +632,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// DJ Management Toolkit (Phase 2.7).
-				'enable_dj_management_toolkit'         => array(
+				'enable_dj_management_toolkit'           => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable DJ Management Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable DJ business management tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -641,7 +641,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Image Production Toolkit (Phase 2.8).
-				'enable_image_production_toolkit'      => array(
+				'enable_image_production_toolkit'        => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Image Production Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI image generation and editing tools (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -650,7 +650,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// AI Tool Builder Toolkit (Phase 2.9).
-				'enable_ai_tool_builder_toolkit'       => array(
+				'enable_ai_tool_builder_toolkit'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable meta-toolkit for building custom tools with AI (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -659,7 +659,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Architect Agent Toolkit (Self-Editing Capabilities).
-				'enable_architect_agent_toolkit'       => array(
+				'enable_architect_agent_toolkit'         => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Architect Agent Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI self-editing with GitHub Copilot CLI parity (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -668,7 +668,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Architectural Design Toolkit (Phase 2.10).
-				'enable_architectural_design_toolkit'  => array(
+				'enable_architectural_design_toolkit'    => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable AI-powered architectural design and blueprinting (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -677,7 +677,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Site Creator Toolkit - Advanced site creation capabilities.
-				'enable_site_creator_toolkit'          => array(
+				'enable_site_creator_toolkit'            => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Site Creator Toolkit', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable advanced AI-powered site creation with page/section/widget builders (Pro Version only)', 'mcp-ai-wpoos' ),
@@ -922,28 +922,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		 */
 		private function get_toolkit_memory_requirements() {
 			return array(
-				'enable_quiz_system'                  => 32,   // 7 tools, database operations.
-				'enable_media_toolkit'                => 48,   // Template management, image processing.
-				'enable_document_generation_toolkit'  => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
-				'enable_project_management'           => 64,   // 13 tools, complex data structures.
-				'enable_places_management'            => 56,   // 6+ tools, Google Maps API, geocoding.
-				'enable_ai_cpt_management'            => 24,   // Metabox integration, lightweight.
-				'enable_eca_management'               => 40,   // 5+ tools, iSAMS integration.
-				'enable_health_wellness_management'   => 128,  // 30+ tools, secure health data storage.
-				'enable_cloudways_toolkit'            => 192,  // 58+ tools, extensive server management.
-				'enable_ecommerce_toolkit'            => 80,   // 20 tools, WooCommerce integration.
-				'enable_social_media_toolkit'         => 64,   // 15 tools, multi-platform APIs.
-				'enable_analytics_toolkit'            => 96,   // 12 tools, data warehouse integrations.
-				'enable_multilingual_toolkit'         => 72,   // 10 tools, translation memory.
-				'enable_video_production_toolkit'     => 256,  // 12 tools, FFmpeg, video processing.
-				'enable_financial_planner_toolkit'    => 80,   // 24 tools, Plaid API integration.
-				'enable_calendar_booking_toolkit'     => 64,   // 12-15 tools, calendar sync.
-				'enable_dj_management_toolkit'        => 72,   // 15-18 tools, music APIs, contracts.
-				'enable_image_production_toolkit'     => 192,  // 12-15 tools, AI generation, GPU processing.
-				'enable_ai_tool_builder_toolkit'      => 48,   // 10 meta-tools, code generation.
-				'enable_architect_agent_toolkit'      => 16,   // 4 self-editing tools (file, shell, git, search).
-				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
-				'enable_site_creator_toolkit'         => 104,  // 26 tools, page/section/widget builders, AI automation.
+				'enable_quiz_system'                     => 32,   // 7 tools, database operations.
+				'enable_media_toolkit'                   => 48,   // Template management, image processing.
+				'enable_document_generation_toolkit'     => 96,   // 3 tools, Node.js, PDF/Word/Excel generation.
+				'enable_project_management'              => 64,   // 13 tools, complex data structures.
+				'enable_places_management'               => 56,   // 6+ tools, Google Maps API, geocoding.
+				'enable_ai_cpt_management'               => 24,   // Metabox integration, lightweight.
+				'enable_eca_management'                  => 40,   // 5+ tools, iSAMS integration.
+				'enable_health_wellness_management'      => 128,  // 30+ tools, secure health data storage.
+				'enable_cloudways_toolkit'               => 192,  // 58+ tools, extensive server management.
+				'enable_ecommerce_toolkit'               => 80,   // 20 tools, WooCommerce integration.
+				'enable_social_media_toolkit'            => 64,   // 15 tools, multi-platform APIs.
+				'enable_analytics_toolkit'               => 96,   // 12 tools, data warehouse integrations.
+				'enable_multilingual_toolkit'            => 72,   // 10 tools, translation memory.
+				'enable_video_production_toolkit'        => 256,  // 12 tools, FFmpeg, video processing.
+				'enable_financial_planner_toolkit'       => 80,   // 24 tools, Plaid API integration.
+				'enable_calendar_booking_toolkit'        => 64,   // 12-15 tools, calendar sync.
+				'enable_dj_management_toolkit'           => 72,   // 15-18 tools, music APIs, contracts.
+				'enable_image_production_toolkit'        => 192,  // 12-15 tools, AI generation, GPU processing.
+				'enable_ai_tool_builder_toolkit'         => 48,   // 10 meta-tools, code generation.
+				'enable_architect_agent_toolkit'         => 16,   // 4 self-editing tools (file, shell, git, search).
+				'enable_architectural_design_toolkit'    => 160,  // 16 tools, 3D modeling, rendering.
+				'enable_site_creator_toolkit'            => 104,  // 26 tools, page/section/widget builders, AI automation.
 				'enable_regulatory_registration_toolkit' => 80,   // 15 tools, multi-country registration management.
 			);
 		}

@@ -44,27 +44,27 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id'   => array(
+				'registration_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID for certificate generation (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'certificate_type'  => array(
+				'certificate_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Type of certificate (optional, default: "standard")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'standard', 'gcc', 'coa', 'free_sale' ),
 					'default'     => 'standard',
 				),
-				'include_qr_code'   => array(
+				'include_qr_code'  => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include QR code for verification (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'signatory_name'    => array(
+				'signatory_name'   => array(
 					'type'        => 'string',
 					'description' => __( 'Signatory name (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'signatory_title'   => array(
+				'signatory_title'  => array(
 					'type'        => 'string',
 					'description' => __( 'Signatory title (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -130,7 +130,7 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 		}
 
 		// Check if registration is approved.
-		$statuses = wp_get_post_terms( $registration_id, 'mcp_ai_reg_status' );
+		$statuses    = wp_get_post_terms( $registration_id, 'mcp_ai_reg_status' );
 		$is_approved = false;
 		if ( ! empty( $statuses ) && ! is_wp_error( $statuses ) ) {
 			$status_name = $statuses[0]->slug;
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 		$certificate_content .= "Country: {$country}\n\n";
 		$certificate_content .= "Approval Date: {$approval_date}\n";
 		$certificate_content .= "Valid Until: {$expiry_date}\n\n";
-		$certificate_content .= "Issued: " . gmdate( 'Y-m-d' ) . "\n\n";
+		$certificate_content .= 'Issued: ' . gmdate( 'Y-m-d' ) . "\n\n";
 
 		if ( $signatory_name ) {
 			$certificate_content .= "Authorized Signatory: {$signatory_name}\n";
@@ -189,16 +189,16 @@ class WP_MCP_AI_Tool_Generate_Compliance_Certificate implements WP_MCP_AI_Tool_I
 		}
 
 		if ( $include_qr_code ) {
-			$verify_url = home_url( '/verify-certificate/?cert=' . $certificate_number );
+			$verify_url           = home_url( '/verify-certificate/?cert=' . $certificate_number );
 			$certificate_content .= "\nVerification URL: {$verify_url}\n";
 		}
 
 		// Save certificate.
-		$upload_dir  = wp_upload_dir();
-		$cert_dir    = $upload_dir['basedir'] . '/compliance-certificates';
-		$filename    = sprintf( 'certificate-%d-%s.pdf', $registration_id, gmdate( 'YmdHis' ) );
-		$file_path   = $cert_dir . '/' . $filename;
-		$file_url    = $upload_dir['baseurl'] . '/compliance-certificates/' . $filename;
+		$upload_dir = wp_upload_dir();
+		$cert_dir   = $upload_dir['basedir'] . '/compliance-certificates';
+		$filename   = sprintf( 'certificate-%d-%s.pdf', $registration_id, gmdate( 'YmdHis' ) );
+		$file_path  = $cert_dir . '/' . $filename;
+		$file_url   = $upload_dir['baseurl'] . '/compliance-certificates/' . $filename;
 
 		if ( ! file_exists( $cert_dir ) ) {
 			wp_mkdir_p( $cert_dir );

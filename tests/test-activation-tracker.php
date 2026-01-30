@@ -129,30 +129,42 @@ class Test_Activation_Tracker extends WP_UnitTestCase {
 		$method->setAccessible( true );
 
 		// Test with localhost.
-		add_filter( 'site_url', function () {
-			return 'http://localhost/wordpress';
-		} );
+		add_filter(
+			'site_url',
+			function () {
+				return 'http://localhost/wordpress';
+			}
+		);
 		$this->assertTrue( $method->invoke( null ) );
 		remove_all_filters( 'site_url' );
 
 		// Test with 127.0.0.1.
-		add_filter( 'site_url', function () {
-			return 'http://127.0.0.1/wordpress';
-		} );
+		add_filter(
+			'site_url',
+			function () {
+				return 'http://127.0.0.1/wordpress';
+			}
+		);
 		$this->assertTrue( $method->invoke( null ) );
 		remove_all_filters( 'site_url' );
 
 		// Test with .local domain.
-		add_filter( 'site_url', function () {
-			return 'http://mysite.local';
-		} );
+		add_filter(
+			'site_url',
+			function () {
+				return 'http://mysite.local';
+			}
+		);
 		$this->assertTrue( $method->invoke( null ) );
 		remove_all_filters( 'site_url' );
 
 		// Test with production domain.
-		add_filter( 'site_url', function () {
-			return 'https://example.com';
-		} );
+		add_filter(
+			'site_url',
+			function () {
+				return 'https://example.com';
+			}
+		);
 		$this->assertFalse( $method->invoke( null ) );
 		remove_all_filters( 'site_url' );
 	}

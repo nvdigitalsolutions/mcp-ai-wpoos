@@ -123,7 +123,7 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 						$result = call_user_func( $callback, $item );
 
 						if ( is_wp_error( $result ) ) {
-							$this->error_count++;
+							++$this->error_count;
 							$errors[] = array(
 								'item'    => $item,
 								'message' => $result->get_error_message(),
@@ -133,14 +133,14 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 								break 2; // Break out of both loops.
 							}
 						} else {
-							$this->success_count++;
+							++$this->success_count;
 						}
 					} else {
 						// Dry run mode - just count.
-						$this->success_count++;
+						++$this->success_count;
 					}
 				} catch ( Exception $e ) {
-					$this->error_count++;
+					++$this->error_count;
 					$errors[] = array(
 						'item'    => $item,
 						'message' => $e->getMessage(),
@@ -267,16 +267,20 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 
 		WP_CLI::log( '' );
 		WP_CLI::log( WP_CLI::colorize( '%G' . __( 'Summary:', 'mcp-ai-wpoos' ) . '%n' ) );
-		WP_CLI::log( sprintf(
+		WP_CLI::log(
+			sprintf(
 			/* translators: %d: number of items */
-			__( '  Total items: %d', 'mcp-ai-wpoos' ),
-			$results['total']
-		) );
-		WP_CLI::log( sprintf(
+				__( '  Total items: %d', 'mcp-ai-wpoos' ),
+				$results['total']
+			)
+		);
+		WP_CLI::log(
+			sprintf(
 			/* translators: %d: number of items */
-			__( '  Successful: %d', 'mcp-ai-wpoos' ),
-			$results['success_count']
-		) );
+				__( '  Successful: %d', 'mcp-ai-wpoos' ),
+				$results['success_count']
+			)
+		);
 
 		if ( $results['error_count'] > 0 ) {
 			WP_CLI::log(
@@ -291,19 +295,23 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 		}
 
 		if ( $elapsed > 0 ) {
-			WP_CLI::log( sprintf(
+			WP_CLI::log(
+				sprintf(
 				/* translators: %s: elapsed time */
-				__( '  Time: %s seconds', 'mcp-ai-wpoos' ),
-				number_format( $elapsed, 2 )
-			) );
+					__( '  Time: %s seconds', 'mcp-ai-wpoos' ),
+					number_format( $elapsed, 2 )
+				)
+			);
 
 			if ( $results['total'] > 0 ) {
 				$rate = $results['total'] / $elapsed;
-				WP_CLI::log( sprintf(
+				WP_CLI::log(
+					sprintf(
 					/* translators: %s: processing rate */
-					__( '  Rate: %s items/second', 'mcp-ai-wpoos' ),
-					number_format( $rate, 2 )
-				) );
+						__( '  Rate: %s items/second', 'mcp-ai-wpoos' ),
+						number_format( $rate, 2 )
+					)
+				);
 			}
 		}
 
@@ -346,11 +354,11 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 		}
 
 		if ( is_object( $wp_object_cache ) ) {
-			$wp_object_cache->group_ops      = array();
-			$wp_object_cache->stats          = array();
-			$wp_object_cache->cache          = array();
-			$wp_object_cache->cache_hits     = 0;
-			$wp_object_cache->cache_misses   = 0;
+			$wp_object_cache->group_ops    = array();
+			$wp_object_cache->stats        = array();
+			$wp_object_cache->cache        = array();
+			$wp_object_cache->cache_hits   = 0;
+			$wp_object_cache->cache_misses = 0;
 		}
 	}
 
@@ -362,11 +370,11 @@ abstract class WP_MCP_AI_CLI_Base_Command extends WP_CLI_Command {
 	 */
 	protected function parse_common_args( $assoc_args ) {
 		return array(
-			'dry_run'   => WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false ),
-			'yes'       => WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ),
-			'format'    => WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' ),
-			'limit'     => isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0,
-			'offset'    => isset( $assoc_args['offset'] ) ? absint( $assoc_args['offset'] ) : 0,
+			'dry_run' => WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false ),
+			'yes'     => WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false ),
+			'format'  => WP_CLI\Utils\get_flag_value( $assoc_args, 'format', 'table' ),
+			'limit'   => isset( $assoc_args['limit'] ) ? absint( $assoc_args['limit'] ) : 0,
+			'offset'  => isset( $assoc_args['offset'] ) ? absint( $assoc_args['offset'] ) : 0,
 		);
 	}
 

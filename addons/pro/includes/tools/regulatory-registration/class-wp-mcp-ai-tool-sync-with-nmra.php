@@ -142,11 +142,11 @@ class WP_MCP_AI_Tool_Sync_With_Nmra implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$api_endpoint = 'https://api.nmra.gov.lk/v1/registrations';
 
 		$response_data = array(
-			'nmra_status'     => 'Under Review',
-			'nmra_reference'  => 'NMRA-' . $registration_id . '-' . time(),
-			'last_updated'    => current_time( 'mysql' ),
-			'review_stage'    => 'Technical Assessment',
-			'estimated_days'  => 45,
+			'nmra_status'    => 'Under Review',
+			'nmra_reference' => 'NMRA-' . $registration_id . '-' . time(),
+			'last_updated'   => current_time( 'mysql' ),
+			'review_stage'   => 'Technical Assessment',
+			'estimated_days' => 45,
 		);
 
 		// Update local registration with NMRA data.

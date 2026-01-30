@@ -57,7 +57,7 @@ class Test_Orchestration_Modes_Display extends WP_UnitTestCase {
 	public function test_orchestration_modes_shows_mode_breakdown() {
 		// Arrange - create teams with specific orchestration modes.
 		$team_ids = array();
-		
+
 		// Create 2 sequential teams.
 		for ( $i = 0; $i < 2; $i++ ) {
 			$team_id = $this->factory->post->create(

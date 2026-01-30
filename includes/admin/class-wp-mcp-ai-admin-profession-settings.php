@@ -204,20 +204,28 @@ class WP_MCP_AI_Admin_Profession_Settings {
 
 	/**
 	 * Save settings.
+	 *
+	 * Note: Nonce verification is done in render_page() before calling this method.
 	 */
 	private function save_settings() {
 		// Sanitize and save provider.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 		if ( isset( $_POST['wp_mcp_ai_profession_default_provider'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 			update_option( 'wp_mcp_ai_profession_default_provider', sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_default_provider'] ) ) );
 		}
 
 		// Sanitize and save model.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 		if ( isset( $_POST['wp_mcp_ai_profession_default_model'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 			update_option( 'wp_mcp_ai_profession_default_model', sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_profession_default_model'] ) ) );
 		}
 
 		// Sanitize and save temperature.
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 		if ( isset( $_POST['wp_mcp_ai_profession_default_temperature'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in render_page() before calling this method.
 			$temperature = floatval( wp_unslash( $_POST['wp_mcp_ai_profession_default_temperature'] ) );
 			$temperature = max( 0, min( 1, $temperature ) ); // Clamp between 0 and 1.
 			update_option( 'wp_mcp_ai_profession_default_temperature', $temperature );

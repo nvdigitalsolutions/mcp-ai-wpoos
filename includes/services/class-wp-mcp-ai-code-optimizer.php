@@ -110,20 +110,20 @@ class WP_MCP_AI_Code_Optimizer {
 		// Syntax validation.
 		$syntax_check = $this->validate_syntax( $generated_code, $language );
 		if ( ! $syntax_check['valid'] ) {
-			$results['valid'] = false;
+			$results['valid']  = false;
 			$results['issues'] = array_merge( $results['issues'], $syntax_check['errors'] );
 		}
 
 		// Style checking (WPCS for PHP).
 		if ( 'php' === $language ) {
-			$style_check = $this->check_wordpress_coding_standards( $generated_code );
+			$style_check            = $this->check_wordpress_coding_standards( $generated_code );
 			$results['suggestions'] = array_merge( $results['suggestions'], $style_check['suggestions'] );
 		}
 
 		// Security scanning.
 		$security_check = $this->scan_security_issues( $generated_code, $language );
 		if ( ! empty( $security_check['vulnerabilities'] ) ) {
-			$results['valid'] = false;
+			$results['valid']    = false;
 			$results['security'] = $security_check['vulnerabilities'];
 		}
 
@@ -195,9 +195,9 @@ class WP_MCP_AI_Code_Optimizer {
 		$mentioned_classes = $class_matches[1] ?? array();
 
 		// Find relevant sections in code.
-		$lines = explode( "\n", $code );
+		$lines               = explode( "\n", $code );
 		$in_relevant_section = false;
-		$current_section = array();
+		$current_section     = array();
 
 		foreach ( $lines as $line ) {
 			// Check if line starts a relevant function or class.
@@ -220,8 +220,8 @@ class WP_MCP_AI_Code_Optimizer {
 
 				// Check for section end (closing brace).
 				if ( false !== strpos( $line, '}' ) && empty( trim( str_replace( '}', '', $line ) ) ) ) {
-					$sections[] = implode( "\n", $current_section );
-					$current_section = array();
+					$sections[]          = implode( "\n", $current_section );
+					$current_section     = array();
 					$in_relevant_section = false;
 				}
 			}
@@ -352,9 +352,9 @@ class WP_MCP_AI_Code_Optimizer {
 		$temp_file = tempnam( sys_get_temp_dir(), 'php_syntax_' );
 		file_put_contents( $temp_file, $code );
 
-		$output = array();
+		$output     = array();
 		$return_var = 0;
-		exec( "php -l " . escapeshellarg( $temp_file ) . " 2>&1", $output, $return_var );
+		exec( 'php -l ' . escapeshellarg( $temp_file ) . ' 2>&1', $output, $return_var );
 
 		unlink( $temp_file );
 

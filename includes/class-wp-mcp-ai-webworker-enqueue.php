@@ -147,7 +147,7 @@ class WP_MCP_AI_WebWorker_Enqueue {
 		$json_data     = wp_json_encode( $elements_data );
 
 		return ( false !== strpos( $json_data, 'mcp-ai-chat' ) ||
-		         false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
+				false !== strpos( $json_data, 'wp-mcp-ai-chat' ) );
 	}
 
 	/**

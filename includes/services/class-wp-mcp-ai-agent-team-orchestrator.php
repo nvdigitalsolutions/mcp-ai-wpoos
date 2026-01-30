@@ -205,7 +205,14 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		// Save initial workflow state to dashboard.
 		$this->save_workflow_to_dashboard( $workflow_id, $workflow_data );
 
-		$this->log_team_action( $team_id, 'execution_started', array( 'workflow_id' => $workflow_id, 'trace_id' => $trace_id ) );
+		$this->log_team_action(
+			$team_id,
+			'execution_started',
+			array(
+				'workflow_id' => $workflow_id,
+				'trace_id'    => $trace_id,
+			)
+		);
 
 		$execution_start = microtime( true );
 		$results         = array();
@@ -217,7 +224,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 			// Add current step name to context for workflow task tracking.
 			$step_name            = isset( $step['name'] ) ? $step['name'] : 'unnamed_step';
 			$context['task_name'] = $step_name;
-			
+
 			$step_start  = microtime( true );
 			$step_result = $this->execute_workflow_step( $team, $step, $task, $context, $results );
 			$step_time   = microtime( true ) - $step_start;
@@ -478,12 +485,15 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Update workflow state.
 		$this->update_workflow_state( $task_id, $result );
-		$this->add_completed_step( $task_id, array(
-			'agent_id'   => $agent['id'],
-			'agent_role' => $agent['role'],
-			'task'       => $agent_task['description'],
-			'result'     => $result,
-		) );
+		$this->add_completed_step(
+			$task_id,
+			array(
+				'agent_id'   => $agent['id'],
+				'agent_role' => $agent['role'],
+				'task'       => $agent_task['description'],
+				'result'     => $result,
+			)
+		);
 
 		// Log delegation completion.
 		$this->log_execution(
@@ -1387,7 +1397,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	protected function save_workflow_to_dashboard( $workflow_id, $workflow_data ) {
 		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );
-		
+
 		// Store workflow data for 7 days.
 		return set_transient( $transient_key, $workflow_data, 7 * DAY_IN_SECONDS );
 	}
@@ -1408,7 +1418,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 
 		// Create workflow tasks from team members and workflow steps.
 		$tasks = array();
-		
+
 		// Add team composition as initial task.
 		$tasks[] = array(
 			'task_id'      => 'compose_' . $team['team_id'],
@@ -1488,15 +1498,15 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		$age_minutes  = round( $age_seconds / 60, 1 );
 
 		$health = array(
-			'workflow_id'  => $workflow_id,
-			'state'        => $workflow['state'],
-			'age_seconds'  => $age_seconds,
-			'age_minutes'  => $age_minutes,
-			'created_at'   => $workflow['created_at'],
-			'started_at'   => $workflow['started_at'] ?? null,
-			'completed_at' => $workflow['completed_at'] ?? null,
-			'status'       => 'healthy',
-			'warnings'     => array(),
+			'workflow_id'     => $workflow_id,
+			'state'           => $workflow['state'],
+			'age_seconds'     => $age_seconds,
+			'age_minutes'     => $age_minutes,
+			'created_at'      => $workflow['created_at'],
+			'started_at'      => $workflow['started_at'] ?? null,
+			'completed_at'    => $workflow['completed_at'] ?? null,
+			'status'          => 'healthy',
+			'warnings'        => array(),
 			'recommendations' => array(),
 		);
 
@@ -1542,7 +1552,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 */
 	public function update_workflow_task_status( $workflow_id, $task_name, $status, $task_data = array() ) {
 		$workflow = $this->get_workflow( $workflow_id );
-		
+
 		if ( ! $workflow ) {
 			return false;
 		}
@@ -1551,29 +1561,29 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		if ( isset( $workflow['tasks'] ) && is_array( $workflow['tasks'] ) ) {
 			foreach ( $workflow['tasks'] as $key => $task ) {
 				if ( isset( $task['name'] ) && $task['name'] === $task_name ) {
-					$workflow['tasks'][ $key ]['status']       = $status;
-					$workflow['tasks'][ $key ]['updated_at']   = current_time( 'mysql' );
-					
+					$workflow['tasks'][ $key ]['status']     = $status;
+					$workflow['tasks'][ $key ]['updated_at'] = current_time( 'mysql' );
+
 					// Add completion timestamp for completed/failed tasks.
 					if ( in_array( $status, array( 'completed', 'failed' ), true ) ) {
 						$workflow['tasks'][ $key ]['completed_at'] = current_time( 'mysql' );
 					}
-					
+
 					// Merge additional task data.
 					if ( ! empty( $task_data ) ) {
 						$workflow['tasks'][ $key ] = array_merge( $workflow['tasks'][ $key ], $task_data );
 					}
-					
+
 					break;
 				}
 			}
 		}
 
 		// Recalculate workflow state based on task statuses.
-		$total_tasks      = count( $workflow['tasks'] );
-		$completed_tasks  = 0;
-		$failed_tasks     = 0;
-		
+		$total_tasks     = count( $workflow['tasks'] );
+		$completed_tasks = 0;
+		$failed_tasks    = 0;
+
 		foreach ( $workflow['tasks'] as $task ) {
 			if ( isset( $task['status'] ) ) {
 				if ( 'completed' === $task['status'] ) {
@@ -1606,4 +1616,3 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 		return true;
 	}
 }
-

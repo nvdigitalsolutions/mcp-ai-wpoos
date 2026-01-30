@@ -119,14 +119,14 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				'addAllergyUrl' => admin_url( 'post-new.php?post_type=mcp_ai_allergy' ),
 				'addPolicyUrl'  => admin_url( 'post-new.php?post_type=mcp_ai_policy' ),
 				'strings'       => array(
-					'loading'          => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
-					'loadMember'       => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
-					'error'            => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
-					'selectMember'     => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
-					'noRecords'        => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
-					'analyzing'        => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
-					'aiAssisting'      => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
-					'enterHealthInfo'  => __( 'Please enter health information to import.', 'mcp-ai-wpoos-pro' ),
+					'loading'         => __( 'Loading member data...', 'mcp-ai-wpoos-pro' ),
+					'loadMember'      => __( 'Load Member Records', 'mcp-ai-wpoos-pro' ),
+					'error'           => __( 'An error occurred. Please try again.', 'mcp-ai-wpoos-pro' ),
+					'selectMember'    => __( 'Select a member to view their health records.', 'mcp-ai-wpoos-pro' ),
+					'noRecords'       => __( 'No records found for this member.', 'mcp-ai-wpoos-pro' ),
+					'analyzing'       => __( 'Analyzing record completeness...', 'mcp-ai-wpoos-pro' ),
+					'aiAssisting'     => __( 'AI is guiding you through record creation...', 'mcp-ai-wpoos-pro' ),
+					'enterHealthInfo' => __( 'Please enter health information to import.', 'mcp-ai-wpoos-pro' ),
 				),
 			)
 		);
@@ -759,12 +759,12 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 				<?php
 				// Calculate completeness based on actual sections.
 				$sections = array(
-					'policies'             => ! empty( $data['policies'] ),
-					'allergies'            => ! empty( $data['allergies'] ),
-					'active_prescriptions' => ! empty( $data['active_prescriptions'] ),
-					'upcoming_checkups'    => ! empty( $data['upcoming_checkups'] ),
+					'policies'               => ! empty( $data['policies'] ),
+					'allergies'              => ! empty( $data['allergies'] ),
+					'active_prescriptions'   => ! empty( $data['active_prescriptions'] ),
+					'upcoming_checkups'      => ! empty( $data['upcoming_checkups'] ),
 					'recent_medical_records' => ! empty( $data['recent_medical_records'] ),
-					'demographics'         => ( ! empty( $member['date_of_birth'] ) && ! empty( $member['gender'] ) ),
+					'demographics'           => ( ! empty( $member['date_of_birth'] ) && ! empty( $member['gender'] ) ),
 				);
 
 				$filled_sections         = count( array_filter( $sections ) );
@@ -927,11 +927,11 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		$tool   = new WP_MCP_AI_Tool_Parse_Health_Information();
 		$result = $tool->execute(
 			array(
-				'member_id'              => $member_id,
-				'raw_information'        => $raw_information,
-				'auto_create_records'    => $auto_create,
-				'confirmation_required'  => $confirmation_required,
-				'attachment_ids'         => $attachment_ids,
+				'member_id'             => $member_id,
+				'raw_information'       => $raw_information,
+				'auto_create_records'   => $auto_create,
+				'confirmation_required' => $confirmation_required,
+				'attachment_ids'        => $attachment_ids,
 			),
 			array( 'user_id' => get_current_user_id() )
 		);
@@ -1136,7 +1136,11 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 			'text/plain',
 		);
 
-		$file_type = $_FILES['file']['type'];
+		if ( ! isset( $_FILES['file']['type'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid file upload.', 'mcp-ai-wpoos-pro' ) ) );
+		}
+
+		$file_type = sanitize_text_field( wp_unslash( $_FILES['file']['type'] ) );
 		if ( ! in_array( $file_type, $allowed_types, true ) ) {
 			wp_send_json_error( array( 'message' => __( 'File type not allowed. Please upload PDF, JPG, PNG, DOC, DOCX, or TXT files.', 'mcp-ai-wpoos-pro' ) ) );
 		}

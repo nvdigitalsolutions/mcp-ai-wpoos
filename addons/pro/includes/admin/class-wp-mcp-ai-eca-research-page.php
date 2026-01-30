@@ -585,9 +585,9 @@ class WP_MCP_AI_ECA_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get ECA statistics.
-		$total_ecas = wp_count_posts( 'mcp_ai_eca' );
+		$total_ecas      = wp_count_posts( 'mcp_ai_eca' );
 		$published_count = isset( $total_ecas->publish ) ? $total_ecas->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$ecas = get_posts(
 			array(
@@ -598,27 +598,27 @@ class WP_MCP_AI_ECA_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_category = 0;
-		$with_schedule = 0;
+		$with_category  = 0;
+		$with_schedule  = 0;
 
 		foreach ( $ecas as $eca ) {
 			$category = get_post_meta( $eca->ID, 'category', true );
 			$schedule = get_post_meta( $eca->ID, 'schedule', true );
 			$has_desc = ! empty( $eca->post_content );
-			
+
 			if ( ! empty( $category ) ) {
-				$with_category++;
+				++$with_category;
 			}
 			if ( ! empty( $schedule ) ) {
-				$with_schedule++;
+				++$with_schedule;
 			}
 			if ( ! empty( $category ) && ! empty( $schedule ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'ECA Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

@@ -59,9 +59,9 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 	 * @param string $toolkit_slug Toolkit identifier.
 	 */
 	public function __construct( $toolkit_slug ) {
-		$this->toolkit_slug    = $toolkit_slug;
-		$this->entity_types    = $this->get_entity_types();
-		$this->import_formats  = $this->get_import_formats();
+		$this->toolkit_slug   = $toolkit_slug;
+		$this->entity_types   = $this->get_entity_types();
+		$this->import_formats = $this->get_import_formats();
 		$this->initialize_data_stores();
 
 		// Get current entity from query string.
@@ -717,8 +717,8 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 		// Implementation will be added in child classes.
 		wp_send_json_success(
 			array(
-				'quality_score' => 85,
-				'issues'        => array(),
+				'quality_score'   => 85,
+				'issues'          => array(),
 				'recommendations' => array(),
 			)
 		);
@@ -754,7 +754,8 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 		}
 
 		// Verify nonce.
-		if ( ! wp_verify_nonce( $_POST['wp_mcp_ai_entry_nonce'], 'wp_mcp_ai_manual_entry' ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Nonce is being verified here.
+		if ( ! isset( $_POST['wp_mcp_ai_entry_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_entry_nonce'] ) ), 'wp_mcp_ai_manual_entry' ) ) {
 			wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
 		}
 
@@ -768,9 +769,10 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 			return;
 		}
 
-		$store     = $this->data_stores[ $entity_type ];
+		$store = $this->data_stores[ $entity_type ];
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is validated in validate_item_data() method.
 		$item_data = isset( $_POST['item_data'] ) ? wp_unslash( $_POST['item_data'] ) : array();
-		
+
 		// Validate data before saving.
 		$validation_result = $this->validate_item_data( $item_data );
 		if ( is_wp_error( $validation_result ) ) {
@@ -786,7 +788,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 		// Redirect back to review workflow with success message.
 		$redirect_url = add_query_arg(
 			array(
-				'page'     => sanitize_key( $_GET['page'] ),
+				'page'     => isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '', // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce verified above.
 				'entity'   => $entity_type,
 				'workflow' => 'review-consolidate',
 				'message'  => 'created',
@@ -805,7 +807,7 @@ abstract class WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function validate_item_data( $item_data ) {
 		$schema = $this->get_validation_schema();
-		
+
 		// Basic validation - override in child classes for specific validation.
 		if ( empty( $item_data['title'] ) ) {
 			return new WP_Error( 'missing_title', __( 'Title is required', 'mcp-ai-wpoos-pro' ) );

@@ -151,7 +151,7 @@ class WP_MCP_AI_Vector_Context_Service {
 
 		// Get all contexts for agent.
 		$context_manager = WP_MCP_AI_Agent_Context_Manager::get_instance();
-		$contexts = $context_manager->search_contexts( $agent_id, $filters, 100, false );
+		$contexts        = $context_manager->search_contexts( $agent_id, $filters, 100, false );
 
 		if ( empty( $contexts ) ) {
 			return array(
@@ -188,9 +188,12 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 
 		// Sort by similarity (highest first).
-		usort( $scored_contexts, function( $a, $b ) {
-			return $b['similarity'] <=> $a['similarity'];
-		});
+		usort(
+			$scored_contexts,
+			function ( $a, $b ) {
+				return $b['similarity'] <=> $a['similarity'];
+			}
+		);
 
 		// Limit results.
 		$scored_contexts = array_slice( $scored_contexts, 0, $limit );
@@ -198,7 +201,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		// Format results.
 		$results = array();
 		foreach ( $scored_contexts as $scored ) {
-			$context = $scored['context'];
+			$context   = $scored['context'];
 			$results[] = array(
 				'context_id'       => $context['context_id'],
 				'context_type'     => $context['context_type'],
@@ -232,8 +235,8 @@ class WP_MCP_AI_Vector_Context_Service {
 	public function optimize_context_window( $candidate_contexts, $token_budget, $current_task ) {
 		if ( empty( $candidate_contexts ) || empty( $current_task['query'] ) ) {
 			return array(
-				'success'  => false,
-				'message'  => __( 'Candidate contexts and task query are required.', 'mcp-ai-wpoos' ),
+				'success' => false,
+				'message' => __( 'Candidate contexts and task query are required.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -273,12 +276,15 @@ class WP_MCP_AI_Vector_Context_Service {
 		}
 
 		// Sort by similarity (highest first).
-		usort( $scored_contexts, function( $a, $b ) {
-			return $b['similarity'] <=> $a['similarity'];
-		});
+		usort(
+			$scored_contexts,
+			function ( $a, $b ) {
+				return $b['similarity'] <=> $a['similarity'];
+			}
+		);
 
 		// Select contexts within budget.
-		$selected = array();
+		$selected    = array();
 		$used_tokens = 0;
 
 		foreach ( $scored_contexts as $scored ) {
@@ -402,7 +408,7 @@ class WP_MCP_AI_Vector_Context_Service {
 			foreach ( $transients as $transient ) {
 				$key = str_replace( '_transient_', '', $transient->option_name );
 				delete_transient( $key );
-				$cleared++;
+				++$cleared;
 			}
 		}
 

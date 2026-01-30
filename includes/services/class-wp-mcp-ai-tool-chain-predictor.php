@@ -75,8 +75,8 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		if ( empty( $available_tools ) ) {
 			$registry = $this->get_registry();
 			if ( $registry ) {
-				$tools            = $registry->get_all_tools();
-				$available_tools  = array_keys( $tools );
+				$tools           = $registry->get_all_tools();
+				$available_tools = array_keys( $tools );
 			}
 		}
 
@@ -113,8 +113,8 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		}
 
 		$optimized = array(
-			'sequential' => array(),
-			'parallel'   => array(),
+			'sequential'    => array(),
+			'parallel'      => array(),
 			'optimizations' => array(),
 		);
 
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		}
 
 		// Record optimizations made.
-		$original_count = count( $tool_chain );
+		$original_count  = count( $tool_chain );
 		$optimized_count = count( $reordered );
 		if ( $original_count > $optimized_count ) {
 			$optimized['optimizations'][] = sprintf(
@@ -158,7 +158,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		}
 
 		if ( ! empty( $optimized['parallel'] ) ) {
-			$parallel_count = array_sum( array_map( 'count', $optimized['parallel'] ) );
+			$parallel_count               = array_sum( array_map( 'count', $optimized['parallel'] ) );
 			$optimized['optimizations'][] = sprintf(
 				'Identified %d tool(s) for parallel execution',
 				$parallel_count
@@ -213,8 +213,8 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 		}
 
 		return array(
-			'prewarmed'  => $prewarmed,
-			'cached'     => $cached,
+			'prewarmed'       => $prewarmed,
+			'cached'          => $cached,
 			'total_predicted' => count( $predicted_chain ),
 		);
 	}
@@ -281,11 +281,11 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 
 		// Heuristic task type detection.
 		$type_patterns = array(
-			'research'   => array( 'research', 'find', 'search', 'gather', 'collect' ),
-			'create'     => array( 'create', 'write', 'generate', 'compose', 'draft' ),
-			'analyze'    => array( 'analyze', 'review', 'evaluate', 'assess', 'examine' ),
-			'update'     => array( 'update', 'modify', 'change', 'edit', 'revise' ),
-			'list'       => array( 'list', 'show', 'display', 'enumerate', 'get all' ),
+			'research' => array( 'research', 'find', 'search', 'gather', 'collect' ),
+			'create'   => array( 'create', 'write', 'generate', 'compose', 'draft' ),
+			'analyze'  => array( 'analyze', 'review', 'evaluate', 'assess', 'examine' ),
+			'update'   => array( 'update', 'modify', 'change', 'edit', 'revise' ),
+			'list'     => array( 'list', 'show', 'display', 'enumerate', 'get all' ),
 		);
 
 		foreach ( $type_patterns as $type => $keywords ) {
@@ -364,8 +364,8 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	/**
 	 * Predict from historical patterns
 	 *
-	 * @param array $patterns Historical patterns.
-	 * @param array $available_tools Available tool slugs.
+	 * @param array  $patterns Historical patterns.
+	 * @param array  $available_tools Available tool slugs.
 	 * @param string $task Task description.
 	 * @return array Predicted chain.
 	 */
@@ -452,7 +452,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 
 			// Assume tools depend on all previous tools (conservative).
 			for ( $i = 0; $i < $index; $i++ ) {
-				$prev_tool = is_array( $tool_chain[ $i ] ) ? $tool_chain[ $i ]['tool_slug'] : $tool_chain[ $i ];
+				$prev_tool                    = is_array( $tool_chain[ $i ] ) ? $tool_chain[ $i ]['tool_slug'] : $tool_chain[ $i ];
 				$dependencies[ $tool_slug ][] = $prev_tool;
 			}
 		}
