@@ -25,7 +25,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 		$this->option_name      = 'wp_mcp_ai_regulatory_registration_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-regulatory-registration-toolkit-settings';
 		$this->parent_slug      = 'edit.php?post_type=mcp_ai_reg_product';
-		$this->has_research     = true;
+		$this->has_research     = false;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-shield-alt';
 
@@ -209,6 +209,21 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 			</table>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Add settings submenu page.
+	 * Override parent to customize menu title.
+	 */
+	public function add_settings_page() {
+		add_submenu_page(
+			$this->parent_slug,
+			$this->toolkit_name . ' ' . __( 'Settings', 'mcp-ai-wpoos-pro' ),
+			__( 'Settings', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			$this->page_slug,
+			array( $this, 'render_settings_page' )
+		);
 	}
 
 	/**
