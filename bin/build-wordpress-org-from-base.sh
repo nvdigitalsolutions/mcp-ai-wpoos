@@ -233,7 +233,7 @@ COMPLETE_SIZE=$(du -h "$ROOT_DIR/$COMPLETE_OUTPUT" 2>/dev/null | cut -f1 || echo
 
 # Get core version for display
 CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
-CORE_SIZE=$(du -h "build/nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip" 2>/dev/null | cut -f1 || echo "N/A")
+CORE_SIZE=$(du -h "build/nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip" 2>/dev/null | cut -f1 || echo "N/A")
 
 cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 # WordPress.org Submission Packages
@@ -281,7 +281,7 @@ Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains tr
 **Text Domain:** \`nvdigital-open-operator-system-oos\`
 
 **Use For:**
-- WordPress.org submission (use -wporg version)
+- WordPress.org submission
 - Free public distribution
 - Sites requiring WordPress.org approved plugins
 
