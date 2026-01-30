@@ -76,8 +76,8 @@ transform_package() {
     mkdir -p "$TEMP_DIR"
     unzip -q "$SOURCE_ZIP" -d "$TEMP_DIR"
     
-    # Find the extracted directory (could be mcp-ai-wpoos-base or mcp-ai-wpoos)
-    EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "mcp-ai-wpoos*" | head -1)
+    # Find the extracted directory (should be nvdigital-open-operator-system-oos*)
+    EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "nvdigital-open-operator-system-oos*" | head -1)
     
     if [ -z "$EXTRACTED_DIR" ] || [ ! -d "$EXTRACTED_DIR" ]; then
         echo "❌ Error: Could not find extracted directory in $TEMP_DIR"
@@ -128,17 +128,19 @@ transform_package() {
     echo "   Remaining old text domains: $AFTER_COUNT"
     
     # Update POT files if they exist
-    if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" ]; then
-        echo "Step 3: Renaming translation file (mcp-ai-wpoos.pot)..."
-        mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
-        sed -i 's/"Project-Id-Version: mcp-ai-wpoos/"Project-Id-Version: nvdigital-open-operator-system-oos/g' \
-            "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
-    fi
-    
+    # Note: Only one of these should exist in any given package:
+    # - Base package has mcp-ai-wpoos-base.pot
+    # - Combined package might have mcp-ai-wpoos.pot
+    # - Pro package has mcp-ai-wpoos-pro.pot
     if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos-base.pot" ]; then
         echo "Step 3: Renaming translation file (mcp-ai-wpoos-base.pot)..."
         mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos-base.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
         sed -i 's/"Project-Id-Version: mcp-ai-wpoos-base/"Project-Id-Version: nvdigital-open-operator-system-oos/g' \
+            "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
+    elif [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" ]; then
+        echo "Step 3: Renaming translation file (mcp-ai-wpoos.pot)..."
+        mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
+        sed -i 's/"Project-Id-Version: mcp-ai-wpoos/"Project-Id-Version: nvdigital-open-operator-system-oos/g' \
             "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
     fi
     
@@ -147,6 +149,13 @@ transform_package() {
         mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos-pro.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-pro.pot"
         sed -i 's/"Project-Id-Version: mcp-ai-wpoos-pro/"Project-Id-Version: nvdigital-open-operator-system-oos-pro/g' \
             "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-pro.pot"
+    fi
+    
+    if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos-core.pot" ]; then
+        echo "Step 3: Renaming translation file (mcp-ai-wpoos-core.pot)..."
+        mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos-core.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-core.pot"
+        sed -i 's/"Project-Id-Version: mcp-ai-wpoos-core/"Project-Id-Version: nvdigital-open-operator-system-oos-core/g' \
+            "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-core.pot"
     fi
     
     # Create output package
