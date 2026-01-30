@@ -1722,7 +1722,17 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		private function render_federation_mesh() {
 			// Get AI Peers count.
 			$ai_peer_count = wp_count_posts( 'ai_peer' );
-			$total_peers   = isset( $ai_peer_count->publish ) ? $ai_peer_count->publish : 0;
+			// Count all AI peers regardless of status to detect unpublished peers.
+			$total_peers   = 0;
+			if ( isset( $ai_peer_count->publish ) ) {
+				$total_peers += absint( $ai_peer_count->publish );
+			}
+			if ( isset( $ai_peer_count->draft ) ) {
+				$total_peers += absint( $ai_peer_count->draft );
+			}
+			if ( isset( $ai_peer_count->pending ) ) {
+				$total_peers += absint( $ai_peer_count->pending );
+			}
 
 			// Get mesh computing status from tools settings.
 			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
@@ -1929,10 +1939,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<p>
 									<?php
 									printf(
-										/* translators: 1: URL to AI Peers list, 2: number of peers */
-										esc_html__( 'You have %2$d AI peer(s) registered, but none are currently published. %1$s to review and publish them.', 'mcp-ai-wpoos' ),
-										'<a href="' . esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ) . '">' . esc_html__( 'View all AI peers', 'mcp-ai-wpoos' ) . '</a>',
-										absint( $total_peers )
+										/* translators: 1: number of peers, 2: URL to AI Peers list */
+										__( 'You have %1$d AI peer(s) registered, but none are currently published. %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+										absint( $total_peers ),
+										'<a href="' . esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ) . '">' . esc_html__( 'View all AI peers', 'mcp-ai-wpoos' ) . '</a>'
 									);
 									?>
 								</p>
