@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/rebuild-all-zips-294bacf8-b719-4b00-becb-1e11bec31a19',
-        'version' => 'dev-copilot/rebuild-all-zips-294bacf8-b719-4b00-becb-1e11bec31a19',
-        'reference' => 'ffe5b7d473b883c9d0e444690d70d9ed6dae04b3',
+        'pretty_version' => 'dev-copilot/review-incomplete-pages',
+        'version' => 'dev-copilot/review-incomplete-pages',
+        'reference' => '077abedf8907f8bbd57b344244b69797ad700eaa',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/rebuild-all-zips-294bacf8-b719-4b00-becb-1e11bec31a19',
-            'version' => 'dev-copilot/rebuild-all-zips-294bacf8-b719-4b00-becb-1e11bec31a19',
-            'reference' => 'ffe5b7d473b883c9d0e444690d70d9ed6dae04b3',
+            'pretty_version' => 'dev-copilot/review-incomplete-pages',
+            'version' => 'dev-copilot/review-incomplete-pages',
+            'reference' => '077abedf8907f8bbd57b344244b69797ad700eaa',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
