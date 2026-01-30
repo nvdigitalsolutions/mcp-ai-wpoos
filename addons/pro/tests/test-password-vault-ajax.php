@@ -80,7 +80,7 @@ class Test_Password_Vault_AJAX extends WP_UnitTestCase {
 		$_GET['page'] = 'wp-mcp-ai-password-vault';
 
 		// Trigger the enqueue action with the expected hook.
-		do_action( 'admin_enqueue_scripts', 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' );
+		do_action( 'admin_enqueue_scripts', 'toplevel_page_wp-mcp-ai-password-vault' );
 
 		// Verify style is enqueued.
 		$this->assertTrue(
