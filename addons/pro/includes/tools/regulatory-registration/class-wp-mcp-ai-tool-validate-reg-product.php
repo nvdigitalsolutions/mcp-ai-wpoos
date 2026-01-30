@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {
 			return array(

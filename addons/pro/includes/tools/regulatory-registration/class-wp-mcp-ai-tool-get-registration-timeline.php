@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['registration_id'] ) ) {
 			return array(

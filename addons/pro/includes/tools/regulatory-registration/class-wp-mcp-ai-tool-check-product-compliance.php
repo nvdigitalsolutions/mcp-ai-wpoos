@@ -97,7 +97,7 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['product_id'] ) ) {
 			return array(

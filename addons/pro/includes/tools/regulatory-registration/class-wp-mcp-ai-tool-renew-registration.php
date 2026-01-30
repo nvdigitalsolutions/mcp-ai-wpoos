@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		if ( empty( $arguments['registration_id'] ) ) {
 			return array(
