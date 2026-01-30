@@ -3870,19 +3870,49 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<span class="dashicons dashicons-admin-settings"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-info-outline" style="font-size: 14px; color: #666; cursor: help;" 
+								title="<?php esc_attr_e( 'Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)', 'mcp-ai-wpoos' ); ?>"></span>
+						</div>
 						<div class="wp-mcp-ai-metric-value">
 							<?php
-							$modes = array();
+							// Count orchestration modes used by teams.
+							$mode_counts = array();
 							foreach ( $teams as $team ) {
 								if ( ! empty( $team['orchestration_mode'] ) ) {
-									$modes[] = $team['orchestration_mode'];
+									$mode = $team['orchestration_mode'];
+									if ( ! isset( $mode_counts[ $mode ] ) ) {
+										$mode_counts[ $mode ] = 0;
+									}
+									++$mode_counts[ $mode ];
 								}
 							}
-							echo esc_html( count( array_unique( $modes ) ) );
+							$unique_modes_used = count( $mode_counts );
+							$total_available_modes = 4; // single, sequential, parallel, swarm.
+							echo esc_html( $unique_modes_used . '/' . $total_available_modes );
 							?>
 						</div>
-						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Different Strategies', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle">
+							<?php
+							if ( ! empty( $mode_counts ) ) {
+								$mode_labels = array(
+									'single'     => __( 'Single', 'mcp-ai-wpoos' ),
+									'sequential' => __( 'Sequential', 'mcp-ai-wpoos' ),
+									'parallel'   => __( 'Parallel', 'mcp-ai-wpoos' ),
+									'swarm'      => __( 'Swarm', 'mcp-ai-wpoos' ),
+								);
+								$mode_display = array();
+								foreach ( $mode_counts as $mode => $count ) {
+									$label = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
+									$mode_display[] = sprintf( '%s (%d)', $label, $count );
+								}
+								echo esc_html( implode( ', ', $mode_display ) );
+							} else {
+								esc_html_e( 'No modes configured', 'mcp-ai-wpoos' );
+							}
+							?>
+						</div>
 					</div>
 				</div>
 				
