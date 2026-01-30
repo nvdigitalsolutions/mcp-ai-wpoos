@@ -460,42 +460,58 @@ class WP_MCP_AI_Reg_Document_Page {
 			)
 		);
 
-		if ( ! empty( $terms ) && ! is_wp_error( $terms ) ) {
-			?>
-			<div class="doc-type-grid">
-				<?php
-				foreach ( $terms as $term ) {
-					// Get actual count for this term.
-					$term_count_query = new WP_Query(
-						array(
-							'post_type'      => 'mcp_ai_reg_document',
-							'post_status'    => 'publish',
-							'posts_per_page' => -1,
-							'fields'         => 'ids',
-							'tax_query'      => array(
-								array(
-									'taxonomy' => 'mcp_ai_doc_type',
-									'field'    => 'term_id',
-									'terms'    => $term->term_id,
-								),
-							),
-						)
-					);
-					?>
-					<div class="doc-type-card">
-						<div class="doc-type-count"><?php echo esc_html( $term_count_query->found_posts ); ?></div>
-						<div class="doc-type-name"><?php echo esc_html( $term->name ); ?></div>
-					</div>
-					<?php
-				}
-				?>
-			</div>
-			<?php
-		} else {
+		if ( empty( $terms ) || is_wp_error( $terms ) ) {
 			?>
 			<p><?php esc_html_e( 'No document types configured.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<?php
+			return;
 		}
+
+		// Get all term IDs.
+		$term_ids = wp_list_pluck( $terms, 'term_id' );
+
+		// Fetch all document counts in a single query grouped by term_id.
+		global $wpdb;
+		$document_counts = $wpdb->get_results(
+			"SELECT tr.term_taxonomy_id, COUNT(*) as total
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+			INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
+			WHERE p.post_type = 'mcp_ai_reg_document'
+			AND p.post_status = 'publish'
+			AND tt.taxonomy = 'mcp_ai_doc_type'
+			AND tt.term_id IN (" . implode( ',', array_map( 'intval', $term_ids ) ) . ')
+			GROUP BY tr.term_taxonomy_id',
+			ARRAY_A
+		);
+
+		// Convert to associative array for quick lookup.
+		$counts_by_term = array();
+		foreach ( $document_counts as $row ) {
+			// Map term_taxonomy_id back to term_id.
+			foreach ( $terms as $term ) {
+				if ( $term->term_taxonomy_id === (int) $row['term_taxonomy_id'] ) {
+					$counts_by_term[ $term->term_id ] = (int) $row['total'];
+					break;
+				}
+			}
+		}
+
+		?>
+		<div class="doc-type-grid">
+			<?php
+			foreach ( $terms as $term ) {
+				$count = isset( $counts_by_term[ $term->term_id ] ) ? $counts_by_term[ $term->term_id ] : 0;
+				?>
+				<div class="doc-type-card">
+					<div class="doc-type-count"><?php echo esc_html( $count ); ?></div>
+					<div class="doc-type-name"><?php echo esc_html( $term->name ); ?></div>
+				</div>
+				<?php
+			}
+			?>
+		</div>
+		<?php
 	}
 
 	/**

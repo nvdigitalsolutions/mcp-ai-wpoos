@@ -286,37 +286,53 @@ class WP_MCP_AI_Reg_Country_Config_Page {
 			)
 		);
 
-		if ( $query->have_posts() ) {
-			while ( $query->have_posts() ) {
-				$query->the_post();
-				$country_id = get_the_ID();
-
-				// Count registrations for this country.
-				$reg_count_query = new WP_Query(
-					array(
-						'post_type'      => 'mcp_ai_registration',
-						'post_status'    => 'any',
-						'posts_per_page' => -1,
-						'fields'         => 'ids',
-						'meta_query'     => array(
-							array(
-								'key'   => 'country_id',
-								'value' => $country_id,
-							),
-						),
-					)
-				);
-
-				$countries[] = array(
-					'id'        => $country_id,
-					'name'      => get_the_title(),
-					'code'      => get_post_meta( $country_id, 'country_code', true ),
-					'authority' => get_post_meta( $country_id, 'regulatory_authority', true ),
-					'reg_count' => $reg_count_query->found_posts,
-				);
-			}
+		if ( ! $query->have_posts() ) {
 			wp_reset_postdata();
+			return $countries;
 		}
+
+		// Get all country IDs first.
+		$country_ids = array();
+		while ( $query->have_posts() ) {
+			$query->the_post();
+			$country_ids[] = get_the_ID();
+		}
+		wp_reset_postdata();
+
+		// Fetch all registration counts in a single query grouped by country_id.
+		global $wpdb;
+		$registration_counts = $wpdb->get_results(
+			"SELECT pm.meta_value as country_id, COUNT(*) as total
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+			WHERE p.post_type = 'mcp_ai_registration'
+			AND pm.meta_key = 'country_id'
+			AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
+			GROUP BY pm.meta_value',
+			ARRAY_A
+		);
+
+		// Convert to associative array for quick lookup.
+		$counts_by_country = array();
+		foreach ( $registration_counts as $row ) {
+			$counts_by_country[ $row['country_id'] ] = (int) $row['total'];
+		}
+
+		// Build countries array with fetched data.
+		$query->rewind_posts();
+		while ( $query->have_posts() ) {
+			$query->the_post();
+			$country_id = get_the_ID();
+
+			$countries[] = array(
+				'id'        => $country_id,
+				'name'      => get_the_title(),
+				'code'      => get_post_meta( $country_id, 'country_code', true ),
+				'authority' => get_post_meta( $country_id, 'regulatory_authority', true ),
+				'reg_count' => isset( $counts_by_country[ $country_id ] ) ? $counts_by_country[ $country_id ] : 0,
+			);
+		}
+		wp_reset_postdata();
 
 		return $countries;
 	}

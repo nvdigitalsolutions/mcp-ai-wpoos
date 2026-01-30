@@ -441,69 +441,83 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 			)
 		);
 
-		if ( $countries_query->have_posts() ) {
-			while ( $countries_query->have_posts() ) {
-				$countries_query->the_post();
-				$country_id = get_the_ID();
-
-				$country_data = array(
-					'name'      => get_the_title(),
-					'authority' => get_post_meta( $country_id, 'regulatory_authority', true ),
-					'total'     => 0,
-					'approved'  => 0,
-					'pending'   => 0,
-				);
-
-				// Count registrations for this country.
-				$regs_query = new WP_Query(
-					array(
-						'post_type'      => 'mcp_ai_registration',
-						'post_status'    => 'any',
-						'posts_per_page' => -1,
-						'fields'         => 'ids',
-						'meta_query'     => array(
-							array(
-								'key'   => 'country_id',
-								'value' => $country_id,
-							),
-						),
-					)
-				);
-				$country_data['total'] = $regs_query->found_posts;
-
-				// Count approved for this country.
-				$approved_term = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
-				if ( $approved_term ) {
-					$approved_query = new WP_Query(
-						array(
-							'post_type'      => 'mcp_ai_registration',
-							'post_status'    => 'any',
-							'posts_per_page' => -1,
-							'fields'         => 'ids',
-							'meta_query'     => array(
-								array(
-									'key'   => 'country_id',
-									'value' => $country_id,
-								),
-							),
-							'tax_query'      => array(
-								array(
-									'taxonomy' => 'mcp_ai_reg_status',
-									'field'    => 'term_id',
-									'terms'    => $approved_term->term_id,
-								),
-							),
-						)
-					);
-					$country_data['approved'] = $approved_query->found_posts;
-				}
-
-				$country_data['pending'] = $country_data['total'] - $country_data['approved'];
-
-				$countries[] = $country_data;
-			}
+		if ( ! $countries_query->have_posts() ) {
 			wp_reset_postdata();
+			return $countries;
 		}
+
+		// Get all country IDs first.
+		$country_ids = array();
+		while ( $countries_query->have_posts() ) {
+			$countries_query->the_post();
+			$country_ids[] = get_the_ID();
+		}
+		wp_reset_postdata();
+
+		// Fetch all registration counts in a single query grouped by country_id.
+		global $wpdb;
+		$registration_counts = $wpdb->get_results(
+			"SELECT pm.meta_value as country_id, COUNT(*) as total
+			FROM {$wpdb->posts} p
+			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+			WHERE p.post_type = 'mcp_ai_registration'
+			AND pm.meta_key = 'country_id'
+			AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
+			GROUP BY pm.meta_value',
+			ARRAY_A
+		);
+
+		// Convert to associative array for quick lookup.
+		$counts_by_country = array();
+		foreach ( $registration_counts as $row ) {
+			$counts_by_country[ $row['country_id'] ] = (int) $row['total'];
+		}
+
+		// Get approved term once.
+		$approved_term = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
+		$approved_counts_by_country = array();
+
+		if ( $approved_term ) {
+			// Fetch approved registration counts in a single query.
+			$approved_counts = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT pm.meta_value as country_id, COUNT(*) as total
+					FROM {$wpdb->posts} p
+					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+					INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+					WHERE p.post_type = 'mcp_ai_registration'
+					AND pm.meta_key = 'country_id'
+					AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
+					AND tr.term_taxonomy_id = %d
+					GROUP BY pm.meta_value',
+					$approved_term->term_taxonomy_id
+				),
+				ARRAY_A
+			);
+
+			foreach ( $approved_counts as $row ) {
+				$approved_counts_by_country[ $row['country_id'] ] = (int) $row['total'];
+			}
+		}
+
+		// Now build the countries array with the fetched data.
+		$countries_query->rewind_posts();
+		while ( $countries_query->have_posts() ) {
+			$countries_query->the_post();
+			$country_id = get_the_ID();
+
+			$total = isset( $counts_by_country[ $country_id ] ) ? $counts_by_country[ $country_id ] : 0;
+			$approved = isset( $approved_counts_by_country[ $country_id ] ) ? $approved_counts_by_country[ $country_id ] : 0;
+
+			$countries[] = array(
+				'name'      => get_the_title(),
+				'authority' => get_post_meta( $country_id, 'regulatory_authority', true ),
+				'total'     => $total,
+				'approved'  => $approved,
+				'pending'   => $total - $approved,
+			);
+		}
+		wp_reset_postdata();
 
 		return $countries;
 	}
