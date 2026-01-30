@@ -25,6 +25,9 @@ if ( is_admin() ) {
 	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
+		// Load Toolkit Settings Page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-regulatory-registration-toolkit-settings-page.php';
+
 		// Load Product settings and research pages.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php';
