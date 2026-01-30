@@ -30,7 +30,7 @@ class WPPostExistsValidator extends ConstraintValidator {
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPPostExists ) {
-			throw new UnexpectedTypeException( $constraint, WPPostExists::class );
+			throw new UnexpectedTypeException( $constraint, esc_html( WPPostExists::class ) );
 		}
 
 		// Null and empty values are valid (use NotBlank for required fields).
@@ -39,7 +39,7 @@ class WPPostExistsValidator extends ConstraintValidator {
 		}
 
 		if ( ! is_numeric( $value ) && ! is_int( $value ) ) {
-			throw new UnexpectedValueException( $value, 'integer' );
+			throw new UnexpectedValueException( $value, esc_html( 'integer' ) );
 		}
 
 		$post_id = absint( $value );

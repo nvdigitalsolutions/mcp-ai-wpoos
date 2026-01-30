@@ -2226,7 +2226,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+			echo wp_kses_post( WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view() );
 		}
 
 		/**

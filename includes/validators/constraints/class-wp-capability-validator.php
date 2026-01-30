@@ -29,7 +29,7 @@ class WPCapabilityValidator extends ConstraintValidator {
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPCapability ) {
-			throw new UnexpectedTypeException( $constraint, WPCapability::class );
+			throw new UnexpectedTypeException( $constraint, esc_html( WPCapability::class ) );
 		}
 
 		// Check if current user has the required capability.
