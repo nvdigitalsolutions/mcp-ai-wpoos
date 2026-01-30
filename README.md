@@ -958,6 +958,9 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ## 📦 Installation
 
+> **ℹ️ Plugin Directory Status**  
+> This plugin is currently **pending approval** in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards throughout the review process. You can install the plugin manually from our [GitHub repository](https://github.com/nvdigitalsolutions/mcp-ai-wpoos) or wait for the official WordPress Plugin Directory listing.
+
 ### Requirements
 
 **Minimum Requirements:**

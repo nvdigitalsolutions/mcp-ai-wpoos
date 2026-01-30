@@ -1730,6 +1730,73 @@ add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
  */
 add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
 
+if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
+	/**
+	 * Display admin notice indicating plugin is pending WordPress Plugin Directory approval.
+	 *
+	 * This notice builds trust by transparently communicating the plugin's approval status.
+	 * Users can dismiss the notice, and it will not be shown again.
+	 */
+	function wp_mcp_ai_plugin_directory_pending_notice() {
+		// Check if user has dismissed the notice.
+		$user_id = get_current_user_id();
+		if ( get_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true ) ) {
+			return;
+		}
+
+		// Only show to users who can manage options.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		?>
+		<div class="notice notice-info is-dismissible" data-dismissible="wp_mcp_ai_directory_notice">
+			<p>
+				<strong><?php esc_html_e( 'NV Digital Open Operator System (oOS):', 'mcp-ai-wpoos' ); ?></strong>
+				<?php esc_html_e( 'This plugin is currently pending approval in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards.', 'mcp-ai-wpoos' ); ?>
+			</p>
+		</div>
+		<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$(document).on('click', '[data-dismissible="wp_mcp_ai_directory_notice"] .notice-dismiss', function() {
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_dismiss_directory_notice',
+						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>'
+					}
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_dismiss_directory_notice_ajax' ) ) {
+	/**
+	 * Handle AJAX request to dismiss the plugin directory pending notice.
+	 */
+	function wp_mcp_ai_dismiss_directory_notice_ajax() {
+		check_ajax_referer( 'wp_mcp_ai_dismiss_directory_notice', 'nonce' );
+
+		$user_id = get_current_user_id();
+		update_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true );
+
+		wp_send_json_success();
+	}
+}
+
+/**
+ * Register plugin directory pending notice on admin_notices.
+ *
+ * This follows the same pattern as other admin notices to ensure translation
+ * functions are called after init completes.
+ */
+add_action( 'admin_notices', 'wp_mcp_ai_plugin_directory_pending_notice' );
+add_action( 'wp_ajax_wp_mcp_ai_dismiss_directory_notice', 'wp_mcp_ai_dismiss_directory_notice_ajax' );
+
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**
 	 * Plugin activation handler.
