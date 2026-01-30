@@ -571,12 +571,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 							return new WP_Error( 'invalid_cidr_mask', sprintf( __( 'Invalid IPv6 CIDR mask (must be 0-128): %s', 'mcp-ai-wpoos' ), $entry ) );
 						}
 					}
-				} else {
+				} elseif ( ! filter_var( $entry, FILTER_VALIDATE_IP ) ) {
 					// Validate as plain IP address.
-					if ( ! filter_var( $entry, FILTER_VALIDATE_IP ) ) {
-						/* translators: %s: IP address */
-						return new WP_Error( 'invalid_ip', sprintf( __( 'Invalid IP address: %s', 'mcp-ai-wpoos' ), $entry ) );
-					}
+					/* translators: %s: IP address */
+					return new WP_Error( 'invalid_ip', sprintf( __( 'Invalid IP address: %s', 'mcp-ai-wpoos' ), $entry ) );
 				}
 			}
 

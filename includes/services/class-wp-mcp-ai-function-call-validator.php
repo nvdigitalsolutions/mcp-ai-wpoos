@@ -106,7 +106,7 @@ class WP_MCP_AI_Function_Call_Validator {
 			$errors[] = sprintf(
 				/* translators: %s: property path */
 				__( 'Value at %s must be an object/array', 'mcp-ai-wpoos' ),
-				$path ?: 'root'
+				$path ? $path : 'root'
 			);
 			return array(
 				'errors' => $errors,
@@ -124,7 +124,7 @@ class WP_MCP_AI_Function_Call_Validator {
 					/* translators: 1: property name, 2: property path */
 					__( 'Required property "%1$s" missing at %2$s', 'mcp-ai-wpoos' ),
 					$req_prop,
-					$path ?: 'root'
+					$path ? $path : 'root'
 				);
 			}
 		}
@@ -433,7 +433,8 @@ class WP_MCP_AI_Function_Call_Validator {
 		$processed = array();
 
 		// Simple topological sort.
-		while ( count( $processed ) < count( $tool_calls_tree ) ) {
+		$total_count = count( $tool_calls_tree );
+		while ( count( $processed ) < $total_count ) {
 			$current_level = array();
 
 			foreach ( $tool_calls_tree as $call_id => $call_data ) {

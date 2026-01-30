@@ -330,7 +330,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'user_id'          => $user_id,
 			'username'         => $user->user_login,
 			'2fa_enabled'      => $enabled,
-			'2fa_method'       => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
+			'2fa_method'       => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
 			'has_backup_codes' => $this->has_backup_codes( $user_id ),
 		);
 	}
@@ -629,7 +629,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 				),
 				array(
 					'name'  => __( '2FA Method', 'mcp-ai-wpoos' ),
-					'value' => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
+					'value' => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
 				),
 			),
 		);
