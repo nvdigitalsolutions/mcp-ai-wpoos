@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-orchestration-modes',
+        'version' => 'dev-copilot/update-orchestration-modes',
+        'reference' => '2aed797ccab3891976a3b277f46088516b390953',
         'pretty_version' => 'dev-copilot/enhance-registration-toolkit',
         'version' => 'dev-copilot/enhance-registration-toolkit',
         'reference' => '2c366373b937e42550b1a042957463ba6693dec0',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-orchestration-modes',
+            'version' => 'dev-copilot/update-orchestration-modes',
+            'reference' => '2aed797ccab3891976a3b277f46088516b390953',
             'pretty_version' => 'dev-copilot/enhance-registration-toolkit',
             'version' => 'dev-copilot/enhance-registration-toolkit',
             'reference' => '2c366373b937e42550b1a042957463ba6693dec0',
