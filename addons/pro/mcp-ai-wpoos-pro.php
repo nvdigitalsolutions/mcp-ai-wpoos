@@ -40,12 +40,25 @@ if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 }
 if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
 	// If loaded as part of main plugin, build URL from main plugin's URL.
-	if ( defined( 'WP_MCP_AI_URL' ) ) {
+	// Check if WP_MCP_AI_URL is defined AND if we're actually bundled (not a separate plugin).
+	// We can detect if we're bundled by checking if our path contains 'addons/pro'.
+	// Use wp_normalize_path() for cross-platform compatibility (Windows/Unix).
+	$is_bundled = defined( 'WP_MCP_AI_URL' ) && 
+	              defined( 'WP_MCP_AI_PATH' ) && 
+	              strpos( 
+	                  wp_normalize_path( WP_MCP_AI_PRO_PATH ), 
+	                  wp_normalize_path( trailingslashit( WP_MCP_AI_PATH ) . 'addons/pro' )
+	              ) !== false;
+	
+	if ( $is_bundled ) {
 		define( 'WP_MCP_AI_PRO_URL', WP_MCP_AI_URL . 'addons/pro/' );
 	} else {
 		// If loaded as standalone plugin, use standard plugin_dir_url().
 		define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
 	}
+	
+	// Clean up temporary variable.
+	unset( $is_bundled );
 }
 
 /**

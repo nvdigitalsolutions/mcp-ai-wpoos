@@ -182,6 +182,21 @@ class WP_MCP_AI_Password_Vault_Admin {
 			return;
 		}
 
+		// Verify Pro addon constants are defined before enqueueing.
+		if ( ! defined( 'WP_MCP_AI_PRO_URL' ) || ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Critical error logging.
+			error_log( 'Password Vault: Cannot enqueue scripts - WP_MCP_AI_PRO_URL or WP_MCP_AI_PRO_VERSION not defined' );
+			return;
+		}
+
+		// Debug logging when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$pro_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL : 'undefined';
+			$pro_path = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : 'undefined';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+			error_log( sprintf( 'Password Vault: Enqueuing scripts. WP_MCP_AI_PRO_URL: %s, WP_MCP_AI_PRO_PATH: %s', $pro_url, $pro_path ) );
+		}
+
 		// Enqueue WordPress color picker.
 		wp_enqueue_style( 'wp-color-picker' );
 		wp_enqueue_script( 'wp-color-picker' );
