@@ -1956,9 +1956,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 										);
 										printf(
 											/* translators: 1: message about unpublished peers, 2: link to view AI peers */
-											esc_html__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+											__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link passed as second parameter.
 											esc_html( $message ),
-											$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__
+											$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__.
 										);
 										?>
 									</p>
@@ -2001,7 +2001,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				<?php endif; ?>
 
-				<?php if ( ! $mesh_enabled && ! $directory_enabled ) : ?>
+				<?php if ( ! $mesh_enabled && ! $federation_enabled ) : ?>
 					<div class="notice notice-info inline" style="margin-top: 20px;">
 						<p>
 							<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
