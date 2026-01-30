@@ -879,9 +879,17 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Create_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-reg-product.php',
 				'WP_MCP_AI_Tool_List_Reg_Products'   => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-products.php',
 				'WP_MCP_AI_Tool_Get_Reg_Product'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-product.php',
+				'WP_MCP_AI_Tool_Update_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-product.php',
+				'WP_MCP_AI_Tool_Delete_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-delete-reg-product.php',
 				// Registration Management Tools.
 				'WP_MCP_AI_Tool_Create_Registration' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-registration.php',
 				'WP_MCP_AI_Tool_List_Registrations'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-registrations.php',
+				'WP_MCP_AI_Tool_Get_Registration'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-registration.php',
+				'WP_MCP_AI_Tool_Update_Registration_Status' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-registration-status.php',
+				'WP_MCP_AI_Tool_List_Expiring_Registrations' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-expiring-registrations.php',
+				// Document Management Tools.
+				'WP_MCP_AI_Tool_List_Reg_Documents'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-documents.php',
+				'WP_MCP_AI_Tool_Check_Document_Expiry' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-document-expiry.php',
 			);
 			$pro_tools                         = array_merge( $pro_tools, $regulatory_registration_tools );
 		}
