@@ -3,6 +3,8 @@
  * Test script for Toolkit Registry.
  *
  * Run with: wp eval-file test-toolkit-registry.php
+ *
+ * @package NV_oOS
  */
 
 // Load WordPress.
@@ -20,7 +22,7 @@ echo "=== Toolkit Registry Test ===\n\n";
 echo "1. All Toolkits:\n";
 $toolkits = $toolkit_registry->get_toolkits();
 foreach ( $toolkits as $slug => $toolkit ) {
-	echo "   - {$slug}: {$toolkit['name']} ({$toolkit['primary_pattern']})\n";
+echo "   - {$slug}: {$toolkit['name']} ({$toolkit['primary_pattern']})\n";
 }
 echo "\n";
 
@@ -28,7 +30,7 @@ echo "\n";
 echo "2. Toolkit Statistics:\n";
 $stats = $toolkit_registry->get_toolkit_stats();
 foreach ( $stats as $slug => $stat ) {
-	echo "   - {$stat['name']}: {$stat['tool_count']} tools\n";
+echo "   - {$stat['name']}: {$stat['tool_count']} tools\n";
 }
 echo "\n";
 
@@ -45,7 +47,7 @@ echo "\n";
 echo "4. Tools in 'content_publishing' toolkit:\n";
 $content_tools = $toolkit_registry->get_toolkit_tools( 'content_publishing' );
 foreach ( $content_tools as $tool_slug ) {
-	echo "   - {$tool_slug}\n";
+echo "   - {$tool_slug}\n";
 }
 echo "\n";
 
@@ -53,18 +55,18 @@ echo "\n";
 echo "5. Tools for 'writer' profession:\n";
 $writer_tools = $toolkit_registry->get_tools_by_profession( 'writer' );
 foreach ( $writer_tools as $tool_slug ) {
-	echo "   - {$tool_slug}\n";
+echo "   - {$tool_slug}\n";
 }
 echo "\n";
 
 // Test 6: Get unmapped tools.
 echo "6. Unmapped Tools (first 10):\n";
-$unmapped = $toolkit_registry->get_unmapped_tools();
+$unmapped        = $toolkit_registry->get_unmapped_tools();
 $unmapped_sample = array_slice( $unmapped, 0, 10 );
 foreach ( $unmapped_sample as $tool_slug ) {
-	echo "   - {$tool_slug}\n";
+echo "   - {$tool_slug}\n";
 }
-echo "   ... and " . ( count( $unmapped ) - 10 ) . " more\n";
+echo '   ... and ' . ( count( $unmapped ) - 10 ) . " more\n";
 echo "\n";
 
 echo "=== Test Complete ===\n";
