@@ -52,7 +52,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 	 */
 	public static function get_unavailable_reason() {
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Run_Crawl4AI_Job' ) ) {
-			return __( 'Product price lookup tool requires the Crawl4AI integration.', 'wp-mcp-ai-pro' );
+			return __( 'Product price lookup tool requires the Crawl4AI integration.', 'mcp-ai-wpoos-pro' );
 		}
 
 		return WP_MCP_AI_Tool_Run_Crawl4AI_Job::get_unavailable_reason();
@@ -73,7 +73,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Lookup Product Price', 'wp-mcp-ai-pro' );
+		return __( 'Lookup Product Price', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -82,7 +82,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Find current online prices for products from images, documents, or URLs. Works like Google Lens Shopping or browser price comparison extensions. Supports image recognition, document parsing (invoices/quotes), single URL lookup, or batch URL comparison across multiple retailers.', 'wp-mcp-ai-pro' );
+		return __( 'Find current online prices for products from images, documents, or URLs. Works like Google Lens Shopping or browser price comparison extensions. Supports image recognition, document parsing (invoices/quotes), single URL lookup, or batch URL comparison across multiple retailers.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -96,11 +96,11 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'image_attachment_id'    => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress Media Library attachment ID of a product image. The tool will use Google Vision to identify the product and search for prices.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'WordPress Media Library attachment ID of a product image. The tool will use Google Vision to identify the product and search for prices.', 'mcp-ai-wpoos-pro' ),
 				),
 				'document_attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress Media Library attachment ID of a document (invoice, quote, spec sheet PDF). The tool will extract line items and look up prices for each.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'WordPress Media Library attachment ID of a document (invoice, quote, spec sheet PDF). The tool will extract line items and look up prices for each.', 'mcp-ai-wpoos-pro' ),
 				),
 				'urls'                   => array(
 					'type'        => 'array',
@@ -108,36 +108,36 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 						'type'   => 'string',
 						'format' => 'uri',
 					),
-					'description' => __( 'Array of product page URLs to compare prices. The tool will extract product information and search for better prices elsewhere.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Array of product page URLs to compare prices. The tool will extract product information and search for better prices elsewhere.', 'mcp-ai-wpoos-pro' ),
 					'maxItems'    => 20,
 				),
 				'url'                    => array(
 					'type'        => 'string',
 					'format'      => 'uri',
-					'description' => __( 'Convenience parameter for a single product URL when not using the urls array.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Convenience parameter for a single product URL when not using the urls array.', 'mcp-ai-wpoos-pro' ),
 				),
 				'max_results_per_item'   => array(
 					'type'        => 'integer',
 					'minimum'     => 1,
 					'maximum'     => 10,
 					'default'     => 5,
-					'description' => __( 'Maximum number of price offers to return per product.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Maximum number of price offers to return per product.', 'mcp-ai-wpoos-pro' ),
 				),
 				'preferred_retailers'    => array(
 					'type'        => 'array',
 					'items'       => array(
 						'type' => 'string',
 					),
-					'description' => __( 'Optional list of retailer domains to prioritize (e.g., ["amazon.com", "walmart.com"]).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional list of retailer domains to prioritize (e.g., ["amazon.com", "walmart.com"]).', 'mcp-ai-wpoos-pro' ),
 				),
 				'currency'               => array(
 					'type'        => 'string',
-					'description' => __( 'Preferred currency code for results (e.g., "USD", "EUR"). If provided, prices in other currencies may be converted.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Preferred currency code for results (e.g., "USD", "EUR"). If provided, prices in other currencies may be converted.', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^[A-Z]{3}$',
 				),
 				'locale'                 => array(
 					'type'        => 'string',
-					'description' => __( 'Locale for search results (e.g., "en-US", "en-GB"). Affects which region\'s retailers are searched.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Locale for search results (e.g., "en-US", "en-GB"). Affects which region\'s retailers are searched.', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^[a-z]{2}-[A-Z]{2}$',
 				),
 			),
@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $user_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to use product price lookup.', 'wp-mcp-ai-pro' ),
+				__( 'You must be authenticated to use product price lookup.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -169,7 +169,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! user_can( $user_id, 'read' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to look up product prices.', 'wp-mcp-ai-pro' ),
+				__( 'You do not have permission to look up product prices.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -177,7 +177,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' ),
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -190,7 +190,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $image_id && ! $document_id && empty( $urls ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_input',
-				__( 'At least one input source is required: image_attachment_id, document_attachment_id, or urls.', 'wp-mcp-ai-pro' ),
+				__( 'At least one input source is required: image_attachment_id, document_attachment_id, or urls.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -305,7 +305,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_image',
-				__( 'Invalid image attachment ID - file not found.', 'wp-mcp-ai-pro' ),
+				__( 'Invalid image attachment ID - file not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -315,7 +315,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $image_url ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_image_url',
-				__( 'Unable to get URL for image attachment.', 'wp-mcp-ai-pro' ),
+				__( 'Unable to get URL for image attachment.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 500 )
 			);
 		}
@@ -359,7 +359,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_document',
-				__( 'Invalid document attachment ID - file not found.', 'wp-mcp-ai-pro' ),
+				__( 'Invalid document attachment ID - file not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -493,7 +493,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Vision_Object_Localization' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_vision_tool',
-				__( 'No Vision API tool available for image product identification.', 'wp-mcp-ai-pro' )
+				__( 'No Vision API tool available for image product identification.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -517,7 +517,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		$title = ! empty( $labels ) ? implode( ' ', $labels ) : __( 'Unknown product', 'wp-mcp-ai-pro' );
+		$title = ! empty( $labels ) ? implode( ' ', $labels ) : __( 'Unknown product', 'mcp-ai-wpoos-pro' );
 
 		return array(
 			'product' => array(
@@ -575,7 +575,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 					$labels[] = $annotation['description'];
 				}
 			}
-			$title = ! empty( $labels ) ? implode( ' ', array_slice( $labels, 0, 3 ) ) : __( 'Unknown product', 'wp-mcp-ai-pro' );
+			$title = ! empty( $labels ) ? implode( ' ', array_slice( $labels, 0, 3 ) ) : __( 'Unknown product', 'mcp-ai-wpoos-pro' );
 		}
 
 		return array(
@@ -622,7 +622,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! file_exists( $file_path ) || ! is_readable( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_readable',
-				__( 'Document file is not readable.', 'wp-mcp-ai-pro' )
+				__( 'Document file is not readable.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -646,7 +646,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 				'wp_mcp_ai_unsupported_file_type',
 				sprintf(
 					/* translators: %s: mime type */
-					__( 'Unsupported document type: %s. Supported types: PDF, Word, Excel, TXT, CSV.', 'wp-mcp-ai-pro' ),
+					__( 'Unsupported document type: %s. Supported types: PDF, Word, Excel, TXT, CSV.', 'mcp-ai-wpoos-pro' ),
 					$mime_type
 				)
 			);
@@ -659,7 +659,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 			if ( false === $content ) {
 				return new WP_Error(
 					'wp_mcp_ai_read_failed',
-					__( 'Failed to read document file.', 'wp-mcp-ai-pro' )
+					__( 'Failed to read document file.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 			return $content;
@@ -670,7 +670,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Submit_Document_Prompt' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_tool',
-				__( 'Document processing tool is not available. Text extraction requires submit_document_prompt tool.', 'wp-mcp-ai-pro' )
+				__( 'Document processing tool is not available. Text extraction requires submit_document_prompt tool.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -679,7 +679,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! $attachment_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_no_attachment_id',
-				__( 'Could not determine attachment ID from file path.', 'wp-mcp-ai-pro' )
+				__( 'Could not determine attachment ID from file path.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -706,7 +706,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 
 		return new WP_Error(
 			'wp_mcp_ai_no_text_extracted',
-			__( 'No text content could be extracted from the document.', 'wp-mcp-ai-pro' )
+			__( 'No text content could be extracted from the document.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -721,7 +721,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( empty( $text ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_empty_text',
-				__( 'No text content provided for line item extraction.', 'wp-mcp-ai-pro' )
+				__( 'No text content provided for line item extraction.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -729,7 +729,7 @@ class WP_MCP_AI_Pro_Tool_Lookup_Product_Price implements WP_MCP_AI_Tool_Interfac
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Submit_Document_Prompt' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_tool',
-				__( 'Line item extraction requires submit_document_prompt tool.', 'wp-mcp-ai-pro' )
+				__( 'Line item extraction requires submit_document_prompt tool.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -865,7 +865,7 @@ If no line items are found, return an empty array [].';
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Run_Crawl4AI_Job' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
-				__( 'Crawl4AI tool is required for URL processing.', 'wp-mcp-ai-pro' )
+				__( 'Crawl4AI tool is required for URL processing.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1090,7 +1090,7 @@ If no line items are found, return an empty array [].';
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Run_Crawl4AI_Job' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
-				__( 'Crawl4AI tool is required.', 'wp-mcp-ai-pro' )
+				__( 'Crawl4AI tool is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1232,7 +1232,7 @@ If no line items are found, return an empty array [].';
 		if ( false === $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_temp_file_failed',
-				__( 'Failed to create temporary file for text extraction.', 'wp-mcp-ai-pro' )
+				__( 'Failed to create temporary file for text extraction.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1299,7 +1299,7 @@ If no line items are found, return an empty array [].';
 				'wp_mcp_ai_json_parse_failed',
 				sprintf(
 					/* translators: %s: JSON error message */
-					__( 'Failed to parse JSON from LLM response: %s', 'wp-mcp-ai-pro' ),
+					__( 'Failed to parse JSON from LLM response: %s', 'mcp-ai-wpoos-pro' ),
 					json_last_error_msg()
 				)
 			);
@@ -1308,7 +1308,7 @@ If no line items are found, return an empty array [].';
 		if ( ! is_array( $decoded ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_json',
-				__( 'LLM response did not contain a valid JSON array.', 'wp-mcp-ai-pro' )
+				__( 'LLM response did not contain a valid JSON array.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

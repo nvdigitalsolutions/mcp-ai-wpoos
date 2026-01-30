@@ -40,14 +40,14 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Site Creator', 'wp-mcp-ai-pro' );
+		return __( 'Site Creator', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a complete WordPress site from a plan following 2025 best practices. The plan can include site options, plugins to install, themes to activate (with theme.json support), and content to create (pages, posts).', 'wp-mcp-ai-pro' );
+		return __( 'Creates a complete WordPress site from a plan following 2025 best practices. The plan can include site options, plugins to install, themes to activate (with theme.json support), and content to create (pages, posts).', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -59,31 +59,31 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties'           => array(
 				'plan' => array(
 					'type'        => 'object',
-					'description' => __( 'A JSON object detailing the site structure. Should include keys for "options", "theme", "plugins", and "content".', 'wp-mcp-ai-pro' ),
+					'description' => __( 'A JSON object detailing the site structure. Should include keys for "options", "theme", "plugins", and "content".', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'options' => array(
 							'type'        => 'object',
-							'description' => __( 'Site options to update (e.g., {"blogname": "My Site", "blogdescription": "A great site"}).', 'wp-mcp-ai-pro' ),
+							'description' => __( 'Site options to update (e.g., {"blogname": "My Site", "blogdescription": "A great site"}).', 'mcp-ai-wpoos-pro' ),
 						),
 						'theme'   => array(
 							'type'        => 'object',
-							'description' => __( 'Theme configuration including slug, type, and optional theme.json settings.', 'wp-mcp-ai-pro' ),
+							'description' => __( 'Theme configuration including slug, type, and optional theme.json settings.', 'mcp-ai-wpoos-pro' ),
 							'properties'  => array(
 								'slug'             => array(
 									'type'        => 'string',
-									'description' => __( 'Theme slug to install and activate (e.g., "astra").', 'wp-mcp-ai-pro' ),
+									'description' => __( 'Theme slug to install and activate (e.g., "astra").', 'mcp-ai-wpoos-pro' ),
 								),
 								'theme_json'       => array(
 									'type'        => 'object',
-									'description' => __( 'Optional theme.json configuration for block themes.', 'wp-mcp-ai-pro' ),
+									'description' => __( 'Optional theme.json configuration for block themes.', 'mcp-ai-wpoos-pro' ),
 								),
 								'industry'         => array(
 									'type'        => 'string',
-									'description' => __( 'Industry for color palette (technology, healthcare, finance, ecommerce).', 'wp-mcp-ai-pro' ),
+									'description' => __( 'Industry for color palette (technology, healthcare, finance, ecommerce).', 'mcp-ai-wpoos-pro' ),
 								),
 								'custom_templates' => array(
 									'type'        => 'array',
-									'description' => __( 'Custom page templates.', 'wp-mcp-ai-pro' ),
+									'description' => __( 'Custom page templates.', 'mcp-ai-wpoos-pro' ),
 									'items'       => array(
 										'type' => 'object',
 									),
@@ -92,21 +92,21 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 						),
 						'plugins' => array(
 							'type'        => 'array',
-							'description' => __( 'Array of plugin slugs to install and activate.', 'wp-mcp-ai-pro' ),
+							'description' => __( 'Array of plugin slugs to install and activate.', 'mcp-ai-wpoos-pro' ),
 							'items'       => array(
 								'type' => 'string',
 							),
 						),
 						'content' => array(
 							'type'        => 'array',
-							'description' => __( 'Array of content items (pages, posts) to create.', 'wp-mcp-ai-pro' ),
+							'description' => __( 'Array of content items (pages, posts) to create.', 'mcp-ai-wpoos-pro' ),
 							'items'       => array(
 								'type' => 'object',
 							),
 						),
 						'menus'   => array(
 							'type'        => 'array',
-							'description' => __( 'Navigation menus to create.', 'wp-mcp-ai-pro' ),
+							'description' => __( 'Navigation menus to create.', 'mcp-ai-wpoos-pro' ),
 							'items'       => array(
 								'type' => 'object',
 							),
@@ -132,7 +132,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $settings['enable_site_creator'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The site_creator tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai-pro' )
+				__( 'The site_creator tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -141,7 +141,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $user_id || ! user_can( $user_id, 'manage_options' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to create a site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to create a site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -150,7 +150,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! is_object( $plan ) && ! is_array( $plan ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_plan',
-				__( 'Invalid plan provided. The plan must be a JSON object.', 'wp-mcp-ai-pro' )
+				__( 'Invalid plan provided. The plan must be a JSON object.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -267,7 +267,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		// Install and activate the theme.
 		$theme_slug = isset( $theme_config['slug'] ) ? sanitize_text_field( $theme_config['slug'] ) : '';
 		if ( empty( $theme_slug ) ) {
-			return new WP_Error( 'wp_mcp_ai_missing_theme_slug', __( 'Theme slug is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_theme_slug', __( 'Theme slug is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$install_result = $registry->execute_tool(
@@ -442,7 +442,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 			} else {
 				$results[ $index ] = new WP_Error(
 					'wp_mcp_ai_missing_menu_name',
-					__( 'Menu name is required.', 'wp-mcp-ai-pro' )
+					__( 'Menu name is required.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}
@@ -567,16 +567,16 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $options_updated > 0 ) {
 			$summary_parts[] = sprintf(
 				/* translators: %d: number of options */
-				_n( '%d option updated', '%d options updated', $options_updated, 'wp-mcp-ai-pro' ),
+				_n( '%d option updated', '%d options updated', $options_updated, 'mcp-ai-wpoos-pro' ),
 				$options_updated
 			);
 		}
 
 		if ( ! is_wp_error( $results['theme'] ) && ! empty( $results['theme'] ) ) {
-			$theme_msg = __( 'theme activated', 'wp-mcp-ai-pro' );
+			$theme_msg = __( 'theme activated', 'mcp-ai-wpoos-pro' );
 			// Add note about theme.json if generated.
 			if ( is_array( $results['theme'] ) && ! empty( $results['theme']['theme_json_generated'] ) ) {
-				$theme_msg .= __( ' with theme.json', 'wp-mcp-ai-pro' );
+				$theme_msg .= __( ' with theme.json', 'mcp-ai-wpoos-pro' );
 			}
 			$summary_parts[] = $theme_msg;
 		}
@@ -584,7 +584,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $plugins_installed > 0 ) {
 			$summary_parts[] = sprintf(
 				/* translators: %d: number of plugins */
-				_n( '%d plugin installed', '%d plugins installed', $plugins_installed, 'wp-mcp-ai-pro' ),
+				_n( '%d plugin installed', '%d plugins installed', $plugins_installed, 'mcp-ai-wpoos-pro' ),
 				$plugins_installed
 			);
 		}
@@ -592,7 +592,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $content_created > 0 ) {
 			$summary_parts[] = sprintf(
 				/* translators: %d: number of content items */
-				_n( '%d content item created', '%d content items created', $content_created, 'wp-mcp-ai-pro' ),
+				_n( '%d content item created', '%d content items created', $content_created, 'mcp-ai-wpoos-pro' ),
 				$content_created
 			);
 		}
@@ -600,7 +600,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( $menus_created > 0 ) {
 			$summary_parts[] = sprintf(
 				/* translators: %d: number of menus */
-				_n( '%d menu created', '%d menus created', $menus_created, 'wp-mcp-ai-pro' ),
+				_n( '%d menu created', '%d menus created', $menus_created, 'mcp-ai-wpoos-pro' ),
 				$menus_created
 			);
 		}
@@ -608,13 +608,13 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $results['errors'] ) ) {
 			$summary_parts[] = sprintf(
 				/* translators: %d: number of errors */
-				_n( '%d error', '%d errors', count( $results['errors'] ), 'wp-mcp-ai-pro' ),
+				_n( '%d error', '%d errors', count( $results['errors'] ), 'mcp-ai-wpoos-pro' ),
 				count( $results['errors'] )
 			);
 		}
 
 		if ( empty( $summary_parts ) ) {
-			return __( 'No changes made.', 'wp-mcp-ai-pro' );
+			return __( 'No changes made.', 'mcp-ai-wpoos-pro' );
 		}
 
 		return implode( ', ', $summary_parts ) . '.';

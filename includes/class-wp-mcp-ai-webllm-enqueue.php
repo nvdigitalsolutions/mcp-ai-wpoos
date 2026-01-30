@@ -95,8 +95,7 @@ class WP_MCP_AI_WebLLM_Enqueue {
 	 */
 	public static function maybe_enqueue_scripts() {
 		// Only load if Pro plugin is present (embedded provider is Pro-only feature).
-		// Check for Pro constant OR that BASE_VERSION is false (full version).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		if ( ! $is_pro_available ) {
 			return;
 		}

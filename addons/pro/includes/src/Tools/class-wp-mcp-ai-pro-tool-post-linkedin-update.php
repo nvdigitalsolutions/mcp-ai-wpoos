@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Publish LinkedIn Update', 'wp-mcp-ai-pro' );
+		return __( 'Publish LinkedIn Update', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a LinkedIn post for a member or organisation via the UGC API.', 'wp-mcp-ai-pro' );
+		return __( 'Creates a LinkedIn post for a member or organisation via the UGC API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,19 +66,19 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 			'properties'           => array(
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'OAuth access token authorised for the LinkedIn UGC API.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'OAuth access token authorised for the LinkedIn UGC API.', 'mcp-ai-wpoos-pro' ),
 				),
 				'author'       => array(
 					'type'        => 'string',
-					'description' => __( 'LinkedIn author URN (e.g. urn:li:organization:123456).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'LinkedIn author URN (e.g. urn:li:organization:123456).', 'mcp-ai-wpoos-pro' ),
 				),
 				'text'         => array(
 					'type'        => 'string',
-					'description' => __( 'Main text body for the LinkedIn update.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Main text body for the LinkedIn update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'share_url'    => array(
 					'type'        => 'string',
-					'description' => __( 'Optional URL to attach as share media.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional URL to attach as share media.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'author', 'text' ),
@@ -100,11 +100,11 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 		$required_capability = apply_filters( 'wp_mcp_ai_post_linkedin_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish LinkedIn updates.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish LinkedIn updates.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
@@ -113,15 +113,15 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 		$share_url    = isset( $arguments['share_url'] ) ? $this->sanitize_url( $arguments['share_url'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_linkedin_token', __( 'A valid LinkedIn OAuth access token is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_linkedin_token', __( 'A valid LinkedIn OAuth access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $author ) {
-			return new WP_Error( 'wp_mcp_ai_missing_linkedin_author', __( 'A valid LinkedIn author URN is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_linkedin_author', __( 'A valid LinkedIn author URN is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $text ) {
-			return new WP_Error( 'wp_mcp_ai_missing_linkedin_text', __( 'Post text must be provided for LinkedIn updates.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_linkedin_text', __( 'Post text must be provided for LinkedIn updates.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$payload = array(
@@ -152,7 +152,7 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 		$body = wp_json_encode( $payload );
 
 		if ( false === $body ) {
-			return new WP_Error( 'wp_mcp_ai_linkedin_encoding_error', __( 'Failed to encode the LinkedIn request payload.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_linkedin_encoding_error', __( 'Failed to encode the LinkedIn request payload.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -182,7 +182,7 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 
 			return new WP_Error(
 				'wp_mcp_ai_linkedin_http_error',
-				__( 'The LinkedIn API request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The LinkedIn API request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -196,13 +196,13 @@ class WP_MCP_AI_Pro_Tool_Post_Linkedin_Update implements WP_MCP_AI_Tool_Interfac
 		}
 
 		if ( 200 !== $code && 201 !== $code ) {
-			$message = __( 'LinkedIn API returned an error.', 'wp-mcp-ai-pro' );
+			$message = __( 'LinkedIn API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $decoded['message'] ) ) {
 				$message = $decoded['message'];
 			} elseif ( ! empty( $decoded['serviceErrorCode'] ) ) {
 				/* translators: %d: LinkedIn service error code */
-				$message = sprintf( __( 'LinkedIn error code %d returned.', 'wp-mcp-ai-pro' ), (int) $decoded['serviceErrorCode'] );
+				$message = sprintf( __( 'LinkedIn error code %d returned.', 'mcp-ai-wpoos-pro' ), (int) $decoded['serviceErrorCode'] );
 			}
 
 			WP_MCP_AI_Logger::log_error(

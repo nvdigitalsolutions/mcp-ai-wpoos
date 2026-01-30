@@ -168,7 +168,7 @@ mkdir -p build
 if [ "$BUILD_BASE" = true ]; then
     echo "Step 3a: Building Base version (standalone)..."
     
-    BASE_SLUG="nvdigital-open-operator-system-oos"
+    BASE_SLUG="mcp-ai-wpoos-base"
     mkdir -p "build/${BASE_SLUG}"
     
     # Copy full plugin files EXCEPT pro addons
@@ -418,7 +418,7 @@ fi
 if [ "$BUILD_PRO" = true ]; then
     echo "Step 3b: Building Pro add-on..."
     
-    PRO_SLUG="nvdigital-open-operator-system-oos-pro"
+    PRO_SLUG="mcp-ai-wpoos-pro"
     mkdir -p "build/${PRO_SLUG}"
     
     # Copy pro addon files
@@ -497,7 +497,7 @@ fi
 if [ "$BUILD_CORE_ONLY" = true ]; then
     echo "Step 3c: Building Core plugin (lightweight)..."
     
-    CORE_SLUG="nvdigital-open-operator-system-oos-core"
+    CORE_SLUG="mcp-ai-wpoos-core"
     mkdir -p "build/${CORE_SLUG}"
     
     # Copy core plugin files
@@ -538,7 +538,7 @@ fi
 if [ "$BUILD_COMBINED" = true ]; then
     echo "Step 3d: Building Base + Pro combined version..."
     
-    COMBINED_SLUG="nvdigital-open-operator-system-oos-complete"
+    COMBINED_SLUG="mcp-ai-wpoos"
     mkdir -p "build/${COMBINED_SLUG}"
     
     # Copy all plugin files (includes both base and pro)
@@ -692,12 +692,12 @@ echo ""
 echo "To install:"
 echo "  1. Go to WordPress Admin → Plugins → Add New → Upload Plugin"
 echo "  2. Upload the appropriate ZIP file:"
-[ "$BUILD_BASE" = true ] && echo "     - nvdigital-open-operator-system-oos-${VERSION}.zip (Standard/WordPress.org version)"
-[ "$BUILD_PRO" = true ] && echo "     - nvdigital-open-operator-system-oos-pro-${VERSION}.zip (Pro add-on, requires base)"
-[ "$BUILD_COMBINED" = true ] && echo "     - nvdigital-open-operator-system-oos-complete-${VERSION}.zip (Complete: Base + Pro combined)"
+[ "$BUILD_BASE" = true ] && echo "     - mcp-ai-wpoos-base-${VERSION}.zip (Base version)"
+[ "$BUILD_PRO" = true ] && echo "     - mcp-ai-wpoos-pro-${VERSION}.zip (Pro add-on, requires base)"
+[ "$BUILD_COMBINED" = true ] && echo "     - mcp-ai-wpoos-${VERSION}.zip (Complete: Base + Pro combined)"
 if [ "$BUILD_CORE_ONLY" = true ]; then
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
-    echo "     - nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
+    echo "     - mcp-ai-wpoos-core-${CORE_VERSION}.zip (Lightweight core plugin)"
 fi
 echo "  3. Click 'Install Now' and then 'Activate'"
 echo ""

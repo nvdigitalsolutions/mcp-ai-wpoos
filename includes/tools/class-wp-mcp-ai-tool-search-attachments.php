@@ -261,6 +261,42 @@ class WP_MCP_AI_Tool_Search_Attachments implements WP_MCP_AI_Tool_Interface, WP_
 		return $payload;
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'media_processing',
+
+			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+
+			'profession_tags'       => array( 'content_creator', 'photographer' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

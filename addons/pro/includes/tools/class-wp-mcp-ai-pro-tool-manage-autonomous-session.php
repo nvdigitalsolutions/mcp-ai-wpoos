@@ -116,7 +116,7 @@ class WP_MCP_AI_Pro_Tool_Manage_Autonomous_Session {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$action = $arguments['action'];
 
 		switch ( $action ) {

@@ -186,6 +186,42 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 		return $result;
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'geospatial_location',
+
+			'pattern_compatibility' => array( 'event_driven' ),
+
+			'profession_tags'       => array( 'urban_planner', 'logistics_coordinator' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

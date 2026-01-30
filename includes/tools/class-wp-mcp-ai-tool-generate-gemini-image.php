@@ -721,6 +721,42 @@ class WP_MCP_AI_Tool_Generate_Gemini_Image implements WP_MCP_AI_Tool_Interface, 
 		wp_delete_file( $file_path );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'content_publishing',
+
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+
+			'profession_tags'       => array( 'graphic_designer', 'content_creator', 'marketing_manager' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

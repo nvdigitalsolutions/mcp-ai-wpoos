@@ -76,6 +76,42 @@ class WP_MCP_AI_Tool_Open_OpenAI_Usage implements WP_MCP_AI_Tool_Interface, WP_M
 		);
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'ai_model_management',
+
+			'pattern_compatibility' => array( 'experimentation', 'peer_to_peer' ),
+
+			'profession_tags'       => array( 'mlops_specialist', 'business_analyst' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

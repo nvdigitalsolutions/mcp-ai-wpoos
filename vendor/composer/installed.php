@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/rebuild-zip-files-again',
+        'version' => 'dev-copilot/rebuild-zip-files-again',
+        'reference' => '275912ad9bc3c3b36775486116c4a3a613b72e65',
         'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
         'version' => 'dev-copilot/fix-activation-error-pro-plugin',
         'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',
@@ -53,6 +56,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/rebuild-zip-files-again',
+            'version' => 'dev-copilot/rebuild-zip-files-again',
+            'reference' => '275912ad9bc3c3b36775486116c4a3a613b72e65',
             'pretty_version' => 'dev-copilot/fix-activation-error-pro-plugin',
             'version' => 'dev-copilot/fix-activation-error-pro-plugin',
             'reference' => '8ac8d35b331da66db16244ed9dc1d6f0b51f25d9',

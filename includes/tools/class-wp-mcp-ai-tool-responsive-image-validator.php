@@ -47,53 +47,53 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Responsive Image Validator', 'wp-mcp-ai' ),
-			'description'          => __( 'Validates srcset/sizes attributes, LCP optimization, Core Web Vitals compliance, lazy loading, and modern image format usage for 2026 standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Responsive Image Validator', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Validates srcset/sizes attributes, LCP optimization, Core Web Vitals compliance, lazy loading, and modern image format usage for 2026 standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'performance',
 			'required_capability'  => 'edit_posts',
 			'parameters'           => array(
 				'action'            => array(
 					'type'        => 'string',
-					'description' => __( 'Action: validate_page, validate_images, check_lcp, or audit_cwv', 'wp-mcp-ai' ),
+					'description' => __( 'Action: validate_page, validate_images, check_lcp, or audit_cwv', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'validate_page', 'validate_images', 'check_lcp', 'audit_cwv' ),
 				),
 				'url'               => array(
 					'type'        => 'string',
-					'description' => __( 'Page URL to validate (for validate_page action)', 'wp-mcp-ai' ),
+					'description' => __( 'Page URL to validate (for validate_page action)', 'mcp-ai-wpoos' ),
 				),
 				'post_id'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Post ID to validate', 'wp-mcp-ai' ),
+					'description' => __( 'Post ID to validate', 'mcp-ai-wpoos' ),
 				),
 				'image_ids'         => array(
 					'type'        => 'array',
-					'description' => __( 'Specific image IDs to validate', 'wp-mcp-ai' ),
+					'description' => __( 'Specific image IDs to validate', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'lcp_threshold'     => array(
 					'type'        => 'number',
-					'description' => __( 'LCP threshold in seconds (default: 2.5 for good)', 'wp-mcp-ai' ),
+					'description' => __( 'LCP threshold in seconds (default: 2.5 for good)', 'mcp-ai-wpoos' ),
 					'default'     => 2.5,
 				),
 				'check_formats'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Check for modern image formats (AVIF, WebP)', 'wp-mcp-ai' ),
+					'description' => __( 'Check for modern image formats (AVIF, WebP)', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'check_lazy_load'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Check lazy loading implementation', 'wp-mcp-ai' ),
+					'description' => __( 'Check lazy loading implementation', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'check_dimensions'  => array(
 					'type'        => 'boolean',
-					'description' => __( 'Check explicit width/height attributes', 'wp-mcp-ai' ),
+					'description' => __( 'Check explicit width/height attributes', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'generate_report'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Generate detailed validation report', 'wp-mcp-ai' ),
+					'description' => __( 'Generate detailed validation report', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 			),
@@ -108,7 +108,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
 
 		// Validate parameters.
@@ -146,7 +146,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -178,7 +178,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			if ( ! $post ) {
 				return array(
 					'success' => false,
-					'error'   => __( 'Post not found', 'wp-mcp-ai' ),
+					'error'   => __( 'Post not found', 'mcp-ai-wpoos' ),
 				);
 			}
 			$content = $post->post_content;
@@ -187,7 +187,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		} else {
 			return array(
 				'success' => false,
-				'error'   => __( 'Either URL or post_id must be provided', 'wp-mcp-ai' ),
+				'error'   => __( 'Either URL or post_id must be provided', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -249,7 +249,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		if ( empty( $image_ids ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'No image IDs provided', 'wp-mcp-ai' ),
+				'error'   => __( 'No image IDs provided', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -290,7 +290,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		if ( empty( $url ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'URL or post_id required', 'wp-mcp-ai' ),
+				'error'   => __( 'URL or post_id required', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -329,7 +329,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 		if ( empty( $url ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'URL or post_id required', 'wp-mcp-ai' ),
+				'error'   => __( 'URL or post_id required', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -421,39 +421,39 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 
 		// Check srcset.
 		if ( ! empty( $image['srcset'] ) ) {
-			$passes[] = __( 'Has srcset attribute for responsive images', 'wp-mcp-ai' );
+			$passes[] = __( 'Has srcset attribute for responsive images', 'mcp-ai-wpoos' );
 		} else {
-			$issues[] = __( 'Missing srcset attribute', 'wp-mcp-ai' );
+			$issues[] = __( 'Missing srcset attribute', 'mcp-ai-wpoos' );
 		}
 
 		// Check sizes.
 		if ( ! empty( $image['srcset'] ) && empty( $image['sizes'] ) ) {
-			$warnings[] = __( 'Has srcset but missing sizes attribute', 'wp-mcp-ai' );
+			$warnings[] = __( 'Has srcset but missing sizes attribute', 'mcp-ai-wpoos' );
 		} elseif ( ! empty( $image['sizes'] ) ) {
-			$passes[] = __( 'Has sizes attribute', 'wp-mcp-ai' );
+			$passes[] = __( 'Has sizes attribute', 'mcp-ai-wpoos' );
 		}
 
 		// Check dimensions.
 		if ( $check_dimensions ) {
 			if ( empty( $image['width'] ) || empty( $image['height'] ) ) {
-				$issues[] = __( 'Missing explicit width/height (causes CLS)', 'wp-mcp-ai' );
+				$issues[] = __( 'Missing explicit width/height (causes CLS)', 'mcp-ai-wpoos' );
 			} else {
-				$passes[] = __( 'Has explicit width/height dimensions', 'wp-mcp-ai' );
+				$passes[] = __( 'Has explicit width/height dimensions', 'mcp-ai-wpoos' );
 			}
 		}
 
 		// Check lazy loading.
 		if ( $check_lazy_load ) {
 			if ( 'lazy' === $image['loading'] ) {
-				$passes[] = __( 'Has lazy loading enabled', 'wp-mcp-ai' );
+				$passes[] = __( 'Has lazy loading enabled', 'mcp-ai-wpoos' );
 			} else {
-				$warnings[] = __( 'Consider adding loading="lazy"', 'wp-mcp-ai' );
+				$warnings[] = __( 'Consider adding loading="lazy"', 'mcp-ai-wpoos' );
 			}
 		}
 
 		// Check decoding.
 		if ( 'async' === $image['decoding'] ) {
-			$passes[] = __( 'Has async decoding for better performance', 'wp-mcp-ai' );
+			$passes[] = __( 'Has async decoding for better performance', 'mcp-ai-wpoos' );
 		}
 
 		// Check format.
@@ -462,19 +462,19 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			if ( in_array( $format, array( 'avif', 'webp' ), true ) ) {
 				$passes[] = sprintf(
 					/* translators: %s: image format */
-					__( 'Using modern format: %s', 'wp-mcp-ai' ),
+					__( 'Using modern format: %s', 'mcp-ai-wpoos' ),
 					strtoupper( $format )
 				);
 			} else {
-				$warnings[] = __( 'Consider using AVIF or WebP format', 'wp-mcp-ai' );
+				$warnings[] = __( 'Consider using AVIF or WebP format', 'mcp-ai-wpoos' );
 			}
 		}
 
 		// Check alt text.
 		if ( empty( $image['alt'] ) ) {
-			$issues[] = __( 'Missing alt text (accessibility issue)', 'wp-mcp-ai' );
+			$issues[] = __( 'Missing alt text (accessibility issue)', 'mcp-ai-wpoos' );
 		} else {
-			$passes[] = __( 'Has alt text for accessibility', 'wp-mcp-ai' );
+			$passes[] = __( 'Has alt text for accessibility', 'mcp-ai-wpoos' );
 		}
 
 		// Determine status.
@@ -543,7 +543,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			'type'        => 'image',
 			'selector'    => 'img.hero-image',
 			'detected'    => true,
-			'note'        => __( 'LCP detection requires real user metrics or Lighthouse integration', 'wp-mcp-ai' ),
+			'note'        => __( 'LCP detection requires real user metrics or Lighthouse integration', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -568,12 +568,12 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 */
 	private function get_lcp_recommendations( $lcp_element ) {
 		return array(
-			__( 'Use fetchpriority="high" on LCP image', 'wp-mcp-ai' ),
-			__( 'Preload LCP image with <link rel="preload">', 'wp-mcp-ai' ),
-			__( 'Remove lazy loading from above-the-fold images', 'wp-mcp-ai' ),
-			__( 'Use modern image formats (AVIF/WebP)', 'wp-mcp-ai' ),
-			__( 'Optimize image dimensions for viewport', 'wp-mcp-ai' ),
-			__( 'Consider CDN for faster delivery', 'wp-mcp-ai' ),
+			__( 'Use fetchpriority="high" on LCP image', 'mcp-ai-wpoos' ),
+			__( 'Preload LCP image with <link rel="preload">', 'mcp-ai-wpoos' ),
+			__( 'Remove lazy loading from above-the-fold images', 'mcp-ai-wpoos' ),
+			__( 'Use modern image formats (AVIF/WebP)', 'mcp-ai-wpoos' ),
+			__( 'Optimize image dimensions for viewport', 'mcp-ai-wpoos' ),
+			__( 'Consider CDN for faster delivery', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -587,10 +587,10 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function check_lcp_metric( $url ) {
 		return array(
 			'metric'  => 'LCP',
-			'name'    => __( 'Largest Contentful Paint', 'wp-mcp-ai' ),
+			'name'    => __( 'Largest Contentful Paint', 'mcp-ai-wpoos' ),
 			'target'  => '< 2.5s',
 			'status'  => 'needs_measurement',
-			'message' => __( 'Use PageSpeed Insights or Chrome DevTools for real metrics', 'wp-mcp-ai' ),
+			'message' => __( 'Use PageSpeed Insights or Chrome DevTools for real metrics', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -604,10 +604,10 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function check_cls_metric( $url ) {
 		return array(
 			'metric'  => 'CLS',
-			'name'    => __( 'Cumulative Layout Shift', 'wp-mcp-ai' ),
+			'name'    => __( 'Cumulative Layout Shift', 'mcp-ai-wpoos' ),
 			'target'  => '< 0.1',
 			'status'  => 'needs_measurement',
-			'tip'     => __( 'Add explicit width/height to all images to prevent CLS', 'wp-mcp-ai' ),
+			'tip'     => __( 'Add explicit width/height to all images to prevent CLS', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -621,10 +621,10 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function check_fid_metric( $url ) {
 		return array(
 			'metric'  => 'FID',
-			'name'    => __( 'First Input Delay', 'wp-mcp-ai' ),
+			'name'    => __( 'First Input Delay', 'mcp-ai-wpoos' ),
 			'target'  => '< 100ms',
 			'status'  => 'needs_measurement',
-			'note'    => __( 'Being replaced by INP in 2026', 'wp-mcp-ai' ),
+			'note'    => __( 'Being replaced by INP in 2026', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -638,10 +638,10 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function check_inp_metric( $url ) {
 		return array(
 			'metric'  => 'INP',
-			'name'    => __( 'Interaction to Next Paint', 'wp-mcp-ai' ),
+			'name'    => __( 'Interaction to Next Paint', 'mcp-ai-wpoos' ),
 			'target'  => '< 200ms',
 			'status'  => 'needs_measurement',
-			'note'    => __( 'New Core Web Vital replacing FID in 2026', 'wp-mcp-ai' ),
+			'note'    => __( 'New Core Web Vital replacing FID in 2026', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -655,7 +655,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function audit_responsive_images( $url ) {
 		return array(
 			'status'  => 'requires_validation',
-			'message' => __( 'Run validate_page action for detailed responsive image audit', 'wp-mcp-ai' ),
+			'message' => __( 'Run validate_page action for detailed responsive image audit', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -669,7 +669,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function audit_lazy_loading( $url ) {
 		return array(
 			'status'  => 'requires_validation',
-			'message' => __( 'Run validate_page action for lazy loading audit', 'wp-mcp-ai' ),
+			'message' => __( 'Run validate_page action for lazy loading audit', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -683,7 +683,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function audit_modern_formats( $url ) {
 		return array(
 			'status'  => 'requires_validation',
-			'message' => __( 'Run validate_page action for format audit', 'wp-mcp-ai' ),
+			'message' => __( 'Run validate_page action for format audit', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -697,7 +697,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	private function audit_explicit_dimensions( $url ) {
 		return array(
 			'status'  => 'requires_validation',
-			'message' => __( 'Run validate_page action for dimensions audit', 'wp-mcp-ai' ),
+			'message' => __( 'Run validate_page action for dimensions audit', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -710,11 +710,11 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 */
 	private function get_cwv_recommendations( $url ) {
 		return array(
-			__( 'Optimize LCP image with modern formats and CDN', 'wp-mcp-ai' ),
-			__( 'Add explicit dimensions to prevent CLS', 'wp-mcp-ai' ),
-			__( 'Use lazy loading for below-the-fold images', 'wp-mcp-ai' ),
-			__( 'Implement responsive images with srcset/sizes', 'wp-mcp-ai' ),
-			__( 'Test with real users via Chrome User Experience Report', 'wp-mcp-ai' ),
+			__( 'Optimize LCP image with modern formats and CDN', 'mcp-ai-wpoos' ),
+			__( 'Add explicit dimensions to prevent CLS', 'mcp-ai-wpoos' ),
+			__( 'Use lazy loading for below-the-fold images', 'mcp-ai-wpoos' ),
+			__( 'Implement responsive images with srcset/sizes', 'mcp-ai-wpoos' ),
+			__( 'Test with real users via Chrome User Experience Report', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -830,11 +830,11 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 			'score'   => $score,
 			'summary' => $summary,
 			'recommendations' => array(
-				__( 'Implement srcset/sizes on all images', 'wp-mcp-ai' ),
-				__( 'Use AVIF or WebP formats for better compression', 'wp-mcp-ai' ),
-				__( 'Add explicit width/height to prevent layout shift', 'wp-mcp-ai' ),
-				__( 'Enable lazy loading for below-the-fold images', 'wp-mcp-ai' ),
-				__( 'Test with real devices and PageSpeed Insights', 'wp-mcp-ai' ),
+				__( 'Implement srcset/sizes on all images', 'mcp-ai-wpoos' ),
+				__( 'Use AVIF or WebP formats for better compression', 'mcp-ai-wpoos' ),
+				__( 'Add explicit width/height to prevent layout shift', 'mcp-ai-wpoos' ),
+				__( 'Enable lazy loading for below-the-fold images', 'mcp-ai-wpoos' ),
+				__( 'Test with real devices and PageSpeed Insights', 'mcp-ai-wpoos' ),
 			),
 		);
 	}

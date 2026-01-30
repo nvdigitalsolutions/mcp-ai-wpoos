@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Retrieve LinkedIn Insights', 'wp-mcp-ai-pro' );
+		return __( 'Retrieve LinkedIn Insights', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Fetches share statistics for a LinkedIn organization using the LinkedIn Marketing API.', 'wp-mcp-ai-pro' );
+		return __( 'Fetches share statistics for a LinkedIn organization using the LinkedIn Marketing API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,23 +66,23 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'access_token'          => array(
 					'type'        => 'string',
-					'description' => __( 'LinkedIn OAuth access token with organizational read permissions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'LinkedIn OAuth access token with organizational read permissions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'organization'          => array(
 					'type'        => 'string',
-					'description' => __( 'The organization URN, for example urn:li:organization:123.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The organization URN, for example urn:li:organization:123.', 'mcp-ai-wpoos-pro' ),
 				),
 				'timeframe_start'       => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Unix epoch start boundary in milliseconds.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional Unix epoch start boundary in milliseconds.', 'mcp-ai-wpoos-pro' ),
 				),
 				'timeframe_end'         => array(
 					'type'        => 'string',
-					'description' => __( 'Optional Unix epoch end boundary in milliseconds.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional Unix epoch end boundary in milliseconds.', 'mcp-ai-wpoos-pro' ),
 				),
 				'time_granularity_type' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional granularity such as DAY, WEEK or MONTH.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional granularity such as DAY, WEEK or MONTH.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'organization' ),
@@ -103,23 +103,23 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 		$required_capability = apply_filters( 'wp_mcp_ai_get_linkedin_insights_capability', 'manage_options', $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_linkedin_insights_forbidden', __( 'You do not have permission to request LinkedIn insights.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_linkedin_insights_forbidden', __( 'You do not have permission to request LinkedIn insights.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_linkedin_insights_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_linkedin_insights_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_linkedin_insights_missing_token', __( 'An OAuth access token is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_linkedin_insights_missing_token', __( 'An OAuth access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$organization = isset( $arguments['organization'] ) ? $this->sanitize_organization( $arguments['organization'] ) : '';
 
 		if ( '' === $organization ) {
-			return new WP_Error( 'wp_mcp_ai_linkedin_insights_missing_organization', __( 'A valid organization URN is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_linkedin_insights_missing_organization', __( 'A valid organization URN is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$timeframe_start       = isset( $arguments['timeframe_start'] ) ? $this->sanitize_timestamp( $arguments['timeframe_start'] ) : '';
@@ -179,7 +179,7 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 
 			return new WP_Error(
 				'wp_mcp_ai_linkedin_insights_http_error',
-				__( 'The LinkedIn insights request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The LinkedIn insights request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Tool_Get_Linkedin_Insights implements WP_MCP_AI_Tool_Interfa
 		}
 
 		if ( 200 !== $code ) {
-			$message = __( 'LinkedIn insights API returned an error.', 'wp-mcp-ai-pro' );
+			$message = __( 'LinkedIn insights API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $decoded['message'] ) ) {
 				$message = $decoded['message'];

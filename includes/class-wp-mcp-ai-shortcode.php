@@ -349,7 +349,7 @@ class WP_MCP_AI_Shortcode {
 	 * @return bool True if embedded provider is available, false otherwise.
 	 */
 	protected function is_embedded_provider_available( $provider ) {
-		return 'embedded' === $provider && ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		return 'embedded' === $provider && defined( 'WP_MCP_AI_PRO_VERSION' );
 	}
 
 	/**

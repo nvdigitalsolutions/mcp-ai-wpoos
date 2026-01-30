@@ -76,7 +76,7 @@ class WP_MCP_AI_Pro_Tool_Instantiate_Template {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$template_id      = absint( $arguments['template_id'] ?? 0 );
 		$variables        = $arguments['variables'] ?? array();

@@ -405,6 +405,42 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		return $meta_query;
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'content_publishing',
+
+			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+
+			'profession_tags'       => array( 'writer', 'researcher', 'editor' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

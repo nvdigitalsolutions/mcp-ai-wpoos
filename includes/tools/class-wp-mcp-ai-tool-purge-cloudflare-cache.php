@@ -479,6 +479,42 @@ class WP_MCP_AI_Tool_Purge_Cloudflare_Cache implements WP_MCP_AI_Tool_Interface,
 		return __( 'Cloudflare rejected the purge request.', 'mcp-ai-wpoos' );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'developer_technical',
+
+			'pattern_compatibility' => array( 'skill_router' ),
+
+			'profession_tags'       => array( 'devops_engineer', 'cloud_architect' ),
+
+			'risk_level'            => 'destructive',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */
