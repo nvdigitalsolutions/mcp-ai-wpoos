@@ -2,10 +2,12 @@
 /**
  * Password Vault Manager Admin Page
  *
- * Provides admin interface for password vault management with dedicated sections for:
+ * Provides admin interface for password vault management with dedicated pages for:
  * - Vault Items Management
  * - Password Generator & Authenticator
+ * - Import/Export & Sync
  * - Security Settings
+ * - Auto Sync & Conflicts
  *
  * @package WP_MCP_AI_Pro
  * @since 1.3.0
@@ -44,18 +46,68 @@ class WP_MCP_AI_Password_Vault_Admin {
 	}
 
 	/**
-	 * Add admin menu page under NV oOS Pro menu.
+	 * Add admin menu pages for Password Vault Manager.
+	 *
+	 * Creates a top-level menu with submenu pages for each section.
 	 *
 	 * @since 1.3.0
 	 */
 	public function add_admin_menu() {
-		add_submenu_page(
-			'nvoos-pro-dashboard',
-			__( 'Password Vault', 'mcp-ai-wpoos-pro' ),
+		// Add top-level menu.
+		add_menu_page(
+			__( 'Password Vault Manager', 'mcp-ai-wpoos-pro' ),
 			__( 'Password Vault', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-password-vault',
-			array( $this, 'render_admin_page' )
+			array( $this, 'render_vault_items_page' ),
+			'dashicons-lock',
+			26
+		);
+
+		// Add submenu pages.
+		add_submenu_page(
+			'wp-mcp-ai-password-vault',
+			__( 'Vault Items', 'mcp-ai-wpoos-pro' ),
+			__( 'Vault Items', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'wp-mcp-ai-password-vault',
+			array( $this, 'render_vault_items_page' )
+		);
+
+		add_submenu_page(
+			'wp-mcp-ai-password-vault',
+			__( 'Password Generator & Authenticator', 'mcp-ai-wpoos-pro' ),
+			__( 'Generator & Auth', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'wp-mcp-ai-password-vault-generator',
+			array( $this, 'render_generator_page' )
+		);
+
+		add_submenu_page(
+			'wp-mcp-ai-password-vault',
+			__( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ),
+			__( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'wp-mcp-ai-password-vault-sync',
+			array( $this, 'render_sync_page' )
+		);
+
+		add_submenu_page(
+			'wp-mcp-ai-password-vault',
+			__( 'Security Settings', 'mcp-ai-wpoos-pro' ),
+			__( 'Security Settings', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'wp-mcp-ai-password-vault-settings',
+			array( $this, 'render_settings_page' )
+		);
+
+		add_submenu_page(
+			'wp-mcp-ai-password-vault',
+			__( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ),
+			__( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ),
+			'manage_options',
+			'wp-mcp-ai-password-vault-automation',
+			array( $this, 'render_automation_page' )
 		);
 	}
 
@@ -107,15 +159,42 @@ class WP_MCP_AI_Password_Vault_Admin {
 	 * @param string $hook Current admin page hook.
 	 */
 	public function enqueue_admin_scripts( $hook ) {
-		// Check for password vault page.
-		// Hook format: 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault'
+		// List of all password vault page hooks.
+		$vault_pages = array(
+			'toplevel_page_wp-mcp-ai-password-vault',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-generator',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-sync',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-settings',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-automation',
+		);
+
+		// Check if we're on any vault page.
+		$is_vault_page = in_array( $hook, $vault_pages, true );
+
 		// Also check via $_GET for additional safety.
-		$is_vault_page = ( 'nvoos-pro-dashboard_page_wp-mcp-ai-password-vault' === $hook ) ||
+		if ( ! $is_vault_page && isset( $_GET['page'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
-			( isset( $_GET['page'] ) && 'wp-mcp-ai-password-vault' === $_GET['page'] );
+			$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
+			$is_vault_page = strpos( $page, 'wp-mcp-ai-password-vault' ) === 0;
+		}
 
 		if ( ! $is_vault_page ) {
 			return;
+		}
+
+		// Verify Pro addon constants are defined before enqueueing.
+		if ( ! defined( 'WP_MCP_AI_PRO_URL' ) || ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Critical error logging.
+			error_log( 'Password Vault: Cannot enqueue scripts - WP_MCP_AI_PRO_URL or WP_MCP_AI_PRO_VERSION not defined' );
+			return;
+		}
+
+		// Debug logging when WP_DEBUG is enabled.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$pro_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL : 'undefined';
+			$pro_path = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : 'undefined';
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
+			error_log( sprintf( 'Password Vault: Enqueuing scripts. WP_MCP_AI_PRO_URL: %s, WP_MCP_AI_PRO_PATH: %s', $pro_url, $pro_path ) );
 		}
 
 		// Enqueue WordPress color picker.
@@ -222,69 +301,106 @@ class WP_MCP_AI_Password_Vault_Admin {
 
 		wp_send_json_success(
 			array(
-				'secret' => $secret,
-				'qr_uri' => $qr_uri,
+				'secret'      => $secret,
+				'qr_code_url' => $qr_uri,
 			)
 		);
 	}
 
 	/**
-	 * Render admin page.
+	 * Render Vault Items page.
 	 *
 	 * @since 1.3.0
 	 */
-	public function render_admin_page() {
+	public function render_vault_items_page() {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'vault';
-		$settings   = get_option( 'wp_mcp_ai_vault_settings', array() );
+		?>
+		<div class="wrap wp-mcp-ai-vault-admin">
+			<h1><?php esc_html_e( 'Vault Items', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<?php $this->render_vault_tab(); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Password Generator & Authenticator page.
+	 *
+	 * @since 1.3.0
+	 */
+	public function render_generator_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$settings = get_option( 'wp_mcp_ai_vault_settings', array() );
 
 		?>
 		<div class="wrap wp-mcp-ai-vault-admin">
-			<h1><?php esc_html_e( 'Password Vault Manager', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Password Generator & Authenticator', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<?php $this->render_generator_tab( $settings ); ?>
+		</div>
+		<?php
+	}
 
-			<nav class="nav-tab-wrapper wp-clearfix">
-				<a href="?page=wp-mcp-ai-password-vault&tab=vault" class="nav-tab <?php echo 'vault' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Vault Items', 'mcp-ai-wpoos-pro' ); ?>
-				</a>
-				<a href="?page=wp-mcp-ai-password-vault&tab=generator" class="nav-tab <?php echo 'generator' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Password Generator & Authenticator', 'mcp-ai-wpoos-pro' ); ?>
-				</a>
-				<a href="?page=wp-mcp-ai-password-vault&tab=sync" class="nav-tab <?php echo 'sync' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ); ?>
-				</a>
-				<a href="?page=wp-mcp-ai-password-vault&tab=settings" class="nav-tab <?php echo 'settings' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Security Settings', 'mcp-ai-wpoos-pro' ); ?>
-				</a>
-				<a href="?page=wp-mcp-ai-password-vault&tab=automation" class="nav-tab <?php echo 'automation' === $active_tab ? 'nav-tab-active' : ''; ?>">
-					<?php esc_html_e( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ); ?>
-				</a>
-			</nav>
+	/**
+	 * Render Import/Export & Sync page.
+	 *
+	 * @since 1.3.0
+	 */
+	public function render_sync_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
 
-			<div class="tab-content">
-				<?php
-				switch ( $active_tab ) {
-					case 'generator':
-						$this->render_generator_tab( $settings );
-						break;
-					case 'sync':
-						$this->render_sync_tab( $settings );
-						break;
-					case 'settings':
-						$this->render_settings_tab( $settings );
-						break;
-					case 'automation':
-						$this->render_automation_tab( $settings );
-						break;
-					case 'vault':
-					default:
-						$this->render_vault_tab();
-						break;
-				}
-				?>
-			</div>
+		$settings = get_option( 'wp_mcp_ai_vault_settings', array() );
+
+		?>
+		<div class="wrap wp-mcp-ai-vault-admin">
+			<h1><?php esc_html_e( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<?php $this->render_sync_tab( $settings ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Security Settings page.
+	 *
+	 * @since 1.3.0
+	 */
+	public function render_settings_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$settings = get_option( 'wp_mcp_ai_vault_settings', array() );
+
+		?>
+		<div class="wrap wp-mcp-ai-vault-admin">
+			<h1><?php esc_html_e( 'Security Settings', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<?php $this->render_settings_tab( $settings ); ?>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Auto Sync & Conflicts page.
+	 *
+	 * @since 1.3.0
+	 */
+	public function render_automation_page() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have sufficient permissions to access this page.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		$settings = get_option( 'wp_mcp_ai_vault_settings', array() );
+
+		?>
+		<div class="wrap wp-mcp-ai-vault-admin">
+			<h1><?php esc_html_e( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ); ?></h1>
+			<?php $this->render_automation_tab( $settings ); ?>
 		</div>
 		<?php
 	}

@@ -43,7 +43,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'WooCommerce Products tool requires WooCommerce to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Products tool requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'WooCommerce Products', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Products', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -70,7 +70,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Comprehensive WooCommerce product management with full CRUD operations. Supports products, variations, categories, tags, attributes, images, and inventory management.', 'wp-mcp-ai-pro' );
+		return __( 'Comprehensive WooCommerce product management with full CRUD operations. Supports products, variations, categories, tags, attributes, images, and inventory management.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -84,80 +84,80 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			'properties' => array(
 				'action'            => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, create, update, search, delete, manage_categories, manage_tags, manage_attributes.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: get, list, create, update, search, delete, manage_categories, manage_tags, manage_attributes.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'get', 'list', 'create', 'update', 'search', 'delete', 'manage_categories', 'manage_tags', 'manage_attributes' ),
 					'default'     => 'list',
 				),
 				'product_id'        => array(
 					'type'        => 'integer',
-					'description' => __( 'Product ID for get or update actions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product ID for get or update actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of products to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of products to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'              => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 				'search'            => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter products.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Search term to filter products.', 'mcp-ai-wpoos-pro' ),
 				),
 				'category'          => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by product category slug.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by product category slug.', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'            => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by product status. Default: publish.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by product status. Default: publish.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'publish', 'draft', 'pending', 'private' ),
 					'default'     => 'publish',
 				),
 				'type'              => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by product type.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by product type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'simple', 'variable', 'grouped', 'external' ),
 				),
 				'name'              => array(
 					'type'        => 'string',
-					'description' => __( 'Product name for create/update.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product name for create/update.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sku'               => array(
 					'type'        => 'string',
-					'description' => __( 'Product SKU.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product SKU.', 'mcp-ai-wpoos-pro' ),
 				),
 				'price'             => array(
 					'type'        => 'string',
-					'description' => __( 'Product regular price.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product regular price.', 'mcp-ai-wpoos-pro' ),
 				),
 				'sale_price'        => array(
 					'type'        => 'string',
-					'description' => __( 'Product sale price.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product sale price.', 'mcp-ai-wpoos-pro' ),
 				),
 				'description'       => array(
 					'type'        => 'string',
-					'description' => __( 'Product description.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product description.', 'mcp-ai-wpoos-pro' ),
 				),
 				'short_description' => array(
 					'type'        => 'string',
-					'description' => __( 'Product short description.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product short description.', 'mcp-ai-wpoos-pro' ),
 				),
 				'stock_quantity'    => array(
 					'type'        => 'integer',
-					'description' => __( 'Stock quantity.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Stock quantity.', 'mcp-ai-wpoos-pro' ),
 				),
 				'stock_status'      => array(
 					'type'        => 'string',
-					'description' => __( 'Stock status.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Stock status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'instock', 'outofstock', 'onbackorder' ),
 				),
 				'categories'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of category IDs or slugs to assign to the product.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Array of category IDs or slugs to assign to the product.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'oneOf' => array(
 							array( 'type' => 'integer' ),
@@ -167,7 +167,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'tags'              => array(
 					'type'        => 'array',
-					'description' => __( 'Array of tag IDs or names to assign to the product.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Array of tag IDs or names to assign to the product.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'oneOf' => array(
 							array( 'type' => 'integer' ),
@@ -177,7 +177,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'images'            => array(
 					'type'        => 'array',
-					'description' => __( 'Array of image URLs or attachment IDs for product gallery.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Array of image URLs or attachment IDs for product gallery.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'oneOf' => array(
 							array( 'type' => 'integer' ),
@@ -190,11 +190,11 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 						array( 'type' => 'integer' ),
 						array( 'type' => 'string' ),
 					),
-					'description' => __( 'Featured image URL or attachment ID.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Featured image URL or attachment ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'attributes'        => array(
 					'type'        => 'array',
-					'description' => __( 'Array of product attributes. Each attribute should have name, visible, variation, and options.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Array of product attributes. Each attribute should have name, visible, variation, and options.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -210,11 +210,11 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'weight'            => array(
 					'type'        => 'string',
-					'description' => __( 'Product weight.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product weight.', 'mcp-ai-wpoos-pro' ),
 				),
 				'dimensions'        => array(
 					'type'        => 'object',
-					'description' => __( 'Product dimensions (length, width, height).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product dimensions (length, width, height).', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
 						'length' => array( 'type' => 'string' ),
 						'width'  => array( 'type' => 'string' ),
@@ -223,19 +223,19 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 				),
 				'virtual'           => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether the product is virtual.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether the product is virtual.', 'mcp-ai-wpoos-pro' ),
 				),
 				'downloadable'      => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether the product is downloadable.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether the product is downloadable.', 'mcp-ai-wpoos-pro' ),
 				),
 				'manage_stock'      => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to enable stock management.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether to enable stock management.', 'mcp-ai-wpoos-pro' ),
 				),
 				'backorders'        => array(
 					'type'        => 'string',
-					'description' => __( 'Backorders setting.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Backorders setting.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'no', 'notify', 'yes' ),
 				),
 			),
@@ -270,7 +270,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'woocommerce_not_active',
-				__( 'WooCommerce is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'WooCommerce is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -298,7 +298,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -313,7 +313,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['product_id'] ) ) {
 			return new WP_Error(
 				'missing_product_id',
-				__( 'Product ID is required for get action.', 'wp-mcp-ai-pro' )
+				__( 'Product ID is required for get action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -322,7 +322,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $product ) {
 			return new WP_Error(
 				'product_not_found',
-				__( 'Product not found.', 'wp-mcp-ai-pro' )
+				__( 'Product not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-pro' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -405,7 +405,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'publish_products' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to create products.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to create products.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -496,7 +496,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $product_id ) {
 			return new WP_Error(
 				'create_failed',
-				__( 'Failed to create product.', 'wp-mcp-ai-pro' )
+				__( 'Failed to create product.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -524,7 +524,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['product_id'] ) ) {
 			return new WP_Error(
 				'missing_product_id',
-				__( 'Product ID is required for update action.', 'wp-mcp-ai-pro' )
+				__( 'Product ID is required for update action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -533,7 +533,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'edit_products' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to edit products.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to edit products.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -542,7 +542,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $product ) {
 			return new WP_Error(
 				'product_not_found',
-				__( 'Product not found.', 'wp-mcp-ai-pro' )
+				__( 'Product not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -692,7 +692,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['product_id'] ) ) {
 			return new WP_Error(
 				'missing_product_id',
-				__( 'Product ID is required for delete action.', 'wp-mcp-ai-pro' )
+				__( 'Product ID is required for delete action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -701,7 +701,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'delete_products' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to delete products.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to delete products.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -710,7 +710,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $product ) {
 			return new WP_Error(
 				'product_not_found',
-				__( 'Product not found.', 'wp-mcp-ai-pro' )
+				__( 'Product not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -724,7 +724,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $deleted ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete product.', 'wp-mcp-ai-pro' )
+				__( 'Failed to delete product.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -733,8 +733,8 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 			'product_id' => $product_id,
 			'name'       => $product_name,
 			'message'    => $force
-				? __( 'Product permanently deleted.', 'wp-mcp-ai-pro' )
-				: __( 'Product moved to trash.', 'wp-mcp-ai-pro' ),
+				? __( 'Product permanently deleted.', 'mcp-ai-wpoos-pro' )
+				: __( 'Product moved to trash.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -751,7 +751,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to manage product categories.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to manage product categories.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -780,7 +780,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['name'] ) ) {
 			return new WP_Error(
 				'missing_name',
-				__( 'Category name is required.', 'wp-mcp-ai-pro' )
+				__( 'Category name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -821,7 +821,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['category_id'] ) ) {
 			return new WP_Error(
 				'missing_category_id',
-				__( 'Category ID is required for update.', 'wp-mcp-ai-pro' )
+				__( 'Category ID is required for update.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -874,7 +874,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['category_id'] ) ) {
 			return new WP_Error(
 				'missing_category_id',
-				__( 'Category ID is required for delete.', 'wp-mcp-ai-pro' )
+				__( 'Category ID is required for delete.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -883,7 +883,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $term ) || ! $term ) {
 			return new WP_Error(
 				'category_not_found',
-				__( 'Category not found.', 'wp-mcp-ai-pro' )
+				__( 'Category not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -892,14 +892,14 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $result ) || ! $result ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete category.', 'wp-mcp-ai-pro' )
+				__( 'Failed to delete category.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		return array(
 			'success'     => true,
 			'category_id' => $term->term_id,
-			'message'     => __( 'Category deleted successfully.', 'wp-mcp-ai-pro' ),
+			'message'     => __( 'Category deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -958,7 +958,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to manage product tags.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to manage product tags.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -987,7 +987,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['name'] ) ) {
 			return new WP_Error(
 				'missing_name',
-				__( 'Tag name is required.', 'wp-mcp-ai-pro' )
+				__( 'Tag name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1026,7 +1026,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['tag_id'] ) ) {
 			return new WP_Error(
 				'missing_tag_id',
-				__( 'Tag ID is required for update.', 'wp-mcp-ai-pro' )
+				__( 'Tag ID is required for update.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1074,7 +1074,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['tag_id'] ) ) {
 			return new WP_Error(
 				'missing_tag_id',
-				__( 'Tag ID is required for delete.', 'wp-mcp-ai-pro' )
+				__( 'Tag ID is required for delete.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1083,7 +1083,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $term ) || ! $term ) {
 			return new WP_Error(
 				'tag_not_found',
-				__( 'Tag not found.', 'wp-mcp-ai-pro' )
+				__( 'Tag not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1092,14 +1092,14 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( is_wp_error( $result ) || ! $result ) {
 			return new WP_Error(
 				'delete_failed',
-				__( 'Failed to delete tag.', 'wp-mcp-ai-pro' )
+				__( 'Failed to delete tag.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		return array(
 			'success' => true,
 			'tag_id'  => $term->term_id,
-			'message' => __( 'Tag deleted successfully.', 'wp-mcp-ai-pro' ),
+			'message' => __( 'Tag deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -1153,7 +1153,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! user_can( $user_id, 'manage_product_terms' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to manage product attributes.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to manage product attributes.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1182,7 +1182,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['name'] ) ) {
 			return new WP_Error(
 				'missing_name',
-				__( 'Attribute name is required.', 'wp-mcp-ai-pro' )
+				__( 'Attribute name is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1225,7 +1225,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['attribute_id'] ) ) {
 			return new WP_Error(
 				'missing_attribute_id',
-				__( 'Attribute ID is required for update.', 'wp-mcp-ai-pro' )
+				__( 'Attribute ID is required for update.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1235,7 +1235,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $attribute ) {
 			return new WP_Error(
 				'attribute_not_found',
-				__( 'Attribute not found.', 'wp-mcp-ai-pro' )
+				__( 'Attribute not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1292,7 +1292,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $arguments['attribute_id'] ) ) {
 			return new WP_Error(
 				'missing_attribute_id',
-				__( 'Attribute ID is required for delete.', 'wp-mcp-ai-pro' )
+				__( 'Attribute ID is required for delete.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1302,7 +1302,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! $attribute ) {
 			return new WP_Error(
 				'attribute_not_found',
-				__( 'Attribute not found.', 'wp-mcp-ai-pro' )
+				__( 'Attribute not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1315,7 +1315,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'success'      => true,
 			'attribute_id' => $attribute_id,
-			'message'      => __( 'Attribute deleted successfully.', 'wp-mcp-ai-pro' ),
+			'message'      => __( 'Attribute deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

@@ -46,41 +46,41 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( '2FA Setup Assistant', 'wp-mcp-ai' ),
-			'description'          => __( 'Guides users through two-factor authentication setup with TOTP, email, or SMS methods. Includes QR code generation and backup codes.', 'wp-mcp-ai' ),
+			'name'                 => __( '2FA Setup Assistant', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Guides users through two-factor authentication setup with TOTP, email, or SMS methods. Includes QR code generation and backup codes.', 'mcp-ai-wpoos' ),
 			'category'             => 'security',
 			'required_capability'  => 'read', // Users can set up their own 2FA.
 			'parameters'           => array(
 				'action'           => array(
 					'type'        => 'string',
-					'description' => __( 'Action to perform: setup, status, enable, disable, generate_backup, or bulk_enforce', 'wp-mcp-ai' ),
+					'description' => __( 'Action to perform: setup, status, enable, disable, generate_backup, or bulk_enforce', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'setup', 'status', 'enable', 'disable', 'generate_backup', 'bulk_enforce' ),
 				),
 				'user_id'          => array(
 					'type'        => 'integer',
-					'description' => __( 'User ID (defaults to current user)', 'wp-mcp-ai' ),
+					'description' => __( 'User ID (defaults to current user)', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'method'           => array(
 					'type'        => 'string',
-					'description' => __( 'Authentication method: totp, email, or sms', 'wp-mcp-ai' ),
+					'description' => __( 'Authentication method: totp, email, or sms', 'mcp-ai-wpoos' ),
 					'default'     => 'totp',
 					'enum'        => array( 'totp', 'email', 'sms' ),
 				),
 				'role'             => array(
 					'type'        => 'string',
-					'description' => __( 'User role for bulk enforcement', 'wp-mcp-ai' ),
+					'description' => __( 'User role for bulk enforcement', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'phone_number'     => array(
 					'type'        => 'string',
-					'description' => __( 'Phone number for SMS method', 'wp-mcp-ai' ),
+					'description' => __( 'Phone number for SMS method', 'mcp-ai-wpoos' ),
 					'required'    => false,
 				),
 				'force_reset'      => array(
 					'type'        => 'boolean',
-					'description' => __( 'Force users to set up 2FA on next login', 'wp-mcp-ai' ),
+					'description' => __( 'Force users to set up 2FA on next login', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 			),
@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate parameters.
 		$action       = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'setup';
 		$user_id      = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : get_current_user_id();
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! $user ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'User not found', 'wp-mcp-ai' ),
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -170,7 +170,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( get_current_user_id() !== $user_id && ! current_user_can( 'edit_users' ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Permission denied', 'wp-mcp-ai' ),
+				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -250,7 +250,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'qr_data'     => $qr_data,
 			'manual_entry' => sprintf(
 				/* translators: %s: secret key */
-				__( 'Manual entry key: %s', 'wp-mcp-ai' ),
+				__( 'Manual entry key: %s', 'mcp-ai-wpoos' ),
 				$secret
 			),
 		);
@@ -271,7 +271,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 
 		return array(
 			'email_address' => $user->user_email,
-			'status'        => __( 'Email 2FA configured', 'wp-mcp-ai' ),
+			'status'        => __( 'Email 2FA configured', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -288,7 +288,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( empty( $phone_number ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Phone number required for SMS 2FA', 'wp-mcp-ai' ),
+				'error'   => __( 'Phone number required for SMS 2FA', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -301,8 +301,8 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 
 		return array(
 			'phone_number' => $phone_number,
-			'status'       => __( 'SMS 2FA configured', 'wp-mcp-ai' ),
-			'note'         => __( 'SMS 2FA requires a third-party SMS service integration', 'wp-mcp-ai' ),
+			'status'       => __( 'SMS 2FA configured', 'mcp-ai-wpoos' ),
+			'note'         => __( 'SMS 2FA requires a third-party SMS service integration', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -318,7 +318,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! $user ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'User not found', 'wp-mcp-ai' ),
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -330,7 +330,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'user_id'        => $user_id,
 			'username'       => $user->user_login,
 			'2fa_enabled'    => $enabled,
-			'2fa_method'     => $method ?: __( 'Not configured', 'wp-mcp-ai' ),
+			'2fa_method'     => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
 			'has_backup_codes' => $this->has_backup_codes( $user_id ),
 		);
 	}
@@ -348,7 +348,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! $user ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'User not found', 'wp-mcp-ai' ),
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -357,7 +357,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( empty( $configured_method ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( '2FA not configured. Please run setup first.', 'wp-mcp-ai' ),
+				'error'   => __( '2FA not configured. Please run setup first.', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -366,7 +366,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		return array(
 			'success' => true,
 			'user_id' => $user_id,
-			'status'  => __( '2FA enabled successfully', 'wp-mcp-ai' ),
+			'status'  => __( '2FA enabled successfully', 'mcp-ai-wpoos' ),
 			'method'  => $configured_method,
 		);
 	}
@@ -383,7 +383,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! $user ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'User not found', 'wp-mcp-ai' ),
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -392,7 +392,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		return array(
 			'success' => true,
 			'user_id' => $user_id,
-			'status'  => __( '2FA disabled', 'wp-mcp-ai' ),
+			'status'  => __( '2FA disabled', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -408,7 +408,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! $user ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'User not found', 'wp-mcp-ai' ),
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -418,7 +418,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'success'      => true,
 			'user_id'      => $user_id,
 			'backup_codes' => $backup_codes,
-			'message'      => __( 'Backup codes generated. Store them in a safe place.', 'wp-mcp-ai' ),
+			'message'      => __( 'Backup codes generated. Store them in a safe place.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -434,14 +434,14 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Permission denied', 'wp-mcp-ai' ),
+				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
 			);
 		}
 
 		if ( empty( $role ) ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Role required for bulk enforcement', 'wp-mcp-ai' ),
+				'error'   => __( 'Role required for bulk enforcement', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -465,7 +465,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'force_reset'   => $force_reset,
 			'message'       => sprintf(
 				/* translators: %d: number of users, %s: role name */
-				__( '2FA enforcement enabled for %d users with role: %s', 'wp-mcp-ai' ),
+				__( '2FA enforcement enabled for %d users with role: %s', 'mcp-ai-wpoos' ),
 				$enforced,
 				$role
 			),
@@ -551,8 +551,8 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		return array(
 			'available_plugins' => $plugins,
 			'note'              => empty( $plugins )
-				? __( 'No 2FA plugins detected. Native implementation will be used.', 'wp-mcp-ai' )
-				: __( '2FA plugins detected. Consider using their native features.', 'wp-mcp-ai' ),
+				? __( 'No 2FA plugins detected. Native implementation will be used.', 'mcp-ai-wpoos' )
+				: __( '2FA plugins detected. Consider using their native features.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -569,29 +569,29 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		switch ( $method ) {
 			case 'totp':
 				$instructions = array(
-					__( '1. Install an authenticator app (Google Authenticator, Authy, or 1Password)', 'wp-mcp-ai' ),
-					__( '2. Scan the QR code with your authenticator app', 'wp-mcp-ai' ),
-					__( '3. Enter the 6-digit code from your app to verify', 'wp-mcp-ai' ),
-					__( '4. Save your backup codes in a secure location', 'wp-mcp-ai' ),
-					__( '5. Enable 2FA to complete setup', 'wp-mcp-ai' ),
+					__( '1. Install an authenticator app (Google Authenticator, Authy, or 1Password)', 'mcp-ai-wpoos' ),
+					__( '2. Scan the QR code with your authenticator app', 'mcp-ai-wpoos' ),
+					__( '3. Enter the 6-digit code from your app to verify', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
+					__( '5. Enable 2FA to complete setup', 'mcp-ai-wpoos' ),
 				);
 				break;
 
 			case 'email':
 				$instructions = array(
-					__( '1. Verify your email address is correct', 'wp-mcp-ai' ),
-					__( '2. Enable 2FA to start receiving codes via email', 'wp-mcp-ai' ),
-					__( '3. Check your inbox for verification code on next login', 'wp-mcp-ai' ),
-					__( '4. Save your backup codes in a secure location', 'wp-mcp-ai' ),
+					__( '1. Verify your email address is correct', 'mcp-ai-wpoos' ),
+					__( '2. Enable 2FA to start receiving codes via email', 'mcp-ai-wpoos' ),
+					__( '3. Check your inbox for verification code on next login', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
 				);
 				break;
 
 			case 'sms':
 				$instructions = array(
-					__( '1. Verify your phone number is correct', 'wp-mcp-ai' ),
-					__( '2. Ensure SMS service is configured (requires third-party integration)', 'wp-mcp-ai' ),
-					__( '3. Enable 2FA to start receiving codes via SMS', 'wp-mcp-ai' ),
-					__( '4. Save your backup codes in a secure location', 'wp-mcp-ai' ),
+					__( '1. Verify your phone number is correct', 'mcp-ai-wpoos' ),
+					__( '2. Ensure SMS service is configured (requires third-party integration)', 'mcp-ai-wpoos' ),
+					__( '3. Enable 2FA to start receiving codes via SMS', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
 				);
 				break;
 		}
@@ -621,15 +621,15 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		$enabled = get_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
 
 		$data = array(
-			'group_label' => __( 'Two-Factor Authentication', 'wp-mcp-ai' ),
+			'group_label' => __( 'Two-Factor Authentication', 'mcp-ai-wpoos' ),
 			'items'       => array(
 				array(
-					'name'  => __( '2FA Status', 'wp-mcp-ai' ),
-					'value' => $enabled ? __( 'Enabled', 'wp-mcp-ai' ) : __( 'Disabled', 'wp-mcp-ai' ),
+					'name'  => __( '2FA Status', 'mcp-ai-wpoos' ),
+					'value' => $enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ),
 				),
 				array(
-					'name'  => __( '2FA Method', 'wp-mcp-ai' ),
-					'value' => $method ?: __( 'Not configured', 'wp-mcp-ai' ),
+					'name'  => __( '2FA Method', 'mcp-ai-wpoos' ),
+					'value' => $method ?: __( 'Not configured', 'mcp-ai-wpoos' ),
 				),
 			),
 		);

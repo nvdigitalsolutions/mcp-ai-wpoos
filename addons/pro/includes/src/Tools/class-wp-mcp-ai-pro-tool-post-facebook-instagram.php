@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Publish Meta Social Post', 'wp-mcp-ai-pro' );
+		return __( 'Publish Meta Social Post', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Creates a post on a Facebook Page or Instagram business account using the Meta Graph API.', 'wp-mcp-ai-pro' );
+		return __( 'Creates a post on a Facebook Page or Instagram business account using the Meta Graph API.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -67,31 +67,31 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 				'platform'     => array(
 					'type'        => 'string',
 					'enum'        => array( 'facebook', 'instagram' ),
-					'description' => __( 'Target platform for the post.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Target platform for the post.', 'mcp-ai-wpoos-pro' ),
 				),
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'Meta Graph API access token with publishing permissions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Meta Graph API access token with publishing permissions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'target_id'    => array(
 					'type'        => 'string',
-					'description' => __( 'Facebook Page ID or Instagram business account ID.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Facebook Page ID or Instagram business account ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'message'      => array(
 					'type'        => 'string',
-					'description' => __( 'Post message used when publishing to Facebook.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Post message used when publishing to Facebook.', 'mcp-ai-wpoos-pro' ),
 				),
 				'link'         => array(
 					'type'        => 'string',
-					'description' => __( 'Optional link to attach to a Facebook post.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional link to attach to a Facebook post.', 'mcp-ai-wpoos-pro' ),
 				),
 				'caption'      => array(
 					'type'        => 'string',
-					'description' => __( 'Caption for Instagram posts.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Caption for Instagram posts.', 'mcp-ai-wpoos-pro' ),
 				),
 				'image_url'    => array(
 					'type'        => 'string',
-					'description' => __( 'Publicly accessible image URL used for Instagram posts.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Publicly accessible image URL used for Instagram posts.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'platform', 'access_token', 'target_id' ),
@@ -113,29 +113,29 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		$required_capability = apply_filters( 'wp_mcp_ai_post_facebook_instagram_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish social posts.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish social posts.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$platform = isset( $arguments['platform'] ) ? sanitize_key( $arguments['platform'] ) : '';
 
 		if ( ! in_array( $platform, array( 'facebook', 'instagram' ), true ) ) {
-			return new WP_Error( 'wp_mcp_ai_invalid_platform', __( 'A valid target platform must be provided.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_invalid_platform', __( 'A valid target platform must be provided.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'An access token is required to publish posts.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_access_token', __( 'An access token is required to publish posts.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$target_id = isset( $arguments['target_id'] ) ? $this->sanitize_target_id( $arguments['target_id'] ) : '';
 
 		if ( '' === $target_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_target_id', __( 'A valid target identifier is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_target_id', __( 'A valid target identifier is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( 'facebook' === $platform ) {
@@ -159,7 +159,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		$link    = isset( $arguments['link'] ) ? $this->sanitize_url( $arguments['link'] ) : '';
 
 		if ( '' === $message && '' === $link ) {
-			return new WP_Error( 'wp_mcp_ai_missing_facebook_content', __( 'A message or link must be supplied for Facebook posts.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_facebook_content', __( 'A message or link must be supplied for Facebook posts.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$endpoint = sprintf( 'https://graph.facebook.com/%1$s/%2$s/feed', self::GRAPH_VERSION, rawurlencode( $page_id ) );
@@ -199,7 +199,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 
 			return new WP_Error(
 				'wp_mcp_ai_facebook_http_error',
-				__( 'The Facebook API request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The Facebook API request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -213,7 +213,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		}
 
 		if ( 200 !== $code || empty( $decoded['id'] ) ) {
-			$message = __( 'Facebook API returned an error.', 'wp-mcp-ai-pro' );
+			$message = __( 'Facebook API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $decoded['error']['message'] ) ) {
 				$message = $decoded['error']['message'];
@@ -240,7 +240,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 
 		return array(
 			/* translators: %s: Social media platform name (e.g., Facebook) */
-			'summary'  => sprintf( __( 'Published to %s', 'wp-mcp-ai-pro' ), 'Facebook' ),
+			'summary'  => sprintf( __( 'Published to %s', 'mcp-ai-wpoos-pro' ), 'Facebook' ),
 			'platform' => 'facebook',
 			'post_id'  => $decoded['id'],
 		);
@@ -260,7 +260,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		$image_url = isset( $arguments['image_url'] ) ? $this->sanitize_url( $arguments['image_url'] ) : '';
 
 		if ( '' === $caption || '' === $image_url ) {
-			return new WP_Error( 'wp_mcp_ai_missing_instagram_content', __( 'Instagram posts require both a caption and an image URL.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_instagram_content', __( 'Instagram posts require both a caption and an image URL.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$media_endpoint = sprintf( 'https://graph.facebook.com/%1$s/%2$s/media', self::GRAPH_VERSION, rawurlencode( $ig_user_id ) );
@@ -293,7 +293,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 
 			return new WP_Error(
 				'wp_mcp_ai_instagram_http_error',
-				__( 'The Instagram media request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The Instagram media request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $media_response )
 			);
 		}
@@ -307,7 +307,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		}
 
 		if ( 200 !== $media_code || empty( $media_decoded['id'] ) ) {
-			$message = __( 'Instagram API returned an error while creating media.', 'wp-mcp-ai-pro' );
+			$message = __( 'Instagram API returned an error while creating media.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $media_decoded['error']['message'] ) ) {
 				$message = $media_decoded['error']['message'];
@@ -362,7 +362,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 
 			return new WP_Error(
 				'wp_mcp_ai_instagram_publish_http_error',
-				__( 'The Instagram publish request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The Instagram publish request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $publish_response )
 			);
 		}
@@ -376,7 +376,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		}
 
 		if ( 200 !== $publish_code || empty( $publish_decoded['id'] ) ) {
-			$message = __( 'Instagram API returned an error while publishing media.', 'wp-mcp-ai-pro' );
+			$message = __( 'Instagram API returned an error while publishing media.', 'mcp-ai-wpoos-pro' );
 
 			if ( ! empty( $publish_decoded['error']['message'] ) ) {
 				$message = $publish_decoded['error']['message'];
@@ -402,7 +402,7 @@ class WP_MCP_AI_Pro_Tool_Post_Facebook_Instagram implements WP_MCP_AI_Tool_Inter
 		}
 
 		return array(
-			'summary'  => sprintf( __( 'Published to %s', 'wp-mcp-ai-pro' ), 'Instagram' ),
+			'summary'  => sprintf( __( 'Published to %s', 'mcp-ai-wpoos-pro' ), 'Instagram' ),
 			'platform' => 'instagram',
 			'post_id'  => $publish_decoded['id'],
 		);

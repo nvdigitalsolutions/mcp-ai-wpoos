@@ -116,6 +116,42 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 		);
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'media_processing',
+
+			'pattern_compatibility' => array( 'sequential', 'orchestrator' ),
+
+			'profession_tags'       => array( 'seo_specialist', 'content_creator' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

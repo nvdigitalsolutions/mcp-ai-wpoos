@@ -127,6 +127,42 @@ class WP_MCP_AI_Tool_Create_Assistant_Validated extends WP_MCP_AI_Validated_Tool
 		return $this->original_tool->execute( $arguments, $context );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'ai_model_management',
+
+			'pattern_compatibility' => array( 'orchestrator' ),
+
+			'profession_tags'       => array( 'ai_researcher', 'systems_administrator' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

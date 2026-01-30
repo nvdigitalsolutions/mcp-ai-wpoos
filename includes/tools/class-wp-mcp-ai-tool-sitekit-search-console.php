@@ -304,4 +304,23 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 	public function get_capability_flags() {
 		return WP_MCP_AI_Tool_Capability_Flags_Interface::CAPABILITY_CAN_USE_IF_ADMIN;
 	}
+
+/**
+ * Get extended tool definition including toolkit metadata.
+ *
+ * @since 1.1.0
+ *
+ * @return array Tool definition with metadata.
+ */
+public function get_definition() {
+	return array(
+		'name'                  => $this->get_name(),
+		'description'           => $this->get_description(),
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'seo_specialist', 'marketing_manager' ),
+		'risk_level'            => 'info',
+	);
+}
+
 }

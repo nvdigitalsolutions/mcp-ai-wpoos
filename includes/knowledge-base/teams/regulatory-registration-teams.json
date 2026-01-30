@@ -1,0 +1,261 @@
+{
+  "teams": [
+    {
+      "title": "Regulatory Registration Core Team",
+      "slug": "regulatory_registration_core_team",
+      "description": "Complete regulatory registration team for multi-country cosmetics and perfume product registration. Handles strategy, documentation, submissions, and compliance.",
+      "members": [
+        "cosmetics_regulatory_specialist",
+        "compliance_documentation_manager",
+        "regulatory_affairs_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential workflow for product registration",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "Initial product assessment and country requirements mapping",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "compliance_documentation_manager",
+            "task": "Document collection, validation, and expiry tracking",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "regulatory_affairs_specialist",
+            "task": "Final submission review and regulatory strategy",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "NMRA Sri Lanka Registration Team",
+      "slug": "nmra_sri_lanka_registration_team",
+      "description": "Specialized team for Sri Lanka NMRA cosmetics and perfume registration. Combines NMRA-specific expertise with documentation management.",
+      "members": [
+        "nmra_registration_officer",
+        "compliance_documentation_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel workflow with NMRA specialist leading and documentation manager supporting",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "nmra_registration_officer",
+            "task": "NMRA-specific process guidance and submission preparation",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "compliance_documentation_manager",
+            "task": "Document management and expiry tracking",
+            "dependencies": []
+          }
+        ]
+      }
+    },
+    {
+      "title": "Multi-Country Registration Team",
+      "slug": "multi_country_registration_team",
+      "description": "Comprehensive team for simultaneous multi-country cosmetics registration campaigns. Handles strategy, documentation, and country-specific compliance.",
+      "members": [
+        "cosmetics_regulatory_specialist",
+        "nmra_registration_officer",
+        "compliance_documentation_manager",
+        "regulatory_affairs_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2,
+      "orchestration_mode": "hybrid",
+      "workflow": {
+        "description": "Hybrid workflow: parallel country assessment, sequential documentation, final strategic review",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "Multi-country regulatory requirements assessment",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "nmra_registration_officer",
+            "task": "Sri Lanka NMRA-specific requirements (parallel)",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "compliance_documentation_manager",
+            "task": "Centralized document management and tracking",
+            "dependencies": [1]
+          },
+          {
+            "step": 3,
+            "agent": "regulatory_affairs_specialist",
+            "task": "Strategic coordination and submission prioritization",
+            "dependencies": [1, 2]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Document Compliance Audit Team",
+      "slug": "document_compliance_audit_team",
+      "description": "Specialized team for regulatory document audits, expiry management, and compliance verification before submissions or inspections.",
+      "members": [
+        "compliance_documentation_manager",
+        "cosmetics_regulatory_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.1,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Systematic document audit workflow",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "compliance_documentation_manager",
+            "task": "Document inventory, expiry check, and completeness verification",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "Regulatory compliance review and gap analysis",
+            "dependencies": [1]
+          }
+        ]
+      }
+    },
+    {
+      "title": "Fast-Track Registration Team",
+      "slug": "fast_track_registration_team",
+      "description": "Agile team for urgent or fast-track cosmetics registration. Optimized for speed with parallel workflows and close coordination.",
+      "members": [
+        "cosmetics_regulatory_specialist",
+        "nmra_registration_officer",
+        "compliance_documentation_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4o",
+      "default_temperature": 0.15,
+      "orchestration_mode": "swarm",
+      "result_aggregation": "consensus",
+      "workflow": {
+        "description": "Swarm mode for maximum parallelization and rapid response",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "all",
+            "task": "Simultaneous assessment, documentation, and preparation",
+            "dependencies": []
+          }
+        ]
+      }
+    },
+    {
+      "title": "Renewal Management Team",
+      "slug": "renewal_management_team",
+      "description": "Specialized team for managing product registration renewals across multiple countries. Focuses on proactive expiry monitoring and renewal coordination.",
+      "members": [
+        "compliance_documentation_manager",
+        "cosmetics_regulatory_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Systematic renewal workflow",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "compliance_documentation_manager",
+            "task": "Identify expiring registrations and required renewal documents",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "Prepare renewal submissions and coordinate with authorities",
+            "dependencies": [1]
+          }
+        ]
+      }
+    },
+    {
+      "title": "GCC Registration Harmonization Team",
+      "slug": "gcc_registration_harmonization_team",
+      "description": "Specialized team for GCC (Gulf Cooperation Council) countries registration. Leverages GCC mutual recognition and harmonization.",
+      "members": [
+        "cosmetics_regulatory_specialist",
+        "compliance_documentation_manager"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.2,
+      "orchestration_mode": "parallel",
+      "workflow": {
+        "description": "Parallel processing for GCC countries with document reuse",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "GCC harmonization strategy and simultaneous country submissions",
+            "dependencies": []
+          },
+          {
+            "step": 1,
+            "agent": "compliance_documentation_manager",
+            "task": "Centralized document management with GCC-wide reuse",
+            "dependencies": []
+          }
+        ]
+      }
+    },
+    {
+      "title": "Migration & Onboarding Team",
+      "slug": "migration_onboarding_team",
+      "description": "Team for migrating existing product portfolios from Excel to the regulatory registration system. Handles data validation and normalization.",
+      "members": [
+        "compliance_documentation_manager",
+        "cosmetics_regulatory_specialist"
+      ],
+      "default_provider": "openai",
+      "default_model": "gpt-4",
+      "default_temperature": 0.1,
+      "orchestration_mode": "sequential",
+      "workflow": {
+        "description": "Sequential migration workflow with validation",
+        "steps": [
+          {
+            "step": 1,
+            "agent": "compliance_documentation_manager",
+            "task": "Data extraction, validation, and document inventory",
+            "dependencies": []
+          },
+          {
+            "step": 2,
+            "agent": "cosmetics_regulatory_specialist",
+            "task": "Regulatory data verification and gap analysis",
+            "dependencies": [1]
+          }
+        ]
+      }
+    }
+  ]
+}

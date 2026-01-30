@@ -37,7 +37,7 @@ class WP_MCP_AI_WebWorker_Enqueue {
 	 */
 	public function register_scripts() {
 		// Only register if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		if ( ! $is_pro_available ) {
 			return;
 		}
@@ -62,7 +62,7 @@ class WP_MCP_AI_WebWorker_Enqueue {
 	 */
 	public function maybe_enqueue_scripts() {
 		// Check if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		if ( ! $is_pro_available ) {
 			return;
 		}
@@ -156,11 +156,11 @@ class WP_MCP_AI_WebWorker_Enqueue {
 	 * @return array Status information
 	 */
 	public static function get_feature_status() {
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		return array(
-			'enabled'                  => get_option( 'wp_mcp_ai_enable_web_workers', false ),
+			'enabled'                   => get_option( 'wp_mcp_ai_enable_web_workers', false ),
 			'embedded_provider_enabled' => $is_pro_available,
-			'browser_support'          => true, // Checked client-side
+			'browser_support'           => true, // Checked client-side
 		);
 	}
 

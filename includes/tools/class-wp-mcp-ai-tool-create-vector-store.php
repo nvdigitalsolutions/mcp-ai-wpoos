@@ -167,6 +167,42 @@ class WP_MCP_AI_Tool_Create_Vector_Store implements WP_MCP_AI_Tool_Interface, WP
 		return 'manage_options';
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'data_analytics',
+
+			'pattern_compatibility' => array( 'orchestrator' ),
+
+			'profession_tags'       => array( 'data_scientist', 'machine_learning_engineer' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

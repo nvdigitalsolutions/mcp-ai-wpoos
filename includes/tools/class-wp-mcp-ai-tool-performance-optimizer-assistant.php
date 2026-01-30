@@ -47,51 +47,51 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Performance Optimizer Assistant', 'wp-mcp-ai' ),
-			'description'          => __( 'Core Web Vitals monitoring, database optimization, caching strategies, query performance analysis, and automated optimization for 2026 standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Performance Optimizer Assistant', 'mcp-ai-wpoos' ),
+			'description'          => __( 'Core Web Vitals monitoring, database optimization, caching strategies, query performance analysis, and automated optimization for 2026 standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'performance',
 			'required_capability'  => 'manage_options',
 			'parameters'           => array(
 				'action'              => array(
 					'type'        => 'string',
-					'description' => __( 'Action: analyze_performance, optimize_database, configure_caching, monitor_cwv, or generate_report', 'wp-mcp-ai' ),
+					'description' => __( 'Action: analyze_performance, optimize_database, configure_caching, monitor_cwv, or generate_report', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'analyze_performance', 'optimize_database', 'configure_caching', 'monitor_cwv', 'generate_report' ),
 				),
 				'optimization_level'  => array(
 					'type'        => 'string',
-					'description' => __( 'Optimization level: safe, moderate, or aggressive', 'wp-mcp-ai' ),
+					'description' => __( 'Optimization level: safe, moderate, or aggressive', 'mcp-ai-wpoos' ),
 					'default'     => 'moderate',
 					'enum'        => array( 'safe', 'moderate', 'aggressive' ),
 				),
 				'target_url'          => array(
 					'type'        => 'string',
-					'description' => __( 'Target URL for CWV monitoring', 'wp-mcp-ai' ),
+					'description' => __( 'Target URL for CWV monitoring', 'mcp-ai-wpoos' ),
 				),
 				'auto_fix'            => array(
 					'type'        => 'boolean',
-					'description' => __( 'Automatically apply safe optimizations', 'wp-mcp-ai' ),
+					'description' => __( 'Automatically apply safe optimizations', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
 				'include_queries'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include slow query analysis', 'wp-mcp-ai' ),
+					'description' => __( 'Include slow query analysis', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'include_plugins'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Include plugin performance analysis', 'wp-mcp-ai' ),
+					'description' => __( 'Include plugin performance analysis', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'cache_strategy'      => array(
 					'type'        => 'string',
-					'description' => __( 'Cache strategy: object, page, or full', 'wp-mcp-ai' ),
+					'description' => __( 'Cache strategy: object, page, or full', 'mcp-ai-wpoos' ),
 					'default'     => 'full',
 					'enum'        => array( 'object', 'page', 'full' ),
 				),
 				'report_format'       => array(
 					'type'        => 'string',
-					'description' => __( 'Report format: summary or detailed', 'wp-mcp-ai' ),
+					'description' => __( 'Report format: summary or detailed', 'mcp-ai-wpoos' ),
 					'default'     => 'summary',
 					'enum'        => array( 'summary', 'detailed' ),
 				),
@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
 
 		// Validate parameters.
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -298,10 +298,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			'auto_fix'       => $auto_fix,
 			'configurations' => $configurations,
 			'recommendations' => array(
-				__( 'Enable persistent object caching (Redis/Memcached)', 'wp-mcp-ai' ),
-				__( 'Implement full-page caching for anonymous users', 'wp-mcp-ai' ),
-				__( 'Configure proper cache headers for static assets', 'wp-mcp-ai' ),
-				__( 'Use CDN for global content delivery', 'wp-mcp-ai' ),
+				__( 'Enable persistent object caching (Redis/Memcached)', 'mcp-ai-wpoos' ),
+				__( 'Implement full-page caching for anonymous users', 'mcp-ai-wpoos' ),
+				__( 'Configure proper cache headers for static assets', 'mcp-ai-wpoos' ),
+				__( 'Use CDN for global content delivery', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -339,7 +339,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 				'rating'    => 'good',
 				'threshold' => 200,
 				'unit'      => 'milliseconds',
-				'note'      => __( 'New CWV metric for 2026', 'wp-mcp-ai' ),
+				'note'      => __( 'New CWV metric for 2026', 'mcp-ai-wpoos' ),
 			),
 			'ttfb' => array(
 				'value'     => 450,
@@ -362,7 +362,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			'status'  => $cwv_score >= 75 ? 'pass' : ( $cwv_score >= 50 ? 'needs_improvement' : 'fail' ),
 			'recommendations' => $this->get_cwv_recommendations( $metrics ),
 			'integration' => array(
-				'note'    => __( 'For real-time monitoring, integrate with:', 'wp-mcp-ai' ),
+				'note'    => __( 'For real-time monitoring, integrate with:', 'mcp-ai-wpoos' ),
 				'options' => array(
 					'Google PageSpeed Insights API',
 					'Chrome User Experience Report',
@@ -504,7 +504,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		// This would require query monitoring plugin or custom logging.
 		return array(
 			'enabled' => defined( 'SAVEQUERIES' ) && SAVEQUERIES,
-			'note'    => __( 'Enable SAVEQUERIES constant to track slow queries', 'wp-mcp-ai' ),
+			'note'    => __( 'Enable SAVEQUERIES constant to track slow queries', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -592,7 +592,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			$recommendations[] = array(
 				'priority' => 'high',
 				'category' => 'caching',
-				'message'  => __( 'Enable persistent object caching (Redis or Memcached)', 'wp-mcp-ai' ),
+				'message'  => __( 'Enable persistent object caching (Redis or Memcached)', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -600,7 +600,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			$recommendations[] = array(
 				'priority' => 'high',
 				'category' => 'caching',
-				'message'  => __( 'Implement full-page caching', 'wp-mcp-ai' ),
+				'message'  => __( 'Implement full-page caching', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -608,7 +608,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			$recommendations[] = array(
 				'priority' => 'medium',
 				'category' => 'database',
-				'message'  => __( 'Reduce autoloaded data (currently over 1MB)', 'wp-mcp-ai' ),
+				'message'  => __( 'Reduce autoloaded data (currently over 1MB)', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -626,11 +626,11 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$fixes = array();
 
 		if ( ! $analysis['caching']['object_cache'] ) {
-			$fixes[] = __( 'Enable object caching', 'wp-mcp-ai' );
+			$fixes[] = __( 'Enable object caching', 'mcp-ai-wpoos' );
 		}
 
 		if ( ! $analysis['caching']['page_cache'] ) {
-			$fixes[] = __( 'Enable page caching', 'wp-mcp-ai' );
+			$fixes[] = __( 'Enable page caching', 'mcp-ai-wpoos' );
 		}
 
 		return $fixes;
@@ -735,7 +735,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 					'success' => true,
 					'savings' => sprintf(
 						/* translators: %d: number of deleted rows */
-						__( '%d transients cleaned', 'wp-mcp-ai' ),
+						__( '%d transients cleaned', 'mcp-ai-wpoos' ),
 						$deleted
 					),
 				);
@@ -761,7 +761,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		return array(
 			'enabled'   => wp_using_ext_object_cache(),
 			'available' => extension_loaded( 'redis' ) || extension_loaded( 'memcached' ),
-			'note'      => __( 'Requires Redis or Memcached extension and drop-in file', 'wp-mcp-ai' ),
+			'note'      => __( 'Requires Redis or Memcached extension and drop-in file', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -775,7 +775,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function configure_page_cache( $auto_fix ) {
 		return array(
 			'enabled' => $this->detect_page_cache(),
-			'note'    => __( 'Consider plugins like WP Super Cache or W3 Total Cache', 'wp-mcp-ai' ),
+			'note'    => __( 'Consider plugins like WP Super Cache or W3 Total Cache', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -789,7 +789,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function configure_browser_cache( $auto_fix ) {
 		return array(
 			'enabled' => true,
-			'note'    => __( 'Set via .htaccess or server configuration', 'wp-mcp-ai' ),
+			'note'    => __( 'Set via .htaccess or server configuration', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -802,7 +802,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function check_cdn_configuration() {
 		return array(
 			'enabled' => $this->detect_cdn(),
-			'note'    => __( 'Consider Cloudflare, StackPath, or KeyCDN', 'wp-mcp-ai' ),
+			'note'    => __( 'Consider Cloudflare, StackPath, or KeyCDN', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -817,15 +817,15 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$recommendations = array();
 
 		if ( 'good' !== $metrics['lcp']['rating'] ) {
-			$recommendations[] = __( 'Optimize LCP: preload critical images, use CDN, optimize server response', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Optimize LCP: preload critical images, use CDN, optimize server response', 'mcp-ai-wpoos' );
 		}
 
 		if ( 'good' !== $metrics['cls']['rating'] ) {
-			$recommendations[] = __( 'Fix CLS: add explicit dimensions to images and embeds', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Fix CLS: add explicit dimensions to images and embeds', 'mcp-ai-wpoos' );
 		}
 
 		if ( 'good' !== $metrics['inp']['rating'] ) {
-			$recommendations[] = __( 'Improve INP: optimize JavaScript, reduce main thread work', 'wp-mcp-ai' );
+			$recommendations[] = __( 'Improve INP: optimize JavaScript, reduce main thread work', 'mcp-ai-wpoos' );
 		}
 
 		return $recommendations;

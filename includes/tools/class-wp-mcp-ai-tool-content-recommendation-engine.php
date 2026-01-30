@@ -47,65 +47,65 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Content Recommendation Engine', 'wp-mcp-ai' ),
-			'description'          => __( 'AI-powered related content recommendations with personalization, collaborative filtering, semantic similarity, and user behavior tracking for 2026 standards.', 'wp-mcp-ai' ),
+			'name'                 => __( 'Content Recommendation Engine', 'mcp-ai-wpoos' ),
+			'description'          => __( 'AI-powered related content recommendations with personalization, collaborative filtering, semantic similarity, and user behavior tracking for 2026 standards.', 'mcp-ai-wpoos' ),
 			'category'             => 'content',
 			'required_capability'  => 'edit_posts',
 			'parameters'           => array(
 				'action'                => array(
 					'type'        => 'string',
-					'description' => __( 'Action: get_recommendations, train_model, track_interaction, or analyze_performance', 'wp-mcp-ai' ),
+					'description' => __( 'Action: get_recommendations, train_model, track_interaction, or analyze_performance', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'get_recommendations', 'train_model', 'track_interaction', 'analyze_performance' ),
 				),
 				'post_id'               => array(
 					'type'        => 'integer',
-					'description' => __( 'Post ID to get recommendations for', 'wp-mcp-ai' ),
+					'description' => __( 'Post ID to get recommendations for', 'mcp-ai-wpoos' ),
 				),
 				'user_id'               => array(
 					'type'        => 'integer',
-					'description' => __( 'User ID for personalized recommendations', 'wp-mcp-ai' ),
+					'description' => __( 'User ID for personalized recommendations', 'mcp-ai-wpoos' ),
 				),
 				'recommendation_type'   => array(
 					'type'        => 'string',
-					'description' => __( 'Type: similar_content, personalized, trending, or category_based', 'wp-mcp-ai' ),
+					'description' => __( 'Type: similar_content, personalized, trending, or category_based', 'mcp-ai-wpoos' ),
 					'default'     => 'similar_content',
 					'enum'        => array( 'similar_content', 'personalized', 'trending', 'category_based' ),
 				),
 				'limit'                 => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of recommendations to return (default: 5)', 'wp-mcp-ai' ),
+					'description' => __( 'Number of recommendations to return (default: 5)', 'mcp-ai-wpoos' ),
 					'default'     => 5,
 				),
 				'exclude_categories'    => array(
 					'type'        => 'array',
-					'description' => __( 'Category IDs to exclude', 'wp-mcp-ai' ),
+					'description' => __( 'Category IDs to exclude', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'include_post_types'    => array(
 					'type'        => 'array',
-					'description' => __( 'Post types to include (default: post)', 'wp-mcp-ai' ),
+					'description' => __( 'Post types to include (default: post)', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array( 'post' ),
 				),
 				'use_semantic_search'   => array(
 					'type'        => 'boolean',
-					'description' => __( 'Use semantic similarity for recommendations', 'wp-mcp-ai' ),
+					'description' => __( 'Use semantic similarity for recommendations', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'use_collaborative'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'Use collaborative filtering based on user behavior', 'wp-mcp-ai' ),
+					'description' => __( 'Use collaborative filtering based on user behavior', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
 				'recency_weight'        => array(
 					'type'        => 'number',
-					'description' => __( 'Weight for recent content (0.0-1.0, default: 0.3)', 'wp-mcp-ai' ),
+					'description' => __( 'Weight for recent content (0.0-1.0, default: 0.3)', 'mcp-ai-wpoos' ),
 					'default'     => 0.3,
 				),
 				'interaction_type'      => array(
 					'type'        => 'string',
-					'description' => __( 'Interaction type: view, click, share, or convert', 'wp-mcp-ai' ),
+					'description' => __( 'Interaction type: view, click, share, or convert', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'view', 'click', 'share', 'convert' ),
 				),
 			),
@@ -120,7 +120,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
 
 		// Validate parameters.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			default:
 				$result = array(
 					'success' => false,
-					'error'   => __( 'Invalid action specified', 'wp-mcp-ai' ),
+					'error'   => __( 'Invalid action specified', 'mcp-ai-wpoos' ),
 				);
 		}
 
@@ -267,9 +267,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			'model_stats'  => $model_stats,
 			'trained_at'   => gmdate( 'Y-m-d H:i:s' ),
 			'next_steps'   => array(
-				__( 'Model is now active for personalized recommendations', 'wp-mcp-ai' ),
-				__( 'Continue tracking user interactions for better accuracy', 'wp-mcp-ai' ),
-				__( 'Retrain model weekly for optimal performance', 'wp-mcp-ai' ),
+				__( 'Model is now active for personalized recommendations', 'mcp-ai-wpoos' ),
+				__( 'Continue tracking user interactions for better accuracy', 'mcp-ai-wpoos' ),
+				__( 'Retrain model weekly for optimal performance', 'mcp-ai-wpoos' ),
 			),
 		);
 	}
@@ -287,7 +287,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		if ( 0 === $post_id ) {
 			return array(
 				'success' => false,
-				'error'   => __( 'Post ID required', 'wp-mcp-ai' ),
+				'error'   => __( 'Post ID required', 'mcp-ai-wpoos' ),
 			);
 		}
 
@@ -311,7 +311,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		return array(
 			'success'      => true,
 			'interaction'  => $interaction,
-			'message'      => __( 'Interaction tracked successfully', 'wp-mcp-ai' ),
+			'message'      => __( 'Interaction tracked successfully', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -352,9 +352,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			'top_content' => $top_content,
 			'engagement_patterns' => $engagement_patterns,
 			'recommendations' => array(
-				__( 'Retrain model weekly for better accuracy', 'wp-mcp-ai' ),
-				__( 'A/B test different recommendation types', 'wp-mcp-ai' ),
-				__( 'Optimize content based on engagement patterns', 'wp-mcp-ai' ),
+				__( 'Retrain model weekly for better accuracy', 'mcp-ai-wpoos' ),
+				__( 'A/B test different recommendation types', 'mcp-ai-wpoos' ),
+				__( 'Optimize content based on engagement patterns', 'mcp-ai-wpoos' ),
 			),
 		);
 	}

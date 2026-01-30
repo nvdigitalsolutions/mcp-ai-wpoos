@@ -107,7 +107,16 @@ jobs:
           ./bin/build-plugin-zip.sh --all
           
           echo ""
-          echo "📦 Plugin distributions:"
+          echo "📦 Original plugin distributions:"
+          ls -lh build/*.zip
+          
+          echo ""
+          echo "🔨 Building WordPress.org packages..."
+          chmod +x bin/build-wordpress-org-from-base.sh
+          ./bin/build-wordpress-org-from-base.sh
+          
+          echo ""
+          echo "📦 All plugin distributions (8 total):"
           ls -lh build/*.zip
 
       - name: Check for changes

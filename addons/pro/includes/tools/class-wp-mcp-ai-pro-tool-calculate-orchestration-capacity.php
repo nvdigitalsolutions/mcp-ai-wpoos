@@ -79,7 +79,7 @@ class WP_MCP_AI_Pro_Tool_Calculate_Orchestration_Capacity {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$mode = ! empty( $arguments['mode'] ) ? $arguments['mode'] : 'analyze_current';
 
 		switch ( $mode ) {
