@@ -396,7 +396,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				sprintf(
 					/* translators: 1: API action name, 2: list of allowed actions */
 					__( 'Invalid API action: %1$s. Allowed actions: %2$s', 'mcp-ai-wpoos-pro' ),
-					$api_action,
+					esc_html( $api_action ),
 					implode( ', ', $allowed_actions )
 				)
 			);
