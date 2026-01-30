@@ -256,7 +256,41 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
-### Security Hardening & Entity Tracking (January 29, 2026) ⭐ **NEW**
+### Repository Organization & Documentation Cleanup (January 30, 2026) ⭐ **NEW**
+
+**Major Cleanup: Root directory organized + proposals status tracking**
+
+**Root Directory Organization:**
+- Moved 7 implementation/summary files from root to `docs/implementation-history/2026/january/`:
+  - `IMPLEMENTATION_COMPLETE.md` - Toolkit Enhancement System completion report
+  - `IMPLEMENTATION_SUMMARY.md` - Regulatory Registration Toolkit implementation
+  - `PR_SUMMARY.md` - PR completion summaries
+  - `ORCHESTRATION_MODES_ENHANCEMENT_SUMMARY.md` - Teams dashboard enhancement
+  - `REGULATORY_TOOLKIT_ENHANCEMENT.md` - Settings page enhancement
+  - `TOOLKIT_ENHANCEMENT_README.md` - Toolkit enhancement overview
+  - `VISUAL_GUIDE.md` - Admin menu and UI guides
+- Moved `test-toolkit-registry.php` to `tests/manual/` for proper test organization
+- Moved `wpcode-snippet.php` to `examples/` as reference implementation
+- Removed duplicate `PRODUCTION_READY.md` (already exists in `docs/deployment/`)
+- **Root now contains only essential documentation** (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING)
+
+**Proposals Status Tracking:**
+- Created comprehensive [PROPOSALS_COMPLETION_STATUS.md](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
+- **64 total proposals tracked**: 18 complete (28%), 6 in progress (9%), 40 pending (63%)
+- **Completed in January 2026**: DeepSeek V4 (all phases), Web Browser Pro Tool, WebLLM (phases 1-3), Toolkit Enhancement System, Phase 5
+- **In Progress**: WordPress Integration (42-82%), Bitwarden Integration (research phase), Ralph Wiggum CCT Orchestration
+- **High Priority Pending**: Toolkit Enhancement extended features, Firefly III Integration, WordPress Core Integration Enhancement
+- Identified action items: Reconcile DeepSeek V4 completion status discrepancy, complete WordPress Integration, review pending proposals
+
+**Dependencies Documentation:**
+- Confirmed [DEPENDENCIES_BUNDLING.md](DEPENDENCIES_BUNDLING.md) in root per user request
+- Documents two-tier dependency management (Base + Pro addon)
+- Explains bundling strategy and build commands for NPM packages
+
+**Files Changed**: 10 files moved/organized  
+**Impact**: Cleaner repository structure, better documentation discovery, improved maintainability
+
+### Security Hardening & Entity Tracking (January 29, 2026)
 
 **Major Security Update: 4 vulnerabilities resolved + comprehensive entity tracking for multi-agent workflows**
 
@@ -487,7 +521,16 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 > **For complete implementation details, see [Consolidated Implementation Summaries 2025](docs/implementation-history/2025/summaries/CONSOLIDATED_IMPLEMENTATION_SUMMARIES_2025.md)**
 
-### 📅 Weekly Summary (Dec 30 - Jan 6, 2026) ⭐ **LATEST**
+### 📅 Weekly Summary (Jan 30, 2026) ⭐ **LATEST**
+- **Repository Organization** - Root directory cleaned: 7 implementation docs moved to `docs/implementation-history/2026/january/`, test files to `tests/manual/`, examples to `examples/`
+- **Proposals Status Tracking** - Comprehensive tracking document created: 64 proposals (18 complete, 6 in progress, 40 pending)
+- **Documentation Consolidation** - Root now contains only essential documentation (down from 31 files to 8 essential files)
+- **Dependencies Documentation** - DEPENDENCIES_BUNDLING.md confirmed in root per stakeholder request
+- **Status Updates** - Identified discrepancies in DeepSeek V4 completion status (needs reconciliation)
+- **Action Items Identified** - WordPress Integration completion (42-82%), Toolkit Enhancement approval decision, Firefly III review
+- [Proposals Status →](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
+
+### 📅 Weekly Summary (Dec 30 - Jan 6, 2026)
 - **100% ISO 27001:2022 Compliance** - 83 of 83 applicable controls implemented (was 56%)
 - **SOC 2 Framework** - 100% compliant (54 of 54 Trust Services Criteria)
 - **HIPAA Framework** - 98% compliant (42 of 43 Security Rule safeguards)
@@ -2438,6 +2481,15 @@ These commands automatically resolve the bundled `vendor/bin` tools (such as `ph
 
 > [!NOTE]
 > The `test:install` script prefers the Composer-provided `wp-phpunit/wp-phpunit` package for the WordPress test suite. Run `composer install` before invoking it, especially on networks where `develop.svn.wordpress.org` is inaccessible.
+
+### NPM Dependencies & Bundling
+
+For details on how NPM dependencies are managed and bundled for both the base plugin and Pro addon, see [DEPENDENCIES_BUNDLING.md](DEPENDENCIES_BUNDLING.md).
+
+**Quick Reference:**
+- Base plugin dependencies: `@microsoft/fetch-event-source`, `dompurify`, `marked`, `ky`, `chart.js`, `@neplex/vectorizer`, `@langchain/*`, `@mlc-ai/web-llm`
+- Build commands: `npm run build:js`, `npm run install:chartjs`, `npm run install:vectorizer`, `npm run build:js:pro`
+- Pro addon has separate `addons/pro/package.json` for Pro-specific dependencies
 
 ---
 
