@@ -1282,6 +1282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( ! is_array( $settings ) ) {
 				$issues[] = __( 'Settings data is not an array. Data corruption detected.', 'mcp-ai-wpoos' );
 			} else {
+				/* translators: %d: number of settings fields */
 				$info[] = sprintf( __( 'Total settings fields: %d', 'mcp-ai-wpoos' ), count( $settings ) );
 			}
 
@@ -1289,6 +1290,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$critical_fields = array( 'default_provider', 'default_model' );
 			foreach ( $critical_fields as $field ) {
 				if ( ! isset( $settings[ $field ] ) || empty( $settings[ $field ] ) ) {
+					/* translators: %s: field name */
 					$warnings[] = sprintf( __( 'Critical field "%s" is missing or empty.', 'mcp-ai-wpoos' ), $field );
 				}
 			}
@@ -1304,11 +1306,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( 0 === $configured_providers ) {
 				$warnings[] = __( 'No AI providers configured. At least one provider is required.', 'mcp-ai-wpoos' );
 			} else {
+				/* translators: %d: number of configured providers */
 				$info[] = sprintf( __( 'Configured providers: %d', 'mcp-ai-wpoos' ), $configured_providers );
 			}
 
 			// Check 5: Cache status.
 			$cache_exists = false !== wp_cache_get( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+			/* translators: %s: cache status (Active or Not cached) */
 			$info[]       = sprintf( __( 'Object cache status: %s', 'mcp-ai-wpoos' ), $cache_exists ? 'Active' : 'Not cached' );
 
 			// Check 6: Backup count.
@@ -1319,6 +1323,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'wp_mcp_ai_settings_backup_%'
 				)
 			);
+			/* translators: %d: number of settings backups */
 			$info[]       = sprintf( __( 'Settings backups available: %d', 'mcp-ai-wpoos' ), (int) $backup_count );
 
 			// Prepare response.
@@ -1336,6 +1341,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'warnings' => $warnings,
 					'info'     => $info,
 					'message'  => sprintf(
+						/* translators: %s: health status (GOOD, WARNING, or CRITICAL) */
 						__( 'Health check complete. Status: %s', 'mcp-ai-wpoos' ),
 						strtoupper( $health_status )
 					),

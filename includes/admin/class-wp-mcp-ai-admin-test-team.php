@@ -260,6 +260,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Test_Team' ) ) {
 											if ( ! empty( $member_names ) ) {
 												echo '<br><small>' . esc_html( implode( ', ', array_slice( $member_names, 0, 3 ) ) );
 												if ( count( $member_names ) > 3 ) {
+													/* translators: %d: number of additional team members */
 													echo ', ' . esc_html( sprintf( __( 'and %d more', 'mcp-ai-wpoos' ), count( $member_names ) - 3 ) );
 												}
 												echo '</small>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.

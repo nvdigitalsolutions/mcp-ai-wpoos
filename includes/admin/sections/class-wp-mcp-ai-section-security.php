@@ -545,6 +545,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					// Validate CIDR format.
 					$parts = explode( '/', $entry );
 					if ( count( $parts ) !== 2 ) {
+						/* translators: %s: CIDR entry */
 						return new WP_Error( 'invalid_cidr', sprintf( __( 'Invalid CIDR format: %s', 'mcp-ai-wpoos' ), $entry ) );
 					}
 
@@ -552,6 +553,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 
 					// Validate IP part.
 					if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+						/* translators: %s: CIDR entry */
 						return new WP_Error( 'invalid_cidr_ip', sprintf( __( 'Invalid IP in CIDR: %s', 'mcp-ai-wpoos' ), $entry ) );
 					}
 
@@ -560,16 +562,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Security' ) ) {
 					// Check for IPv4 or IPv6.
 					if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
 						if ( $mask_int < 0 || $mask_int > 32 ) {
+							/* translators: %s: CIDR entry */
 							return new WP_Error( 'invalid_cidr_mask', sprintf( __( 'Invalid IPv4 CIDR mask (must be 0-32): %s', 'mcp-ai-wpoos' ), $entry ) );
 						}
 					} elseif ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6 ) ) {
 						if ( $mask_int < 0 || $mask_int > 128 ) {
+							/* translators: %s: CIDR entry */
 							return new WP_Error( 'invalid_cidr_mask', sprintf( __( 'Invalid IPv6 CIDR mask (must be 0-128): %s', 'mcp-ai-wpoos' ), $entry ) );
 						}
 					}
 				} else {
 					// Validate as plain IP address.
 					if ( ! filter_var( $entry, FILTER_VALIDATE_IP ) ) {
+						/* translators: %s: IP address */
 						return new WP_Error( 'invalid_ip', sprintf( __( 'Invalid IP address: %s', 'mcp-ai-wpoos' ), $entry ) );
 					}
 				}

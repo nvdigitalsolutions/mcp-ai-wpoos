@@ -1404,6 +1404,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<div class="metric-stats">
 								<?php
 								$avg_tools = count( $professions ) > 0 ? round( $total_tools / count( $professions ), 1 ) : 0;
+								/* translators: %s: average number of tools */
 								?>
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Avg per Agent: %s', 'mcp-ai-wpoos' ), $avg_tools ) ); ?></span>
 							</div>
@@ -1424,7 +1425,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<div class="metric-primary"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></div>
 							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Status', 'mcp-ai-wpoos' ); ?></div>
 							<div class="metric-stats">
+								/* translators: %s: memory usage percentage */
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Memory: %s%%', 'mcp-ai-wpoos' ), number_format( $health['memory_usage'], 1 ) ) ); ?></span>
+								/* translators: %s: error rate percentage */
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Errors: %s%%', 'mcp-ai-wpoos' ), number_format( $health['error_rate'], 1 ) ) ); ?></span>
 							</div>
 						</div>
@@ -1461,6 +1464,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										if ( ! $has_critic ) {
 											$missing[] = 'Critic';
 										}
+										/* translators: %s: comma-separated list of missing roles */
 										echo esc_html( sprintf( __( 'Missing: %s', 'mcp-ai-wpoos' ), implode( ', ', $missing ) ) );
 										?>
 									</span>
