@@ -332,8 +332,8 @@ class WP_MCP_AI_Reg_Document_Page {
 		);
 		$stats['total_documents'] = $total_query->found_posts;
 
-		$today      = date( 'Y-m-d' );
-		$in_30_days = date( 'Y-m-d', strtotime( '+30 days' ) );
+		$today      = current_time( 'Y-m-d' );
+		$in_30_days = date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
 
 		// Count expiring soon (within 30 days).
 		$expiring_query = new WP_Query(
@@ -383,8 +383,8 @@ class WP_MCP_AI_Reg_Document_Page {
 	 * Render expiring documents list.
 	 */
 	private static function render_expiring_documents() {
-		$today      = date( 'Y-m-d' );
-		$in_30_days = date( 'Y-m-d', strtotime( '+30 days' ) );
+		$today      = current_time( 'Y-m-d' );
+		$in_30_days = date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
 
 		$query = new WP_Query(
 			array(
@@ -415,7 +415,7 @@ class WP_MCP_AI_Reg_Document_Page {
 					$is_expired  = $expiry_date && strtotime( $expiry_date ) < strtotime( $today );
 					$doc_type    = wp_get_post_terms( get_the_ID(), 'mcp_ai_doc_type', array( 'fields' => 'names' ) );
 					?>
-					<li class="document-item <?php echo $is_expired ? 'expired' : 'expiring'; ?>">
+					<li class="document-item <?php echo esc_attr( $is_expired ? 'expired' : 'expiring' ); ?>">
 						<div>
 							<div class="document-title"><?php the_title(); ?></div>
 							<div class="document-meta">
@@ -428,7 +428,7 @@ class WP_MCP_AI_Reg_Document_Page {
 							</div>
 						</div>
 						<div>
-							<span class="expiry-badge <?php echo $is_expired ? 'expired' : 'expiring'; ?>">
+							<span class="expiry-badge <?php echo esc_attr( $is_expired ? 'expired' : 'expiring' ); ?>">
 								<?php echo $is_expired ? esc_html__( 'EXPIRED', 'mcp-ai-wpoos-pro' ) : esc_html__( 'EXPIRING SOON', 'mcp-ai-wpoos-pro' ); ?>
 							</span>
 							<a href="<?php echo esc_url( get_edit_post_link() ); ?>" class="button button-small">
@@ -465,7 +465,6 @@ class WP_MCP_AI_Reg_Document_Page {
 			<div class="doc-type-grid">
 				<?php
 				foreach ( $terms as $term ) {
-					$count = wp_count_posts( 'mcp_ai_reg_document' );
 					// Get actual count for this term.
 					$term_count_query = new WP_Query(
 						array(

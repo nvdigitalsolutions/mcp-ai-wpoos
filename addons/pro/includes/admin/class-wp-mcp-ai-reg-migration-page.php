@@ -53,23 +53,23 @@ class WP_MCP_AI_Reg_Migration_Page {
 
 			<div class="import-section">
 				<h2><?php esc_html_e( 'Import Options', 'mcp-ai-wpoos-pro' ); ?></h2>
-				
-				<div class="import-type-selector">
-					<label>
-						<input type="radio" name="import_type" value="products" checked />
-						<strong><?php esc_html_e( 'Import Products', 'mcp-ai-wpoos-pro' ); ?></strong>
-						<p class="description"><?php esc_html_e( 'Import regulatory products with ingredients, formulations, and basic information.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</label>
-					
-					<label>
-						<input type="radio" name="import_type" value="registrations" />
-						<strong><?php esc_html_e( 'Import Registrations', 'mcp-ai-wpoos-pro' ); ?></strong>
-						<p class="description"><?php esc_html_e( 'Import registration records with submission dates, approval dates, and status information.', 'mcp-ai-wpoos-pro' ); ?></p>
-					</label>
-				</div>
 
 				<form method="post" enctype="multipart/form-data" class="import-form">
 					<?php wp_nonce_field( 'wp_mcp_ai_import_excel_nonce' ); ?>
+					
+					<div class="import-type-selector">
+						<label>
+							<input type="radio" name="import_type" value="products" checked />
+							<strong><?php esc_html_e( 'Import Products', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p class="description"><?php esc_html_e( 'Import regulatory products with ingredients, formulations, and basic information.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</label>
+						
+						<label>
+							<input type="radio" name="import_type" value="registrations" />
+							<strong><?php esc_html_e( 'Import Registrations', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<p class="description"><?php esc_html_e( 'Import registration records with submission dates, approval dates, and status information.', 'mcp-ai-wpoos-pro' ); ?></p>
+						</label>
+					</div>
 					
 					<table class="form-table">
 						<tr>
@@ -182,6 +182,9 @@ class WP_MCP_AI_Reg_Migration_Page {
 				border-radius: 4px;
 				cursor: pointer;
 			}
+			.wp-mcp-ai-import-page .import-type-selector input[type="radio"]:checked + strong {
+				color: #2271b1;
+			}
 			.wp-mcp-ai-import-page .import-type-selector label:has(input:checked) {
 				border-color: #2271b1;
 				background: #f6f7f7;
@@ -217,11 +220,6 @@ class WP_MCP_AI_Reg_Migration_Page {
 	 * Handle import form submission.
 	 */
 	private static function handle_import() {
-		// Verify nonce.
-		if ( ! isset( $_POST['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ), 'wp_mcp_ai_import_excel_nonce' ) ) {
-			wp_die( esc_html__( 'Security check failed', 'mcp-ai-wpoos-pro' ) );
-		}
-
 		// Check capabilities.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die( esc_html__( 'You do not have permission to import data', 'mcp-ai-wpoos-pro' ) );

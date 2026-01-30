@@ -321,6 +321,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 			)
 		);
 		$stats['total_products'] = $products_query->found_posts;
+		wp_reset_postdata();
 
 		// Count registrations.
 		$registrations_query = new WP_Query(
@@ -332,6 +333,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 			)
 		);
 		$stats['total_registrations'] = $registrations_query->found_posts;
+		wp_reset_postdata();
 
 		// Count by status (using taxonomy if available).
 		$approved_term = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
@@ -352,6 +354,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 				)
 			);
 			$stats['approved'] = $approved_query->found_posts;
+			wp_reset_postdata();
 		}
 
 		$review_term = get_term_by( 'name', 'Under Review', 'mcp_ai_reg_status' );
@@ -372,6 +375,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 				)
 			);
 			$stats['under_review'] = $review_query->found_posts;
+			wp_reset_postdata();
 		}
 
 		$draft_term = get_term_by( 'name', 'Draft', 'mcp_ai_reg_status' );
@@ -392,6 +396,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 				)
 			);
 			$stats['draft'] = $draft_query->found_posts;
+			wp_reset_postdata();
 		}
 
 		// Count expiring soon (within 30 days).
@@ -405,8 +410,8 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 					array(
 						'key'     => 'expiry_date',
 						'value'   => array(
-							date( 'Y-m-d' ),
-							date( 'Y-m-d', strtotime( '+30 days' ) ),
+							current_time( 'Y-m-d' ),
+							date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) ),
 						),
 						'compare' => 'BETWEEN',
 						'type'    => 'DATE',
@@ -415,6 +420,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 			)
 		);
 		$stats['expiring_soon'] = $expiring_query->found_posts;
+		wp_reset_postdata();
 
 		return $stats;
 	}
