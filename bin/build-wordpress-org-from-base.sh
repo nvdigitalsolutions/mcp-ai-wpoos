@@ -1,13 +1,24 @@
 #!/bin/bash
 #
-# Build WordPress.org Packages (Base and Complete)
+# Build WordPress.org Packages (Base, Pro, Complete, and Core)
 #
 # This script takes the already-built packages and transforms them
-# for WordPress.org compatible distribution by changing the text domain.
+# for WordPress.org compatible distribution by changing the text domain
+# throughout the codebase (not just headers).
 #
-# Creates two packages:
-# 1. nvdigital-open-operator-system-oos-{version}.zip - BASE only
-# 2. nvdigital-open-operator-system-oos-complete-{version}.zip - BASE + PRO
+# Input: 4 packages from build-plugin-zip.sh (with headers set correctly):
+# - build/nvdigital-open-operator-system-oos-{version}.zip (BASE)
+# - build/nvdigital-open-operator-system-oos-pro-{version}.zip (PRO)
+# - build/nvdigital-open-operator-system-oos-complete-{version}.zip (COMPLETE)
+# - build/nvdigital-open-operator-system-oos-core-{version}.zip (CORE)
+#
+# Output: 4 WordPress.org ready packages with all text domains transformed:
+# - build/nvdigital-open-operator-system-oos-wporg-{version}.zip (BASE WordPress.org)
+# - build/nvdigital-open-operator-system-oos-pro-wporg-{version}.zip (PRO WordPress.org)
+# - build/nvdigital-open-operator-system-oos-complete-wporg-{version}.zip (COMPLETE WordPress.org)
+# - build/nvdigital-open-operator-system-oos-core-wporg-{version}.zip (CORE WordPress.org)
+#
+# Total: 8 files (4 original + 4 transformed)
 #
 # Usage:
 #   ./bin/build-wordpress-org-from-base.sh
@@ -156,23 +167,58 @@ transform_package() {
 
 # Build BASE WordPress.org package
 BASE_SOURCE="build/nvdigital-open-operator-system-oos-${VERSION}.zip"
-BASE_OUTPUT="build/nvdigital-open-operator-system-oos-${VERSION}.zip"
+BASE_OUTPUT="build/nvdigital-open-operator-system-oos-wporg-${VERSION}.zip"
 transform_package "$BASE_SOURCE" "$BASE_OUTPUT" "BASE (WordPress.org)"
 
 echo ""
 
+# Build PRO WordPress.org package
+PRO_SOURCE="build/nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+PRO_OUTPUT="build/nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip"
+if [ -f "$PRO_SOURCE" ]; then
+    transform_package "$PRO_SOURCE" "$PRO_OUTPUT" "PRO (WordPress.org)"
+    echo ""
+else
+    echo "⚠️  Pro source not found: $PRO_SOURCE - skipping..."
+    echo ""
+fi
+
 # Build COMPLETE WordPress.org package
 COMPLETE_SOURCE="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
-COMPLETE_OUTPUT="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
+COMPLETE_OUTPUT="build/nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip"
 transform_package "$COMPLETE_SOURCE" "$COMPLETE_OUTPUT" "COMPLETE (Base + Pro)"
+
+echo ""
+
+# Build CORE WordPress.org package
+CORE_SOURCE="build/nvdigital-open-operator-system-oos-core-${VERSION}.zip"
+CORE_OUTPUT="build/nvdigital-open-operator-system-oos-core-wporg-${VERSION}.zip"
+# Core version might have its own version number
+if [ ! -f "$CORE_SOURCE" ]; then
+    # Try with core's own version
+    CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
+    CORE_SOURCE="build/nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip"
+    CORE_OUTPUT="build/nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip"
+fi
+
+if [ -f "$CORE_SOURCE" ]; then
+    transform_package "$CORE_SOURCE" "$CORE_OUTPUT" "CORE (WordPress.org)"
+else
+    echo "⚠️  Core source not found: $CORE_SOURCE - skipping..."
+fi
 
 # Create submission README
 echo ""
 echo "Creating submission documentation..."
 
 CURRENT_DATE=$(date +"%B %d, %Y")
-BASE_SIZE=$(du -h "$ROOT_DIR/$BASE_OUTPUT" | cut -f1)
-COMPLETE_SIZE=$(du -h "$ROOT_DIR/$COMPLETE_OUTPUT" | cut -f1)
+BASE_SIZE=$(du -h "$ROOT_DIR/$BASE_OUTPUT" 2>/dev/null | cut -f1 || echo "N/A")
+PRO_SIZE=$(du -h "$ROOT_DIR/$PRO_OUTPUT" 2>/dev/null | cut -f1 || echo "N/A")
+COMPLETE_SIZE=$(du -h "$ROOT_DIR/$COMPLETE_OUTPUT" 2>/dev/null | cut -f1 || echo "N/A")
+
+# Get core version for display
+CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
+CORE_SIZE=$(du -h "build/nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip" 2>/dev/null | cut -f1 || echo "N/A")
 
 cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 # WordPress.org Submission Packages
@@ -183,12 +229,31 @@ cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 
 ---
 
-## Two Packages Available
+## Package Overview
+
+This build creates **8 ZIP files** for distribution:
+
+### Original Packages (4 files)
+Built by \`build-plugin-zip.sh\` with correct plugin headers:
+1. \`nvdigital-open-operator-system-oos-${VERSION}.zip\` - Base version
+2. \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\` - Pro add-on
+3. \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\` - Combined (Base + Pro)
+4. \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\` - Core (lightweight)
+
+### WordPress.org Transformed Packages (4 files)
+Built by \`build-wordpress-org-from-base.sh\` with all text domains transformed:
+5. \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\` - Base (WordPress.org ready)
+6. \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\` - Pro (WordPress.org ready)
+7. \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\` - Combined (WordPress.org ready)
+8. \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\` - Core (WordPress.org ready)
+
+---
+
+## Package Details
 
 ### 1. BASE Package (WordPress.org Submission)
-**File:** \`nvdigital-open-operator-system-oos-${VERSION}.zip\`  
-**Size:** $BASE_SIZE  
-**Based on:** \`mcp-ai-wpoos-base-${VERSION}.zip\`
+**Original:** \`nvdigital-open-operator-system-oos-${VERSION}.zip\`  
+**WordPress.org:** \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\` ($BASE_SIZE)
 
 **What's Included:**
 - 127 base tools
@@ -198,36 +263,47 @@ cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 - Privacy API (GDPR compliant)
 - Site Health integration
 
-**What's NOT Included:**
-- Pro addon (70+ Pro tools)
-- LangChain.js orchestration
-- Transformers.js browser AI
-- Web Workers
+**Text Domain:** \`nvdigital-open-operator-system-oos\`
 
 **Use For:**
-- WordPress.org submission
+- WordPress.org submission (use -wporg version)
 - Free public distribution
 - Sites requiring WordPress.org approved plugins
 
 ---
 
-### 2. COMPLETE Package (Self-hosted Distribution)
-**File:** \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\`  
-**Size:** $COMPLETE_SIZE  
-**Based on:** \`mcp-ai-wpoos-${VERSION}.zip\` (combined base + Pro)
+### 2. PRO Add-on Package
+**Original:** \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\`  
+**WordPress.org:** \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\` ($PRO_SIZE)
 
 **What's Included:**
-- Everything in BASE package
 - 70+ Pro tools
 - Pro Dashboard
-- Advanced integrations (WooCommerce, GitHub, Google, etc.)
+- Advanced integrations (WooCommerce, JetEngine, GitHub, Google, etc.)
 - Social media tools
 - Document generation (PDF, Word, Excel)
 - Video processing (FFmpeg)
-- All Pro features
 
-**What's NOT Included:**
-- Nothing - this is the complete package
+**Text Domain:** \`nvdigital-open-operator-system-oos-pro\`
+
+**Requirements:** Requires base plugin to be installed first
+
+**Use For:**
+- Add-on distribution
+- Pro features for existing base installations
+
+---
+
+### 3. COMPLETE Package (Self-hosted Distribution)
+**Original:** \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\`  
+**WordPress.org:** \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\` ($COMPLETE_SIZE)
+
+**What's Included:**
+- Everything in BASE package
+- Everything in PRO package
+- All 197+ tools in one install
+
+**Text Domain:** \`nvdigital-open-operator-system-oos\` (base) + \`nvdigital-open-operator-system-oos-pro\` (pro features)
 
 **Use For:**
 - Self-hosted websites
@@ -237,42 +313,77 @@ cat > "build/WORDPRESS_ORG_SUBMISSION_README.md" << EOREADME
 
 ---
 
-## Key Differences
+### 4. CORE Package (Lightweight)
+**Original:** \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\`  
+**WordPress.org:** \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\` ($CORE_SIZE)
 
-| Feature | BASE | COMPLETE |
-|---------|------|----------|
-| **Size** | $BASE_SIZE | $COMPLETE_SIZE |
-| **Tools** | 127 | 197+ |
-| **Pro Features** | ❌ | ✅ |
-| **WordPress.org** | ✅ Submit | ❌ No (Pro is commercial) |
-| **Text Domain** | nvdigital-open-operator-system-oos | nvdigital-open-operator-system-oos |
+**What's Included:**
+- 4 basic tools only
+- Minimal footprint
+- Essential AI functionality
+
+**Text Domain:** \`nvdigital-open-operator-system-oos-core\`
+
+**Use For:**
+- Lightweight installations
+- Testing environments
+- Minimal AI integration needs
+
+---
+
+## Key Differences: Original vs WordPress.org Versions
+
+| Aspect | Original Packages | WordPress.org Packages (-wporg) |
+|--------|-------------------|----------------------------------|
+| **Plugin Headers** | Text domains set | Text domains set |
+| **Code Text Domains** | Original (mcp-ai-wpoos*) | Transformed (nvdigital-open-operator-system-oos*) |
+| **Translation Files** | Original names | Renamed to match new text domains |
+| **Use Case** | Development, testing | Production, WordPress.org submission |
+| **Recommended For** | Internal use | Public distribution |
+
+**Important:** For WordPress.org submission or public distribution, **always use the -wporg versions** which have all text domains fully transformed throughout the codebase.
 
 ---
 
 ## Installation
 
-### BASE Package
-1. **WordPress.org:** Submit to https://wordpress.org/plugins/developers/add/
-2. **Manual Install:** Upload via Plugins → Add New → Upload Plugin
+### BASE Package (WordPress.org)
+- **File to use:** \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\`
+- **WordPress.org:** Submit to https://wordpress.org/plugins/developers/add/
+- **Manual Install:** Upload via Plugins → Add New → Upload Plugin
 
-### COMPLETE Package
-1. **Self-hosted Only:** Cannot submit to WordPress.org (includes Pro)
-2. **Manual Install:** Upload via Plugins → Add New → Upload Plugin
-3. **Distribution:** Host on your website for customer downloads
+### PRO Package  
+- **File to use:** \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\`
+- **Requirements:** Base plugin must be installed first
+- **Manual Install:** Upload via Plugins → Add New → Upload Plugin
+
+### COMPLETE Package (Self-hosted)
+- **File to use:** \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\`
+- **Self-hosted Only:** Cannot submit to WordPress.org (includes Pro)
+- **Manual Install:** Upload via Plugins → Add New → Upload Plugin
+- **Distribution:** Host on your website for customer downloads
+
+### CORE Package (Lightweight)
+- **File to use:** \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\`
+- **Manual Install:** Upload via Plugins → Add New → Upload Plugin
+- **Use Case:** Minimal installations, testing
 
 ---
 
 ## Compliance
 
-Both packages are:
-- ✅ Text domain transformed
+All WordPress.org packages (-wporg suffix) are:
+- ✅ Text domains fully transformed in headers and code
+- ✅ Translation files renamed to match text domains
 - ✅ No .backup files
 - ✅ No broken references
 - ✅ Fully functional
 - ✅ Ready for distribution
 
-**BASE package:** WordPress.org compliant  
-**COMPLETE package:** Self-hosted distribution only
+**BASE -wporg package:** WordPress.org submission ready  
+**PRO -wporg package:** Self-hosted add-on distribution  
+**COMPLETE -wporg package:** Self-hosted distribution only (includes proprietary Pro features)  
+**CORE -wporg package:** Lightweight WordPress.org or self-hosted distribution
 
 ---
 
@@ -292,11 +403,22 @@ echo "=========================================="
 echo "✅ WordPress.org Packages Complete!"
 echo "=========================================="
 echo ""
-echo "📦 Packages created:"
-echo "   BASE:     $BASE_OUTPUT ($BASE_SIZE)"
-echo "   COMPLETE: $COMPLETE_OUTPUT ($COMPLETE_SIZE)"
+echo "📦 WordPress.org Packages created (8 total: 4 original + 4 transformed):"
+echo ""
+echo "Original packages (with headers set):"
+echo "   1. nvdigital-open-operator-system-oos-${VERSION}.zip"
+echo "   2. nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+echo "   3. nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
+echo "   4. nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip"
+echo ""
+echo "WordPress.org transformed packages (all text domains transformed):"
+echo "   5. nvdigital-open-operator-system-oos-wporg-${VERSION}.zip ($BASE_SIZE)"
+echo "   6. nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip ($PRO_SIZE)"
+echo "   7. nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip ($COMPLETE_SIZE)"
+echo "   8. nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip ($CORE_SIZE)"
 echo ""
 echo "📄 Documentation: build/WORDPRESS_ORG_SUBMISSION_README.md"
 echo ""
-echo "Ready for distribution!"
+echo "✨ For WordPress.org submission or public distribution, use the -wporg versions!"
+echo ""
 
