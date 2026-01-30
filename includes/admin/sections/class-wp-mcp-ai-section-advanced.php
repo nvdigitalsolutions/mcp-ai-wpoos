@@ -1720,21 +1720,24 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 * Provides UI for managing mesh peer connections and AI Peers.
 		 */
 		private function render_federation_mesh() {
-			// Get AI Peers count.
-			$ai_peer_count = wp_count_posts( 'ai_peer' );
-			// Count all AI peers regardless of status to detect unpublished peers.
-			// Exclude only trash and auto-draft statuses.
-			$total_peers = 0;
-			foreach ( (array) $ai_peer_count as $status => $count ) {
-				if ( ! in_array( $status, array( 'trash', 'auto-draft' ), true ) ) {
-					$total_peers += absint( $count );
-				}
-			}
-
 			// Get mesh computing status from tools settings.
 			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
 			$mesh_enabled       = ! empty( $settings['enable_mesh'] );
 			$federation_enabled = ! empty( $settings['enable_federation'] );
+			$directory_enabled  = ! empty( $settings['enable_federation_directory'] );
+
+			// Get AI Peers count only if directory is enabled and post type exists.
+			$total_peers = 0;
+			if ( $directory_enabled && post_type_exists( 'ai_peer' ) ) {
+				$ai_peer_count = wp_count_posts( 'ai_peer' );
+				// Count all AI peers regardless of status to detect unpublished peers.
+				// Exclude only trash and auto-draft statuses.
+				foreach ( (array) $ai_peer_count as $status => $count ) {
+					if ( ! in_array( $status, array( 'trash', 'auto-draft' ), true ) ) {
+						$total_peers += absint( $count );
+					}
+				}
+			}
 
 			// Get mesh inbound API key.
 			$mesh_inbound_key = ! empty( $settings['mesh_inbound_api_key'] ) ? $settings['mesh_inbound_api_key'] : '';
@@ -1834,156 +1837,178 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				<?php endif; ?>
 
 				<!-- AI Peers Management -->
-				<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-					<h4><?php esc_html_e( 'AI Peers (Federation Directory)', 'mcp-ai-wpoos' ); ?></h4>
-					<p class="description">
-						<?php esc_html_e( 'AI Peers represent other NV oOS instances in the federation network. Each peer can provide capabilities, tools, and AI services that can be discovered and consumed by this site.', 'mcp-ai-wpoos' ); ?>
-					</p>
+				<?php if ( $directory_enabled ) : ?>
+					<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+						<h4><?php esc_html_e( 'AI Peers (Federation Directory)', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'AI Peers represent other NV oOS instances in the federation network. Each peer can provide capabilities, tools, and AI services that can be discovered and consumed by this site.', 'mcp-ai-wpoos' ); ?>
+						</p>
 
-					<?php if ( $total_peers > 0 ) : ?>
-						<!-- AI Peers List -->
-						<?php
-						$ai_peers = get_posts(
-							array(
-								'post_type'      => 'ai_peer',
-								'post_status'    => 'publish',
-								'posts_per_page' => 10,
-								'orderby'        => 'title',
-								'order'          => 'ASC',
-							)
-						);
-
-						if ( ! empty( $ai_peers ) ) :
-							?>
-							<div class="wp-mcp-ai-peers-list" style="margin: 15px 0;">
-								<table class="widefat striped" style="margin-top: 15px;">
-									<thead>
-										<tr>
-											<th><?php esc_html_e( 'Peer Name', 'mcp-ai-wpoos' ); ?></th>
-											<th><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></th>
-											<th><?php esc_html_e( 'Health Status', 'mcp-ai-wpoos' ); ?></th>
-											<th><?php esc_html_e( 'Last Verified', 'mcp-ai-wpoos' ); ?></th>
-											<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
-										</tr>
-									</thead>
-									<tbody>
-										<?php foreach ( $ai_peers as $peer ) : ?>
-											<?php
-											$peer_id     = $peer->ID;
-											$site_url    = get_post_meta( $peer_id, '_wp_mcp_ai_peer_site_url', true );
-											$health      = get_post_meta( $peer_id, '_wp_mcp_ai_peer_health_status', true );
-											$last_verify = get_post_meta( $peer_id, '_wp_mcp_ai_peer_last_verified', true );
-
-											// Format health status.
-											$health_class = 'unknown';
-											$health_text  = __( 'Unknown', 'mcp-ai-wpoos' );
-											if ( 'healthy' === $health ) {
-												$health_class = 'success';
-												$health_text  = __( 'Healthy', 'mcp-ai-wpoos' );
-											} elseif ( 'degraded' === $health ) {
-												$health_class = 'warning';
-												$health_text  = __( 'Degraded', 'mcp-ai-wpoos' );
-											} elseif ( 'unhealthy' === $health ) {
-												$health_class = 'error';
-												$health_text  = __( 'Unhealthy', 'mcp-ai-wpoos' );
-											}
-
-											// Format last verified.
-											$last_verify_display = __( 'Never', 'mcp-ai-wpoos' );
-											if ( $last_verify ) {
-												$last_verify_display = human_time_diff( strtotime( $last_verify ), current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
-											}
-
-											$edit_url = admin_url( 'post.php?post=' . $peer_id . '&action=edit' );
-											?>
-											<tr>
-												<td>
-													<strong>
-														<a href="<?php echo esc_url( $edit_url ); ?>">
-															<?php echo esc_html( $peer->post_title ); ?>
-														</a>
-													</strong>
-												</td>
-												<td>
-													<?php if ( $site_url ) : ?>
-														<a href="<?php echo esc_url( $site_url ); ?>" target="_blank" rel="noopener noreferrer">
-															<?php echo esc_html( $site_url ); ?>
-															<span class="dashicons dashicons-external" style="font-size: 12px; text-decoration: none;"></span>
-														</a>
-													<?php else : ?>
-														<span class="description"><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></span>
-													<?php endif; ?>
-												</td>
-												<td>
-													<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $health_class ); ?>">
-														<?php echo esc_html( $health_text ); ?>
-													</span>
-												</td>
-												<td><?php echo esc_html( $last_verify_display ); ?></td>
-												<td>
-													<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
-														<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
-													</a>
-												</td>
-											</tr>
-										<?php endforeach; ?>
-									</tbody>
-								</table>
-							</div>
-						<?php else : ?>
-							<!-- Show message when peers exist but aren't published -->
-							<div class="notice notice-warning inline" style="margin: 15px 0;">
-								<p>
-									<?php
-									$message = sprintf(
-										/* translators: %d: number of peers */
-										_n(
-											'You have %d AI peer registered, but it is not currently published.',
-											'You have %d AI peers registered, but none are currently published.',
-											$total_peers,
-											'mcp-ai-wpoos'
-										),
-										$total_peers
-									);
-									$link = sprintf(
-										'<a href="%s">%s</a>',
-										esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ),
-										esc_html__( 'View all AI peers', 'mcp-ai-wpoos' )
-									);
-									printf(
-										/* translators: 1: message about unpublished peers, 2: link to view AI peers */
-										__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
-										esc_html( $message ),
-										$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__
-									);
-									?>
-								</p>
-							</div>
-						<?php endif; ?>
-					<?php endif; ?>
-
-					<!-- Add New Peer Button -->
-					<div style="margin: 15px 0;">
-						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=ai_peer' ) ); ?>" class="button button-primary">
-							<span class="dashicons dashicons-plus" style="margin-top: 3px;"></span>
-							<?php esc_html_e( 'Add New AI Peer', 'mcp-ai-wpoos' ); ?>
-						</a>
 						<?php if ( $total_peers > 0 ) : ?>
-							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ); ?>" class="button button-secondary" style="margin-left: 5px;">
-								<?php esc_html_e( 'View All AI Peers', 'mcp-ai-wpoos' ); ?> (<?php echo absint( $total_peers ); ?>)
-							</a>
-						<?php endif; ?>
-					</div>
+							<!-- AI Peers List -->
+							<?php
+							$ai_peers = get_posts(
+								array(
+									'post_type'      => 'ai_peer',
+									'post_status'    => 'publish',
+									'posts_per_page' => 10,
+									'orderby'        => 'title',
+									'order'          => 'ASC',
+								)
+							);
 
-					<?php if ( ! $mesh_enabled && ! $federation_enabled ) : ?>
-						<div class="notice notice-info inline" style="margin-top: 20px;">
+							if ( ! empty( $ai_peers ) ) :
+								?>
+								<div class="wp-mcp-ai-peers-list" style="margin: 15px 0;">
+									<table class="widefat striped" style="margin-top: 15px;">
+										<thead>
+											<tr>
+												<th><?php esc_html_e( 'Peer Name', 'mcp-ai-wpoos' ); ?></th>
+												<th><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></th>
+												<th><?php esc_html_e( 'Health Status', 'mcp-ai-wpoos' ); ?></th>
+												<th><?php esc_html_e( 'Last Verified', 'mcp-ai-wpoos' ); ?></th>
+												<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+											</tr>
+										</thead>
+										<tbody>
+											<?php foreach ( $ai_peers as $peer ) : ?>
+												<?php
+												$peer_id     = $peer->ID;
+												$site_url    = get_post_meta( $peer_id, '_wp_mcp_ai_peer_site_url', true );
+												$health      = get_post_meta( $peer_id, '_wp_mcp_ai_peer_health_status', true );
+												$last_verify = get_post_meta( $peer_id, '_wp_mcp_ai_peer_last_verified', true );
+
+												// Format health status.
+												$health_class = 'unknown';
+												$health_text  = __( 'Unknown', 'mcp-ai-wpoos' );
+												if ( 'healthy' === $health ) {
+													$health_class = 'success';
+													$health_text  = __( 'Healthy', 'mcp-ai-wpoos' );
+												} elseif ( 'degraded' === $health ) {
+													$health_class = 'warning';
+													$health_text  = __( 'Degraded', 'mcp-ai-wpoos' );
+												} elseif ( 'unhealthy' === $health ) {
+													$health_class = 'error';
+													$health_text  = __( 'Unhealthy', 'mcp-ai-wpoos' );
+												}
+
+												// Format last verified.
+												$last_verify_display = __( 'Never', 'mcp-ai-wpoos' );
+												if ( $last_verify ) {
+													$last_verify_display = human_time_diff( strtotime( $last_verify ), current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
+												}
+
+												$edit_url = admin_url( 'post.php?post=' . $peer_id . '&action=edit' );
+												?>
+												<tr>
+													<td>
+														<strong>
+															<a href="<?php echo esc_url( $edit_url ); ?>">
+																<?php echo esc_html( $peer->post_title ); ?>
+															</a>
+														</strong>
+													</td>
+													<td>
+														<?php if ( $site_url ) : ?>
+															<a href="<?php echo esc_url( $site_url ); ?>" target="_blank" rel="noopener noreferrer">
+																<?php echo esc_html( $site_url ); ?>
+																<span class="dashicons dashicons-external" style="font-size: 12px; text-decoration: none;"></span>
+															</a>
+														<?php else : ?>
+															<span class="description"><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></span>
+														<?php endif; ?>
+													</td>
+													<td>
+														<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $health_class ); ?>">
+															<?php echo esc_html( $health_text ); ?>
+														</span>
+													</td>
+													<td><?php echo esc_html( $last_verify_display ); ?></td>
+													<td>
+														<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
+															<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+														</a>
+													</td>
+												</tr>
+											<?php endforeach; ?>
+										</tbody>
+									</table>
+								</div>
+							<?php else : ?>
+								<!-- Show message when peers exist but aren't published -->
+								<div class="notice notice-warning inline" style="margin: 15px 0;">
+									<p>
+										<?php
+										$message = sprintf(
+											/* translators: %d: number of peers */
+											_n(
+												'You have %d AI peer registered, but it is not currently published.',
+												'You have %d AI peers registered, but none are currently published.',
+												$total_peers,
+												'mcp-ai-wpoos'
+											),
+											$total_peers
+										);
+										$link = sprintf(
+											'<a href="%s">%s</a>',
+											esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ),
+											esc_html__( 'View all AI peers', 'mcp-ai-wpoos' )
+										);
+										printf(
+											/* translators: 1: message about unpublished peers, 2: link to view AI peers */
+											esc_html__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+											esc_html( $message ),
+											$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__
+										);
+										?>
+									</p>
+								</div>
+							<?php endif; ?>
+						<?php endif; ?>
+
+						<!-- Add New Peer Button -->
+						<div style="margin: 15px 0;">
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=ai_peer' ) ); ?>" class="button button-primary">
+								<span class="dashicons dashicons-plus" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Add New AI Peer', 'mcp-ai-wpoos' ); ?>
+							</a>
+							<?php if ( $total_peers > 0 ) : ?>
+								<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ); ?>" class="button button-secondary" style="margin-left: 5px;">
+									<?php esc_html_e( 'View All AI Peers', 'mcp-ai-wpoos' ); ?> (<?php echo absint( $total_peers ); ?>)
+								</a>
+							<?php endif; ?>
+						</div>
+					</div>
+				<?php else : ?>
+					<!-- Show message when directory is disabled -->
+					<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+						<h4><?php esc_html_e( 'AI Peers (Federation Directory)', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'AI Peers represent other NV oOS instances in the federation network. Each peer can provide capabilities, tools, and AI services that can be discovered and consumed by this site.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<div class="notice notice-warning inline" style="margin: 15px 0;">
 							<p>
-								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
-								<?php esc_html_e( 'To use mesh computing and federation features, enable them in the Tools & Features settings.', 'mcp-ai-wpoos' ); ?>
+								<strong><?php esc_html_e( 'Directory Service Disabled', 'mcp-ai-wpoos' ); ?></strong><br>
+								<?php
+								printf(
+									/* translators: %s: URL to general settings */
+									esc_html__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ),
+									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'General Settings', 'mcp-ai-wpoos' ) . '</a>'
+								);
+								?>
 							</p>
 						</div>
-					<?php endif; ?>
-				</div>
+					</div>
+				<?php endif; ?>
+
+				<?php if ( ! $mesh_enabled && ! $directory_enabled ) : ?>
+					<div class="notice notice-info inline" style="margin-top: 20px;">
+						<p>
+							<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'To use mesh computing and federation features, enable them in the Tools & Features settings.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					</div>
+				<?php endif; ?>
 			</div>
 
 			<?php
