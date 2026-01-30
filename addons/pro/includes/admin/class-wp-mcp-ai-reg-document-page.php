@@ -25,7 +25,7 @@ class WP_MCP_AI_Reg_Document_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai',
+			'edit.php?post_type=mcp_ai_reg_product',
 			__( 'Document Management', 'mcp-ai-wpoos-pro' ),
 			__( 'Documents', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',

@@ -25,7 +25,7 @@ class WP_MCP_AI_Reg_Migration_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai',
+			'edit.php?post_type=mcp_ai_reg_product',
 			__( 'Import from Excel', 'mcp-ai-wpoos-pro' ),
 			__( 'Import Excel', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
