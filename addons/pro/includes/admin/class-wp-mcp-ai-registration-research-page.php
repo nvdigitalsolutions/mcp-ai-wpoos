@@ -296,7 +296,7 @@ class WP_MCP_AI_Registration_Research_Page {
 		}
 
 		// Get research data from request.
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized below per field.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Data is sanitized by tool execute method.
 		$research_data_raw = isset( $_POST['research_data'] ) ? wp_unslash( $_POST['research_data'] ) : '';
 
 		if ( empty( $research_data_raw ) ) {
@@ -362,7 +362,7 @@ class WP_MCP_AI_Registration_Research_Page {
 	 * @param string $format Data format.
 	 * @return array|WP_Error Result or error.
 	 */
-	protected static function process_import_data( $data, $format ) {
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
 		// This would integrate with the import_registrations_from_excel tool.
 		return new WP_Error( 'not_implemented', __( 'Registration import will be handled through Excel import page.', 'mcp-ai-wpoos-pro' ) );
 	}
