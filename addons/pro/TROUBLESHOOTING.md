@@ -34,10 +34,15 @@ The Pro Add-on supports two installation configurations:
 - Copy buttons don't function
 
 ### Root Cause
-In versions prior to v1.3.0, the Pro addon incorrectly determined its asset URL when both plugins were installed separately. The constant `WP_MCP_AI_PRO_URL` was set to `{base-plugin-url}/addons/pro/` even when Pro was installed as a separate plugin, causing 404 errors for all assets.
+In versions prior to v1.3.0, the Pro addon had two issues:
+1. Incorrectly determined asset URL when plugins were installed separately 
+2. Used `trailingslashit()` on URL that already had trailing slash, creating double slashes
+
+The constant `WP_MCP_AI_PRO_URL` was set to `{base-plugin-url}/addons/pro/` even when Pro was installed as a separate plugin, and then `trailingslashit()` was applied, resulting in URLs like:
+- `https://example.com/wp-content/plugins/mcp-ai-wpoos-pro//assets/js/file.js` (double slash causes 404)
 
 ### Solution (Fixed in v1.3.0+)
-The Pro addon now correctly detects whether it's bundled or separate by checking if the plugin path contains `addons/pro/`, using normalized paths for cross-platform compatibility:
+**Issue 1 - Path Detection**: The Pro addon now correctly detects whether it's bundled or separate by checking if the plugin path contains `addons/pro/`, using normalized paths for cross-platform compatibility:
 
 ```php
 // Updated logic in mcp-ai-wpoos-pro.php
@@ -53,9 +58,20 @@ if ( $is_bundled ) {
 } else {
     define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
 }
+```
 
-// Clean up temporary variable.
-unset( $is_bundled );
+**Issue 2 - URL Construction**: Asset URLs are now constructed without `trailingslashit()` since `WP_MCP_AI_PRO_URL` already includes the trailing slash:
+
+```php
+// BEFORE (Incorrect - caused double slashes):
+$css_url = trailingslashit( WP_MCP_AI_PRO_URL ) . 'assets/css/password-vault-admin.css';
+// Result: https://site.com/plugins/pro//assets/css/file.css ❌
+
+// AFTER (Correct):
+wp_enqueue_style(
+    'wp-mcp-ai-password-vault',
+    WP_MCP_AI_PRO_URL . 'assets/css/password-vault-admin.css',
+    // Result: https://site.com/plugins/pro/assets/css/file.css ✅
 ```
 
 ### Verification Steps
@@ -74,10 +90,11 @@ unset( $is_bundled );
 
 3. **Verify Asset URLs** in browser DevTools:
    - Open the Password Generator page
-   - Check Network tab for 404 errors
-   - Correct URL should match plugin installation type:
+   - Check Network tab for 404 errors or double slashes in URLs
+   - Correct URL format should be:
      - Bundled: `.../mcp-ai-wpoos/addons/pro/assets/js/password-vault-admin.js`
      - Separate: `.../mcp-ai-wpoos-pro/assets/js/password-vault-admin.js`
+   - **NOT**: `.../mcp-ai-wpoos-pro//assets/js/...` (double slash is wrong)
 
 ### Manual Workaround (if fix not available)
 If you're using an older version, you can manually fix by editing `addons/pro/mcp-ai-wpoos-pro.php`:
