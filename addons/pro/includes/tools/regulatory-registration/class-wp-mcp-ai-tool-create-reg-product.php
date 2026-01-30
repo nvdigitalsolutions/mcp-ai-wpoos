@@ -14,7 +14,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Creates a new regulatory product.
  */
-class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
+	
+	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
 	/**
 	 * {@inheritdoc}
 	 */
@@ -124,7 +126,13 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-write' );
+		return array(
+			'pro',                  // Pro-tier tool.
+			'database-write',       // Writes to database.
+			'state-changing',       // Modifies database state.
+			'reversible',           // Can be undone by deleting the product.
+			'idempotent',           // Can be called multiple times safely (creates new products each time).
+		);
 	}
 
 	/**

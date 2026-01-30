@@ -85,7 +85,14 @@ class WP_MCP_AI_Tool_List_Reg_Products implements WP_MCP_AI_Tool_Interface, WP_M
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-read' );
+		return array(
+			'pro',                  // Pro-tier tool.
+			'database-read',        // Reads from database.
+			'read-only',            // Does not modify state.
+			'cacheable',            // Results can be cached.
+			'paginated',            // Supports pagination.
+			'idempotent',           // Can be called multiple times safely with same result.
+		);
 	}
 
 	/**

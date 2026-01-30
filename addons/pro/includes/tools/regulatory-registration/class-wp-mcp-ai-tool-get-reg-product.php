@@ -63,7 +63,13 @@ class WP_MCP_AI_Tool_Get_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * {@inheritdoc}
 	 */
 	public function get_capability_flags() {
-		return array( 'pro', 'database-read' );
+		return array(
+			'pro',                  // Pro-tier tool.
+			'database-read',        // Reads from database.
+			'read-only',            // Does not modify state.
+			'cacheable',            // Results can be cached.
+			'idempotent',           // Can be called multiple times safely with same result.
+		);
 	}
 
 	/**
