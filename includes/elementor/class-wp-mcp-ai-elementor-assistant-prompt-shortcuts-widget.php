@@ -188,8 +188,8 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		if ( '' !== $title ) {
 			$title_output = $this->format_text_inline( $title );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $title_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<h3 class="wp-mcp-ai-assistant-prompt-shortcuts__title">' . $title_output . '</h3>';
 			}
 		}
@@ -197,8 +197,8 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		if ( ! $assistant_id || ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 			$empty_output = $this->format_text_inline( $empty_message );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $empty_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $empty_output . '</p>';
 			}
 
@@ -212,8 +212,8 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 		if ( empty( $shortcuts ) ) {
 			$no_shortcuts_output = $this->format_text_inline( $no_shortcuts_msg );
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $no_shortcuts_output ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<p class="wp-mcp-ai-assistant-prompt-shortcuts__notice">' . $no_shortcuts_output . '</p>';
 			}
 
@@ -235,8 +235,8 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 
 			echo '<li class="wp-mcp-ai-assistant-prompt-shortcuts__item">';
 
+// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 			if ( '' !== $label_text ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_inline.
 				echo '<span class="wp-mcp-ai-assistant-prompt-shortcuts__label">' . $label_text . '</span>';
 			}
 
@@ -251,6 +251,7 @@ class WP_MCP_AI_Elementor_Assistant_Prompt_Shortcuts_Widget extends \Elementor\W
 			if ( $show_descriptions ) {
 				$description_output = $this->format_text_block( $description );
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text.
 				if ( '' !== $description_output ) {
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is escaped in format_text_block.
 					echo '<div class="wp-mcp-ai-assistant-prompt-shortcuts__description">' . $description_output . '</div>';

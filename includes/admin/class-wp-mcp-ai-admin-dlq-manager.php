@@ -438,6 +438,9 @@ class WP_MCP_AI_Admin_DLQ_Manager {
 			</table>
 		</form>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for select-all checkbox functionality on this admin page only.
+		?>
 		<script>
 		document.getElementById('select-all').addEventListener('change', function() {
 			const checkboxes = document.querySelectorAll('input[name="dlq_items[]"]');

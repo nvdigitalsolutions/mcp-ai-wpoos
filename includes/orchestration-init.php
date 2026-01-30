@@ -109,11 +109,19 @@ add_action( 'wp_mcp_ai_tools_init', 'wp_mcp_ai_register_orchestration_tools' );
 
 /**
  * Load orchestration dashboard
+ *
+ * Note: The base plugin orchestration dashboard is loaded from mcp-ai-wpoos.php.
+ * The Pro version dashboard (class-wp-mcp-ai-orchestration-dashboard.php) should
+ * only be loaded by the Pro addon to avoid conflicts and undefined constant errors.
+ *
+ * @deprecated This function should not load any dashboard - removed to prevent conflicts.
  */
 function wp_mcp_ai_load_orchestration_dashboard() {
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-orchestration-dashboard.php';
-	new WP_MCP_AI_Orchestration_Dashboard();
+	// Base dashboard is loaded from mcp-ai-wpoos.php (class-wp-mcp-ai-admin-orchestration-dashboard.php)
+	// Pro dashboard should be loaded by the Pro addon only
+	// Leaving this function empty for backwards compatibility
 }
+// Note: Keeping the hook for backwards compatibility, but function does nothing now
 add_action( 'admin_init', 'wp_mcp_ai_load_orchestration_dashboard' );
 
 /**

@@ -277,9 +277,11 @@ class WP_MCP_AI_Security_Audit {
 		</div>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe.
 			let findingIndex = <?php echo count( $findings ); ?>;
 
 			$('#wp-mcp-ai-add-finding').on('click', function() {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template HTML is properly escaped in get_finding_template().
 				const template = `<?php echo $this->get_finding_template(); ?>`.replace(/INDEX/g, findingIndex);
 				$('#wp-mcp-ai-findings-list').append(template);
 				findingIndex++;

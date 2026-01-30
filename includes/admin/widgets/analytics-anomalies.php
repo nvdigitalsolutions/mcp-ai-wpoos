@@ -116,12 +116,14 @@ $severity_colors = array(
 			<canvas id="wp-mcp-ai-anomaly-scatter-chart"></canvas>
 		</div>
 
+		<?php
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script required for Chart.js anomaly detection scatter plot initialization with dynamic data
+		?>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
 			if (typeof Chart !== 'undefined') {
 				var ctx = document.getElementById('wp-mcp-ai-anomaly-scatter-chart');
 				if (ctx) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 					var anomalies = <?php echo wp_json_encode( $anomalies ); ?>;
 
 					// Prepare scatter plot data.
@@ -137,7 +139,6 @@ $severity_colors = array(
 
 					// Color points by severity.
 					var pointColors = scatterData.map(function(point) {
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- wp_json_encode() handles escaping for JavaScript context.
 						var severityMap = <?php echo wp_json_encode( $severity_colors ); ?>;
 						return severityMap[point.severity] || '#666';
 					});

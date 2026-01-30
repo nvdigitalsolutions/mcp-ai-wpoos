@@ -41,9 +41,9 @@
 				avoid_ambiguous: $form.find('[name="avoid_ambiguous"]').is(':checked') ? 1 : 0
 			};
 
-			// Submit via admin-post.php
+			// Submit via admin-ajax.php
 			$.ajax({
-				url: ajaxurl || wpMcpAiVault.ajax_url,
+				url: wpMcpAiVault.ajax_url,
 				method: 'POST',
 				data: formData,
 				beforeSend: function() {
@@ -114,7 +114,7 @@
 			};
 
 			$.ajax({
-				url: ajaxurl || wpMcpAiVault.ajax_url,
+				url: wpMcpAiVault.ajax_url,
 				method: 'POST',
 				data: formData,
 				beforeSend: function() {

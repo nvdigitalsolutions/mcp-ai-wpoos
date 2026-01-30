@@ -7,6 +7,7 @@
 # - Pro add-on
 # - Combined (base + pro)
 # - Core plugin (lightweight)
+# - WordPress.org compliant package (with CDN exclusions and text domain transformation)
 #
 # Usage:
 #   ./bin/rebuild-all-zips.sh                # Rebuild all versions
@@ -24,10 +25,17 @@ cd "$ROOT_DIR"
 VERSION_ARG=""
 if [ "$1" = "--version" ] && [ -n "$2" ]; then
     VERSION_ARG="--version $2"
+    VERSION="$2"
+else
+    # Get version from plugin file
+    VERSION=$(grep -E "^\s*\*\s*Version:" mcp-ai-wpoos.php | sed 's/.*Version:\s*//' | tr -d '[:space:]')
+    if [ -z "$VERSION" ]; then
+        VERSION="dev"
+    fi
 fi
 
 echo "=========================================="
-echo "Rebuilding All Plugin ZIPs"
+echo "Rebuilding All Plugin ZIPs (v${VERSION})"
 echo "=========================================="
 echo ""
 
@@ -37,5 +45,25 @@ echo ""
 
 echo ""
 echo "=========================================="
+echo "Building WordPress.org Compliant Package"
+echo "=========================================="
+echo ""
+
+# Build WordPress.org package from base build (ensures identical functionality)
+echo "Creating WordPress.org package from base build..."
+"$SCRIPT_DIR/build-wordpress-org-from-base.sh" --version "$VERSION"
+
+echo ""
+echo "=========================================="
 echo "✅ All ZIPs rebuilt successfully!"
 echo "=========================================="
+echo ""
+echo "📦 Build output in build/:"
+ls -lh "$ROOT_DIR/build/"*.zip | awk '{print "   " $9 " (" $5 ")"}'
+echo ""
+echo "📄 WordPress.org submission package:"
+WPORG_ZIP_NAME="nvdigital-open-operator-system-oos-${VERSION}.zip"
+WPORG_SIZE=$(du -h "$ROOT_DIR/build/$WPORG_ZIP_NAME" | cut -f1)
+echo "   build/$WPORG_ZIP_NAME ($WPORG_SIZE)"
+echo "   Built from: mcp-ai-wpoos-base-${VERSION}.zip"
+echo "   See build/WORDPRESS_ORG_SUBMISSION_README.md for instructions"

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NV Digital Open Operator System Complete (oOS)
  * Plugin URI: https://nvdigitalsolutions.com/wpoos
- * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 109 tools with base features and Pro add-on (WooCommerce, social media, GitHub, Google services, FFmpeg, WP-CLI, and more).
+ * Description: Complete AI Assistant framework with OpenAI, Gemini, and Ollama integration. Includes 197 tools total (127 base + 70 Pro) with base features and Pro add-on (WooCommerce, social media analytics, GitHub, Google services, FFmpeg, WP-CLI, and multi-agent orchestration).
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
@@ -483,6 +483,10 @@ if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php' 
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-remote-tester.php';
 }
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-encryption.php';
+
+// Load WordPress integration enhancements (Privacy API and Site Health).
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-privacy.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-site-health.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-credentials.php';
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-rate-limit-manager.php';
 
@@ -545,13 +549,22 @@ require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-professional-selector-sh
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webllm-enqueue.php';
 
 // Load Transformers.js enqueue manager (Phase 2: Browser-Native AI Tasks).
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
+// Note: Excluded from WordPress.org deployment due to CDN dependencies.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-transformers-enqueue.php';
+}
 
 // Load LangChain.js enqueue manager (Phase 3: Orchestration & Agents).
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+// Note: Excluded from WordPress.org deployment due to CDN dependencies.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-langchain-enqueue.php';
+}
 
 // Load Web Worker enqueue manager (Phase 4: Performance & Non-Blocking UI).
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php';
+// Note: Excluded from WordPress.org deployment due to CDN dependencies.
+if ( file_exists( WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php' ) ) {
+	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-webworker-enqueue.php';
+}
 require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-shortcodes.php';
 
 // Load Pro addon early so it can register tool hooks before tool registry initializes.
@@ -826,7 +839,6 @@ if ( is_admin() ) {
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-report-generator.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-helper.php';
-	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-diagnostic.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-chart-settings.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-settings.php';
@@ -835,7 +847,6 @@ if ( is_admin() ) {
 	new WP_MCP_AI_Pro_Database();
 	new WP_MCP_AI_Pro_License();
 	WP_MCP_AI_Pro_Dashboard::get_instance(); // Use singleton pattern.
-	new WP_MCP_AI_Pro_Dashboard_REST();
 
 	/**
 	 * Add plugin action links in the plugins list.
@@ -861,6 +872,11 @@ if ( is_admin() ) {
 
 	add_filter( 'plugin_action_links_' . plugin_basename( WP_MCP_AI_FILE ), 'wp_mcp_ai_add_plugin_action_links' );
 }
+
+// Load Pro Dashboard REST API (must be loaded outside is_admin block).
+// REST API endpoints need to be registered for all request types, not just admin requests.
+require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-pro-dashboard-rest.php';
+new WP_MCP_AI_Pro_Dashboard_REST();
 
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-stdio-transport.php';
@@ -1109,6 +1125,14 @@ if ( ! class_exists( 'WP_MCP_AI' ) ) {
 			// Initialize Gutenberg blocks for AI Assistant Builder.
 			if ( class_exists( 'WP_MCP_AI_Assistant_Builder_Blocks' ) ) {
 				WP_MCP_AI_Assistant_Builder_Blocks::init();
+			}
+
+			// Initialize WordPress integration enhancements (Privacy API and Site Health).
+			if ( class_exists( 'WP_MCP_AI_Privacy' ) ) {
+				new WP_MCP_AI_Privacy();
+			}
+			if ( class_exists( 'WP_MCP_AI_Site_Health' ) ) {
+				new WP_MCP_AI_Site_Health();
 			}
 
 			// Disable wp-auth-check in Elementor editor to prevent JavaScript errors.
@@ -1705,6 +1729,73 @@ add_action( 'admin_init', 'wp_mcp_ai_run_deferred_activation_security_check' );
  * was called incorrectly" warning.
  */
 add_action( 'admin_notices', 'wp_mcp_ai_activation_security_notice' );
+
+if ( ! function_exists( 'wp_mcp_ai_plugin_directory_pending_notice' ) ) {
+	/**
+	 * Display admin notice indicating plugin is pending WordPress Plugin Directory approval.
+	 *
+	 * This notice builds trust by transparently communicating the plugin's approval status.
+	 * Users can dismiss the notice, and it will not be shown again.
+	 */
+	function wp_mcp_ai_plugin_directory_pending_notice() {
+		// Check if user has dismissed the notice.
+		$user_id = get_current_user_id();
+		if ( get_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true ) ) {
+			return;
+		}
+
+		// Only show to users who can manage options.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		?>
+		<div class="notice notice-info is-dismissible" data-dismissible="wp_mcp_ai_directory_notice">
+			<p>
+				<strong><?php esc_html_e( 'NV Digital Open Operator System (oOS):', 'mcp-ai-wpoos' ); ?></strong>
+				<?php esc_html_e( 'This plugin is currently pending approval in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards.', 'mcp-ai-wpoos' ); ?>
+			</p>
+		</div>
+		<script type="text/javascript">
+		jQuery(document).ready(function($) {
+			$(document).on('click', '[data-dismissible="wp_mcp_ai_directory_notice"] .notice-dismiss', function() {
+				$.ajax({
+					url: ajaxurl,
+					type: 'POST',
+					data: {
+						action: 'wp_mcp_ai_dismiss_directory_notice',
+						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_dismiss_directory_notice' ) ); ?>'
+					}
+				});
+			});
+		});
+		</script>
+		<?php
+	}
+}
+
+if ( ! function_exists( 'wp_mcp_ai_dismiss_directory_notice_ajax' ) ) {
+	/**
+	 * Handle AJAX request to dismiss the plugin directory pending notice.
+	 */
+	function wp_mcp_ai_dismiss_directory_notice_ajax() {
+		check_ajax_referer( 'wp_mcp_ai_dismiss_directory_notice', 'nonce' );
+
+		$user_id = get_current_user_id();
+		update_user_meta( $user_id, 'wp_mcp_ai_dismissed_directory_notice', true );
+
+		wp_send_json_success();
+	}
+}
+
+/**
+ * Register plugin directory pending notice on admin_notices.
+ *
+ * This follows the same pattern as other admin notices to ensure translation
+ * functions are called after init completes.
+ */
+add_action( 'admin_notices', 'wp_mcp_ai_plugin_directory_pending_notice' );
+add_action( 'wp_ajax_wp_mcp_ai_dismiss_directory_notice', 'wp_mcp_ai_dismiss_directory_notice_ajax' );
 
 if ( ! function_exists( 'wp_mcp_ai_activate' ) ) {
 	/**

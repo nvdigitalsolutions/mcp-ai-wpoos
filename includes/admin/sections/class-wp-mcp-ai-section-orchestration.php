@@ -508,6 +508,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-performance-dashboard {
 						background: #fff;
@@ -679,7 +682,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 											<?php echo esc_html( number_format( $utilization_pct, 1 ) ); ?>%
 										</td>
 										<td>
-											<span class="capacity-score" style="color: <?php echo $metrics['capacity_score'] > 70 ? '#46b450' : ( $metrics['capacity_score'] > 30 ? '#f0b849' : '#dc3232' ); ?>;">
+											<span class="capacity-score" style="color: <?php echo esc_attr( $metrics['capacity_score'] > 70 ? '#46b450' : ( $metrics['capacity_score'] > 30 ? '#f0b849' : '#dc3232' ) ); ?>;">
 												<?php echo esc_html( number_format( $metrics['capacity_score'], 0 ) ); ?>
 											</span>
 										</td>
@@ -708,6 +711,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-load-monitoring {
 						background: #fff;
@@ -873,7 +879,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									<td><code><?php echo esc_html( $tool_slug ); ?></code></td>
 									<td><?php echo esc_html( number_format( $tool_stats['total_count'] ) ); ?></td>
 									<td>
-										<span style="color: <?php echo $tool_stats['success_rate'] > 95 ? '#46b450' : ( $tool_stats['success_rate'] > 80 ? '#f0b849' : '#dc3232' ); ?>;">
+										<span style="color: <?php echo esc_attr( $tool_stats['success_rate'] > 95 ? '#46b450' : ( $tool_stats['success_rate'] > 80 ? '#f0b849' : '#dc3232' ) ); ?>;">
 											<?php echo esc_html( number_format( $tool_stats['success_rate'], 1 ) ); ?>%
 										</span>
 									</td>
@@ -901,6 +907,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-performance-stats {
 						background: #fff;
@@ -1250,10 +1259,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_agent_roles ) {
 						$this->render_agents_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'Agent Roles are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'professions':
@@ -1262,10 +1271,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_professions ) {
 						$this->render_professions_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'AI Professions are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'teams':
@@ -1274,10 +1283,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( $enable_multi_agent_teams ) {
 						$this->render_teams_view();
 					} else {
-						echo '<div class="notice notice-warning inline"><p>';
+						echo '<div class="notice notice-warning inline"><p>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						esc_html_e( 'Multi-Agent Teams are currently disabled. Enable them in Settings to view this dashboard.', 'mcp-ai-wpoos' );
 						echo ' <a href="' . esc_url( $this->get_view_url( 'settings' ) ) . '">' . esc_html__( 'Go to Settings', 'mcp-ai-wpoos' ) . '</a>';
-						echo '</p></div>';
+						echo '</p></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					}
 					break;
 				case 'overview':
@@ -1350,7 +1359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<span class="status-label"><?php esc_html_e( 'System', 'mcp-ai-wpoos' ); ?></span>
 							</div>
 							<div class="status-item">
-								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?> status-icon-<?php echo $team_ready ? 'good' : 'warning'; ?>"></span>
+								<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?> status-icon-<?php echo esc_attr( $team_ready ? 'good' : 'warning' ); ?>"></span>
 								<span class="status-label"><?php esc_html_e( 'Teams', 'mcp-ai-wpoos' ); ?></span>
 							</div>
 						</div>
@@ -1426,14 +1435,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						</div>
 					</div>
 
-					<div class="executive-metric-card <?php echo $team_ready ? 'status-good' : 'status-warning'; ?>">
+					<div class="executive-metric-card <?php echo esc_attr( $team_ready ? 'status-good' : 'status-warning' ); ?>">
 						<div class="metric-header">
 							<span class="dashicons dashicons-networking"></span>
 							<h4><?php esc_html_e( 'Team Coordination', 'mcp-ai-wpoos' ); ?></h4>
 						</div>
 						<div class="metric-body">
 							<div class="metric-primary">
-								<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>"></span>
+								<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?>"></span>
 							</div>
 							<div class="wp-mcp-ai-metric-label">
 								<?php echo $team_ready ? esc_html__( 'Teams Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Setup Required', 'mcp-ai-wpoos' ); ?>
@@ -1585,6 +1594,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				?>
 
 				<!-- Chart Initialization -->
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				/* <![CDATA[ */
 				jQuery(document).ready(function($) {
@@ -1664,6 +1676,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				</script>
 
 				<!-- Enhanced Styling -->
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 				.executive-header {
 					background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1952,22 +1967,21 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			echo '<h3>' . esc_html__( 'Orchestration Features', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Enable or disable orchestration layer features. These settings control how the AI orchestration system manages resources, security, and task scheduling. All orchestration features work uniformly across all AI providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio).', 'mcp-ai-wpoos' ) . '</p>';
 
-			echo '<table class="form-table" role="presentation">';
+			echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			foreach ( $settings_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
 						// Close table for section headers, render HTML, reopen table.
-						echo '</table>';
-						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field definition.
+						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 						echo $field['content'];
-						echo '<table class="form-table" role="presentation">';
+						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
 					}
 				}
 			}
-			echo '</table>';
+			echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 		/**
@@ -1976,13 +1990,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		private function render_presets_view() {
 			$fields = $this->get_fields();
 
-			echo '<div class="wp-mcp-ai-presets-view">';
+			echo '<div class="wp-mcp-ai-presets-view">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			echo '<h3>' . esc_html__( 'Orchestration Configuration Presets', 'mcp-ai-wpoos' ) . '</h3>';
 			echo '<p class="description">' . esc_html__( 'Choose a preset configuration optimized for your expected usage pattern. Presets automatically configure context window limits, health monitoring thresholds, budget allocation, and predictive settings across all AI providers.', 'mcp-ai-wpoos' ) . '</p>';
 
 			// Render presets selector.
 			if ( isset( $fields['configuration_presets'] ) ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in get_presets_content method.
 				echo $fields['configuration_presets']['content'];
 			}
 
@@ -1992,7 +2005,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				echo '<input type="hidden" name="wp_mcp_ai_settings[orchestration_preset]" id="orchestration_preset" value="' . esc_attr( $current_preset ) . '" />';
 			}
 
-			echo '</div>';
+			echo '</div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 		/**
@@ -2031,12 +2044,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in field content.
 						echo $field['content'];
 					} elseif ( 'slider' === $field['type'] ) {
 						// Use orchestration renderer for sliders.
 						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in render_slider method.
 							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
 						}
 					}
@@ -2049,13 +2060,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				'enable_per_session_limits',
 			);
 
-			echo '<table class="form-table" role="presentation">';
+			echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 			foreach ( $checkbox_fields as $key ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$this->render_field( $key, $fields[ $key ] );
 				}
 			}
-			echo '</table>';
+			echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 		}
 
 
@@ -2209,7 +2220,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content is escaped in renderer methods.
 			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
 		}
 
@@ -2441,6 +2451,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-agents-grid {
 					display: grid;
@@ -2750,6 +2763,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</style>
 			
 			<!-- Chart.js Initialization -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			/* <![CDATA[ */
 			jQuery(document).ready(function($) {
@@ -3069,9 +3085,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
 							$team_ready   = $has_planner && $has_executor && $has_critic;
 							?>
-							<span class="dashicons dashicons-<?php echo $team_ready ? 'yes-alt' : 'warning'; ?>" style="color: <?php echo $team_ready ? '#4CAF50' : '#FF9800'; ?>"></span>
+							<span class="dashicons dashicons-<?php echo esc_attr( $team_ready ? 'yes-alt' : 'warning' ); ?>" style="color: <?php echo esc_attr( $team_ready ? '#4CAF50' : '#FF9800' ); ?>"></span>
 						</div>
-						<div class="metric-subtitle status-<?php echo $team_ready ? 'good' : 'warning'; ?>">
+						<div class="metric-subtitle status-<?php echo esc_attr( $team_ready ? 'good' : 'warning' ); ?>">
 							<?php echo $team_ready ? esc_html__( 'Ready', 'mcp-ai-wpoos' ) : esc_html__( 'Incomplete', 'mcp-ai-wpoos' ); ?>
 						</div>
 					</div>
@@ -3239,6 +3255,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				/* Enhanced Orchestration Styles */
 				.wp-mcp-ai-orchestration-header {
@@ -3676,6 +3695,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</style>
 			
 			<!-- Chart.js Initialization for Professions -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			/* <![CDATA[ */
 			jQuery(document).ready(function($) {
@@ -3848,19 +3870,49 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<span class="dashicons dashicons-admin-settings"></span>
 					</div>
 					<div class="wp-mcp-ai-metric-content">
-						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-label">
+							<?php esc_html_e( 'Orchestration Modes', 'mcp-ai-wpoos' ); ?>
+							<span class="dashicons dashicons-info-outline" style="font-size: 14px; color: #666; cursor: help;" 
+								title="<?php esc_attr_e( 'Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)', 'mcp-ai-wpoos' ); ?>"></span>
+						</div>
 						<div class="wp-mcp-ai-metric-value">
 							<?php
-							$modes = array();
+							// Count orchestration modes used by teams.
+							$mode_counts = array();
 							foreach ( $teams as $team ) {
 								if ( ! empty( $team['orchestration_mode'] ) ) {
-									$modes[] = $team['orchestration_mode'];
+									$mode = $team['orchestration_mode'];
+									if ( ! isset( $mode_counts[ $mode ] ) ) {
+										$mode_counts[ $mode ] = 0;
+									}
+									++$mode_counts[ $mode ];
 								}
 							}
-							echo esc_html( count( array_unique( $modes ) ) );
+							$unique_modes_used = count( $mode_counts );
+							$total_available_modes = 4; // single, sequential, parallel, swarm.
+							echo esc_html( $unique_modes_used . '/' . $total_available_modes );
 							?>
 						</div>
-						<div class="wp-mcp-ai-metric-subtitle"><?php esc_html_e( 'Different Strategies', 'mcp-ai-wpoos' ); ?></div>
+						<div class="wp-mcp-ai-metric-subtitle">
+							<?php
+							if ( ! empty( $mode_counts ) ) {
+								$mode_labels = array(
+									'single'     => __( 'Single', 'mcp-ai-wpoos' ),
+									'sequential' => __( 'Sequential', 'mcp-ai-wpoos' ),
+									'parallel'   => __( 'Parallel', 'mcp-ai-wpoos' ),
+									'swarm'      => __( 'Swarm', 'mcp-ai-wpoos' ),
+								);
+								$mode_display = array();
+								foreach ( $mode_counts as $mode => $count ) {
+									$label = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
+									$mode_display[] = sprintf( '%s (%d)', $label, $count );
+								}
+								echo esc_html( implode( ', ', $mode_display ) );
+							} else {
+								esc_html_e( 'No modes configured', 'mcp-ai-wpoos' );
+							}
+							?>
+						</div>
 					</div>
 				</div>
 				
@@ -4001,6 +4053,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			</div>
 
 			<!-- Styling -->
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
 			<style>
 				/* Enhanced Orchestration Styles */
 				.wp-mcp-ai-orchestration-header {

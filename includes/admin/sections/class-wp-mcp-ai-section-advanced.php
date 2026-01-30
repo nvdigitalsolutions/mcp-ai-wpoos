@@ -276,23 +276,23 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 
 			// Render performance monitoring if we're on the performance_monitoring sub-tab.
 			if ( 'performance_monitoring' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_performance_monitoring();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 
 			// Render data management if we're on the data_management sub-tab.
 			if ( 'data_management' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_data_management();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 
 			// Render settings management if we're on the settings_management sub-tab.
 			if ( 'settings_management' === $active_subtab ) {
-				echo '</table>'; // Close the form table.
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
 				$this->render_settings_management();
-				echo '<table class="form-table" role="presentation" style="display:none;">'; // Re-open hidden table for structure.
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 		}
 
@@ -659,6 +659,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					.wp-mcp-ai-status-badge {
 						display: inline-block;
@@ -684,6 +687,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					}
 				</style>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performReseed(actionType, buttonId) {
@@ -763,6 +769,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				});
 				</script>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+				?>
 				<style>
 					@keyframes spin {
 						from { transform: rotate(0deg); }
@@ -876,6 +885,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performOrchestrationSeed(force, buttonId) {
@@ -1030,6 +1042,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performTeamReseed(actionType, buttonId) {
@@ -1240,6 +1255,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performTemplateSeed(overwrite, buttonId) {
@@ -1376,6 +1394,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
+				<?php
+				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+				?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performGeminiMigration(actionType, buttonId) {
@@ -1813,6 +1834,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
+			?>
 			<script type="text/javascript">
 			jQuery(document).ready(function($) {
 				const nonce = <?php echo wp_json_encode( wp_create_nonce( 'wp-mcp-ai-dashboard' ) ); ?>;

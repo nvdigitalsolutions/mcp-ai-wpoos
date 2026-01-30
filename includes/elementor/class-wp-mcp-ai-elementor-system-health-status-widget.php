@@ -334,6 +334,7 @@ class WP_MCP_AI_Elementor_System_Health_Status_Widget extends \Elementor\Widget_
 		}
 	}
 }
+// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for Elementor system health status widget layout and styling
 ?>
 <style>
 .wp-mcp-ai-system-health {

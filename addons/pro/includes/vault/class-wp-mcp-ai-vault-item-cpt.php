@@ -37,7 +37,10 @@ class WP_MCP_AI_Vault_Item_CPT {
 	 * Constructor.
 	 */
 	private function __construct() {
-		add_action( 'init', array( $this, 'register_post_type' ) );
+		// Call register_post_type() directly instead of hooking to 'init'.
+		// This is necessary because this class is instantiated during the 'init' hook,
+		// and adding another 'init' action at that point won't fire until the next request.
+		$this->register_post_type();
 	}
 
 	/**
@@ -76,8 +79,8 @@ class WP_MCP_AI_Vault_Item_CPT {
 			'description'           => __( 'Encrypted vault items (passwords, notes, cards, identities)', 'mcp-ai-wpoos-pro' ),
 			'public'                => false,
 			'publicly_queryable'    => false,
-			'show_ui'               => false, // Hidden from admin UI - managed via custom admin page.
-			'show_in_menu'          => false,
+			'show_ui'               => true, // Show in admin UI.
+			'show_in_menu'          => 'wp-mcp-ai-password-vault', // Show under Password Vault menu.
 			'query_var'             => false,
 			'rewrite'               => false,
 			'capability_type'       => 'post',

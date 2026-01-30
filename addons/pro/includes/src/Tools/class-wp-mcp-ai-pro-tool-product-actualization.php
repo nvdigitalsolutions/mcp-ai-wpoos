@@ -45,7 +45,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'Product Actualization tool requires either Imagick or GD PHP extension to be installed.', 'wp-mcp-ai-pro' );
+		return __( 'Product Actualization tool requires either Imagick or GD PHP extension to be installed.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -63,7 +63,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'Product Actualization', 'wp-mcp-ai-pro' );
+		return __( 'Product Actualization', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -72,7 +72,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Composite a product image into a generated scene or short video while preserving the original product pixels. Image mode creates static composited images. Video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'wp-mcp-ai-pro' );
+		return __( 'Composite a product image into a generated scene or short video while preserving the original product pixels. Image mode creates static composited images. Video mode uses Google Gemini VEO to animate the scene around the product. Perfect for lifestyle marketing shots, social ads, and product visualization.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -86,47 +86,47 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'properties'           => array(
 				'product_attachment_id' => array(
 					'type'        => 'integer',
-					'description' => __( 'WordPress attachment ID of the product image to be composited. Can also accept a file_id string from chat file uploads (e.g., "file-abc123").', 'wp-mcp-ai-pro' ),
+					'description' => __( 'WordPress attachment ID of the product image to be composited. Can also accept a file_id string from chat file uploads (e.g., "file-abc123").', 'mcp-ai-wpoos-pro' ),
 				),
 				'mode'                  => array(
 					'type'        => 'string',
 					'enum'        => array( 'image', 'video' ),
 					'default'     => 'image',
-					'description' => __( 'Whether to create a still image or a short video.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether to create a still image or a short video.', 'mcp-ai-wpoos-pro' ),
 				),
 				'scene_prompt'          => array(
 					'type'        => 'string',
-					'description' => __( 'High-level description of the desired scene/background (e.g., "bright kitchen counter, morning light, shallow depth of field").', 'wp-mcp-ai-pro' ),
+					'description' => __( 'High-level description of the desired scene/background (e.g., "bright kitchen counter, morning light, shallow depth of field").', 'mcp-ai-wpoos-pro' ),
 				),
 				'aspect_ratio'          => array(
 					'type'        => 'string',
 					'enum'        => array( '1:1', '4:5', '16:9', '9:16', '3:2', '2:3', 'auto' ),
 					'default'     => '3:2',
-					'description' => __( 'Aspect ratio for the background generation. Note: For image mode, OpenAI supports 1:1, 2:3 (portrait), and 3:2 (landscape). For video mode with Veo, supports 1:1, 2:3, 3:2, and auto. 16:9 and 9:16 will map to closest supported ratios.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Aspect ratio for the background generation. Note: For image mode, OpenAI supports 1:1, 2:3 (portrait), and 3:2 (landscape). For video mode with Veo, supports 1:1, 2:3, 3:2, and auto. 16:9 and 9:16 will map to closest supported ratios.', 'mcp-ai-wpoos-pro' ),
 				),
 				'duration_seconds'      => array(
 					'type'        => 'integer',
 					'minimum'     => 4,
 					'maximum'     => 10,
 					'default'     => 6,
-					'description' => __( 'Duration of the output video in seconds (video mode only).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Duration of the output video in seconds (video mode only).', 'mcp-ai-wpoos-pro' ),
 				),
 				'background_mode'       => array(
 					'type'        => 'string',
 					'enum'        => array( 'auto', 'remove', 'preserve' ),
 					'default'     => 'auto',
-					'description' => __( 'Control background removal strategy. "auto" detects transparency, "remove" forces removal, "preserve" keeps original background.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Control background removal strategy. "auto" detects transparency, "remove" forces removal, "preserve" keeps original background.', 'mcp-ai-wpoos-pro' ),
 				),
 				'placement_hint'        => array(
 					'type'        => 'string',
-					'description' => __( 'Optional hint for product placement (e.g., "center on a table", "bottom-right on a shelf", "floating in air").', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional hint for product placement (e.g., "center on a table", "bottom-right on a shelf", "floating in air").', 'mcp-ai-wpoos-pro' ),
 				),
 				'scale_factor'          => array(
 					'type'        => 'number',
 					'minimum'     => 0.1,
 					'maximum'     => 2.0,
 					'default'     => 1.0,
-					'description' => __( 'Scale factor for the product relative to the scene (1.0 = natural size).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Scale factor for the product relative to the scene (1.0 = natural size).', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'product_attachment_id', 'scene_prompt' ),
@@ -149,7 +149,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $user_id && ! $has_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You must be authenticated to use product actualization.', 'wp-mcp-ai-pro' ),
+				__( 'You must be authenticated to use product actualization.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 403 )
 			);
 		}
@@ -159,7 +159,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			if ( ! user_can( $user_id, 'upload_files' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_forbidden',
-					__( 'You do not have permission to create product visualizations.', 'wp-mcp-ai-pro' ),
+					__( 'You do not have permission to create product visualizations.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -167,7 +167,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_wrong_site',
-					__( 'You do not have access to this site.', 'wp-mcp-ai-pro' ),
+					__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ),
 					array( 'status' => 403 )
 				);
 			}
@@ -202,7 +202,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $product_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_product',
-				__( 'Product attachment ID is required.', 'wp-mcp-ai-pro' ),
+				__( 'Product attachment ID is required.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -210,7 +210,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( '' === $scene_prompt ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_prompt',
-				__( 'Scene prompt is required to generate the background.', 'wp-mcp-ai-pro' ),
+				__( 'Scene prompt is required to generate the background.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -230,7 +230,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_product',
-				__( 'Invalid product attachment ID - file not found.', 'wp-mcp-ai-pro' ),
+				__( 'Invalid product attachment ID - file not found.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -240,7 +240,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $mime_type || ! str_starts_with( $mime_type, 'image/' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_file_type',
-				__( 'Product attachment must be an image.', 'wp-mcp-ai-pro' ),
+				__( 'Product attachment must be an image.', 'mcp-ai-wpoos-pro' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -411,7 +411,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 			'url'           => $url,
 			'text'          => sprintf(
 				/* translators: 1: attachment ID, 2: mode */
-				__( 'Successfully created product visualization (ID: %1$d) in %2$s mode.', 'wp-mcp-ai-pro' ),
+				__( 'Successfully created product visualization (ID: %1$d) in %2$s mode.', 'mcp-ai-wpoos-pro' ),
 				$attachment_id,
 				$mode
 			),
@@ -429,7 +429,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $file_path || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'Source file not found.', 'wp-mcp-ai-pro' )
+				__( 'Source file not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -449,7 +449,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! copy( $file_path, $temp_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_copy_failed',
-				__( 'Failed to duplicate product file.', 'wp-mcp-ai-pro' )
+				__( 'Failed to duplicate product file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -567,7 +567,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		// Default: Return error indicating implementation needed.
 		return new WP_Error(
 			'wp_mcp_ai_bg_removal_not_configured',
-			__( 'Background removal is not configured. Please set background_mode to "preserve" or configure the remove.bg API key in plugin settings.', 'wp-mcp-ai-pro' )
+			__( 'Background removal is not configured. Please set background_mode to "preserve" or configure the remove.bg API key in plugin settings.', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -587,7 +587,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_OpenAI_Image' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
-				__( 'OpenAI image generation tool is required but not available.', 'wp-mcp-ai-pro' )
+				__( 'OpenAI image generation tool is required but not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -607,7 +607,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! isset( $result['attachment_id'] ) || ! isset( $result['file_path'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_result',
-				__( 'Scene generation returned invalid result.', 'wp-mcp-ai-pro' )
+				__( 'Scene generation returned invalid result.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -655,7 +655,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! class_exists( 'WP_MCP_AI_Tool_Generate_Veo_Video' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_dependency',
-				__( 'VEO video generation tool is required but not available.', 'wp-mcp-ai-pro' )
+				__( 'VEO video generation tool is required but not available.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -685,7 +685,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! isset( $result['attachment_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_result',
-				__( 'Video generation returned invalid result.', 'wp-mcp-ai-pro' )
+				__( 'Video generation returned invalid result.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -715,7 +715,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 
 		return new WP_Error(
 			'wp_mcp_ai_no_image_library',
-			__( 'No image processing library available (Imagick or GD required).', 'wp-mcp-ai-pro' )
+			__( 'No image processing library available (Imagick or GD required).', 'mcp-ai-wpoos-pro' )
 		);
 	}
 
@@ -794,7 +794,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				'wp_mcp_ai_composite_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Image compositing failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Image compositing failed: %s', 'mcp-ai-wpoos-pro' ),
 					$e->getMessage()
 				)
 			);
@@ -818,7 +818,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $bg_info || ! $prod_info ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_image',
-				__( 'Failed to read image information.', 'wp-mcp-ai-pro' )
+				__( 'Failed to read image information.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -829,7 +829,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $background || ! $product ) {
 			return new WP_Error(
 				'wp_mcp_ai_image_load_failed',
-				__( 'Failed to load images.', 'wp-mcp-ai-pro' )
+				__( 'Failed to load images.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -885,7 +885,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_save_failed',
-				__( 'Failed to save composited image.', 'wp-mcp-ai-pro' )
+				__( 'Failed to save composited image.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1001,7 +1001,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
-				__( 'Composited file not found.', 'wp-mcp-ai-pro' )
+				__( 'Composited file not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1013,7 +1013,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( false === $file_contents ) {
 			return new WP_Error(
 				'wp_mcp_ai_read_failed',
-				__( 'Failed to read composited file.', 'wp-mcp-ai-pro' )
+				__( 'Failed to read composited file.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1028,7 +1028,7 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 				'wp_mcp_ai_upload_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Failed to upload composited file: %s', 'wp-mcp-ai-pro' ),
+					__( 'Failed to upload composited file: %s', 'mcp-ai-wpoos-pro' ),
 					$upload['error']
 				)
 			);
@@ -1039,14 +1039,14 @@ class WP_MCP_AI_Pro_Tool_Product_Actualization implements WP_MCP_AI_Tool_Interfa
 		if ( ! $uploaded_path || ! file_exists( $uploaded_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_upload_failed',
-				__( 'Failed to save composited file to uploads directory.', 'wp-mcp-ai-pro' )
+				__( 'Failed to save composited file to uploads directory.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Create attachment.
 		$title = sprintf(
 			/* translators: %s: scene prompt excerpt */
-			__( 'Product Visualization: %s', 'wp-mcp-ai-pro' ),
+			__( 'Product Visualization: %s', 'mcp-ai-wpoos-pro' ),
 			wp_trim_words( $arguments['scene_prompt'], 8, '...' )
 		);
 

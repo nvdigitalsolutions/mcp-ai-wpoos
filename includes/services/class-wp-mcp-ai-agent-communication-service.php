@@ -29,53 +29,86 @@ class WP_MCP_AI_Agent_Communication_Service {
 	/**
 	 * Delegate a task to another agent
 	 *
-	 * @param int   $from_agent_id Source agent ID.
-	 * @param int   $to_agent_id Target agent ID.
-	 * @param array $task Task data to delegate.
-	 * @param array $context Shared context.
+	 * @param int|string $from_agent_id Source agent ID (integer post ID or string virtual ID).
+	 * @param int|string $to_agent_id Target agent ID (integer post ID or string virtual ID).
+	 * @param array      $task Task data to delegate.
+	 * @param array      $context Shared context.
 	 * @return array|WP_Error Delegation result or error.
 	 */
 	public function delegate_task( $from_agent_id, $to_agent_id, $task, $context = array() ) {
-		// Validate inputs.
-		$from_agent_id = absint( $from_agent_id );
-		$to_agent_id   = absint( $to_agent_id );
-
-		if ( ! $from_agent_id || ! $to_agent_id ) {
+		// Validate target agent (required).
+		if ( empty( $to_agent_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_invalid_agent_id',
 				__( 'Valid agent IDs required for delegation.', 'mcp-ai-wpoos' )
 			);
 		}
 
-		// Verify both agents exist.
-		$from_agent = get_post( $from_agent_id );
-		$to_agent   = get_post( $to_agent_id );
-
-		if ( ! $from_agent || 'mcp_ai_assistant' !== $from_agent->post_type ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_source_agent',
-				__( 'Source agent not found or invalid.', 'mcp-ai-wpoos' )
-			);
+		// Check if target is a virtual agent.
+		$is_virtual_target = is_string( $to_agent_id ) && 0 === strpos( $to_agent_id, 'virtual_' );
+		
+		// For virtual agents, validate they exist in a team context.
+		if ( $is_virtual_target ) {
+			$virtual_agent = $this->get_virtual_agent_data( $to_agent_id, $context );
+			if ( ! $virtual_agent ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_virtual_agent',
+					__( 'Virtual agent not found. Ensure the agent was created via create_agent_team.', 'mcp-ai-wpoos' )
+				);
+			}
+			$to_agent_name = $virtual_agent['name'];
+			$to_agent_role = isset( $virtual_agent['role'] ) ? $virtual_agent['role'] : 'unknown';
+		} else {
+			// Real agent - validate as WordPress post.
+			$to_agent_id = absint( $to_agent_id );
+			if ( ! $to_agent_id ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_agent_id',
+					__( 'Valid agent IDs required for delegation.', 'mcp-ai-wpoos' )
+				);
+			}
+			
+			$to_agent = get_post( $to_agent_id );
+			if ( ! $to_agent || 'mcp_ai_assistant' !== $to_agent->post_type ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_target_agent',
+					__( 'Target agent not found or invalid.', 'mcp-ai-wpoos' )
+				);
+			}
+			$to_agent_name = get_the_title( $to_agent_id );
+			$to_agent_role = wp_mcp_ai_get_assistant_role( $to_agent_id );
+			$to_agent_role = $to_agent_role ? $to_agent_role->get_role_name() : 'assistant';
 		}
 
-		if ( ! $to_agent || 'mcp_ai_assistant' !== $to_agent->post_type ) {
-			return new WP_Error(
-				'wp_mcp_ai_invalid_target_agent',
-				__( 'Target agent not found or invalid.', 'mcp-ai-wpoos' )
-			);
-		}
+		// Validate source agent (can be 0 for system-level delegation).
+		$is_virtual_source = is_string( $from_agent_id ) && 0 === strpos( $from_agent_id, 'virtual_' );
+		
+		if ( ! $is_virtual_source ) {
+			$from_agent_id = absint( $from_agent_id );
+			
+			// Source validation is optional - 0 means system/user delegation.
+			if ( $from_agent_id > 0 ) {
+				$from_agent = get_post( $from_agent_id );
+				if ( ! $from_agent || 'mcp_ai_assistant' !== $from_agent->post_type ) {
+					return new WP_Error(
+						'wp_mcp_ai_invalid_source_agent',
+						__( 'Source agent not found or invalid.', 'mcp-ai-wpoos' )
+					);
+				}
 
-		// Verify source agent can delegate.
-		$source_role = wp_mcp_ai_get_assistant_role( $from_agent_id );
-		if ( $source_role && ! $source_role->can_delegate() ) {
-			return new WP_Error(
-				'wp_mcp_ai_cannot_delegate',
-				sprintf(
-					/* translators: %s: role name */
-					__( 'Agent with role %s cannot delegate tasks.', 'mcp-ai-wpoos' ),
-					$source_role->get_role_name()
-				)
-			);
+				// Verify source agent can delegate.
+				$source_role = wp_mcp_ai_get_assistant_role( $from_agent_id );
+				if ( $source_role && ! $source_role->can_delegate() ) {
+					return new WP_Error(
+						'wp_mcp_ai_cannot_delegate',
+						sprintf(
+							/* translators: %s: role name */
+							__( 'Agent with role %s cannot delegate tasks.', 'mcp-ai-wpoos' ),
+							$source_role->get_role_name()
+						)
+					);
+				}
+			}
 		}
 
 		// Create delegation record.
@@ -99,10 +132,10 @@ class WP_MCP_AI_Agent_Communication_Service {
 		return array(
 			'delegation_id' => $delegation['delegation_id'],
 			'status'        => 'delegated',
-			'to_agent'      => array(
-				'id'    => $to_agent_id,
-				'title' => get_the_title( $to_agent_id ),
-			),
+			'agent_id'      => $to_agent_id,
+			'agent_name'    => $to_agent_name,
+			'agent_role'    => $to_agent_role,
+			'delegated_at'  => $delegation['created_at'],
 			'message'       => __( 'Task successfully delegated to target agent.', 'mcp-ai-wpoos' ),
 		);
 	}
@@ -390,16 +423,107 @@ class WP_MCP_AI_Agent_Communication_Service {
 	 */
 	protected function log_delegation( $delegation, $action ) {
 		if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-			WP_MCP_AI_Logger::log(
+			WP_MCP_AI_Logger::log_event(
+				'info',
 				sprintf( 'Agent delegation %s', $action ),
 				array(
 					'delegation_id' => $delegation['delegation_id'],
 					'from_agent'    => $delegation['from_agent_id'],
 					'to_agent'      => $delegation['to_agent_id'],
 					'action'        => $action,
-				),
-				'info'
+				)
 			);
 		}
+	}
+
+	/**
+	 * Get virtual agent data from team context
+	 *
+	 * @param string $virtual_agent_id Virtual agent ID.
+	 * @param array  $context Task context that may contain team_id.
+	 * @return array|null Virtual agent data or null if not found.
+	 */
+	protected function get_virtual_agent_data( $virtual_agent_id, $context = array() ) {
+		// Try to find the team ID in context.
+		$team_id = null;
+		if ( isset( $context['team_id'] ) ) {
+			$team_id = $context['team_id'];
+		} elseif ( isset( $context['parent_task_id'] ) ) {
+			// Try to extract team ID from parent task ID if it follows team_xxx format.
+			if ( 0 === strpos( $context['parent_task_id'], 'team_' ) ) {
+				$team_id = $context['parent_task_id'];
+			}
+		}
+
+		// If no team ID in context, search all recent teams.
+		if ( ! $team_id ) {
+			$team_id = $this->find_team_with_virtual_agent( $virtual_agent_id );
+		}
+
+		if ( ! $team_id ) {
+			return null;
+		}
+
+		// Get team data from transient.
+		$team = get_transient( 'wp_mcp_ai_team_' . $team_id );
+		if ( ! $team || ! isset( $team['members'] ) ) {
+			return null;
+		}
+
+		// Find the virtual agent in team members.
+		foreach ( $team['members'] as $member ) {
+			if ( isset( $member['id'] ) && $member['id'] === $virtual_agent_id ) {
+				return $member;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Find team containing a specific virtual agent
+	 *
+	 * Searches recent teams to find one that contains the virtual agent.
+	 *
+	 * @param string $virtual_agent_id Virtual agent ID to search for.
+	 * @return string|null Team ID or null if not found.
+	 */
+	protected function find_team_with_virtual_agent( $virtual_agent_id ) {
+		global $wpdb;
+
+		// Search transients for recent teams.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$transients = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT option_name, option_value 
+				FROM {$wpdb->options} 
+				WHERE option_name LIKE %s 
+				ORDER BY option_id DESC 
+				LIMIT 20",
+				'_transient_wp_mcp_ai_team_%'
+			)
+		);
+
+		if ( empty( $transients ) ) {
+			return null;
+		}
+
+		foreach ( $transients as $transient ) {
+			$team = maybe_unserialize( $transient->option_value );
+			if ( ! is_array( $team ) || ! isset( $team['members'] ) ) {
+				continue;
+			}
+
+			// Check if this team has the virtual agent.
+			foreach ( $team['members'] as $member ) {
+				if ( isset( $member['id'] ) && $member['id'] === $virtual_agent_id ) {
+					// Extract team ID from transient name.
+					$team_id = str_replace( '_transient_wp_mcp_ai_team_', '', $transient->option_name );
+					return $team_id;
+				}
+			}
+		}
+
+		return null;
 	}
 }

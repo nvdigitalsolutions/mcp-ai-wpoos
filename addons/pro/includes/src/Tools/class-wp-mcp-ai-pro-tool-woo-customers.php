@@ -43,7 +43,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'WooCommerce Customers tool requires WooCommerce to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Customers tool requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'WooCommerce Customers', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Customers', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -70,7 +70,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Manage WooCommerce customers. View customer details, order history, and update customer information.', 'wp-mcp-ai-pro' );
+		return __( 'Manage WooCommerce customers. View customer details, order history, and update customer information.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -84,38 +84,38 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 			'properties' => array(
 				'action'       => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, search, get_orders.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: get, list, search, get_orders.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'get', 'list', 'search', 'get_orders' ),
 					'default'     => 'list',
 				),
 				'customer_id'  => array(
 					'type'        => 'integer',
-					'description' => __( 'Customer ID for get or get_orders actions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Customer ID for get or get_orders actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'     => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of customers to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of customers to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'         => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 				'search'       => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter customers by name or email.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Search term to filter customers by name or email.', 'mcp-ai-wpoos-pro' ),
 				),
 				'role'         => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by user role.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by user role.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'customer', 'subscriber', 'all' ),
 					'default'     => 'customer',
 				),
 				'order_status' => array(
 					'type'        => 'string',
-					'description' => __( 'Filter customer orders by status (for get_orders action).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter customer orders by status (for get_orders action).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed', 'any' ),
 					'default'     => 'any',
 				),
@@ -151,7 +151,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'woocommerce_not_active',
-				__( 'WooCommerce is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'WooCommerce is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! user_can( $user_id, 'list_users' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to view customers.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to view customers.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -178,7 +178,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -193,7 +193,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $arguments['customer_id'] ) ) {
 			return new WP_Error(
 				'missing_customer_id',
-				__( 'Customer ID is required for get action.', 'wp-mcp-ai-pro' )
+				__( 'Customer ID is required for get action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -202,7 +202,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $customer->get_id() ) {
 			return new WP_Error(
 				'customer_not_found',
-				__( 'Customer not found.', 'wp-mcp-ai-pro' )
+				__( 'Customer not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -257,7 +257,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $arguments['search'] ) ) {
 			return new WP_Error(
 				'missing_search_term',
-				__( 'Search term is required for search action.', 'wp-mcp-ai-pro' )
+				__( 'Search term is required for search action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -298,7 +298,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $arguments['customer_id'] ) ) {
 			return new WP_Error(
 				'missing_customer_id',
-				__( 'Customer ID is required for get_orders action.', 'wp-mcp-ai-pro' )
+				__( 'Customer ID is required for get_orders action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -307,7 +307,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Customers implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( ! $customer->get_id() ) {
 			return new WP_Error(
 				'customer_not_found',
-				__( 'Customer not found.', 'wp-mcp-ai-pro' )
+				__( 'Customer not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

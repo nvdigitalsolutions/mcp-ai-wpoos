@@ -181,6 +181,9 @@ $analysis = isset( $data['analysis'] ) ? $data['analysis'] : array();
 	</div>
 </div>
 
+<?php
+// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for token performance stats widget layout and styling on this admin page only
+?>
 <style>
 	.wp-mcp-ai-widget-performance-stats {
 		padding: 15px;

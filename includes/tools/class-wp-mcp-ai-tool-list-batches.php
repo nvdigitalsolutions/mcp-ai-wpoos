@@ -67,6 +67,42 @@ class WP_MCP_AI_Tool_List_Batches implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		);
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'ai_model_management',
+
+			'pattern_compatibility' => array( 'experimentation' ),
+
+			'profession_tags'       => array( 'machine_learning_engineer' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

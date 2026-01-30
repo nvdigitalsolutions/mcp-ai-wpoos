@@ -598,7 +598,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 				),
 
 				// Embedded LLM Settings (Pro version only - auto-enabled when Pro is present).
-				'enable_embedded'                    => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+				'enable_embedded'                    => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Embedded LLM Provider', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable client-side embedded language models (Pro - Auto-enabled)', 'mcp-ai-wpoos' ),
@@ -606,14 +606,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'default'        => true,
 					'disabled'       => true, // Read-only since it's auto-enabled with Pro.
 				) : null,
-				'embedded_model'                     => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+				'embedded_model'                     => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
 					'type'        => 'select',
 					'label'       => __( 'Default Embedded Model', 'mcp-ai-wpoos' ),
 					'description' => __( 'Select a model for client-side inference. Models are downloaded on-demand to the user\'s browser cache when first used. Models marked with * support tool/function calling. Recommended: Hermes 2 Pro for best function calling accuracy.', 'mcp-ai-wpoos' ),
 					'options'     => $embedded_models,
 					'default'     => 'Hermes-2-Pro-Llama-3-8B-q4f16_1-MLC',
 				) : null,
-				'embedded_model_management'          => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+				'embedded_model_management'          => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
 					'type'        => 'custom',
 					'label'       => __( 'Available Models', 'mcp-ai-wpoos' ),
 					'description' => __( 'Models available for client-side inference. Models are automatically downloaded to the user\'s browser cache when first used. No server-side storage required.', 'mcp-ai-wpoos' ),
@@ -866,7 +866,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'icon'   => 'dashicons-desktop',
 					'fields' => array( 'enable_lm_studio', 'lm_studio_endpoint_url', 'lm_studio_model', 'lm_studio_network_interface' ),
 				),
-				'embedded'             => ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ? array(
+				'embedded'             => defined( 'WP_MCP_AI_PRO_VERSION' ) ? array(
 					'id'     => 'embedded',
 					'label'  => __( 'Embedded LLM', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-smartphone',
@@ -1073,7 +1073,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					</div>
 				<?php if ( $description ) : ?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
-					<?php endif; ?>
+					<?php endif;
+					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+					?>
 					<style>
 						#wp-mcp-ai-provider-sortable {
 							list-style: none;

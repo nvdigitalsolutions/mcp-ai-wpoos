@@ -118,29 +118,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'enable_media_toolkit'                => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
-				'enable_document_generation_toolkit'  => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-				'enable_quiz_system'                  => __( 'Quiz System', 'mcp-ai-wpoos' ),
-				'enable_project_management'           => __( 'Project Management', 'mcp-ai-wpoos' ),
-				'enable_health_wellness_management'   => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
-				'enable_places_management'            => __( 'Places Management', 'mcp-ai-wpoos' ),
-				'enable_eca_management'               => __( 'ECA Management', 'mcp-ai-wpoos' ),
-				'enable_crm_toolkit'                  => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ecommerce_toolkit'            => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-				'enable_social_media_toolkit'         => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_analytics_toolkit'            => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
-				'enable_multilingual_toolkit'         => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
-				'enable_video_production_toolkit'     => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ai_tool_builder_toolkit'      => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
-				'enable_architectural_design_toolkit' => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
-				'enable_calendar_booking_toolkit'     => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
-				'enable_dj_management_toolkit'        => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_financial_planner_toolkit'    => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
-				'enable_image_production_toolkit'     => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_woocommerce_tools'            => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
-				'enable_jetengine_tools'              => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
-				'enable_site_creator'                 => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'enable_ai_cpt_management'            => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+				'enable_media_toolkit'                       => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+				'enable_document_generation_toolkit'         => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+				'enable_quiz_system'                         => __( 'Quiz System', 'mcp-ai-wpoos' ),
+				'enable_project_management'                  => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'enable_health_wellness_management'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+				'enable_places_management'                   => __( 'Places Management', 'mcp-ai-wpoos' ),
+				'enable_eca_management'                      => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_crm_toolkit'                         => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ecommerce_toolkit'                   => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+				'enable_social_media_toolkit'                => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_analytics_toolkit'                   => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+				'enable_multilingual_toolkit'                => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+				'enable_video_production_toolkit'            => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ai_tool_builder_toolkit'             => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architect_agent_toolkit'             => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architectural_design_toolkit'        => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+				'enable_calendar_booking_toolkit'            => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_dj_management_toolkit'               => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_financial_planner_toolkit'           => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+				'enable_image_production_toolkit'            => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_regulatory_registration_toolkit'     => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_woocommerce_tools'                   => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
+				'enable_jetengine_tools'                     => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
+				'enable_site_creator'                        => __( 'Site Creator', 'mcp-ai-wpoos' ),
+				'enable_ai_cpt_management'                   => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -524,6 +526,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'validate_tool tool', 'mcp-ai-wpoos' ),
 					),
 				),
+				'architect_agent_toolkit'      => array(
+					'name'          => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Self-editing capabilities for AI agents with file operations, shell commands, git integration, and code search. Achieves GitHub Copilot CLI parity.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_architect_agent_toolkit'] ),
+					'category'      => 'development',
+					'php_functions' => array( 'proc_open', 'exec' ),
+					'npm_packages'  => array(),
+					'tools_count'   => 4,
+					'tools'         => array(
+						__( 'manage_files tool', 'mcp-ai-wpoos' ),
+						__( 'execute_shell_command tool', 'mcp-ai-wpoos' ),
+						__( 'git_operations tool', 'mcp-ai-wpoos' ),
+						__( 'search_codebase tool', 'mcp-ai-wpoos' ),
+					),
+				),
 				'architectural_design_toolkit' => array(
 					'name'          => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
@@ -598,7 +615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_financial_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'image_production_toolkit'     => array(
+				'image_production_toolkit'           => array(
 					'name'          => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_image_production_toolkit'] ),
@@ -615,6 +632,57 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'upscale_image tool', 'mcp-ai-wpoos' ),
 						__( 'batch_process_images tool', 'mcp-ai-wpoos' ),
 						__( 'create_thumbnail tool', 'mcp-ai-wpoos' ),
+					),
+				),
+				'regulatory_registration_toolkit'    => array(
+					'name'          => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+					'description'   => __( 'Comprehensive regulatory product registration and compliance management for multi-country regulatory submissions (NMRA, MOHAP, SFDA). Features product registration tracking, document management, compliance validation, PDF generation, and multi-country support with registration timeline tracking and expiry notifications.', 'mcp-ai-wpoos' ),
+					'enabled'       => ! empty( $settings['enable_regulatory_registration_toolkit'] ),
+					'category'      => 'specialized',
+					'php_functions' => array(),
+					'npm_packages'  => array( 'pdfkit', 'exceljs', 'docx', 'csv-parse', 'csv-stringify', 'validator' ),
+					'tools_count'   => 40,
+					'tools'         => array(
+						__( 'create_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'list_reg_products tool', 'mcp-ai-wpoos' ),
+						__( 'get_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'update_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'delete_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'search_reg_products tool', 'mcp-ai-wpoos' ),
+						__( 'duplicate_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'validate_reg_product tool', 'mcp-ai-wpoos' ),
+						__( 'create_registration tool', 'mcp-ai-wpoos' ),
+						__( 'list_registrations tool', 'mcp-ai-wpoos' ),
+						__( 'get_registration tool', 'mcp-ai-wpoos' ),
+						__( 'update_registration_status tool', 'mcp-ai-wpoos' ),
+						__( 'list_expiring_registrations tool', 'mcp-ai-wpoos' ),
+						__( 'submit_registration tool', 'mcp-ai-wpoos' ),
+						__( 'approve_registration tool', 'mcp-ai-wpoos' ),
+						__( 'renew_registration tool', 'mcp-ai-wpoos' ),
+						__( 'get_registration_timeline tool', 'mcp-ai-wpoos' ),
+						__( 'list_registrations_by_country tool', 'mcp-ai-wpoos' ),
+						__( 'list_reg_documents tool', 'mcp-ai-wpoos' ),
+						__( 'check_document_expiry tool', 'mcp-ai-wpoos' ),
+						__( 'upload_reg_document tool', 'mcp-ai-wpoos' ),
+						__( 'update_reg_document tool', 'mcp-ai-wpoos' ),
+						__( 'get_reg_document tool', 'mcp-ai-wpoos' ),
+						__( 'validate_document_checklist tool', 'mcp-ai-wpoos' ),
+						__( 'generate_submission_pack tool', 'mcp-ai-wpoos' ),
+						__( 'track_document_version tool', 'mcp-ai-wpoos' ),
+						__( 'add_regulatory_requirement tool', 'mcp-ai-wpoos' ),
+						__( 'get_regulatory_requirements tool', 'mcp-ai-wpoos' ),
+						__( 'check_product_compliance tool', 'mcp-ai-wpoos' ),
+						__( 'validate_inci_ingredients tool', 'mcp-ai-wpoos' ),
+						__( 'check_hs_code tool', 'mcp-ai-wpoos' ),
+						__( 'get_regulatory_updates tool', 'mcp-ai-wpoos' ),
+						__( 'generate_pdf_dossier tool', 'mcp-ai-wpoos' ),
+						__( 'generate_cover_letter tool', 'mcp-ai-wpoos' ),
+						__( 'generate_compliance_certificate tool', 'mcp-ai-wpoos' ),
+						__( 'sync_with_nmra tool', 'mcp-ai-wpoos' ),
+						__( 'sync_with_mohap tool', 'mcp-ai-wpoos' ),
+						__( 'sync_with_sfda tool', 'mcp-ai-wpoos' ),
+						__( 'validate_excel_import tool', 'mcp-ai-wpoos' ),
+						__( 'configure_email_notifications tool', 'mcp-ai-wpoos' ),
 					),
 				),
 			);
@@ -692,7 +760,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<details class="toolkit-section">
 							<summary>
 								<?php esc_html_e( 'PHP Requirements', 'mcp-ai-wpoos' ); ?>
-								<span class="section-badge <?php echo $toolkit['php_available'] ? 'ok' : 'error'; ?>">
+								<span class="section-badge <?php echo esc_attr( $toolkit['php_available'] ? 'ok' : 'error' ); ?>">
 									<?php echo $toolkit['php_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</summary>
@@ -708,8 +776,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 										<tr>
 											<td><code><?php echo esc_html( $func_name ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo $available ? 'available' : 'unavailable'; ?>">
-													<?php echo $available ? '✓' : '✗'; ?>
+												<span class="status-indicator <?php echo esc_attr( $available ? 'available' : 'unavailable' ); ?>">
+													<?php echo $available ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
 												</span>
 											</td>
 										</tr>
@@ -723,7 +791,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<details class="toolkit-section">
 							<summary>
 								<?php esc_html_e( 'NPM Dependencies', 'mcp-ai-wpoos' ); ?>
-								<span class="section-badge <?php echo $toolkit['npm_available'] ? 'ok' : 'error'; ?>">
+								<span class="section-badge <?php echo esc_attr( $toolkit['npm_available'] ? 'ok' : 'error' ); ?>">
 									<?php echo $toolkit['npm_available'] ? esc_html__( 'OK', 'mcp-ai-wpoos' ) : esc_html__( 'Missing', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</summary>
@@ -739,8 +807,8 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 										<tr>
 											<td><code><?php echo esc_html( $package ); ?></code></td>
 											<td>
-												<span class="status-indicator <?php echo $installed ? 'available' : 'unavailable'; ?>">
-													<?php echo $installed ? '✓' : '✗'; ?>
+												<span class="status-indicator <?php echo esc_attr( $installed ? 'available' : 'unavailable' ); ?>">
+													<?php echo $installed ? '✓' : '✗'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static checkmark symbols. ?>
 												</span>
 											</td>
 										</tr>
@@ -1073,7 +1141,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Pro Dashboard', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['pro_dashboard_enabled'] ? 'enabled' : 'disabled'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['pro_dashboard_enabled'] ? 'enabled' : 'disabled' ); ?>">
 								<?php echo $status['pro_dashboard_enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1081,7 +1149,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Base Version Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['base_version'] ? 'active' : 'inactive'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['base_version'] ? 'active' : 'inactive' ); ?>">
 								<?php echo $status['base_version'] ? esc_html__( 'Active (35 core tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (65+ tools)', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1089,7 +1157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 					<tr>
 						<td><strong><?php esc_html_e( 'Debug Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
-							<span class="wp-mcp-ai-status-badge <?php echo $status['debug_mode'] ? 'enabled' : 'disabled'; ?>">
+							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['debug_mode'] ? 'enabled' : 'disabled' ); ?>">
 								<?php echo $status['debug_mode'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
@@ -1134,7 +1202,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<tr>
 							<td><strong><?php echo esc_html( $display_name ); ?></strong></td>
 							<td>
-								<span class="wp-mcp-ai-status-badge <?php echo $is_active ? 'active' : 'inactive'; ?>">
+								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $is_active ? 'active' : 'inactive' ); ?>">
 									<?php echo $is_active ? esc_html__( 'Active', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</td>
@@ -1166,7 +1234,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<tr>
 							<td><strong><?php echo esc_html( $toolkit_info['name'] ); ?></strong></td>
 							<td>
-								<span class="wp-mcp-ai-status-badge <?php echo $toolkit_info['enabled'] ? 'enabled' : 'disabled'; ?>">
+								<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $toolkit_info['enabled'] ? 'enabled' : 'disabled' ); ?>">
 									<?php echo $toolkit_info['enabled'] ? esc_html__( 'Enabled', 'mcp-ai-wpoos' ) : esc_html__( 'Disabled', 'mcp-ai-wpoos' ); ?>
 								</span>
 							</td>
@@ -1205,10 +1273,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</p>
 
 				<?php if ( isset( $packages['error'] ) ) : ?>
-					<div class="notice notice-error">
+					<div class="notice notice-info">
 						<p>
-							<strong><?php esc_html_e( 'Error reading package.json:', 'mcp-ai-wpoos' ); ?></strong>
-							<?php echo esc_html( $packages['error'] ); ?>
+							<strong><?php esc_html_e( 'NPM Package Information:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'Not available in this installation (package.json not found). This is normal for WordPress.org and production builds where development files are excluded.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p style="margin: 5px 0 0 0;">
+							<em><?php esc_html_e( 'Your plugin is fully functional. NPM package information is only needed for development purposes.', 'mcp-ai-wpoos' ); ?></em>
 						</p>
 					</div>
 				<?php else : ?>
@@ -1249,6 +1320,21 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 									<p style="margin: 0;">
 										<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
 										<?php esc_html_e( 'Package status is determined by checking for vendor files. Some packages may be installed in node_modules but not visible here after deployment.', 'mcp-ai-wpoos' ); ?>
+									</p>
+								</div>
+							<?php else : ?>
+								<div style="padding: 20px; background: #f0f0f1; border-left: 4px solid #72aee6; text-align: center;">
+									<p style="margin: 0 0 10px 0;">
+										<span class="dashicons dashicons-info" style="font-size: 48px; width: 48px; height: 48px; color: #72aee6;"></span>
+									</p>
+									<p style="margin: 0 0 5px 0; font-weight: 600;">
+										<?php esc_html_e( 'NPM Package Information Not Available', 'mcp-ai-wpoos' ); ?>
+									</p>
+									<p style="margin: 0; color: #666;">
+										<?php esc_html_e( 'This is normal for WordPress.org and production builds.', 'mcp-ai-wpoos' ); ?>
+									</p>
+									<p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">
+										<?php esc_html_e( 'Your plugin functionality is not affected. Package information is only for development reference.', 'mcp-ai-wpoos' ); ?>
 									</p>
 								</div>
 							<?php endif; ?>
@@ -1304,6 +1390,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				</div>
 			</div>
 
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for pro settings page layout and styling on this admin page only
+			?>
 			<style>
 				.wp-mcp-ai-pro-settings h1 .dashicons {
 					font-size: 30px;
@@ -1713,7 +1802,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 
 <div class="wp-mcp-ai-model-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 15px;">
 			<?php foreach ( $models as $model_id => $model ) : ?>
-<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo $model['recommended'] ? '#00a32a' : '#c3c4c7'; ?>; padding: 15px; background: #fff; border-radius: 4px;">
+<div class="wp-mcp-ai-model-card" style="border: 1px solid <?php echo esc_attr( $model['recommended'] ? '#00a32a' : '#c3c4c7' ); ?>; padding: 15px; background: #fff; border-radius: 4px;">
 <div style="display: flex; align-items: start; justify-content: space-between; margin-bottom: 10px;">
 <h4 style="margin: 0; font-size: 14px;">
 				<?php echo esc_html( $model['name'] ); ?>

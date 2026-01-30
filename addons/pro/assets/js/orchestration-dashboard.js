@@ -8,9 +8,25 @@
 
 	const OrchestrationDashboard = {
 		refreshInterval: null,
-		config: wpMcpAiOrchestration || {},
+		config: typeof wpMcpAiOrchestration !== 'undefined' ? wpMcpAiOrchestration : {},
 
 		init: function() {
+			console.log('OrchestrationDashboard: Initializing...', this.config);
+			
+			// Check if config is properly loaded.
+			if (!this.config.ajaxUrl || !this.config.nonce) {
+				console.error('OrchestrationDashboard: Configuration not loaded properly', this.config);
+				// Show user-friendly error message on the page.
+				$('.wp-mcp-ai-orchestration-dashboard').prepend(
+					'<div class="notice notice-error"><p>' +
+					'<strong>Configuration Error:</strong> The orchestration dashboard could not load properly. ' +
+					'Please check that the plugin is activated correctly and try refreshing the page.' +
+					'</p></div>'
+				);
+				return;
+			}
+			
+			console.log('OrchestrationDashboard: Configuration loaded successfully');
 			this.bindEvents();
 			this.startAutoRefresh();
 			this.loadDashboardData();
@@ -19,6 +35,12 @@
 		bindEvents: function() {
 			// Session control buttons.
 			$(document).on('click', '.session-action', this.handleSessionAction.bind(this));
+			
+			// Workflow trigger buttons.
+			$(document).on('click', '.workflow-trigger', this.handleWorkflowTrigger.bind(this));
+			
+			// Workflow restart buttons.
+			$(document).on('click', '.workflow-restart', this.handleWorkflowRestart.bind(this));
 			
 			// Manual refresh button (if added).
 			$(document).on('click', '.refresh-dashboard', this.loadDashboardData.bind(this));
@@ -32,6 +54,7 @@
 		},
 
 		loadDashboardData: function() {
+			console.log('OrchestrationDashboard: Loading dashboard data...');
 			$.ajax({
 				url: this.config.ajaxUrl,
 				type: 'POST',
@@ -40,19 +63,30 @@
 					nonce: this.config.nonce
 				},
 				success: (response) => {
+					console.log('OrchestrationDashboard: AJAX response received', response);
 					if (response.success && response.data) {
+						console.log('OrchestrationDashboard: Updating dashboard with data', response.data);
 						this.updateDashboard(response.data);
+					} else {
+						console.error('Dashboard data load failed:', response);
 					}
 				},
-				error: () => {
-					console.error('Failed to load dashboard data');
+				error: (xhr, status, error) => {
+					console.error('Failed to load dashboard data:', {
+						status: status,
+						error: error,
+						response: xhr.responseText
+					});
 				}
 			});
 		},
 
 		updateDashboard: function(data) {
+			console.log('OrchestrationDashboard: Updating dashboard sections...');
+			
 			// Update overview cards.
 			if (data.overview) {
+				console.log('OrchestrationDashboard: Updating overview metrics', data.overview);
 				$('[data-metric="active_sessions"]').text(data.overview.active_sessions);
 				$('[data-metric="total_plans"]').text(data.overview.total_plans);
 				$('[data-metric="total_executions"]').text(data.overview.total_executions);
@@ -61,6 +95,7 @@
 
 			// Update capacity metrics.
 			if (data.capacity) {
+				console.log('OrchestrationDashboard: Updating capacity metrics', data.capacity);
 				$('[data-metric="utilization"]').text(data.capacity.utilization);
 				$('[data-metric="queue_length"]').text(data.capacity.queue_length);
 				
@@ -70,15 +105,186 @@
 				$statusBadge.addClass('status-' + data.capacity.load_status.toLowerCase());
 			}
 
+			// Update system status if available.
+			if (data.system_status) {
+				console.log('OrchestrationDashboard: System status data found', data.system_status);
+				this.updateSystemStatus(data.system_status);
+			} else {
+				console.warn('OrchestrationDashboard: No system_status data in response!', data);
+			}
+
 			// Update sessions table.
 			if (data.sessions) {
 				this.updateSessionsTable(data.sessions);
+			}
+
+			// Update workflows table.
+			if (data.workflows) {
+				this.updateWorkflowsTable(data.workflows);
 			}
 
 			// Update activity feed.
 			if (data.activity) {
 				this.updateActivityFeed(data.activity);
 			}
+		},
+
+		/**
+		 * Update system status display.
+		 *
+		 * @param {Object} systemStatus System status data.
+		 */
+		updateSystemStatus: function(systemStatus) {
+			console.log('OrchestrationDashboard: updateSystemStatus called with:', systemStatus);
+			
+			// Update cron status
+			if (systemStatus.cron) {
+				console.log('OrchestrationDashboard: Updating cron status', systemStatus.cron);
+				
+				// Defensive check - verify elements exist
+				const $cronActive = $('[data-system-status="cron_active"]');
+				const $cronPending = $('[data-system-status="cron_pending"]');
+				const $cronFailed = $('[data-system-status="cron_failed"]');
+				
+				console.log('OrchestrationDashboard: Found cron elements:', {
+					active: $cronActive.length,
+					pending: $cronPending.length,
+					failed: $cronFailed.length
+				});
+				
+				if ($cronActive.length) {
+					$cronActive.text(systemStatus.cron.active || 0);
+					console.log('OrchestrationDashboard: Set cron_active to', systemStatus.cron.active || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_active"] not found in DOM!');
+				}
+				
+				if ($cronPending.length) {
+					$cronPending.text(systemStatus.cron.pending || 0);
+					console.log('OrchestrationDashboard: Set cron_pending to', systemStatus.cron.pending || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_pending"] not found in DOM!');
+				}
+				
+				if ($cronFailed.length) {
+					$cronFailed.text(systemStatus.cron.failed || 0);
+					console.log('OrchestrationDashboard: Set cron_failed to', systemStatus.cron.failed || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="cron_failed"] not found in DOM!');
+				}
+			} else {
+				console.warn('OrchestrationDashboard: No cron data in system_status');
+			}
+
+			// Update async status
+			if (systemStatus.async) {
+				console.log('OrchestrationDashboard: Updating async status', systemStatus.async);
+				
+				const asyncStatus = systemStatus.async.status || 'unknown';
+				const $asyncStatus = $('[data-system-status="async_status"]');
+				const $asyncStuckJobs = $('[data-system-status="async_stuck_jobs"]');
+				const $asyncLongRunning = $('[data-system-status="async_long_running"]');
+				
+				console.log('OrchestrationDashboard: Found async elements:', {
+					status: $asyncStatus.length,
+					stuck_jobs: $asyncStuckJobs.length,
+					long_running: $asyncLongRunning.length
+				});
+				
+				if ($asyncStatus.length) {
+					$asyncStatus
+						.text(asyncStatus)
+						.removeClass('status-healthy status-warning status-error')
+						.addClass('status-' + asyncStatus);
+					console.log('OrchestrationDashboard: Set async_status to', asyncStatus);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_status"] not found in DOM!');
+				}
+				
+				if ($asyncStuckJobs.length) {
+					$asyncStuckJobs.text(systemStatus.async.stuck_jobs || 0);
+					console.log('OrchestrationDashboard: Set async_stuck_jobs to', systemStatus.async.stuck_jobs || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_stuck_jobs"] not found in DOM!');
+				}
+				
+				if ($asyncLongRunning.length) {
+					$asyncLongRunning.text(systemStatus.async.long_running || 0);
+					console.log('OrchestrationDashboard: Set async_long_running to', systemStatus.async.long_running || 0);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="async_long_running"] not found in DOM!');
+				}
+			} else {
+				console.warn('OrchestrationDashboard: No async data in system_status');
+			}
+
+			// Update health status
+			if (systemStatus.health) {
+				console.log('OrchestrationDashboard: Updating health status', systemStatus.health);
+				
+				const healthStatus = systemStatus.health.status || 'unknown';
+				const $healthStatus = $('[data-system-status="health_status"]');
+				const $healthLabel = $('[data-system-status="health_label"]');
+				
+				console.log('OrchestrationDashboard: Found health elements:', {
+					status: $healthStatus.length,
+					label: $healthLabel.length
+				});
+				
+				if ($healthStatus.length) {
+					$healthStatus
+						.text(systemStatus.health.icon + ' ' + healthStatus)
+						.removeClass('status-healthy status-good status-fair status-poor')
+						.addClass('status-' + healthStatus);
+					console.log('OrchestrationDashboard: Set health_status to', systemStatus.health.icon + ' ' + healthStatus);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="health_status"] not found in DOM!');
+				}
+				
+				if ($healthLabel.length) {
+					$healthLabel.text(systemStatus.health.label || 'Unknown');
+					console.log('OrchestrationDashboard: Set health_label to', systemStatus.health.label || 'Unknown');
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="health_label"] not found in DOM!');
+				}
+			} else {
+				console.warn('OrchestrationDashboard: No health data in system_status');
+			}
+
+			// Update SSE status
+			if (systemStatus.sse) {
+				console.log('OrchestrationDashboard: Updating SSE status', systemStatus.sse);
+				
+				const sseAvailable = systemStatus.sse.available ? 'Yes' : 'No';
+				const $sseAvailable = $('[data-system-status="sse_available"]');
+				const $sseEndpoint = $('[data-system-status="sse_endpoint"]');
+				
+				console.log('OrchestrationDashboard: Found SSE elements:', {
+					available: $sseAvailable.length,
+					endpoint: $sseEndpoint.length
+				});
+				
+				if ($sseAvailable.length) {
+					$sseAvailable
+						.text(sseAvailable)
+						.removeClass('status-yes status-no')
+						.addClass('status-' + (systemStatus.sse.available ? 'yes' : 'no'));
+					console.log('OrchestrationDashboard: Set sse_available to', sseAvailable);
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="sse_available"] not found in DOM!');
+				}
+				
+				if ($sseEndpoint.length) {
+					$sseEndpoint.text(systemStatus.sse.endpoint || 'N/A');
+					console.log('OrchestrationDashboard: Set sse_endpoint to', systemStatus.sse.endpoint || 'N/A');
+				} else {
+					console.error('OrchestrationDashboard: Element [data-system-status="sse_endpoint"] not found in DOM!');
+				}
+			} else {
+				console.warn('OrchestrationDashboard: No SSE data in system_status');
+			}
+			
+			console.log('OrchestrationDashboard: System status update complete');
 		},
 
 		updateSessionsTable: function(sessions) {
@@ -143,13 +349,16 @@
 		getSessionActions: function(session) {
 			let actions = '';
 			
+			// Escape session_id for safe insertion into HTML attributes
+			const escapedSessionId = this.escapeHtmlAttribute(session.session_id);
+			
 			if (session.status === 'active') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="pause">⏸ Pause</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="pause">⏸ Pause</button> ';
 			} else if (session.status === 'paused') {
-				actions += '<button class="button button-small session-action" data-session="' + session.session_id + '" data-action="resume">▶ Resume</button> ';
+				actions += '<button class="button button-small session-action" data-session="' + escapedSessionId + '" data-action="resume">▶ Resume</button> ';
 			}
 			
-			actions += '<button class="button button-small button-link-delete session-action" data-session="' + session.session_id + '" data-action="stop">⏹ Stop</button>';
+			actions += '<button class="button button-small button-link-delete session-action" data-session="' + escapedSessionId + '" data-action="stop">⏹ Stop</button>';
 			
 			return actions;
 		},
@@ -201,6 +410,164 @@
 			const div = document.createElement('div');
 			div.textContent = text;
 			return div.innerHTML;
+		},
+
+		/**
+		 * Escape HTML attribute value
+		 * 
+		 * @param {string} text Text to escape for use in HTML attribute.
+		 * @return {string} Escaped text safe for HTML attributes.
+		 */
+		escapeHtmlAttribute: function(text) {
+			return String(text)
+				.replace(/&/g, '&amp;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#39;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;');
+		},
+
+		updateWorkflowsTable: function(workflows) {
+			const $tbody = $('#workflows-table-body');
+			
+			if (workflows.length === 0) {
+				$tbody.html('<tr class="no-items"><td colspan="8">' + (this.config.strings.noWorkflows || 'No workflows found') + '</td></tr>');
+				return;
+			}
+
+			let html = '';
+			workflows.forEach(workflow => {
+				const stateClass = workflow.is_stale ? 'status-warning' : 'status-' + workflow.state;
+				const stateBadge = workflow.is_stale ? 
+					'<span class="status-badge ' + stateClass + '" title="Stuck in initialized state">' + workflow.state + ' (STALE)</span>' :
+					'<span class="status-badge ' + stateClass + '">' + workflow.state + '</span>';
+
+				html += '<tr' + (workflow.is_stale ? ' class="workflow-stale"' : '') + '>';
+				html += '<td><code>' + this.escapeHtml(workflow.workflow_id.substring(0, 20)) + '...</code></td>';
+				html += '<td><code>' + this.escapeHtml(workflow.team_id) + '</code></td>';
+				html += '<td>' + this.escapeHtml(workflow.task_type) + '</td>';
+				html += '<td>' + stateBadge + '</td>';
+				html += '<td>' + this.escapeHtml(workflow.age_display) + '</td>';
+				html += '<td>' + workflow.tasks_done + ' / ' + workflow.tasks_total + '</td>';
+				html += '<td>' + this.escapeHtml(workflow.created_at) + '</td>';
+				html += '<td>' + this.getWorkflowActions(workflow) + '</td>';
+				html += '</tr>';
+			});
+
+			$tbody.html(html);
+		},
+
+		getWorkflowActions: function(workflow) {
+			let actions = '';
+			
+			// Escape workflow_id for safe insertion into HTML attributes
+			const escapedWorkflowId = this.escapeHtmlAttribute(workflow.workflow_id);
+			
+			// Show "Continue" button for initialized or failed workflows
+			if (workflow.state === 'initialized' || workflow.state === 'failed') {
+				const buttonText = workflow.is_stale ? 
+					'🚀 ' + (this.config.strings.startWorkflow || 'Continue') :
+					'▶ ' + (this.config.strings.startWorkflow || 'Continue');
+				const buttonClass = workflow.is_stale ? 'button-primary' : 'button';
+				actions += '<button class="button button-small ' + buttonClass + ' workflow-trigger" ' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
+					'title="Continue this workflow">' +
+					buttonText + '</button> ';
+			}
+			
+			// Show "Restart" button for completed or failed workflows
+			if (workflow.state === 'completed' || workflow.state === 'failed') {
+				actions += '<button class="button button-small workflow-restart" ' +
+					'data-workflow="' + escapedWorkflowId + '" ' +
+					'title="Restart this workflow from beginning">' +
+					'<span class="dashicons dashicons-update"></span> Restart</button>';
+			}
+			
+			// Show running indicator for active workflows
+			if (workflow.state === 'running') {
+				actions += '<span class="description">' +
+					'<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> ' +
+					'Running...</span>';
+			}
+			
+			// View details link (future enhancement)
+			// actions += '<button class="button button-small button-link workflow-view" data-workflow="' + escapedWorkflowId + '">' + (this.config.strings.viewWorkflow || 'View') + '</button>';
+			
+			return actions;
+		},
+
+		handleWorkflowTrigger: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow');
+
+			// Confirm before starting
+			if (!confirm(this.config.strings.confirmStart || 'Are you sure you want to start this workflow?')) {
+				return;
+			}
+
+			$button.prop('disabled', true).text('Starting...');
+
+			$.ajax({
+				url: this.config.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_trigger_workflow',
+					nonce: this.config.nonce,
+					workflow_id: workflowId
+				},
+				success: (response) => {
+					if (response.success) {
+						alert(this.config.strings.workflowStarted || 'Workflow started successfully');
+						this.loadDashboardData(); // Reload to show updated state
+					} else {
+						alert((this.config.strings.workflowError || 'Error starting workflow') + ': ' + (response.data.message || 'Unknown error'));
+					}
+				},
+				error: (xhr, status, error) => {
+					alert((this.config.strings.workflowError || 'Error starting workflow') + ': ' + error);
+				},
+				complete: () => {
+					$button.prop('disabled', false).text(this.config.strings.startWorkflow || 'Start Workflow');
+				}
+			});
+		},
+
+		handleWorkflowRestart: function(e) {
+			e.preventDefault();
+			const $button = $(e.currentTarget);
+			const workflowId = $button.data('workflow');
+
+			// Confirm before restarting
+			if (!confirm('Are you sure you want to restart this workflow? This will reset all tasks and start from the beginning.')) {
+				return;
+			}
+
+			const originalHtml = $button.html();
+			$button.prop('disabled', true).html('<span class="dashicons dashicons-update-alt" style="animation: rotation 2s infinite linear;"></span> Restarting...');
+
+			$.ajax({
+				url: this.config.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_restart_workflow',
+					nonce: this.config.nonce,
+					workflow_id: workflowId
+				},
+				success: (response) => {
+					if (response.success) {
+						alert('Workflow reset successfully! You can now continue it.');
+						this.loadDashboardData(); // Reload to show updated state
+					} else {
+						alert('Error restarting workflow: ' + (response.data.message || 'Unknown error'));
+						$button.prop('disabled', false).html(originalHtml);
+					}
+				},
+				error: (xhr, status, error) => {
+					alert('Error restarting workflow: ' + error);
+					$button.prop('disabled', false).html(originalHtml);
+				}
+			});
 		}
 	};
 

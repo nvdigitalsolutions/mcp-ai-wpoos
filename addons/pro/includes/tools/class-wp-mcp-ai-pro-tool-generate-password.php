@@ -93,7 +93,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Password {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$length          = isset( $arguments['length'] ) ? absint( $arguments['length'] ) : 16;
 		$uppercase       = isset( $arguments['uppercase'] ) ? (bool) $arguments['uppercase'] : true;
 		$lowercase       = isset( $arguments['lowercase'] ) ? (bool) $arguments['lowercase'] : true;
