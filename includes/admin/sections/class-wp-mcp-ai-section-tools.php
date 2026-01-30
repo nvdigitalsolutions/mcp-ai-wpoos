@@ -684,6 +684,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 26 site creation tools: research & best practices (4), page builders (5), section builders (6), widget builders (4), template management (4), and Architect Agent integration (3) for automated development workflows. This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+
+				// Regulatory Registration Toolkit - Multi-country cosmetics and perfume product registration.
+				'enable_regulatory_registration_toolkit' => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Regulatory Registration Pro Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable multi-country cosmetics and perfume product registration management (Pro Version only)', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 15 regulatory registration tools for managing product registrations, compliance documents, regulatory requirements, and multi-country submissions (Sri Lanka NMRA, UAE, Saudi SFDA, Qatar, Kuwait, Oman, India). This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -752,7 +761,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit' ),
+					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -935,6 +944,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_architect_agent_toolkit'      => 16,   // 4 self-editing tools (file, shell, git, search).
 				'enable_architectural_design_toolkit' => 160,  // 16 tools, 3D modeling, rendering.
 				'enable_site_creator_toolkit'         => 104,  // 26 tools, page/section/widget builders, AI automation.
+				'enable_regulatory_registration_toolkit' => 80,   // 15 tools, multi-country registration management.
 			);
 		}
 
