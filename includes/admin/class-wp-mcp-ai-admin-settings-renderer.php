@@ -86,9 +86,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 		public function render_textarea_field( $name, $label, $description = '', $args = array() ) {
 			$settings = WP_MCP_AI_Admin_Settings_Base::get_settings();
 			$value    = isset( $settings[ $name ] ) ? $settings[ $name ] : '';
-			$rows     = isset( $args['rows'] ) ? $args['rows'] : 5;
-			$cols     = isset( $args['cols'] ) ? $args['cols'] : 50;
-			$class    = isset( $args['class'] ) ? $args['class'] : 'large-text';
+			// Handle array values - convert to JSON string for display.
+			$textarea_value = is_array( $value ) ? wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) : $value;
+			$rows           = isset( $args['rows'] ) ? $args['rows'] : 5;
+			$cols           = isset( $args['cols'] ) ? $args['cols'] : 50;
+			$class          = isset( $args['class'] ) ? $args['class'] : 'large-text';
 
 			?>
 			<label for="<?php echo esc_attr( $name ); ?>">
@@ -100,7 +102,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Renderer' ) ) {
 				rows="<?php echo esc_attr( $rows ); ?>"
 				cols="<?php echo esc_attr( $cols ); ?>"
 				class="<?php echo esc_attr( $class ); ?>"
-			><?php echo esc_textarea( $value ); ?></textarea>
+			><?php echo esc_textarea( $textarea_value ); ?></textarea>
 			<?php if ( ! empty( $description ) ) : ?>
 				<p class="description"><?php echo wp_kses_post( $description ); ?></p>
 			<?php endif; ?>
