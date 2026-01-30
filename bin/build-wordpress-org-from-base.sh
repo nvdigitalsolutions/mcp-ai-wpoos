@@ -155,14 +155,14 @@ transform_package() {
 }
 
 # Build BASE WordPress.org package
-BASE_SOURCE="build/mcp-ai-wpoos-base-${VERSION}.zip"
+BASE_SOURCE="build/nvdigital-open-operator-system-oos-${VERSION}.zip"
 BASE_OUTPUT="build/nvdigital-open-operator-system-oos-${VERSION}.zip"
 transform_package "$BASE_SOURCE" "$BASE_OUTPUT" "BASE (WordPress.org)"
 
 echo ""
 
 # Build COMPLETE WordPress.org package
-COMPLETE_SOURCE="build/mcp-ai-wpoos-${VERSION}.zip"
+COMPLETE_SOURCE="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
 COMPLETE_OUTPUT="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
 transform_package "$COMPLETE_SOURCE" "$COMPLETE_OUTPUT" "COMPLETE (Base + Pro)"
 
