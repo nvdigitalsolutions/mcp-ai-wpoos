@@ -162,10 +162,10 @@ class WP_MCP_AI_Password_Vault_Admin {
 		// List of all password vault page hooks.
 		$vault_pages = array(
 			'toplevel_page_wp-mcp-ai-password-vault',
-			'password-vault_page_wp-mcp-ai-password-vault-generator',
-			'password-vault_page_wp-mcp-ai-password-vault-sync',
-			'password-vault_page_wp-mcp-ai-password-vault-settings',
-			'password-vault_page_wp-mcp-ai-password-vault-automation',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-generator',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-sync',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-settings',
+			'wp-mcp-ai-password-vault_page_wp-mcp-ai-password-vault-automation',
 		);
 
 		// Check if we're on any vault page.
@@ -286,8 +286,8 @@ class WP_MCP_AI_Password_Vault_Admin {
 
 		wp_send_json_success(
 			array(
-				'secret' => $secret,
-				'qr_uri' => $qr_uri,
+				'secret'      => $secret,
+				'qr_code_url' => $qr_uri,
 			)
 		);
 	}
