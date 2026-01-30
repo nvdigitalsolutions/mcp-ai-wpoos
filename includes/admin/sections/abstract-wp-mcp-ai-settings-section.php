@@ -402,6 +402,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							break;
 
 						case 'textarea':
+							// Handle array values - convert to JSON string for display.
+							if ( is_array( $value ) ) {
+								$json_value = wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+								// Handle encoding failure gracefully.
+								$textarea_value = ( false !== $json_value ) ? $json_value : wp_json_encode( $value );
+							} else {
+								$textarea_value = $value;
+							}
 							?>
 							<textarea
 								id="<?php echo esc_attr( $key ); ?>"
@@ -410,7 +418,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								class="large-text code"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
 								<?php echo esc_attr( $required ? 'required' : '' ); ?>
-							><?php echo esc_textarea( $value ); ?></textarea>
+							><?php echo esc_textarea( $textarea_value ); ?></textarea>
 							<?php
 							break;
 

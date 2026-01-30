@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/add-save-button-advanced-settings',
+        'version' => 'dev-copilot/add-save-button-advanced-settings',
+        'reference' => 'afdd24797160df9a07fddbd0df1a108efbbc94dc',
         'pretty_version' => 'dev-copilot/fix-wordpress-errors-wpcs',
         'version' => 'dev-copilot/fix-wordpress-errors-wpcs',
         'reference' => 'fbb7a7d1982a6b62ec89620d23e5402e11ba227b',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/add-save-button-advanced-settings',
+            'version' => 'dev-copilot/add-save-button-advanced-settings',
+            'reference' => 'afdd24797160df9a07fddbd0df1a108efbbc94dc',
             'pretty_version' => 'dev-copilot/fix-wordpress-errors-wpcs',
             'version' => 'dev-copilot/fix-wordpress-errors-wpcs',
             'reference' => 'fbb7a7d1982a6b62ec89620d23e5402e11ba227b',
