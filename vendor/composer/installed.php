@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/review-toolkits-enhancement',
+        'version' => 'dev-copilot/review-toolkits-enhancement',
+        'reference' => '625c618555bbb12795d52b0138713e4252a204c4',
         'pretty_version' => 'dev-copilot/move-to-next-step-registration',
         'version' => 'dev-copilot/move-to-next-step-registration',
         'reference' => '1b9fa4f2ee00236a710321d7f91568a397e3b921',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/review-toolkits-enhancement',
+            'version' => 'dev-copilot/review-toolkits-enhancement',
+            'reference' => '625c618555bbb12795d52b0138713e4252a204c4',
             'pretty_version' => 'dev-copilot/move-to-next-step-registration',
             'version' => 'dev-copilot/move-to-next-step-registration',
             'reference' => '1b9fa4f2ee00236a710321d7f91568a397e3b921',

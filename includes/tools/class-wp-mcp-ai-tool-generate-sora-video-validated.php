@@ -50,4 +50,23 @@ class WP_MCP_AI_Tool_Generate_Sora_Video_Validated extends WP_MCP_AI_Tool_Genera
 	protected function get_base_tool() {
 		return new WP_MCP_AI_Tool_Generate_Sora_Video();
 	}
+
+/**
+ * Get extended tool definition including toolkit metadata.
+ *
+ * @since 1.1.0
+ *
+ * @return array Tool definition with metadata.
+ */
+public function get_definition() {
+	return array(
+		'name'                  => $this->get_name(),
+		'description'           => $this->get_description(),
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'video_producer', 'content_creator' ),
+		'risk_level'            => 'standard',
+	);
+}
+
 }

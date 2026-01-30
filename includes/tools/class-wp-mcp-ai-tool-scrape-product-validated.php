@@ -126,6 +126,42 @@ class WP_MCP_AI_Tool_Scrape_Product_Validated extends WP_MCP_AI_Validated_Tool i
 		return $this->original_tool->execute( $arguments, $context );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'ecommerce_business',
+
+			'pattern_compatibility' => array( 'sequential' ),
+
+			'profession_tags'       => array( 'ecommerce_manager', 'market_researcher' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

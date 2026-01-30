@@ -200,6 +200,42 @@ class WP_MCP_AI_Tool_Vision_Object_Localization implements WP_MCP_AI_Tool_Interf
 		return $decoded;
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'media_processing',
+
+			'pattern_compatibility' => array( 'sequential' ),
+
+			'profession_tags'       => array( 'data_scientist', 'researcher' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */
