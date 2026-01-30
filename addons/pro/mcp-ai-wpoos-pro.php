@@ -893,6 +893,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				// Document Management Tools.
 				'WP_MCP_AI_Tool_List_Reg_Documents'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-documents.php',
 				'WP_MCP_AI_Tool_Check_Document_Expiry' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-document-expiry.php',
+				'WP_MCP_AI_Tool_Upload_Reg_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-upload-reg-document.php',
+				'WP_MCP_AI_Tool_Update_Reg_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-document.php',
+				'WP_MCP_AI_Tool_Get_Reg_Document'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-document.php',
+				'WP_MCP_AI_Tool_Validate_Document_Checklist' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-document-checklist.php',
+				'WP_MCP_AI_Tool_Generate_Submission_Pack' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-submission-pack.php',
+				'WP_MCP_AI_Tool_Track_Document_Version' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-track-document-version.php',
 			);
 			$pro_tools                         = array_merge( $pro_tools, $regulatory_registration_tools );
 		}
