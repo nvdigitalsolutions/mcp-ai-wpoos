@@ -342,7 +342,7 @@ if [ "$BUILD_BASE" = true ]; then
  * Author URI: https://nvdigitalsolutions.com\
  * License: GPLv3 or later\
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html\
- * Text Domain: mcp-ai-wpoos-base\
+ * Text Domain: nvdigital-open-operator-system-oos\
  * Domain Path: /languages\
  * Network: true\
  *\
@@ -462,7 +462,7 @@ if [ "$BUILD_PRO" = true ]; then
  * Author: NV Digital Solutions\
  * Author URI: https://nvdigitalsolutions.com\
  * License: Proprietary\
- * Text Domain: mcp-ai-wpoos-pro\
+ * Text Domain: nvdigital-open-operator-system-oos-pro\
  * Domain Path: /languages\
  * Network: true\
  *\
@@ -667,6 +667,12 @@ if [ "$BUILD_COMBINED" = true ]; then
     if [ -f "build/${COMBINED_SLUG}/README.md" ]; then
         rm -f "build/${COMBINED_SLUG}/README.md"
         echo "✓ Removed README.md (readme.txt is used for WordPress.org)"
+    fi
+    
+    # Update text domain in mcp-ai-wpoos.php header for combined version
+    if [ -f "build/${COMBINED_SLUG}/mcp-ai-wpoos.php" ]; then
+        sed -i 's/ \* Text Domain: mcp-ai-wpoos$/ * Text Domain: nvdigital-open-operator-system-oos/' "build/${COMBINED_SLUG}/mcp-ai-wpoos.php"
+        echo "✓ Updated text domain in mcp-ai-wpoos.php to nvdigital-open-operator-system-oos"
     fi
     
     # Create ZIP

@@ -78,31 +78,64 @@ transform_package() {
     
     # Transform text domain
     echo "Step 2: Transforming text domain..."
-    echo "   mcp-ai-wpoos → nvdigital-open-operator-system-oos"
+    echo "   mcp-ai-wpoos* → nvdigital-open-operator-system-oos*"
     
-    # Count before
-    BEFORE_COUNT=$(grep -r "'mcp-ai-wpoos'" "$EXTRACTED_DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
+    # Count before (all variants)
+    BEFORE_COUNT=$(grep -rE "('mcp-ai-wpoos'|\"mcp-ai-wpoos\"|'mcp-ai-wpoos-base'|\"mcp-ai-wpoos-base\"|'mcp-ai-wpoos-pro'|\"mcp-ai-wpoos-pro\")" "$EXTRACTED_DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
     
-    # Transform PHP files
+    # Transform PHP files - handle all text domain variants
+    # Transform mcp-ai-wpoos-base → nvdigital-open-operator-system-oos
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-base'/'nvdigital-open-operator-system-oos'/g" {} \;
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-base"/"nvdigital-open-operator-system-oos"/g' {} \;
+    
+    # Transform mcp-ai-wpoos-pro → nvdigital-open-operator-system-oos-pro
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
+    
+    # Transform mcp-ai-wpoos → nvdigital-open-operator-system-oos (catch remaining instances)
     find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
     find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
     
-    # Transform JavaScript files
+    # Transform JavaScript files - handle all text domain variants
+    # Transform mcp-ai-wpoos-base → nvdigital-open-operator-system-oos
+    find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos-base'/'nvdigital-open-operator-system-oos'/g" {} \;
+    find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos-base"/"nvdigital-open-operator-system-oos"/g' {} \;
+    
+    # Transform mcp-ai-wpoos-pro → nvdigital-open-operator-system-oos-pro
+    find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos-pro'/'nvdigital-open-operator-system-oos-pro'/g" {} \;
+    find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos-pro"/"nvdigital-open-operator-system-oos-pro"/g' {} \;
+    
+    # Transform mcp-ai-wpoos → nvdigital-open-operator-system-oos (catch remaining instances)
     find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i "s/'mcp-ai-wpoos'/'nvdigital-open-operator-system-oos'/g" {} \;
     find "$EXTRACTED_DIR" -name "*.js" -type f -exec sed -i 's/"mcp-ai-wpoos"/"nvdigital-open-operator-system-oos"/g' {} \;
     
-    # Count after
-    AFTER_COUNT=$(grep -r "'mcp-ai-wpoos'" "$EXTRACTED_DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
+    # Count after (all variants)
+    AFTER_COUNT=$(grep -rE "('mcp-ai-wpoos'|\"mcp-ai-wpoos\"|'mcp-ai-wpoos-base'|\"mcp-ai-wpoos-base\"|'mcp-ai-wpoos-pro'|\"mcp-ai-wpoos-pro\")" "$EXTRACTED_DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
     TRANSFORMED=$((BEFORE_COUNT - AFTER_COUNT))
     
     echo "   Transformed: $TRANSFORMED instances"
+    echo "   Remaining old text domains: $AFTER_COUNT"
     
-    # Update POT file if it exists
+    # Update POT files if they exist
     if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" ]; then
-        echo "Step 3: Renaming translation file..."
+        echo "Step 3: Renaming translation file (mcp-ai-wpoos.pot)..."
         mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
         sed -i 's/"Project-Id-Version: mcp-ai-wpoos/"Project-Id-Version: nvdigital-open-operator-system-oos/g' \
             "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
+    fi
+    
+    if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos-base.pot" ]; then
+        echo "Step 3: Renaming translation file (mcp-ai-wpoos-base.pot)..."
+        mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos-base.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
+        sed -i 's/"Project-Id-Version: mcp-ai-wpoos-base/"Project-Id-Version: nvdigital-open-operator-system-oos/g' \
+            "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos.pot"
+    fi
+    
+    if [ -f "$EXTRACTED_DIR/languages/mcp-ai-wpoos-pro.pot" ]; then
+        echo "Step 3: Renaming translation file (mcp-ai-wpoos-pro.pot)..."
+        mv "$EXTRACTED_DIR/languages/mcp-ai-wpoos-pro.pot" "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-pro.pot"
+        sed -i 's/"Project-Id-Version: mcp-ai-wpoos-pro/"Project-Id-Version: nvdigital-open-operator-system-oos-pro/g' \
+            "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-pro.pot"
     fi
     
     # Create output package
