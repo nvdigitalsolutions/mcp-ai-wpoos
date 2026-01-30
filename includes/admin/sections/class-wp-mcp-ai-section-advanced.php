@@ -1923,6 +1923,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									</tbody>
 								</table>
 							</div>
+						<?php else : ?>
+							<!-- Show message when peers exist but aren't published -->
+							<div class="notice notice-warning inline" style="margin: 15px 0;">
+								<p>
+									<?php
+									printf(
+										/* translators: 1: URL to AI Peers list, 2: number of peers */
+										esc_html__( 'You have %2$d AI peer(s) registered, but none are currently published. %1$s to review and publish them.', 'mcp-ai-wpoos' ),
+										'<a href="' . esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ) . '">' . esc_html__( 'View all AI peers', 'mcp-ai-wpoos' ) . '</a>',
+										absint( $total_peers )
+									);
+									?>
+								</p>
+							</div>
 						<?php endif; ?>
 					<?php endif; ?>
 
