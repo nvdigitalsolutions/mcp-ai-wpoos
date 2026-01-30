@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/organize-repo-structure',
         'version' => 'dev-copilot/organize-repo-structure',
-        'reference' => '44f43b97817f7ae8afdbe62021955a97da1091ee',
+        'reference' => '02160efff87a66533a0c86bf6c0e00213332d272',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/organize-repo-structure',
             'version' => 'dev-copilot/organize-repo-structure',
-            'reference' => '44f43b97817f7ae8afdbe62021955a97da1091ee',
+            'reference' => '02160efff87a66533a0c86bf6c0e00213332d272',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
