@@ -79,8 +79,8 @@ class WP_MCP_AI_Vault_Item_CPT {
 			'description'           => __( 'Encrypted vault items (passwords, notes, cards, identities)', 'mcp-ai-wpoos-pro' ),
 			'public'                => false,
 			'publicly_queryable'    => false,
-			'show_ui'               => false, // Hidden from admin UI - managed via custom admin page.
-			'show_in_menu'          => false,
+			'show_ui'               => true, // Show in admin UI.
+			'show_in_menu'          => 'wp-mcp-ai-password-vault', // Show under Password Vault menu.
 			'query_var'             => false,
 			'rewrite'               => false,
 			'capability_type'       => 'post',
