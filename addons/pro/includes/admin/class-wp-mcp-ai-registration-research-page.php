@@ -1,8 +1,8 @@
 <?php
 /**
- * Product Research Page for Regulatory Registration Toolkit.
+ * Registration Research Page for Regulatory Registration Toolkit.
  *
- * Provides AI-assisted product research and creation interface.
+ * Provides AI-assisted registration research and creation interface.
  *
  * @package WP_MCP_AI
  */
@@ -15,9 +15,9 @@ require_once __DIR__ . '/trait-wp-mcp-ai-research-page-featured-image.php';
 require_once __DIR__ . '/trait-wp-mcp-ai-research-page-enhancements.php';
 
 /**
- * Product Research Page class.
+ * Registration Research Page class.
  */
-class WP_MCP_AI_Reg_Product_Research_Page {
+class WP_MCP_AI_Registration_Research_Page {
 	use WP_MCP_AI_Research_Page_Featured_Image;
 	use WP_MCP_AI_Research_Page_Import_Handler;
 	use WP_MCP_AI_Research_Page_Consolidation;
@@ -29,7 +29,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 *
 	 * @var string
 	 */
-	const PAGE_SLUG = 'wp-mcp-ai-reg-product-research';
+	const PAGE_SLUG = 'wp-mcp-ai-registration-research';
 
 	/**
 	 * Initialize the class.
@@ -37,8 +37,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	public static function init() {
 		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 21 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_assets' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_create_reg_product_from_research', array( __CLASS__, 'handle_create_from_research' ) );
-		add_action( 'wp_ajax_wp_mcp_ai_import_reg_product', array( __CLASS__, 'ajax_handle_import' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_create_registration_from_research', array( __CLASS__, 'handle_create_from_research' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_import_registration', array( __CLASS__, 'ajax_handle_import' ) );
 	}
 
 	/**
@@ -46,8 +46,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'edit.php?post_type=mcp_ai_reg_product',
-			__( 'Research & Add Products', 'mcp-ai-wpoos-pro' ),
+			'edit.php?post_type=mcp_ai_registration',
+			__( 'Research & Add Registrations', 'mcp-ai-wpoos-pro' ),
 			__( 'Research & Add', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			self::PAGE_SLUG,
@@ -62,7 +62,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	public static function enqueue_assets( $hook ) {
 		// Only load on our research page.
-		if ( 'mcp_ai_reg_product_page_' . self::PAGE_SLUG !== $hook ) {
+		if ( 'mcp_ai_registration_page_' . self::PAGE_SLUG !== $hook ) {
 			return;
 		}
 
@@ -97,8 +97,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			'wpMcpAiResearchPage',
 			array(
 				'ajaxUrl'    => admin_url( 'admin-ajax.php' ),
-				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_reg_product' ),
-				'entityType' => 'reg_product',
+				'nonce'      => wp_create_nonce( 'wp_mcp_ai_research_registration' ),
+				'entityType' => 'registration',
 			)
 		);
 	}
@@ -108,7 +108,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	public static function render_page() {
 		// Get assistant from settings.
-		$settings     = get_option( 'wp_mcp_ai_reg_product_settings', array() );
+		$settings     = get_option( 'wp_mcp_ai_registration_settings', array() );
 		$assistant_id = isset( $settings['assistant_id'] ) ? absint( $settings['assistant_id'] ) : 0;
 
 		// If no assistant configured or invalid, get the first available assistant.
@@ -129,7 +129,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		?>
 		<div class="wrap wp-mcp-ai-research-page">
 			<h1 class="wp-heading-inline">
-				<?php esc_html_e( 'Research & Add Product', 'mcp-ai-wpoos-pro' ); ?>
+				<?php esc_html_e( 'Research & Add Registration', 'mcp-ai-wpoos-pro' ); ?>
 			</h1>
 
 			<hr class="wp-header-end">
@@ -151,34 +151,34 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					<div class="wp-mcp-ai-research-intro">
 						<h2><?php esc_html_e( 'How It Works', 'mcp-ai-wpoos-pro' ); ?></h2>
 						<ol>
-							<li><?php esc_html_e( 'Search existing products or research regulatory requirements', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Verify ingredient compliance and INCI nomenclature', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Create products with complete regulatory data', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><?php esc_html_e( 'Link products to brands and categories', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Search existing registrations or research country requirements', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Review submission timelines and document checklists', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Create registrations linked to products and countries', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><?php esc_html_e( 'Track approval status and expiry dates', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ol>
 					</div>
 
 					<div class="wp-mcp-ai-research-tips">
 						<h3><?php esc_html_e( 'Research Tips', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul>
-							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Check if product already exists', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'INCI compliance:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Validate ingredient nomenclature', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Regulatory research:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Find country-specific requirements', 'mcp-ai-wpoos-pro' ); ?></li>
-							<li><strong><?php esc_html_e( 'Complete data:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Include all manufacturer and origin details', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Search first:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Check for existing registrations', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Country requirements:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Research specific regulatory frameworks', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Document checklist:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Verify all required documents', 'mcp-ai-wpoos-pro' ); ?></li>
+							<li><strong><?php esc_html_e( 'Timeline planning:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Factor in 4-6 month approval times', 'mcp-ai-wpoos-pro' ); ?></li>
 						</ul>
 					</div>
 
 					<div class="wp-mcp-ai-research-examples">
 						<h3><?php esc_html_e( 'Example Queries', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<ul class="wp-mcp-ai-example-list">
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research creating a new skincare moisturizer product with INCI ingredients, manufacturer details, and HS code">
-								<?php esc_html_e( '"Research creating a new skincare moisturizer..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research registering a cosmetic product in Sri Lanka NMRA including timeline, fees, and required documents">
+								<?php esc_html_e( '"Research registering a product in Sri Lanka..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about registering a perfume in Sri Lanka NMRA including required documents and timeline">
-								<?php esc_html_e( '"Find information about registering a perfume..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Find information about UAE cosmetic registration requirements for MOHAP and Dubai Municipality">
+								<?php esc_html_e( '"Find UAE registration requirements..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
-							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research compliance requirements for a haircare product with allergen information">
-								<?php esc_html_e( '"Research compliance requirements for haircare..."', 'mcp-ai-wpoos-pro' ); ?>
+							<li><button type="button" class="button button-secondary wp-mcp-ai-example-query" data-query="Research multi-country registration strategy for GCC region with mutual recognition">
+								<?php esc_html_e( '"Research multi-country GCC strategy..."', 'mcp-ai-wpoos-pro' ); ?>
 							</button></li>
 						</ul>
 					</div>
@@ -186,13 +186,18 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					<div class="wp-mcp-ai-research-actions">
 						<h3><?php esc_html_e( 'Quick Actions', 'mcp-ai-wpoos-pro' ); ?></h3>
 						<p>
-							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_reg_product' ) ); ?>" class="button">
-								<?php esc_html_e( 'View All Products', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration' ) ); ?>" class="button">
+								<?php esc_html_e( 'View All Registrations', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>
 						<p>
-							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_reg_product' ) ); ?>" class="button">
-								<?php esc_html_e( 'Add Product Manually', 'mcp-ai-wpoos-pro' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=mcp_ai_registration' ) ); ?>" class="button">
+								<?php esc_html_e( 'Add Registration Manually', 'mcp-ai-wpoos-pro' ); ?>
+							</a>
+						</p>
+						<p>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=wp-mcp-ai-registration-dashboard' ) ); ?>" class="button">
+								<?php esc_html_e( 'View Dashboard', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 						</p>
 					</div>
@@ -206,17 +211,17 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 							<button type="button" class="workflow-option active" data-workflow="research">
 								<span class="dashicons dashicons-format-chat"></span>
 								<strong><?php esc_html_e( 'AI Research', 'mcp-ai-wpoos-pro' ); ?></strong>
-								<p><?php esc_html_e( 'Research and create products with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
+								<p><?php esc_html_e( 'Research and create registrations with AI assistance', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
 							<button type="button" class="workflow-option" data-workflow="import">
 								<span class="dashicons dashicons-upload"></span>
 								<strong><?php esc_html_e( 'Import Data', 'mcp-ai-wpoos-pro' ); ?></strong>
-								<p><?php esc_html_e( 'Bulk import product data', 'mcp-ai-wpoos-pro' ); ?></p>
+								<p><?php esc_html_e( 'Bulk import registration data', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
 							<button type="button" class="workflow-option" data-workflow="review">
 								<span class="dashicons dashicons-analytics"></span>
-								<strong><?php esc_html_e( 'Review & Quality', 'mcp-ai-wpoos-pro' ); ?></strong>
-								<p><?php esc_html_e( 'View product quality and completeness', 'mcp-ai-wpoos-pro' ); ?></p>
+								<strong><?php esc_html_e( 'Review & Status', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<p><?php esc_html_e( 'View registration status and expiry dates', 'mcp-ai-wpoos-pro' ); ?></p>
 							</button>
 						</div>
 					</div>
@@ -226,9 +231,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive regulatory product tools.
+							// Render chat interface with comprehensive registration tools.
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_reg_product,list_reg_products,get_reg_product,search_reg_products,validate_reg_product,web_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_registration,list_registrations,get_registration,list_reg_products,get_reg_product,check_product_compliance,web_search"]'
 							);
 							?>
 						</div>
@@ -279,15 +284,15 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	}
 
 	/**
-	 * Handle AJAX request to create product from research.
+	 * Handle AJAX request to create registration from research.
 	 */
 	public static function handle_create_from_research() {
 		// Verify nonce.
-		check_ajax_referer( 'wp_mcp_ai_research_reg_product', 'nonce' );
+		check_ajax_referer( 'wp_mcp_ai_research_registration', 'nonce' );
 
 		// Check user capability.
 		if ( ! current_user_can( 'edit_posts' ) ) {
-			wp_send_json_error( array( 'message' => __( 'You do not have permission to create products.', 'mcp-ai-wpoos-pro' ) ) );
+			wp_send_json_error( array( 'message' => __( 'You do not have permission to create registrations.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
 		// Get research data from request.
@@ -305,16 +310,16 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			wp_send_json_error( array( 'message' => __( 'Invalid JSON data format.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		if ( empty( $research_data['title'] ) ) {
-			wp_send_json_error( array( 'message' => __( 'Product title is required.', 'mcp-ai-wpoos-pro' ) ) );
+		if ( empty( $research_data['product_id'] ) && empty( $research_data['title'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Product ID or registration title is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		// Use the create_reg_product tool to create the product.
-		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Reg_Product' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Create Product tool not available.', 'mcp-ai-wpoos-pro' ) ) );
+		// Use the create_registration tool to create the registration.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Create_Registration' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Create Registration tool not available.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$tool   = new WP_MCP_AI_Tool_Create_Reg_Product();
+		$tool   = new WP_MCP_AI_Tool_Create_Registration();
 		$result = $tool->execute(
 			$research_data,
 			array( 'user_id' => get_current_user_id() )
@@ -324,15 +329,15 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
 		}
 
-		// Return success with product ID and edit URL.
-		$product_id = isset( $result['product_id'] ) ? $result['product_id'] : 0;
-		$edit_url   = $product_id > 0 ? admin_url( 'post.php?post=' . $product_id . '&action=edit' ) : '';
+		// Return success with registration ID and edit URL.
+		$registration_id = isset( $result['registration_id'] ) ? $result['registration_id'] : 0;
+		$edit_url        = $registration_id > 0 ? admin_url( 'post.php?post=' . $registration_id . '&action=edit' ) : '';
 
 		wp_send_json_success(
 			array(
-				'message'    => __( 'Product created successfully!', 'mcp-ai-wpoos-pro' ),
-				'product_id' => $product_id,
-				'edit_url'   => $edit_url,
+				'message'         => __( 'Registration created successfully!', 'mcp-ai-wpoos-pro' ),
+				'registration_id' => $registration_id,
+				'edit_url'        => $edit_url,
 			)
 		);
 	}
@@ -358,8 +363,8 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 * @return array|WP_Error Result or error.
 	 */
 	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
-		// This would integrate with the import_products_from_excel tool.
-		return new WP_Error( 'not_implemented', __( 'Product import will be handled through Excel import page.', 'mcp-ai-wpoos-pro' ) );
+		// This would integrate with the import_registrations_from_excel tool.
+		return new WP_Error( 'not_implemented', __( 'Registration import will be handled through Excel import page.', 'mcp-ai-wpoos-pro' ) );
 	}
 
 	/**
@@ -368,35 +373,35 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 * @return array Completeness data.
 	 */
 	protected static function calculate_completeness() {
-		$products = get_posts(
+		$registrations = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_reg_product',
+				'post_type'      => 'mcp_ai_registration',
 				'post_status'    => 'any',
 				'posts_per_page' => -1,
 			)
 		);
 
-		$total         = count( $products );
+		$total         = count( $registrations );
 		$complete      = 0;
 		$missing_items = array();
 
-		foreach ( $products as $product ) {
-			$meta       = get_post_meta( $product->ID );
-			$has_brand  = ! empty( $meta['brand'][0] ?? '' );
-			$has_inci   = ! empty( $meta['inci_ingredients'][0] ?? '' );
-			$has_origin = ! empty( $meta['origin_country'][0] ?? '' );
+		foreach ( $registrations as $registration ) {
+			$meta           = get_post_meta( $registration->ID );
+			$has_product    = ! empty( $meta['product_id'][0] ?? '' );
+			$has_country    = ! empty( $meta['country'][0] ?? '' );
+			$has_submission = ! empty( $meta['submission_date'][0] ?? '' );
 
-			if ( $has_brand && $has_inci && $has_origin ) {
+			if ( $has_product && $has_country && $has_submission ) {
 				$complete++;
 			} else {
-				if ( ! $has_brand ) {
-					$missing_items[] = sprintf( '%s: Missing brand', $product->post_title );
+				if ( ! $has_product ) {
+					$missing_items[] = sprintf( '%s: Missing product link', $registration->post_title );
 				}
-				if ( ! $has_inci ) {
-					$missing_items[] = sprintf( '%s: Missing INCI ingredients', $product->post_title );
+				if ( ! $has_country ) {
+					$missing_items[] = sprintf( '%s: Missing country', $registration->post_title );
 				}
-				if ( ! $has_origin ) {
-					$missing_items[] = sprintf( '%s: Missing origin country', $product->post_title );
+				if ( ! $has_submission ) {
+					$missing_items[] = sprintf( '%s: Missing submission date', $registration->post_title );
 				}
 			}
 		}
@@ -407,9 +412,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			'percentage'  => $percentage,
 			'missing'     => array_slice( $missing_items, 0, 10 ),
 			'suggestions' => array(
-				__( 'Complete missing brand information', 'mcp-ai-wpoos-pro' ),
-				__( 'Add INCI ingredient lists for compliance', 'mcp-ai-wpoos-pro' ),
-				__( 'Verify origin country information', 'mcp-ai-wpoos-pro' ),
+				__( 'Link all registrations to products', 'mcp-ai-wpoos-pro' ),
+				__( 'Add country and regulatory authority', 'mcp-ai-wpoos-pro' ),
+				__( 'Update submission and approval dates', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
@@ -420,9 +425,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 * @return array Items.
 	 */
 	protected static function get_items_for_review() {
-		$products = get_posts(
+		$registrations = get_posts(
 			array(
-				'post_type'      => 'mcp_ai_reg_product',
+				'post_type'      => 'mcp_ai_registration',
 				'post_status'    => 'any',
 				'posts_per_page' => 20,
 				'orderby'        => 'date',
@@ -431,11 +436,11 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		);
 
 		$items = array();
-		foreach ( $products as $product ) {
+		foreach ( $registrations as $registration ) {
 			$items[] = array(
-				'id'    => $product->ID,
-				'title' => $product->post_title,
-				'meta'  => get_post_meta( $product->ID ),
+				'id'    => $registration->ID,
+				'title' => $registration->post_title,
+				'meta'  => get_post_meta( $registration->ID ),
 			);
 		}
 
@@ -453,17 +458,18 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 		$issues = array();
 		$meta   = $item['meta'] ?? array();
 
-		// Check required fields (10 points each).
+		// Check required fields (20 points each).
 		$required_fields = array(
-			'brand'              => __( 'Brand', 'mcp-ai-wpoos-pro' ),
-			'manufacturer'       => __( 'Manufacturer', 'mcp-ai-wpoos-pro' ),
-			'origin_country'     => __( 'Origin Country', 'mcp-ai-wpoos-pro' ),
-			'inci_ingredients'   => __( 'INCI Ingredients', 'mcp-ai-wpoos-pro' ),
+			'product_id'      => __( 'Product Link', 'mcp-ai-wpoos-pro' ),
+			'country'         => __( 'Country', 'mcp-ai-wpoos-pro' ),
+			'submission_date' => __( 'Submission Date', 'mcp-ai-wpoos-pro' ),
+			'approval_date'   => __( 'Approval Date', 'mcp-ai-wpoos-pro' ),
+			'expiry_date'     => __( 'Expiry Date', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $required_fields as $field => $label ) {
 			if ( ! empty( $meta[ $field ][0] ?? '' ) ) {
-				$score += 25;
+				$score += 20;
 			} else {
 				$issues[] = sprintf(
 					/* translators: %s: Field label */
@@ -491,4 +497,4 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	}
 }
 
-WP_MCP_AI_Reg_Product_Research_Page::init();
+WP_MCP_AI_Registration_Research_Page::init();
