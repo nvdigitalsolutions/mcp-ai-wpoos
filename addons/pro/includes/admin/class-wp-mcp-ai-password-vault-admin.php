@@ -48,34 +48,24 @@ class WP_MCP_AI_Password_Vault_Admin {
 	/**
 	 * Add admin menu pages for Password Vault Manager.
 	 *
-	 * Creates a top-level menu with submenu pages for each section.
+	 * Registers Password Vault pages as submenu items under the Pro Dashboard.
+	 * This integrates the password vault with the Pro Dashboard menu structure.
 	 *
 	 * @since 1.3.0
 	 */
 	public function add_admin_menu() {
-		// Add top-level menu.
-		add_menu_page(
+		// Register as submenu pages under Pro Dashboard (nvoos-pro-dashboard).
+		add_submenu_page(
+			'nvoos-pro-dashboard',
 			__( 'Password Vault Manager', 'mcp-ai-wpoos-pro' ),
 			__( 'Password Vault', 'mcp-ai-wpoos-pro' ),
-			'manage_options',
-			'wp-mcp-ai-password-vault',
-			array( $this, 'render_vault_items_page' ),
-			'dashicons-lock',
-			26
-		);
-
-		// Add submenu pages.
-		add_submenu_page(
-			'wp-mcp-ai-password-vault',
-			__( 'Vault Items', 'mcp-ai-wpoos-pro' ),
-			__( 'Vault Items', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-password-vault',
 			array( $this, 'render_vault_items_page' )
 		);
 
 		add_submenu_page(
-			'wp-mcp-ai-password-vault',
+			'nvoos-pro-dashboard',
 			__( 'Password Generator & Authenticator', 'mcp-ai-wpoos-pro' ),
 			__( 'Generator & Auth', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
@@ -84,27 +74,27 @@ class WP_MCP_AI_Password_Vault_Admin {
 		);
 
 		add_submenu_page(
-			'wp-mcp-ai-password-vault',
+			'nvoos-pro-dashboard',
 			__( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ),
-			__( 'Import/Export & Sync', 'mcp-ai-wpoos-pro' ),
+			__( 'Vault Sync', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-password-vault-sync',
 			array( $this, 'render_sync_page' )
 		);
 
 		add_submenu_page(
-			'wp-mcp-ai-password-vault',
-			__( 'Security Settings', 'mcp-ai-wpoos-pro' ),
-			__( 'Security Settings', 'mcp-ai-wpoos-pro' ),
+			'nvoos-pro-dashboard',
+			__( 'Vault Security Settings', 'mcp-ai-wpoos-pro' ),
+			__( 'Vault Settings', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-password-vault-settings',
 			array( $this, 'render_settings_page' )
 		);
 
 		add_submenu_page(
-			'wp-mcp-ai-password-vault',
-			__( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ),
-			__( 'Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ),
+			'nvoos-pro-dashboard',
+			__( 'Vault Auto Sync & Conflicts', 'mcp-ai-wpoos-pro' ),
+			__( 'Vault Automation', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-password-vault-automation',
 			array( $this, 'render_automation_page' )
