@@ -271,6 +271,7 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
   - `VISUAL_GUIDE.md` - Admin menu and UI guides
 - Moved `test-toolkit-registry.php` to `tests/manual/` for proper test organization
 - Moved `wpcode-snippet.php` to `examples/` as reference implementation
+- Moved `verify-wpcs-compliance.sh` to `bin/` with other verification scripts
 - Removed duplicate `PRODUCTION_READY.md` (already exists in `docs/deployment/`)
 - **Root now contains only essential documentation** (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING)
 
