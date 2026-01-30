@@ -6,11 +6,11 @@
 # for WordPress.org compatible distribution by changing the text domain
 # throughout the codebase (not just headers).
 #
-# Input: 4 packages from build-plugin-zip.sh (with headers set correctly):
-# - build/nvdigital-open-operator-system-oos-{version}.zip (BASE)
-# - build/nvdigital-open-operator-system-oos-pro-{version}.zip (PRO)
-# - build/nvdigital-open-operator-system-oos-complete-{version}.zip (COMPLETE)
-# - build/nvdigital-open-operator-system-oos-core-{version}.zip (CORE)
+# Input: 4 packages from build-plugin-zip.sh (with repository text domains):
+# - build/mcp-ai-wpoos-base-{version}.zip (BASE)
+# - build/mcp-ai-wpoos-pro-{version}.zip (PRO)
+# - build/mcp-ai-wpoos-{version}.zip (COMPLETE)
+# - build/mcp-ai-wpoos-core-{version}.zip (CORE)
 #
 # Output: 4 WordPress.org ready packages with all text domains transformed:
 # - build/nvdigital-open-operator-system-oos-wporg-{version}.zip (BASE WordPress.org)
@@ -76,8 +76,8 @@ transform_package() {
     mkdir -p "$TEMP_DIR"
     unzip -q "$SOURCE_ZIP" -d "$TEMP_DIR"
     
-    # Find the extracted directory (should be nvdigital-open-operator-system-oos*)
-    EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "nvdigital-open-operator-system-oos*" | head -1)
+    # Find the extracted directory (should be mcp-ai-wpoos*)
+    EXTRACTED_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "mcp-ai-wpoos*" | head -1)
     
     if [ -z "$EXTRACTED_DIR" ] || [ ! -d "$EXTRACTED_DIR" ]; then
         echo "❌ Error: Could not find extracted directory in $TEMP_DIR"
@@ -175,14 +175,14 @@ transform_package() {
 }
 
 # Build BASE WordPress.org package
-BASE_SOURCE="build/nvdigital-open-operator-system-oos-${VERSION}.zip"
+BASE_SOURCE="build/mcp-ai-wpoos-base-${VERSION}.zip"
 BASE_OUTPUT="build/nvdigital-open-operator-system-oos-wporg-${VERSION}.zip"
 transform_package "$BASE_SOURCE" "$BASE_OUTPUT" "BASE (WordPress.org)"
 
 echo ""
 
 # Build PRO WordPress.org package
-PRO_SOURCE="build/nvdigital-open-operator-system-oos-pro-${VERSION}.zip"
+PRO_SOURCE="build/mcp-ai-wpoos-pro-${VERSION}.zip"
 PRO_OUTPUT="build/nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip"
 if [ -f "$PRO_SOURCE" ]; then
     transform_package "$PRO_SOURCE" "$PRO_OUTPUT" "PRO (WordPress.org)"
@@ -193,20 +193,20 @@ else
 fi
 
 # Build COMPLETE WordPress.org package
-COMPLETE_SOURCE="build/nvdigital-open-operator-system-oos-complete-${VERSION}.zip"
+COMPLETE_SOURCE="build/mcp-ai-wpoos-${VERSION}.zip"
 COMPLETE_OUTPUT="build/nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip"
 transform_package "$COMPLETE_SOURCE" "$COMPLETE_OUTPUT" "COMPLETE (Base + Pro)"
 
 echo ""
 
 # Build CORE WordPress.org package
-CORE_SOURCE="build/nvdigital-open-operator-system-oos-core-${VERSION}.zip"
+CORE_SOURCE="build/mcp-ai-wpoos-core-${VERSION}.zip"
 CORE_OUTPUT="build/nvdigital-open-operator-system-oos-core-wporg-${VERSION}.zip"
 # Core version might have its own version number
 if [ ! -f "$CORE_SOURCE" ]; then
     # Try with core's own version
     CORE_VERSION=$(grep -E "^\s*\*\s*Version:" core/mcp-ai-wpoos-core.php 2>/dev/null | sed 's/.*Version:\s*//' | tr -d '[:space:]' || echo "1.0.0")
-    CORE_SOURCE="build/nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip"
+    CORE_SOURCE="build/mcp-ai-wpoos-core-${CORE_VERSION}.zip"
     CORE_OUTPUT="build/nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip"
 fi
 
@@ -244,10 +244,10 @@ This build creates **8 ZIP files** for distribution:
 
 ### Original Packages (4 files) - Repository Text Domains
 Built by \`build-plugin-zip.sh\` with repository text domains for internal development:
-1. \`nvdigital-open-operator-system-oos-${VERSION}.zip\` - Base version (text domain: \`mcp-ai-wpoos-base\`)
-2. \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\` - Pro add-on (text domain: \`mcp-ai-wpoos-pro\`)
-3. \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\` - Combined (text domain: \`mcp-ai-wpoos\`)
-4. \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\` - Core (text domain: \`mcp-ai-wpoos-core\`)
+1. \`mcp-ai-wpoos-base-${VERSION}.zip\` - Base version (text domain: \`mcp-ai-wpoos-base\`)
+2. \`mcp-ai-wpoos-pro-${VERSION}.zip\` - Pro add-on (text domain: \`mcp-ai-wpoos-pro\`)
+3. \`mcp-ai-wpoos-${VERSION}.zip\` - Combined (text domain: \`mcp-ai-wpoos\`)
+4. \`mcp-ai-wpoos-core-${CORE_VERSION}.zip\` - Core (text domain: \`mcp-ai-wpoos-core\`)
 
 ### WordPress.org Packages (4 files) - WordPress Text Domains
 Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains transformed throughout:
@@ -261,7 +261,7 @@ Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains tr
 ## Package Details
 
 ### 1. BASE Package (WordPress.org Submission)
-**Original:** \`nvdigital-open-operator-system-oos-${VERSION}.zip\`  
+**Original:** \`mcp-ai-wpoos-base-${VERSION}.zip\`  
 **WordPress.org:** \`nvdigital-open-operator-system-oos-wporg-${VERSION}.zip\` ($BASE_SIZE)
 
 **What's Included:**
@@ -282,7 +282,7 @@ Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains tr
 ---
 
 ### 2. PRO Add-on Package
-**Original:** \`nvdigital-open-operator-system-oos-pro-${VERSION}.zip\`  
+**Original:** \`mcp-ai-wpoos-pro-${VERSION}.zip\`  
 **WordPress.org:** \`nvdigital-open-operator-system-oos-pro-wporg-${VERSION}.zip\` ($PRO_SIZE)
 
 **What's Included:**
@@ -304,7 +304,7 @@ Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains tr
 ---
 
 ### 3. COMPLETE Package (Self-hosted Distribution)
-**Original:** \`nvdigital-open-operator-system-oos-complete-${VERSION}.zip\`  
+**Original:** \`mcp-ai-wpoos-${VERSION}.zip\`  
 **WordPress.org:** \`nvdigital-open-operator-system-oos-complete-wporg-${VERSION}.zip\` ($COMPLETE_SIZE)
 
 **What's Included:**
@@ -323,7 +323,7 @@ Built by \`build-wordpress-org-from-base.sh\` with WordPress.org text domains tr
 ---
 
 ### 4. CORE Package (Lightweight)
-**Original:** \`nvdigital-open-operator-system-oos-core-${CORE_VERSION}.zip\`  
+**Original:** \`mcp-ai-wpoos-core-${CORE_VERSION}.zip\`  
 **WordPress.org:** \`nvdigital-open-operator-system-oos-core-wporg-${CORE_VERSION}.zip\` ($CORE_SIZE)
 
 **What's Included:**
