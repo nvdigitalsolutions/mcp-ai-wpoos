@@ -1,4 +1,4 @@
-# Open Operator System (NV oOS) - Pro Add-on Troubleshooting
+# Open Operator System (oOS) - Pro Add-on Troubleshooting
 
 This document provides troubleshooting guidance for common issues with the Pro Add-on when installed in different configurations.
 
@@ -37,19 +37,25 @@ The Pro Add-on supports two installation configurations:
 In versions prior to v1.3.0, the Pro addon incorrectly determined its asset URL when both plugins were installed separately. The constant `WP_MCP_AI_PRO_URL` was set to `{base-plugin-url}/addons/pro/` even when Pro was installed as a separate plugin, causing 404 errors for all assets.
 
 ### Solution (Fixed in v1.3.0+)
-The Pro addon now correctly detects whether it's bundled or separate by checking if the plugin path contains `addons/pro/`:
+The Pro addon now correctly detects whether it's bundled or separate by checking if the plugin path contains `addons/pro/`, using normalized paths for cross-platform compatibility:
 
 ```php
 // Updated logic in mcp-ai-wpoos-pro.php
 $is_bundled = defined( 'WP_MCP_AI_URL' ) && 
               defined( 'WP_MCP_AI_PATH' ) && 
-              strpos( WP_MCP_AI_PRO_PATH, WP_MCP_AI_PATH . 'addons/pro' ) !== false;
+              strpos( 
+                  wp_normalize_path( WP_MCP_AI_PRO_PATH ), 
+                  wp_normalize_path( trailingslashit( WP_MCP_AI_PATH ) . 'addons/pro' )
+              ) !== false;
 
 if ( $is_bundled ) {
     define( 'WP_MCP_AI_PRO_URL', WP_MCP_AI_URL . 'addons/pro/' );
 } else {
     define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
 }
+
+// Clean up temporary variable.
+unset( $is_bundled );
 ```
 
 ### Verification Steps
