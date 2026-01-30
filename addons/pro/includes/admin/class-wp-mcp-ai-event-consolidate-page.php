@@ -132,20 +132,20 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function get_validation_schema() {
 		return array(
-			'required_fields'     => array(
-				'uid'      => __( 'UID (Unique Identifier)', 'mcp-ai-wpoos-pro' ),
-				'title'    => __( 'Event Summary/Title', 'mcp-ai-wpoos-pro' ),
-				'dtstart'  => __( 'Start Date/Time', 'mcp-ai-wpoos-pro' ),
-				'dtstamp'  => __( 'Timestamp', 'mcp-ai-wpoos-pro' ),
+			'required_fields'    => array(
+				'uid'     => __( 'UID (Unique Identifier)', 'mcp-ai-wpoos-pro' ),
+				'title'   => __( 'Event Summary/Title', 'mcp-ai-wpoos-pro' ),
+				'dtstart' => __( 'Start Date/Time', 'mcp-ai-wpoos-pro' ),
+				'dtstamp' => __( 'Timestamp', 'mcp-ai-wpoos-pro' ),
 			),
-			'recommended_fields'  => array(
+			'recommended_fields' => array(
 				'dtend'       => __( 'End Date/Time', 'mcp-ai-wpoos-pro' ),
 				'location'    => __( 'Location', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
 				'organizer'   => __( 'Organizer', 'mcp-ai-wpoos-pro' ),
 				'url'         => __( 'Event URL', 'mcp-ai-wpoos-pro' ),
 			),
-			'validation_rules'    => array(
+			'validation_rules'   => array(
 				'uid'     => array(
 					'type'   => 'string',
 					'unique' => true,
@@ -156,11 +156,11 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 					'format' => 'ISO 8601: YYYY-MM-DDTHH:MM:SS or YYYYMMDDTHHMMSS',
 				),
 				'dtend'   => array(
-					'type'   => 'datetime',
-					'rule'   => 'Must be after dtstart',
+					'type' => 'datetime',
+					'rule' => 'Must be after dtstart',
 				),
 			),
-			'quality_dimensions'  => array(
+			'quality_dimensions' => array(
 				'completeness' => __( 'All required RFC 5545 fields present', 'mcp-ai-wpoos-pro' ),
 				'accuracy'     => __( 'Valid date/time formats', 'mcp-ai-wpoos-pro' ),
 				'consistency'  => __( 'Timezone information included for non-UTC times', 'mcp-ai-wpoos-pro' ),
@@ -202,16 +202,16 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			return new WP_Error( 'invalid_ics', __( 'Invalid iCalendar format: missing VCALENDAR component', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$events = array();
-		$lines  = explode( "\n", $data );
-		$in_event = false;
+		$events        = array();
+		$lines         = explode( "\n", $data );
+		$in_event      = false;
 		$current_event = array();
 
 		foreach ( $lines as $line ) {
 			$line = trim( $line );
 
 			if ( 'BEGIN:VEVENT' === $line ) {
-				$in_event = true;
+				$in_event      = true;
 				$current_event = array();
 				continue;
 			}
@@ -226,13 +226,13 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 			if ( $in_event && false !== strpos( $line, ':' ) ) {
 				list( $key, $value ) = explode( ':', $line, 2 );
-				
+
 				// Handle parameters (e.g., DTSTART;TZID=America/New_York:20240101T120000).
 				if ( false !== strpos( $key, ';' ) ) {
-					list( $key, $params ) = explode( ';', $key, 2 );
+					list( $key, $params )                            = explode( ';', $key, 2 );
 					$current_event[ strtolower( $key ) . '_params' ] = $params;
 				}
-				
+
 				$current_event[ strtolower( $key ) ] = $value;
 			}
 		}
@@ -269,7 +269,7 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 				continue;
 			}
 
-			$event = array_combine( $headers, $values );
+			$event    = array_combine( $headers, $values );
 			$events[] = $this->normalize_event_data( $event );
 		}
 
@@ -321,8 +321,8 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 		$normalized = array();
 		foreach ( $event as $key => $value ) {
-			$key_lower = strtolower( trim( $key ) );
-			$mapped_key = isset( $field_map[ $key_lower ] ) ? $field_map[ $key_lower ] : $key_lower;
+			$key_lower                 = strtolower( trim( $key ) );
+			$mapped_key                = isset( $field_map[ $key_lower ] ) ? $field_map[ $key_lower ] : $key_lower;
 			$normalized[ $mapped_key ] = trim( $value );
 		}
 
@@ -426,7 +426,7 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		if ( ! empty( $item_data['dtstart'] ) && ! empty( $item_data['dtend'] ) ) {
 			$start = strtotime( $item_data['dtstart'] );
 			$end   = strtotime( $item_data['dtend'] );
-			
+
 			if ( false !== $start && false !== $end && $end < $start ) {
 				return new WP_Error( 'invalid_date_range', __( 'End date/time must be after start date/time', 'mcp-ai-wpoos-pro' ) );
 			}
@@ -447,7 +447,7 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			'post_status'    => 'any',
 		);
 
-		$events = get_posts( $args );
+		$events       = get_posts( $args );
 		$total_events = count( $events );
 
 		if ( 0 === $total_events ) {
@@ -457,12 +457,12 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			);
 		}
 
-		$schema = $this->get_validation_schema();
-		$required_fields = array_keys( $schema['required_fields'] );
+		$schema             = $this->get_validation_schema();
+		$required_fields    = array_keys( $schema['required_fields'] );
 		$recommended_fields = array_keys( $schema['recommended_fields'] );
-		$total_fields = count( $required_fields ) + count( $recommended_fields );
-		
-		$filled_count = 0;
+		$total_fields       = count( $required_fields ) + count( $recommended_fields );
+
+		$filled_count  = 0;
 		$missing_items = array();
 
 		foreach ( $events as $event ) {
@@ -470,38 +470,38 @@ class WP_MCP_AI_Event_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 			// Check required fields.
 			if ( get_post_meta( $event->ID, 'event_uid', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( ! empty( $event->post_title ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( get_post_meta( $event->ID, 'event_start_date', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
-			$event_filled++; // DTSTAMP is auto-generated.
+			++$event_filled; // DTSTAMP is auto-generated.
 
 			// Check recommended fields.
 			if ( get_post_meta( $event->ID, 'event_end_date', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( get_post_meta( $event->ID, 'event_location', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( ! empty( $event->post_content ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( get_post_meta( $event->ID, 'event_organizer', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 			if ( get_post_meta( $event->ID, 'event_url', true ) ) {
-				$event_filled++;
+				++$event_filled;
 			}
 
 			$filled_count += $event_filled;
 		}
 
 		$average_filled = $total_events > 0 ? $filled_count / $total_events : 0;
-		$percentage = round( ( $average_filled / $total_fields ) * 100 );
+		$percentage     = round( ( $average_filled / $total_fields ) * 100 );
 
 		if ( $percentage < 80 ) {
 			$missing_items[] = sprintf(

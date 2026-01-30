@@ -44,26 +44,26 @@ class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'rule_id'      => array(
+				'rule_id'     => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by specific rule ID (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'action_type'  => array(
+				'action_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by action type (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'create_rule', 'update_rule', 'delete_rule', 'execute_rule' ),
 				),
-				'start_date'   => array(
+				'start_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Start date (format: YYYY-MM-DD, optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'     => array(
+				'end_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'End date (format: YYYY-MM-DD, optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'limit'        => array(
+				'limit'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of results (optional, default: 100)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -168,9 +168,9 @@ class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interf
 
 		// Calculate statistics.
 		$stats = array(
-			'total_entries'   => count( $workflow_log ),
+			'total_entries'    => count( $workflow_log ),
 			'filtered_entries' => count( $filtered_log ),
-			'by_action_type'  => array(),
+			'by_action_type'   => array(),
 		);
 
 		foreach ( $workflow_log as $entry ) {
@@ -179,7 +179,7 @@ class WP_MCP_AI_Tool_Get_Workflow_Execution_Log implements WP_MCP_AI_Tool_Interf
 				if ( ! isset( $stats['by_action_type'][ $action ] ) ) {
 					$stats['by_action_type'][ $action ] = 0;
 				}
-				$stats['by_action_type'][ $action ]++;
+				++$stats['by_action_type'][ $action ];
 			}
 		}
 

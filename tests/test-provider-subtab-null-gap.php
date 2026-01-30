@@ -20,12 +20,12 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 		}
 
 		$section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		
+
 		$subtabs = $method->invoke( $section );
 
 		// Verify no null values in the array.
@@ -55,12 +55,12 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 		}
 
 		$section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		
+
 		$subtabs = $method->invoke( $section );
 		$keys    = array_keys( $subtabs );
 
@@ -90,12 +90,12 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 		}
 
 		$section = new WP_MCP_AI_Section_Providers();
-		
+
 		// Use reflection to access protected method.
 		$reflection = new ReflectionClass( $section );
 		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
-		
+
 		$subtabs = $method->invoke( $section );
 
 		// array_filter preserves keys, so we should have non-sequential numeric keys.
@@ -104,7 +104,7 @@ class WP_MCP_AI_Provider_Subtab_Null_Gap_Test extends WP_UnitTestCase {
 		$null_count = 0;
 		foreach ( $subtabs as $subtab ) {
 			if ( is_null( $subtab ) ) {
-				$null_count++;
+				++$null_count;
 			}
 		}
 

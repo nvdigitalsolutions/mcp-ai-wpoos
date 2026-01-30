@@ -349,9 +349,9 @@ class WP_MCP_AI_Registration_Research_Page {
 	 */
 	protected static function get_import_formats() {
 		return array(
-			'csv'   => 'CSV',
-			'xlsx'  => 'Excel',
-			'json'  => 'JSON',
+			'csv'  => 'CSV',
+			'xlsx' => 'Excel',
+			'json' => 'JSON',
 		);
 	}
 
@@ -392,7 +392,7 @@ class WP_MCP_AI_Registration_Research_Page {
 			$has_submission = ! empty( $meta['submission_date'][0] ?? '' );
 
 			if ( $has_product && $has_country && $has_submission ) {
-				$complete++;
+				++$complete;
 			} else {
 				if ( ! $has_product ) {
 					$missing_items[] = sprintf( '%s: Missing product link', $registration->post_title );

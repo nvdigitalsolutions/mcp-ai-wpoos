@@ -32,7 +32,7 @@ class WP_MCP_AI_Reasoning_Controller {
 	/**
 	 * Storage keys
 	 */
-	const QUALITY_METRICS_KEY = 'wp_mcp_ai_reasoning_quality_metrics';
+	const QUALITY_METRICS_KEY   = 'wp_mcp_ai_reasoning_quality_metrics';
 	const REASONING_HISTORY_KEY = 'wp_mcp_ai_reasoning_history';
 
 	/**
@@ -48,10 +48,10 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @var array
 	 */
 	protected $trigger_weights = array(
-		'multi_step'         => 0.3,
-		'logical_complexity' => 0.25,
-		'code_generation'    => 0.2,
-		'domain_expertise'   => 0.15,
+		'multi_step'          => 0.3,
+		'logical_complexity'  => 0.25,
+		'code_generation'     => 0.2,
+		'domain_expertise'    => 0.15,
 		'verification_needed' => 0.1,
 	);
 
@@ -171,10 +171,13 @@ class WP_MCP_AI_Reasoning_Controller {
 			);
 		}
 
-		$total = count( $metrics );
-		$successful = array_filter( $metrics, function( $m ) {
-			return ! empty( $m['success'] );
-		} );
+		$total      = count( $metrics );
+		$successful = array_filter(
+			$metrics,
+			function ( $m ) {
+				return ! empty( $m['success'] );
+			}
+		);
 
 		return array(
 			'total_tasks'      => $total,
@@ -197,8 +200,16 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Keywords indicating multi-step process.
 		$multi_step_keywords = array(
-			'then', 'after', 'next', 'finally', 'first', 'second',
-			'step by step', 'and then', 'followed by', 'subsequently',
+			'then',
+			'after',
+			'next',
+			'finally',
+			'first',
+			'second',
+			'step by step',
+			'and then',
+			'followed by',
+			'subsequently',
 		);
 
 		$score = 0;
@@ -230,12 +241,19 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function calculate_logical_complexity( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Complex logical operators.
 		$logical_keywords = array(
-			'if', 'unless', 'because', 'therefore', 'however',
-			'although', 'whereas', 'given that', 'assuming',
+			'if',
+			'unless',
+			'because',
+			'therefore',
+			'however',
+			'although',
+			'whereas',
+			'given that',
+			'assuming',
 		);
 
 		foreach ( $logical_keywords as $keyword ) {
@@ -246,8 +264,14 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Mathematical or analytical terms.
 		$analytical_keywords = array(
-			'calculate', 'analyze', 'compare', 'evaluate',
-			'assess', 'determine', 'prove', 'verify',
+			'calculate',
+			'analyze',
+			'compare',
+			'evaluate',
+			'assess',
+			'determine',
+			'prove',
+			'verify',
 		);
 
 		foreach ( $analytical_keywords as $keyword ) {
@@ -276,13 +300,24 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function involves_code_generation( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Code-related keywords.
 		$code_keywords = array(
-			'code', 'function', 'class', 'method', 'script',
-			'program', 'implement', 'write code', 'develop',
-			'php', 'javascript', 'python', 'css', 'html',
+			'code',
+			'function',
+			'class',
+			'method',
+			'script',
+			'program',
+			'implement',
+			'write code',
+			'develop',
+			'php',
+			'javascript',
+			'python',
+			'css',
+			'html',
 		);
 
 		foreach ( $code_keywords as $keyword ) {
@@ -318,12 +353,18 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function requires_domain_expertise( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Domain-specific terms.
 		$domain_keywords = array(
-			'technical', 'specialized', 'expert', 'professional',
-			'industry', 'compliance', 'regulatory', 'best practice',
+			'technical',
+			'specialized',
+			'expert',
+			'professional',
+			'industry',
+			'compliance',
+			'regulatory',
+			'best practice',
 		);
 
 		foreach ( $domain_keywords as $keyword ) {
@@ -354,12 +395,19 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function needs_verification( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Verification keywords.
 		$verification_keywords = array(
-			'verify', 'validate', 'check', 'confirm', 'ensure',
-			'test', 'review', 'double-check', 'accuracy',
+			'verify',
+			'validate',
+			'check',
+			'confirm',
+			'ensure',
+			'test',
+			'review',
+			'double-check',
+			'accuracy',
 		);
 
 		foreach ( $verification_keywords as $keyword ) {
@@ -370,8 +418,13 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Critical or high-stakes tasks.
 		$critical_keywords = array(
-			'critical', 'important', 'security', 'production',
-			'live', 'customer-facing', 'compliance',
+			'critical',
+			'important',
+			'security',
+			'production',
+			'live',
+			'customer-facing',
+			'compliance',
 		);
 
 		foreach ( $critical_keywords as $keyword ) {
@@ -407,7 +460,7 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @return string Reasoning prompt.
 	 */
 	protected function get_reasoning_prompt( $task_info ) {
-		$prompt = "Enhanced Reasoning Mode Activated:\n\n";
+		$prompt  = "Enhanced Reasoning Mode Activated:\n\n";
 		$prompt .= "Please approach this task with careful, step-by-step reasoning:\n";
 		$prompt .= "1. Break down the problem into clear steps\n";
 		$prompt .= "2. State your assumptions explicitly\n";
@@ -557,7 +610,7 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		return array_filter(
 			$metrics,
-			function( $m ) use ( $cutoff ) {
+			function ( $m ) use ( $cutoff ) {
 				return isset( $m['timestamp'] ) && $m['timestamp'] > $cutoff;
 			}
 		);

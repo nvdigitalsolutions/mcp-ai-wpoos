@@ -198,7 +198,7 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 
 		// Check that a workflow transient was created for this team.
 		$workflow_transient_name = '_transient_wp_mcp_ai_workflow_wf_' . $team_id;
-		
+
 		// Query the database to check if the workflow transient exists.
 		$workflow_exists = $wpdb->get_var(
 			$wpdb->prepare(
@@ -224,4 +224,3 @@ class Test_Create_Agent_Team_Delegation_Guidance extends WP_UnitTestCase {
 		$this->assertNotEmpty( $workflow_data['tasks'], 'Workflow should have tasks' );
 	}
 }
-

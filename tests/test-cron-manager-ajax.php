@@ -439,7 +439,7 @@ class Test_Cron_Manager_Ajax extends WP_UnitTestCase {
 
 		foreach ( $jobs as $job ) {
 			$this->assertNotEmpty( $job['delete_nonce'], 'Delete nonce should not be empty' );
-			
+
 			// Verify nonce is valid.
 			$nonce_valid = wp_verify_nonce( $job['delete_nonce'], 'wp_mcp_ai_delete_cron_' . $job['job_id'] );
 			$this->assertNotFalse( $nonce_valid, 'Delete nonce should be valid' );

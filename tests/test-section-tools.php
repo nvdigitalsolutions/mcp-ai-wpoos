@@ -97,7 +97,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 		}
 
 		// Site Creator subtab should NOT exist here - it has its own separate admin page.
-		$this->assertArrayNotHasKey( 'site_creator', $subtabs, "Site Creator subtab should not exist in Tools page" );
+		$this->assertArrayNotHasKey( 'site_creator', $subtabs, 'Site Creator subtab should not exist in Tools page' );
 	}
 
 	/**

@@ -800,9 +800,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</div>
 		</div>
 
-		<?php
+			<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-		?>
+			?>
 		<style>
 			.wp-mcp-ai-tool-row-recommended {
 				background-color: #fffbf0 !important;

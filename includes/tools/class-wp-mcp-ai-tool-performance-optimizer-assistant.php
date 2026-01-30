@@ -47,49 +47,49 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Performance Optimizer Assistant', 'mcp-ai-wpoos' ),
-			'description'          => __( 'Core Web Vitals monitoring, database optimization, caching strategies, query performance analysis, and automated optimization for 2026 standards.', 'mcp-ai-wpoos' ),
-			'category'             => 'performance',
-			'required_capability'  => 'manage_options',
-			'parameters'           => array(
-				'action'              => array(
+			'name'                => __( 'Performance Optimizer Assistant', 'mcp-ai-wpoos' ),
+			'description'         => __( 'Core Web Vitals monitoring, database optimization, caching strategies, query performance analysis, and automated optimization for 2026 standards.', 'mcp-ai-wpoos' ),
+			'category'            => 'performance',
+			'required_capability' => 'manage_options',
+			'parameters'          => array(
+				'action'             => array(
 					'type'        => 'string',
 					'description' => __( 'Action: analyze_performance, optimize_database, configure_caching, monitor_cwv, or generate_report', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'analyze_performance', 'optimize_database', 'configure_caching', 'monitor_cwv', 'generate_report' ),
 				),
-				'optimization_level'  => array(
+				'optimization_level' => array(
 					'type'        => 'string',
 					'description' => __( 'Optimization level: safe, moderate, or aggressive', 'mcp-ai-wpoos' ),
 					'default'     => 'moderate',
 					'enum'        => array( 'safe', 'moderate', 'aggressive' ),
 				),
-				'target_url'          => array(
+				'target_url'         => array(
 					'type'        => 'string',
 					'description' => __( 'Target URL for CWV monitoring', 'mcp-ai-wpoos' ),
 				),
-				'auto_fix'            => array(
+				'auto_fix'           => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically apply safe optimizations', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'include_queries'     => array(
+				'include_queries'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include slow query analysis', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'include_plugins'     => array(
+				'include_plugins'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include plugin performance analysis', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'cache_strategy'      => array(
+				'cache_strategy'     => array(
 					'type'        => 'string',
 					'description' => __( 'Cache strategy: object, page, or full', 'mcp-ai-wpoos' ),
 					'default'     => 'full',
 					'enum'        => array( 'object', 'page', 'full' ),
 				),
-				'report_format'       => array(
+				'report_format'      => array(
 					'type'        => 'string',
 					'description' => __( 'Report format: summary or detailed', 'mcp-ai-wpoos' ),
 					'default'     => 'summary',
@@ -226,8 +226,8 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function handle_optimize_database( $optimization_level, $auto_fix ) {
 		$optimizations = array();
-		$applied = array();
-		$skipped = array();
+		$applied       = array();
+		$skipped       = array();
 
 		// Optimization tasks based on level.
 		$tasks = $this->get_database_optimization_tasks( $optimization_level );
@@ -243,10 +243,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 			}
 
 			$optimizations[] = array(
-				'task'     => $task['name'],
-				'status'   => $auto_fix ? 'applied' : 'recommended',
-				'impact'   => $task['impact'],
-				'savings'  => isset( $result['savings'] ) ? $result['savings'] : 'N/A',
+				'task'    => $task['name'],
+				'status'  => $auto_fix ? 'applied' : 'recommended',
+				'impact'  => $task['impact'],
+				'savings' => isset( $result['savings'] ) ? $result['savings'] : 'N/A',
 			);
 		}
 
@@ -293,10 +293,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$configurations['cdn'] = $this->check_cdn_configuration();
 
 		return array(
-			'success'        => true,
-			'strategy'       => $cache_strategy,
-			'auto_fix'       => $auto_fix,
-			'configurations' => $configurations,
+			'success'         => true,
+			'strategy'        => $cache_strategy,
+			'auto_fix'        => $auto_fix,
+			'configurations'  => $configurations,
 			'recommendations' => array(
 				__( 'Enable persistent object caching (Redis/Memcached)', 'mcp-ai-wpoos' ),
 				__( 'Implement full-page caching for anonymous users', 'mcp-ai-wpoos' ),
@@ -316,25 +316,25 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	private function handle_monitor_cwv( $target_url ) {
 		// Simulate CWV metrics (in production, integrate with real monitoring).
 		$metrics = array(
-			'lcp' => array(
+			'lcp'  => array(
 				'value'     => 2.3,
 				'rating'    => 'good',
 				'threshold' => 2.5,
 				'unit'      => 'seconds',
 			),
-			'fid' => array(
+			'fid'  => array(
 				'value'     => 85,
 				'rating'    => 'good',
 				'threshold' => 100,
 				'unit'      => 'milliseconds',
 			),
-			'cls' => array(
+			'cls'  => array(
 				'value'     => 0.08,
 				'rating'    => 'good',
 				'threshold' => 0.1,
 				'unit'      => 'score',
 			),
-			'inp' => array(
+			'inp'  => array(
 				'value'     => 180,
 				'rating'    => 'good',
 				'threshold' => 200,
@@ -350,18 +350,18 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		);
 
 		// Calculate overall score.
-		$passing = count( array_filter( $metrics, fn( $m ) => 'good' === $m['rating'] ) );
-		$total = count( $metrics );
+		$passing   = count( array_filter( $metrics, fn( $m ) => 'good' === $m['rating'] ) );
+		$total     = count( $metrics );
 		$cwv_score = round( ( $passing / $total ) * 100 );
 
 		return array(
-			'success' => true,
-			'url'     => $target_url,
-			'metrics' => $metrics,
-			'score'   => $cwv_score,
-			'status'  => $cwv_score >= 75 ? 'pass' : ( $cwv_score >= 50 ? 'needs_improvement' : 'fail' ),
+			'success'         => true,
+			'url'             => $target_url,
+			'metrics'         => $metrics,
+			'score'           => $cwv_score,
+			'status'          => $cwv_score >= 75 ? 'pass' : ( $cwv_score >= 50 ? 'needs_improvement' : 'fail' ),
 			'recommendations' => $this->get_cwv_recommendations( $metrics ),
-			'integration' => array(
+			'integration'     => array(
 				'note'    => __( 'For real-time monitoring, integrate with:', 'mcp-ai-wpoos' ),
 				'options' => array(
 					'Google PageSpeed Insights API',
@@ -384,25 +384,25 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		// Gather comprehensive performance data.
 		$report = array();
 
-		$report['generated_at'] = gmdate( 'Y-m-d H:i:s' );
-		$report['site_url'] = home_url();
+		$report['generated_at']      = gmdate( 'Y-m-d H:i:s' );
+		$report['site_url']          = home_url();
 		$report['wordpress_version'] = get_bloginfo( 'version' );
-		$report['php_version'] = phpversion();
+		$report['php_version']       = phpversion();
 
 		// Performance analysis.
-		$analysis = $this->handle_analyze_performance( true, true, $report_format );
+		$analysis              = $this->handle_analyze_performance( true, true, $report_format );
 		$report['performance'] = $analysis;
 
 		// CWV monitoring.
-		$cwv = $this->handle_monitor_cwv( home_url() );
+		$cwv                       = $this->handle_monitor_cwv( home_url() );
 		$report['core_web_vitals'] = $cwv;
 
 		// Resource usage.
 		$report['resources'] = array(
-			'memory_limit'    => ini_get( 'memory_limit' ),
-			'memory_usage'    => size_format( memory_get_usage( true ) ),
-			'peak_memory'     => size_format( memory_get_peak_usage( true ) ),
-			'max_execution'   => ini_get( 'max_execution_time' ),
+			'memory_limit'  => ini_get( 'memory_limit' ),
+			'memory_usage'  => size_format( memory_get_usage( true ) ),
+			'peak_memory'   => size_format( memory_get_peak_usage( true ) ),
+			'max_execution' => ini_get( 'max_execution_time' ),
 		);
 
 		// Active optimizations.
@@ -426,11 +426,11 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function analyze_server_metrics() {
 		return array(
-			'php_version'       => phpversion(),
-			'memory_limit'      => ini_get( 'memory_limit' ),
-			'max_execution_time' => ini_get( 'max_execution_time' ),
+			'php_version'         => phpversion(),
+			'memory_limit'        => ini_get( 'memory_limit' ),
+			'max_execution_time'  => ini_get( 'max_execution_time' ),
 			'upload_max_filesize' => ini_get( 'upload_max_filesize' ),
-			'opcache_enabled'   => function_exists( 'opcache_get_status' ) && opcache_get_status(),
+			'opcache_enabled'     => function_exists( 'opcache_get_status' ) && opcache_get_status(),
 		);
 	}
 
@@ -452,11 +452,11 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$table_count = $wpdb->get_var( "SELECT COUNT(*) FROM information_schema.TABLES WHERE table_schema = '{$wpdb->dbname}'" );
 
 		return array(
-			'size'              => size_format( $db_size ),
-			'size_bytes'        => $db_size,
-			'table_count'       => $table_count,
-			'autoload_size'     => $this->get_autoload_size(),
-			'transient_count'   => $this->count_transients(),
+			'size'            => size_format( $db_size ),
+			'size_bytes'      => $db_size,
+			'table_count'     => $table_count,
+			'autoload_size'   => $this->get_autoload_size(),
+			'transient_count' => $this->count_transients(),
 		);
 	}
 
@@ -468,12 +468,12 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function analyze_wordpress_metrics() {
 		return array(
-			'version'        => get_bloginfo( 'version' ),
-			'post_count'     => wp_count_posts()->publish,
-			'page_count'     => wp_count_posts( 'page' )->publish,
-			'user_count'     => count_users()['total_users'],
-			'plugin_count'   => count( get_option( 'active_plugins', array() ) ),
-			'theme'          => wp_get_theme()->get( 'Name' ),
+			'version'      => get_bloginfo( 'version' ),
+			'post_count'   => wp_count_posts()->publish,
+			'page_count'   => wp_count_posts( 'page' )->publish,
+			'user_count'   => count_users()['total_users'],
+			'plugin_count' => count( get_option( 'active_plugins', array() ) ),
+			'theme'        => wp_get_theme()->get( 'Name' ),
 		);
 	}
 
@@ -520,7 +520,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 		$plugins = array();
 		foreach ( $active_plugins as $plugin ) {
 			$plugin_data = get_plugin_data( WP_PLUGIN_DIR . '/' . $plugin );
-			$plugins[] = array(
+			$plugins[]   = array(
 				'name'    => $plugin_data['Name'],
 				'version' => $plugin_data['Version'],
 			);
@@ -540,10 +540,10 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function check_caching_status() {
 		return array(
-			'object_cache'  => wp_using_ext_object_cache(),
-			'page_cache'    => $this->detect_page_cache(),
-			'opcache'       => function_exists( 'opcache_get_status' ) && opcache_get_status(),
-			'cdn'           => $this->detect_cdn(),
+			'object_cache' => wp_using_ext_object_cache(),
+			'page_cache'   => $this->detect_page_cache(),
+			'opcache'      => function_exists( 'opcache_get_status' ) && opcache_get_status(),
+			'cdn'          => $this->detect_cdn(),
 		);
 	}
 
@@ -645,12 +645,12 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function summarize_analysis( $analysis ) {
 		return array(
-			'database'  => array(
-				'size'  => $analysis['database']['size'],
+			'database' => array(
+				'size'   => $analysis['database']['size'],
 				'tables' => $analysis['database']['table_count'],
 			),
-			'caching'   => $analysis['caching'],
-			'plugins'   => array(
+			'caching'  => $analysis['caching'],
+			'plugins'  => array(
 				'total' => $analysis['plugins']['total'],
 			),
 		);
@@ -899,7 +899,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function count_theme_files() {
 		$theme_dir = get_stylesheet_directory();
-		$files = glob( $theme_dir . '/*.php' );
+		$files     = glob( $theme_dir . '/*.php' );
 		return count( $files );
 	}
 
@@ -934,8 +934,8 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 */
 	private function detect_cdn() {
 		// Check if upload URL differs from site URL (common CDN setup).
-		$uploads = wp_upload_dir();
-		$site_url = parse_url( site_url(), PHP_URL_HOST );
+		$uploads    = wp_upload_dir();
+		$site_url   = parse_url( site_url(), PHP_URL_HOST );
 		$upload_url = parse_url( $uploads['baseurl'], PHP_URL_HOST );
 
 		return $site_url !== $upload_url;

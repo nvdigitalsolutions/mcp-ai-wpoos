@@ -388,13 +388,13 @@ class WP_MCP_AI_Reg_Document_Research_Page {
 		$missing_items = array();
 
 		foreach ( $documents as $document ) {
-			$meta        = get_post_meta( $document->ID );
-			$has_type    = ! empty( $meta['document_type'][0] ?? '' );
-			$has_expiry  = ! empty( $meta['expiry_date'][0] ?? '' );
-			$has_link    = ! empty( $meta['registration_id'][0] ?? '' ) || ! empty( $meta['product_id'][0] ?? '' );
+			$meta       = get_post_meta( $document->ID );
+			$has_type   = ! empty( $meta['document_type'][0] ?? '' );
+			$has_expiry = ! empty( $meta['expiry_date'][0] ?? '' );
+			$has_link   = ! empty( $meta['registration_id'][0] ?? '' ) || ! empty( $meta['product_id'][0] ?? '' );
 
 			if ( $has_type && $has_expiry && $has_link ) {
-				$complete++;
+				++$complete;
 			} else {
 				if ( ! $has_type ) {
 					$missing_items[] = sprintf( '%s: Missing document type', $document->post_title );
@@ -483,8 +483,8 @@ class WP_MCP_AI_Reg_Document_Research_Page {
 		// Check expiry status.
 		$expiry_date = $meta['expiry_date'][0] ?? '';
 		if ( ! empty( $expiry_date ) ) {
-			$expiry_timestamp = strtotime( $expiry_date );
-			$now              = time();
+			$expiry_timestamp  = strtotime( $expiry_date );
+			$now               = time();
 			$days_until_expiry = ( $expiry_timestamp - $now ) / DAY_IN_SECONDS;
 
 			if ( $days_until_expiry < 0 ) {

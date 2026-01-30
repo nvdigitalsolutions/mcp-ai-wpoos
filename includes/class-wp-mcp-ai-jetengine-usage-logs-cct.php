@@ -164,30 +164,30 @@ class WP_MCP_AI_JetEngine_Usage_Logs_CCT {
 			'rest_post_access'    => 'edit_posts',
 			'rest_delete_access'  => 'manage_options',
 			'admin_columns'       => array(
-				'_ID'             => array(
+				'_ID'          => array(
 					'enabled'     => true,
 					'prefix'      => '#',
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'timestamp'       => array(
+				'timestamp'    => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'user_id'         => array(
+				'user_id'      => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
 				),
-				'provider'        => array(
+				'provider'     => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'model'           => array(
+				'model'        => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 				),
-				'total_tokens'    => array(
+				'total_tokens' => array(
 					'enabled'     => true,
 					'is_sortable' => true,
 					'is_num'      => true,
@@ -204,59 +204,59 @@ class WP_MCP_AI_JetEngine_Usage_Logs_CCT {
 	protected static function get_meta_fields() {
 		return array(
 			array(
-				'title'   => __( 'Timestamp', 'mcp-ai-wpoos' ),
-				'name'    => 'timestamp',
-				'type'    => 'datetime-local',
+				'title'       => __( 'Timestamp', 'mcp-ai-wpoos' ),
+				'name'        => 'timestamp',
+				'type'        => 'datetime-local',
 				'is_required' => true,
 			),
 			array(
-				'title'   => __( 'User ID', 'mcp-ai-wpoos' ),
-				'name'    => 'user_id',
-				'type'    => 'number',
+				'title'       => __( 'User ID', 'mcp-ai-wpoos' ),
+				'name'        => 'user_id',
+				'type'        => 'number',
 				'is_required' => true,
 			),
 			array(
-				'title'   => __( 'Assistant ID', 'mcp-ai-wpoos' ),
-				'name'    => 'assistant_id',
-				'type'    => 'number',
+				'title'       => __( 'Assistant ID', 'mcp-ai-wpoos' ),
+				'name'        => 'assistant_id',
+				'type'        => 'number',
 				'is_required' => true,
 			),
 			array(
-				'title'   => __( 'Provider', 'mcp-ai-wpoos' ),
-				'name'    => 'provider',
-				'type'    => 'text',
+				'title'       => __( 'Provider', 'mcp-ai-wpoos' ),
+				'name'        => 'provider',
+				'type'        => 'text',
 				'is_required' => true,
 			),
 			array(
-				'title'   => __( 'Model', 'mcp-ai-wpoos' ),
-				'name'    => 'model',
-				'type'    => 'text',
+				'title'       => __( 'Model', 'mcp-ai-wpoos' ),
+				'name'        => 'model',
+				'type'        => 'text',
 				'is_required' => true,
 			),
 			array(
-				'title'   => __( 'Prompt Tokens', 'mcp-ai-wpoos' ),
-				'name'    => 'prompt_tokens',
-				'type'    => 'number',
+				'title' => __( 'Prompt Tokens', 'mcp-ai-wpoos' ),
+				'name'  => 'prompt_tokens',
+				'type'  => 'number',
 			),
 			array(
-				'title'   => __( 'Completion Tokens', 'mcp-ai-wpoos' ),
-				'name'    => 'completion_tokens',
-				'type'    => 'number',
+				'title' => __( 'Completion Tokens', 'mcp-ai-wpoos' ),
+				'name'  => 'completion_tokens',
+				'type'  => 'number',
 			),
 			array(
-				'title'   => __( 'Total Tokens', 'mcp-ai-wpoos' ),
-				'name'    => 'total_tokens',
-				'type'    => 'number',
+				'title' => __( 'Total Tokens', 'mcp-ai-wpoos' ),
+				'name'  => 'total_tokens',
+				'type'  => 'number',
 			),
 			array(
-				'title'   => __( 'Finish Reason', 'mcp-ai-wpoos' ),
-				'name'    => 'finish_reason',
-				'type'    => 'text',
+				'title' => __( 'Finish Reason', 'mcp-ai-wpoos' ),
+				'name'  => 'finish_reason',
+				'type'  => 'text',
 			),
 			array(
-				'title'   => __( 'Source', 'mcp-ai-wpoos' ),
-				'name'    => 'source',
-				'type'    => 'text',
+				'title'       => __( 'Source', 'mcp-ai-wpoos' ),
+				'name'        => 'source',
+				'type'        => 'text',
 				'description' => __( 'embedded or server', 'mcp-ai-wpoos' ),
 			),
 		);

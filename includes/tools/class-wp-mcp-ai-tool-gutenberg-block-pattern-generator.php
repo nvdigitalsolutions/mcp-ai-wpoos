@@ -47,62 +47,62 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Gutenberg Block Pattern Generator', 'mcp-ai-wpoos' ),
-			'description'          => __( 'AI-powered block pattern creation with theme.json integration, FSE support, pattern categories, and responsive design following 2026 WordPress standards.', 'mcp-ai-wpoos' ),
-			'category'             => 'content',
-			'required_capability'  => 'edit_posts',
-			'parameters'           => array(
-				'action'           => array(
+			'name'                => __( 'Gutenberg Block Pattern Generator', 'mcp-ai-wpoos' ),
+			'description'         => __( 'AI-powered block pattern creation with theme.json integration, FSE support, pattern categories, and responsive design following 2026 WordPress standards.', 'mcp-ai-wpoos' ),
+			'category'            => 'content',
+			'required_capability' => 'edit_posts',
+			'parameters'          => array(
+				'action'         => array(
 					'type'        => 'string',
 					'description' => __( 'Action: generate_pattern, list_patterns, sync_theme_json, or validate_pattern', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'generate_pattern', 'list_patterns', 'sync_theme_json', 'validate_pattern' ),
 				),
-				'pattern_type'     => array(
+				'pattern_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Pattern type: hero, call-to-action, testimonial, pricing, gallery, team, or custom', 'mcp-ai-wpoos' ),
 					'default'     => 'hero',
 					'enum'        => array( 'hero', 'call-to-action', 'testimonial', 'pricing', 'gallery', 'team', 'custom' ),
 				),
-				'title'            => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Pattern title', 'mcp-ai-wpoos' ),
 				),
-				'description'      => array(
+				'description'    => array(
 					'type'        => 'string',
 					'description' => __( 'Pattern description', 'mcp-ai-wpoos' ),
 				),
-				'categories'       => array(
+				'categories'     => array(
 					'type'        => 'array',
 					'description' => __( 'Pattern categories (featured, buttons, columns, text, etc.)', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array( 'featured' ),
 				),
-				'keywords'         => array(
+				'keywords'       => array(
 					'type'        => 'array',
 					'description' => __( 'Search keywords for pattern discovery', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'content'          => array(
+				'content'        => array(
 					'type'        => 'string',
 					'description' => __( 'Custom block content (HTML or block markup)', 'mcp-ai-wpoos' ),
 				),
-				'viewport_width'   => array(
+				'viewport_width' => array(
 					'type'        => 'integer',
 					'description' => __( 'Pattern preview viewport width (default: 1280)', 'mcp-ai-wpoos' ),
 					'default'     => 1280,
 				),
-				'block_types'      => array(
+				'block_types'    => array(
 					'type'        => 'array',
 					'description' => __( 'Restrict pattern to specific block types', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'inserter'         => array(
+				'inserter'       => array(
 					'type'        => 'boolean',
 					'description' => __( 'Show pattern in inserter (default: true)', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'sync_theme'       => array(
+				'sync_theme'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Sync with active theme.json settings', 'mcp-ai-wpoos' ),
 					'default'     => true,
@@ -230,9 +230,9 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 			'pattern'    => $pattern_properties,
 			'preview'    => $this->generate_pattern_preview( $content ),
 			'usage'      => array(
-				'inserter'   => __( 'Pattern is available in the block inserter', 'mcp-ai-wpoos' ),
-				'shortcode'  => sprintf( '[pattern slug="%s"]', $slug ),
-				'php'        => sprintf( "<?php echo do_blocks('<!-- wp:pattern {\"slug\":\"%s\"} /-->'); ?>", $slug ),
+				'inserter'  => __( 'Pattern is available in the block inserter', 'mcp-ai-wpoos' ),
+				'shortcode' => sprintf( '[pattern slug="%s"]', $slug ),
+				'php'       => sprintf( "<?php echo do_blocks('<!-- wp:pattern {\"slug\":\"%s\"} /-->'); ?>", $slug ),
 			),
 			'theme_json' => $sync_theme ? __( 'Synced with theme.json settings', 'mcp-ai-wpoos' ) : __( 'Independent styling', 'mcp-ai-wpoos' ),
 		);
@@ -245,7 +245,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 * @return array List result.
 	 */
 	private function handle_list_patterns() {
-		$patterns = \WP_Block_Patterns_Registry::get_instance()->get_all_registered();
+		$patterns     = \WP_Block_Patterns_Registry::get_instance()->get_all_registered();
 		$pattern_list = array();
 
 		foreach ( $patterns as $pattern ) {
@@ -260,9 +260,9 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		}
 
 		return array(
-			'success' => true,
-			'count'   => count( $pattern_list ),
-			'patterns' => $pattern_list,
+			'success'    => true,
+			'count'      => count( $pattern_list ),
+			'patterns'   => $pattern_list,
 			'categories' => $this->get_pattern_categories(),
 		);
 	}
@@ -313,7 +313,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 		}
 
 		$validation_results = array();
-		$is_valid = true;
+		$is_valid           = true;
 
 		// Check if content contains valid blocks.
 		if ( ! has_blocks( $content ) ) {
@@ -321,7 +321,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 				'type'    => 'error',
 				'message' => __( 'Content does not contain valid block markup', 'mcp-ai-wpoos' ),
 			);
-			$is_valid = false;
+			$is_valid             = false;
 		}
 
 		// Parse blocks.
@@ -360,7 +360,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 
 		// Check accessibility.
 		$accessibility_issues = $this->check_accessibility( $blocks );
-		$validation_results = array_merge( $validation_results, $accessibility_issues );
+		$validation_results   = array_merge( $validation_results, $accessibility_issues );
 
 		return array(
 			'success'     => $is_valid,
@@ -384,13 +384,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	private function generate_pattern_content( $pattern_type ) {
 		$templates = array(
-			'hero'            => $this->get_hero_template(),
-			'call-to-action'  => $this->get_cta_template(),
-			'testimonial'     => $this->get_testimonial_template(),
-			'pricing'         => $this->get_pricing_template(),
-			'gallery'         => $this->get_gallery_template(),
-			'team'            => $this->get_team_template(),
-			'custom'          => '<!-- wp:paragraph --><p>Custom pattern content</p><!-- /wp:paragraph -->',
+			'hero'           => $this->get_hero_template(),
+			'call-to-action' => $this->get_cta_template(),
+			'testimonial'    => $this->get_testimonial_template(),
+			'pricing'        => $this->get_pricing_template(),
+			'gallery'        => $this->get_gallery_template(),
+			'team'           => $this->get_team_template(),
+			'custom'         => '<!-- wp:paragraph --><p>Custom pattern content</p><!-- /wp:paragraph -->',
 		);
 
 		return isset( $templates[ $pattern_type ] ) ? $templates[ $pattern_type ] : $templates['custom'];
@@ -624,7 +624,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 * @return void
 	 */
 	private function store_pattern( $slug, $properties ) {
-		$patterns = get_option( 'wp_mcp_ai_custom_patterns', array() );
+		$patterns          = get_option( 'wp_mcp_ai_custom_patterns', array() );
 		$patterns[ $slug ] = $properties;
 		update_option( 'wp_mcp_ai_custom_patterns', $patterns );
 	}
@@ -698,7 +698,13 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 */
 	private function get_pattern_categories() {
 		$categories = \WP_Block_Pattern_Categories_Registry::get_instance()->get_all_registered();
-		return array_map( fn( $cat ) => array( 'name' => $cat['name'], 'label' => $cat['label'] ), $categories );
+		return array_map(
+			fn( $cat ) => array(
+				'name'  => $cat['name'],
+				'label' => $cat['label'],
+			),
+			$categories
+		);
 	}
 
 	/**

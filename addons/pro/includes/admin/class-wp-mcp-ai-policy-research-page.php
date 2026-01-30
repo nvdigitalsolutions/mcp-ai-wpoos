@@ -603,9 +603,9 @@ class WP_MCP_AI_Policy_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get policy statistics.
-		$total_policies = wp_count_posts( 'mcp_ai_policy' );
+		$total_policies  = wp_count_posts( 'mcp_ai_policy' );
 		$published_count = isset( $total_policies->publish ) ? $total_policies->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$policies = get_posts(
 			array(
@@ -615,28 +615,28 @@ class WP_MCP_AI_Policy_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$complete_count      = 0;
 		$with_effective_date = 0;
-		$with_category = 0;
+		$with_category       = 0;
 
 		foreach ( $policies as $policy ) {
 			$effective_date = get_post_meta( $policy->ID, 'effective_date', true );
 			$category       = get_post_meta( $policy->ID, 'category', true );
 			$has_content    = ! empty( $policy->post_content );
-			
+
 			if ( ! empty( $effective_date ) ) {
-				$with_effective_date++;
+				++$with_effective_date;
 			}
 			if ( ! empty( $category ) ) {
-				$with_category++;
+				++$with_category;
 			}
 			if ( ! empty( $effective_date ) && ! empty( $category ) && $has_content ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Policy Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

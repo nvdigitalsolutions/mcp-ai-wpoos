@@ -83,12 +83,12 @@ class WP_MCP_AI_Tool_Profiler {
 
 		// Build profile.
 		$profile = array(
-			'tool_slug'      => $tool_slug,
-			'performance'    => $this->analyze_performance( $executions ),
-			'specialization' => $this->analyze_specialization( $executions, $tool_slug ),
+			'tool_slug'       => $tool_slug,
+			'performance'     => $this->analyze_performance( $executions ),
+			'specialization'  => $this->analyze_specialization( $executions, $tool_slug ),
 			'recommendations' => $this->generate_recommendations( $executions, $tool_slug ),
-			'last_updated'   => current_time( 'mysql' ),
-			'sample_size'    => count( $executions ),
+			'last_updated'    => current_time( 'mysql' ),
+			'sample_size'     => count( $executions ),
 		);
 
 		// Cache profile.
@@ -124,10 +124,10 @@ class WP_MCP_AI_Tool_Profiler {
 			$score = $this->calculate_tool_task_fit( $tool_slug, $task_features );
 			if ( $score > 0 ) {
 				$scored_tools[] = array(
-					'tool_slug'   => $tool_slug,
-					'tool_name'   => $tool->get_name(),
-					'confidence'  => $score,
-					'reason'      => $this->get_recommendation_reason( $tool_slug, $task_features ),
+					'tool_slug'  => $tool_slug,
+					'tool_name'  => $tool->get_name(),
+					'confidence' => $score,
+					'reason'     => $this->get_recommendation_reason( $tool_slug, $task_features ),
 				);
 			}
 		}

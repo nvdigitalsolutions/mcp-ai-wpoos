@@ -60,23 +60,23 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Parent menu title: "NV oOS" -> sanitized to "nv-oos"
 		// Submenu slug: "mcp-ai-orchestration"
 		// Expected hook: nv-oos_page_mcp-ai-orchestration (or variants like toplevel_page_mcp-ai-orchestration)
-		
+
 		// Check if this is the base orchestration page (not the Pro version).
 		// Pro version uses slug 'mcp-ai-orchestration-pro', we want to exclude that.
 		$is_orchestration_page = false !== strpos( $hook, 'mcp-ai-orchestration' );
 		$is_pro_page           = false !== strpos( $hook, 'mcp-ai-orchestration-pro' );
-		
+
 		// Only enqueue on base orchestration page, not Pro page or other pages.
 		if ( ! $is_orchestration_page || $is_pro_page ) {
 			return;
 		}
 
 		// Use file modification time for cache busting to ensure CSS/JS updates are loaded.
-		$css_path    = WP_MCP_AI_PATH . 'assets/css/admin-orchestration-dashboard.css';
-		$js_path     = WP_MCP_AI_PATH . 'assets/js/admin-orchestration-dashboard.js';
-		$shared_css_path = WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css';
-		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
-		$js_version  = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
+		$css_path           = WP_MCP_AI_PATH . 'assets/css/admin-orchestration-dashboard.css';
+		$js_path            = WP_MCP_AI_PATH . 'assets/js/admin-orchestration-dashboard.js';
+		$shared_css_path    = WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css';
+		$css_version        = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
+		$js_version         = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
 		$shared_css_version = file_exists( $shared_css_path ) ? filemtime( $shared_css_path ) : WP_MCP_AI_VERSION;
 
 		// Enqueue shared monitor CSS for auto-refresh controls.
@@ -798,9 +798,9 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Get cron job status if service is available.
 		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
 			try {
-				$cron_service    = new WP_MCP_AI_Cron_Status_Service();
-				$cron_summary    = $cron_service->get_status_summary( 0, 5 );
-				$status['cron']  = array(
+				$cron_service   = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary   = $cron_service->get_status_summary( 0, 5 );
+				$status['cron'] = array(
 					'total'     => count( $cron_summary ),
 					'active'    => 0,
 					'completed' => 0,
@@ -811,7 +811,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 				foreach ( $cron_summary as $job ) {
 					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
-					
+
 					if ( 'active' === $job_status || 'running' === $job_status ) {
 						++$status['cron']['active'];
 					} elseif ( 'completed' === $job_status ) {
@@ -841,8 +841,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
 			try {
 				WP_MCP_AI_Logger::log_debug( '[Admin Dashboard] Collecting async status' );
-				$async_health     = WP_MCP_AI_Async_Health_Monitor::check_async_health();
-				$status['async']  = array(
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
 					'status'         => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
 					'stuck_jobs'     => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
 					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
@@ -913,10 +913,13 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Add system status information.
 		$stats['system_status'] = $this->get_system_status();
 
-		WP_MCP_AI_Logger::log_debug( '[Admin Dashboard] AJAX get_stats response prepared', array(
-			'has_system_status' => isset( $stats['system_status'] ),
-			'system_status_keys' => isset( $stats['system_status'] ) ? array_keys( $stats['system_status'] ) : array(),
-		) );
+		WP_MCP_AI_Logger::log_debug(
+			'[Admin Dashboard] AJAX get_stats response prepared',
+			array(
+				'has_system_status'  => isset( $stats['system_status'] ),
+				'system_status_keys' => isset( $stats['system_status'] ) ? array_keys( $stats['system_status'] ) : array(),
+			)
+		);
 
 		wp_send_json_success( $stats );
 	}
@@ -1237,7 +1240,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		foreach ( $transients as $transient ) {
 			$index = maybe_unserialize( $transient->option_value );
 			if ( is_array( $index ) && ! empty( $index ) ) {
-				$total_agents++;
+				++$total_agents;
 				$total_contexts += count( $index );
 
 				// Count by type.
@@ -1246,7 +1249,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 					if ( ! isset( $contexts_by_type[ $type ] ) ) {
 						$contexts_by_type[ $type ] = 0;
 					}
-					$contexts_by_type[ $type ]++;
+					++$contexts_by_type[ $type ];
 				}
 			}
 		}

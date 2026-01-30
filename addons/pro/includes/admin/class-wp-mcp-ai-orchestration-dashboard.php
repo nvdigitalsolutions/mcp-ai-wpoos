@@ -337,10 +337,13 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 		$data = $this->get_dashboard_data();
 
-		WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Dashboard data prepared', array(
-			'has_system_status' => isset( $data['system_status'] ),
-			'system_status_keys' => isset( $data['system_status'] ) ? array_keys( $data['system_status'] ) : array(),
-		) );
+		WP_MCP_AI_Logger::log_debug(
+			'[Pro Dashboard] Dashboard data prepared',
+			array(
+				'has_system_status'  => isset( $data['system_status'] ),
+				'system_status_keys' => isset( $data['system_status'] ) ? array_keys( $data['system_status'] ) : array(),
+			)
+		);
 
 		wp_send_json_success( $data );
 	}
@@ -352,13 +355,13 @@ class WP_MCP_AI_Orchestration_Dashboard {
 	 */
 	private function get_dashboard_data() {
 		$data = array(
-			'overview'       => $this->get_overview_metrics(),
-			'capacity'       => $this->get_capacity_metrics(),
-			'sessions'       => $this->get_active_sessions(),
-			'workflows'      => $this->get_team_workflows(),
-			'activity'       => $this->get_recent_activity(),
-			'system_status'  => $this->get_system_status(),
-			'timestamp'      => time(),
+			'overview'      => $this->get_overview_metrics(),
+			'capacity'      => $this->get_capacity_metrics(),
+			'sessions'      => $this->get_active_sessions(),
+			'workflows'     => $this->get_team_workflows(),
+			'activity'      => $this->get_recent_activity(),
+			'system_status' => $this->get_system_status(),
+			'timestamp'     => time(),
 		);
 
 		return $data;
@@ -386,9 +389,9 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		if ( class_exists( 'WP_MCP_AI_Cron_Status_Service' ) ) {
 			try {
 				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting cron status' );
-				$cron_service    = new WP_MCP_AI_Cron_Status_Service();
-				$cron_summary    = $cron_service->get_status_summary( 0, 5 );
-				$status['cron']  = array(
+				$cron_service   = new WP_MCP_AI_Cron_Status_Service();
+				$cron_summary   = $cron_service->get_status_summary( 0, 5 );
+				$status['cron'] = array(
 					'total'     => count( $cron_summary ),
 					'active'    => 0,
 					'completed' => 0,
@@ -399,7 +402,7 @@ class WP_MCP_AI_Orchestration_Dashboard {
 
 				foreach ( $cron_summary as $job ) {
 					$job_status = isset( $job['status'] ) ? $job['status'] : 'unknown';
-					
+
 					if ( 'active' === $job_status || 'running' === $job_status ) {
 						++$status['cron']['active'];
 					} elseif ( 'completed' === $job_status ) {
@@ -433,8 +436,8 @@ class WP_MCP_AI_Orchestration_Dashboard {
 		if ( class_exists( 'WP_MCP_AI_Async_Health_Monitor' ) ) {
 			try {
 				WP_MCP_AI_Logger::log_debug( '[Pro Dashboard] Collecting async status' );
-				$async_health     = WP_MCP_AI_Async_Health_Monitor::check_async_health();
-				$status['async']  = array(
+				$async_health    = WP_MCP_AI_Async_Health_Monitor::check_async_health();
+				$status['async'] = array(
 					'status'         => isset( $async_health['status'] ) ? $async_health['status'] : 'unknown',
 					'stuck_jobs'     => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
 					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,

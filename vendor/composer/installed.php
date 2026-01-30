@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-composer-install-command-again',
-        'version' => 'dev-copilot/update-composer-install-command-again',
-        'reference' => '90e7f930351405da3344758a7d8d4741ad2d3b22',
+        'pretty_version' => 'dev-copilot/fix-wordpress-errors-wpcs',
+        'version' => 'dev-copilot/fix-wordpress-errors-wpcs',
+        'reference' => 'fbb7a7d1982a6b62ec89620d23e5402e11ba227b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-composer-install-command-again',
-            'version' => 'dev-copilot/update-composer-install-command-again',
-            'reference' => '90e7f930351405da3344758a7d8d4741ad2d3b22',
+            'pretty_version' => 'dev-copilot/fix-wordpress-errors-wpcs',
+            'version' => 'dev-copilot/fix-wordpress-errors-wpcs',
+            'reference' => 'fbb7a7d1982a6b62ec89620d23e5402e11ba227b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -249,13 +249,13 @@ class WP_MCP_AI_Hybrid_Executor {
 		}
 
 		return array(
-			'client_tools'  => $client_tools,
-			'server_tools'  => $server_tools,
-			'can_parallel'  => $this->can_parallel( $tools ),
-			'strategy'      => count( $client_tools ) > count( $server_tools ) ? 'client-heavy' : 'server-heavy',
-			'total_tools'   => count( $tools ),
-			'client_count'  => count( $client_tools ),
-			'server_count'  => count( $server_tools ),
+			'client_tools' => $client_tools,
+			'server_tools' => $server_tools,
+			'can_parallel' => $this->can_parallel( $tools ),
+			'strategy'     => count( $client_tools ) > count( $server_tools ) ? 'client-heavy' : 'server-heavy',
+			'total_tools'  => count( $tools ),
+			'client_count' => count( $client_tools ),
+			'server_count' => count( $server_tools ),
 		);
 	}
 }

@@ -1073,9 +1073,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					</div>
 				<?php if ( $description ) : ?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
-					<?php endif;
+					<?php
+					endif;
 					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-					?>
+				?>
 					<style>
 						#wp-mcp-ai-provider-sortable {
 							list-style: none;

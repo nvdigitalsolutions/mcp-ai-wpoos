@@ -59,7 +59,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 	public function __construct( $main_controller = null, $authenticator = null, $validator = null ) {
 		parent::__construct( $authenticator, $validator );
 		$this->main_controller = $main_controller;
-		
+
 		// Hook into SSE job status events to stream them to chat clients.
 		add_action( 'wp_mcp_ai_emit_sse_event', array( $this, 'handle_sse_job_event' ), 10, 2 );
 	}
@@ -304,19 +304,19 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 				'permission_callback' => array( $this, 'permissions_check' ),
 				'callback'            => array( $this, 'handle_track_embedded_usage' ),
 				'args'                => array(
-					'assistant_id' => array(
+					'assistant_id'  => array(
 						'description'       => __( 'ID of the assistant that generated the response.', 'mcp-ai-wpoos' ),
 						'type'              => 'integer',
 						'required'          => true,
 						'sanitize_callback' => 'absint',
 					),
-					'model'        => array(
+					'model'         => array(
 						'description'       => __( 'Model identifier used for generation.', 'mcp-ai-wpoos' ),
 						'type'              => 'string',
 						'required'          => true,
 						'sanitize_callback' => 'sanitize_text_field',
 					),
-					'usage'        => array(
+					'usage'         => array(
 						'description' => __( 'Usage statistics object.', 'mcp-ai-wpoos' ),
 						'type'        => 'object',
 						'required'    => true,

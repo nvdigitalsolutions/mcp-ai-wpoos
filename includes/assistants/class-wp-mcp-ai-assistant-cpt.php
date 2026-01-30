@@ -390,6 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-badge">';
+					/* translators: %d: number of shortcuts */
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-count">' . esc_html( sprintf( _n( '%d shortcut', '%d shortcuts', $shortcut_count, 'mcp-ai-wpoos' ), $shortcut_count ) ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
 					echo '</span>';

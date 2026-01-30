@@ -109,17 +109,11 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -137,7 +131,6 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 
@@ -275,18 +268,18 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 		if ( ! empty( $arguments['post_id'] ) ) {
 			$post = get_post( $arguments['post_id'] );
 			return array(
-				'post_id'  => $post->ID,
-				'title'    => $post->post_title,
-				'content'  => wp_strip_all_tags( $post->post_content ),
-				'excerpt'  => $post->post_excerpt,
+				'post_id'   => $post->ID,
+				'title'     => $post->post_title,
+				'content'   => wp_strip_all_tags( $post->post_content ),
+				'excerpt'   => $post->post_excerpt,
 				'post_type' => $post->post_type,
 			);
 		}
 
 		return array(
-			'title'   => $arguments['title'] ?? '',
-			'content' => wp_strip_all_tags( $arguments['content'] ?? '' ),
-			'excerpt' => '',
+			'title'     => $arguments['title'] ?? '',
+			'content'   => wp_strip_all_tags( $arguments['content'] ?? '' ),
+			'excerpt'   => '',
 			'post_type' => 'post',
 		);
 	}
@@ -360,7 +353,7 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 
 		$content_preview = wp_trim_words( $content_data['content'], 200 );
 
-		$prompt = "Generate SEO-optimized meta tags following 2026 industry best practices.\n\n";
+		$prompt  = "Generate SEO-optimized meta tags following 2026 industry best practices.\n\n";
 		$prompt .= "Content Title: {$content_data['title']}\n";
 		$prompt .= "Content Preview:\n{$content_preview}\n\n";
 
@@ -410,7 +403,7 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 			$prompt .= "  \"variations\": [{\"title\": \"...\", \"meta_description\": \"...\"}]\n";
 		}
 
-		$prompt .= "}";
+		$prompt .= '}';
 
 		return $prompt;
 	}
@@ -453,13 +446,13 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 		$focus_keyword    = $arguments['focus_keyword'] ?? '';
 
 		$validation = array(
-			'title_length_ok'       => false,
-			'description_length_ok' => false,
-			'keyword_in_title'      => false,
+			'title_length_ok'        => false,
+			'description_length_ok'  => false,
+			'keyword_in_title'       => false,
 			'keyword_in_description' => false,
-			'has_call_to_action'    => false,
-			'all_passed'            => false,
-			'issues'                => array(),
+			'has_call_to_action'     => false,
+			'all_passed'             => false,
+			'issues'                 => array(),
 		);
 
 		// Validate title length (50-60 characters).
@@ -493,8 +486,8 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Check for keyword presence.
 		if ( $focus_keyword ) {
-			$title_lower = strtolower( $seo_meta['title'] ?? '' );
-			$desc_lower  = strtolower( $seo_meta['meta_description'] ?? '' );
+			$title_lower   = strtolower( $seo_meta['title'] ?? '' );
+			$desc_lower    = strtolower( $seo_meta['meta_description'] ?? '' );
 			$keyword_lower = strtolower( $focus_keyword );
 
 			if ( strpos( $title_lower, $keyword_lower ) !== false ) {
@@ -511,7 +504,7 @@ class WP_MCP_AI_Tool_SEO_Meta_Optimizer implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Check for CTA in description.
-		$cta_words = array( 'learn', 'discover', 'find out', 'read', 'explore', 'get', 'download', 'shop', 'buy', 'subscribe' );
+		$cta_words  = array( 'learn', 'discover', 'find out', 'read', 'explore', 'get', 'download', 'shop', 'buy', 'subscribe' );
 		$desc_lower = strtolower( $seo_meta['meta_description'] ?? '' );
 
 		foreach ( $cta_words as $cta ) {

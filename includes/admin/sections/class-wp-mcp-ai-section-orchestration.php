@@ -988,6 +988,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		 * Get statistics content HTML.
 		 *
 		 * @return string
+		 * @throws Exception If Resource Manager is not available or stats cannot be generated.
 		 */
 		private function get_stats_content() { // phpcs:ignore Squiz.Commenting.FunctionComment.Missing
 			try {
@@ -1405,6 +1406,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								<?php
 								$avg_tools = count( $professions ) > 0 ? round( $total_tools / count( $professions ), 1 ) : 0;
 								?>
+								<?php /* translators: %s: average number of tools */ ?>
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Avg per Agent: %s', 'mcp-ai-wpoos' ), $avg_tools ) ); ?></span>
 							</div>
 						</div>
@@ -1424,7 +1426,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 							<div class="metric-primary"><?php echo esc_html( ucfirst( $health['memory_status'] ) ); ?></div>
 							<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Overall Status', 'mcp-ai-wpoos' ); ?></div>
 							<div class="metric-stats">
+								<?php /* translators: %s: memory usage percentage */ ?>
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Memory: %s%%', 'mcp-ai-wpoos' ), number_format( $health['memory_usage'], 1 ) ) ); ?></span>
+								<?php /* translators: %s: error rate percentage */ ?>
 								<span class="role-stat"><?php echo esc_html( sprintf( __( 'Errors: %s%%', 'mcp-ai-wpoos' ), number_format( $health['error_rate'], 1 ) ) ); ?></span>
 							</div>
 						</div>
@@ -1461,6 +1465,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 										if ( ! $has_critic ) {
 											$missing[] = 'Critic';
 										}
+										/* translators: %s: comma-separated list of missing roles */
 										echo esc_html( sprintf( __( 'Missing: %s', 'mcp-ai-wpoos' ), implode( ', ', $missing ) ) );
 										?>
 									</span>
@@ -1974,7 +1979,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( 'html' === $field['type'] ) {
 						// Close table for section headers, render HTML, reopen table.
 						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
-						echo $field['content'];
+						echo $field['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
 						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
@@ -1996,7 +2001,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Render presets selector.
 			if ( isset( $fields['configuration_presets'] ) ) {
-				echo $fields['configuration_presets']['content'];
+				echo $fields['configuration_presets']['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
 			}
 
 			// Render hidden field for preset tracking.
@@ -2044,11 +2049,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
-						echo $field['content'];
+						echo $field['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
 					} elseif ( 'slider' === $field['type'] ) {
 						// Use orchestration renderer for sliders.
 						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
+							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
 						}
 					}
 				}
@@ -2220,7 +2225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view();
+			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
 		}
 
 		/**
@@ -2985,12 +2990,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 		}
 
 		/**
-		 * Get health icon for status.
-		 *
-		 * @param string $status Health status.
-		 * @return string Icon name.
-
-	/**
 		 * Render professions view.
 		 *
 		 * Displays all configured AI professions (concrete agent instances).
@@ -3079,7 +3078,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<div class="wp-mcp-ai-metric-label"><?php esc_html_e( 'Team Readiness', 'mcp-ai-wpoos' ); ?></div>
 						<div class="wp-mcp-ai-metric-value">
 							<?php
-							// Team ready if we have at least planner, executor, and critic
+							// Team ready if we have at least planner, executor, and critic.
 							$has_planner  = isset( $role_counts['planner'] ) && $role_counts['planner'] > 0;
 							$has_executor = isset( $role_counts['executor'] ) && $role_counts['executor'] > 0;
 							$has_critic   = isset( $role_counts['critic'] ) && $role_counts['critic'] > 0;
@@ -3888,7 +3887,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 									++$mode_counts[ $mode ];
 								}
 							}
-							$unique_modes_used = count( $mode_counts );
+							$unique_modes_used     = count( $mode_counts );
 							$total_available_modes = 4; // single, sequential, parallel, swarm.
 							echo esc_html( $unique_modes_used . '/' . $total_available_modes );
 							?>
@@ -3896,7 +3895,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 						<div class="wp-mcp-ai-metric-subtitle">
 							<?php
 							if ( ! empty( $mode_counts ) ) {
-								$mode_labels = array(
+								$mode_labels  = array(
 									'single'     => __( 'Single', 'mcp-ai-wpoos' ),
 									'sequential' => __( 'Sequential', 'mcp-ai-wpoos' ),
 									'parallel'   => __( 'Parallel', 'mcp-ai-wpoos' ),
@@ -3904,7 +3903,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 								);
 								$mode_display = array();
 								foreach ( $mode_counts as $mode => $count ) {
-									$label = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
+									$label          = isset( $mode_labels[ $mode ] ) ? $mode_labels[ $mode ] : ucfirst( $mode );
 									$mode_display[] = sprintf( '%s (%d)', $label, $count );
 								}
 								echo esc_html( implode( ', ', $mode_display ) );
@@ -4611,7 +4610,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			// Get active cron jobs.
 			if ( class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				$cached_count          = WP_MCP_AI_Cache_Helper::get( 'active_cron_count' );
-				$health['active_jobs'] = $cached_count !== false ? $cached_count : 0;
+				$health['active_jobs'] = false !== $cached_count ? $cached_count : 0;
 			}
 
 			// Get error rate from recent logs.

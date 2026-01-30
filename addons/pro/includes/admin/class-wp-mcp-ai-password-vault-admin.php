@@ -174,7 +174,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		// Also check via $_GET for additional safety.
 		if ( ! $is_vault_page && isset( $_GET['page'] ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Checking page slug for script enqueue only.
-			$page = sanitize_text_field( wp_unslash( $_GET['page'] ) );
+			$page          = sanitize_text_field( wp_unslash( $_GET['page'] ) );
 			$is_vault_page = strpos( $page, 'wp-mcp-ai-password-vault' ) === 0;
 		}
 
@@ -727,18 +727,25 @@ class WP_MCP_AI_Password_Vault_Admin {
 			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		if ( ! isset( $_FILES['bitwarden_import_file'] ) || $_FILES['bitwarden_import_file']['error'] !== UPLOAD_ERR_OK ) {
+		if ( ! isset( $_FILES['bitwarden_import_file'] ) || ! isset( $_FILES['bitwarden_import_file']['error'] ) || UPLOAD_ERR_OK !== $_FILES['bitwarden_import_file']['error'] ) {
 			wp_die( esc_html__( 'No file uploaded or upload error.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Validate file type.
-		$file_type = wp_check_filetype( $_FILES['bitwarden_import_file']['name'] );
-		if ( $file_type['ext'] !== 'json' ) {
+		if ( ! isset( $_FILES['bitwarden_import_file']['name'] ) ) {
+			wp_die( esc_html__( 'Invalid file upload.', 'mcp-ai-wpoos-pro' ) );
+		}
+		$file_type = wp_check_filetype( sanitize_file_name( wp_unslash( $_FILES['bitwarden_import_file']['name'] ) ) );
+		if ( 'json' !== $file_type['ext'] ) {
 			wp_die( esc_html__( 'Invalid file type. Please upload a JSON file.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		// Read file content.
-		$json_data = file_get_contents( $_FILES['bitwarden_import_file']['tmp_name'] );
+		if ( ! isset( $_FILES['bitwarden_import_file']['tmp_name'] ) ) {
+			wp_die( esc_html__( 'Invalid file upload.', 'mcp-ai-wpoos-pro' ) );
+		}
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- File path from $_FILES is validated by WordPress.
+		$json_data = file_get_contents( wp_unslash( $_FILES['bitwarden_import_file']['tmp_name'] ) );
 
 		// Parse options.
 		$options = array(
@@ -765,13 +772,13 @@ class WP_MCP_AI_Password_Vault_Admin {
 				$message .= '<br><br><strong>' . esc_html__( 'Errors:', 'mcp-ai-wpoos-pro' ) . '</strong><br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
 			}
 
-			wp_die( $message, esc_html__( 'Import Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+			wp_die( wp_kses_post( $message ), esc_html__( 'Import Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
 		} else {
 			$error_message = esc_html__( 'Import failed.', 'mcp-ai-wpoos-pro' );
 			if ( ! empty( $result['errors'] ) ) {
 				$error_message .= '<br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
 			}
-			wp_die( $error_message, esc_html__( 'Import Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+			wp_die( wp_kses_post( $error_message ), esc_html__( 'Import Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
 		}
 	}
 
@@ -804,7 +811,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		}
 
 		// Send file download.
-		$filename = 'bitwarden-export-' . date( 'Y-m-d-His' ) . '.json';
+		$filename = 'bitwarden-export-' . gmdate( 'Y-m-d-His' ) . '.json';
 
 		header( 'Content-Type: application/json' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
@@ -812,6 +819,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		header( 'Pragma: no-cache' );
 		header( 'Expires: 0' );
 
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JSON data is sanitized during encoding.
 		echo $json_data;
 		exit;
 	}
@@ -828,11 +836,12 @@ class WP_MCP_AI_Password_Vault_Admin {
 			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$server_url     = esc_url_raw( $_POST['bitwarden_server_url'] ?? '' );
-		$email          = sanitize_text_field( $_POST['bitwarden_email'] ?? '' );
+		$server_url     = esc_url_raw( wp_unslash( $_POST['bitwarden_server_url'] ?? '' ) );
+		$email          = sanitize_text_field( wp_unslash( $_POST['bitwarden_email'] ?? '' ) );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Password should not be sanitized or unslashed.
 		$password       = $_POST['bitwarden_password'] ?? '';
-		$auth_method    = sanitize_text_field( $_POST['auth_method'] ?? 'password' );
-		$sync_direction = sanitize_text_field( $_POST['sync_direction'] ?? 'pull' );
+		$auth_method    = sanitize_text_field( wp_unslash( $_POST['auth_method'] ?? 'password' ) );
+		$sync_direction = sanitize_text_field( wp_unslash( $_POST['sync_direction'] ?? 'pull' ) );
 
 		if ( empty( $server_url ) || empty( $email ) || empty( $password ) ) {
 			wp_die( esc_html__( 'Please fill in all required fields.', 'mcp-ai-wpoos-pro' ), esc_html__( 'Sync Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
@@ -849,7 +858,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		$access_token = $auth_result['access_token'];
 
 		// Perform sync.
-		if ( $sync_direction === 'pull' ) {
+		if ( 'pull' === $sync_direction ) {
 			$result = $sync_service->sync_from_bitwarden( get_current_user_id(), $access_token );
 		} else {
 			$result = $sync_service->sync_to_bitwarden( get_current_user_id(), $access_token );
@@ -860,7 +869,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		}
 
 		if ( $result['success'] ) {
-			if ( $sync_direction === 'pull' ) {
+			if ( 'pull' === $sync_direction ) {
 				$message = sprintf(
 					/* translators: 1: items synced, 2: folders synced */
 					esc_html__( 'Sync successful! Pulled %1$d items and %2$d folders from Bitwarden.', 'mcp-ai-wpoos-pro' ),
@@ -880,7 +889,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 				$message .= '<br><br><strong>' . esc_html__( 'Errors:', 'mcp-ai-wpoos-pro' ) . '</strong><br>' . implode( '<br>', array_map( 'esc_html', $result['errors'] ) );
 			}
 
-			wp_die( $message, esc_html__( 'Sync Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
+			wp_die( wp_kses_post( $message ), esc_html__( 'Sync Complete', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
 		} else {
 			wp_die( esc_html__( 'Sync failed.', 'mcp-ai-wpoos-pro' ), esc_html__( 'Sync Failed', 'mcp-ai-wpoos-pro' ), array( 'back_link' => true ) );
 		}

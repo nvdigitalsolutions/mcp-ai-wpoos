@@ -1262,9 +1262,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</div>
 				</div>
 
-				<?php
+					<?php
 				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
-				?>
+					?>
 				<script type="text/javascript">
 				jQuery(document).ready(function($) {
 					function performTemplateSeed(overwrite, buttonId) {

@@ -512,7 +512,7 @@ class WP_MCP_AI_Privacy {
 		$deleted_count = 0;
 		foreach ( $user_meta_keys as $key ) {
 			if ( delete_user_meta( $user->ID, $key ) ) {
-				$deleted_count++;
+				++$deleted_count;
 				$items_removed = true;
 			}
 		}
