@@ -146,15 +146,15 @@ class WP_MCP_AI_Tool_Check_Authority_Status implements WP_MCP_AI_Tool_Interface,
 			$status       = ! empty( $status_terms ) && ! is_wp_error( $status_terms ) ? $status_terms[0]->name : 'Unknown';
 
 			$registration_data = array(
-				'registration_id'   => $registration_id,
-				'title'             => $registration->post_title,
-				'country'           => $country,
-				'authority'         => $authority,
-				'status'            => $status,
-				'submission_date'   => get_post_meta( $registration_id, 'submission_date', true ),
-				'approval_date'     => get_post_meta( $registration_id, 'approval_date', true ),
-				'expiry_date'       => get_post_meta( $registration_id, 'expiry_date', true ),
-				'last_checked'      => current_time( 'mysql' ),
+				'registration_id' => $registration_id,
+				'title'           => $registration->post_title,
+				'country'         => $country,
+				'authority'       => $authority,
+				'status'          => $status,
+				'submission_date' => get_post_meta( $registration_id, 'submission_date', true ),
+				'approval_date'   => get_post_meta( $registration_id, 'approval_date', true ),
+				'expiry_date'     => get_post_meta( $registration_id, 'expiry_date', true ),
+				'last_checked'    => current_time( 'mysql' ),
 			);
 
 			// Get authority-specific data.

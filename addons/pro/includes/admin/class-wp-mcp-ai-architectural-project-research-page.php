@@ -367,15 +367,21 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 				'project_type' => __( 'Project Type', 'mcp-ai-wpoos-pro' ),
 			),
 			'recommended_fields' => array(
-				'location'        => __( 'Location', 'mcp-ai-wpoos-pro' ),
-				'square_footage'  => __( 'Square Footage', 'mcp-ai-wpoos-pro' ),
-				'budget'          => __( 'Budget', 'mcp-ai-wpoos-pro' ),
-				'timeline'        => __( 'Timeline', 'mcp-ai-wpoos-pro' ),
-				'style'           => __( 'Architectural Style', 'mcp-ai-wpoos-pro' ),
+				'location'       => __( 'Location', 'mcp-ai-wpoos-pro' ),
+				'square_footage' => __( 'Square Footage', 'mcp-ai-wpoos-pro' ),
+				'budget'         => __( 'Budget', 'mcp-ai-wpoos-pro' ),
+				'timeline'       => __( 'Timeline', 'mcp-ai-wpoos-pro' ),
+				'style'          => __( 'Architectural Style', 'mcp-ai-wpoos-pro' ),
 			),
 			'validation_rules'   => array(
-				'square_footage' => array( 'type' => 'numeric', 'min_value' => 0 ),
-				'budget'         => array( 'type' => 'numeric', 'min_value' => 0 ),
+				'square_footage' => array(
+					'type'      => 'numeric',
+					'min_value' => 0,
+				),
+				'budget'         => array(
+					'type'      => 'numeric',
+					'min_value' => 0,
+				),
 			),
 			'quality_dimensions' => array(
 				'completeness',
@@ -404,10 +410,10 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 		$complete = 0;
 
 		foreach ( $projects as $project ) {
-			$project_type    = get_post_meta( $project->ID, 'project_type', true );
-			$square_footage  = get_post_meta( $project->ID, 'square_footage', true );
-			$location        = get_post_meta( $project->ID, 'location', true );
-			
+			$project_type   = get_post_meta( $project->ID, 'project_type', true );
+			$square_footage = get_post_meta( $project->ID, 'square_footage', true );
+			$location       = get_post_meta( $project->ID, 'location', true );
+
 			if ( ! empty( $project_type ) && ! empty( $square_footage ) && ! empty( $location ) && ! empty( $project->post_content ) ) {
 				++$complete;
 			}
@@ -608,9 +614,9 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get project statistics.
-		$total_projects = wp_count_posts( 'mcp_ai_arch_proj' );
+		$total_projects  = wp_count_posts( 'mcp_ai_arch_proj' );
 		$published_count = isset( $total_projects->publish ) ? $total_projects->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$projects = get_posts(
 			array(
@@ -621,28 +627,28 @@ class WP_MCP_AI_Architectural_Project_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_type = 0;
-		$with_location = 0;
+		$with_type      = 0;
+		$with_location  = 0;
 
 		foreach ( $projects as $project ) {
 			$project_type   = get_post_meta( $project->ID, 'project_type', true );
 			$location       = get_post_meta( $project->ID, 'location', true );
 			$square_footage = get_post_meta( $project->ID, 'square_footage', true );
 			$has_desc       = ! empty( $project->post_content );
-			
+
 			if ( ! empty( $project_type ) ) {
-				$with_type++;
+				++$with_type;
 			}
 			if ( ! empty( $location ) ) {
-				$with_location++;
+				++$with_location;
 			}
 			if ( ! empty( $project_type ) && ! empty( $location ) && ! empty( $square_footage ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Project Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

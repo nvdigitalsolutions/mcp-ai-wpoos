@@ -62,8 +62,8 @@ class WP_MCP_AI_Validator_Dependency_Test extends WP_UnitTestCase {
 		// Instead, we verify the logic by checking the registration function behavior.
 
 		// The registration function checks both PHP version and Symfony availability.
-		$php_version_ok     = version_compare( PHP_VERSION, '8.0.0', '>=' );
-		$symfony_available  = class_exists( 'Symfony\Component\Validator\Validation' );
+		$php_version_ok    = version_compare( PHP_VERSION, '8.0.0', '>=' );
+		$symfony_available = class_exists( 'Symfony\Component\Validator\Validation' );
 
 		if ( ! $php_version_ok || ! $symfony_available ) {
 			// Validated tools should not be registered.
@@ -137,7 +137,7 @@ class WP_MCP_AI_Validator_Dependency_Test extends WP_UnitTestCase {
 		// This test verifies that the PHP version check exists.
 		// We can't easily downgrade PHP in tests, so we just verify the logic.
 
-		$current_version = PHP_VERSION;
+		$current_version  = PHP_VERSION;
 		$required_version = '8.0.0';
 
 		if ( version_compare( $current_version, $required_version, '<' ) ) {

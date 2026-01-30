@@ -622,9 +622,9 @@ class WP_MCP_AI_Page_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get page statistics.
-		$total_pages = wp_count_posts( 'page' );
+		$total_pages     = wp_count_posts( 'page' );
 		$published_count = isset( $total_pages->publish ) ? $total_pages->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$pages = get_posts(
 			array(
@@ -635,26 +635,26 @@ class WP_MCP_AI_Page_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_image = 0;
-		$with_content = 0;
+		$with_image     = 0;
+		$with_content   = 0;
 
 		foreach ( $pages as $page ) {
 			$has_image   = has_post_thumbnail( $page->ID );
 			$has_content = ! empty( $page->post_content ) && strlen( $page->post_content ) > 100;
-			
+
 			if ( $has_image ) {
-				$with_image++;
+				++$with_image;
 			}
 			if ( $has_content ) {
-				$with_content++;
+				++$with_content;
 			}
 			if ( $has_image && $has_content ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Page Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

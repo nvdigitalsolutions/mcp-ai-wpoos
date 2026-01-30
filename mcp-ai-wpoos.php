@@ -6,7 +6,7 @@
  * Version: 1.1.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
- * Tested up to: 6.7
+ * Tested up to: 6.9
  * Author: NV Digital Solutions
  * Author URI: https://nvdigitalsolutions.com
  * License: GPLv3 or later
@@ -623,7 +623,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-r
 // Load third-party plugin integrations.
 // Integrations are loaded when:
 // - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
-// - Pro addon is active (even with base version)
+// - Pro addon is active (even with base version).
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-tool-handlers.php';

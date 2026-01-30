@@ -44,25 +44,25 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'file_path'         => array(
+				'file_path'        => array(
 					'type'        => 'string',
 					'description' => __( 'Path to Excel file to validate (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'import_type'       => array(
+				'import_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Type of import to validate (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'products', 'registrations' ),
 				),
-				'field_mapping'     => array(
+				'field_mapping'    => array(
 					'type'        => 'object',
 					'description' => __( 'Field mapping to validate against (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'check_duplicates'  => array(
+				'check_duplicates' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check for duplicate records (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'start_row'         => array(
+				'start_row'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Starting row number (optional, default: 2)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -138,12 +138,12 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		$validation_results = array(
-			'valid'              => true,
-			'total_rows'         => 0,
-			'valid_rows'         => 0,
-			'errors'             => array(),
-			'warnings'           => array(),
-			'duplicates'         => array(),
+			'valid'      => true,
+			'total_rows' => 0,
+			'valid_rows' => 0,
+			'errors'     => array(),
+			'warnings'   => array(),
+			'duplicates' => array(),
 		);
 
 		// Simulate reading Excel data.
@@ -159,16 +159,16 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 
 		foreach ( $sample_data as $index => $row_data ) {
 			$row_number = $start_row + $index;
-			$has_error = false;
+			$has_error  = false;
 
 			// Map fields.
 			$record_data = array();
-			$col_index = 0;
+			$col_index   = 0;
 			foreach ( $field_mapping as $field => $column ) {
 				if ( isset( $row_data[ $col_index ] ) ) {
 					$record_data[ $field ] = $row_data[ $col_index ];
 				}
-				$col_index++;
+				++$col_index;
 			}
 
 			// Validate required fields based on import type.
@@ -197,7 +197,7 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 				$primary_field = 'products' === $import_type ? 'name' : 'product_name';
 				if ( ! empty( $record_data[ $primary_field ] ) ) {
 					$record_key = strtolower( trim( $record_data[ $primary_field ] ) );
-					
+
 					if ( isset( $seen_records[ $record_key ] ) ) {
 						$validation_results['warnings'][] = sprintf(
 							/* translators: 1: row number, 2: first row number */
@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_Validate_Excel_Import implements WP_MCP_AI_Tool_Interface, 
 			}
 
 			if ( ! $has_error ) {
-				$validation_results['valid_rows']++;
+				++$validation_results['valid_rows'];
 			}
 		}
 

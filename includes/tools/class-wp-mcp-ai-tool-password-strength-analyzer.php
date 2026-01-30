@@ -61,27 +61,27 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'password'         => array(
+				'password'            => array(
 					'type'        => 'string',
 					'description' => __( 'Password to analyze (single password mode).', 'mcp-ai-wpoos' ),
 				),
-				'user_id'          => array(
+				'user_id'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Analyze password for specific user (requires admin).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'bulk_audit'       => array(
+				'bulk_audit'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Audit all user passwords (checks only strength patterns, not actual passwords).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'role_filter'      => array(
+				'role_filter'         => array(
 					'type'        => 'string',
 					'description' => __( 'Filter bulk audit by user role.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'administrator', 'editor', 'author', 'contributor', 'subscriber', 'all' ),
 					'default'     => 'all',
 				),
-				'check_breaches'   => array(
+				'check_breaches'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check against known breach databases (Have I Been Pwned).', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -104,17 +104,11 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -132,7 +126,6 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -206,12 +199,12 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		);
 
 		// Length check (2026 standard: 12+ characters).
-		$length = strlen( $password );
+		$length                       = strlen( $password );
 		$analysis['checks']['length'] = array(
 			'passed'   => $length >= 12,
 			'value'    => $length,
 			'required' => 12,
-			'message'  => $length >= 12 
+			'message'  => $length >= 12
 				? __( 'Password length meets 2026 standard (12+ characters).', 'mcp-ai-wpoos' )
 				: sprintf(
 					/* translators: %d: current password length */
@@ -249,7 +242,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		$complexity_count = 0;
 		foreach ( array( 'uppercase', 'lowercase', 'numbers', 'special_chars' ) as $check ) {
 			if ( $analysis['checks'][ $check ]['passed'] ) {
-				$complexity_count++;
+				++$complexity_count;
 			}
 		}
 
@@ -266,7 +259,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Common pattern detection.
-		$common_patterns = $this->detect_common_patterns( $password );
+		$common_patterns                       = $this->detect_common_patterns( $password );
 		$analysis['checks']['common_patterns'] = array(
 			'passed'   => empty( $common_patterns ),
 			'patterns' => $common_patterns,
@@ -284,7 +277,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		}
 
 		// Dictionary word check.
-		$contains_dictionary = $this->contains_dictionary_words( $password );
+		$contains_dictionary                    = $this->contains_dictionary_words( $password );
 		$analysis['checks']['dictionary_words'] = array(
 			'passed'  => ! $contains_dictionary,
 			'message' => $contains_dictionary
@@ -298,7 +291,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 
 		// Breach check (optional).
 		if ( $arguments['check_breaches'] ?? false ) {
-			$breach_check = $this->check_password_breaches( $password );
+			$breach_check                          = $this->check_password_breaches( $password );
 			$analysis['checks']['breach_database'] = $breach_check;
 
 			if ( ! $breach_check['passed'] ) {
@@ -356,14 +349,14 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		$password_age = $this->get_password_age( $user );
 
 		return array(
-			'user_id'       => $user_id,
-			'user_login'    => $user->user_login,
-			'password_age'  => $password_age,
+			'user_id'        => $user_id,
+			'user_login'     => $user->user_login,
+			'password_age'   => $password_age,
 			'recommendation' => $password_age['days'] > 90
 				? __( 'Password is older than 90 days. Consider updating.', 'mcp-ai-wpoos' )
 				: __( 'Password age is acceptable.', 'mcp-ai-wpoos' ),
-			'last_changed'  => $password_age['last_changed'],
-			'note'          => __( 'Actual password cannot be analyzed as it is stored as a secure hash.', 'mcp-ai-wpoos' ),
+			'last_changed'   => $password_age['last_changed'],
+			'note'           => __( 'Actual password cannot be analyzed as it is stored as a secure hash.', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -394,9 +387,9 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		$users = get_users( $user_args );
 
 		$audit_results = array(
-			'total_users'  => count( $users ),
+			'total_users'   => count( $users ),
 			'users_audited' => array(),
-			'statistics'   => array(
+			'statistics'    => array(
 				'password_age_over_90'  => 0,
 				'password_age_over_180' => 0,
 				'password_age_over_365' => 0,
@@ -416,13 +409,13 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 
 			// Track statistics.
 			if ( $password_age['days'] > 90 ) {
-				$audit_results['statistics']['password_age_over_90']++;
+				++$audit_results['statistics']['password_age_over_90'];
 			}
 			if ( $password_age['days'] > 180 ) {
-				$audit_results['statistics']['password_age_over_180']++;
+				++$audit_results['statistics']['password_age_over_180'];
 			}
 			if ( $password_age['days'] > 365 ) {
-				$audit_results['statistics']['password_age_over_365']++;
+				++$audit_results['statistics']['password_age_over_365'];
 			}
 
 			$audit_results['users_audited'][] = $user_audit;
@@ -503,8 +496,18 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 	private function contains_dictionary_words( $password ) {
 		// Common weak words.
 		$common_words = array(
-			'password', 'admin', 'user', 'login', 'welcome', 'letmein',
-			'monkey', 'dragon', 'master', 'sunshine', 'princess', 'football',
+			'password',
+			'admin',
+			'user',
+			'login',
+			'welcome',
+			'letmein',
+			'monkey',
+			'dragon',
+			'master',
+			'sunshine',
+			'princess',
+			'football',
 		);
 
 		$password_lower = strtolower( $password );
@@ -528,9 +531,9 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		// This is a placeholder for Have I Been Pwned API integration.
 		// Implementation would use k-Anonymity model for secure checking.
 		return array(
-			'passed'     => true,
-			'checked'    => false,
-			'message'    => __( 'Breach checking not yet implemented.', 'mcp-ai-wpoos' ),
+			'passed'       => true,
+			'checked'      => false,
+			'message'      => __( 'Breach checking not yet implemented.', 'mcp-ai-wpoos' ),
 			'breach_count' => 0,
 		);
 	}
@@ -549,7 +552,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 			$score += 30;
 			// Bonus for longer passwords.
 			$extra_length = max( 0, $checks['length']['value'] - 12 );
-			$score += min( 10, $extra_length * 2 );
+			$score       += min( 10, $extra_length * 2 );
 		}
 
 		// Complexity (25 points).
@@ -648,7 +651,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 		$stats = $audit_results['statistics'];
 
 		// Calculate weighted risk.
-		$risk = 0;
+		$risk  = 0;
 		$risk += ( $stats['password_age_over_90'] / $total ) * 30;
 		$risk += ( $stats['password_age_over_180'] / $total ) * 50;
 		$risk += ( $stats['password_age_over_365'] / $total ) * 20;

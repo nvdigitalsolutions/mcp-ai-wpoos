@@ -122,8 +122,8 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 		$api_key = get_option( 'wp_mcp_ai_openai_api_key' );
 		if ( empty( $api_key ) ) {
 			return array(
-				'success' => false,
-				'message' => __( 'OpenAI API key is required for semantic search. Please configure it in plugin settings or use retrieve_agent_memory for keyword-based search.', 'mcp-ai-wpoos' ),
+				'success'  => false,
+				'message'  => __( 'OpenAI API key is required for semantic search. Please configure it in plugin settings or use retrieve_agent_memory for keyword-based search.', 'mcp-ai-wpoos' ),
 				'fallback' => 'retrieve_agent_memory',
 			);
 		}
@@ -145,8 +145,8 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 
 		if ( ! $result['success'] ) {
 			return array(
-				'success' => false,
-				'message' => isset( $result['error'] ) ? $result['error'] : __( 'Semantic search failed.', 'mcp-ai-wpoos' ),
+				'success'  => false,
+				'message'  => isset( $result['error'] ) ? $result['error'] : __( 'Semantic search failed.', 'mcp-ai-wpoos' ),
 				'fallback' => 'retrieve_agent_memory',
 			);
 		}
@@ -170,17 +170,11 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -198,7 +192,6 @@ class WP_MCP_AI_Tool_Semantic_Context_Search implements WP_MCP_AI_Tool_Interface
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

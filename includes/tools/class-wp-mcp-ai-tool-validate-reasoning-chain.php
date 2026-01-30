@@ -86,17 +86,11 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -114,7 +108,6 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -130,7 +123,11 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments including reasoning_steps and optional conclusion.
+	 * @param array $context   Execution context (unused).
+	 * @return array|WP_Error Result data or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
@@ -196,7 +193,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 		if ( $validation_result['valid'] ) {
 			$message = sprintf(
 				/* translators: 1: coherence score, 2: consistency score */
-				__( 'Reasoning chain is valid. Coherence: %.1f%%, Logical consistency: %.1f%%. No significant gaps identified.', 'mcp-ai-wpoos' ),
+				__( 'Reasoning chain is valid. Coherence: %1$.1f%%, Logical consistency: %2$.1f%%. No significant gaps identified.', 'mcp-ai-wpoos' ),
 				$quality_metrics['coherence'] * 100,
 				$quality_metrics['logical_consistency'] * 100
 			);
@@ -282,7 +279,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 				}
 			}
 
-			if ( $matches === 0 && count( $conclusion_words ) > 0 ) {
+			if ( 0 === $matches && count( $conclusion_words ) > 0 ) {
 				$issues[] = __( 'Warning: Conclusion does not appear to be directly supported by final reasoning steps.', 'mcp-ai-wpoos' );
 			}
 		}
@@ -298,7 +295,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		if ( $connectors_found === 0 && count( $reasoning_steps ) > 2 ) {
+		if ( 0 === $connectors_found && count( $reasoning_steps ) > 2 ) {
 			$issues[] = __( 'Notice: No logical connectors found. Reasoning may benefit from explicit causal language (therefore, because, thus, etc.).', 'mcp-ai-wpoos' );
 		}
 

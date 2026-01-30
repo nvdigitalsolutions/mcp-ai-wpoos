@@ -981,7 +981,10 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ### For Developers (GitHub Clone)
 
-If you're cloning from GitHub for development:
+> **✅ Production-Ready Repository**  
+> This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
+
+If you're cloning from GitHub:
 
 #### Option 1: Cloudways and Managed Hosting (Recommended)
 
@@ -992,15 +995,18 @@ For Cloudways and similar managed hosting platforms, clone directly into the Wor
 # Navigate to WordPress plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 
-# Clone the repository
+# Clone the repository (production-ready, no composer needed!)
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 
 # Verify you're in the correct directory
 pwd  # Should show the plugins path
 
-# Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+# Optional: Only needed for frontend asset rebuilding or development
+# npm install && npm run build
+
+# Optional: Only run if you need to update dependencies or add dev tools
+# composer install --no-dev --classmap-authoritative
 ```
 
 **⚠️ Cloudways Important Notes:**
@@ -1013,17 +1019,23 @@ npm install && composer install --no-dev --optimize-autoloader
 For local development or standard VPS hosting:
 
 ```bash
-# Option A: Clone directly into WordPress plugins directory (recommended)
+# Option A: Clone directly into WordPress plugins directory (recommended, production-ready!)
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
+# Ready to activate! No composer or npm needed for production use.
 
-# Option B: Clone, install, then copy
+# Option B: Clone and copy (also production-ready!)
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+**For Development Only:**
+```bash
+# Only if you need to rebuild assets or modify dependencies:
+npm install && npm run build
+composer install --no-dev --classmap-authoritative
 ```
 
 #### Final Steps

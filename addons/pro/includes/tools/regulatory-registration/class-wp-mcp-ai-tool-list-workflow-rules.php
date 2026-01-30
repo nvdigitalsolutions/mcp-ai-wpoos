@@ -44,16 +44,16 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'filter_enabled'    => array(
+				'filter_enabled'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Filter by enabled status (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_disabled'  => array(
+				'include_disabled' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include disabled rules (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_stats'     => array(
+				'include_stats'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include execution statistics (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 		$workflow_rules = get_option( 'wp_mcp_ai_workflow_rules', array() );
 
 		$rules_list = array();
-		$stats = array(
+		$stats      = array(
 			'total'            => 0,
 			'enabled'          => 0,
 			'disabled'         => 0,
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 		);
 
 		foreach ( $workflow_rules as $rule_id => $rule ) {
-			$stats['total']++;
+			++$stats['total'];
 
 			// Apply filters.
 			if ( null !== $filter_enabled && $rule['enabled'] !== $filter_enabled ) {
@@ -132,9 +132,9 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 
 			// Count statistics.
 			if ( $rule['enabled'] ) {
-				$stats['enabled']++;
+				++$stats['enabled'];
 			} else {
-				$stats['disabled']++;
+				++$stats['disabled'];
 			}
 
 			if ( isset( $rule['executions'] ) ) {
@@ -152,7 +152,7 @@ class WP_MCP_AI_Tool_List_Workflow_Rules implements WP_MCP_AI_Tool_Interface, WP
 			);
 
 			if ( $include_stats && isset( $rule['executions'] ) ) {
-				$rule_summary['executions'] = absint( $rule['executions'] );
+				$rule_summary['executions']    = absint( $rule['executions'] );
 				$rule_summary['last_executed'] = isset( $rule['last_executed'] ) ? $rule['last_executed'] : null;
 			}
 

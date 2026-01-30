@@ -499,7 +499,7 @@ class WP_MCP_AI_Task_Research_Page {
 			// Validate task data.
 			$validation = self::validate_task_data( $task_data );
 			if ( is_wp_error( $validation ) ) {
-				$results['error_count']++;
+				++$results['error_count'];
 				$results['errors'][ $index ] = $validation->get_error_message();
 				continue;
 			}
@@ -508,10 +508,10 @@ class WP_MCP_AI_Task_Research_Page {
 			$result = $tool->execute( $task_data, array( 'user_id' => get_current_user_id() ) );
 
 			if ( is_wp_error( $result ) ) {
-				$results['error_count']++;
+				++$results['error_count'];
 				$results['errors'][ $index ] = $result->get_error_message();
 			} else {
-				$results['success_count']++;
+				++$results['success_count'];
 			}
 		}
 
@@ -602,9 +602,9 @@ class WP_MCP_AI_Task_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get task statistics.
-		$total_tasks = wp_count_posts( 'mcp_ai_task' );
+		$total_tasks     = wp_count_posts( 'mcp_ai_task' );
 		$published_count = isset( $total_tasks->publish ) ? $total_tasks->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$tasks = get_posts(
 			array(
@@ -615,27 +615,27 @@ class WP_MCP_AI_Task_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_priority = 0;
-		$with_status = 0;
+		$with_priority  = 0;
+		$with_status    = 0;
 
 		foreach ( $tasks as $task ) {
 			$priority = get_post_meta( $task->ID, 'priority', true );
 			$status   = get_post_meta( $task->ID, 'status', true );
 			$has_desc = ! empty( $task->post_content );
-			
+
 			if ( ! empty( $priority ) ) {
-				$with_priority++;
+				++$with_priority;
 			}
 			if ( ! empty( $status ) ) {
-				$with_status++;
+				++$with_status;
 			}
 			if ( ! empty( $priority ) && ! empty( $status ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Task Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -773,15 +773,15 @@ class WP_MCP_AI_Task_Research_Page {
 			)
 		);
 
-		$total_tasks     = count( $tasks );
-		$complete_tasks  = 0;
-		$missing         = array();
+		$total_tasks    = count( $tasks );
+		$complete_tasks = 0;
+		$missing        = array();
 
 		foreach ( $tasks as $task ) {
 			$priority = get_post_meta( $task->ID, 'priority', true );
 			$status   = get_post_meta( $task->ID, 'status', true );
 			if ( ! empty( $priority ) && ! empty( $status ) && ! empty( $task->post_content ) ) {
-				$complete_tasks++;
+				++$complete_tasks;
 			}
 		}
 
@@ -888,7 +888,7 @@ class WP_MCP_AI_Task_Research_Page {
 		return array(
 			'score'  => $score,
 			'level'  => $level,
-			'status' => $level === 'high' ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
 			'issues' => $issues,
 		);
 	}

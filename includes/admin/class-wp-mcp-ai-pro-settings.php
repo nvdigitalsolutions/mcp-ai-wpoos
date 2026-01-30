@@ -118,31 +118,31 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'enable_media_toolkit'                       => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
-				'enable_document_generation_toolkit'         => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
-				'enable_quiz_system'                         => __( 'Quiz System', 'mcp-ai-wpoos' ),
-				'enable_project_management'                  => __( 'Project Management', 'mcp-ai-wpoos' ),
-				'enable_health_wellness_management'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
-				'enable_places_management'                   => __( 'Places Management', 'mcp-ai-wpoos' ),
-				'enable_eca_management'                      => __( 'ECA Management', 'mcp-ai-wpoos' ),
-				'enable_crm_toolkit'                         => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ecommerce_toolkit'                   => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
-				'enable_social_media_toolkit'                => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_analytics_toolkit'                   => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
-				'enable_multilingual_toolkit'                => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
-				'enable_video_production_toolkit'            => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_ai_tool_builder_toolkit'             => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
-				'enable_architect_agent_toolkit'             => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
-				'enable_architectural_design_toolkit'        => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
-				'enable_calendar_booking_toolkit'            => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
-				'enable_dj_management_toolkit'               => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
-				'enable_financial_planner_toolkit'           => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
-				'enable_image_production_toolkit'            => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
-				'enable_regulatory_registration_toolkit'     => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
-				'enable_woocommerce_tools'                   => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
-				'enable_jetengine_tools'                     => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
-				'enable_site_creator'                        => __( 'Site Creator', 'mcp-ai-wpoos' ),
-				'enable_ai_cpt_management'                   => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+				'enable_media_toolkit'                   => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
+				'enable_document_generation_toolkit'     => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
+				'enable_quiz_system'                     => __( 'Quiz System', 'mcp-ai-wpoos' ),
+				'enable_project_management'              => __( 'Project Management', 'mcp-ai-wpoos' ),
+				'enable_health_wellness_management'      => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
+				'enable_places_management'               => __( 'Places Management', 'mcp-ai-wpoos' ),
+				'enable_eca_management'                  => __( 'ECA Management', 'mcp-ai-wpoos' ),
+				'enable_crm_toolkit'                     => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ecommerce_toolkit'               => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
+				'enable_social_media_toolkit'            => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_analytics_toolkit'               => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
+				'enable_multilingual_toolkit'            => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
+				'enable_video_production_toolkit'        => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_ai_tool_builder_toolkit'         => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architect_agent_toolkit'         => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
+				'enable_architectural_design_toolkit'    => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
+				'enable_calendar_booking_toolkit'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_dj_management_toolkit'           => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
+				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
+				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
+				'enable_regulatory_registration_toolkit' => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_woocommerce_tools'               => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
+				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
+				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
+				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -281,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 			$settings = get_option( 'wp_mcp_ai_settings', array() );
 
 			$toolkits = array(
-				'media_toolkit'                => array(
+				'media_toolkit'                   => array(
 					'name'          => __( 'Media Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Image optimization, video processing, SVG vectorization, and math equation rendering.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_media_toolkit'] ),
@@ -296,7 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'vectorize_image tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'document_generation'          => array(
+				'document_generation'             => array(
 					'name'          => __( 'Document Generation Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Advanced PDF, Word, and Excel document generation with external libraries.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_document_generation_toolkit'] ),
@@ -310,7 +310,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_excel_document tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'project_management'           => array(
+				'project_management'              => array(
 					'name'          => __( 'Project Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'ICS calendar file generation for project scheduling and event management.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_project_management'] ),
@@ -322,7 +322,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_ics_calendar tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'places_management'            => array(
+				'places_management'               => array(
 					'name'          => __( 'Places Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Geographic data processing and spatial analysis with Turf.js.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_places_management'] ),
@@ -334,7 +334,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'process_geospatial_data tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'health_wellness_management'   => array(
+				'health_wellness_management'      => array(
 					'name'          => __( 'Health & Wellness Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Health data visualization and chart generation with Chart.js.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_health_wellness_management'] ),
@@ -346,7 +346,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_health_chart tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'quiz_system'                  => array(
+				'quiz_system'                     => array(
 					'name'          => __( 'Quiz System', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Interactive quiz creation with math equation support.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_quiz_system'] ),
@@ -359,7 +359,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'render_math_equation tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'eca_management'               => array(
+				'eca_management'                  => array(
 					'name'          => __( 'ECA Management', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Extracurricular activities management with no external dependencies.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_eca_management'] ),
@@ -373,7 +373,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_eca_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'crm_toolkit'                  => array(
+				'crm_toolkit'                     => array(
 					'name'          => __( 'CRM & Email Marketing Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Comprehensive customer relationship management and email marketing automation with contact management, campaign creation, list segmentation, email sending with nodemailer, validation, CSV import/export, and calendar integration.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_crm_toolkit'] ),
@@ -396,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'send_calendar_invite tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'code_formatting'              => array(
+				'code_formatting'                 => array(
 					'name'          => __( 'Code Formatting', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Code and email template formatting with Prettier and MJML.', 'mcp-ai-wpoos' ),
 					'enabled'       => true,
@@ -409,7 +409,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'compile_mjml tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ecommerce_toolkit'            => array(
+				'ecommerce_toolkit'               => array(
 					'name'          => __( 'E-commerce Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Advanced WooCommerce integration with product management, order processing, inventory tracking, payment gateway support, and customer management.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ecommerce_toolkit'] ),
@@ -428,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_reports tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'social_media_toolkit'         => array(
+				'social_media_toolkit'            => array(
 					'name'          => __( 'Social Media Management Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Multi-platform social media posting, scheduling, analytics, and engagement management for Twitter, Facebook, LinkedIn, and Instagram.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_social_media_toolkit'] ),
@@ -451,7 +451,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'monitor_trends tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'analytics_toolkit'            => array(
+				'analytics_toolkit'               => array(
 					'name'          => __( 'Advanced Analytics Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Business intelligence, predictive analytics, data visualization with D3.js, statistical analysis with Math.js, regression modeling, and CSV data export.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_analytics_toolkit'] ),
@@ -472,7 +472,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_insights tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'multilingual_toolkit'         => array(
+				'multilingual_toolkit'            => array(
 					'name'          => __( 'Multilingual Content Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Multi-language content management with i18next, automatic language detection with franc, Google Translate API integration, and ISO 639-1 language code support.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_multilingual_toolkit'] ),
@@ -489,7 +489,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'batch_translate tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'video_production_toolkit'     => array(
+				'video_production_toolkit'        => array(
 					'name'          => __( 'Video Production Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Professional video creation, editing, and processing with FFmpeg, subtitle generation, GIF creation, and video stitching for content creators and marketers.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_video_production_toolkit'] ),
@@ -510,7 +510,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'trim_video tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'ai_tool_builder_toolkit'      => array(
+				'ai_tool_builder_toolkit'         => array(
 					'name'          => __( 'AI Tool Builder Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Meta-toolkit for creating custom AI tools with scaffolding, code generation, testing, and documentation capabilities.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_ai_tool_builder_toolkit'] ),
@@ -526,7 +526,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'validate_tool tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'architect_agent_toolkit'      => array(
+				'architect_agent_toolkit'         => array(
 					'name'          => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Self-editing capabilities for AI agents with file operations, shell commands, git integration, and code search. Achieves GitHub Copilot CLI parity.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_architect_agent_toolkit'] ),
@@ -541,7 +541,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'search_codebase tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'architectural_design_toolkit' => array(
+				'architectural_design_toolkit'    => array(
 					'name'          => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered floor plan generation, 3D modeling, blueprint creation, code compliance checking, and cost estimation for architectural projects.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_architectural_design_toolkit'] ),
@@ -558,7 +558,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'optimize_layout tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'calendar_booking_toolkit'     => array(
+				'calendar_booking_toolkit'        => array(
 					'name'          => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Appointment scheduling, availability management, calendar synchronization, booking management, and automated reminder system.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_calendar_booking_toolkit'] ),
@@ -576,7 +576,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'reschedule_appointment tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'dj_management_toolkit'        => array(
+				'dj_management_toolkit'           => array(
 					'name'          => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Equipment tracking, playlist management, event scheduling, client management, and music library organization for DJs and event organizers.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_dj_management_toolkit'] ),
@@ -595,7 +595,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'manage_invoices tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'financial_planner_toolkit'    => array(
+				'financial_planner_toolkit'       => array(
 					'name'          => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Retirement planning, budgeting, investment tracking, debt management, and financial goal planning with advanced analytics.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_financial_planner_toolkit'] ),
@@ -615,7 +615,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'generate_financial_report tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'image_production_toolkit'           => array(
+				'image_production_toolkit'        => array(
 					'name'          => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'AI-powered image generation, editing, enhancement, and optimization with advanced filters and effects.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_image_production_toolkit'] ),
@@ -634,7 +634,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'create_thumbnail tool', 'mcp-ai-wpoos' ),
 					),
 				),
-				'regulatory_registration_toolkit'    => array(
+				'regulatory_registration_toolkit' => array(
 					'name'          => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
 					'description'   => __( 'Comprehensive regulatory product registration and compliance management for multi-country regulatory submissions (NMRA, MOHAP, SFDA). Features product registration tracking, document management, compliance validation, PDF generation, and multi-country support with registration timeline tracking and expiry notifications.', 'mcp-ai-wpoos' ),
 					'enabled'       => ! empty( $settings['enable_regulatory_registration_toolkit'] ),

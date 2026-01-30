@@ -233,7 +233,11 @@ class WP_MCP_AI_Efficiency_Monitor {
 		usort(
 			$recommendations,
 			function ( $a, $b ) {
-				$priority_order = array( 'high' => 3, 'medium' => 2, 'low' => 1 );
+				$priority_order = array(
+					'high'   => 3,
+					'medium' => 2,
+					'low'    => 1,
+				);
 				$a_val          = $priority_order[ $a['priority'] ] ?? 0;
 				$b_val          = $priority_order[ $b['priority'] ] ?? 0;
 				return $b_val <=> $a_val;
@@ -290,8 +294,8 @@ class WP_MCP_AI_Efficiency_Monitor {
 	protected function calculate_load_balancing_metrics() {
 		// Placeholder - integrate with orchestrator stats.
 		return array(
-			'sync_async_ratio' => 0,
-			'queue_depth'      => 0,
+			'sync_async_ratio'  => 0,
+			'queue_depth'       => 0,
 			'distributed_calls' => 0,
 		);
 	}
@@ -413,8 +417,8 @@ class WP_MCP_AI_Efficiency_Monitor {
 	protected function get_rate_limit_status() {
 		// Placeholder - integrate with rate limit manager.
 		return array(
-			'openai'  => 'healthy',
-			'gemini'  => 'healthy',
+			'openai' => 'healthy',
+			'gemini' => 'healthy',
 		);
 	}
 
@@ -451,7 +455,7 @@ class WP_MCP_AI_Efficiency_Monitor {
 		$history[] = $metrics;
 
 		// Clean up old entries.
-		$cutoff = time() - ( self::HISTORY_RETENTION_DAYS * DAY_IN_SECONDS );
+		$cutoff  = time() - ( self::HISTORY_RETENTION_DAYS * DAY_IN_SECONDS );
 		$history = array_filter(
 			$history,
 			function ( $entry ) use ( $cutoff ) {
@@ -475,25 +479,25 @@ class WP_MCP_AI_Efficiency_Monitor {
 	 */
 	protected function get_fallback_metrics() {
 		return array(
-			'health_status'       => 'unknown',
-			'tool_execution'      => array(
+			'health_status'      => 'unknown',
+			'tool_execution'     => array(
 				'avg_execution_time' => 0,
 				'success_rate'       => 0,
 				'cache_hit_rate'     => 0,
 			),
-			'load_balancing'      => array(
-				'sync_async_ratio' => 0,
-				'queue_depth'      => 0,
+			'load_balancing'     => array(
+				'sync_async_ratio'  => 0,
+				'queue_depth'       => 0,
 				'distributed_calls' => 0,
 			),
-			'resource_usage'      => array(
+			'resource_usage'     => array(
 				'memory_utilization' => $this->get_memory_usage_percentage(),
 				'api_rate_limits'    => array(),
 				'token_consumption'  => array(),
 			),
-			'bottlenecks'         => array(),
-			'timestamp'           => current_time( 'mysql' ),
-			'available_capacity'  => 100,
+			'bottlenecks'        => array(),
+			'timestamp'          => current_time( 'mysql' ),
+			'available_capacity' => 100,
 		);
 	}
 

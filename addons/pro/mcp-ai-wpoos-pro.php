@@ -43,20 +43,20 @@ if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
 	// Check if WP_MCP_AI_URL is defined AND if we're actually bundled (not a separate plugin).
 	// We can detect if we're bundled by checking if our path contains 'addons/pro'.
 	// Use wp_normalize_path() for cross-platform compatibility (Windows/Unix).
-	$is_bundled = defined( 'WP_MCP_AI_URL' ) && 
-	              defined( 'WP_MCP_AI_PATH' ) && 
-	              strpos( 
-	                  wp_normalize_path( WP_MCP_AI_PRO_PATH ), 
-	                  wp_normalize_path( trailingslashit( WP_MCP_AI_PATH ) . 'addons/pro' )
-	              ) !== false;
-	
+	$is_bundled = defined( 'WP_MCP_AI_URL' ) &&
+					defined( 'WP_MCP_AI_PATH' ) &&
+					strpos(
+						wp_normalize_path( WP_MCP_AI_PRO_PATH ),
+						wp_normalize_path( trailingslashit( WP_MCP_AI_PATH ) . 'addons/pro' )
+					) !== false;
+
 	if ( $is_bundled ) {
 		define( 'WP_MCP_AI_PRO_URL', WP_MCP_AI_URL . 'addons/pro/' );
 	} else {
 		// If loaded as standalone plugin, use standard plugin_dir_url().
 		define( 'WP_MCP_AI_PRO_URL', plugin_dir_url( WP_MCP_AI_PRO_FILE ) );
 	}
-	
+
 	// Clean up temporary variable.
 	unset( $is_bundled );
 }
@@ -889,76 +889,76 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
 			$regulatory_registration_tools = array(
 				// Product Management Tools.
-				'WP_MCP_AI_Tool_Create_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-reg-product.php',
-				'WP_MCP_AI_Tool_List_Reg_Products'   => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-products.php',
-				'WP_MCP_AI_Tool_Get_Reg_Product'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-product.php',
-				'WP_MCP_AI_Tool_Update_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-product.php',
-				'WP_MCP_AI_Tool_Delete_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-delete-reg-product.php',
-				'WP_MCP_AI_Tool_Search_Reg_Products' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-search-reg-products.php',
-				'WP_MCP_AI_Tool_Duplicate_Reg_Product' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-duplicate-reg-product.php',
-				'WP_MCP_AI_Tool_Validate_Reg_Product' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-reg-product.php',
+				'WP_MCP_AI_Tool_Create_Reg_Product'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-reg-product.php',
+				'WP_MCP_AI_Tool_List_Reg_Products'         => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-products.php',
+				'WP_MCP_AI_Tool_Get_Reg_Product'           => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-product.php',
+				'WP_MCP_AI_Tool_Update_Reg_Product'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-product.php',
+				'WP_MCP_AI_Tool_Delete_Reg_Product'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-delete-reg-product.php',
+				'WP_MCP_AI_Tool_Search_Reg_Products'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-search-reg-products.php',
+				'WP_MCP_AI_Tool_Duplicate_Reg_Product'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-duplicate-reg-product.php',
+				'WP_MCP_AI_Tool_Validate_Reg_Product'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-reg-product.php',
 				// Registration Management Tools.
-				'WP_MCP_AI_Tool_Create_Registration' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-registration.php',
-				'WP_MCP_AI_Tool_List_Registrations'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-registrations.php',
-				'WP_MCP_AI_Tool_Get_Registration'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-registration.php',
+				'WP_MCP_AI_Tool_Create_Registration'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-registration.php',
+				'WP_MCP_AI_Tool_List_Registrations'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-registrations.php',
+				'WP_MCP_AI_Tool_Get_Registration'          => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-registration.php',
 				'WP_MCP_AI_Tool_Update_Registration_Status' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-registration-status.php',
 				'WP_MCP_AI_Tool_List_Expiring_Registrations' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-expiring-registrations.php',
-				'WP_MCP_AI_Tool_Submit_Registration' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-submit-registration.php',
-				'WP_MCP_AI_Tool_Approve_Registration' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-approve-registration.php',
-				'WP_MCP_AI_Tool_Renew_Registration'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-renew-registration.php',
+				'WP_MCP_AI_Tool_Submit_Registration'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-submit-registration.php',
+				'WP_MCP_AI_Tool_Approve_Registration'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-approve-registration.php',
+				'WP_MCP_AI_Tool_Renew_Registration'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-renew-registration.php',
 				'WP_MCP_AI_Tool_Get_Registration_Timeline' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-registration-timeline.php',
 				'WP_MCP_AI_Tool_List_Registrations_By_Country' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-registrations-by-country.php',
 				// Document Management Tools.
-				'WP_MCP_AI_Tool_List_Reg_Documents'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-documents.php',
-				'WP_MCP_AI_Tool_Check_Document_Expiry' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-document-expiry.php',
-				'WP_MCP_AI_Tool_Upload_Reg_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-upload-reg-document.php',
-				'WP_MCP_AI_Tool_Update_Reg_Document' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-document.php',
-				'WP_MCP_AI_Tool_Get_Reg_Document'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-document.php',
+				'WP_MCP_AI_Tool_List_Reg_Documents'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-documents.php',
+				'WP_MCP_AI_Tool_Check_Document_Expiry'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-document-expiry.php',
+				'WP_MCP_AI_Tool_Upload_Reg_Document'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-upload-reg-document.php',
+				'WP_MCP_AI_Tool_Update_Reg_Document'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-reg-document.php',
+				'WP_MCP_AI_Tool_Get_Reg_Document'          => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-document.php',
 				'WP_MCP_AI_Tool_Validate_Document_Checklist' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-document-checklist.php',
-				'WP_MCP_AI_Tool_Generate_Submission_Pack' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-submission-pack.php',
-				'WP_MCP_AI_Tool_Track_Document_Version' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-track-document-version.php',
+				'WP_MCP_AI_Tool_Generate_Submission_Pack'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-submission-pack.php',
+				'WP_MCP_AI_Tool_Track_Document_Version'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-track-document-version.php',
 				// Compliance Tools.
 				'WP_MCP_AI_Tool_Add_Regulatory_Requirement' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-add-regulatory-requirement.php',
 				'WP_MCP_AI_Tool_Get_Regulatory_Requirements' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-regulatory-requirements.php',
-				'WP_MCP_AI_Tool_Check_Product_Compliance' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-product-compliance.php',
+				'WP_MCP_AI_Tool_Check_Product_Compliance'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-product-compliance.php',
 				'WP_MCP_AI_Tool_Validate_INCI_Ingredients' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-inci-ingredients.php',
-				'WP_MCP_AI_Tool_Check_HS_Code'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-hs-code.php',
-				'WP_MCP_AI_Tool_Get_Regulatory_Updates' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-regulatory-updates.php',
+				'WP_MCP_AI_Tool_Check_HS_Code'             => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-hs-code.php',
+				'WP_MCP_AI_Tool_Get_Regulatory_Updates'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-regulatory-updates.php',
 				// PDF Generation Tools (Phase 3).
-				'WP_MCP_AI_Tool_Generate_PDF_Dossier' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-pdf-dossier.php',
-				'WP_MCP_AI_Tool_Generate_Cover_Letter' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-cover-letter.php',
+				'WP_MCP_AI_Tool_Generate_PDF_Dossier'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-pdf-dossier.php',
+				'WP_MCP_AI_Tool_Generate_Cover_Letter'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-cover-letter.php',
 				'WP_MCP_AI_Tool_Generate_Compliance_Certificate' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-compliance-certificate.php',
 				// API Integration Tools (Phase 3).
-				'WP_MCP_AI_Tool_Sync_With_NMRA'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-sync-with-nmra.php',
-				'WP_MCP_AI_Tool_Sync_With_MOHAP'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-sync-with-mohap.php',
-				'WP_MCP_AI_Tool_Check_Authority_Status' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-authority-status.php',
-				'WP_MCP_AI_Tool_Submit_To_Authority' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-submit-to-authority.php',
+				'WP_MCP_AI_Tool_Sync_With_NMRA'            => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-sync-with-nmra.php',
+				'WP_MCP_AI_Tool_Sync_With_MOHAP'           => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-sync-with-mohap.php',
+				'WP_MCP_AI_Tool_Check_Authority_Status'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-check-authority-status.php',
+				'WP_MCP_AI_Tool_Submit_To_Authority'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-submit-to-authority.php',
 				// Reporting Tools (Phase 3).
 				'WP_MCP_AI_Tool_Generate_Compliance_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-compliance-report.php',
-				'WP_MCP_AI_Tool_Generate_Pipeline_Report' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-pipeline-report.php',
-				'WP_MCP_AI_Tool_Generate_Expiry_Forecast' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-expiry-forecast.php',
+				'WP_MCP_AI_Tool_Generate_Pipeline_Report'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-pipeline-report.php',
+				'WP_MCP_AI_Tool_Generate_Expiry_Forecast'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-expiry-forecast.php',
 				'WP_MCP_AI_Tool_Generate_Country_Performance' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-country-performance.php',
-				'WP_MCP_AI_Tool_Generate_Cost_Analysis' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-cost-analysis.php',
+				'WP_MCP_AI_Tool_Generate_Cost_Analysis'    => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-generate-cost-analysis.php',
 				// Excel Import/Export Tools (Phase 3).
 				'WP_MCP_AI_Tool_Import_Products_From_Excel' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-import-products-from-excel.php',
-				'WP_MCP_AI_Tool_Export_Products_To_Excel' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-export-products-to-excel.php',
+				'WP_MCP_AI_Tool_Export_Products_To_Excel'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-export-products-to-excel.php',
 				'WP_MCP_AI_Tool_Import_Registrations_From_Excel' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-import-registrations-from-excel.php',
 				'WP_MCP_AI_Tool_Export_Registrations_To_Excel' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-export-registrations-to-excel.php',
-				'WP_MCP_AI_Tool_Validate_Excel_Import' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-excel-import.php',
+				'WP_MCP_AI_Tool_Validate_Excel_Import'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-validate-excel-import.php',
 				// Email Notification Tools (Phase 3).
 				'WP_MCP_AI_Tool_Configure_Email_Notifications' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-configure-email-notifications.php',
-				'WP_MCP_AI_Tool_Send_Expiry_Alerts'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-send-expiry-alerts.php',
+				'WP_MCP_AI_Tool_Send_Expiry_Alerts'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-send-expiry-alerts.php',
 				'WP_MCP_AI_Tool_Send_Status_Change_Notification' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-send-status-change-notification.php',
-				'WP_MCP_AI_Tool_Get_Notification_History' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-notification-history.php',
+				'WP_MCP_AI_Tool_Get_Notification_History'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-notification-history.php',
 				// Workflow Automation Tools (Phase 3).
-				'WP_MCP_AI_Tool_Create_Workflow_Rule' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-workflow-rule.php',
-				'WP_MCP_AI_Tool_List_Workflow_Rules' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-workflow-rules.php',
-				'WP_MCP_AI_Tool_Update_Workflow_Rule' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-workflow-rule.php',
-				'WP_MCP_AI_Tool_Delete_Workflow_Rule' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-delete-workflow-rule.php',
-				'WP_MCP_AI_Tool_Test_Workflow_Rule'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-test-workflow-rule.php',
+				'WP_MCP_AI_Tool_Create_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-workflow-rule.php',
+				'WP_MCP_AI_Tool_List_Workflow_Rules'       => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-workflow-rules.php',
+				'WP_MCP_AI_Tool_Update_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-update-workflow-rule.php',
+				'WP_MCP_AI_Tool_Delete_Workflow_Rule'      => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-delete-workflow-rule.php',
+				'WP_MCP_AI_Tool_Test_Workflow_Rule'        => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-test-workflow-rule.php',
 				'WP_MCP_AI_Tool_Get_Workflow_Execution_Log' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-workflow-execution-log.php',
 			);
-			$pro_tools                         = array_merge( $pro_tools, $regulatory_registration_tools );
+			$pro_tools                     = array_merge( $pro_tools, $regulatory_registration_tools );
 		}
 
 		// Add Document Generation Toolkit tools if enabled.
@@ -1305,25 +1305,25 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 		// Add Architectural Design Toolkit tool mappings if enabled.
 		if ( ! empty( $settings['enable_architectural_design_toolkit'] ) ) {
 			// Floor Planning & Space Design tools.
-			$pro_tools['generate_floor_plan']           = 'external-tools';
-			$pro_tools['optimize_space_layout']         = 'external-tools';
-			$pro_tools['create_floor_plan_variations']  = 'external-tools';
-			$pro_tools['convert_sketch_to_floor_plan']  = 'external-tools';
+			$pro_tools['generate_floor_plan']          = 'external-tools';
+			$pro_tools['optimize_space_layout']        = 'external-tools';
+			$pro_tools['create_floor_plan_variations'] = 'external-tools';
+			$pro_tools['convert_sketch_to_floor_plan'] = 'external-tools';
 			// 3D Modeling & Visualization tools.
-			$pro_tools['generate_3d_model']             = 'external-tools';
-			$pro_tools['render_architectural_view']     = 'external-tools';
-			$pro_tools['create_walkthrough_animation']  = 'external-tools';
+			$pro_tools['generate_3d_model']            = 'external-tools';
+			$pro_tools['render_architectural_view']    = 'external-tools';
+			$pro_tools['create_walkthrough_animation'] = 'external-tools';
 			// Documentation & Blueprints tools.
 			$pro_tools['generate_construction_drawings'] = 'external-tools';
-			$pro_tools['generate_detail_drawings']      = 'external-tools';
+			$pro_tools['generate_detail_drawings']       = 'external-tools';
 			$pro_tools['export_architectural_documents'] = 'external-tools';
 			// Analysis & Compliance tools.
-			$pro_tools['check_building_code_compliance'] = 'external-tools';
-			$pro_tools['analyze_structural_feasibility'] = 'external-tools';
+			$pro_tools['check_building_code_compliance']   = 'external-tools';
+			$pro_tools['analyze_structural_feasibility']   = 'external-tools';
 			$pro_tools['calculate_sustainability_metrics'] = 'external-tools';
 			// Estimation & Scheduling tools.
-			$pro_tools['generate_material_schedule']    = 'external-tools';
-			$pro_tools['estimate_construction_cost']    = 'external-tools';
+			$pro_tools['generate_material_schedule']     = 'external-tools';
+			$pro_tools['estimate_construction_cost']     = 'external-tools';
 			$pro_tools['generate_construction_timeline'] = 'external-tools';
 		}
 

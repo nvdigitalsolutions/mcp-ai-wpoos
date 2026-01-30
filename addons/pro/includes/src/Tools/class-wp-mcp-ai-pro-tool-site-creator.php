@@ -284,7 +284,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $theme_config['theme_json'] ) || ! empty( $theme_config['industry'] ) || ! empty( $theme_config['custom_templates'] ) ) {
 			// Load theme.json generator.
 			if ( ! class_exists( 'WP_MCP_AI_Theme_JSON_Generator' ) ) {
-				$helper_path = dirname( dirname( __FILE__ ) ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
+				$helper_path = dirname( __DIR__ ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
 				if ( file_exists( $helper_path ) ) {
 					require_once $helper_path;
 				}

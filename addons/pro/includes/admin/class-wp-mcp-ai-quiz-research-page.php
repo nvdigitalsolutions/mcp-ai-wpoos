@@ -435,14 +435,14 @@ class WP_MCP_AI_Quiz_Research_Page {
 			)
 		);
 
-		$total_quizzes   = count( $quizzes );
+		$total_quizzes    = count( $quizzes );
 		$complete_quizzes = 0;
 		$missing          = array();
 
 		foreach ( $quizzes as $quiz ) {
 			$questions = get_post_meta( $quiz->ID, 'questions', true );
 			if ( ! empty( $questions ) && ! empty( $quiz->post_content ) ) {
-				$complete_quizzes++;
+				++$complete_quizzes;
 			}
 		}
 
@@ -514,7 +514,7 @@ class WP_MCP_AI_Quiz_Research_Page {
 		if ( is_array( $questions ) && count( $questions ) >= 5 ) {
 			$score += 40;
 		} elseif ( is_array( $questions ) && count( $questions ) > 0 ) {
-			$score += 20;
+			$score   += 20;
 			$issues[] = __( 'Needs more questions', 'mcp-ai-wpoos-pro' );
 		} else {
 			$issues[] = __( 'Missing questions', 'mcp-ai-wpoos-pro' );
@@ -553,7 +553,7 @@ class WP_MCP_AI_Quiz_Research_Page {
 		return array(
 			'score'  => $score,
 			'level'  => $level,
-			'status' => $level === 'high' ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
+			'status' => 'high' === $level ? __( 'Complete', 'mcp-ai-wpoos-pro' ) : __( 'Needs Work', 'mcp-ai-wpoos-pro' ),
 			'issues' => $issues,
 		);
 	}
@@ -633,9 +633,9 @@ class WP_MCP_AI_Quiz_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get quiz statistics.
-		$total_quizzes = wp_count_posts( 'mcp_ai_quiz' );
+		$total_quizzes   = wp_count_posts( 'mcp_ai_quiz' );
 		$published_count = isset( $total_quizzes->publish ) ? $total_quizzes->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$quizzes = get_posts(
 			array(
@@ -647,27 +647,27 @@ class WP_MCP_AI_Quiz_Research_Page {
 
 		$complete_count = 0;
 		$with_questions = 0;
-		$with_settings = 0;
+		$with_settings  = 0;
 
 		foreach ( $quizzes as $quiz ) {
 			$questions     = get_post_meta( $quiz->ID, 'questions', true );
 			$time_limit    = get_post_meta( $quiz->ID, 'time_limit', true );
 			$passing_score = get_post_meta( $quiz->ID, 'passing_score', true );
 			$has_desc      = ! empty( $quiz->post_content );
-			
+
 			if ( is_array( $questions ) && count( $questions ) >= 5 ) {
-				$with_questions++;
+				++$with_questions;
 			}
 			if ( ! empty( $time_limit ) && ! empty( $passing_score ) ) {
-				$with_settings++;
+				++$with_settings;
 			}
 			if ( is_array( $questions ) && count( $questions ) >= 5 && ! empty( $time_limit ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Quiz Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

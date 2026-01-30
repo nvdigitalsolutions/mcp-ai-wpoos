@@ -84,17 +84,11 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -112,7 +106,6 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -191,10 +184,10 @@ class WP_MCP_AI_Tool_Analyze_Code_Sequence implements WP_MCP_AI_Tool_Interface, 
 
 		// Add detailed breakdown.
 		$result['summary'] = array(
-			'valid'              => $validation_result['valid'],
-			'syntax_errors'      => $issues_count,
-			'style_suggestions'  => $suggestions_count,
-			'security_issues'    => $security_count,
+			'valid'             => $validation_result['valid'],
+			'syntax_errors'     => $issues_count,
+			'style_suggestions' => $suggestions_count,
+			'security_issues'   => $security_count,
 		);
 
 		if ( $security_count > 0 ) {

@@ -37,7 +37,7 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 
 		// Use reflection to create an instance without running constructor hooks.
 		// The file auto-instantiates the class at the bottom, but we need a reference for testing.
-		$class            = new ReflectionClass( 'WP_MCP_AI_Admin_Orchestration_Dashboard' );
+		$class           = new ReflectionClass( 'WP_MCP_AI_Admin_Orchestration_Dashboard' );
 		$this->dashboard = $class->newInstanceWithoutConstructor();
 	}
 
@@ -47,7 +47,7 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 	public function test_assets_enqueued_on_base_page() {
 		// Simulate being on the base orchestration dashboard page.
 		$hook = 'nv-oos_page_mcp-ai-orchestration';
-		
+
 		// Clear any previously enqueued scripts/styles.
 		global $wp_scripts, $wp_styles;
 		$wp_scripts = new WP_Scripts();
@@ -73,7 +73,7 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 	public function test_assets_not_enqueued_on_pro_page() {
 		// Simulate being on the Pro orchestration dashboard page.
 		$hook = 'nvoos-pro-dashboard_page_mcp-ai-orchestration-pro';
-		
+
 		// Clear any previously enqueued scripts/styles.
 		global $wp_scripts, $wp_styles;
 		$wp_scripts = new WP_Scripts();
@@ -99,7 +99,7 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 	public function test_assets_not_enqueued_on_other_pages() {
 		// Simulate being on a different admin page.
 		$hook = 'other_page';
-		
+
 		// Clear any previously enqueued scripts/styles.
 		global $wp_scripts, $wp_styles;
 		$wp_scripts = new WP_Scripts();
@@ -125,7 +125,7 @@ class Test_Orchestration_Dashboard_Asset_Enqueue extends WP_UnitTestCase {
 	public function test_assets_enqueued_on_toplevel_page() {
 		// Simulate being on a toplevel orchestration page.
 		$hook = 'toplevel_page_mcp-ai-orchestration';
-		
+
 		// Clear any previously enqueued scripts/styles.
 		global $wp_scripts, $wp_styles;
 		$wp_scripts = new WP_Scripts();

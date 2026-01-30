@@ -213,7 +213,7 @@ class WP_MCP_AI_CLI_Content_Command extends WP_MCP_AI_CLI_Base_Command {
 		}
 
 		// Log categorization.
-		$post = get_post( $post_id );
+		$post       = get_post( $post_id );
 		$categories = $result['suggestions'] ?? array();
 
 		if ( ! empty( $categories ) ) {

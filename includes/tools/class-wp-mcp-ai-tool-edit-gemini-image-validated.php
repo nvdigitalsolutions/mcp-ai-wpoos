@@ -132,17 +132,11 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Too
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -160,7 +154,6 @@ class WP_MCP_AI_Tool_Edit_Gemini_Image_Validated extends WP_MCP_AI_Validated_Too
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

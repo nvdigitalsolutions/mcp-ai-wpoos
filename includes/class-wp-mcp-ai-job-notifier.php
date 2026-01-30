@@ -383,11 +383,11 @@ class WP_MCP_AI_Job_Notifier {
 		$cached_status = self::get_job_status( $job_id );
 		if ( $cached_status && isset( $cached_status['metadata']['tool'] ) ) {
 			$tool = $cached_status['metadata']['tool'];
-			
+
 			if ( 'run_crawl4ai_job' === $tool || 'crawl4ai' === $tool ) {
 				return 'crawl4ai_job_status_update';
 			}
-			
+
 			if ( 'create_cron_job' === $tool || strpos( $tool, 'cron' ) !== false ) {
 				return 'cron_job_status_update';
 			}

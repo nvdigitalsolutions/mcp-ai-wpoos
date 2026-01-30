@@ -604,9 +604,9 @@ class WP_MCP_AI_Place_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get place statistics.
-		$total_places = wp_count_posts( 'mcp_ai_place' );
+		$total_places    = wp_count_posts( 'mcp_ai_place' );
 		$published_count = isset( $total_places->publish ) ? $total_places->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$places = get_posts(
 			array(
@@ -616,28 +616,28 @@ class WP_MCP_AI_Place_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$complete_count   = 0;
 		$with_coordinates = 0;
-		$with_address = 0;
+		$with_address     = 0;
 
 		foreach ( $places as $place ) {
 			$latitude  = get_post_meta( $place->ID, 'latitude', true );
 			$longitude = get_post_meta( $place->ID, 'longitude', true );
 			$address   = get_post_meta( $place->ID, 'address', true );
-			
+
 			if ( ! empty( $latitude ) && ! empty( $longitude ) ) {
-				$with_coordinates++;
+				++$with_coordinates;
 			}
 			if ( ! empty( $address ) ) {
-				$with_address++;
+				++$with_address;
 			}
 			if ( ! empty( $latitude ) && ! empty( $longitude ) && ! empty( $address ) ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Place Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

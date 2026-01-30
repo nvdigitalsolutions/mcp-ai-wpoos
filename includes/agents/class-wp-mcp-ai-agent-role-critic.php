@@ -51,10 +51,7 @@ class WP_MCP_AI_Agent_Role_Critic extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	public function get_system_prompt_additions() {
 		return __(
-			'You are a Critic agent responsible for validating and improving the quality of results from other agents. ' .
-			'When reviewing results, be thorough and constructive. Check for accuracy, completeness, clarity, and adherence to requirements. ' .
-			'Identify specific issues and provide actionable recommendations for improvement. ' .
-			'Your feedback should be clear, specific, and focused on enhancing the final output quality.',
+			'You are a Critic agent responsible for validating and improving the quality of results from other agents. When reviewing results, be thorough and constructive. Check for accuracy, completeness, clarity, and adherence to requirements. Identify specific issues and provide actionable recommendations for improvement. Your feedback should be clear, specific, and focused on enhancing the final output quality.',
 			'mcp-ai-wpoos'
 		);
 	}
