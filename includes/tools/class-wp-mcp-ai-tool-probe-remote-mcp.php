@@ -204,6 +204,42 @@ class WP_MCP_AI_Tool_Probe_Remote_MCP implements WP_MCP_AI_Tool_Interface, WP_MC
 		return sprintf( __( 'Probe completed with %1$s (%2$s).', 'mcp-ai-wpoos' ), $status, $step_summary );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'integration_external',
+
+			'pattern_compatibility' => array( 'skill_router' ),
+
+			'profession_tags'       => array( 'integration_specialist', 'api_developer' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */
