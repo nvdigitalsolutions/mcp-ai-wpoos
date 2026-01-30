@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_action'    => array(
 					'type'        => 'string',
-					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Case-insensitive. Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'LX_ItemPull',
 						'LX_ItemUpdate',
@@ -369,7 +369,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			);
 		}
 
-		// Validate API action.
+		// Validate and normalize API action (case-insensitive).
 		$allowed_actions = array(
 			'LX_ItemPull',
 			'LX_ItemUpdate',
@@ -380,16 +380,30 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'LX_CustomerQuery',
 		);
 
-		if ( ! in_array( $api_action, $allowed_actions, true ) ) {
+		// Create case-insensitive mapping.
+		$action_map = array();
+		foreach ( $allowed_actions as $allowed_action ) {
+			$action_map[ strtolower( $allowed_action ) ] = $allowed_action;
+		}
+
+		// Normalize the API action to proper casing.
+		$api_action_lower      = strtolower( $api_action );
+		$normalized_api_action = isset( $action_map[ $api_action_lower ] ) ? $action_map[ $api_action_lower ] : null;
+
+		if ( null === $normalized_api_action ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_api_action',
 				sprintf(
-					/* translators: %s: API action name */
-					__( 'Invalid API action: %s', 'mcp-ai-wpoos-pro' ),
-					$api_action
+					/* translators: 1: API action name, 2: list of allowed actions */
+					__( 'Invalid API action: %1$s. Allowed actions: %2$s', 'mcp-ai-wpoos-pro' ),
+					$api_action,
+					implode( ', ', $allowed_actions )
 				)
 			);
 		}
+
+		// Use the normalized action name for consistency.
+		$api_action = $normalized_api_action;
 
 		// Prepare request body.
 		$api_body = array();
