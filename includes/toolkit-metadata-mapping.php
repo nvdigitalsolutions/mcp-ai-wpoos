@@ -995,4 +995,348 @@ return array(
 		'profession_tags'       => array( 'security_analyst', 'api_developer' ),
 		'risk_level'            => 'standard',
 	),
+
+	// ========================================
+	// REMAINING VALIDATED TOOL VARIANTS
+	// ========================================
+	'generate_sora_video_validated'      => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'video_producer', 'content_creator' ),
+		'risk_level'            => 'standard',
+	),
+	'generate_veo_video_validated'       => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'video_producer', 'content_creator' ),
+		'risk_level'            => 'standard',
+	),
+	'get_recent_posts_validated'         => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'writer', 'content_creator', 'editor' ),
+		'risk_level'            => 'info',
+	),
+	'get_system_logs_validated'          => array(
+		'toolkit'               => 'developer_technical',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'devops_engineer', 'systems_administrator' ),
+		'risk_level'            => 'info',
+	),
+	'get_user_info_validated'            => array(
+		'toolkit'               => 'security_compliance',
+		'pattern_compatibility' => array( 'layered_defense' ),
+		'profession_tags'       => array( 'systems_administrator', 'security_analyst' ),
+		'risk_level'            => 'info',
+	),
+	'save_post_validated'                => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+		'profession_tags'       => array( 'writer', 'content_creator', 'journalist' ),
+		'risk_level'            => 'standard',
+	),
+	'scrape_product_validated'           => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'ecommerce_manager', 'market_researcher' ),
+		'risk_level'            => 'info',
+	),
+	'search_content_validated'           => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'writer', 'researcher', 'editor' ),
+		'risk_level'            => 'info',
+	),
+	'send_group_email_validated'         => array(
+		'toolkit'               => 'communication_outreach',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'marketing_manager', 'pr_specialist' ),
+		'risk_level'            => 'standard',
+	),
+	'run_crawl4ai_job_validated'         => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'researcher', 'data_scientist' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// ELEMENTOR INTEGRATION TOOLS
+	// ========================================
+	'get_elementor_templates'            => array(
+		'toolkit'               => 'developer_technical',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'web_designer' ),
+		'risk_level'            => 'info',
+	),
+	'import_elementor_template_kit'      => array(
+		'toolkit'               => 'developer_technical',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'web_developer', 'web_designer' ),
+		'risk_level'            => 'standard',
+	),
+
+	// ========================================
+	// JETENGINE INTEGRATION TOOLS
+	// ========================================
+	'get_jetformbuilder_forms'           => array(
+		'toolkit'               => 'integration_external',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'wordpress_developer' ),
+		'risk_level'            => 'info',
+	),
+	'get_jetformbuilder_submissions'     => array(
+		'toolkit'               => 'integration_external',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'data_analyst' ),
+		'risk_level'            => 'info',
+	),
+	'invoke_jetengine_route'             => array(
+		'toolkit'               => 'integration_external',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'api_developer' ),
+		'risk_level'            => 'standard',
+	),
+	'list_jetengine_routes'              => array(
+		'toolkit'               => 'integration_external',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'api_developer' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// OPENAI FILE MANAGEMENT
+	// ========================================
+	'get_openai_file_details'            => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'experimentation' ),
+		'profession_tags'       => array( 'machine_learning_engineer', 'data_scientist' ),
+		'risk_level'            => 'info',
+	),
+	'list_openai_files'                  => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'experimentation' ),
+		'profession_tags'       => array( 'machine_learning_engineer', 'data_scientist' ),
+		'risk_level'            => 'info',
+	),
+	'open_openai_usage'                  => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'experimentation', 'peer_to_peer' ),
+		'profession_tags'       => array( 'mlops_specialist', 'business_analyst' ),
+		'risk_level'            => 'info',
+	),
+	'run_openai_external_action'         => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'experimentation' ),
+		'profession_tags'       => array( 'machine_learning_engineer', 'ai_researcher' ),
+		'risk_level'            => 'standard',
+	),
+	'monitor_batch'                      => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'experimentation' ),
+		'profession_tags'       => array( 'machine_learning_engineer', 'mlops_specialist' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// PROFESSION MANAGEMENT TOOLS
+	// ========================================
+	'get_profession'                     => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'systems_administrator', 'ai_researcher' ),
+		'risk_level'            => 'info',
+	),
+	'list_professions'                   => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'systems_administrator', 'ai_researcher' ),
+		'risk_level'            => 'info',
+	),
+	'save_profession'                    => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'systems_administrator', 'ai_researcher' ),
+		'risk_level'            => 'standard',
+	),
+	'profession_stats'                   => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'peer_to_peer' ),
+		'profession_tags'       => array( 'business_analyst', 'data_scientist' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// NEWSLETTER TOOLS
+	// ========================================
+	'newsletter_add_subscriber'          => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'marketing_manager', 'email_marketer' ),
+		'risk_level'            => 'standard',
+	),
+	'newsletter_get_emails'              => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'marketing_manager', 'email_marketer' ),
+		'risk_level'            => 'info',
+	),
+	'newsletter_unsubscribe'             => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'marketing_manager', 'customer_service_rep' ),
+		'risk_level'            => 'standard',
+	),
+
+	// ========================================
+	// SITE KIT INTEGRATION
+	// ========================================
+	'sitekit_pagespeed'                  => array(
+		'toolkit'               => 'developer_technical',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'web_developer', 'performance_engineer' ),
+		'risk_level'            => 'info',
+	),
+	'sitekit_search_console'             => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'seo_specialist', 'marketing_manager' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// PAYMENT INTEGRATION
+	// ========================================
+	'payhere_get_payment'                => array(
+		'toolkit'               => 'ecommerce_business',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'ecommerce_manager', 'financial_analyst' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// CACHE MANAGEMENT
+	// ========================================
+	'purge_varnish_cache'                => array(
+		'toolkit'               => 'developer_technical',
+		'pattern_compatibility' => array( 'skill_router' ),
+		'profession_tags'       => array( 'devops_engineer', 'systems_administrator' ),
+		'risk_level'            => 'destructive',
+	),
+
+	// ========================================
+	// CONTENT MANAGEMENT
+	// ========================================
+	'update_term'                        => array(
+		'toolkit'               => 'content_publishing',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'content_strategist', 'seo_specialist' ),
+		'risk_level'            => 'standard',
+	),
+	'get_user_info'                      => array(
+		'toolkit'               => 'security_compliance',
+		'pattern_compatibility' => array( 'layered_defense' ),
+		'profession_tags'       => array( 'systems_administrator', 'security_analyst' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// IMPORT/EXPORT TOOLS
+	// ========================================
+	'get_all_import_status'              => array(
+		'toolkit'               => 'workflow_automation',
+		'pattern_compatibility' => array( 'hierarchical' ),
+		'profession_tags'       => array( 'systems_administrator', 'data_engineer' ),
+		'risk_level'            => 'info',
+	),
+	'list_all_export_templates'          => array(
+		'toolkit'               => 'workflow_automation',
+		'pattern_compatibility' => array( 'hierarchical' ),
+		'profession_tags'       => array( 'systems_administrator', 'data_engineer' ),
+		'risk_level'            => 'info',
+	),
+	'list_all_import_templates'          => array(
+		'toolkit'               => 'workflow_automation',
+		'pattern_compatibility' => array( 'hierarchical' ),
+		'profession_tags'       => array( 'systems_administrator', 'data_engineer' ),
+		'risk_level'            => 'info',
+	),
+	'trigger_all_export'                 => array(
+		'toolkit'               => 'workflow_automation',
+		'pattern_compatibility' => array( 'hierarchical' ),
+		'profession_tags'       => array( 'systems_administrator', 'data_engineer' ),
+		'risk_level'            => 'standard',
+	),
+	'trigger_all_import'                 => array(
+		'toolkit'               => 'workflow_automation',
+		'pattern_compatibility' => array( 'hierarchical' ),
+		'profession_tags'       => array( 'systems_administrator', 'data_engineer' ),
+		'risk_level'            => 'standard',
+	),
+
+	// ========================================
+	// AI AGENT MEMORY & CONTEXT TOOLS
+	// ========================================
+	'retrieve_agent_memory'              => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator', 'hierarchical' ),
+		'profession_tags'       => array( 'ai_researcher', 'machine_learning_engineer' ),
+		'risk_level'            => 'info',
+	),
+	'store_agent_context'                => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator', 'hierarchical' ),
+		'profession_tags'       => array( 'ai_researcher', 'machine_learning_engineer' ),
+		'risk_level'            => 'standard',
+	),
+	'prioritize_context'                 => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'ai_researcher', 'machine_learning_engineer' ),
+		'risk_level'            => 'info',
+	),
+
+	// ========================================
+	// SPECIALIZED AI TOOLS
+	// ========================================
+	'run_crawl4ai_job'                   => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'researcher', 'data_scientist', 'web_scraper' ),
+		'risk_level'            => 'info',
+	),
+	'query_mesh_intelligent'             => array(
+		'toolkit'               => 'research_discovery',
+		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+		'profession_tags'       => array( 'researcher', 'analyst', 'data_scientist' ),
+		'risk_level'            => 'info',
+	),
+	'probe_chat'                         => array(
+		'toolkit'               => 'communication_outreach',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'customer_service_rep', 'support_specialist' ),
+		'risk_level'            => 'info',
+	),
+	'submit_document_prompt'             => array(
+		'toolkit'               => 'ai_model_management',
+		'pattern_compatibility' => array( 'orchestrator' ),
+		'profession_tags'       => array( 'ai_researcher', 'machine_learning_engineer' ),
+		'risk_level'            => 'standard',
+	),
+
+	// ========================================
+	// MEDIA TOOLS
+	// ========================================
+	'graphic_editor_plus'                => array(
+		'toolkit'               => 'media_processing',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'graphic_designer', 'photographer' ),
+		'risk_level'            => 'standard',
+	),
+	'image_base'                         => array(
+		'toolkit'               => 'media_processing',
+		'pattern_compatibility' => array( 'sequential' ),
+		'profession_tags'       => array( 'graphic_designer', 'web_developer' ),
+		'risk_level'            => 'info',
+	),
 );

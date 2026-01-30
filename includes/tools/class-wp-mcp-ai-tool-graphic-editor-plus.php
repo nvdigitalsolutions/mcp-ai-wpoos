@@ -182,6 +182,42 @@ class WP_MCP_AI_Tool_Graphic_Editor_Plus extends WP_MCP_AI_Tool_Image_Base {
 		);
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'media_processing',
+
+			'pattern_compatibility' => array( 'sequential' ),
+
+			'profession_tags'       => array( 'graphic_designer', 'photographer' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */
