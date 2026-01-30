@@ -164,6 +164,28 @@ transform_package() {
             "$EXTRACTED_DIR/languages/nvdigital-open-operator-system-oos-core.pot"
     fi
     
+    # Rename main PHP files to match WordPress.org package naming
+    echo "Step 3a: Renaming main PHP files..."
+    
+    # Base package: mcp-ai-wpoos-base.php → nvdigital-open-operator-system-oos.php
+    if [ -f "$EXTRACTED_DIR/mcp-ai-wpoos-base.php" ]; then
+        mv "$EXTRACTED_DIR/mcp-ai-wpoos-base.php" "$EXTRACTED_DIR/nvdigital-open-operator-system-oos.php"
+        echo "   Renamed: mcp-ai-wpoos-base.php → nvdigital-open-operator-system-oos.php"
+    fi
+    
+    # Pro package: mcp-ai-wpoos-pro.php → nvdigital-open-operator-system-oos-pro.php
+    if [ -f "$EXTRACTED_DIR/mcp-ai-wpoos-pro.php" ]; then
+        mv "$EXTRACTED_DIR/mcp-ai-wpoos-pro.php" "$EXTRACTED_DIR/nvdigital-open-operator-system-oos-pro.php"
+        echo "   Renamed: mcp-ai-wpoos-pro.php → nvdigital-open-operator-system-oos-pro.php"
+    fi
+    
+    # Complete package: mcp-ai-wpoos.php → nvdigital-open-operator-system-oos.php
+    # Note: Only rename if mcp-ai-wpoos-base.php doesn't exist (to avoid conflict with base package)
+    if [ -f "$EXTRACTED_DIR/mcp-ai-wpoos.php" ] && [ ! -f "$EXTRACTED_DIR/nvdigital-open-operator-system-oos.php" ]; then
+        mv "$EXTRACTED_DIR/mcp-ai-wpoos.php" "$EXTRACTED_DIR/nvdigital-open-operator-system-oos.php"
+        echo "   Renamed: mcp-ai-wpoos.php → nvdigital-open-operator-system-oos.php"
+    fi
+    
     # Create output package
     echo "Step 4: Creating package..."
     cd "$EXTRACTED_DIR"
