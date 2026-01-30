@@ -36,7 +36,10 @@ class WP_MCP_AI_Vault_Folder_CPT {
 	 * Constructor.
 	 */
 	private function __construct() {
-		add_action( 'init', array( $this, 'register_post_type' ) );
+		// Call register_post_type() directly instead of hooking to 'init'.
+		// This is necessary because this class is instantiated during the 'init' hook,
+		// and adding another 'init' action at that point won't fire until the next request.
+		$this->register_post_type();
 	}
 
 	/**

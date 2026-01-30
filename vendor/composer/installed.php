@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-invalid-post-type-error',
+        'version' => 'dev-copilot/fix-invalid-post-type-error',
+        'reference' => '0c4974c8b2e3210720a65a31edd25d3c1c68b748',
         'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-issue',
         'version' => 'dev-copilot/fix-embedded-llm-provider-issue',
         'reference' => '3da395a6941c69923e14ede0aba5926a8e14f508',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-invalid-post-type-error',
+            'version' => 'dev-copilot/fix-invalid-post-type-error',
+            'reference' => '0c4974c8b2e3210720a65a31edd25d3c1c68b748',
             'pretty_version' => 'dev-copilot/fix-embedded-llm-provider-issue',
             'version' => 'dev-copilot/fix-embedded-llm-provider-issue',
             'reference' => '3da395a6941c69923e14ede0aba5926a8e14f508',
