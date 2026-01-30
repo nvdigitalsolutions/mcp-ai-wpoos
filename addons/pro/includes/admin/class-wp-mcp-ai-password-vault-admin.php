@@ -184,8 +184,10 @@ class WP_MCP_AI_Password_Vault_Admin {
 
 		// Debug logging when WP_DEBUG is enabled.
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			$pro_url  = defined( 'WP_MCP_AI_PRO_URL' ) ? WP_MCP_AI_PRO_URL : 'undefined';
+			$pro_path = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : 'undefined';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
-			error_log( sprintf( 'Password Vault: Enqueuing scripts. WP_MCP_AI_PRO_URL: %s, WP_MCP_AI_PRO_PATH: %s', WP_MCP_AI_PRO_URL, WP_MCP_AI_PRO_PATH ) );
+			error_log( sprintf( 'Password Vault: Enqueuing scripts. WP_MCP_AI_PRO_URL: %s, WP_MCP_AI_PRO_PATH: %s', $pro_url, $pro_path ) );
 		}
 
 		// Enqueue WordPress color picker.

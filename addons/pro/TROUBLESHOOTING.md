@@ -34,7 +34,7 @@ The Pro Add-on supports two installation configurations:
 - Copy buttons don't function
 
 ### Root Cause
-In versions prior to the fix (commit 644ba02), the Pro addon incorrectly determined its asset URL when both plugins were installed separately. The constant `WP_MCP_AI_PRO_URL` was set to `{base-plugin-url}/addons/pro/` even when Pro was installed as a separate plugin, causing 404 errors for all assets.
+In versions prior to v1.3.0, the Pro addon incorrectly determined its asset URL when both plugins were installed separately. The constant `WP_MCP_AI_PRO_URL` was set to `{base-plugin-url}/addons/pro/` even when Pro was installed as a separate plugin, causing 404 errors for all assets.
 
 ### Solution (Fixed in v1.3.0+)
 The Pro addon now correctly detects whether it's bundled or separate by checking if the plugin path contains `addons/pro/`:
