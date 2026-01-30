@@ -1,14 +1,89 @@
 # NV oOS Proposals Directory
 
 **Last Updated:** January 29, 2026  
-**Total Proposals:** 42 files  
-**Latest Addition:** WordPress Core Integration Enhancement (5 new documents, ~390KB)
+**Total Proposals:** 44 files  
+**Latest Addition:** Firefly III Personal Finance Integration (2 new documents, ~56KB)
 
 This directory contains proposals, research, and implementation status for major features and enhancements to the NV oOS plugin.
 
 ---
 
-## 🌟 NEW: WordPress Core Integration Enhancement
+## 🌟 NEW: Firefly III Personal Finance Integration
+
+**Status:** 📋 PROPOSAL - Awaiting Stakeholder Review  
+**Date:** January 29, 2026  
+**Investment:** 2-3 months, 2 developers  
+**Documentation:** ~56KB across 2 comprehensive documents
+
+**Quick Start: [FIREFLY-III-EXECUTIVE-SUMMARY.md](./FIREFLY-III-EXECUTIVE-SUMMARY.md)** (10 min read)
+
+### What Is This?
+
+A comprehensive proposal to integrate **Firefly III** (open-source personal finance manager) with NV oOS, enabling AI-powered financial management through natural language conversations. Users can track expenses, monitor budgets, analyze spending patterns, and get financial insights via AI assistants.
+
+### Key Documents
+
+1. **[FIREFLY-III-EXECUTIVE-SUMMARY.md](./FIREFLY-III-EXECUTIVE-SUMMARY.md)** (12KB)
+   - High-level overview for decision makers
+   - Business case and ROI projections ($40k-$75k investment, 15-20% Pro growth)
+   - 3 decision options (Approve/Pilot/Defer)
+   - Quick comparison with alternatives
+
+2. **[FIREFLY-III-INTEGRATION-PROPOSAL.md](./FIREFLY-III-INTEGRATION-PROPOSAL.md)** (44KB)
+   - Complete technical specifications
+   - 10 AI-powered finance tools
+   - OAuth 2.0 integration architecture
+   - Security considerations and compliance
+   - 10+ detailed use cases
+   - 5 implementation phases (2-3 months)
+   - Testing strategy and success metrics
+
+### What's Proposed
+
+**10 New Personal Finance AI Tools:**
+- `firefly_get_transactions` - Retrieve and filter transactions
+- `firefly_create_transaction` - Add expenses/income
+- `firefly_get_budgets` - Budget tracking and analysis
+- `firefly_get_accounts` - Account balances and overview
+- `firefly_get_categories` - Spending by category
+- `firefly_get_bills` - Bill tracking and reminders
+- `firefly_get_reports` - Financial summaries
+- `firefly_search_transactions` - Transaction search
+- `firefly_analyze_spending` - AI spending insights
+- `firefly_budget_insights` - Budget recommendations
+
+**3 Pre-Built Assistants:**
+- Personal Finance Assistant
+- Budget Accountability Coach
+- Quick Expense Logger
+
+### Why Firefly III?
+
+- ✅ **Open Source & Free:** No licensing costs, MIT license
+- ✅ **Privacy-First:** Self-hosted, user controls data
+- ✅ **Excellent API:** Comprehensive REST API v2
+- ✅ **Personal Finance Focus:** Purpose-built for individuals
+- ✅ **WordPress Alignment:** Same philosophy (open-source, self-hosted)
+
+### Timeline & Investment
+
+- **Duration:** 2-3 months (9-13 weeks)
+- **Team:** 2 developers + QA + writer
+- **Investment:** $40k-$75k development
+- **Expected ROI:** 15-20% increase in Pro subscriptions
+- **Break-Even:** 6-9 months
+
+### Next Steps
+
+1. Review executive summary (10 min)
+2. Review full proposal if needed (30 min)
+3. Schedule stakeholder decision meeting
+4. Approve, pilot, or defer
+5. If approved: Allocate resources and begin Phase 1
+
+---
+
+## 🌟 WordPress Core Integration Enhancement
 
 **Status:** ✅ PROPOSAL COMPLETE - READY FOR STAKEHOLDER REVIEW  
 **Date:** January 29, 2026  
@@ -174,7 +249,26 @@ Browser automation and interaction for Pro addon.
 
 ---
 
-### 4. Bitwarden/Vaultwarden Integration
+### 4. Firefly III Personal Finance Integration
+**Status:** 📋 PROPOSAL - Awaiting Stakeholder Review  
+**Primary Document:** [FIREFLY-III-INTEGRATION-PROPOSAL.md](FIREFLY-III-INTEGRATION-PROPOSAL.md)
+
+AI-powered personal finance management via Firefly III integration.
+
+**Key Info:**
+- 10 finance tools for expense tracking, budgets, reports
+- OAuth 2.0 + Personal Access Token authentication
+- Estimated 2-3 months, $40k-$75k investment
+- 15-20% projected Pro subscription increase
+- Pro addon feature
+- Decision required to proceed
+
+**Supporting Docs:**
+- [FIREFLY-III-EXECUTIVE-SUMMARY.md](FIREFLY-III-EXECUTIVE-SUMMARY.md) - Executive decision document
+
+---
+
+### 5. Bitwarden/Vaultwarden Integration
 **Status:** 🔮 PENDING - Awaiting Stakeholder Decision  
 **Primary Document:** [BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md](BITWARDEN-VAULTWARDEN-INTEGRATION-PROPOSAL.md)
 
@@ -244,9 +338,10 @@ Autonomous AI development loops with intelligent exit detection.
 1. DeepSeek V4 (final 10-15% remaining)
 2. Ralph Wiggum (ready for implementation)
 
-**🔮 PENDING (2):**
-1. Bitwarden/Vaultwarden Integration
-2. WebLLM Phases 4-8
+**🔮 PENDING (3):**
+1. Firefly III Personal Finance Integration
+2. Bitwarden/Vaultwarden Integration
+3. WebLLM Phases 4-8
 
 **📚 REFERENCE (7):**
 1. Plugin Size Reduction Research
@@ -264,6 +359,7 @@ Autonomous AI development loops with intelligent exit detection.
 - Ralph Wiggum implementation (80-120 hours)
 
 **🟡 MEDIUM PRIORITY:**
+- Firefly III Personal Finance Integration decision
 - WebLLM Phases 4-5 (Web Workers, Service Workers)
 - Bitwarden/Vaultwarden decision
 
@@ -283,6 +379,10 @@ Autonomous AI development loops with intelligent exit detection.
 - WebLLM Enhancement
 - Playwright Web Browser Tool
 - Service Workers
+
+**💰 Financial Management:**
+- Firefly III Personal Finance Integration
+- QuickBooks Integration (existing)
 
 **🔐 Security & Access:**
 - Bitwarden/Vaultwarden Integration
