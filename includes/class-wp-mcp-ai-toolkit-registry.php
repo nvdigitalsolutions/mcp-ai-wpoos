@@ -305,7 +305,7 @@ class WP_MCP_AI_Toolkit_Registry {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
 
 			if ( isset( $metadata['pattern_compatibility'] ) &&
-				 in_array( $pattern_slug, $metadata['pattern_compatibility'], true ) ) {
+				in_array( $pattern_slug, $metadata['pattern_compatibility'], true ) ) {
 				$tools[] = $tool->get_slug();
 			}
 		}
@@ -329,7 +329,7 @@ class WP_MCP_AI_Toolkit_Registry {
 			$metadata = $this->get_tool_metadata( $tool->get_slug() );
 
 			if ( isset( $metadata['profession_tags'] ) &&
-				 in_array( $profession_slug, $metadata['profession_tags'], true ) ) {
+				in_array( $profession_slug, $metadata['profession_tags'], true ) ) {
 				$tools[] = $tool->get_slug();
 			}
 		}
@@ -427,9 +427,9 @@ class WP_MCP_AI_Toolkit_Registry {
 		$toolkit_coverage = array();
 
 		foreach ( array_keys( $this->toolkits ) as $toolkit_slug ) {
-			$tools                              = $this->get_toolkit_tools( $toolkit_slug );
-			$toolkit_coverage[ $toolkit_slug ]  = count( $tools );
-			$mapped_tools                      += count( $tools );
+			$tools                             = $this->get_toolkit_tools( $toolkit_slug );
+			$toolkit_coverage[ $toolkit_slug ] = count( $tools );
+			$mapped_tools                     += count( $tools );
 		}
 
 		$unmapped_count = count( $this->get_unmapped_tools() );
