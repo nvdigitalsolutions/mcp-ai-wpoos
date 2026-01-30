@@ -288,6 +288,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
 			}
 
+			// Render federation & mesh if we're on the federation_mesh sub-tab.
+			if ( 'federation_mesh' === $active_subtab ) {
+				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
+				$this->render_federation_mesh();
+				echo '<table class="form-table" role="presentation" style="display:none;">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Re-open hidden table for structure.
+			}
+
 			// Render settings management if we're on the settings_management sub-tab.
 			if ( 'settings_management' === $active_subtab ) {
 				echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag, Close the form table.
@@ -1705,6 +1712,273 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				'seeded'                     => $playbooks_seeded,
 				'last_sync'                  => $last_sync,
 			);
+		}
+
+		/**
+		 * Render Federation & Mesh section.
+		 *
+		 * Provides UI for managing mesh peer connections and AI Peers.
+		 */
+		private function render_federation_mesh() {
+			// Get AI Peers count.
+			$ai_peer_count = wp_count_posts( 'ai_peer' );
+			$total_peers   = isset( $ai_peer_count->publish ) ? $ai_peer_count->publish : 0;
+
+			// Get mesh computing status from tools settings.
+			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
+			$mesh_enabled       = ! empty( $settings['enable_mesh'] );
+			$federation_enabled = ! empty( $settings['enable_federation'] );
+
+			// Get mesh inbound API key.
+			$mesh_inbound_key = ! empty( $settings['mesh_inbound_api_key'] ) ? $settings['mesh_inbound_api_key'] : '';
+			?>
+			<div class="wp-mcp-ai-federation-mesh-section" style="margin-top: 30px;">
+				<h3><?php esc_html_e( 'Federation & Mesh Computing', 'mcp-ai-wpoos' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Manage federated AI peers and mesh computing connections. Federation enables discovery and sharing of AI capabilities across trusted sites.', 'mcp-ai-wpoos' ); ?>
+				</p>
+
+				<!-- Status Overview -->
+				<div class="wp-mcp-ai-mesh-status" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+					<h4 style="margin-top: 0;"><?php esc_html_e( 'Current Status', 'mcp-ai-wpoos' ); ?></h4>
+					<ul style="margin: 10px 0; padding-left: 20px;">
+						<li>
+							<strong><?php esc_html_e( 'Mesh Computing:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $mesh_enabled ? 'success' : 'warning' ); ?>">
+								<?php echo esc_html( $mesh_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
+							</span>
+							<?php if ( ! $mesh_enabled ) : ?>
+								<span class="description" style="margin-left: 10px;">
+									<?php
+									printf(
+										/* translators: %s: URL to tools settings */
+										esc_html__( 'Enable mesh computing in %s', 'mcp-ai-wpoos' ),
+										'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=features' ) ) . '">' . esc_html__( 'Tools & Features', 'mcp-ai-wpoos' ) . '</a>'
+									);
+									?>
+								</span>
+							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Federation Directory:', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $federation_enabled ? 'success' : 'warning' ); ?>">
+								<?php echo esc_html( $federation_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
+							</span>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Registered AI Peers:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php echo absint( $total_peers ); ?>
+						</li>
+					</ul>
+				</div>
+
+				<!-- Mesh Inbound API Key -->
+				<?php if ( $mesh_enabled && $mesh_inbound_key ) : ?>
+					<div class="wp-mcp-ai-mesh-api-key" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+						<h4 style="margin-top: 0;"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'Use this key when configuring other sites to connect to this instance as a mesh peer. Keep this key secure and only share it with trusted administrators.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+							<input type="text" readonly value="<?php echo esc_attr( $mesh_inbound_key ); ?>" 
+								id="wp-mcp-ai-mesh-key-display" 
+								style="width: 100%; max-width: 500px; font-family: monospace; font-size: 12px;" />
+							<button type="button" class="button button-secondary" id="wp-mcp-ai-copy-mesh-key">
+								<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span>
+								<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+							</button>
+						</div>
+					</div>
+
+					<script>
+					jQuery(document).ready(function($) {
+						$('#wp-mcp-ai-copy-mesh-key').on('click', function() {
+							var $input = $('#wp-mcp-ai-mesh-key-display');
+							$input.select();
+							document.execCommand('copy');
+							
+							var $button = $(this);
+							var originalText = $button.html();
+							$button.html('<span class="dashicons dashicons-yes" style="margin-top: 3px; color: #46b450;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos' ) ); ?>');
+							
+							setTimeout(function() {
+								$button.html(originalText);
+							}, 2000);
+						});
+					});
+					</script>
+				<?php endif; ?>
+
+				<!-- Mesh Peer Sites Configuration -->
+				<?php if ( $mesh_enabled ) : ?>
+					<div class="wp-mcp-ai-mesh-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+						<h4><?php esc_html_e( 'Mesh Peer Sites', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'Configure peer sites for mesh computing. These are remote NV oOS instances that this site can query for distributed workload processing.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<?php
+						// Call the existing custom field renderer for mesh_peer_sites.
+						if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'render_mesh_peer_sites_field' ) ) {
+							$admin_settings = new WP_MCP_AI_Admin_Settings();
+							$admin_settings->render_mesh_peer_sites_field();
+						}
+						?>
+					</div>
+				<?php endif; ?>
+
+				<!-- AI Peers Management -->
+				<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+					<h4><?php esc_html_e( 'AI Peers (Federation Directory)', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description">
+						<?php esc_html_e( 'AI Peers represent other NV oOS instances in the federation network. Each peer can provide capabilities, tools, and AI services that can be discovered and consumed by this site.', 'mcp-ai-wpoos' ); ?>
+					</p>
+
+					<?php if ( $total_peers > 0 ) : ?>
+						<!-- AI Peers List -->
+						<?php
+						$ai_peers = get_posts(
+							array(
+								'post_type'      => 'ai_peer',
+								'post_status'    => 'publish',
+								'posts_per_page' => 10,
+								'orderby'        => 'title',
+								'order'          => 'ASC',
+							)
+						);
+
+						if ( ! empty( $ai_peers ) ) :
+							?>
+							<div class="wp-mcp-ai-peers-list" style="margin: 15px 0;">
+								<table class="widefat striped" style="margin-top: 15px;">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Peer Name', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Health Status', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Last Verified', 'mcp-ai-wpoos' ); ?></th>
+											<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php foreach ( $ai_peers as $peer ) : ?>
+											<?php
+											$peer_id     = $peer->ID;
+											$site_url    = get_post_meta( $peer_id, '_wp_mcp_ai_peer_site_url', true );
+											$health      = get_post_meta( $peer_id, '_wp_mcp_ai_peer_health_status', true );
+											$last_verify = get_post_meta( $peer_id, '_wp_mcp_ai_peer_last_verified', true );
+
+											// Format health status.
+											$health_class = 'unknown';
+											$health_text  = __( 'Unknown', 'mcp-ai-wpoos' );
+											if ( 'healthy' === $health ) {
+												$health_class = 'success';
+												$health_text  = __( 'Healthy', 'mcp-ai-wpoos' );
+											} elseif ( 'degraded' === $health ) {
+												$health_class = 'warning';
+												$health_text  = __( 'Degraded', 'mcp-ai-wpoos' );
+											} elseif ( 'unhealthy' === $health ) {
+												$health_class = 'error';
+												$health_text  = __( 'Unhealthy', 'mcp-ai-wpoos' );
+											}
+
+											// Format last verified.
+											$last_verify_display = __( 'Never', 'mcp-ai-wpoos' );
+											if ( $last_verify ) {
+												$last_verify_display = human_time_diff( strtotime( $last_verify ), current_time( 'timestamp' ) ) . ' ' . __( 'ago', 'mcp-ai-wpoos' );
+											}
+
+											$edit_url = admin_url( 'post.php?post=' . $peer_id . '&action=edit' );
+											?>
+											<tr>
+												<td>
+													<strong>
+														<a href="<?php echo esc_url( $edit_url ); ?>">
+															<?php echo esc_html( $peer->post_title ); ?>
+														</a>
+													</strong>
+												</td>
+												<td>
+													<?php if ( $site_url ) : ?>
+														<a href="<?php echo esc_url( $site_url ); ?>" target="_blank" rel="noopener noreferrer">
+															<?php echo esc_html( $site_url ); ?>
+															<span class="dashicons dashicons-external" style="font-size: 12px; text-decoration: none;"></span>
+														</a>
+													<?php else : ?>
+														<span class="description"><?php esc_html_e( 'Not set', 'mcp-ai-wpoos' ); ?></span>
+													<?php endif; ?>
+												</td>
+												<td>
+													<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $health_class ); ?>">
+														<?php echo esc_html( $health_text ); ?>
+													</span>
+												</td>
+												<td><?php echo esc_html( $last_verify_display ); ?></td>
+												<td>
+													<a href="<?php echo esc_url( $edit_url ); ?>" class="button button-small">
+														<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
+													</a>
+												</td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+							</div>
+						<?php endif; ?>
+					<?php endif; ?>
+
+					<!-- Add New Peer Button -->
+					<div style="margin: 15px 0;">
+						<a href="<?php echo esc_url( admin_url( 'post-new.php?post_type=ai_peer' ) ); ?>" class="button button-primary">
+							<span class="dashicons dashicons-plus" style="margin-top: 3px;"></span>
+							<?php esc_html_e( 'Add New AI Peer', 'mcp-ai-wpoos' ); ?>
+						</a>
+						<?php if ( $total_peers > 0 ) : ?>
+							<a href="<?php echo esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ); ?>" class="button button-secondary" style="margin-left: 5px;">
+								<?php esc_html_e( 'View All AI Peers', 'mcp-ai-wpoos' ); ?> (<?php echo absint( $total_peers ); ?>)
+							</a>
+						<?php endif; ?>
+					</div>
+
+					<?php if ( ! $mesh_enabled && ! $federation_enabled ) : ?>
+						<div class="notice notice-info inline" style="margin-top: 20px;">
+							<p>
+								<strong><?php esc_html_e( 'Note:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'To use mesh computing and federation features, enable them in the Tools & Features settings.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						</div>
+					<?php endif; ?>
+				</div>
+			</div>
+
+			<?php
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
+			?>
+			<style>
+				.wp-mcp-ai-status-badge {
+					display: inline-block;
+					padding: 2px 8px;
+					border-radius: 3px;
+					font-size: 12px;
+					font-weight: 600;
+				}
+				.wp-mcp-ai-status-success {
+					background: #d4edda;
+					color: #155724;
+				}
+				.wp-mcp-ai-status-warning {
+					background: #fff3cd;
+					color: #856404;
+				}
+				.wp-mcp-ai-status-error {
+					background: #f8d7da;
+					color: #721c24;
+				}
+				.wp-mcp-ai-status-unknown {
+					background: #e2e3e5;
+					color: #383d41;
+				}
+			</style>
+			<?php
 		}
 
 		/**
