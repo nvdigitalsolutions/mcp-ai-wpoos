@@ -45,7 +45,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 	public function add_meta_box() {
 		add_meta_box(
 			'wp-mcp-ai-pro-remote-connections',
-			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
+			__( 'Remote Site Connections', 'mcp-ai-wpoos-pro' ),
 			array( $this, 'render_meta_box' ),
 			'mcp_ai_assistant',
 			'side',
@@ -72,10 +72,10 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 
 		if ( empty( $connections ) ) {
 			?>
-			<p><?php esc_html_e( 'No remote site connections configured.', 'wp-mcp-ai-pro' ); ?></p>
+			<p><?php esc_html_e( 'No remote site connections configured.', 'mcp-ai-wpoos-pro' ); ?></p>
 			<p>
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>">
-					<?php esc_html_e( 'Add Remote Site Connection', 'wp-mcp-ai-pro' ); ?>
+					<?php esc_html_e( 'Add Remote Site Connection', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 			</p>
 			<?php
@@ -83,7 +83,7 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 		}
 
 		?>
-		<p><?php esc_html_e( 'Select which remote site connections this assistant can access:', 'wp-mcp-ai-pro' ); ?></p>
+		<p><?php esc_html_e( 'Select which remote site connections this assistant can access:', 'mcp-ai-wpoos-pro' ); ?></p>
 
 		<div style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; background: #fff;">
 			<?php foreach ( $connections as $connection_key => $connection ) : ?>
@@ -98,13 +98,13 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 						<input type="checkbox" name="wp_mcp_ai_pro_remote_connections[]" value="<?php echo esc_attr( $connection_id ); ?>" <?php checked( $is_enabled ); ?> <?php disabled( 'disabled' === $connection_status ); ?>>
 						<strong><?php echo esc_html( $connection['name'] ); ?></strong>
 						<?php if ( 'disabled' === $connection_status ) : ?>
-							<span style="color: #dc3232; font-size: 11px;">(<?php esc_html_e( 'Disabled', 'wp-mcp-ai-pro' ); ?>)</span>
+							<span style="color: #dc3232; font-size: 11px;">(<?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?>)</span>
 						<?php endif; ?>
 					</label>
 					<div style="font-size: 11px; color: #666; margin-left: 22px;">
 						<?php echo esc_html( $connection['url'] ); ?>
 						<?php if ( ! empty( $connection['has_woocommerce'] ) ) : ?>
-							<br><span style="color: #46b450;">● <?php esc_html_e( 'WooCommerce enabled', 'wp-mcp-ai-pro' ); ?></span>
+							<br><span style="color: #46b450;">● <?php esc_html_e( 'WooCommerce enabled', 'mcp-ai-wpoos-pro' ); ?></span>
 						<?php endif; ?>
 					</div>
 				</div>
@@ -113,12 +113,12 @@ class WP_MCP_AI_Pro_Metabox_Remote_Connections {
 
 		<p style="margin-top: 10px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" style="font-size: 11px;">
-				<?php esc_html_e( 'Manage Remote Site Connections', 'wp-mcp-ai-pro' ); ?>
+				<?php esc_html_e( 'Manage Remote Site Connections', 'mcp-ai-wpoos-pro' ); ?>
 			</a>
 		</p>
 
 		<p class="description">
-			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites.', 'wp-mcp-ai-pro' ); ?>
+			<?php esc_html_e( 'Only enabled connections can be selected. Remote connections allow this assistant to query posts, products, orders, and other data from external WordPress/WooCommerce sites.', 'mcp-ai-wpoos-pro' ); ?>
 		</p>
 		<?php
 	}

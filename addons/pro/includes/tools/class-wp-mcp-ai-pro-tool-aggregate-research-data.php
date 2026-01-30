@@ -99,7 +99,7 @@ class WP_MCP_AI_Pro_Tool_Aggregate_Research_Data {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate inputs.
 		if ( empty( $arguments['sources'] ) || ! is_array( $arguments['sources'] ) ) {
 			return array(

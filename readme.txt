@@ -116,7 +116,11 @@ NV oOS is 100% open source and licensed under GPLv3. We welcome contributions:
 
 == Installation ==
 
+**Plugin Directory Status:** This plugin is currently pending approval in the WordPress Plugin Directory. We are committed to maintaining high quality and security standards throughout the review process.
+
 = Automatic Installation =
+
+Once approved in the WordPress Plugin Directory:
 
 1. Go to Plugins → Add New in your WordPress admin
 2. Search for "Open Operator System"

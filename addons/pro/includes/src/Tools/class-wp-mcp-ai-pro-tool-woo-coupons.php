@@ -44,7 +44,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'WooCommerce Coupons tool requires WooCommerce to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Coupons tool requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -62,7 +62,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'WooCommerce Coupons', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Coupons', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -71,7 +71,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Manage WooCommerce coupons. Create, update, list, and delete discount coupons with flexible restrictions.', 'wp-mcp-ai-pro' );
+		return __( 'Manage WooCommerce coupons. Create, update, list, and delete discount coupons with flexible restrictions.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -85,86 +85,86 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'properties' => array(
 				'action'                 => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, create, update, delete.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: get, list, create, update, delete.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'get', 'list', 'create', 'update', 'delete' ),
 					'default'     => 'list',
 				),
 				'coupon_id'              => array(
 					'type'        => 'integer',
-					'description' => __( 'Coupon ID for get, update, or delete actions.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Coupon ID for get, update, or delete actions.', 'mcp-ai-wpoos-pro' ),
 				),
 				'code'                   => array(
 					'type'        => 'string',
-					'description' => __( 'Coupon code. Required for create action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Coupon code. Required for create action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'discount_type'          => array(
 					'type'        => 'string',
-					'description' => __( 'Discount type.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Discount type.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'fixed_cart', 'percent', 'fixed_product', 'percent_product' ),
 					'default'     => 'percent',
 				),
 				'amount'                 => array(
 					'type'        => 'string',
-					'description' => __( 'Coupon discount amount.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Coupon discount amount.', 'mcp-ai-wpoos-pro' ),
 				),
 				'individual_use'         => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, coupon cannot be used with other coupons.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'If true, coupon cannot be used with other coupons.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'exclude_sale_items'     => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, coupon will not apply to items on sale.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'If true, coupon will not apply to items on sale.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'minimum_amount'         => array(
 					'type'        => 'string',
-					'description' => __( 'Minimum order amount that needs to be in the cart before coupon applies.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Minimum order amount that needs to be in the cart before coupon applies.', 'mcp-ai-wpoos-pro' ),
 				),
 				'maximum_amount'         => array(
 					'type'        => 'string',
-					'description' => __( 'Maximum order amount allowed when using the coupon.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Maximum order amount allowed when using the coupon.', 'mcp-ai-wpoos-pro' ),
 				),
 				'product_ids'            => array(
 					'type'        => 'array',
-					'description' => __( 'List of product IDs the coupon can be used with.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'List of product IDs the coupon can be used with.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'excluded_product_ids'   => array(
 					'type'        => 'array',
-					'description' => __( 'List of product IDs the coupon cannot be used with.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'List of product IDs the coupon cannot be used with.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
 				'usage_limit'            => array(
 					'type'        => 'integer',
-					'description' => __( 'How many times the coupon can be used in total.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'How many times the coupon can be used in total.', 'mcp-ai-wpoos-pro' ),
 				),
 				'usage_limit_per_user'   => array(
 					'type'        => 'integer',
-					'description' => __( 'How many times the coupon can be used per customer.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'How many times the coupon can be used per customer.', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit_usage_to_x_items' => array(
 					'type'        => 'integer',
-					'description' => __( 'Max number of items in the cart the coupon can be applied to.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Max number of items in the cart the coupon can be applied to.', 'mcp-ai-wpoos-pro' ),
 				),
 				'free_shipping'          => array(
 					'type'        => 'boolean',
-					'description' => __( 'If true, this coupon will grant free shipping.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'If true, this coupon will grant free shipping.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 				'expiry_date'            => array(
 					'type'        => 'string',
-					'description' => __( 'Expiry date for the coupon (ISO 8601 format).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Expiry date for the coupon (ISO 8601 format).', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'               => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of coupons to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of coupons to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'                   => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 			),
@@ -199,7 +199,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'woocommerce_not_active',
-				__( 'WooCommerce is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'WooCommerce is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -211,7 +211,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( in_array( $action, $write_actions, true ) && ! user_can( $user_id, 'manage_woocommerce' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to manage coupons.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to manage coupons.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -229,7 +229,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -244,7 +244,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( empty( $arguments['coupon_id'] ) ) {
 			return new WP_Error(
 				'missing_coupon_id',
-				__( 'Coupon ID is required for get action.', 'wp-mcp-ai-pro' )
+				__( 'Coupon ID is required for get action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -253,7 +253,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! $coupon->get_id() ) {
 			return new WP_Error(
 				'coupon_not_found',
-				__( 'Coupon not found.', 'wp-mcp-ai-pro' )
+				__( 'Coupon not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -310,7 +310,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( empty( $arguments['code'] ) ) {
 			return new WP_Error(
 				'missing_code',
-				__( 'Coupon code is required for create action.', 'wp-mcp-ai-pro' )
+				__( 'Coupon code is required for create action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -325,7 +325,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! $coupon_id ) {
 			return new WP_Error(
 				'create_failed',
-				__( 'Failed to create coupon.', 'wp-mcp-ai-pro' )
+				__( 'Failed to create coupon.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -343,7 +343,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( empty( $arguments['coupon_id'] ) ) {
 			return new WP_Error(
 				'missing_coupon_id',
-				__( 'Coupon ID is required for update action.', 'wp-mcp-ai-pro' )
+				__( 'Coupon ID is required for update action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -352,7 +352,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! $coupon->get_id() ) {
 			return new WP_Error(
 				'coupon_not_found',
-				__( 'Coupon not found.', 'wp-mcp-ai-pro' )
+				__( 'Coupon not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -375,7 +375,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( empty( $arguments['coupon_id'] ) ) {
 			return new WP_Error(
 				'missing_coupon_id',
-				__( 'Coupon ID is required for delete action.', 'wp-mcp-ai-pro' )
+				__( 'Coupon ID is required for delete action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -384,7 +384,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 		if ( ! $coupon->get_id() ) {
 			return new WP_Error(
 				'coupon_not_found',
-				__( 'Coupon not found.', 'wp-mcp-ai-pro' )
+				__( 'Coupon not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -397,7 +397,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Coupons implements WP_MCP_AI_Tool_Interface, WP_MCP
 			'success'   => true,
 			'coupon_id' => $coupon_id,
 			'code'      => $coupon_code,
-			'message'   => __( 'Coupon deleted successfully.', 'wp-mcp-ai-pro' ),
+			'message'   => __( 'Coupon deleted successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

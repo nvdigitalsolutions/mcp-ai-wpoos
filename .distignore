@@ -29,7 +29,6 @@ node_modules
 vendor-dev
 composer.json
 composer.lock
-package.json
 package-lock.json
 babel.config.js
 jest.config.js
@@ -115,6 +114,22 @@ shared
 mcp-diagnostic-debug.php
 test-storage-service.html
 assets/examples
+
+# CDN-dependent features (not compliant with WordPress.org)
+# These files load external runtime dependencies from jsdelivr CDN
+# They are Pro features and excluded from WordPress.org deployment
+includes/class-wp-mcp-ai-langchain-enqueue.php
+includes/class-wp-mcp-ai-transformers-enqueue.php
+includes/class-wp-mcp-ai-webworker-enqueue.php
+assets/js/langchain-tool-adapter.min.js
+assets/js/langchain-tool-adapter.js
+assets/js/langchain-orchestration.min.js
+assets/js/langchain-orchestration.js
+assets/js/transformers-tasks-client.min.js
+assets/js/transformers-tasks-client.js
+assets/js/web-worker-manager.min.js
+assets/js/web-worker-manager.js
+assets/js/workers
 
 # Keep these files (negation - they will be included)
 !readme.txt

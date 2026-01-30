@@ -92,7 +92,7 @@ class WP_MCP_AI_Pro_Tool_Create_Task_Plan {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate arguments.
 		if ( empty( $arguments['plan_name'] ) || empty( $arguments['goal'] ) || empty( $arguments['tasks'] ) ) {
 			return array(

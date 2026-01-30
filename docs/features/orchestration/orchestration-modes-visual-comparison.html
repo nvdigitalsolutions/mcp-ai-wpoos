@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchestration Modes Display Enhancement - Visual Comparison</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f0f1;
+        }
+        .header {
+            background: #fff;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2271b1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1d2327;
+            margin: 0 0 10px 0;
+        }
+        .subtitle {
+            color: #646970;
+            font-size: 16px;
+        }
+        .comparison-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .version-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .version-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d2327;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f1;
+        }
+        .before .version-title {
+            color: #d63638;
+        }
+        .after .version-title {
+            color: #00a32a;
+        }
+        .metric-card {
+            background: #fff;
+            border: 1px solid #dcdcde;
+            border-radius: 4px;
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .metric-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .metric-icon {
+            font-size: 24px;
+            color: #2271b1;
+            background: #f0f6fc;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+        .metric-content {
+            flex: 1;
+        }
+        .metric-label {
+            font-size: 14px;
+            color: #646970;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-icon {
+            font-size: 14px;
+            color: #666;
+            cursor: help;
+            position: relative;
+        }
+        .info-icon:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1d2327;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #1d2327;
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        .metric-subtitle {
+            font-size: 13px;
+            color: #646970;
+        }
+        .issues-list {
+            background: #fcf0f1;
+            border-left: 4px solid #d63638;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .issues-list h4 {
+            margin: 0 0 10px 0;
+            color: #d63638;
+        }
+        .issues-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .benefits-list {
+            background: #edfaef;
+            border-left: 4px solid #00a32a;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .benefits-list h4 {
+            margin: 0 0 10px 0;
+            color: #00a32a;
+        }
+        .benefits-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .examples-section {
+            background: #fff;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .example-card {
+            background: #f6f7f7;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .example-title {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #1d2327;
+        }
+        .modes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .mode-item {
+            background: #fff;
+            padding: 15px;
+            border-left: 3px solid #2271b1;
+            border-radius: 4px;
+        }
+        .mode-item h4 {
+            margin: 0 0 8px 0;
+            color: #2271b1;
+        }
+        .mode-item p {
+            margin: 0;
+            color: #646970;
+            font-size: 14px;
+        }
+        .dashicon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            font-size: 20px;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Orchestration Modes Display Enhancement</h1>
+        <p class="subtitle">Enhanced metric card to show clearer orchestration mode information in the Teams dashboard</p>
+    </div>
+
+    <div class="comparison-container">
+        <div class="version-section before">
+            <div class="version-title">❌ Before Enhancement</div>
+            <div class="metric-card">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-content">
+                    <div class="metric-label">Orchestration Modes</div>
+                    <div class="metric-value">1</div>
+                    <div class="metric-subtitle">Different Strategies</div>
+                </div>
+            </div>
+            <div class="issues-list">
+                <h4>Issues with Old Display:</h4>
+                <ul>
+                    <li>Unclear what "1" represents (1 team or 1 mode?)</li>
+                    <li>No indication of total available modes (4)</li>
+                    <li>No details on which modes are being used</li>
+                    <li>Generic subtitle doesn't provide useful info</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="version-section after">
+            <div class="version-title">✅ After Enhancement</div>
+            <div class="metric-card">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-content">
+                    <div class="metric-label">
+                        Orchestration Modes
+                        <span class="info-icon" data-tooltip="Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)">ⓘ</span>
+                    </div>
+                    <div class="metric-value">2/4</div>
+                    <div class="metric-subtitle">Sequential (2), Parallel (1)</div>
+                </div>
+            </div>
+            <div class="benefits-list">
+                <h4>Benefits of New Display:</h4>
+                <ul>
+                    <li>Shows "2/4" - 2 modes in use out of 4 available</li>
+                    <li>Detailed breakdown: which modes and how many teams</li>
+                    <li>Info icon with tooltip explaining all modes</li>
+                    <li>Clear understanding of orchestration capabilities</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="examples-section">
+        <h2>Display Examples for Different Scenarios</h2>
+        
+        <div class="example-card">
+            <div class="example-title">Example 1: No Teams Configured</div>
+            <div class="metric-card">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-content">
+                    <div class="metric-label">
+                        Orchestration Modes
+                        <span class="info-icon" data-tooltip="Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)">ⓘ</span>
+                    </div>
+                    <div class="metric-value">0/4</div>
+                    <div class="metric-subtitle">No modes configured</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="example-card">
+            <div class="example-title">Example 2: Mixed Modes (Sequential + Parallel + Swarm)</div>
+            <div class="metric-card">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-content">
+                    <div class="metric-label">
+                        Orchestration Modes
+                        <span class="info-icon" data-tooltip="Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)">ⓘ</span>
+                    </div>
+                    <div class="metric-value">3/4</div>
+                    <div class="metric-subtitle">Sequential (2), Parallel (1), Swarm (1)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="example-card">
+            <div class="example-title">Example 3: All Modes in Use</div>
+            <div class="metric-card">
+                <div class="metric-icon">⚙️</div>
+                <div class="metric-content">
+                    <div class="metric-label">
+                        Orchestration Modes
+                        <span class="info-icon" data-tooltip="Available modes: Single (1 agent), Sequential (pipeline), Parallel (simultaneous), Swarm (consensus)">ⓘ</span>
+                    </div>
+                    <div class="metric-value">4/4</div>
+                    <div class="metric-subtitle">Single (1), Sequential (3), Parallel (2), Swarm (1)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="examples-section">
+        <h2>Available Orchestration Modes</h2>
+        <div class="modes-grid">
+            <div class="mode-item">
+                <h4>1. Single</h4>
+                <p><strong>Description:</strong> One agent handles entire task</p>
+                <p><strong>Use Case:</strong> Simple tasks where one profession has all needed expertise</p>
+            </div>
+            <div class="mode-item">
+                <h4>2. Sequential</h4>
+                <p><strong>Description:</strong> Agents execute in order (pipeline A→B→C)</p>
+                <p><strong>Use Case:</strong> Pipeline workflows where each step builds on previous</p>
+            </div>
+            <div class="mode-item">
+                <h4>3. Parallel</h4>
+                <p><strong>Description:</strong> Agents execute simultaneously</p>
+                <p><strong>Use Case:</strong> Multiple perspectives needed, time-critical tasks</p>
+            </div>
+            <div class="mode-item">
+                <h4>4. Swarm</h4>
+                <p><strong>Description:</strong> Redundant agents for consensus/validation</p>
+                <p><strong>Use Case:</strong> High-stakes decisions requiring agreement</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="examples-section">
+        <h2>Key Improvements</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div style="padding: 20px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 4px;">
+                <h3 style="margin: 0 0 10px 0; color: #2271b1;">📊 Clear Format</h3>
+                <p style="margin: 0; color: #646970;">Shows "X/4" format making it immediately clear how many orchestration modes are in use out of the 4 available</p>
+            </div>
+            <div style="padding: 20px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 4px;">
+                <h3 style="margin: 0 0 10px 0; color: #2271b1;">📈 Mode Distribution</h3>
+                <p style="margin: 0; color: #646970;">Subtitle shows breakdown of which specific modes are being used with team counts</p>
+            </div>
+            <div style="padding: 20px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 4px;">
+                <h3 style="margin: 0 0 10px 0; color: #2271b1;">ℹ️ Contextual Help</h3>
+                <p style="margin: 0; color: #646970;">Info icon provides tooltip with concise explanation of all 4 orchestration modes</p>
+            </div>
+            <div style="padding: 20px; background: #f0f6fc; border-left: 3px solid #2271b1; border-radius: 4px;">
+                <h3 style="margin: 0 0 10px 0; color: #2271b1;">🎯 Empty State</h3>
+                <p style="margin: 0; color: #646970;">Gracefully handles no teams with "0/4" and "No modes configured" message</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
