@@ -876,9 +876,12 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
 			$regulatory_registration_tools = array(
 				// Product Management Tools.
-				'WP_MCP_AI_Tool_Create_Reg_Product' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-reg-product.php',
+				'WP_MCP_AI_Tool_Create_Reg_Product'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-reg-product.php',
+				'WP_MCP_AI_Tool_List_Reg_Products'   => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-reg-products.php',
+				'WP_MCP_AI_Tool_Get_Reg_Product'     => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-get-reg-product.php',
 				// Registration Management Tools.
 				'WP_MCP_AI_Tool_Create_Registration' => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-create-registration.php',
+				'WP_MCP_AI_Tool_List_Registrations'  => WP_MCP_AI_PRO_PATH . 'includes/tools/regulatory-registration/class-wp-mcp-ai-tool-list-registrations.php',
 			);
 			$pro_tools                         = array_merge( $pro_tools, $regulatory_registration_tools );
 		}
