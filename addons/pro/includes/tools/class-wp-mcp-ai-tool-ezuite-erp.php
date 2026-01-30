@@ -88,7 +88,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_action'    => array(
 					'type'        => 'string',
-					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
+					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Case-insensitive. Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'LX_ItemPull',
 						'LX_ItemUpdate',
