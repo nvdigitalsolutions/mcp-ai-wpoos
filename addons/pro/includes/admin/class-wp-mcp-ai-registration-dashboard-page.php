@@ -25,9 +25,9 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai',
+			'edit.php?post_type=mcp_ai_reg_product',
 			__( 'Registration Dashboard', 'mcp-ai-wpoos-pro' ),
-			__( 'Reg Dashboard', 'mcp-ai-wpoos-pro' ),
+			__( 'Dashboard', 'mcp-ai-wpoos-pro' ),
 			'edit_posts',
 			'wp-mcp-ai-registration-dashboard',
 			array( __CLASS__, 'render_page' )

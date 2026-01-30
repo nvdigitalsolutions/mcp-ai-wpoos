@@ -24,6 +24,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 		$this->toolkit_name     = __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_regulatory_registration_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-regulatory-registration-toolkit-settings';
+		$this->parent_slug      = 'edit.php?post_type=mcp_ai_reg_product';
 		$this->has_research     = true;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-shield-alt';

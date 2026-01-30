@@ -25,9 +25,9 @@ class WP_MCP_AI_Reg_Product_Settings_Page {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'wp-mcp-ai',
+			'edit.php?post_type=mcp_ai_reg_product',
 			__( 'Product Settings', 'mcp-ai-wpoos-pro' ),
-			__( 'Product Settings', 'mcp-ai-wpoos-pro' ),
+			__( 'Settings', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-reg-product-settings',
 			array( __CLASS__, 'render_page' )
