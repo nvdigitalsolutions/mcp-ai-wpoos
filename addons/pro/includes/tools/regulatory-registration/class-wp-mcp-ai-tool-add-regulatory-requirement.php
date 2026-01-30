@@ -103,7 +103,7 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 	 *
 	 * @return bool
 	 */
-	public function is_available() {
+	public static function is_available() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_regulatory_registration_toolkit'] );
 	}

@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 	 *
 	 * @return bool
 	 */
-	public function is_available() {
+	public static function is_available() {
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_regulatory_registration_toolkit'] );
 	}
