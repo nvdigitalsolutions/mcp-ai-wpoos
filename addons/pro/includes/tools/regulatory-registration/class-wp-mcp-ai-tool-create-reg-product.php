@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Creates a new regulatory product.
  */
 class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
-	
+
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -45,13 +46,13 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_name'      => array(
+				'product_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'Product name (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 200,
 				),
-				'brand'             => array(
+				'brand'              => array(
 					'type'        => 'string',
 					'description' => __( 'Brand name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
@@ -61,57 +62,57 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 					'description' => __( 'Supplier reference code (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'item_group'        => array(
+				'item_group'         => array(
 					'type'        => 'string',
 					'description' => __( 'Item group or family (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'category'          => array(
+				'category'           => array(
 					'type'        => 'string',
 					'description' => __( 'Product category: skincare, haircare, makeup, perfumes, or cosmetics (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'skincare', 'haircare', 'makeup', 'perfumes', 'cosmetics' ),
 				),
-				'description'       => array(
+				'description'        => array(
 					'type'        => 'string',
 					'description' => __( 'Detailed product description (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'origin_country'    => array(
+				'origin_country'     => array(
 					'type'        => 'string',
 					'description' => __( 'Country of origin (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'manufacturer'      => array(
+				'manufacturer'       => array(
 					'type'        => 'string',
 					'description' => __( 'Manufacturer name (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 200,
 				),
-				'inci_ingredients'  => array(
+				'inci_ingredients'   => array(
 					'type'        => 'string',
 					'description' => __( 'INCI (International Nomenclature of Cosmetic Ingredients) list (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
 				),
-				'allergens'         => array(
+				'allergens'          => array(
 					'type'        => 'string',
 					'description' => __( 'Known allergens or restricted substances (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 1000,
 				),
-				'hs_code'           => array(
+				'hs_code'            => array(
 					'type'        => 'string',
 					'description' => __( 'HS Code / Customs code (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'barcode'           => array(
+				'barcode'            => array(
 					'type'        => 'string',
 					'description' => __( 'Barcode / GTIN (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 50,
 				),
-				'pack_size'         => array(
+				'pack_size'          => array(
 					'type'        => 'string',
 					'description' => __( 'Pack size / units (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'variant'           => array(
+				'variant'            => array(
 					'type'        => 'string',
 					'description' => __( 'Product variant (size, concentration, etc.) (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
@@ -169,20 +170,20 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Sanitize inputs.
-		$product_name      = sanitize_text_field( $arguments['product_name'] );
-		$brand             = ! empty( $arguments['brand'] ) ? sanitize_text_field( $arguments['brand'] ) : '';
-		$supplier_ref      = ! empty( $arguments['supplier_reference'] ) ? sanitize_text_field( $arguments['supplier_reference'] ) : '';
-		$item_group        = ! empty( $arguments['item_group'] ) ? sanitize_text_field( $arguments['item_group'] ) : '';
-		$category          = ! empty( $arguments['category'] ) ? sanitize_text_field( $arguments['category'] ) : '';
-		$description       = ! empty( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
-		$origin_country    = ! empty( $arguments['origin_country'] ) ? sanitize_text_field( $arguments['origin_country'] ) : '';
-		$manufacturer      = ! empty( $arguments['manufacturer'] ) ? sanitize_text_field( $arguments['manufacturer'] ) : '';
-		$inci_ingredients  = ! empty( $arguments['inci_ingredients'] ) ? sanitize_textarea_field( $arguments['inci_ingredients'] ) : '';
-		$allergens         = ! empty( $arguments['allergens'] ) ? sanitize_textarea_field( $arguments['allergens'] ) : '';
-		$hs_code           = ! empty( $arguments['hs_code'] ) ? sanitize_text_field( $arguments['hs_code'] ) : '';
-		$barcode           = ! empty( $arguments['barcode'] ) ? sanitize_text_field( $arguments['barcode'] ) : '';
-		$pack_size         = ! empty( $arguments['pack_size'] ) ? sanitize_text_field( $arguments['pack_size'] ) : '';
-		$variant           = ! empty( $arguments['variant'] ) ? sanitize_text_field( $arguments['variant'] ) : '';
+		$product_name     = sanitize_text_field( $arguments['product_name'] );
+		$brand            = ! empty( $arguments['brand'] ) ? sanitize_text_field( $arguments['brand'] ) : '';
+		$supplier_ref     = ! empty( $arguments['supplier_reference'] ) ? sanitize_text_field( $arguments['supplier_reference'] ) : '';
+		$item_group       = ! empty( $arguments['item_group'] ) ? sanitize_text_field( $arguments['item_group'] ) : '';
+		$category         = ! empty( $arguments['category'] ) ? sanitize_text_field( $arguments['category'] ) : '';
+		$description      = ! empty( $arguments['description'] ) ? wp_kses_post( $arguments['description'] ) : '';
+		$origin_country   = ! empty( $arguments['origin_country'] ) ? sanitize_text_field( $arguments['origin_country'] ) : '';
+		$manufacturer     = ! empty( $arguments['manufacturer'] ) ? sanitize_text_field( $arguments['manufacturer'] ) : '';
+		$inci_ingredients = ! empty( $arguments['inci_ingredients'] ) ? sanitize_textarea_field( $arguments['inci_ingredients'] ) : '';
+		$allergens        = ! empty( $arguments['allergens'] ) ? sanitize_textarea_field( $arguments['allergens'] ) : '';
+		$hs_code          = ! empty( $arguments['hs_code'] ) ? sanitize_text_field( $arguments['hs_code'] ) : '';
+		$barcode          = ! empty( $arguments['barcode'] ) ? sanitize_text_field( $arguments['barcode'] ) : '';
+		$pack_size        = ! empty( $arguments['pack_size'] ) ? sanitize_text_field( $arguments['pack_size'] ) : '';
+		$variant          = ! empty( $arguments['variant'] ) ? sanitize_text_field( $arguments['variant'] ) : '';
 
 		// Create the post.
 		$post_data = array(
@@ -278,6 +279,7 @@ class WP_MCP_AI_Tool_Create_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'success'    => true,
 			'product_id' => $product_id,
+			// translators: %s is the product name.
 			'message'    => sprintf( __( 'Product "%s" created successfully.', 'mcp-ai-wpoos-pro' ), $product_name ),
 			'edit_url'   => get_edit_post_link( $product_id, 'raw' ),
 		);
