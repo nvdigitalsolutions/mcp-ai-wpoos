@@ -212,7 +212,14 @@ Test and documentation files are excluded from tracked packages:
 
 ## Troubleshooting
 
-### sharp Installation Issues
+For detailed troubleshooting guidance, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+
+### Common Issues
+
+#### JavaScript/CSS Not Loading in Base+Pro Setup
+If the Password Generator & Authenticator page displays but buttons don't work, ensure you're running v1.3.0+ which includes the fix for asset URL detection in separate plugin installations. See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md#javascriptcss-not-loading) for details.
+
+#### sharp Installation Issues
 
 If sharp fails to install, ensure build tools are available:
 
