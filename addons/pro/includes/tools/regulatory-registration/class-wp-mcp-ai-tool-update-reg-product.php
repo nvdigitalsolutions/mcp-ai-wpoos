@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		foreach ( $meta_fields as $field ) {
 			if ( isset( $arguments[ $field ] ) ) {
-				$value = 'inci_ingredients' === $field || 'allergens' === $field 
+				$value = 'inci_ingredients' === $field || 'allergens' === $field
 					? sanitize_textarea_field( $arguments[ $field ] )
 					: sanitize_text_field( $arguments[ $field ] );
 				update_post_meta( $product_id, $field, $value );
@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		// Update category taxonomy.
 		if ( isset( $arguments['category'] ) ) {
 			$category = sanitize_text_field( $arguments['category'] );
-			$term = term_exists( $category, 'mcp_ai_reg_category' );
+			$term     = term_exists( $category, 'mcp_ai_reg_category' );
 			if ( ! $term ) {
 				$term = wp_insert_term( $category, 'mcp_ai_reg_category' );
 			}
@@ -218,7 +218,7 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		// Update brand taxonomy.
 		if ( isset( $arguments['brand'] ) ) {
 			$brand = sanitize_text_field( $arguments['brand'] );
-			$term = term_exists( $brand, 'mcp_ai_reg_brand' );
+			$term  = term_exists( $brand, 'mcp_ai_reg_brand' );
 			if ( ! $term ) {
 				$term = wp_insert_term( $brand, 'mcp_ai_reg_brand' );
 			}
@@ -229,7 +229,7 @@ class WP_MCP_AI_Tool_Update_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 		// Get updated product data.
 		$updated_product = get_post( $product_id );
-		$product_data = array(
+		$product_data    = array(
 			'id'                 => $updated_product->ID,
 			'name'               => $updated_product->post_title,
 			'description'        => $updated_product->post_content,

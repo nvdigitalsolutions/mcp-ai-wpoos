@@ -43,21 +43,21 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'       => array(
+				'product_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to duplicate (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'new_title'        => array(
+				'new_title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Title for the duplicated product (optional, defaults to "[Copy] Original Title")', 'mcp-ai-wpoos-pro' ),
 				),
-				'copy_meta'        => array(
+				'copy_meta'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Copy metadata fields (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'copy_taxonomies'  => array(
+				'copy_taxonomies'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Copy taxonomy terms (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -67,7 +67,7 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 					'description' => __( 'Copy associated registrations (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
-				'copy_documents'   => array(
+				'copy_documents'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Copy associated documents (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -100,6 +100,9 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -160,24 +163,24 @@ class WP_MCP_AI_Tool_Duplicate_Reg_Product implements WP_MCP_AI_Tool_Interface, 
 		// Copy registrations if requested.
 		$registration_count = 0;
 		if ( ! empty( $arguments['copy_registrations'] ) ) {
-			$registration_count = $this->copy_registrations( $product_id, $new_product_id );
+			$registration_count            = $this->copy_registrations( $product_id, $new_product_id );
 			$copied_items['registrations'] = $registration_count;
 		}
 
 		// Copy documents if requested.
 		$document_count = 0;
 		if ( ! empty( $arguments['copy_documents'] ) ) {
-			$document_count = $this->copy_documents( $product_id, $new_product_id );
+			$document_count            = $this->copy_documents( $product_id, $new_product_id );
 			$copied_items['documents'] = $document_count;
 		}
 
 		return array(
-			'success'        => true,
-			'new_product_id' => $new_product_id,
-			'new_title'      => $new_title,
+			'success'           => true,
+			'new_product_id'    => $new_product_id,
+			'new_title'         => $new_title,
 			'source_product_id' => $product_id,
-			'copied_items'   => $copied_items,
-			'message'        => sprintf(
+			'copied_items'      => $copied_items,
+			'message'           => sprintf(
 				/* translators: %s: new product title */
 				__( 'Product duplicated successfully: %s', 'mcp-ai-wpoos-pro' ),
 				$new_title

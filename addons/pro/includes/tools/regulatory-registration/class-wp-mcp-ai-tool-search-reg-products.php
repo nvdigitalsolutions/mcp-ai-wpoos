@@ -43,41 +43,41 @@ class WP_MCP_AI_Tool_Search_Reg_Products implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'search'           => array(
+				'search'         => array(
 					'type'        => 'string',
 					'description' => __( 'Search term for product name or description (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'brand'            => array(
+				'brand'          => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by brand (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'category'         => array(
+				'category'       => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by category (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'manufacturer'     => array(
+				'manufacturer'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by manufacturer (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'origin_country'   => array(
+				'origin_country' => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by origin country (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'hs_code'          => array(
+				'hs_code'        => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by HS code (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'ingredients'      => array(
+				'ingredients'    => array(
 					'type'        => 'string',
 					'description' => __( 'Search in INCI ingredients (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'page'             => array(
+				'page'           => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
-				'per_page'         => array(
+				'per_page'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Results per page (optional, default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,

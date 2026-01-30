@@ -43,16 +43,16 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country'          => array(
+				'country'         => array(
 					'type'        => 'string',
 					'description' => __( 'Country code to filter by (optional, if not provided returns all countries)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_stats'    => array(
+				'include_stats'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include statistics for each country (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'group_by_status'  => array(
+				'group_by_status' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Group registrations by status within each country (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -87,6 +87,9 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Build query arguments.
@@ -115,17 +118,17 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 		$countries = array();
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
-				$country = get_post_meta( $post->ID, 'country', true );
-				$authority = get_post_meta( $post->ID, 'authority', true );
-				$product_id = get_post_meta( $post->ID, 'product_id', true );
-				$cos_number = get_post_meta( $post->ID, 'cos_number', true );
-				$expiry_date = get_post_meta( $post->ID, 'expiry_date', true );
+				$country         = get_post_meta( $post->ID, 'country', true );
+				$authority       = get_post_meta( $post->ID, 'authority', true );
+				$product_id      = get_post_meta( $post->ID, 'product_id', true );
+				$cos_number      = get_post_meta( $post->ID, 'cos_number', true );
+				$expiry_date     = get_post_meta( $post->ID, 'expiry_date', true );
 				$submission_date = get_post_meta( $post->ID, 'submission_date', true );
-				$approval_date = get_post_meta( $post->ID, 'approval_date', true );
+				$approval_date   = get_post_meta( $post->ID, 'approval_date', true );
 
 				// Get status.
 				$status_terms = wp_get_object_terms( $post->ID, 'mcp_ai_reg_status', array( 'fields' => 'names' ) );
-				$status = ! empty( $status_terms ) ? $status_terms[0] : 'Unknown';
+				$status       = ! empty( $status_terms ) ? $status_terms[0] : 'Unknown';
 
 				// Calculate expiry status.
 				$expiry_status = 'valid';
@@ -183,11 +186,11 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 		$countries_array = array_values( $countries );
 
 		return array(
-			'success'        => true,
-			'countries'      => $countries_array,
-			'total_countries' => count( $countries_array ),
+			'success'             => true,
+			'countries'           => $countries_array,
+			'total_countries'     => count( $countries_array ),
 			'total_registrations' => $query->found_posts,
-			'message'        => sprintf(
+			'message'             => sprintf(
 				/* translators: 1: number of registrations, 2: number of countries */
 				__( 'Found %1$d registration(s) across %2$d country/countries.', 'mcp-ai-wpoos-pro' ),
 				$query->found_posts,
@@ -204,11 +207,11 @@ class WP_MCP_AI_Tool_List_Registrations_By_Country implements WP_MCP_AI_Tool_Int
 	 */
 	private function calculate_country_stats( $registrations ) {
 		$stats = array(
-			'total'              => count( $registrations ),
-			'approved'           => 0,
-			'pending'            => 0,
-			'expired'            => 0,
-			'expiring_soon'      => 0,
+			'total'               => count( $registrations ),
+			'approved'            => 0,
+			'pending'             => 0,
+			'expired'             => 0,
+			'expiring_soon'       => 0,
 			'status_distribution' => array(),
 		);
 

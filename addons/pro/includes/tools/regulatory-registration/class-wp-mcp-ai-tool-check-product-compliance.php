@@ -43,16 +43,16 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'       => array(
+				'product_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to check (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'country'          => array(
+				'country'           => array(
 					'type'        => 'string',
 					'description' => __( 'Country code to check compliance for (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'check_documents'  => array(
+				'check_documents'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Check document requirements (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -93,6 +93,9 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -123,7 +126,7 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 		}
 
 		// Get product category.
-		$categories = wp_get_object_terms( $product_id, 'mcp_ai_reg_category', array( 'fields' => 'names' ) );
+		$categories       = wp_get_object_terms( $product_id, 'mcp_ai_reg_category', array( 'fields' => 'names' ) );
 		$product_category = ! empty( $categories ) ? $categories[0] : '';
 
 		// Get all requirements for this country.
@@ -131,43 +134,43 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 
 		// Initialize compliance checks.
 		$compliance_issues = array();
-		$passed_checks = array();
+		$passed_checks     = array();
 
 		// Check document requirements if enabled.
 		if ( ! empty( $arguments['check_documents'] ) ) {
-			$doc_results = $this->check_document_compliance( $product_id, $requirements );
+			$doc_results       = $this->check_document_compliance( $product_id, $requirements );
 			$compliance_issues = array_merge( $compliance_issues, $doc_results['issues'] );
-			$passed_checks = array_merge( $passed_checks, $doc_results['passed'] );
+			$passed_checks     = array_merge( $passed_checks, $doc_results['passed'] );
 		}
 
 		// Check ingredient restrictions if enabled.
 		if ( ! empty( $arguments['check_ingredients'] ) ) {
 			$ingredient_results = $this->check_ingredient_compliance( $product_id, $requirements );
-			$compliance_issues = array_merge( $compliance_issues, $ingredient_results['issues'] );
-			$passed_checks = array_merge( $passed_checks, $ingredient_results['passed'] );
+			$compliance_issues  = array_merge( $compliance_issues, $ingredient_results['issues'] );
+			$passed_checks      = array_merge( $passed_checks, $ingredient_results['passed'] );
 		}
 
 		// Calculate compliance score.
-		$total_checks = count( $compliance_issues ) + count( $passed_checks );
+		$total_checks     = count( $compliance_issues ) + count( $passed_checks );
 		$compliance_score = $total_checks > 0 ? round( ( count( $passed_checks ) / $total_checks ) * 100, 2 ) : 0;
 
 		// Determine overall status.
 		$is_compliant = empty( $compliance_issues );
-		$status = $is_compliant ? 'compliant' : ( $compliance_score >= 50 ? 'partially_compliant' : 'non_compliant' );
+		$status       = $is_compliant ? 'compliant' : ( $compliance_score >= 50 ? 'partially_compliant' : 'non_compliant' );
 
 		return array(
-			'success'           => true,
-			'product_id'        => $product_id,
-			'country'           => $country,
-			'is_compliant'      => $is_compliant,
-			'status'            => $status,
-			'compliance_score'  => $compliance_score,
-			'total_checks'      => $total_checks,
-			'passed_checks'     => count( $passed_checks ),
-			'failed_checks'     => count( $compliance_issues ),
-			'compliance_issues' => $compliance_issues,
+			'success'             => true,
+			'product_id'          => $product_id,
+			'country'             => $country,
+			'is_compliant'        => $is_compliant,
+			'status'              => $status,
+			'compliance_score'    => $compliance_score,
+			'total_checks'        => $total_checks,
+			'passed_checks'       => count( $passed_checks ),
+			'failed_checks'       => count( $compliance_issues ),
+			'compliance_issues'   => $compliance_issues,
 			'passed_requirements' => $passed_checks,
-			'message'           => $is_compliant
+			'message'             => $is_compliant
 				? __( 'Product is compliant with all regulatory requirements.', 'mcp-ai-wpoos-pro' )
 				: sprintf(
 					/* translators: %d: number of compliance issues */
@@ -198,8 +201,8 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 			$meta_query[] = array(
 				'relation' => 'OR',
 				array(
-					'key'     => 'product_category',
-					'value'   => $product_category,
+					'key'   => 'product_category',
+					'value' => $product_category,
 				),
 				array(
 					'key'     => 'product_category',
@@ -251,7 +254,10 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 		);
 
 		if ( empty( $doc_requirements ) ) {
-			return array( 'issues' => $issues, 'passed' => $passed );
+			return array(
+				'issues' => $issues,
+				'passed' => $passed,
+			);
 		}
 
 		// Get product documents.
@@ -304,7 +310,10 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		return array( 'issues' => $issues, 'passed' => $passed );
+		return array(
+			'issues' => $issues,
+			'passed' => $passed,
+		);
 	}
 
 	/**
@@ -332,7 +341,10 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 				'requirement' => 'No ingredient restrictions',
 				'type'        => 'ingredient',
 			);
-			return array( 'issues' => $issues, 'passed' => $passed );
+			return array(
+				'issues' => $issues,
+				'passed' => $passed,
+			);
 		}
 
 		// Get product ingredients.
@@ -362,6 +374,9 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 			}
 		}
 
-		return array( 'issues' => $issues, 'passed' => $passed );
+		return array(
+			'issues' => $issues,
+			'passed' => $passed,
+		);
 	}
 }

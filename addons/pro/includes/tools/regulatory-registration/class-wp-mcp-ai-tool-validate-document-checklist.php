@@ -43,17 +43,17 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'       => array(
+				'product_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to validate (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'registration_id'  => array(
+				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to validate (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'country'          => array(
+				'country'         => array(
 					'type'        => 'string',
 					'description' => __( 'Country code to check country-specific requirements (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -87,6 +87,9 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Must have either product_id or registration_id.
@@ -125,7 +128,7 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		$required_documents = $this->get_required_documents( $country );
 
 		// Get existing documents.
-		$meta_key = 'registration' === $entity_type ? 'registration_id' : 'product_id';
+		$meta_key      = 'registration' === $entity_type ? 'registration_id' : 'product_id';
 		$existing_docs = get_posts(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
@@ -138,7 +141,7 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 
 		// Get document types of existing documents.
 		$existing_types = array();
-		$expired_docs = array();
+		$expired_docs   = array();
 		foreach ( $existing_docs as $doc_id ) {
 			$doc_type = get_post_meta( $doc_id, 'document_type', true );
 			if ( $doc_type ) {
@@ -160,13 +163,13 @@ class WP_MCP_AI_Tool_Validate_Document_Checklist implements WP_MCP_AI_Tool_Inter
 		$missing_documents = array_diff( $required_documents, $existing_types );
 
 		// Calculate compliance.
-		$total_required = count( $required_documents );
-		$total_present  = count( array_intersect( $required_documents, $existing_types ) );
+		$total_required        = count( $required_documents );
+		$total_present         = count( array_intersect( $required_documents, $existing_types ) );
 		$completion_percentage = $total_required > 0 ? round( ( $total_present / $total_required ) * 100, 2 ) : 100;
 
 		// Determine overall status.
 		$is_compliant = empty( $missing_documents ) && empty( $expired_docs );
-		$status = $is_compliant ? 'compliant' : ( $total_present > 0 ? 'partially_compliant' : 'non_compliant' );
+		$status       = $is_compliant ? 'compliant' : ( $total_present > 0 ? 'partially_compliant' : 'non_compliant' );
 
 		return array(
 			'success'               => true,

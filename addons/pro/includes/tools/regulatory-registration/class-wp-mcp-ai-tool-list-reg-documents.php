@@ -43,32 +43,32 @@ class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'       => array(
+				'product_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by product ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'registration_id'  => array(
+				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Filter by registration ID (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'document_type'    => array(
+				'document_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by document type (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'           => array(
+				'status'          => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by status: valid, expired, expiring_soon (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'valid', 'expired', 'expiring_soon' ),
 				),
-				'page'             => array(
+				'page'            => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
-				'per_page'         => array(
+				'per_page'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Results per page (optional, default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -167,20 +167,20 @@ class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_
 		$query = new WP_Query( $query_args );
 
 		$documents = array();
-		$today = time();
+		$today     = time();
 
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
-				$expiry_date = get_post_meta( $post->ID, 'expiry_date', true );
-				$is_expired = false;
-				$expiring_soon = false;
+				$expiry_date    = get_post_meta( $post->ID, 'expiry_date', true );
+				$is_expired     = false;
+				$expiring_soon  = false;
 				$days_to_expiry = null;
 
 				if ( $expiry_date ) {
-					$expiry = strtotime( $expiry_date );
+					$expiry         = strtotime( $expiry_date );
 					$days_to_expiry = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
-					$is_expired = $days_to_expiry < 0;
-					$expiring_soon = $days_to_expiry >= 0 && $days_to_expiry <= 90;
+					$is_expired     = $days_to_expiry < 0;
+					$expiring_soon  = $days_to_expiry >= 0 && $days_to_expiry <= 90;
 				}
 
 				// Filter by status if requested.
@@ -225,11 +225,11 @@ class WP_MCP_AI_Tool_List_Reg_Documents implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success'    => true,
-			'documents'  => $documents,
-			'total'      => $query->found_posts,
-			'page'       => $page,
-			'per_page'   => $per_page,
+			'success'     => true,
+			'documents'   => $documents,
+			'total'       => $query->found_posts,
+			'page'        => $page,
+			'per_page'    => $per_page,
 			'total_pages' => $query->max_num_pages,
 		);
 	}

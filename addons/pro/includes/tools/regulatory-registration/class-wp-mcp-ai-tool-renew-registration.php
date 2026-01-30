@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id'  => array(
+				'registration_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Original registration ID to renew (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -52,7 +52,7 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'string',
 					'description' => __( 'Expected new expiry date after renewal (YYYY-MM-DD, optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'notes'            => array(
+				'notes'                => array(
 					'type'        => 'string',
 					'description' => __( 'Notes about the renewal (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -84,6 +84,9 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -106,10 +109,10 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Get original registration data.
-		$product_id = get_post_meta( $original_registration_id, 'product_id', true );
-		$country = get_post_meta( $original_registration_id, 'country', true );
-		$authority = get_post_meta( $original_registration_id, 'authority', true );
-		$old_cos_number = get_post_meta( $original_registration_id, 'cos_number', true );
+		$product_id      = get_post_meta( $original_registration_id, 'product_id', true );
+		$country         = get_post_meta( $original_registration_id, 'country', true );
+		$authority       = get_post_meta( $original_registration_id, 'authority', true );
+		$old_cos_number  = get_post_meta( $original_registration_id, 'cos_number', true );
 		$old_expiry_date = get_post_meta( $original_registration_id, 'expiry_date', true );
 
 		// Create renewal registration.
@@ -166,15 +169,15 @@ class WP_MCP_AI_Tool_Renew_Registration implements WP_MCP_AI_Tool_Interface, WP_
 		update_post_meta( $original_registration_id, 'renewal_date', current_time( 'mysql' ) );
 
 		return array(
-			'success'                => true,
-			'renewal_id'             => $renewal_id,
-			'renewal_title'          => $renewal_title,
+			'success'                  => true,
+			'renewal_id'               => $renewal_id,
+			'renewal_title'            => $renewal_title,
 			'original_registration_id' => $original_registration_id,
-			'product_id'             => $product_id,
-			'country'                => $country,
-			'authority'              => $authority,
-			'registration_type'      => 'renewal',
-			'message'                => __( 'Renewal registration created successfully.', 'mcp-ai-wpoos-pro' ),
+			'product_id'               => $product_id,
+			'country'                  => $country,
+			'authority'                => $authority,
+			'registration_type'        => 'renewal',
+			'message'                  => __( 'Renewal registration created successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

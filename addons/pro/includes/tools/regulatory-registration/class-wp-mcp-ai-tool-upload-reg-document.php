@@ -43,50 +43,50 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'title'            => array(
+				'title'           => array(
 					'type'        => 'string',
 					'description' => __( 'Document title (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'document_type'    => array(
+				'document_type'   => array(
 					'type'        => 'string',
 					'description' => __( 'Document type: loa, fsc, coa, gmp, iso, msds, pif, cpsr, cpnp, artwork, formula, stability, other (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'file_url'         => array(
+				'file_url'        => array(
 					'type'        => 'string',
 					'description' => __( 'URL of file to upload (required if file_data not provided)', 'mcp-ai-wpoos-pro' ),
 				),
-				'file_data'        => array(
+				'file_data'       => array(
 					'type'        => 'string',
 					'description' => __( 'Base64 encoded file data (required if file_url not provided)', 'mcp-ai-wpoos-pro' ),
 				),
-				'file_name'        => array(
+				'file_name'       => array(
 					'type'        => 'string',
 					'description' => __( 'File name (required if using file_data)', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_id'       => array(
+				'product_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to attach document to (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'registration_id'  => array(
+				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to attach document to (optional, must provide product_id or registration_id)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'issue_date'       => array(
+				'issue_date'      => array(
 					'type'        => 'string',
 					'description' => __( 'Document issue date (YYYY-MM-DD format, optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'expiry_date'      => array(
+				'expiry_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Document expiry date (YYYY-MM-DD format, optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'version'          => array(
+				'version'         => array(
 					'type'        => 'string',
 					'description' => __( 'Document version (optional, default: 1.0)', 'mcp-ai-wpoos-pro' ),
 					'default'     => '1.0',
 				),
-				'notes'            => array(
+				'notes'           => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -120,6 +120,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -268,9 +271,9 @@ class WP_MCP_AI_Tool_Upload_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Get upload directory.
-		$upload_dir = wp_upload_dir();
+		$upload_dir  = wp_upload_dir();
 		$upload_path = $upload_dir['path'] . '/' . $file_name;
-		$upload_url = $upload_dir['url'] . '/' . $file_name;
+		$upload_url  = $upload_dir['url'] . '/' . $file_name;
 
 		// Save file.
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- Legitimate file upload.

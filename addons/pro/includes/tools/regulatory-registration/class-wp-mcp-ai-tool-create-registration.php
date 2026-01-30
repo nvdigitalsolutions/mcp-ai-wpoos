@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Creates a new registration instance.
  */
 class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface, WP_MCP_AI_Tool_Context_Restrictions_Interface {
-	
+
 	use WP_MCP_AI_Tool_Restrict_From_Chat_Client;
+
 	/**
 	 * {@inheritdoc}
 	 */
@@ -45,55 +46,55 @@ class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'         => array(
+				'product_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'country'            => array(
+				'country'           => array(
 					'type'        => 'string',
 					'description' => __( 'Country/region (e.g., Sri Lanka, UAE, Saudi Arabia) (required)', 'mcp-ai-wpoos-pro' ),
 					'minLength'   => 1,
 					'maxLength'   => 100,
 				),
-				'authority'          => array(
+				'authority'         => array(
 					'type'        => 'string',
 					'description' => __( 'Regulatory authority (e.g., NMRA, MOHAP, SFDA) (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'registration_type'  => array(
+				'registration_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Registration type: new, renewal, or variation (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'new', 'renewal', 'variation' ),
 					'default'     => 'new',
 				),
-				'status'             => array(
+				'status'            => array(
 					'type'        => 'string',
 					'description' => __( 'Initial status (optional, defaults to "draft")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'draft', 'pending_documents', 'ready_for_submission', 'submitted', 'under_review', 'approved', 'rejected', 'on_hold', 'renewal_due' ),
 					'default'     => 'draft',
 				),
-				'cos_number'         => array(
+				'cos_number'        => array(
 					'type'        => 'string',
 					'description' => __( 'COS/Certificate number (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 100,
 				),
-				'submission_date'    => array(
+				'submission_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Submission date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'approval_date'      => array(
+				'approval_date'     => array(
 					'type'        => 'string',
 					'description' => __( 'Approval date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'expiry_date'        => array(
+				'expiry_date'       => array(
 					'type'        => 'string',
 					'description' => __( 'Registration expiry date in ISO 8601 format (YYYY-MM-DD) (optional)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'notes'              => array(
+				'notes'             => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes or comments (optional)', 'mcp-ai-wpoos-pro' ),
 					'maxLength'   => 5000,
@@ -242,7 +243,8 @@ class WP_MCP_AI_Tool_Create_Registration implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'success'         => true,
 			'registration_id' => $registration_id,
-			'message'         => sprintf( __( 'Registration for "%s" in %s created successfully.', 'mcp-ai-wpoos-pro' ), $product->post_title, $country ),
+			// translators: %1$s is the product name, %2$s is the country name.
+			'message'         => sprintf( __( 'Registration for "%1$s" in %2$s created successfully.', 'mcp-ai-wpoos-pro' ), $product->post_title, $country ),
 			'edit_url'        => get_edit_post_link( $registration_id, 'raw' ),
 		);
 	}

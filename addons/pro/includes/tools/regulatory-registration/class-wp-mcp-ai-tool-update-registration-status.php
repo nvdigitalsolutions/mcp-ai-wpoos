@@ -139,7 +139,7 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 		}
 
 		$registration_id = absint( $arguments['registration_id'] );
-		$status = sanitize_text_field( $arguments['status'] );
+		$status          = sanitize_text_field( $arguments['status'] );
 
 		// Get the registration.
 		$registration = get_post( $registration_id );
@@ -195,7 +195,7 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 
 		// Get updated registration data.
 		$updated_registration = get_post( $registration_id );
-		$registration_data = array(
+		$registration_data    = array(
 			'id'              => $updated_registration->ID,
 			'title'           => $updated_registration->post_title,
 			'notes'           => $updated_registration->post_content,
@@ -209,8 +209,8 @@ class WP_MCP_AI_Tool_Update_Registration_Status implements WP_MCP_AI_Tool_Interf
 		);
 
 		return array(
-			'success' => true,
-			'message' => __( 'Registration status updated successfully.', 'mcp-ai-wpoos-pro' ),
+			'success'      => true,
+			'message'      => __( 'Registration status updated successfully.', 'mcp-ai-wpoos-pro' ),
 			'registration' => $registration_data,
 		);
 	}

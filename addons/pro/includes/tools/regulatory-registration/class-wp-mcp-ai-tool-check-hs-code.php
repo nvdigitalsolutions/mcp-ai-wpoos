@@ -43,11 +43,11 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'hs_code'          => array(
+				'hs_code'      => array(
 					'type'        => 'string',
 					'description' => __( 'HS code to validate (required, e.g. 3304.99.00)', 'mcp-ai-wpoos-pro' ),
 				),
-				'product_type'     => array(
+				'product_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Product type to suggest appropriate HS code (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -80,6 +80,9 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -110,11 +113,11 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 
 		// Check if product type matches HS code category.
 		$product_type_match = true;
-		$suggestions = array();
+		$suggestions        = array();
 		if ( ! empty( $arguments['product_type'] ) ) {
-			$match_check = $this->check_product_type_match( $hs_code, $arguments['product_type'] );
+			$match_check        = $this->check_product_type_match( $hs_code, $arguments['product_type'] );
 			$product_type_match = $match_check['matches'];
-			$suggestions = $match_check['suggestions'];
+			$suggestions        = $match_check['suggestions'];
 		}
 
 		return array(
@@ -166,8 +169,8 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	private function get_hs_code_info( $hs_code ) {
 		// Clean code for lookup.
 		$clean_code = str_replace( array( ' ', '.' ), '', $hs_code );
-		$chapter = substr( $clean_code, 0, 2 );
-		$heading = substr( $clean_code, 0, 4 );
+		$chapter    = substr( $clean_code, 0, 2 );
+		$heading    = substr( $clean_code, 0, 4 );
 
 		// Common cosmetics HS codes (sample set).
 		$hs_codes = array(
@@ -235,7 +238,7 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 */
 	private function check_product_type_match( $hs_code, $product_type ) {
 		$clean_code = str_replace( array( ' ', '.' ), '', $hs_code );
-		$heading = substr( $clean_code, 0, 4 );
+		$heading    = substr( $clean_code, 0, 4 );
 
 		// Product type to HS code mapping.
 		$product_to_hs = array(
@@ -260,7 +263,7 @@ class WP_MCP_AI_Tool_Check_HS_Code implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'shaving cream' => array( '3307' ),
 		);
 
-		$product_lower = strtolower( $product_type );
+		$product_lower  = strtolower( $product_type );
 		$expected_codes = array();
 
 		// Find matching product types.

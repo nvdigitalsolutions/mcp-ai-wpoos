@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id'  => array(
+				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to get timeline for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -79,6 +79,9 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -101,10 +104,10 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 		}
 
 		// Get registration details.
-		$country = get_post_meta( $registration_id, 'country', true );
-		$submission_date = get_post_meta( $registration_id, 'submission_date', true );
-		$approval_date = get_post_meta( $registration_id, 'approval_date', true );
-		$expiry_date = get_post_meta( $registration_id, 'expiry_date', true );
+		$country           = get_post_meta( $registration_id, 'country', true );
+		$submission_date   = get_post_meta( $registration_id, 'submission_date', true );
+		$approval_date     = get_post_meta( $registration_id, 'approval_date', true );
+		$expiry_date       = get_post_meta( $registration_id, 'expiry_date', true );
 		$registration_type = get_post_meta( $registration_id, 'registration_type', true );
 
 		// Get expected timeline for country.
@@ -147,75 +150,75 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	private function get_expected_timeline( $country, $registration_type ) {
 		// Default timelines (in days).
 		$default_timeline = array(
-			'new'      => array(
-				'preparation'   => 30,
-				'submission'    => 1,
-				'review'        => 90,
-				'queries'       => 30,
-				'approval'      => 14,
-				'total'         => 165,
+			'new'       => array(
+				'preparation' => 30,
+				'submission'  => 1,
+				'review'      => 90,
+				'queries'     => 30,
+				'approval'    => 14,
+				'total'       => 165,
 			),
-			'renewal'  => array(
-				'preparation'   => 14,
-				'submission'    => 1,
-				'review'        => 60,
-				'queries'       => 14,
-				'approval'      => 7,
-				'total'         => 96,
+			'renewal'   => array(
+				'preparation' => 14,
+				'submission'  => 1,
+				'review'      => 60,
+				'queries'     => 14,
+				'approval'    => 7,
+				'total'       => 96,
 			),
 			'variation' => array(
-				'preparation'   => 14,
-				'submission'    => 1,
-				'review'        => 45,
-				'queries'       => 14,
-				'approval'      => 7,
-				'total'         => 81,
+				'preparation' => 14,
+				'submission'  => 1,
+				'review'      => 45,
+				'queries'     => 14,
+				'approval'    => 7,
+				'total'       => 81,
 			),
 		);
 
 		// Country-specific timelines.
 		$country_timelines = array(
 			'LK' => array( // Sri Lanka NMRA.
-				'new'      => array(
-					'preparation'   => 45,
-					'submission'    => 1,
-					'review'        => 120,
-					'queries'       => 30,
-					'approval'      => 14,
-					'total'         => 210,
+				'new'     => array(
+					'preparation' => 45,
+					'submission'  => 1,
+					'review'      => 120,
+					'queries'     => 30,
+					'approval'    => 14,
+					'total'       => 210,
 				),
-				'renewal'  => array(
-					'preparation'   => 21,
-					'submission'    => 1,
-					'review'        => 90,
-					'queries'       => 14,
-					'approval'      => 7,
-					'total'         => 133,
+				'renewal' => array(
+					'preparation' => 21,
+					'submission'  => 1,
+					'review'      => 90,
+					'queries'     => 14,
+					'approval'    => 7,
+					'total'       => 133,
 				),
 			),
 			'AE' => array( // UAE MOHAP.
-				'new'      => array(
-					'preparation'   => 30,
-					'submission'    => 1,
-					'review'        => 60,
-					'queries'       => 21,
-					'approval'      => 7,
-					'total'         => 119,
+				'new' => array(
+					'preparation' => 30,
+					'submission'  => 1,
+					'review'      => 60,
+					'queries'     => 21,
+					'approval'    => 7,
+					'total'       => 119,
 				),
 			),
 			'SA' => array( // Saudi SFDA.
-				'new'      => array(
-					'preparation'   => 30,
-					'submission'    => 1,
-					'review'        => 90,
-					'queries'       => 30,
-					'approval'      => 14,
-					'total'         => 165,
+				'new' => array(
+					'preparation' => 30,
+					'submission'  => 1,
+					'review'      => 90,
+					'queries'     => 30,
+					'approval'    => 14,
+					'total'       => 165,
 				),
 			),
 		);
 
-		$type = ! empty( $registration_type ) ? $registration_type : 'new';
+		$type          = ! empty( $registration_type ) ? $registration_type : 'new';
 		$country_upper = strtoupper( $country );
 
 		if ( isset( $country_timelines[ $country_upper ][ $type ] ) ) {
@@ -237,7 +240,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function calculate_milestones( $registration, $submission_date, $expected_timeline ) {
 		$milestones = array();
-		$base_date = ! empty( $submission_date ) ? strtotime( $submission_date ) : strtotime( $registration->post_date );
+		$base_date  = ! empty( $submission_date ) ? strtotime( $submission_date ) : strtotime( $registration->post_date );
 
 		$milestones[] = array(
 			'name'        => 'Preparation',
@@ -259,7 +262,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 		);
 
 		$approval_date = get_post_meta( $registration->ID, 'approval_date', true );
-		$milestones[] = array(
+		$milestones[]  = array(
 			'name'        => 'Approval',
 			'status'      => ! empty( $approval_date ) ? 'completed' : 'pending',
 			'start_date'  => null,
@@ -279,7 +282,7 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 	 */
 	private function calculate_progress( $milestones ) {
 		$completed = 0;
-		$total = count( $milestones );
+		$total     = count( $milestones );
 
 		foreach ( $milestones as $milestone ) {
 			if ( 'completed' === $milestone['status'] ) {
@@ -335,34 +338,34 @@ class WP_MCP_AI_Tool_Get_Registration_Timeline implements WP_MCP_AI_Tool_Interfa
 		$analysis = array();
 
 		if ( ! empty( $submission_date ) ) {
-			$submitted_timestamp = strtotime( $submission_date );
-			$days_since_submission = floor( ( time() - $submitted_timestamp ) / DAY_IN_SECONDS );
+			$submitted_timestamp               = strtotime( $submission_date );
+			$days_since_submission             = floor( ( time() - $submitted_timestamp ) / DAY_IN_SECONDS );
 			$analysis['days_since_submission'] = $days_since_submission;
 
 			if ( empty( $approval_date ) ) {
-				$expected_approval_date = gmdate( 'Y-m-d', strtotime( '+' . $expected_timeline['total'] . ' days', $submitted_timestamp ) );
-				$analysis['expected_approval_date'] = $expected_approval_date;
+				$expected_approval_date                = gmdate( 'Y-m-d', strtotime( '+' . $expected_timeline['total'] . ' days', $submitted_timestamp ) );
+				$analysis['expected_approval_date']    = $expected_approval_date;
 				$analysis['days_to_expected_approval'] = floor( ( strtotime( $expected_approval_date ) - time() ) / DAY_IN_SECONDS );
 			}
 		}
 
 		if ( ! empty( $approval_date ) ) {
-			$approved_timestamp = strtotime( $approval_date );
+			$approved_timestamp              = strtotime( $approval_date );
 			$analysis['days_since_approval'] = floor( ( time() - $approved_timestamp ) / DAY_IN_SECONDS );
 
 			if ( ! empty( $submission_date ) ) {
-				$processing_time = floor( ( $approved_timestamp - strtotime( $submission_date ) ) / DAY_IN_SECONDS );
-				$analysis['actual_processing_time'] = $processing_time;
+				$processing_time                      = floor( ( $approved_timestamp - strtotime( $submission_date ) ) / DAY_IN_SECONDS );
+				$analysis['actual_processing_time']   = $processing_time;
 				$analysis['expected_processing_time'] = $expected_timeline['total'];
 				$analysis['processing_time_variance'] = $processing_time - $expected_timeline['total'];
 			}
 		}
 
 		if ( ! empty( $expiry_date ) ) {
-			$expiry_timestamp = strtotime( $expiry_date );
-			$days_to_expiry = floor( ( $expiry_timestamp - time() ) / DAY_IN_SECONDS );
+			$expiry_timestamp           = strtotime( $expiry_date );
+			$days_to_expiry             = floor( ( $expiry_timestamp - time() ) / DAY_IN_SECONDS );
 			$analysis['days_to_expiry'] = $days_to_expiry;
-			$analysis['expiry_date'] = $expiry_date;
+			$analysis['expiry_date']    = $expiry_date;
 
 			if ( $days_to_expiry < 0 ) {
 				$analysis['expiry_status'] = 'expired';

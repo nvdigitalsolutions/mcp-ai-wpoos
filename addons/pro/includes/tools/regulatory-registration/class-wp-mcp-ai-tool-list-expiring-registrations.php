@@ -43,18 +43,18 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'warning_days'     => array(
+				'warning_days'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Days ahead to include (optional, default: 90)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 365,
 					'default'     => 90,
 				),
-				'country'          => array(
+				'country'         => array(
 					'type'        => 'string',
 					'description' => __( 'Filter by country (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'include_expired'  => array(
+				'include_expired' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include already expired registrations (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -104,9 +104,9 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to view registrations.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$warning_days = isset( $arguments['warning_days'] ) ? absint( $arguments['warning_days'] ) : 90;
-		$include_expired = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : true;
-		$today = time();
+		$warning_days      = isset( $arguments['warning_days'] ) ? absint( $arguments['warning_days'] ) : 90;
+		$include_expired   = isset( $arguments['include_expired'] ) ? (bool) $arguments['include_expired'] : true;
+		$today             = time();
 		$warning_threshold = $today + ( $warning_days * DAY_IN_SECONDS );
 
 		// Build query args.
@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 
 		$query = new WP_Query( $query_args );
 
-		$expired = array();
+		$expired       = array();
 		$expiring_soon = array();
 
 		if ( $query->have_posts() ) {
@@ -143,7 +143,7 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 					continue;
 				}
 
-				$expiry = strtotime( $expiry_date );
+				$expiry         = strtotime( $expiry_date );
 				$days_to_expiry = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
 
 				// Skip if expired and we're not including expired.
@@ -157,15 +157,15 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 				}
 
 				$reg_data = array(
-					'id'              => $post->ID,
-					'title'           => $post->post_title,
-					'product_id'      => absint( get_post_meta( $post->ID, 'product_id', true ) ),
-					'country'         => get_post_meta( $post->ID, 'country', true ),
-					'authority'       => get_post_meta( $post->ID, 'authority', true ),
-					'cos_number'      => get_post_meta( $post->ID, 'cos_number', true ),
-					'expiry_date'     => $expiry_date,
-					'days_to_expiry'  => $days_to_expiry,
-					'is_expired'      => $expiry < $today,
+					'id'             => $post->ID,
+					'title'          => $post->post_title,
+					'product_id'     => absint( get_post_meta( $post->ID, 'product_id', true ) ),
+					'country'        => get_post_meta( $post->ID, 'country', true ),
+					'authority'      => get_post_meta( $post->ID, 'authority', true ),
+					'cos_number'     => get_post_meta( $post->ID, 'cos_number', true ),
+					'expiry_date'    => $expiry_date,
+					'days_to_expiry' => $days_to_expiry,
+					'is_expired'     => $expiry < $today,
 				);
 
 				// Get status.
@@ -191,22 +191,28 @@ class WP_MCP_AI_Tool_List_Expiring_Registrations implements WP_MCP_AI_Tool_Inter
 		}
 
 		// Sort by days to expiry (most urgent first).
-		usort( $expired, function( $a, $b ) {
-			return $b['days_to_expiry'] - $a['days_to_expiry'];
-		});
+		usort(
+			$expired,
+			function ( $a, $b ) {
+				return $b['days_to_expiry'] - $a['days_to_expiry'];
+			}
+		);
 
-		usort( $expiring_soon, function( $a, $b ) {
-			return $a['days_to_expiry'] - $b['days_to_expiry'];
-		});
+		usort(
+			$expiring_soon,
+			function ( $a, $b ) {
+				return $a['days_to_expiry'] - $b['days_to_expiry'];
+			}
+		);
 
 		return array(
-			'success'           => true,
-			'expired_count'     => count( $expired ),
+			'success'             => true,
+			'expired_count'       => count( $expired ),
 			'expiring_soon_count' => count( $expiring_soon ),
-			'expired'           => $expired,
-			'expiring_soon'     => $expiring_soon,
-			'warning_days'      => $warning_days,
-			'summary'           => sprintf(
+			'expired'             => $expired,
+			'expiring_soon'       => $expiring_soon,
+			'warning_days'        => $warning_days,
+			'summary'             => sprintf(
 				/* translators: 1: expired count, 2: expiring soon count, 3: warning days */
 				__( '%1$d expired registrations, %2$d expiring within %3$d days', 'mcp-ai-wpoos-pro' ),
 				count( $expired ),

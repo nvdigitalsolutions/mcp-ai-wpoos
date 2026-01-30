@@ -115,8 +115,8 @@ class WP_MCP_AI_Tool_Submit_Registration implements WP_MCP_AI_Tool_Interface, WP
 		}
 
 		// Set submission date (default to today).
-		$submission_date = ! empty( $arguments['submission_date'] ) 
-			? sanitize_text_field( $arguments['submission_date'] ) 
+		$submission_date = ! empty( $arguments['submission_date'] )
+			? sanitize_text_field( $arguments['submission_date'] )
 			: current_time( 'Y-m-d' );
 
 		// Update status to Submitted.
@@ -134,7 +134,7 @@ class WP_MCP_AI_Tool_Submit_Registration implements WP_MCP_AI_Tool_Interface, WP
 		// Update notes if provided.
 		if ( ! empty( $arguments['notes'] ) ) {
 			$post_content = get_post_field( 'post_content', $registration_id );
-			$new_content = $post_content . "\n\n" . sprintf(
+			$new_content  = $post_content . "\n\n" . sprintf(
 				/* translators: 1: submission date, 2: notes */
 				__( '[Submitted on %1$s] %2$s', 'mcp-ai-wpoos-pro' ),
 				$submission_date,

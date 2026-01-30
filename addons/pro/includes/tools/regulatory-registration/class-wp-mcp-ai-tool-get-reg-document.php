@@ -43,12 +43,12 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'document_id'      => array(
+				'document_id'          => array(
 					'type'        => 'integer',
 					'description' => __( 'Document ID to retrieve (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'include_product'  => array(
+				'include_product'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include related product information (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -89,6 +89,9 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -111,25 +114,25 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		// Get metadata.
-		$product_id       = get_post_meta( $document_id, 'product_id', true );
-		$registration_id  = get_post_meta( $document_id, 'registration_id', true );
-		$document_type    = get_post_meta( $document_id, 'document_type', true );
-		$file_url         = get_post_meta( $document_id, 'file_url', true );
-		$version          = get_post_meta( $document_id, 'version', true );
-		$issue_date       = get_post_meta( $document_id, 'issue_date', true );
-		$expiry_date      = get_post_meta( $document_id, 'expiry_date', true );
+		$product_id      = get_post_meta( $document_id, 'product_id', true );
+		$registration_id = get_post_meta( $document_id, 'registration_id', true );
+		$document_type   = get_post_meta( $document_id, 'document_type', true );
+		$file_url        = get_post_meta( $document_id, 'file_url', true );
+		$version         = get_post_meta( $document_id, 'version', true );
+		$issue_date      = get_post_meta( $document_id, 'issue_date', true );
+		$expiry_date     = get_post_meta( $document_id, 'expiry_date', true );
 
 		// Calculate expiry status.
-		$expiry_status = 'valid';
+		$expiry_status  = 'valid';
 		$days_to_expiry = null;
 		if ( ! empty( $expiry_date ) ) {
 			$expiry_timestamp = strtotime( $expiry_date );
-			$current_time = time();
+			$current_time     = time();
 			if ( $expiry_timestamp < $current_time ) {
-				$expiry_status = 'expired';
+				$expiry_status  = 'expired';
 				$days_to_expiry = floor( ( $expiry_timestamp - $current_time ) / DAY_IN_SECONDS );
 			} elseif ( $expiry_timestamp < strtotime( '+90 days', $current_time ) ) {
-				$expiry_status = 'expiring_soon';
+				$expiry_status  = 'expiring_soon';
 				$days_to_expiry = floor( ( $expiry_timestamp - $current_time ) / DAY_IN_SECONDS );
 			} else {
 				$days_to_expiry = floor( ( $expiry_timestamp - $current_time ) / DAY_IN_SECONDS );
@@ -141,22 +144,22 @@ class WP_MCP_AI_Tool_Get_Reg_Document implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Build document data.
 		$document_data = array(
-			'document_id'    => $document_id,
-			'title'          => $document->post_title,
-			'document_type'  => $document_type,
-			'file_url'       => $file_url,
-			'version'        => $version,
-			'issue_date'     => $issue_date,
-			'expiry_date'    => $expiry_date,
-			'expiry_status'  => $expiry_status,
-			'days_to_expiry' => $days_to_expiry,
-			'status'         => $document->post_status,
-			'notes'          => $document->post_content,
-			'created_at'     => $document->post_date,
-			'modified_at'    => $document->post_modified,
-			'product_id'     => $product_id,
+			'document_id'     => $document_id,
+			'title'           => $document->post_title,
+			'document_type'   => $document_type,
+			'file_url'        => $file_url,
+			'version'         => $version,
+			'issue_date'      => $issue_date,
+			'expiry_date'     => $expiry_date,
+			'expiry_status'   => $expiry_status,
+			'days_to_expiry'  => $days_to_expiry,
+			'status'          => $document->post_status,
+			'notes'           => $document->post_content,
+			'created_at'      => $document->post_date,
+			'modified_at'     => $document->post_modified,
+			'product_id'      => $product_id,
 			'registration_id' => $registration_id,
-			'taxonomies'     => array(
+			'taxonomies'      => array(
 				'doc_types' => $doc_types,
 			),
 		);

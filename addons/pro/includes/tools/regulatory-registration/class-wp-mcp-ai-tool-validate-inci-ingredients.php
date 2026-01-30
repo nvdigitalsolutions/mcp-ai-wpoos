@@ -43,11 +43,11 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'ingredients'      => array(
+				'ingredients'        => array(
 					'type'        => 'string',
 					'description' => __( 'Comma-separated list of ingredients to validate (required)', 'mcp-ai-wpoos-pro' ),
 				),
-				'country'          => array(
+				'country'            => array(
 					'type'        => 'string',
 					'description' => __( 'Country code for country-specific restrictions (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -85,6 +85,9 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -97,19 +100,19 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 
 		// Parse ingredients.
 		$ingredients_text = sanitize_textarea_field( $arguments['ingredients'] );
-		$ingredients = array_map( 'trim', explode( ',', $ingredients_text ) );
+		$ingredients      = array_map( 'trim', explode( ',', $ingredients_text ) );
 
 		// Validate each ingredient.
 		$validation_results = array();
-		$invalid_count = 0;
-		$restricted_count = 0;
+		$invalid_count      = 0;
+		$restricted_count   = 0;
 
 		foreach ( $ingredients as $ingredient ) {
 			if ( empty( $ingredient ) ) {
 				continue;
 			}
 
-			$validation = $this->validate_single_ingredient( $ingredient, $arguments );
+			$validation           = $this->validate_single_ingredient( $ingredient, $arguments );
 			$validation_results[] = $validation;
 
 			if ( ! $validation['is_valid_inci'] ) {
@@ -123,23 +126,23 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 
 		// Calculate overall validation status.
 		$total_ingredients = count( $validation_results );
-		$valid_count = $total_ingredients - $invalid_count;
-		$validation_score = $total_ingredients > 0 ? round( ( $valid_count / $total_ingredients ) * 100, 2 ) : 0;
+		$valid_count       = $total_ingredients - $invalid_count;
+		$validation_score  = $total_ingredients > 0 ? round( ( $valid_count / $total_ingredients ) * 100, 2 ) : 0;
 
-		$is_valid = $invalid_count === 0 && $restricted_count === 0;
-		$status = $is_valid ? 'valid' : ( $validation_score >= 80 ? 'mostly_valid' : 'invalid' );
+		$is_valid = 0 === $invalid_count && 0 === $restricted_count;
+		$status   = $is_valid ? 'valid' : ( $validation_score >= 80 ? 'mostly_valid' : 'invalid' );
 
 		return array(
-			'success'            => true,
-			'is_valid'           => $is_valid,
-			'status'             => $status,
-			'validation_score'   => $validation_score,
-			'total_ingredients'  => $total_ingredients,
-			'valid_ingredients'  => $valid_count,
-			'invalid_ingredients' => $invalid_count,
+			'success'                => true,
+			'is_valid'               => $is_valid,
+			'status'                 => $status,
+			'validation_score'       => $validation_score,
+			'total_ingredients'      => $total_ingredients,
+			'valid_ingredients'      => $valid_count,
+			'invalid_ingredients'    => $invalid_count,
 			'restricted_ingredients' => $restricted_count,
-			'ingredients'        => $validation_results,
-			'message'            => $is_valid
+			'ingredients'            => $validation_results,
+			'message'                => $is_valid
 				? __( 'All ingredients are valid INCI names and not restricted.', 'mcp-ai-wpoos-pro' )
 				: sprintf(
 					/* translators: 1: invalid count, 2: restricted count */
@@ -162,16 +165,16 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 
 		// Basic INCI validation rules.
 		$is_valid_inci = $this->check_inci_format( $ingredient );
-		$common_name = $this->get_common_name( $ingredient );
-		$warnings = array();
+		$common_name   = $this->get_common_name( $ingredient );
+		$warnings      = array();
 
 		// Check for restricted substances if enabled.
-		$is_restricted = false;
+		$is_restricted    = false;
 		$restriction_info = array();
 		if ( ! empty( $arguments['check_restrictions'] ) ) {
 			$restriction_check = $this->check_restrictions( $ingredient, $arguments['country'] ?? '' );
-			$is_restricted = $restriction_check['is_restricted'];
-			$restriction_info = $restriction_check['info'];
+			$is_restricted     = $restriction_check['is_restricted'];
+			$restriction_info  = $restriction_check['info'];
 		}
 
 		// Check for common issues.
@@ -188,12 +191,12 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 		}
 
 		return array(
-			'ingredient'      => $ingredient,
-			'is_valid_inci'   => $is_valid_inci,
-			'common_name'     => $common_name,
-			'is_restricted'   => $is_restricted,
+			'ingredient'       => $ingredient,
+			'is_valid_inci'    => $is_valid_inci,
+			'common_name'      => $common_name,
+			'is_restricted'    => $is_restricted,
 			'restriction_info' => $restriction_info,
-			'warnings'        => $warnings,
+			'warnings'         => $warnings,
 		);
 	}
 
@@ -264,29 +267,29 @@ class WP_MCP_AI_Tool_Validate_INCI_Ingredients implements WP_MCP_AI_Tool_Interfa
 	private function check_restrictions( $ingredient, $country ) {
 		// Common restricted/banned substances (sample set).
 		$globally_restricted = array(
-			'Hydroquinone'           => array(
-				'reason'  => 'Banned in EU, restricted in many countries',
-				'level'   => 'banned',
+			'Hydroquinone' => array(
+				'reason' => 'Banned in EU, restricted in many countries',
+				'level'  => 'banned',
 			),
-			'Mercury'                => array(
-				'reason'  => 'Toxic heavy metal, globally banned',
-				'level'   => 'banned',
+			'Mercury'      => array(
+				'reason' => 'Toxic heavy metal, globally banned',
+				'level'  => 'banned',
 			),
-			'Lead'                   => array(
-				'reason'  => 'Toxic heavy metal, banned in cosmetics',
-				'level'   => 'banned',
+			'Lead'         => array(
+				'reason' => 'Toxic heavy metal, banned in cosmetics',
+				'level'  => 'banned',
 			),
-			'Formaldehyde'           => array(
-				'reason'  => 'Carcinogenic, restricted in many countries',
-				'level'   => 'restricted',
+			'Formaldehyde' => array(
+				'reason' => 'Carcinogenic, restricted in many countries',
+				'level'  => 'restricted',
 			),
-			'Parabens'               => array(
-				'reason'  => 'Endocrine disruptor, restricted in some countries',
-				'level'   => 'restricted',
+			'Parabens'     => array(
+				'reason' => 'Endocrine disruptor, restricted in some countries',
+				'level'  => 'restricted',
 			),
-			'Triclosan'              => array(
-				'reason'  => 'Antimicrobial resistance concerns',
-				'level'   => 'restricted',
+			'Triclosan'    => array(
+				'reason' => 'Antimicrobial resistance concerns',
+				'level'  => 'restricted',
 			),
 		);
 

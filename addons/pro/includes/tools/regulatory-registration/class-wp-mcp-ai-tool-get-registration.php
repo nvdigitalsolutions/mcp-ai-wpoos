@@ -43,12 +43,12 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id' => array(
+				'registration_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'include_product' => array(
+				'include_product'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include product details (optional, default: false)', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
@@ -109,9 +109,9 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 			return new WP_Error( 'wp_mcp_ai_missing_param', __( 'Registration ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$registration_id    = absint( $arguments['registration_id'] );
-		$include_product    = ! empty( $arguments['include_product'] );
-		$include_documents  = ! empty( $arguments['include_documents'] );
+		$registration_id   = absint( $arguments['registration_id'] );
+		$include_product   = ! empty( $arguments['include_product'] );
+		$include_documents = ! empty( $arguments['include_documents'] );
 
 		// Get the registration.
 		$registration = get_post( $registration_id );
@@ -145,12 +145,12 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		// Calculate days to expiry if expiry date set.
 		if ( ! empty( $registration_data['expiry_date'] ) ) {
-			$expiry = strtotime( $registration_data['expiry_date'] );
-			$today = time();
-			$days_to_expiry = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
+			$expiry                              = strtotime( $registration_data['expiry_date'] );
+			$today                               = time();
+			$days_to_expiry                      = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
 			$registration_data['days_to_expiry'] = $days_to_expiry;
-			$registration_data['is_expired'] = $days_to_expiry < 0;
-			$registration_data['expiring_soon'] = $days_to_expiry >= 0 && $days_to_expiry <= 90;
+			$registration_data['is_expired']     = $days_to_expiry < 0;
+			$registration_data['expiring_soon']  = $days_to_expiry >= 0 && $days_to_expiry <= 90;
 		}
 
 		// Include product details if requested.
@@ -158,9 +158,9 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 			$product = get_post( $registration_data['product_id'] );
 			if ( $product && 'mcp_ai_reg_product' === $product->post_type ) {
 				$registration_data['product'] = array(
-					'id'          => $product->ID,
-					'name'        => $product->post_title,
-					'brand'       => get_post_meta( $product->ID, 'brand', true ),
+					'id'           => $product->ID,
+					'name'         => $product->post_title,
+					'brand'        => get_post_meta( $product->ID, 'brand', true ),
 					'manufacturer' => get_post_meta( $product->ID, 'manufacturer', true ),
 				);
 			}
@@ -197,12 +197,12 @@ class WP_MCP_AI_Tool_Get_Registration implements WP_MCP_AI_Tool_Interface, WP_MC
 				}
 			}
 
-			$registration_data['documents'] = $documents;
+			$registration_data['documents']      = $documents;
 			$registration_data['document_count'] = count( $documents );
 		}
 
 		return array(
-			'success' => true,
+			'success'      => true,
 			'registration' => $registration_data,
 		);
 	}

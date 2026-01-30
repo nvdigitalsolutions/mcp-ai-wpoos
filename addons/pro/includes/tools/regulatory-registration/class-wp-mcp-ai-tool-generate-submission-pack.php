@@ -43,12 +43,12 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id'  => array(
+				'registration_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID to generate pack for (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'submission_type'  => array(
+				'submission_type'      => array(
 					'type'        => 'string',
 					'description' => __( 'Type of submission: new, renewal, variation (optional, default: new)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'new', 'renewal', 'variation' ),
@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 					'description' => __( 'Generate cover letter (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'include_index'    => array(
+				'include_index'        => array(
 					'type'        => 'boolean',
 					'description' => __( 'Generate document index (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -94,6 +94,9 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -117,8 +120,8 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 
 		// Get registration details.
 		$product_id = get_post_meta( $registration_id, 'product_id', true );
-		$country = get_post_meta( $registration_id, 'country', true );
-		$authority = get_post_meta( $registration_id, 'authority', true );
+		$country    = get_post_meta( $registration_id, 'country', true );
+		$authority  = get_post_meta( $registration_id, 'authority', true );
 
 		// Get product details.
 		$product = get_post( $product_id );
@@ -144,7 +147,7 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 		);
 
 		// Check for missing required documents.
-		$required_docs = $this->get_required_documents( $country );
+		$required_docs  = $this->get_required_documents( $country );
 		$existing_types = array();
 		foreach ( $documents as $doc ) {
 			$doc_type = get_post_meta( $doc->ID, 'document_type', true );
@@ -164,7 +167,7 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 
 		// Create submission pack metadata.
 		$submission_type = ! empty( $arguments['submission_type'] ) ? sanitize_text_field( $arguments['submission_type'] ) : 'new';
-		$pack_data = array(
+		$pack_data       = array(
 			'registration_id' => $registration_id,
 			'product_id'      => $product_id,
 			'country'         => $country,
@@ -251,16 +254,16 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 	 * @return string Cover letter content.
 	 */
 	private function generate_cover_letter( $registration, $product, $country, $authority, $submission_type ) {
-		$date = current_time( 'F j, Y' );
+		$date         = current_time( 'F j, Y' );
 		$product_name = $product->post_title;
-		$brand = get_post_meta( $product->ID, 'brand', true );
+		$brand        = get_post_meta( $product->ID, 'brand', true );
 
-		$letter = "Date: {$date}\n\n";
+		$letter  = "Date: {$date}\n\n";
 		$letter .= "To: {$authority}\n";
 		$letter .= "Country: {$country}\n\n";
-		$letter .= "Re: " . ucfirst( $submission_type ) . " Registration Application for {$product_name}\n\n";
+		$letter .= 'Re: ' . ucfirst( $submission_type ) . " Registration Application for {$product_name}\n\n";
 		$letter .= "Dear Sir/Madam,\n\n";
-		$letter .= "We hereby submit the complete application dossier for the " . strtolower( $submission_type ) . " registration of our product:\n\n";
+		$letter .= 'We hereby submit the complete application dossier for the ' . strtolower( $submission_type ) . " registration of our product:\n\n";
 		$letter .= "Product Name: {$product_name}\n";
 		if ( $brand ) {
 			$letter .= "Brand: {$brand}\n";
@@ -276,17 +279,17 @@ class WP_MCP_AI_Tool_Generate_Submission_Pack implements WP_MCP_AI_Tool_Interfac
 	/**
 	 * Generate document index.
 	 *
-	 * @param array  $documents Array of document data.
+	 * @param array   $documents Array of document data.
 	 * @param WP_Post $product Product post.
-	 * @param string $country Country code.
+	 * @param string  $country Country code.
 	 * @return string Document index content.
 	 */
 	private function generate_document_index( $documents, $product, $country ) {
-		$index = "DOCUMENT INDEX\n";
+		$index  = "DOCUMENT INDEX\n";
 		$index .= "==============\n\n";
 		$index .= "Product: {$product->post_title}\n";
 		$index .= "Country: {$country}\n";
-		$index .= "Generated: " . current_time( 'F j, Y' ) . "\n\n";
+		$index .= 'Generated: ' . current_time( 'F j, Y' ) . "\n\n";
 		$index .= "Documents Included:\n\n";
 
 		$counter = 1;

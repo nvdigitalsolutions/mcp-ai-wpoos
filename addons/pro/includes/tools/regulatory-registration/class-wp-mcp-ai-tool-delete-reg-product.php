@@ -114,8 +114,8 @@ class WP_MCP_AI_Tool_Delete_Reg_Product implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		return array(
-			'success' => true,
-			'message' => __( 'Product deleted successfully.', 'mcp-ai-wpoos-pro' ),
+			'success'    => true,
+			'message'    => __( 'Product deleted successfully.', 'mcp-ai-wpoos-pro' ),
 			'product_id' => $product_id,
 		);
 	}

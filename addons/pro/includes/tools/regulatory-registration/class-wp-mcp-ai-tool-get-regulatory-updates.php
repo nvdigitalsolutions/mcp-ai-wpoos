@@ -43,30 +43,30 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'country'          => array(
+				'country'     => array(
 					'type'        => 'string',
 					'description' => __( 'Country code to get updates for (optional, leave empty for all)', 'mcp-ai-wpoos-pro' ),
 				),
-				'authority'        => array(
+				'authority'   => array(
 					'type'        => 'string',
 					'description' => __( 'Authority name to get updates for (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'since_date'       => array(
+				'since_date'  => array(
 					'type'        => 'string',
 					'description' => __( 'Get updates since this date (YYYY-MM-DD, optional, default: 30 days ago)', 'mcp-ai-wpoos-pro' ),
 				),
-				'update_type'      => array(
+				'update_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Type of update: new_regulation, amendment, guideline, restriction, other (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'new_regulation', 'amendment', 'guideline', 'restriction', 'other' ),
 				),
-				'page'             => array(
+				'page'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Page number for pagination (optional, default: 1)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'default'     => 1,
 				),
-				'per_page'         => array(
+				'per_page'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Results per page (optional, default: 20, max: 100)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -103,6 +103,9 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		$page     = ! empty( $arguments['page'] ) ? absint( $arguments['page'] ) : 1;
@@ -162,15 +165,15 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
 				$updates[] = array(
-					'update_id'    => $post->ID,
-					'title'        => $post->post_title,
-					'description'  => $post->post_content,
-					'country'      => get_post_meta( $post->ID, 'country', true ),
-					'authority'    => get_post_meta( $post->ID, 'authority', true ),
-					'update_type'  => get_post_meta( $post->ID, 'update_type', true ),
+					'update_id'      => $post->ID,
+					'title'          => $post->post_title,
+					'description'    => $post->post_content,
+					'country'        => get_post_meta( $post->ID, 'country', true ),
+					'authority'      => get_post_meta( $post->ID, 'authority', true ),
+					'update_type'    => get_post_meta( $post->ID, 'update_type', true ),
 					'effective_date' => get_post_meta( $post->ID, 'effective_date', true ),
-					'reference_url' => get_post_meta( $post->ID, 'reference_url', true ),
-					'published_at' => $post->post_date,
+					'reference_url'  => get_post_meta( $post->ID, 'reference_url', true ),
+					'published_at'   => $post->post_date,
 				);
 			}
 		}
@@ -181,13 +184,13 @@ class WP_MCP_AI_Tool_Get_Regulatory_Updates implements WP_MCP_AI_Tool_Interface,
 		}
 
 		return array(
-			'success'     => true,
-			'updates'     => $updates,
-			'total'       => ! empty( $query->found_posts ) ? $query->found_posts : count( $updates ),
-			'page'        => $page,
-			'per_page'    => $per_page,
-			'since_date'  => $since_date,
-			'message'     => sprintf(
+			'success'    => true,
+			'updates'    => $updates,
+			'total'      => ! empty( $query->found_posts ) ? $query->found_posts : count( $updates ),
+			'page'       => $page,
+			'per_page'   => $per_page,
+			'since_date' => $since_date,
+			'message'    => sprintf(
 				/* translators: %d: number of updates */
 				__( 'Found %d regulatory update(s).', 'mcp-ai-wpoos-pro' ),
 				count( $updates )

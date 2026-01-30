@@ -43,7 +43,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'product_id'       => array(
+				'product_id'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Product ID to validate (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -53,17 +53,17 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Check data completeness (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_inci'       => array(
+				'check_inci'         => array(
 					'type'        => 'boolean',
 					'description' => __( 'Validate INCI ingredients (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'check_hs_code'    => array(
+				'check_hs_code'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Validate HS code (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'target_country'   => array(
+				'target_country'     => array(
 					'type'        => 'string',
 					'description' => __( 'Target country for registration (optional, for country-specific validation)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -97,6 +97,9 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -120,16 +123,16 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 
 		// Initialize validation results.
 		$validation_results = array();
-		$errors = array();
-		$warnings = array();
-		$passed_checks = array();
+		$errors             = array();
+		$warnings           = array();
+		$passed_checks      = array();
 
 		// Check data completeness if enabled.
 		if ( ! empty( $arguments['check_completeness'] ) ) {
-			$completeness_result = $this->check_completeness( $product_id, $product );
+			$completeness_result                = $this->check_completeness( $product_id, $product );
 			$validation_results['completeness'] = $completeness_result;
-			$errors = array_merge( $errors, $completeness_result['errors'] );
-			$warnings = array_merge( $warnings, $completeness_result['warnings'] );
+			$errors                             = array_merge( $errors, $completeness_result['errors'] );
+			$warnings                           = array_merge( $warnings, $completeness_result['warnings'] );
 			if ( $completeness_result['is_complete'] ) {
 				$passed_checks[] = 'Data completeness';
 			}
@@ -137,7 +140,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 
 		// Validate INCI ingredients if enabled.
 		if ( ! empty( $arguments['check_inci'] ) ) {
-			$inci_result = $this->check_inci( $product_id, $arguments['target_country'] ?? '' );
+			$inci_result                = $this->check_inci( $product_id, $arguments['target_country'] ?? '' );
 			$validation_results['inci'] = $inci_result;
 			if ( ! $inci_result['is_valid'] ) {
 				$errors = array_merge( $errors, $inci_result['errors'] );
@@ -149,7 +152,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 
 		// Validate HS code if enabled.
 		if ( ! empty( $arguments['check_hs_code'] ) ) {
-			$hs_code_result = $this->check_hs_code( $product_id, $product );
+			$hs_code_result                = $this->check_hs_code( $product_id, $product );
 			$validation_results['hs_code'] = $hs_code_result;
 			if ( ! $hs_code_result['is_valid'] ) {
 				$errors = array_merge( $errors, $hs_code_result['errors'] );
@@ -160,26 +163,26 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Calculate overall validation status.
-		$is_valid = empty( $errors );
+		$is_valid     = empty( $errors );
 		$has_warnings = ! empty( $warnings );
-		$status = $is_valid ? ( $has_warnings ? 'valid_with_warnings' : 'valid' ) : 'invalid';
+		$status       = $is_valid ? ( $has_warnings ? 'valid_with_warnings' : 'valid' ) : 'invalid';
 
 		// Determine readiness for registration.
 		$ready_for_registration = $is_valid && ! empty( $validation_results['completeness']['is_complete'] );
 
 		return array(
-			'success'               => true,
-			'product_id'            => $product_id,
-			'product_title'         => $product->post_title,
-			'is_valid'              => $is_valid,
-			'status'                => $status,
+			'success'                => true,
+			'product_id'             => $product_id,
+			'product_title'          => $product->post_title,
+			'is_valid'               => $is_valid,
+			'status'                 => $status,
 			'ready_for_registration' => $ready_for_registration,
-			'validation_results'    => $validation_results,
-			'errors'                => $errors,
-			'warnings'              => $warnings,
-			'passed_checks'         => $passed_checks,
-			'total_checks'          => count( $passed_checks ) + count( $errors ),
-			'message'               => $is_valid
+			'validation_results'     => $validation_results,
+			'errors'                 => $errors,
+			'warnings'               => $warnings,
+			'passed_checks'          => $passed_checks,
+			'total_checks'           => count( $passed_checks ) + count( $errors ),
+			'message'                => $is_valid
 				? __( 'Product validation passed.', 'mcp-ai-wpoos-pro' )
 				: sprintf(
 					/* translators: %d: number of errors */
@@ -197,24 +200,24 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 * @return array Completeness result.
 	 */
 	private function check_completeness( $product_id, $product ) {
-		$errors = array();
-		$warnings = array();
+		$errors         = array();
+		$warnings       = array();
 		$missing_fields = array();
 		$present_fields = array();
 
 		// Required fields.
 		$required_fields = array(
-			'brand'           => get_post_meta( $product_id, 'brand', true ),
-			'manufacturer'    => get_post_meta( $product_id, 'manufacturer', true ),
-			'origin_country'  => get_post_meta( $product_id, 'origin_country', true ),
+			'brand'            => get_post_meta( $product_id, 'brand', true ),
+			'manufacturer'     => get_post_meta( $product_id, 'manufacturer', true ),
+			'origin_country'   => get_post_meta( $product_id, 'origin_country', true ),
 			'inci_ingredients' => get_post_meta( $product_id, 'inci_ingredients', true ),
-			'hs_code'         => get_post_meta( $product_id, 'hs_code', true ),
+			'hs_code'          => get_post_meta( $product_id, 'hs_code', true ),
 		);
 
 		foreach ( $required_fields as $field => $value ) {
 			if ( empty( $value ) ) {
 				$missing_fields[] = $field;
-				$errors[] = sprintf(
+				$errors[]         = sprintf(
 					/* translators: %s: field name */
 					__( 'Required field missing: %s', 'mcp-ai-wpoos-pro' ),
 					ucfirst( str_replace( '_', ' ', $field ) )
@@ -241,7 +244,7 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 			}
 		}
 
-		$total_fields = count( $required_fields );
+		$total_fields          = count( $required_fields );
 		$completion_percentage = $total_fields > 0 ? round( ( count( $present_fields ) / $total_fields ) * 100, 2 ) : 0;
 
 		return array(
@@ -263,8 +266,8 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 */
 	private function check_inci( $product_id, $country ) {
 		$inci_ingredients = get_post_meta( $product_id, 'inci_ingredients', true );
-		$errors = array();
-		$warnings = array();
+		$errors           = array();
+		$warnings         = array();
 
 		if ( empty( $inci_ingredients ) ) {
 			$errors[] = __( 'INCI ingredients list is empty.', 'mcp-ai-wpoos-pro' );
@@ -299,9 +302,9 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'is_valid' => empty( $errors ),
-			'errors'   => $errors,
-			'warnings' => $warnings,
+			'is_valid'         => empty( $errors ),
+			'errors'           => $errors,
+			'warnings'         => $warnings,
 			'ingredient_count' => count( $ingredients ),
 		);
 	}
@@ -314,8 +317,8 @@ class WP_MCP_AI_Tool_Validate_Reg_Product implements WP_MCP_AI_Tool_Interface, W
 	 * @return array HS code validation result.
 	 */
 	private function check_hs_code( $product_id, $product ) {
-		$hs_code = get_post_meta( $product_id, 'hs_code', true );
-		$errors = array();
+		$hs_code  = get_post_meta( $product_id, 'hs_code', true );
+		$errors   = array();
 		$warnings = array();
 
 		if ( empty( $hs_code ) ) {

@@ -43,25 +43,25 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'document_id'      => array(
+				'document_id'  => array(
 					'type'        => 'integer',
 					'description' => __( 'Document ID (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'action'           => array(
+				'action'       => array(
 					'type'        => 'string',
 					'description' => __( 'Action: get_history or create_version (required)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'get_history', 'create_version' ),
 				),
-				'new_version'      => array(
+				'new_version'  => array(
 					'type'        => 'string',
 					'description' => __( 'New version number (required when action=create_version)', 'mcp-ai-wpoos-pro' ),
 				),
-				'file_url'         => array(
+				'file_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'New file URL (required when action=create_version)', 'mcp-ai-wpoos-pro' ),
 				),
-				'change_notes'     => array(
+				'change_notes' => array(
 					'type'        => 'string',
 					'description' => __( 'Notes about changes in this version (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -94,6 +94,9 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -112,7 +115,7 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 		}
 
 		$document_id = absint( $arguments['document_id'] );
-		$action = sanitize_text_field( $arguments['action'] );
+		$action      = sanitize_text_field( $arguments['action'] );
 
 		// Verify document exists.
 		$document = get_post( $document_id );
@@ -144,7 +147,7 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 	 */
 	private function get_version_history( $document_id, $document ) {
 		// Get current version.
-		$current_version = get_post_meta( $document_id, 'version', true );
+		$current_version  = get_post_meta( $document_id, 'version', true );
 		$current_file_url = get_post_meta( $document_id, 'file_url', true );
 
 		// Get version history from meta.
@@ -164,10 +167,10 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 
 		if ( ! $current_version_in_history ) {
 			$version_history[] = array(
-				'version'     => $current_version,
-				'file_url'    => $current_file_url,
-				'created_at'  => $document->post_modified,
-				'notes'       => '',
+				'version'    => $current_version,
+				'file_url'   => $current_file_url,
+				'created_at' => $document->post_modified,
+				'notes'      => '',
 			);
 		}
 
@@ -212,12 +215,12 @@ class WP_MCP_AI_Tool_Track_Document_Version implements WP_MCP_AI_Tool_Interface,
 			);
 		}
 
-		$new_version = sanitize_text_field( $arguments['new_version'] );
+		$new_version  = sanitize_text_field( $arguments['new_version'] );
 		$new_file_url = esc_url_raw( $arguments['file_url'] );
 		$change_notes = ! empty( $arguments['change_notes'] ) ? sanitize_textarea_field( $arguments['change_notes'] ) : '';
 
 		// Get current version info.
-		$old_version = get_post_meta( $document_id, 'version', true );
+		$old_version  = get_post_meta( $document_id, 'version', true );
 		$old_file_url = get_post_meta( $document_id, 'file_url', true );
 
 		// Get existing version history.

@@ -124,8 +124,8 @@ class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Set approval date (default to today).
-		$approval_date = ! empty( $arguments['approval_date'] ) 
-			? sanitize_text_field( $arguments['approval_date'] ) 
+		$approval_date = ! empty( $arguments['approval_date'] )
+			? sanitize_text_field( $arguments['approval_date'] )
 			: current_time( 'Y-m-d' );
 
 		// Update status to Approved.
@@ -153,7 +153,7 @@ class WP_MCP_AI_Tool_Approve_Registration implements WP_MCP_AI_Tool_Interface, W
 		// Update notes if provided.
 		if ( ! empty( $arguments['notes'] ) ) {
 			$post_content = get_post_field( 'post_content', $registration_id );
-			$new_content = $post_content . "\n\n" . sprintf(
+			$new_content  = $post_content . "\n\n" . sprintf(
 				/* translators: 1: approval date, 2: notes */
 				__( '[Approved on %1$s] %2$s', 'mcp-ai-wpoos-pro' ),
 				$approval_date,

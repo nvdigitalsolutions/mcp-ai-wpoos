@@ -43,37 +43,37 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'document_id'      => array(
+				'document_id'   => array(
 					'type'        => 'integer',
 					'description' => __( 'Document ID to update (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'title'            => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Document title (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'document_type'    => array(
+				'document_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Document type (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'issue_date'       => array(
+				'issue_date'    => array(
 					'type'        => 'string',
 					'description' => __( 'Document issue date (YYYY-MM-DD format, optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'expiry_date'      => array(
+				'expiry_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'Document expiry date (YYYY-MM-DD format, optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'version'          => array(
+				'version'       => array(
 					'type'        => 'string',
 					'description' => __( 'Document version (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'status'           => array(
+				'status'        => array(
 					'type'        => 'string',
 					'description' => __( 'Document status: draft, pending, approved, rejected (optional)', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'draft', 'pending', 'approved', 'rejected' ),
 				),
-				'notes'            => array(
+				'notes'         => array(
 					'type'        => 'string',
 					'description' => __( 'Additional notes (optional)', 'mcp-ai-wpoos-pro' ),
 				),
@@ -105,6 +105,9 @@ class WP_MCP_AI_Tool_Update_Reg_Document implements WP_MCP_AI_Tool_Interface, WP
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.

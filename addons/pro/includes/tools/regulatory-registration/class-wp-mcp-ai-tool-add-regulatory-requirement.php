@@ -110,6 +110,9 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
@@ -163,13 +166,13 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 		}
 
 		return array(
-			'success'        => true,
-			'requirement_id' => $requirement_id,
-			'country'        => $arguments['country'],
-			'authority'      => $arguments['authority'],
+			'success'          => true,
+			'requirement_id'   => $requirement_id,
+			'country'          => $arguments['country'],
+			'authority'        => $arguments['authority'],
 			'requirement_type' => $arguments['requirement_type'],
-			'is_mandatory'   => ! empty( $arguments['is_mandatory'] ),
-			'message'        => __( 'Regulatory requirement created successfully.', 'mcp-ai-wpoos-pro' ),
+			'is_mandatory'     => ! empty( $arguments['is_mandatory'] ),
+			'message'          => __( 'Regulatory requirement created successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 }

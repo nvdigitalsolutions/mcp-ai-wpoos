@@ -43,19 +43,19 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'warning_days'     => array(
+				'warning_days'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Days ahead to warn about expiry (optional, default: 90)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 					'maximum'     => 365,
 					'default'     => 90,
 				),
-				'product_id'       => array(
+				'product_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Check only documents for specific product (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'registration_id'  => array(
+				'registration_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'Check only documents for specific registration (optional)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
@@ -105,8 +105,8 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to check documents.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$warning_days = isset( $arguments['warning_days'] ) ? absint( $arguments['warning_days'] ) : 90;
-		$today = time();
+		$warning_days      = isset( $arguments['warning_days'] ) ? absint( $arguments['warning_days'] ) : 90;
+		$today             = time();
 		$warning_threshold = $today + ( $warning_days * DAY_IN_SECONDS );
 
 		// Build query args.
@@ -145,8 +145,8 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 		$query = new WP_Query( $query_args );
 
 		$expired_documents = array();
-		$expiring_soon = array();
-		$valid_documents = array();
+		$expiring_soon     = array();
+		$valid_documents   = array();
 
 		if ( $query->have_posts() ) {
 			foreach ( $query->posts as $post ) {
@@ -155,7 +155,7 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 					continue;
 				}
 
-				$expiry = strtotime( $expiry_date );
+				$expiry         = strtotime( $expiry_date );
 				$days_to_expiry = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
 
 				$doc_data = array(
@@ -176,28 +176,34 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 
 				if ( $expiry < $today ) {
 					// Already expired.
-					$doc_data['status'] = 'expired';
+					$doc_data['status']  = 'expired';
 					$expired_documents[] = $doc_data;
 				} elseif ( $expiry < $warning_threshold ) {
 					// Expiring soon (within warning period).
 					$doc_data['status'] = 'expiring_soon';
-					$expiring_soon[] = $doc_data;
+					$expiring_soon[]    = $doc_data;
 				} else {
 					// Still valid.
 					$doc_data['status'] = 'valid';
-					$valid_documents[] = $doc_data;
+					$valid_documents[]  = $doc_data;
 				}
 			}
 		}
 
 		// Sort by days to expiry (most urgent first).
-		usort( $expired_documents, function( $a, $b ) {
-			return $b['days_to_expiry'] - $a['days_to_expiry'];
-		});
+		usort(
+			$expired_documents,
+			function ( $a, $b ) {
+				return $b['days_to_expiry'] - $a['days_to_expiry'];
+			}
+		);
 
-		usort( $expiring_soon, function( $a, $b ) {
-			return $a['days_to_expiry'] - $b['days_to_expiry'];
-		});
+		usort(
+			$expiring_soon,
+			function ( $a, $b ) {
+				return $a['days_to_expiry'] - $b['days_to_expiry'];
+			}
+		);
 
 		$alert_level = 'ok';
 		if ( count( $expired_documents ) > 0 ) {
@@ -207,15 +213,15 @@ class WP_MCP_AI_Tool_Check_Document_Expiry implements WP_MCP_AI_Tool_Interface, 
 		}
 
 		return array(
-			'success'           => true,
-			'alert_level'       => $alert_level,
-			'expired_count'     => count( $expired_documents ),
+			'success'             => true,
+			'alert_level'         => $alert_level,
+			'expired_count'       => count( $expired_documents ),
 			'expiring_soon_count' => count( $expiring_soon ),
-			'valid_count'       => count( $valid_documents ),
-			'expired_documents' => $expired_documents,
-			'expiring_soon'     => $expiring_soon,
-			'warning_days'      => $warning_days,
-			'summary'           => sprintf(
+			'valid_count'         => count( $valid_documents ),
+			'expired_documents'   => $expired_documents,
+			'expiring_soon'       => $expiring_soon,
+			'warning_days'        => $warning_days,
+			'summary'             => sprintf(
 				/* translators: 1: expired count, 2: expiring soon count, 3: valid count */
 				__( '%1$d expired, %2$d expiring soon (within %4$d days), %3$d valid', 'mcp-ai-wpoos-pro' ),
 				count( $expired_documents ),

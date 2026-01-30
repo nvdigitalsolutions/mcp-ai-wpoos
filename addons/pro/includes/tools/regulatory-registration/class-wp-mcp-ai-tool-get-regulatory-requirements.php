@@ -109,6 +109,9 @@ class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Inter
 
 	/**
 	 * {@inheritdoc}
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
 	 */
 	public function execute( $arguments, $context = array() ) {
 		// Validate required arguments.
