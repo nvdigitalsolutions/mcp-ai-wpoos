@@ -53,9 +53,21 @@ class WP_MCP_AI_Admin_Profession_Settings {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		register_setting( 'wp_mcp_ai_profession_settings_group', 'wp_mcp_ai_profession_default_provider' );
-		register_setting( 'wp_mcp_ai_profession_settings_group', 'wp_mcp_ai_profession_default_model' );
-		register_setting( 'wp_mcp_ai_profession_settings_group', 'wp_mcp_ai_profession_default_temperature' );
+		register_setting(
+			'wp_mcp_ai_profession_settings_group',
+			'wp_mcp_ai_profession_default_provider',
+			array( 'sanitize_callback' => 'sanitize_text_field' )
+		);
+		register_setting(
+			'wp_mcp_ai_profession_settings_group',
+			'wp_mcp_ai_profession_default_model',
+			array( 'sanitize_callback' => 'sanitize_text_field' )
+		);
+		register_setting(
+			'wp_mcp_ai_profession_settings_group',
+			'wp_mcp_ai_profession_default_temperature',
+			array( 'sanitize_callback' => 'floatval' )
+		);
 	}
 
 	/**

@@ -464,8 +464,8 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 			'users_affected' => $enforced,
 			'force_reset'   => $force_reset,
 			'message'       => sprintf(
-				/* translators: %d: number of users, %s: role name */
-				__( '2FA enforcement enabled for %d users with role: %s', 'mcp-ai-wpoos' ),
+				/* translators: 1: number of users, 2: role name */
+				__( '2FA enforcement enabled for %1$d users with role: %2$s', 'mcp-ai-wpoos' ),
 				$enforced,
 				$role
 			),

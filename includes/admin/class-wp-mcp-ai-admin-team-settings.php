@@ -53,10 +53,26 @@ class WP_MCP_AI_Admin_Team_Settings {
 	 * Register settings.
 	 */
 	public function register_settings() {
-		register_setting( 'wp_mcp_ai_team_settings_group', 'wp_mcp_ai_team_default_provider' );
-		register_setting( 'wp_mcp_ai_team_settings_group', 'wp_mcp_ai_team_default_model' );
-		register_setting( 'wp_mcp_ai_team_settings_group', 'wp_mcp_ai_team_default_temperature' );
-		register_setting( 'wp_mcp_ai_team_settings_group', 'wp_mcp_ai_team_default_driver_assistant' );
+		register_setting(
+			'wp_mcp_ai_team_settings_group',
+			'wp_mcp_ai_team_default_provider',
+			array( 'sanitize_callback' => 'sanitize_text_field' )
+		);
+		register_setting(
+			'wp_mcp_ai_team_settings_group',
+			'wp_mcp_ai_team_default_model',
+			array( 'sanitize_callback' => 'sanitize_text_field' )
+		);
+		register_setting(
+			'wp_mcp_ai_team_settings_group',
+			'wp_mcp_ai_team_default_temperature',
+			array( 'sanitize_callback' => 'floatval' )
+		);
+		register_setting(
+			'wp_mcp_ai_team_settings_group',
+			'wp_mcp_ai_team_default_driver_assistant',
+			array( 'sanitize_callback' => 'absint' )
+		);
 	}
 
 	/**

@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Validate_Reasoning_Chain implements WP_MCP_AI_Tool_Interfac
 		if ( $validation_result['valid'] ) {
 			$message = sprintf(
 				/* translators: 1: coherence score, 2: consistency score */
-				__( 'Reasoning chain is valid. Coherence: %.1f%%, Logical consistency: %.1f%%. No significant gaps identified.', 'mcp-ai-wpoos' ),
+				__( 'Reasoning chain is valid. Coherence: %1$.1f%%, Logical consistency: %2$.1f%%. No significant gaps identified.', 'mcp-ai-wpoos' ),
 				$quality_metrics['coherence'] * 100,
 				$quality_metrics['logical_consistency'] * 100
 			);
