@@ -1018,7 +1018,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 						</p>
 					</div>
 
-WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
 					<?php
 					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
 					?>
