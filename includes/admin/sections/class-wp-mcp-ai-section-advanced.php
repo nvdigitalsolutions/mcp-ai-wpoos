@@ -1723,15 +1723,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			// Get AI Peers count.
 			$ai_peer_count = wp_count_posts( 'ai_peer' );
 			// Count all AI peers regardless of status to detect unpublished peers.
-			$total_peers   = 0;
-			if ( isset( $ai_peer_count->publish ) ) {
-				$total_peers += absint( $ai_peer_count->publish );
-			}
-			if ( isset( $ai_peer_count->draft ) ) {
-				$total_peers += absint( $ai_peer_count->draft );
-			}
-			if ( isset( $ai_peer_count->pending ) ) {
-				$total_peers += absint( $ai_peer_count->pending );
+			// Exclude only trash and auto-draft statuses.
+			$total_peers = 0;
+			foreach ( (array) $ai_peer_count as $status => $count ) {
+				if ( ! in_array( $status, array( 'trash', 'auto-draft' ), true ) ) {
+					$total_peers += absint( $count );
+				}
 			}
 
 			// Get mesh computing status from tools settings.
@@ -1938,11 +1935,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 							<div class="notice notice-warning inline" style="margin: 15px 0;">
 								<p>
 									<?php
+									$message = sprintf(
+										/* translators: %d: number of peers */
+										_n(
+											'You have %d AI peer registered, but it is not currently published.',
+											'You have %d AI peers registered, but none are currently published.',
+											$total_peers,
+											'mcp-ai-wpoos'
+										),
+										$total_peers
+									);
+									$link = sprintf(
+										'<a href="%s">%s</a>',
+										esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ),
+										esc_html__( 'View all AI peers', 'mcp-ai-wpoos' )
+									);
 									printf(
-										/* translators: 1: number of peers, 2: URL to AI Peers list */
-										__( 'You have %1$d AI peer(s) registered, but none are currently published. %2$s to review and publish them.', 'mcp-ai-wpoos' ),
-										absint( $total_peers ),
-										'<a href="' . esc_url( admin_url( 'edit.php?post_type=ai_peer' ) ) . '">' . esc_html__( 'View all AI peers', 'mcp-ai-wpoos' ) . '</a>'
+										/* translators: 1: message about unpublished peers, 2: link to view AI peers */
+										__( '%1$s %2$s to review and publish them.', 'mcp-ai-wpoos' ),
+										esc_html( $message ),
+										$link // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Escaped above with esc_url and esc_html__
 									);
 									?>
 								</p>
