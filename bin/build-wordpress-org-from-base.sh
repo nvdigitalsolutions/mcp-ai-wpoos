@@ -95,6 +95,12 @@ transform_package() {
     BEFORE_COUNT=$(grep -rE "('mcp-ai-wpoos'|\"mcp-ai-wpoos\"|'mcp-ai-wpoos-base'|\"mcp-ai-wpoos-base\"|'mcp-ai-wpoos-pro'|\"mcp-ai-wpoos-pro\")" "$EXTRACTED_DIR" --include="*.php" --include="*.js" 2>/dev/null | wc -l || echo 0)
     
     # Transform PHP files - handle all text domain variants
+    # First, transform plugin headers (Text Domain: mcp-ai-wpoos-base → nvdigital-open-operator-system-oos)
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/Text Domain: mcp-ai-wpoos-base/Text Domain: nvdigital-open-operator-system-oos/g' {} \;
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/Text Domain: mcp-ai-wpoos-pro/Text Domain: nvdigital-open-operator-system-oos-pro/g' {} \;
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/Text Domain: mcp-ai-wpoos-core/Text Domain: nvdigital-open-operator-system-oos-core/g' {} \;
+    find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/Text Domain: mcp-ai-wpoos/Text Domain: nvdigital-open-operator-system-oos/g' {} \;
+    
     # Transform mcp-ai-wpoos-base → nvdigital-open-operator-system-oos
     find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i "s/'mcp-ai-wpoos-base'/'nvdigital-open-operator-system-oos'/g" {} \;
     find "$EXTRACTED_DIR" -name "*.php" -type f -exec sed -i 's/"mcp-ai-wpoos-base"/"nvdigital-open-operator-system-oos"/g' {} \;
