@@ -1809,9 +1809,26 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					</script>
 				<?php endif; ?>
 
+				<!-- Mesh Peer Sites Configuration -->
+				<?php if ( $mesh_enabled ) : ?>
+					<div class="wp-mcp-ai-mesh-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
+						<h4><?php esc_html_e( 'Mesh Peer Sites', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description">
+							<?php esc_html_e( 'Configure peer sites for mesh computing. These are remote NV oOS instances that this site can query for distributed workload processing.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<?php
+						// Call the existing custom field renderer for mesh_peer_sites.
+						if ( class_exists( 'WP_MCP_AI_Admin_Settings' ) && method_exists( 'WP_MCP_AI_Admin_Settings', 'render_mesh_peer_sites_field' ) ) {
+							$admin_settings = new WP_MCP_AI_Admin_Settings();
+							$admin_settings->render_mesh_peer_sites_field();
+						}
+						?>
+					</div>
+				<?php endif; ?>
+
 				<!-- AI Peers Management -->
 				<div class="wp-mcp-ai-ai-peers-section" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-					<h4><?php esc_html_e( 'AI Peers', 'mcp-ai-wpoos' ); ?></h4>
+					<h4><?php esc_html_e( 'AI Peers (Federation Directory)', 'mcp-ai-wpoos' ); ?></h4>
 					<p class="description">
 						<?php esc_html_e( 'AI Peers represent other NV oOS instances in the federation network. Each peer can provide capabilities, tools, and AI services that can be discovered and consumed by this site.', 'mcp-ai-wpoos' ); ?>
 					</p>
