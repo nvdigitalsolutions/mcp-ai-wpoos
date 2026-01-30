@@ -434,6 +434,7 @@ class WP_MCP_AI_Function_Call_Validator {
 
 		// Simple topological sort.
 		$total_count = count( $tool_calls_tree );
+		// phpcs:ignore Generic.CodeAnalysis.ForLoopWithTestFunctionCall.NotAllowed, Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $processed array grows inside loop, count() must be called each iteration.
 		while ( count( $processed ) < $total_count ) {
 			$current_level = array();
 
