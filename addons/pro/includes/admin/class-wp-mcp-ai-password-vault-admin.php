@@ -2,10 +2,12 @@
 /**
  * Password Vault Manager Admin Page
  *
- * Provides admin interface for password vault management with dedicated sections for:
+ * Provides admin interface for password vault management with dedicated pages for:
  * - Vault Items Management
  * - Password Generator & Authenticator
+ * - Import/Export & Sync
  * - Security Settings
+ * - Auto Sync & Conflicts
  *
  * @package WP_MCP_AI_Pro
  * @since 1.3.0
