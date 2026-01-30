@@ -98,7 +98,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate parameters.
 		$action            = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'analyze';
 		$target_format     = isset( $arguments['target_format'] ) ? sanitize_text_field( $arguments['target_format'] ) : 'auto';

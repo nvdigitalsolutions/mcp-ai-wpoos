@@ -95,7 +95,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate parameters.
 		$action       = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'setup';
 		$user_id      = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : get_current_user_id();

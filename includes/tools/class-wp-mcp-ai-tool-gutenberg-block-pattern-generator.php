@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Gutenberg_Block_Pattern_Generator {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
 
 		// Validate parameters.

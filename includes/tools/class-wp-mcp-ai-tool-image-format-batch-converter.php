@@ -112,7 +112,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$start_time = microtime( true );
 
 		// Validate parameters.
