@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param array $context   Execution context.
 	 * @return array Tool execution result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate parameters.
 		$time_period      = isset( $arguments['time_period'] ) ? sanitize_text_field( $arguments['time_period'] ) : '24hours';
 		$start_date       = isset( $arguments['start_date'] ) ? sanitize_text_field( $arguments['start_date'] ) : '';

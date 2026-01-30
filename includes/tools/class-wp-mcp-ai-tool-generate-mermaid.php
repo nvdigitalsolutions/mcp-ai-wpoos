@@ -77,7 +77,7 @@ class WP_MCP_AI_Tool_Generate_Mermaid implements WP_MCP_AI_Tool_Interface {
 	 * @param array $context   Execution context.
 	 * @return array Tool result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate diagram type.
 		$valid_types = array( 'flowchart', 'sequence', 'gantt', 'class' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {

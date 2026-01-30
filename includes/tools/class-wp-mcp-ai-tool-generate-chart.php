@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 	 * @param array $context   Execution context.
 	 * @return array Tool result.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate chart type.
 		$valid_types = array( 'line', 'bar', 'pie', 'doughnut', 'scatter', 'radar' );
 		if ( ! isset( $arguments['type'] ) || ! in_array( $arguments['type'], $valid_types, true ) ) {

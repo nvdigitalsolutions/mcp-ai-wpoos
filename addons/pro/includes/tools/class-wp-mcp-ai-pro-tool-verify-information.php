@@ -49,7 +49,7 @@ class WP_MCP_AI_Pro_Tool_Verify_Information {
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$claim   = sanitize_text_field( $arguments['claim'] );
 		$sources = $arguments['sources'];
 

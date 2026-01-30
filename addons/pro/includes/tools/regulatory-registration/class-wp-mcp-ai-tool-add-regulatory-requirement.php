@@ -114,7 +114,7 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 	 * @param array $arguments Tool arguments.
 	 * @param array $context   Execution context.
 	 */
-	public function execute( $arguments, $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required arguments.
 		$required_fields = array( 'title', 'country', 'authority', 'requirement_type' );
 		foreach ( $required_fields as $field ) {

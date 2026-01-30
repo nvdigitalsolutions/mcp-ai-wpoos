@@ -54,7 +54,7 @@ class WP_MCP_AI_Pro_Tool_Seed_Template_Library {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$overwrite = $arguments['overwrite'] ?? false;
 
 		// Get pre-built templates.
