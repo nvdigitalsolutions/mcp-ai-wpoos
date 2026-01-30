@@ -195,15 +195,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 			$pro_path = defined( 'WP_MCP_AI_PRO_PATH' ) ? WP_MCP_AI_PRO_PATH : 'undefined';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
 			error_log( sprintf( 'Password Vault: Enqueuing scripts. WP_MCP_AI_PRO_URL: %s, WP_MCP_AI_PRO_PATH: %s', $pro_url, $pro_path ) );
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
-			error_log( sprintf( 'Password Vault: CSS URL: %s', $css_url ) );
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Debug logging only when WP_DEBUG is enabled.
-			error_log( sprintf( 'Password Vault: JS URL: %s', $js_url ) );
 		}
-
-		// Build asset URLs with validation.
-		$css_url = trailingslashit( WP_MCP_AI_PRO_URL ) . 'assets/css/password-vault-admin.css';
-		$js_url  = trailingslashit( WP_MCP_AI_PRO_URL ) . 'assets/js/password-vault-admin.js';
 
 		// Enqueue WordPress color picker.
 		wp_enqueue_style( 'wp-color-picker' );
@@ -212,7 +204,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		// Enqueue custom styles.
 		wp_enqueue_style(
 			'wp-mcp-ai-password-vault',
-			$css_url,
+			WP_MCP_AI_PRO_URL . 'assets/css/password-vault-admin.css',
 			array(),
 			WP_MCP_AI_PRO_VERSION
 		);
@@ -220,7 +212,7 @@ class WP_MCP_AI_Password_Vault_Admin {
 		// Enqueue custom scripts.
 		wp_enqueue_script(
 			'wp-mcp-ai-password-vault',
-			$js_url,
+			WP_MCP_AI_PRO_URL . 'assets/js/password-vault-admin.js',
 			array( 'jquery', 'wp-color-picker' ),
 			WP_MCP_AI_PRO_VERSION,
 			true
