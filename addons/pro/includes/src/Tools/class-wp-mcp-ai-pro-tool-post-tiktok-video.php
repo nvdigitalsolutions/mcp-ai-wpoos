@@ -47,14 +47,14 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Publish TikTok Video', 'wp-mcp-ai-pro' );
+		return __( 'Publish TikTok Video', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Publishes a video to TikTok using the official Open API share endpoint.', 'wp-mcp-ai-pro' );
+		return __( 'Publishes a video to TikTok using the official Open API share endpoint.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -66,19 +66,19 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 			'properties'           => array(
 				'access_token' => array(
 					'type'        => 'string',
-					'description' => __( 'TikTok Open API access token with the video.share scope.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'TikTok Open API access token with the video.share scope.', 'mcp-ai-wpoos-pro' ),
 				),
 				'open_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'The Open ID of the TikTok user or business account receiving the video.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The Open ID of the TikTok user or business account receiving the video.', 'mcp-ai-wpoos-pro' ),
 				),
 				'video_url'    => array(
 					'type'        => 'string',
-					'description' => __( 'Publicly accessible URL for the video asset.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Publicly accessible URL for the video asset.', 'mcp-ai-wpoos-pro' ),
 				),
 				'caption'      => array(
 					'type'        => 'string',
-					'description' => __( 'Optional caption text applied to the published video.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional caption text applied to the published video.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'access_token', 'open_id', 'video_url' ),
@@ -100,11 +100,11 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 		$required_capability = apply_filters( 'wp_mcp_ai_post_tiktok_video_capability', $default_capability, $context, $arguments, $this );
 
 		if ( $required_capability && ( ! $user_id || ! user_can( $user_id, $required_capability ) ) ) {
-			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish TikTok videos.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to publish TikTok videos.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( is_multisite() && $user_id && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
-			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_wrong_site', __( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$access_token = isset( $arguments['access_token'] ) ? $this->sanitize_access_token( $arguments['access_token'] ) : '';
@@ -113,15 +113,15 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 		$caption      = isset( $arguments['caption'] ) ? $this->sanitize_caption( $arguments['caption'] ) : '';
 
 		if ( '' === $access_token ) {
-			return new WP_Error( 'wp_mcp_ai_missing_tiktok_token', __( 'A valid TikTok access token is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_tiktok_token', __( 'A valid TikTok access token is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $open_id ) {
-			return new WP_Error( 'wp_mcp_ai_missing_tiktok_open_id', __( 'A valid TikTok Open ID is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_tiktok_open_id', __( 'A valid TikTok Open ID is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		if ( '' === $video_url ) {
-			return new WP_Error( 'wp_mcp_ai_missing_tiktok_video_url', __( 'A publicly accessible video URL is required.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_missing_tiktok_video_url', __( 'A publicly accessible video URL is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		$payload = array(
@@ -137,7 +137,7 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 		$body = wp_json_encode( $payload );
 
 		if ( false === $body ) {
-			return new WP_Error( 'wp_mcp_ai_tiktok_encoding_error', __( 'Failed to encode the TikTok request payload.', 'wp-mcp-ai-pro' ) );
+			return new WP_Error( 'wp_mcp_ai_tiktok_encoding_error', __( 'Failed to encode the TikTok request payload.', 'mcp-ai-wpoos-pro' ) );
 		}
 
 		WP_MCP_AI_Logger::log_event(
@@ -165,7 +165,7 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 
 			return new WP_Error(
 				'wp_mcp_ai_tiktok_http_error',
-				__( 'The TikTok API request failed to send.', 'wp-mcp-ai-pro' ),
+				__( 'The TikTok API request failed to send.', 'mcp-ai-wpoos-pro' ),
 				array( 'error' => $response )
 			);
 		}
@@ -183,7 +183,7 @@ class WP_MCP_AI_Pro_Tool_Post_Tiktok_Video implements WP_MCP_AI_Tool_Interface, 
 		$description = isset( $data['description'] ) ? $data['description'] : '';
 
 		if ( 200 !== $code || $error_code ) {
-			$message = $description ? $description : __( 'TikTok API returned an error.', 'wp-mcp-ai-pro' );
+			$message = $description ? $description : __( 'TikTok API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			WP_MCP_AI_Logger::log_error(
 				'TikTok publish request was not successful.',

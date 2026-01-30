@@ -32,14 +32,14 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'EZuite ERP', 'wp-mcp-ai-pro' );
+		return __( 'EZuite ERP', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Connect to EZuite ERP system for inventory management, item lookups, and other ERP operations. Supports multiple API actions including item pull, inventory updates, and more.', 'wp-mcp-ai-pro' );
+		return __( 'Connect to EZuite ERP system for inventory management, item lookups, and other ERP operations. Supports multiple API actions including item pull, inventory updates, and more.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -74,7 +74,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			'properties'           => array(
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'list_connections',
 						'test_connection',
@@ -84,11 +84,11 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'REQUIRED (except for list_connections). The connection ID obtained from calling list_connections first.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'REQUIRED (except for list_connections). The connection ID obtained from calling list_connections first.', 'mcp-ai-wpoos-pro' ),
 				),
 				'api_action'    => array(
 					'type'        => 'string',
-					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Required for invoke_api action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'EZuite API action to invoke (e.g., "LX_ItemPull" for pulling items). Required for invoke_api action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'LX_ItemPull',
 						'LX_ItemUpdate',
@@ -101,7 +101,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				),
 				'api_body'      => array(
 					'type'        => 'array',
-					'description' => __( 'Request body array for the EZuite API action. Example: [{"Location_Code": "ALL"}] for LX_ItemPull.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Request body array for the EZuite API action. Example: [{"Location_Code": "ALL"}] for LX_ItemPull.', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
 						'type' => 'object',
 					),
@@ -126,14 +126,14 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access EZuite ERP.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to access EZuite ERP.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_missing_connection',
 				sprintf(
 					/* translators: 1: action name, 2: list of available connections */
-					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter.', 'wp-mcp-ai-pro' ),
+					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter.', 'mcp-ai-wpoos-pro' ),
 					$action,
 					$connection_list
 				)
@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_connection_not_found',
 				sprintf(
 					/* translators: %s: connection ID */
-					__( 'Connection "%s" not found. Call list_connections to see available connections.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" not found. Call list_connections to see available connections.', 'mcp-ai-wpoos-pro' ),
 					$connection_id
 				)
 			);
@@ -195,7 +195,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
-				__( 'This connection is not an EZuite ERP connection. Use the ezuite_erp connection type.', 'wp-mcp-ai-pro' )
+				__( 'This connection is not an EZuite ERP connection. Use the ezuite_erp connection type.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -205,7 +205,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_connection_disabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is disabled.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is disabled.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_connection_not_enabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is not enabled for this assistant.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is not enabled for this assistant.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -236,7 +236,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 					'wp_mcp_ai_pro_invalid_action',
 					sprintf(
 						/* translators: %s: action name */
-						__( 'Invalid action: %s', 'wp-mcp-ai-pro' ),
+						__( 'Invalid action: %s', 'mcp-ai-wpoos-pro' ),
 						$action
 					)
 				);
@@ -296,7 +296,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		$response = array(
 			'summary'     => sprintf(
 				/* translators: %d: number of connections */
-				__( 'Found %d EZuite ERP connection(s)', 'wp-mcp-ai-pro' ),
+				__( 'Found %d EZuite ERP connection(s)', 'mcp-ai-wpoos-pro' ),
 				count( $result )
 			),
 			'connections' => $result,
@@ -337,7 +337,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'success' => false,
 				'message' => sprintf(
 					/* translators: %s: error message */
-					__( 'Connection test failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Connection test failed: %s', 'mcp-ai-wpoos-pro' ),
 					$result->get_error_message()
 				),
 			);
@@ -345,7 +345,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 
 		return array(
 			'success' => true,
-			'message' => __( 'Connection successful.', 'wp-mcp-ai-pro' ),
+			'message' => __( 'Connection successful.', 'mcp-ai-wpoos-pro' ),
 			'url'     => $connection['url'],
 		);
 	}
@@ -365,7 +365,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( empty( $api_action ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_action',
-				__( 'API action parameter is required for invoke_api action.', 'wp-mcp-ai-pro' )
+				__( 'API action parameter is required for invoke_api action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -385,7 +385,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_invalid_api_action',
 				sprintf(
 					/* translators: %s: API action name */
-					__( 'Invalid API action: %s', 'wp-mcp-ai-pro' ),
+					__( 'Invalid API action: %s', 'mcp-ai-wpoos-pro' ),
 					$api_action
 				)
 			);
@@ -398,7 +398,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		} else {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_body',
-				__( 'API body parameter is required. For LX_ItemPull, provide Location_Code. Note: Using "ALL" may return large datasets.', 'wp-mcp-ai-pro' )
+				__( 'API body parameter is required. For LX_ItemPull, provide Location_Code. Note: Using "ALL" may return large datasets.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -435,7 +435,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_key',
-				__( 'API key is not configured for this connection.', 'wp-mcp-ai-pro' )
+				__( 'API key is not configured for this connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -462,7 +462,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Request failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -474,7 +474,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( $status_code >= 400 ) {
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
-				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
+				__( 'HTTP error %d', 'mcp-ai-wpoos-pro' ),
 				$status_code
 			);
 
@@ -492,13 +492,13 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 		if ( null === $decoded ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_json',
-				__( 'Invalid JSON response from EZuite ERP API.', 'wp-mcp-ai-pro' )
+				__( 'Invalid JSON response from EZuite ERP API.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check EZuite API response status.
 		if ( isset( $decoded['Status_Code'] ) && 200 !== absint( $decoded['Status_Code'] ) ) {
-			$error_message = isset( $decoded['Message'] ) ? $decoded['Message'] : __( 'Unknown error', 'wp-mcp-ai-pro' );
+			$error_message = isset( $decoded['Message'] ) ? $decoded['Message'] : __( 'Unknown error', 'mcp-ai-wpoos-pro' );
 			return new WP_Error( 'wp_mcp_ai_pro_erp_error', $error_message );
 		}
 
@@ -564,7 +564,7 @@ class WP_MCP_AI_Tool_EZuite_ERP implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 				'wp_mcp_ai_pro_rate_limit_exceeded',
 				sprintf(
 					/* translators: %d: maximum requests allowed per minute */
-					__( 'EZuite ERP API rate limit exceeded. Maximum %d requests per minute allowed.', 'wp-mcp-ai-pro' ),
+					__( 'EZuite ERP API rate limit exceeded. Maximum %d requests per minute allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_minute
 				)
 			);

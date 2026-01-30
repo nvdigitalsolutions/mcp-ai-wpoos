@@ -38,14 +38,14 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Install and Activate Plugin', 'wp-mcp-ai-pro' );
+		return __( 'Install and Activate Plugin', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Installs a plugin from the WordPress.org repository and activates it. Requires the plugin slug.', 'wp-mcp-ai-pro' );
+		return __( 'Installs a plugin from the WordPress.org repository and activates it. Requires the plugin slug.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -57,15 +57,15 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 			'properties'           => array(
 				'slug'    => array(
 					'type'        => 'string',
-					'description' => __( 'The slug of the plugin from the WordPress.org repository (e.g., "elementor").', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The slug of the plugin from the WordPress.org repository (e.g., "elementor").', 'mcp-ai-wpoos-pro' ),
 				),
 				'version' => array(
 					'type'        => 'string',
-					'description' => __( 'Optional specific version to install (e.g., "3.0.0"). Leave empty for latest.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional specific version to install (e.g., "3.0.0"). Leave empty for latest.', 'mcp-ai-wpoos-pro' ),
 				),
 				'network' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to network activate the plugin on multisite. Default false.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether to network activate the plugin on multisite. Default false.', 'mcp-ai-wpoos-pro' ),
 					'default'     => false,
 				),
 			),
@@ -87,7 +87,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_plugin_install'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The install_and_activate_plugin tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'wp-mcp-ai-pro' )
+				__( 'The install_and_activate_plugin tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -96,14 +96,14 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( ! $user_id || ! user_can( $user_id, 'install_plugins' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to install plugins.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to install plugins.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( ! user_can( $user_id, 'activate_plugins' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to activate plugins.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to activate plugins.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -114,7 +114,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( empty( $slug ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_slug',
-				__( 'Plugin slug not provided.', 'wp-mcp-ai-pro' )
+				__( 'Plugin slug not provided.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -122,7 +122,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( $network_active && is_multisite() && ! user_can( $user_id, 'manage_network_plugins' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to network activate plugins.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to network activate plugins.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -160,7 +160,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 			'network_active' => $network_active,
 			'message'        => sprintf(
 				/* translators: %s: plugin name */
-				__( 'Plugin "%s" is installed and active.', 'wp-mcp-ai-pro' ),
+				__( 'Plugin "%s" is installed and active.', 'mcp-ai-wpoos-pro' ),
 				$plugin_name
 			),
 		);
@@ -240,7 +240,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 				'wp_mcp_ai_plugin_api_error',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Could not retrieve plugin information: %s', 'wp-mcp-ai-pro' ),
+					__( 'Could not retrieve plugin information: %s', 'mcp-ai-wpoos-pro' ),
 					$api->get_error_message()
 				)
 			);
@@ -262,7 +262,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 				'wp_mcp_ai_install_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Plugin installation failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Plugin installation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$result->get_error_message()
 				)
 			);
@@ -271,7 +271,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( ! $result ) {
 			return new WP_Error(
 				'wp_mcp_ai_install_failed',
-				__( 'Plugin installation failed for an unknown reason.', 'wp-mcp-ai-pro' )
+				__( 'Plugin installation failed for an unknown reason.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -280,7 +280,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( ! $plugin_file ) {
 			return new WP_Error(
 				'wp_mcp_ai_plugin_not_found',
-				__( 'Could not find plugin file after installation.', 'wp-mcp-ai-pro' )
+				__( 'Could not find plugin file after installation.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -315,7 +315,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 				'wp_mcp_ai_activation_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Plugin activation failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Plugin activation failed: %s', 'mcp-ai-wpoos-pro' ),
 					$result->get_error_message()
 				)
 			);

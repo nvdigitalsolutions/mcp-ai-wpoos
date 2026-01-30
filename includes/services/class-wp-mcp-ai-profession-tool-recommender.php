@@ -35,23 +35,41 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 	protected $tool_registry;
 
 	/**
+	 * Toolkit registry instance.
+	 *
+	 * @var WP_MCP_AI_Toolkit_Registry|null
+	 */
+	protected $toolkit_registry;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param WP_MCP_AI_Tool_Registry $tool_registry Optional tool registry instance.
+	 * @param WP_MCP_AI_Tool_Registry    $tool_registry    Optional tool registry instance.
+	 * @param WP_MCP_AI_Toolkit_Registry $toolkit_registry Optional toolkit registry instance.
 	 */
-	public function __construct( $tool_registry = null ) {
-		$this->tool_registry = $tool_registry;
+	public function __construct( $tool_registry = null, $toolkit_registry = null ) {
+		$this->tool_registry    = $tool_registry;
+		$this->toolkit_registry = $toolkit_registry;
 	}
 
 	/**
 	 * Get recommended tools for a profession.
 	 *
+	 * Enhanced to use toolkit registry for intelligent recommendations.
+	 *
 	 * @param string $profession_slug Profession slug.
 	 * @param string $category        Profession category.
+	 * @param array  $options         Optional filtering options.
 	 * @return array Array of tool slugs.
 	 */
-	public function get_recommended_tools( $profession_slug, $category ) {
+	public function get_recommended_tools( $profession_slug, $category, $options = array() ) {
 		$tools = array();
+
+		// If toolkit registry is available, use profession-tagged tools.
+		if ( $this->toolkit_registry ) {
+			$profession_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
+			$tools            = array_merge( $tools, $profession_tools );
+		}
 
 		// Add core tools for all professions.
 		$tools = array_merge( $tools, $this->get_core_tools() );
@@ -60,9 +78,25 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 		$category_tools = $this->get_category_tools( $category );
 		$tools          = array_merge( $tools, $category_tools );
 
-		// Add profession-specific tools.
+		// Add profession-specific tools from legacy mapping.
 		$profession_tools = $this->get_profession_specific_tools( $profession_slug );
 		$tools            = array_merge( $tools, $profession_tools );
+
+		// Apply filters if specified.
+		if ( ! empty( $options['risk_level'] ) && $this->toolkit_registry ) {
+			$risk_filtered_tools = $this->toolkit_registry->get_tools_by_risk_level( $options['risk_level'] );
+			$tools               = array_intersect( $tools, $risk_filtered_tools );
+		}
+
+		if ( ! empty( $options['pattern'] ) && $this->toolkit_registry ) {
+			$pattern_tools = $this->toolkit_registry->get_tools_by_pattern( $options['pattern'] );
+			$tools         = array_intersect( $tools, $pattern_tools );
+		}
+
+		if ( ! empty( $options['toolkit'] ) && $this->toolkit_registry ) {
+			$toolkit_tools = $this->toolkit_registry->get_toolkit_tools( $options['toolkit'] );
+			$tools         = array_intersect( $tools, $toolkit_tools );
+		}
 
 		// Deduplicate and filter available tools.
 		$tools = array_unique( $tools );
@@ -523,5 +557,167 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 		$sections[] = '6. **Stay updated** - Tool capabilities may expand; check documentation for new features';
 
 		return implode( "\n", $sections );
+	}
+
+	/**
+	 * Get toolkit-based recommendations for a profession.
+	 *
+	 * Returns tools organized by toolkit with metadata.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @return array Array of toolkits with recommended tools.
+	 */
+	public function get_toolkit_recommendations( $profession_slug ) {
+		if ( ! $this->toolkit_registry ) {
+			return array();
+		}
+
+		$recommendations = array();
+		$toolkits        = $this->toolkit_registry->get_toolkits();
+
+		foreach ( $toolkits as $toolkit_slug => $toolkit_info ) {
+			// Get tools tagged for this profession in this toolkit.
+			$toolkit_tools = $this->toolkit_registry->get_toolkit_tools( $toolkit_slug );
+			$profession_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
+
+			// Find intersection.
+			$relevant_tools = array_intersect( $toolkit_tools, $profession_tools );
+
+			if ( ! empty( $relevant_tools ) ) {
+				$recommendations[ $toolkit_slug ] = array(
+					'name'             => $toolkit_info['name'],
+					'description'      => $toolkit_info['description'],
+					'primary_pattern'  => $toolkit_info['primary_pattern'],
+					'tool_count'       => count( $relevant_tools ),
+					'tools'            => $relevant_tools,
+				);
+			}
+		}
+
+		return $recommendations;
+	}
+
+	/**
+	 * Get tools by risk level for a profession.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @param string $risk_level      Risk level (info, standard, destructive).
+	 * @return array Array of tool slugs.
+	 */
+	public function get_tools_by_risk_level( $profession_slug, $risk_level ) {
+		if ( ! $this->toolkit_registry ) {
+			return array();
+		}
+
+		// Get all tools for profession.
+		$profession_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
+
+		// Filter by risk level.
+		$risk_tools = $this->toolkit_registry->get_tools_by_risk_level( $risk_level );
+
+		return array_values( array_intersect( $profession_tools, $risk_tools ) );
+	}
+
+	/**
+	 * Get safe tools for a profession (info risk level only).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @return array Array of tool slugs.
+	 */
+	public function get_safe_tools( $profession_slug ) {
+		return $this->get_tools_by_risk_level( $profession_slug, 'info' );
+	}
+
+	/**
+	 * Get destructive tools for a profession (requires extra caution).
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @return array Array of tool slugs.
+	 */
+	public function get_destructive_tools( $profession_slug ) {
+		return $this->get_tools_by_risk_level( $profession_slug, 'destructive' );
+	}
+
+	/**
+	 * Get tools compatible with a specific multi-agent pattern.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @param string $pattern_slug    Pattern slug.
+	 * @return array Array of tool slugs.
+	 */
+	public function get_pattern_compatible_tools( $profession_slug, $pattern_slug ) {
+		if ( ! $this->toolkit_registry ) {
+			return array();
+		}
+
+		// Get all tools for profession.
+		$profession_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
+
+		// Filter by pattern compatibility.
+		$pattern_tools = $this->toolkit_registry->get_tools_by_pattern( $pattern_slug );
+
+		return array_values( array_intersect( $profession_tools, $pattern_tools ) );
+	}
+
+	/**
+	 * Get profession statistics from toolkit registry.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @param string $profession_slug Profession slug.
+	 * @return array Statistics array.
+	 */
+	public function get_profession_stats( $profession_slug ) {
+		if ( ! $this->toolkit_registry ) {
+			return array(
+				'total_tools'       => 0,
+				'toolkits_used'     => 0,
+				'patterns_used'     => 0,
+				'safe_tools'        => 0,
+				'destructive_tools' => 0,
+			);
+		}
+
+		$all_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
+
+		// Count toolkits.
+		$toolkits_used = array();
+		foreach ( $all_tools as $tool_slug ) {
+			$metadata = $this->toolkit_registry->get_tool_metadata( $tool_slug );
+			if ( isset( $metadata['toolkit'] ) ) {
+				$toolkits_used[ $metadata['toolkit'] ] = true;
+			}
+		}
+
+		// Count patterns.
+		$patterns_used = array();
+		foreach ( $all_tools as $tool_slug ) {
+			$metadata = $this->toolkit_registry->get_tool_metadata( $tool_slug );
+			if ( isset( $metadata['pattern_compatibility'] ) ) {
+				foreach ( $metadata['pattern_compatibility'] as $pattern ) {
+					$patterns_used[ $pattern ] = true;
+				}
+			}
+		}
+
+		return array(
+			'total_tools'       => count( $all_tools ),
+			'toolkits_used'     => count( $toolkits_used ),
+			'patterns_used'     => count( $patterns_used ),
+			'safe_tools'        => count( $this->get_safe_tools( $profession_slug ) ),
+			'destructive_tools' => count( $this->get_destructive_tools( $profession_slug ) ),
+			'toolkit_breakdown' => array_keys( $toolkits_used ),
+			'pattern_breakdown' => array_keys( $patterns_used ),
+		);
 	}
 }

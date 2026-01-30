@@ -94,7 +94,7 @@ class WP_MCP_AI_Pro_Tool_Create_Template {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$template_name     = sanitize_text_field( $arguments['template_name'] ?? '' );
 		$description       = sanitize_textarea_field( $arguments['description'] ?? '' );

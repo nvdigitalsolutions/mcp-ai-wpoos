@@ -52,8 +52,8 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	public function add_admin_menu() {
 		add_submenu_page(
 			'nvoos-pro-dashboard',
-			__( 'Remote Site Connections', 'wp-mcp-ai-pro' ),
-			__( 'Remote Sites', 'wp-mcp-ai-pro' ),
+			__( 'Remote Site Connections', 'mcp-ai-wpoos-pro' ),
+			__( 'Remote Sites', 'mcp-ai-wpoos-pro' ),
 			'manage_options',
 			'wp-mcp-ai-remote-sites',
 			array( $this, 'render_admin_page' )
@@ -104,7 +104,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
 
 			if ( ! wp_verify_nonce( $nonce, 'delete_connection_' . $connection_id ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$deleted = WP_MCP_AI_Pro_Remote_Site_Manager::delete_connection( $connection_id );
@@ -112,7 +112,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			if ( $deleted ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&deleted=1' ) );
 			} else {
-				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found or could not be deleted.', 'wp-mcp-ai-pro' ) ) ) );
+				wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found or could not be deleted.', 'mcp-ai-wpoos-pro' ) ) ) );
 			}
 			exit;
 		}
@@ -123,7 +123,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
 
 			if ( ! wp_verify_nonce( $nonce, 'test_connection_' . $connection_id ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$result = WP_MCP_AI_Pro_Remote_Site_Manager::test_connection( $connection_id );
@@ -154,7 +154,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$connection_id = isset( $_GET['connection_id'] ) ? sanitize_key( wp_unslash( $_GET['connection_id'] ) ) : '';
 
 			if ( ! wp_verify_nonce( $nonce, 'google_drive_oauth_connect_' . $connection_id ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			$this->handle_google_drive_oauth_start( $connection_id );
@@ -170,7 +170,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			$nonce = isset( $_POST['_wpnonce'] ) ? wp_unslash( $_POST['_wpnonce'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 			if ( ! wp_verify_nonce( $nonce, 'save_remote_connection' ) ) {
-				wp_die( esc_html__( 'Security check failed.', 'wp-mcp-ai-pro' ) );
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos-pro' ) );
 			}
 
 			// Get connection type first to determine which fields to use.
@@ -299,23 +299,23 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			// If editing but connection not found, show error and list instead.
 			if ( null === $connection_to_edit ) {
 				$editing       = '';
-				$_GET['error'] = __( 'Connection not found.', 'wp-mcp-ai-pro' );
+				$_GET['error'] = __( 'Connection not found.', 'mcp-ai-wpoos-pro' );
 			}
 		}
 
 		?>
 		<div class="wrap">
-			<h1><?php esc_html_e( 'Remote Site Connections', 'wp-mcp-ai-pro' ); ?></h1>
+			<h1><?php esc_html_e( 'Remote Site Connections', 'mcp-ai-wpoos-pro' ); ?></h1>
 
 			<?php if ( isset( $_GET['saved'] ) ) : ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Connection saved successfully.', 'wp-mcp-ai-pro' ); ?></p>
+					<p><?php esc_html_e( 'Connection saved successfully.', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
 			<?php if ( isset( $_GET['deleted'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Connection deleted successfully.', 'wp-mcp-ai-pro' ); ?></p>
+					<p><?php esc_html_e( 'Connection deleted successfully.', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -328,7 +328,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 			<?php if ( isset( $_GET['test_success'] ) ) : // phpcs:ignore WordPress.Security.NonceVerification.Recommended ?>
 				<div class="notice notice-success is-dismissible">
-					<p><?php esc_html_e( 'Connection test successful!', 'wp-mcp-ai-pro' ); ?></p>
+					<p><?php esc_html_e( 'Connection test successful!', 'mcp-ai-wpoos-pro' ); ?></p>
 				</div>
 			<?php endif; ?>
 
@@ -366,7 +366,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		?>
 		<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
 			<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&add=1' ) ); ?>" class="button button-primary">
-				<?php esc_html_e( 'Add New Connection', 'wp-mcp-ai-pro' ); ?>
+				<?php esc_html_e( 'Add New Connection', 'mcp-ai-wpoos-pro' ); ?>
 			</a>
 			<div>
 				<span class="dashicons dashicons-info-outline" style="color: #2271b1; vertical-align: middle;"></span>
@@ -374,7 +374,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 					<?php
 					printf(
 						/* translators: %s: cache duration */
-						esc_html__( 'Caching enabled: %s TTL', 'wp-mcp-ai-pro' ),
+						esc_html__( 'Caching enabled: %s TTL', 'mcp-ai-wpoos-pro' ),
 						'<strong>5 minutes</strong>'
 					);
 					?>
@@ -383,18 +383,18 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		</div>
 
 		<?php if ( empty( $connections ) ) : ?>
-			<p><?php esc_html_e( 'No remote site connections configured yet.', 'wp-mcp-ai-pro' ); ?></p>
+			<p><?php esc_html_e( 'No remote site connections configured yet.', 'mcp-ai-wpoos-pro' ); ?></p>
 		<?php else : ?>
 			<table class="wp-list-table widefat fixed striped">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Name', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'Type', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'URL', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'Auth Type', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'Health', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
-						<th><?php esc_html_e( 'Actions', 'wp-mcp-ai-pro' ); ?></th>
+						<th><?php esc_html_e( 'Name', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Type', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'URL', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Auth Type', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Health', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
+						<th><?php esc_html_e( 'Actions', 'mcp-ai-wpoos-pro' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -413,15 +413,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 								// Define labels and colors for each connection type
 								$type_labels = array(
-									'wordpress'    => __( 'WordPress', 'wp-mcp-ai-pro' ),
-									'generic'      => __( 'Generic REST API', 'wp-mcp-ai-pro' ),
-									'isams'        => __( 'iSAMS', 'wp-mcp-ai-pro' ),
-									'flowhub'      => __( 'Flowhub', 'wp-mcp-ai-pro' ),
-									'payhere'      => __( 'PayHere', 'wp-mcp-ai-pro' ),
-									'quickbooks'   => __( 'QuickBooks', 'wp-mcp-ai-pro' ),
-									'ezuite_erp'   => __( 'EZuite ERP', 'wp-mcp-ai-pro' ),
-									'gmail'        => __( 'Gmail', 'wp-mcp-ai-pro' ),
-									'google_drive' => __( 'Google Drive', 'wp-mcp-ai-pro' ),
+									'wordpress'    => __( 'WordPress', 'mcp-ai-wpoos-pro' ),
+									'generic'      => __( 'Generic REST API', 'mcp-ai-wpoos-pro' ),
+									'isams'        => __( 'iSAMS', 'mcp-ai-wpoos-pro' ),
+									'flowhub'      => __( 'Flowhub', 'mcp-ai-wpoos-pro' ),
+									'payhere'      => __( 'PayHere', 'mcp-ai-wpoos-pro' ),
+									'quickbooks'   => __( 'QuickBooks', 'mcp-ai-wpoos-pro' ),
+									'ezuite_erp'   => __( 'EZuite ERP', 'mcp-ai-wpoos-pro' ),
+									'gmail'        => __( 'Gmail', 'mcp-ai-wpoos-pro' ),
+									'google_drive' => __( 'Google Drive', 'mcp-ai-wpoos-pro' ),
 								);
 
 								$type_colors = array(
@@ -463,31 +463,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 								if ( $health_metrics['request_count'] > 0 ) {
 									printf(
 										/* translators: 1: success rate, 2: request count */
-										esc_html__( '%1$s%% (%2$d reqs)', 'wp-mcp-ai-pro' ),
+										esc_html__( '%1$s%% (%2$d reqs)', 'mcp-ai-wpoos-pro' ),
 										esc_html( $health_metrics['success_rate'] ),
 										absint( $health_metrics['request_count'] )
 									);
 								} else {
-									esc_html_e( 'No data', 'wp-mcp-ai-pro' );
+									esc_html_e( 'No data', 'mcp-ai-wpoos-pro' );
 								}
 								?>
 							</td>
 							<td>
 								<?php if ( ! empty( $connection['enabled'] ) ) : ?>
-									<span style="color: green;">●</span> <?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?>
+									<span style="color: green;">●</span> <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?>
 								<?php else : ?>
-									<span style="color: red;">●</span> <?php esc_html_e( 'Disabled', 'wp-mcp-ai-pro' ); ?>
+									<span style="color: red;">●</span> <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos-pro' ); ?>
 								<?php endif; ?>
 							</td>
 							<td>
 								<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id ) ); ?>">
-									<?php esc_html_e( 'Edit', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Edit', 'mcp-ai-wpoos-pro' ); ?>
 								</a> |
 								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=test&connection_id=' . $connection_id ), 'test_connection_' . $connection_id ) ); ?>">
-									<?php esc_html_e( 'Test', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Test', 'mcp-ai-wpoos-pro' ); ?>
 								</a> |
-								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection_id ), 'delete_connection_' . $connection_id ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'wp-mcp-ai-pro' ); ?>');" style="color: #b32d2e;">
-									<?php esc_html_e( 'Delete', 'wp-mcp-ai-pro' ); ?>
+								<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&action=delete&connection_id=' . $connection_id ), 'delete_connection_' . $connection_id ) ); ?>" onclick="return confirm('<?php esc_attr_e( 'Are you sure you want to delete this connection?', 'mcp-ai-wpoos-pro' ); ?>');" style="color: #b32d2e;">
+									<?php esc_html_e( 'Delete', 'mcp-ai-wpoos-pro' ); ?>
 								</a>
 							</td>
 						</tr>
@@ -496,35 +496,35 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			</table>
 
 			<div style="margin-top: 30px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px;">
-				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance & Reliability Features', 'wp-mcp-ai-pro' ); ?></h3>
+				<h3 style="margin-top: 0;"><?php esc_html_e( 'Performance & Reliability Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<p style="margin-bottom: 15px;">
-					<?php esc_html_e( 'Remote site requests include advanced features for performance, reliability, and monitoring.', 'wp-mcp-ai-pro' ); ?>
+					<?php esc_html_e( 'Remote site requests include advanced features for performance, reliability, and monitoring.', 'mcp-ai-wpoos-pro' ); ?>
 				</p>
 				<table class="form-table" style="background: white; border: 1px solid #ddd;">
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Request Caching', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Request Caching', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'GET requests are cached to reduce redundant API calls. Default: 5 minutes. Configure per-connection in connection settings above.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'GET requests are cached to reduce redundant API calls. Default: 5 minutes. Configure per-connection in connection settings above.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Rate Limiting', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
 								<?php
 								printf(
 									/* translators: 1: rate limit, 2: filter name */
-									esc_html__( 'Limited to %1$s per user to prevent abuse. Customize via %2$s filter.', 'wp-mcp-ai-pro' ),
+									esc_html__( 'Limited to %1$s per user to prevent abuse. Customize via %2$s filter.', 'mcp-ai-wpoos-pro' ),
 									'<code>30 requests/minute</code>',
 									'<code>wp_mcp_ai_pro_remote_wp_rate_limit</code>'
 								);
@@ -533,61 +533,61 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Retry Logic', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Retry Logic', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'Automatic retry with exponential backoff (3 attempts) for transient errors. Improves reliability.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Automatic retry with exponential backoff (3 attempts) for transient errors. Improves reliability.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Request Deduplication', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Request Deduplication', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'Prevents duplicate simultaneous requests to the same endpoint. Reduces load on remote servers.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Prevents duplicate simultaneous requests to the same endpoint. Reduces load on remote servers.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Compression Support', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Compression Support', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'Requests accept gzip/deflate compression to reduce bandwidth and improve speed for large responses.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Requests accept gzip/deflate compression to reduce bandwidth and improve speed for large responses.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Health Monitoring', 'wp-mcp-ai-pro' ); ?></th>
+						<th scope="row"><?php esc_html_e( 'Health Monitoring', 'mcp-ai-wpoos-pro' ); ?></th>
 						<td>
 							<p>
 								<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-								<strong><?php esc_html_e( 'Enabled', 'wp-mcp-ai-pro' ); ?></strong>
+								<strong><?php esc_html_e( 'Enabled', 'mcp-ai-wpoos-pro' ); ?></strong>
 							</p>
 							<p class="description">
-								<?php esc_html_e( 'Tracks success rates, response times, and connection health. View health status in the "Health" column above.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Tracks success rates, response times, and connection health. View health status in the "Health" column above.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 						</td>
 					</tr>
 				</table>
 				<p style="margin-top: 15px;">
-					<strong><?php esc_html_e( 'Developer Note:', 'wp-mcp-ai-pro' ); ?></strong>
+					<strong><?php esc_html_e( 'Developer Note:', 'mcp-ai-wpoos-pro' ); ?></strong>
 					<?php
 					printf(
 						/* translators: %s: documentation link */
-						esc_html__( 'Use filters to customize caching, rate limits, and retry behavior. See %s for details.', 'wp-mcp-ai-pro' ),
-						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/tools/remote-wp-connection.md' ) . '" target="_blank">' . esc_html__( 'documentation', 'wp-mcp-ai-pro' ) . '</a>'
+						esc_html__( 'Use filters to customize caching, rate limits, and retry behavior. See %s for details.', 'mcp-ai-wpoos-pro' ),
+						'<a href="' . esc_url( 'https://github.com/nvdigitalsolutions/mcp-ai-wpoos/blob/main/docs/features/tools/remote-wp-connection.md' ) . '" target="_blank">' . esc_html__( 'documentation', 'mcp-ai-wpoos-pro' ) . '</a>'
 					);
 					?>
 				</p>
@@ -606,7 +606,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 	protected function render_edit_form( $connection ) {
 		$is_edit = ! empty( $connection );
 		?>
-		<h2><?php echo $is_edit ? esc_html__( 'Edit Connection', 'wp-mcp-ai-pro' ) : esc_html__( 'Add New Connection', 'wp-mcp-ai-pro' ); ?></h2>
+		<h2><?php echo $is_edit ? esc_html__( 'Edit Connection', 'mcp-ai-wpoos-pro' ) : esc_html__( 'Add New Connection', 'mcp-ai-wpoos-pro' ); ?></h2>
 
 		<form method="post" action="">
 			<?php wp_nonce_field( 'save_remote_connection', '_wpnonce' ); ?>
@@ -618,30 +618,30 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			<table class="form-table">
 				<tr>
 					<th scope="row">
-						<label for="name"><?php esc_html_e( 'Connection Name', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="name"><?php esc_html_e( 'Connection Name', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="name" id="name" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['name'] ) : ''; ?>" required>
-						<p class="description"><?php esc_html_e( 'A friendly name to identify this connection.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'A friendly name to identify this connection.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr>
 					<th scope="row">
-						<label for="url"><?php esc_html_e( 'Site URL', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="url"><?php esc_html_e( 'Site URL', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="url" name="url" id="url" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['url'] ) : ''; ?>" placeholder="https://example.com" required>
-						<p class="description" id="url-description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description" id="url-description"><?php esc_html_e( 'The full URL of the remote site (including https://).', 'mcp-ai-wpoos-pro' ); ?></p>
 						<p class="description" id="url-description-flowhub" style="display: none;">
-							<?php esc_html_e( 'FlowHub uses a fixed API URL. This field is automatically set to https://api.flowhub.co', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'FlowHub uses a fixed API URL. This field is automatically set to https://api.flowhub.co', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
 
 				<tr>
 					<th scope="row">
-						<label for="connection_type"><?php esc_html_e( 'Connection Type', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="connection_type"><?php esc_html_e( 'Connection Type', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<?php
@@ -649,59 +649,59 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						?>
 						<select name="connection_type" id="connection_type" class="regular-text" required>
 							<option value="wordpress" <?php selected( $connection_type, 'WordPress' ); ?>>
-								<?php esc_html_e( 'WordPress / WooCommerce', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'WordPress / WooCommerce', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="generic" <?php selected( $connection_type, 'generic' ); ?>>
-								<?php esc_html_e( 'Generic REST API', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Generic REST API', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="isams" <?php selected( $connection_type, 'isams' ); ?>>
-								<?php esc_html_e( 'iSAMS (School Management)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'iSAMS (School Management)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="flowhub" <?php selected( $connection_type, 'flowhub' ); ?>>
-								<?php esc_html_e( 'Flowhub (POS/Retail)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Flowhub (POS/Retail)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="payhere" <?php selected( $connection_type, 'payhere' ); ?>>
-								<?php esc_html_e( 'PayHere (Payment Gateway)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'PayHere (Payment Gateway)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="quickbooks" <?php selected( $connection_type, 'quickbooks' ); ?>>
-								<?php esc_html_e( 'QuickBooks (Accounting)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'QuickBooks (Accounting)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="ezuite_erp" <?php selected( $connection_type, 'ezuite_erp' ); ?>>
-								<?php esc_html_e( 'EZuite ERP (Inventory)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'EZuite ERP (Inventory)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="gmail" <?php selected( $connection_type, 'gmail' ); ?>>
-								<?php esc_html_e( 'Gmail (Email Service)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Gmail (Email Service)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 							<option value="google_drive" <?php selected( $connection_type, 'google_drive' ); ?>>
-								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Google Drive (Cloud Storage)', 'mcp-ai-wpoos-pro' ); ?>
 							</option>
 						</select>
 						<p class="description">
-							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'Select the type of connection. Each type has specific authentication requirements and field configurations.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
 
 				<tr id="auth_type_row">
 					<th scope="row">
-						<label for="auth_type"><?php esc_html_e( 'Authentication Type', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="auth_type"><?php esc_html_e( 'Authentication Type', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<select name="auth_type" id="auth_type" onchange="toggleAuthFields(this.value)">
-							<option value="none" <?php selected( $is_edit ? $connection['auth_type'] : 'none', 'none' ); ?>><?php esc_html_e( 'None', 'wp-mcp-ai-pro' ); ?></option>
-							<option value="custom_header" <?php selected( $is_edit ? $connection['auth_type'] : '', 'custom_header' ); ?>><?php esc_html_e( 'Custom Header', 'wp-mcp-ai-pro' ); ?></option>
-							<option value="application_password" <?php selected( $is_edit ? $connection['auth_type'] : '', 'application_password' ); ?>><?php esc_html_e( 'Application Password', 'wp-mcp-ai-pro' ); ?></option>
-							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'wp-mcp-ai-pro' ); ?></option>
-							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></option>
-							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'wp-mcp-ai-pro' ); ?></option>
+							<option value="none" <?php selected( $is_edit ? $connection['auth_type'] : 'none', 'none' ); ?>><?php esc_html_e( 'None', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="custom_header" <?php selected( $is_edit ? $connection['auth_type'] : '', 'custom_header' ); ?>><?php esc_html_e( 'Custom Header', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="application_password" <?php selected( $is_edit ? $connection['auth_type'] : '', 'application_password' ); ?>><?php esc_html_e( 'Application Password', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="basic_auth" <?php selected( $is_edit ? $connection['auth_type'] : '', 'basic_auth' ); ?>><?php esc_html_e( 'Basic Auth', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="jwt" <?php selected( $is_edit ? $connection['auth_type'] : '', 'jwt' ); ?>><?php esc_html_e( 'JWT Token', 'mcp-ai-wpoos-pro' ); ?></option>
+							<option value="woocommerce" <?php selected( $is_edit ? $connection['auth_type'] : '', 'woocommerce' ); ?>><?php esc_html_e( 'WooCommerce API Keys (ck_/cs_)', 'mcp-ai-wpoos-pro' ); ?></option>
 						</select>
-						<p class="description"><?php esc_html_e( 'Authentication method for WordPress and Generic API connections.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Authentication method for WordPress and Generic API connections.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr id="username_field" style="display: none;">
 					<th scope="row">
-						<label for="username"><?php esc_html_e( 'Username', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="username"><?php esc_html_e( 'Username', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="username" id="username" class="regular-text" value="<?php echo $is_edit ? esc_attr( $connection['username'] ) : ''; ?>" autocomplete="off">
@@ -710,48 +710,48 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr id="password_field" style="display: none;">
 					<th scope="row">
-						<label for="password"><?php esc_html_e( 'Password / Application Password', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="password"><?php esc_html_e( 'Password / Application Password', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="password" name="password" id="password" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing password.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr id="token_field" style="display: none;">
 					<th scope="row">
-						<label for="token"><?php esc_html_e( 'JWT Token', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="token"><?php esc_html_e( 'JWT Token', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<textarea name="token" id="token" class="large-text" rows="3" autocomplete="off"></textarea>
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing token.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr id="consumer_key_field" style="display: none;">
 					<th scope="row">
-						<label for="consumer_key"><?php esc_html_e( 'Consumer Key', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="consumer_key"><?php esc_html_e( 'Consumer Key', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="consumer_key" id="consumer_key" class="regular-text" value="" autocomplete="off" placeholder="ck_...">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer key.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr id="consumer_secret_field" style="display: none;">
 					<th scope="row">
-						<label for="consumer_secret"><?php esc_html_e( 'Consumer Secret', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="consumer_secret"><?php esc_html_e( 'Consumer Secret', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="password" name="consumer_secret" id="consumer_secret" class="regular-text" value="" autocomplete="new-password" placeholder="cs_...">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing consumer secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -759,24 +759,24 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for iSAMS -->
 				<tr class="isams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="isams_api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="isams_api_key"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="isams_api_key" id="isams_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="isams-only-field" style="display: none;">
 					<th scope="row">
-						<label for="isams_api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="isams_api_secret"><?php esc_html_e( 'API Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="password" name="isams_api_secret" id="isams_api_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -784,134 +784,134 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Flowhub -->
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="flowhub_api_key"><?php esc_html_e( 'API Key (key header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="flowhub_api_key"><?php esc_html_e( 'API Key (key header)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="flowhub_api_key" id="flowhub_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your Flowhub API key. Sent as "key" header in requests.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your Flowhub API key. Sent as "key" header in requests.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="flowhub_client_id"><?php esc_html_e( 'Client ID (clientId header)', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="flowhub_client_id"><?php esc_html_e( 'Client ID (clientId header)', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="flowhub_client_id" id="flowhub_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Your Flowhub client identifier. Sent as "clientId" header in requests.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Your Flowhub client identifier. Sent as "clientId" header in requests.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="flowhub-only-field" style="display: none;">
 					<th scope="row">
-						<label for="location_id"><?php esc_html_e( 'Location ID (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="location_id"><?php esc_html_e( 'Location ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="location_id" id="location_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['location_id'] ) ? esc_attr( $connection['location_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'Optional: The Flowhub location/dispensary ID for filtering requests.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: The Flowhub location/dispensary ID for filtering requests.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<!-- Type-specific fields for PayHere -->
 				<tr class="payhere-only-field" style="display: none;">
 					<th scope="row">
-						<label for="app_id"><?php esc_html_e( 'App ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="app_id"><?php esc_html_e( 'App ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="app_id" id="app_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['app_id'] ) ? esc_attr( $connection['app_id'] ) : ''; ?>" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App ID.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App ID.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="payhere-only-field" style="display: none;">
 					<th scope="row">
-						<label for="app_secret"><?php esc_html_e( 'App Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="app_secret"><?php esc_html_e( 'App Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="password" name="app_secret" id="app_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App Secret.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing App Secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="payhere-only-field" style="display: none;">
-					<th scope="row"><?php esc_html_e( 'Sandbox Mode', 'wp-mcp-ai-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Sandbox Mode', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
 							<input type="checkbox" name="sandbox_mode" value="1" <?php checked( $is_edit && ! empty( $connection['sandbox_mode'] ) ); ?>>
-							<?php esc_html_e( 'Enable sandbox/test mode', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'Enable sandbox/test mode', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'Use PayHere sandbox environment for testing.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Use PayHere sandbox environment for testing.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<!-- Type-specific fields for QuickBooks -->
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="quickbooks_client_id"><?php esc_html_e( 'Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="quickbooks_client_id"><?php esc_html_e( 'Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="quickbooks_client_id" id="quickbooks_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client ID.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="quickbooks_client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="quickbooks_client_secret"><?php esc_html_e( 'Client Secret / OAuth Token', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<textarea name="quickbooks_client_secret" id="quickbooks_client_secret" class="large-text" rows="3" autocomplete="off"></textarea>
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret/token. For OAuth, paste the complete token here.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing client secret/token. For OAuth, paste the complete token here.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="quickbooks-only-field" style="display: none;">
 					<th scope="row">
-						<label for="company_id"><?php esc_html_e( 'Company ID (Realm ID)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="company_id"><?php esc_html_e( 'Company ID (Realm ID)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="company_id" id="company_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['company_id'] ) ? esc_attr( $connection['company_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The QuickBooks company/realm ID.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<!-- Type-specific fields for EZuite ERP -->
 				<tr class="ezuite_erp-only-field" style="display: none;">
 					<th scope="row">
-						<label for="ezuite_erp_api_key"><?php esc_html_e( 'API Key', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="ezuite_erp_api_key"><?php esc_html_e( 'API Key', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="ezuite_erp_api_key" id="ezuite_erp_api_key" class="regular-text" value="" autocomplete="off">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API key.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your EZuite API key provided by EZuite.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your EZuite API key provided by EZuite.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="ezuite_erp-only-field" style="display: none;">
 					<th scope="row">
-						<label for="ezuite_erp_api_secret"><?php esc_html_e( 'API Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="ezuite_erp_api_secret"><?php esc_html_e( 'API Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="password" name="ezuite_erp_api_secret" id="ezuite_erp_api_secret" class="regular-text" value="" autocomplete="new-password">
 						<?php if ( $is_edit ) : ?>
-							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Leave blank to keep existing API secret.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Your EZuite API secret provided by EZuite.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Your EZuite API secret provided by EZuite.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
@@ -919,17 +919,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<!-- Type-specific fields for Gmail -->
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
-						<label for="gmail_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="gmail_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="gmail_client_id" id="gmail_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
-						<label for="gmail_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="gmail_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="password" name="gmail_client_secret" id="gmail_client_secret" class="regular-text" value="" autocomplete="new-password">
@@ -937,20 +937,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php if ( ! empty( $connection['client_secret'] ) ) : ?>
 								<p class="description">
 									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-									<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php else : ?>
-								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 							<?php endif; ?>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
-						<label><?php esc_html_e( 'Authorized Redirect URI', 'wp-mcp-ai-pro' ); ?></label>
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<?php
@@ -964,11 +964,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						?>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( $gmail_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
-							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
-							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'mcp-ai-wpoos-pro' ); ?>
 							<br>
 							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
-								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
 							</a>
 						</p>
 					</td>
@@ -976,7 +976,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
-						<label for="gmail_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="gmail_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<textarea name="gmail_refresh_token" id="gmail_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
@@ -984,41 +984,41 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
 								<p class="description">
 									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-									<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php else : ?>
-								<p class="description"><?php esc_html_e( 'Optional: OAuth refresh token. Leave blank if not obtained yet through OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Optional: OAuth refresh token. Leave blank if not obtained yet through OAuth flow.', 'mcp-ai-wpoos-pro' ); ?></p>
 							<?php endif; ?>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="gmail-only-field" style="display: none;">
 					<th scope="row">
-						<label for="gmail_user_email"><?php esc_html_e( 'Gmail User Email (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="gmail_user_email"><?php esc_html_e( 'Gmail User Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="email" name="gmail_user_email" id="gmail_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@gmail.com">
-						<p class="description"><?php esc_html_e( 'The Gmail address associated with this connection for reference.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The Gmail address associated with this connection for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<!-- Type-specific fields for Google Drive -->
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_drive_client_id"><?php esc_html_e( 'OAuth Client ID', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="google_drive_client_id"><?php esc_html_e( 'OAuth Client ID', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="text" name="google_drive_client_id" id="google_drive_client_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['client_id'] ) ? esc_attr( $connection['client_id'] ) : ''; ?>" autocomplete="off">
-						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'OAuth 2.0 Client ID from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_drive_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'wp-mcp-ai-pro' ); ?> <span class="required">*</span></label>
+						<label for="google_drive_client_secret"><?php esc_html_e( 'OAuth Client Secret', 'mcp-ai-wpoos-pro' ); ?> <span class="required">*</span></label>
 					</th>
 					<td>
 						<input type="password" name="google_drive_client_secret" id="google_drive_client_secret" class="regular-text" value="" autocomplete="new-password">
@@ -1026,20 +1026,20 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php if ( ! empty( $connection['client_secret'] ) ) : ?>
 								<p class="description">
 									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-									<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Client secret is set. Leave blank to keep existing secret, or enter a new one to replace it.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php else : ?>
-								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Client secret is not set. Enter OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 							<?php endif; ?>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'OAuth 2.0 Client Secret from Google Cloud Console.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label><?php esc_html_e( 'Authorized Redirect URI', 'wp-mcp-ai-pro' ); ?></label>
+						<label><?php esc_html_e( 'Authorized Redirect URI', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<?php
@@ -1053,11 +1053,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 						?>
 						<input type="text" readonly="readonly" value="<?php echo esc_url( $google_drive_redirect_uri ); ?>" class="large-text code" onclick="this.select();" style="background-color: #f0f0f0;">
 						<p class="description">
-							<strong><?php esc_html_e( 'Important:', 'wp-mcp-ai-pro' ); ?></strong>
-							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'wp-mcp-ai-pro' ); ?>
+							<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+							<?php esc_html_e( 'Copy this exact URL and add it to the "Authorized redirect URIs" in your Google Cloud Console OAuth 2.0 credentials. The URL must match exactly (including https://).', 'mcp-ai-wpoos-pro' ); ?>
 							<br>
 							<a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">
-								<?php esc_html_e( 'Open Google Cloud Console', 'wp-mcp-ai-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
+								<?php esc_html_e( 'Open Google Cloud Console', 'mcp-ai-wpoos-pro' ); ?> <span class="dashicons dashicons-external" style="font-size: 14px; vertical-align: text-top;"></span>
 							</a>
 						</p>
 					</td>
@@ -1065,7 +1065,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_drive_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="google_drive_refresh_token"><?php esc_html_e( 'Refresh Token (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<textarea name="google_drive_refresh_token" id="google_drive_refresh_token" class="large-text" rows="3" autocomplete="off"></textarea>
@@ -1073,40 +1073,40 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
 								<p class="description">
 									<span class="dashicons dashicons-yes-alt" style="color: #46b450;"></span>
-									<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'Refresh token is set. Leave blank to keep existing token, or paste a new token to replace it.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php else : ?>
-								<p class="description"><?php esc_html_e( 'Optional: OAuth refresh token. Leave blank if not obtained yet through OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Optional: OAuth refresh token. Leave blank if not obtained yet through OAuth flow.', 'mcp-ai-wpoos-pro' ); ?></p>
 							<?php endif; ?>
 						<?php else : ?>
-							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'wp-mcp-ai-pro' ); ?></p>
+							<p class="description"><?php esc_html_e( 'Optional: Pre-existing OAuth refresh token. If not provided, tools will need to initiate OAuth flow.', 'mcp-ai-wpoos-pro' ); ?></p>
 						<?php endif; ?>
 					</td>
 				</tr>
 
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_drive_folder_id"><?php esc_html_e( 'Folder ID (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="google_drive_folder_id"><?php esc_html_e( 'Folder ID (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="google_drive_folder_id" id="google_drive_folder_id" class="regular-text" value="<?php echo $is_edit && isset( $connection['folder_id'] ) ? esc_attr( $connection['folder_id'] ) : ''; ?>" autocomplete="off" placeholder="1a2b3c4d5e6f7g8h9i0j">
-						<p class="description"><?php esc_html_e( 'Optional: Limit access to a specific folder by ID. Leave blank for full drive access (within granted scopes).', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Optional: Limit access to a specific folder by ID. Leave blank for full drive access (within granted scopes).', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="google_drive-only-field" style="display: none;">
 					<th scope="row">
-						<label for="google_drive_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="google_drive_user_email"><?php esc_html_e( 'Google User Email (Optional)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="email" name="google_drive_user_email" id="google_drive_user_email" class="regular-text" value="<?php echo $is_edit && isset( $connection['user_email'] ) ? esc_attr( $connection['user_email'] ) : ''; ?>" autocomplete="off" placeholder="user@example.com">
-						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection for reference.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'The Google account email associated with this connection for reference.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 				<?php if ( $is_edit && 'gmail' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 					<tr class="gmail-only-field" style="display: none;">
 						<th scope="row">
-							<label><?php esc_html_e( 'OAuth Connection', 'wp-mcp-ai-pro' ); ?></label>
+							<label><?php esc_html_e( 'OAuth Connection', 'mcp-ai-wpoos-pro' ); ?></label>
 						</th>
 						<td>
 							<?php
@@ -1160,7 +1160,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 									array(
 										'page'  => 'wp-mcp-ai-remote-sites',
 										'edit'  => $connection['id'],
-										'error' => rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'wp-mcp-ai-pro' ) ),
+										'error' => rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ),
 									),
 									admin_url( 'admin.php' )
 								);
@@ -1168,15 +1168,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							?>
 							<a href="<?php echo esc_url( $oauth_url ); ?>" class="button button-secondary" <?php echo $has_required_credentials ? '' : 'onclick="return false;" style="opacity: 0.5; cursor: not-allowed;"'; ?>>
 								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Connect to Gmail', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Connect to Gmail', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 							<p class="description">
-								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Make sure to save the Client ID and Client Secret first.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Make sure to save the Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
 								<p class="description" style="color: #46b450;">
 									<span class="dashicons dashicons-yes-alt"></span>
-									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php endif; ?>
 						</td>
@@ -1187,7 +1187,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<?php if ( $is_edit && 'google_drive' === ( isset( $connection['connection_type'] ) ? $connection['connection_type'] : '' ) ) : ?>
 					<tr class="google_drive-only-field" style="display: none;">
 						<th scope="row">
-							<label><?php esc_html_e( 'OAuth Connection', 'wp-mcp-ai-pro' ); ?></label>
+							<label><?php esc_html_e( 'OAuth Connection', 'mcp-ai-wpoos-pro' ); ?></label>
 						</th>
 						<td>
 							<?php
@@ -1205,15 +1205,15 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 							?>
 							<a href="<?php echo esc_url( $oauth_url ); ?>" class="button button-secondary">
 								<span class="dashicons dashicons-google" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Connect to Google Drive', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Connect to Google Drive', 'mcp-ai-wpoos-pro' ); ?>
 							</a>
 							<p class="description">
-								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Make sure to save the Client ID and Client Secret first.', 'wp-mcp-ai-pro' ); ?>
+								<?php esc_html_e( 'Click to authorize this connection with your Google account and obtain a refresh token. Make sure to save the Client ID and Client Secret first.', 'mcp-ai-wpoos-pro' ); ?>
 							</p>
 							<?php if ( ! empty( $connection['refresh_token'] ) ) : ?>
 								<p class="description" style="color: #46b450;">
 									<span class="dashicons dashicons-yes-alt"></span>
-									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'wp-mcp-ai-pro' ); ?>
+									<?php esc_html_e( 'This connection is already authorized. Click the button above to re-authorize if needed.', 'mcp-ai-wpoos-pro' ); ?>
 								</p>
 							<?php endif; ?>
 						</td>
@@ -1221,55 +1221,55 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 				<?php endif; ?>
 
 				<tr class="wordpress-only-field">
-					<th scope="row"><?php esc_html_e( 'WooCommerce', 'wp-mcp-ai-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'WooCommerce', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
 							<input type="checkbox" name="has_woocommerce" value="1" <?php checked( $is_edit && ! empty( $connection['has_woocommerce'] ) ); ?>>
-							<?php esc_html_e( 'This site has WooCommerce installed', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'This site has WooCommerce installed', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<p class="description"><?php esc_html_e( 'Enable to access WooCommerce products, orders, and other data.', 'wp-mcp-ai-pro' ); ?></p>
+						<p class="description"><?php esc_html_e( 'Enable to access WooCommerce products, orders, and other data.', 'mcp-ai-wpoos-pro' ); ?></p>
 					</td>
 				</tr>
 
 				<tr class="generic-only-field" style="display:none;">
 					<th scope="row">
-						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="test_endpoint"><?php esc_html_e( 'Test Endpoint', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="text" name="test_endpoint" id="test_endpoint" class="regular-text" value="<?php echo $is_edit && isset( $connection['test_endpoint'] ) ? esc_attr( $connection['test_endpoint'] ) : '/'; ?>" placeholder="/">
 						<p class="description">
-							<?php esc_html_e( 'API endpoint to use for connection testing (e.g., /api/health or /). Default: /', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'API endpoint to use for connection testing (e.g., /api/health or /). Default: /', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
 
 				<tr>
-					<th scope="row"><?php esc_html_e( 'Status', 'wp-mcp-ai-pro' ); ?></th>
+					<th scope="row"><?php esc_html_e( 'Status', 'mcp-ai-wpoos-pro' ); ?></th>
 					<td>
 						<label>
 							<input type="checkbox" name="enabled" value="1" <?php checked( ! $is_edit || ! empty( $connection['enabled'] ) ); ?>>
-							<?php esc_html_e( 'Connection enabled', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'Connection enabled', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</td>
 				</tr>
 
 				<tr>
 					<th scope="row">
-						<label for="cache_ttl"><?php esc_html_e( 'Cache TTL (seconds)', 'wp-mcp-ai-pro' ); ?></label>
+						<label for="cache_ttl"><?php esc_html_e( 'Cache TTL (seconds)', 'mcp-ai-wpoos-pro' ); ?></label>
 					</th>
 					<td>
 						<input type="number" name="cache_ttl" id="cache_ttl" class="small-text" value="<?php echo $is_edit && isset( $connection['cache_ttl'] ) ? esc_attr( $connection['cache_ttl'] ) : '300'; ?>" min="0" max="3600">
 						<p class="description">
-							<?php esc_html_e( 'How long to cache GET requests (in seconds). Default: 300 (5 minutes). Set to 0 to disable caching for this connection.', 'wp-mcp-ai-pro' ); ?>
+							<?php esc_html_e( 'How long to cache GET requests (in seconds). Default: 300 (5 minutes). Set to 0 to disable caching for this connection.', 'mcp-ai-wpoos-pro' ); ?>
 						</p>
 					</td>
 				</tr>
 			</table>
 
 			<p class="submit">
-				<input type="submit" name="wp_mcp_ai_pro_save_connection" class="button button-primary" value="<?php echo $is_edit ? esc_attr__( 'Update Connection', 'wp-mcp-ai-pro' ) : esc_attr__( 'Add Connection', 'wp-mcp-ai-pro' ); ?>">
+				<input type="submit" name="wp_mcp_ai_pro_save_connection" class="button button-primary" value="<?php echo $is_edit ? esc_attr__( 'Update Connection', 'mcp-ai-wpoos-pro' ) : esc_attr__( 'Add Connection', 'mcp-ai-wpoos-pro' ); ?>">
 				<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites' ) ); ?>" class="button">
-					<?php esc_html_e( 'Cancel', 'wp-mcp-ai-pro' ); ?>
+					<?php esc_html_e( 'Cancel', 'mcp-ai-wpoos-pro' ); ?>
 				</a>
 			</p>
 		</form>
@@ -1453,17 +1453,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( 'gmail' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Gmail connection.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Gmail connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1526,7 +1526,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'wp-mcp-ai-pro' ), $error ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 			exit;
 		}
 
@@ -1536,12 +1536,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1549,7 +1549,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1581,7 +1581,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1589,14 +1589,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1609,7 +1609,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1659,11 +1659,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			exit;
 		}
 
-		$success_message = __( 'Gmail connected successfully!', 'wp-mcp-ai-pro' );
+		$success_message = __( 'Gmail connected successfully!', 'mcp-ai-wpoos-pro' );
 		if ( $email_address ) {
 			$success_message = sprintf(
 				/* translators: %s: email address */
-				__( 'Gmail connected successfully for %s!', 'wp-mcp-ai-pro' ),
+				__( 'Gmail connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
 				$email_address
 			);
 		}
@@ -1683,17 +1683,17 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( 'google_drive' !== $connection['connection_type'] ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Drive connection.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'This is not a Google Drive connection.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( empty( $connection['client_id'] ) || empty( $connection['client_secret'] ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Please save the Client ID and Client Secret before connecting.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1756,7 +1756,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 
 		if ( $error ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'wp-mcp-ai-pro' ), $error ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( sprintf( __( 'Google OAuth error: %s', 'mcp-ai-wpoos-pro' ), $error ) ) ) );
 			exit;
 		}
 
@@ -1766,12 +1766,12 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		delete_transient( $transient_key );
 
 		if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		if ( empty( $code ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'No authorization code received from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1779,7 +1779,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$connection    = WP_MCP_AI_Pro_Remote_Site_Manager::get_connection( $connection_id );
 
 		if ( ! $connection ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&error=' . rawurlencode( __( 'Connection not found.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1811,7 +1811,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Failed to exchange authorization code. Please try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1819,14 +1819,14 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( 200 !== (int) $status_code ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Google rejected the authorization. Please check your OAuth configuration.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( ! is_array( $decoded ) ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'Invalid response from Google.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1839,7 +1839,7 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		}
 
 		if ( '' === $refresh_token ) {
-			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'wp-mcp-ai-pro' ) ) ) );
+			wp_safe_redirect( admin_url( 'admin.php?page=wp-mcp-ai-remote-sites&edit=' . $connection_id . '&error=' . rawurlencode( __( 'No refresh token received. Please revoke existing access and try again.', 'mcp-ai-wpoos-pro' ) ) ) );
 			exit;
 		}
 
@@ -1890,11 +1890,11 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 			exit;
 		}
 
-		$success_message = __( 'Google Drive connected successfully!', 'wp-mcp-ai-pro' );
+		$success_message = __( 'Google Drive connected successfully!', 'mcp-ai-wpoos-pro' );
 		if ( $email_address ) {
 			$success_message = sprintf(
 				/* translators: %s: email address */
-				__( 'Google Drive connected successfully for %s!', 'wp-mcp-ai-pro' ),
+				__( 'Google Drive connected successfully for %s!', 'mcp-ai-wpoos-pro' ),
 				$email_address
 			);
 		}

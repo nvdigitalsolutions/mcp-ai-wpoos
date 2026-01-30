@@ -67,7 +67,7 @@ class WP_MCP_AI_Pro_Tool_Convert_Html_To_Markdown {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['html'] ) ) {
 			return array(
 				'success' => false,

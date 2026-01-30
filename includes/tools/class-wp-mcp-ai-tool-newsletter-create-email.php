@@ -285,6 +285,42 @@ class WP_MCP_AI_Tool_Newsletter_Create_Email implements WP_MCP_AI_Tool_Interface
 		}
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'ecommerce_business',
+
+			'pattern_compatibility' => array( 'orchestrator' ),
+
+			'profession_tags'       => array( 'marketing_manager', 'email_marketer' ),
+
+			'risk_level'            => 'standard',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

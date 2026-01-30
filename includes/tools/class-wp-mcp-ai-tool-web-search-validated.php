@@ -96,6 +96,42 @@ class WP_MCP_AI_Tool_Web_Search_Validated extends WP_MCP_AI_Validated_Tool imple
 		return $this->original_tool->execute( $arguments, $context );
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'research_discovery',
+
+			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+
+			'profession_tags'       => array( 'researcher', 'journalist', 'analyst' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

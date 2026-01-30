@@ -40,7 +40,7 @@ class WP_MCP_AI_Pro_Tool_Analyze_Data_Patterns {
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$dataset = $arguments['dataset'];
 		$type    = isset( $arguments['analysis_type'] ) ? $arguments['analysis_type'] : 'trend';
 

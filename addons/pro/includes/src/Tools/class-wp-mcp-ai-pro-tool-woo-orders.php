@@ -42,7 +42,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string Reason message.
 	 */
 	public static function get_unavailable_reason() {
-		return __( 'WooCommerce Orders tool requires WooCommerce to be installed and activated.', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Orders tool requires WooCommerce to be installed and activated.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -60,7 +60,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string
 	 */
 	public function get_name() {
-		return __( 'WooCommerce Orders', 'wp-mcp-ai-pro' );
+		return __( 'WooCommerce Orders', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -69,7 +69,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Comprehensive WooCommerce order management. View order details, statuses, customer information, order items, update statuses, add notes, and process refunds.', 'wp-mcp-ai-pro' );
+		return __( 'Comprehensive WooCommerce order management. View order details, statuses, customer information, order items, update statuses, add notes, and process refunds.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -83,60 +83,60 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'properties' => array(
 				'action'        => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform: get, list, search.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform: get, list, search.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'get', 'list', 'search' ),
 					'default'     => 'list',
 				),
 				'order_id'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Order ID for get action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Order ID for get action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of orders to return. Default: 10. Max: 100.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of orders to return. Default: 10. Max: 100.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'maximum'     => 100,
 				),
 				'page'          => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 				),
 				'status'        => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by order status.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by order status.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
 				'customer'      => array(
 					'type'        => 'integer',
-					'description' => __( 'Filter by customer ID.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by customer ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'new_status'    => array(
 					'type'        => 'string',
-					'description' => __( 'New status for update_status action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'New status for update_status action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'pending', 'processing', 'on-hold', 'completed', 'cancelled', 'refunded', 'failed' ),
 				),
 				'note'          => array(
 					'type'        => 'string',
-					'description' => __( 'Note content for add_note action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Note content for add_note action.', 'mcp-ai-wpoos-pro' ),
 				),
 				'note_type'     => array(
 					'type'        => 'string',
-					'description' => __( 'Note type: customer (visible to customer) or private (internal only).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Note type: customer (visible to customer) or private (internal only).', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'customer', 'private' ),
 					'default'     => 'private',
 				),
 				'refund_amount' => array(
 					'type'        => 'number',
-					'description' => __( 'Amount to refund (for refund action).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Amount to refund (for refund action).', 'mcp-ai-wpoos-pro' ),
 				),
 				'refund_reason' => array(
 					'type'        => 'string',
-					'description' => __( 'Reason for refund.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Reason for refund.', 'mcp-ai-wpoos-pro' ),
 				),
 				'restock_items' => array(
 					'type'        => 'boolean',
-					'description' => __( 'Whether to restock items when refunding.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Whether to restock items when refunding.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 			),
@@ -172,7 +172,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! self::is_available() ) {
 			return new WP_Error(
 				'woocommerce_not_active',
-				__( 'WooCommerce is not installed or activated.', 'wp-mcp-ai-pro' )
+				__( 'WooCommerce is not installed or activated.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -181,7 +181,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to view orders.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to view orders.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -203,7 +203,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			default:
 				return new WP_Error(
 					'invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -218,7 +218,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'missing_order_id',
-				__( 'Order ID is required for get action.', 'wp-mcp-ai-pro' )
+				__( 'Order ID is required for get action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -227,7 +227,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $order ) {
 			return new WP_Error(
 				'order_not_found',
-				__( 'Order not found.', 'wp-mcp-ai-pro' )
+				__( 'Order not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -341,14 +341,14 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'missing_order_id',
-				__( 'Order ID is required for update_status action.', 'wp-mcp-ai-pro' )
+				__( 'Order ID is required for update_status action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['new_status'] ) ) {
 			return new WP_Error(
 				'missing_new_status',
-				__( 'New status is required for update_status action.', 'wp-mcp-ai-pro' )
+				__( 'New status is required for update_status action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -357,7 +357,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to update orders.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to update orders.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -366,7 +366,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $order ) {
 			return new WP_Error(
 				'order_not_found',
-				__( 'Order not found.', 'wp-mcp-ai-pro' )
+				__( 'Order not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -386,7 +386,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'new_status' => $order->get_status(),
 			'message'    => sprintf(
 				/* translators: 1: order ID, 2: old status, 3: new status */
-				__( 'Order #%1$d status updated from %2$s to %3$s.', 'wp-mcp-ai-pro' ),
+				__( 'Order #%1$d status updated from %2$s to %3$s.', 'mcp-ai-wpoos-pro' ),
 				$order->get_id(),
 				$old_status,
 				$order->get_status()
@@ -405,14 +405,14 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'missing_order_id',
-				__( 'Order ID is required for add_note action.', 'wp-mcp-ai-pro' )
+				__( 'Order ID is required for add_note action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['note'] ) ) {
 			return new WP_Error(
 				'missing_note',
-				__( 'Note content is required for add_note action.', 'wp-mcp-ai-pro' )
+				__( 'Note content is required for add_note action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -421,7 +421,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to add order notes.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to add order notes.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -430,7 +430,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $order ) {
 			return new WP_Error(
 				'order_not_found',
-				__( 'Order not found.', 'wp-mcp-ai-pro' )
+				__( 'Order not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -447,7 +447,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $note_id ) {
 			return new WP_Error(
 				'note_failed',
-				__( 'Failed to add order note.', 'wp-mcp-ai-pro' )
+				__( 'Failed to add order note.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -456,7 +456,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'order_id' => $order->get_id(),
 			'note_id'  => $note_id,
 			'type'     => $note_type,
-			'message'  => __( 'Order note added successfully.', 'wp-mcp-ai-pro' ),
+			'message'  => __( 'Order note added successfully.', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
@@ -471,7 +471,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'missing_order_id',
-				__( 'Order ID is required for refund action.', 'wp-mcp-ai-pro' )
+				__( 'Order ID is required for refund action.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -480,7 +480,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! user_can( $user_id, 'edit_shop_orders' ) ) {
 			return new WP_Error(
 				'permission_denied',
-				__( 'You do not have permission to refund orders.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to refund orders.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -489,7 +489,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( ! $order ) {
 			return new WP_Error(
 				'order_not_found',
-				__( 'Order not found.', 'wp-mcp-ai-pro' )
+				__( 'Order not found.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -500,14 +500,14 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		if ( $refund_amount <= 0 ) {
 			return new WP_Error(
 				'invalid_refund_amount',
-				__( 'Refund amount must be greater than zero.', 'wp-mcp-ai-pro' )
+				__( 'Refund amount must be greater than zero.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( $refund_amount > $order->get_total() ) {
 			return new WP_Error(
 				'invalid_refund_amount',
-				__( 'Refund amount cannot exceed order total.', 'wp-mcp-ai-pro' )
+				__( 'Refund amount cannot exceed order total.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -552,7 +552,7 @@ class WP_MCP_AI_Pro_Tool_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'restocked'     => $restock_items,
 			'message'       => sprintf(
 				/* translators: 1: refund amount, 2: order ID */
-				__( 'Refund of %1$s created for order #%2$d.', 'wp-mcp-ai-pro' ),
+				__( 'Refund of %1$s created for order #%2$d.', 'mcp-ai-wpoos-pro' ),
 				wc_price( $refund_amount ),
 				$order->get_id()
 			),

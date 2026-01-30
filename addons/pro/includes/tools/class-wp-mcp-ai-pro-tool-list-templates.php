@@ -74,7 +74,7 @@ class WP_MCP_AI_Pro_Tool_List_Templates {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Extract arguments.
 		$category = sanitize_text_field( $arguments['category'] ?? 'all' );
 		$status   = sanitize_text_field( $arguments['status'] ?? 'all' );

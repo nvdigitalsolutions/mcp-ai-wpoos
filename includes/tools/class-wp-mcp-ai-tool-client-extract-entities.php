@@ -61,6 +61,42 @@ class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
+
+	/**
+
+	 * Get extended tool definition including toolkit metadata.
+
+	 *
+
+	 * @since 1.1.0
+
+	 *
+
+	 * @return array Tool definition with metadata.
+
+	 */
+
+	public function get_definition() {
+
+		return array(
+
+			'name'                  => $this->get_name(),
+
+			'description'           => $this->get_description(),
+
+			'toolkit'               => 'research_discovery',
+
+			'pattern_compatibility' => array( 'sequential' ),
+
+			'profession_tags'       => array( 'researcher', 'data_scientist' ),
+
+			'risk_level'            => 'info',
+
+		);
+
+	}
+
+
 	/**
 	 * {@inheritdoc}
 	 */

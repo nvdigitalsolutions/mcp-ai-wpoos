@@ -38,7 +38,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 */
 	public function register_scripts() {
 		// Only register if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		if ( ! $is_pro_available ) {
 			return;
 		}
@@ -101,7 +101,7 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 */
 	public function maybe_enqueue_scripts() {
 		// Check if Pro plugin is present (embedded provider is Pro-only feature).
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		if ( ! $is_pro_available ) {
 			return;
 		}
@@ -200,12 +200,12 @@ class WP_MCP_AI_LangChain_Enqueue {
 	 * @return array Status information
 	 */
 	public static function get_feature_status() {
-		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
+		$is_pro_available = defined( 'WP_MCP_AI_PRO_VERSION' );
 		return array(
-			'enabled' => get_option( 'wp_mcp_ai_enable_langchain_orchestration', false ),
+			'enabled'                   => get_option( 'wp_mcp_ai_enable_langchain_orchestration', false ),
 			'embedded_provider_enabled' => $is_pro_available,
-			'has_transformers' => defined( 'WP_MCP_AI_TRANSFORMERS_VERSION' ),
-			'has_webllm' => class_exists( 'WP_MCP_AI_WebLLM_Enqueue' ),
+			'has_transformers'          => defined( 'WP_MCP_AI_TRANSFORMERS_VERSION' ),
+			'has_webllm'                => class_exists( 'WP_MCP_AI_WebLLM_Enqueue' ),
 		);
 	}
 

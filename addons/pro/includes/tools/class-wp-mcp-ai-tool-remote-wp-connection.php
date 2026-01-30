@@ -57,14 +57,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Remote WordPress/WooCommerce Connection', 'wp-mcp-ai-pro' );
+		return __( 'Remote WordPress/WooCommerce Connection', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'wp-mcp-ai-pro' );
+		return __( 'Access remote WordPress and WooCommerce sites to retrieve posts, pages, media, products, orders, and other data in read-only mode. IMPORTANT: When using get_wc_products with include_variations enabled (default), variable products are represented ONLY by their variations (not the parent product) to provide accurate stock quantities. Products are automatically sorted with in-stock items first and return only essential fields to optimize token usage. Each variation includes parent_id and parent_name for reference. You do NOT need to make a separate call to get_wc_product_variations unless you want variations for a specific product only. WORKFLOW: Always call with action="list_connections" FIRST to discover available connection IDs, then use those IDs in subsequent calls. Never attempt get_posts, get_media, etc. without first calling list_connections.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -76,7 +76,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			'properties'           => array(
 				'action'             => array(
 					'type'        => 'string',
-					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The action to perform. IMPORTANT: Always call with "list_connections" FIRST to discover available connection IDs before any other action.', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array(
 						'list_connections',
 						'test_connection',
@@ -96,62 +96,62 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				),
 				'connection_id'      => array(
 					'type'        => 'string',
-					'description' => __( 'REQUIRED (except for list_connections action). The connection ID obtained from calling list_connections first. Format: conn_XXXX. You must call list_connections before using any other action to get this ID.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'REQUIRED (except for list_connections action). The connection ID obtained from calling list_connections first. Format: conn_XXXX. You must call list_connections before using any other action to get this ID.', 'mcp-ai-wpoos-pro' ),
 				),
 				'post_type'          => array(
 					'type'        => 'string',
-					'description' => __( 'Post type to query (for get_posts action). Defaults to "post".', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Post type to query (for get_posts action). Defaults to "post".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'post',
 				),
 				'post_id'            => array(
 					'type'        => 'integer',
-					'description' => __( 'Post or product ID for single item queries.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Post or product ID for single item queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'order_id'           => array(
 					'type'        => 'integer',
-					'description' => __( 'WooCommerce order ID for order queries.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'WooCommerce order ID for order queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'per_page'           => array(
 					'type'        => 'integer',
-					'description' => __( 'Number of items to retrieve per page. Default: 25 for get_wc_products (10 for other actions), Max: 100. Products are automatically sorted with in-stock items first.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Number of items to retrieve per page. Default: 25 for get_wc_products (10 for other actions), Max: 100. Products are automatically sorted with in-stock items first.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 10,
 					'minimum'     => 1,
 					'maximum'     => 100,
 				),
 				'page'               => array(
 					'type'        => 'integer',
-					'description' => __( 'Page number for pagination. Default: 1.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Page number for pagination. Default: 1.', 'mcp-ai-wpoos-pro' ),
 					'default'     => 1,
 					'minimum'     => 1,
 				),
 				'search'             => array(
 					'type'        => 'string',
-					'description' => __( 'Search term to filter results.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Search term to filter results.', 'mcp-ai-wpoos-pro' ),
 				),
 				'status'             => array(
 					'type'        => 'string',
-					'description' => __( 'Filter by status (publish, draft, etc. for posts; completed, processing, etc. for orders).', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter by status (publish, draft, etc. for posts; completed, processing, etc. for orders).', 'mcp-ai-wpoos-pro' ),
 				),
 				'sku'                => array(
 					'type'        => 'string',
-					'description' => __( 'Product SKU for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Product SKU for WooCommerce product queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'stock_status'       => array(
 					'type'        => 'string',
-					'description' => __( 'Filter products by stock status (e.g., instock, outofstock, onbackorder) for WooCommerce product queries. When used with variable products, automatically filters variations to only show those matching the stock status.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter products by stock status (e.g., instock, outofstock, onbackorder) for WooCommerce product queries. When used with variable products, automatically filters variations to only show those matching the stock status.', 'mcp-ai-wpoos-pro' ),
 				),
 				'include_variations' => array(
 					'type'        => 'boolean',
-					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true). When enabled, variable products are represented ONLY by their variations (not the parent product) to avoid stock confusion. Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price, and attributes. Set to false only if you want parent products without variations. To get variations for a specific product, use get_wc_product_variations instead.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'For get_wc_products: Whether to include product variations in results. AUTOMATICALLY ENABLED BY DEFAULT (true). When enabled, variable products are represented ONLY by their variations (not the parent product) to avoid stock confusion. Each variation includes parent_id, parent_name, stock_quantity, stock_status, sku, price, and attributes. Set to false only if you want parent products without variations. To get variations for a specific product, use get_wc_product_variations instead.', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
 				'category'           => array(
 					'type'        => 'string',
-					'description' => __( 'Filter products by category slug or ID for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter products by category slug or ID for WooCommerce product queries.', 'mcp-ai-wpoos-pro' ),
 				),
 				'type'               => array(
 					'type'        => 'string',
-					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Filter products by type (e.g., simple, variable, grouped, external) for WooCommerce product queries.', 'mcp-ai-wpoos-pro' ),
 				),
 			),
 			'required'             => array( 'action' ),
@@ -173,14 +173,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access remote WordPress sites.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to access remote WordPress sites.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_missing_connection',
 				sprintf(
 					/* translators: 1: action name, 2: list of available connections */
-					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter with one of the available connection IDs.', 'wp-mcp-ai-pro' ),
+					__( 'Connection ID is required for action "%1$s".%2$s You must provide the connection_id parameter with one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					$action,
 					$connection_list
 				)
@@ -245,7 +245,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_invalid_connection',
 				sprintf(
 					/* translators: 1: connection ID, 2: list of available connections */
-					__( 'Invalid connection ID "%1$s".%2$s Use one of the available connection IDs.', 'wp-mcp-ai-pro' ),
+					__( 'Invalid connection ID "%1$s".%2$s Use one of the available connection IDs.', 'mcp-ai-wpoos-pro' ),
 					$connection_id,
 					$connection_list
 				)
@@ -257,7 +257,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_disabled_connection',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is disabled. Please ask the user to enable it in the WordPress admin under NV oOS → Remote Sites.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is disabled. Please ask the user to enable it in the WordPress admin under NV oOS → Remote Sites.', 'mcp-ai-wpoos-pro' ),
 					isset( $connection['name'] ) ? $connection['name'] : $connection_id
 				)
 			);
@@ -269,7 +269,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_connection_not_enabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is not enabled for this assistant. Please ask the user to enable it in the assistant editor under Remote Site Connections metabox.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is not enabled for this assistant. Please ask the user to enable it in the assistant editor under Remote Site Connections metabox.', 'mcp-ai-wpoos-pro' ),
 					isset( $connection['name'] ) ? $connection['name'] : $connection_id
 				)
 			);
@@ -316,7 +316,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 			default:
 				return new WP_Error(
 					'wp_mcp_ai_pro_invalid_action',
-					__( 'Invalid action specified.', 'wp-mcp-ai-pro' )
+					__( 'Invalid action specified.', 'mcp-ai-wpoos-pro' )
 				);
 		}
 	}
@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		$response = array(
 			'summary'     => sprintf(
 				/* translators: %d: number of connections */
-				__( 'Found %d remote site connection(s)', 'wp-mcp-ai-pro' ),
+				__( 'Found %d remote site connection(s)', 'mcp-ai-wpoos-pro' ),
 				count( $result )
 			),
 			'connections' => $result,
@@ -445,7 +445,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of posts */
-				__( 'Retrieved %d post(s)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d post(s)', 'mcp-ai-wpoos-pro' ),
 				count( $posts )
 			),
 			'posts'   => $posts,
@@ -466,7 +466,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_post_id',
-				__( 'Post ID is required.', 'wp-mcp-ai-pro' )
+				__( 'Post ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -482,7 +482,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'summary' => __( 'Post retrieved successfully', 'wp-mcp-ai-pro' ),
+			'summary' => __( 'Post retrieved successfully', 'mcp-ai-wpoos-pro' ),
 			'post'    => $post,
 		);
 	}
@@ -535,7 +535,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of media items */
-				__( 'Retrieved %d media item(s)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d media item(s)', 'mcp-ai-wpoos-pro' ),
 				count( $media )
 			),
 			'media'   => $media,
@@ -556,7 +556,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -707,14 +707,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( $variation_count > 0 ) {
 			$summary = sprintf(
 				/* translators: 1: number of product groups (variable products counted as groups, simple products as individual), 2: number of variations */
-				__( 'Retrieved %1$d product(s) with %2$d variation(s). Note: Variable products are represented by their variations only, not the parent product.', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %1$d product(s) with %2$d variation(s). Note: Variable products are represented by their variations only, not the parent product.', 'mcp-ai-wpoos-pro' ),
 				$parent_count,
 				$variation_count
 			);
 		} else {
 			$summary = sprintf(
 				/* translators: %d: number of products */
-				__( 'Retrieved %d product(s)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d product(s)', 'mcp-ai-wpoos-pro' ),
 				$parent_count
 			);
 		}
@@ -741,14 +741,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_product_id',
-				__( 'Product ID is required.', 'wp-mcp-ai-pro' )
+				__( 'Product ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -770,7 +770,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'summary' => __( 'Product retrieved successfully', 'wp-mcp-ai-pro' ),
+			'summary' => __( 'Product retrieved successfully', 'mcp-ai-wpoos-pro' ),
 			'product' => $product,
 		);
 	}
@@ -788,14 +788,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['post_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_product_id',
-				__( 'Product ID is required for fetching variations.', 'wp-mcp-ai-pro' )
+				__( 'Product ID is required for fetching variations.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -809,7 +809,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary'    => sprintf(
 				/* translators: 1: number of variations, 2: product ID */
-				__( 'Retrieved %1$d variation(s) for product ID %2$d', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %1$d variation(s) for product ID %2$d', 'mcp-ai-wpoos-pro' ),
 				count( $variations ),
 				$product_id
 			),
@@ -836,7 +836,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( ! $product_id ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_product_id',
-				__( 'Invalid product ID for fetching variations.', 'wp-mcp-ai-pro' )
+				__( 'Invalid product ID for fetching variations.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1138,7 +1138,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1170,7 +1170,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary' => sprintf(
 				/* translators: %d: number of orders */
-				__( 'Retrieved %d order(s)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d order(s)', 'mcp-ai-wpoos-pro' ),
 				count( $orders )
 			),
 			'orders'  => $orders,
@@ -1191,14 +1191,14 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( empty( $arguments['order_id'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_order_id',
-				__( 'Order ID is required.', 'wp-mcp-ai-pro' )
+				__( 'Order ID is required.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1212,7 +1212,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		return array(
-			'summary' => __( 'Order retrieved successfully', 'wp-mcp-ai-pro' ),
+			'summary' => __( 'Order retrieved successfully', 'mcp-ai-wpoos-pro' ),
 			'order'   => $order,
 		);
 	}
@@ -1230,7 +1230,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1258,7 +1258,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary'   => sprintf(
 				/* translators: %d: number of customers */
-				__( 'Retrieved %d customer(s)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d customer(s)', 'mcp-ai-wpoos-pro' ),
 				count( $customers )
 			),
 			'customers' => $customers,
@@ -1279,7 +1279,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		if ( empty( $connection['has_woocommerce'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_no_woocommerce',
-				__( 'This connection does not have WooCommerce enabled.', 'wp-mcp-ai-pro' )
+				__( 'This connection does not have WooCommerce enabled.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -1307,7 +1307,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'summary'    => sprintf(
 				/* translators: %d: number of categories */
-				__( 'Retrieved %d product categor(ies)', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %d product categor(ies)', 'mcp-ai-wpoos-pro' ),
 				count( $categories )
 			),
 			'categories' => $categories,
@@ -1381,7 +1381,7 @@ class WP_MCP_AI_Tool_Remote_WP_Connection implements WP_MCP_AI_Tool_Interface, W
 				'wp_mcp_ai_pro_rate_limit_exceeded',
 				sprintf(
 					/* translators: %d: maximum requests allowed per minute */
-					__( 'Remote site request rate limit exceeded. Maximum %d requests per minute allowed.', 'wp-mcp-ai-pro' ),
+					__( 'Remote site request rate limit exceeded. Maximum %d requests per minute allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_minute
 				)
 			);

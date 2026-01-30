@@ -115,8 +115,8 @@ abstract class WP_MCP_AI_Admin_Test_Page_Base {
 	 * This is required for admin test pages where assistants are loaded dynamically.
 	 */
 	protected function enqueue_embedded_provider_if_needed() {
-		// Skip if WP_MCP_AI_BASE_VERSION is true (embedded provider not available in base version).
-		if ( defined( 'WP_MCP_AI_BASE_VERSION' ) && WP_MCP_AI_BASE_VERSION ) {
+		// Skip if Pro is not available (embedded provider is Pro-only).
+		if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 			return;
 		}
 

@@ -90,7 +90,7 @@ class WP_MCP_AI_Pro_Tool_Vault_Access {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate action.
 		if ( empty( $arguments['action'] ) ) {
 			return array(

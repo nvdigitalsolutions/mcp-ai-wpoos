@@ -66,14 +66,14 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'Get EZuite ERP Products', 'wp-mcp-ai-pro' );
+		return __( 'Get EZuite ERP Products', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Returns products from EZuite ERP system with inventory levels, pricing, and product details. Simplified interface for retrieving product catalog information from the connected ERP system.', 'wp-mcp-ai-pro' );
+		return __( 'Returns products from EZuite ERP system with inventory levels, pricing, and product details. Simplified interface for retrieving product catalog information from the connected ERP system.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -85,22 +85,22 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 			'properties'           => array(
 				'connection_id' => array(
 					'type'        => 'string',
-					'description' => __( 'The EZuite ERP connection ID. Call ezuite_erp tool with action "list_connections" first to get available connection IDs.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'The EZuite ERP connection ID. Call ezuite_erp tool with action "list_connections" first to get available connection IDs.', 'mcp-ai-wpoos-pro' ),
 				),
 				'location_code' => array(
 					'type'        => 'string',
-					'description' => __( 'Location code to filter products by (e.g., "MAIN", "WAREHOUSE1"). Use "ALL" to retrieve all products. Default is "ALL".', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Location code to filter products by (e.g., "MAIN", "WAREHOUSE1"). Use "ALL" to retrieve all products. Default is "ALL".', 'mcp-ai-wpoos-pro' ),
 					'default'     => 'ALL',
 				),
 				'item_code'     => array(
 					'type'        => 'string',
-					'description' => __( 'Optional specific item code to retrieve a single product.', 'wp-mcp-ai-pro' ),
+					'description' => __( 'Optional specific item code to retrieve a single product.', 'mcp-ai-wpoos-pro' ),
 				),
 				'limit'         => array(
 					'type'        => 'integer',
 					'description' => sprintf(
 						/* translators: %d: default limit */
-						__( 'Maximum number of products to return. Default is %d.', 'wp-mcp-ai-pro' ),
+						__( 'Maximum number of products to return. Default is %d.', 'mcp-ai-wpoos-pro' ),
 						self::DEFAULT_LIMIT
 					),
 					'minimum'     => self::MIN_LIMIT,
@@ -139,14 +139,14 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( ! $user_id || ! user_can( $user_id, 'edit_posts' ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_forbidden',
-				__( 'You do not have permission to access EZuite ERP products.', 'wp-mcp-ai-pro' )
+				__( 'You do not have permission to access EZuite ERP products.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		if ( is_multisite() && ! is_user_member_of_blog( $user_id, get_current_blog_id() ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_wrong_site',
-				__( 'You do not have access to this site.', 'wp-mcp-ai-pro' )
+				__( 'You do not have access to this site.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( empty( $connection_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_connection',
-				__( 'Connection ID is required. Use the ezuite_erp tool with action "list_connections" to get available connection IDs.', 'wp-mcp-ai-pro' )
+				__( 'Connection ID is required. Use the ezuite_erp tool with action "list_connections" to get available connection IDs.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -174,7 +174,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_pro_connection_not_found',
 				sprintf(
 					/* translators: %s: connection ID */
-					__( 'Connection "%s" not found. Call ezuite_erp tool with action "list_connections" to see available connections.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" not found. Call ezuite_erp tool with action "list_connections" to see available connections.', 'mcp-ai-wpoos-pro' ),
 					$connection_id
 				)
 			);
@@ -184,7 +184,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( empty( $connection['connection_type'] ) || 'ezuite_erp' !== $connection['connection_type'] ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_wrong_connection_type',
-				__( 'This connection is not an EZuite ERP connection.', 'wp-mcp-ai-pro' )
+				__( 'This connection is not an EZuite ERP connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -194,7 +194,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_pro_connection_disabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is disabled.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is disabled.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_pro_connection_not_enabled',
 				sprintf(
 					/* translators: %s: connection name */
-					__( 'Connection "%s" is not enabled for this assistant.', 'wp-mcp-ai-pro' ),
+					__( 'Connection "%s" is not enabled for this assistant.', 'mcp-ai-wpoos-pro' ),
 					$connection['name']
 				)
 			);
@@ -243,7 +243,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		return array(
 			'summary'         => sprintf(
 				/* translators: 1: number of products returned, 2: connection name */
-				__( 'Retrieved %1$d product(s) from %2$s', 'wp-mcp-ai-pro' ),
+				__( 'Retrieved %1$d product(s) from %2$s', 'mcp-ai-wpoos-pro' ),
 				count( $products ),
 				$connection['name']
 			),
@@ -273,7 +273,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( empty( $api_key ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_missing_api_key',
-				__( 'API key is not configured for this connection.', 'wp-mcp-ai-pro' )
+				__( 'API key is not configured for this connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -300,7 +300,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_pro_request_failed',
 				sprintf(
 					/* translators: %s: error message */
-					__( 'Request failed: %s', 'wp-mcp-ai-pro' ),
+					__( 'Request failed: %s', 'mcp-ai-wpoos-pro' ),
 					$response->get_error_message()
 				)
 			);
@@ -312,7 +312,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( $status_code >= 400 ) {
 			$error_message = sprintf(
 				/* translators: %d: HTTP status code */
-				__( 'HTTP error %d', 'wp-mcp-ai-pro' ),
+				__( 'HTTP error %d', 'mcp-ai-wpoos-pro' ),
 				$status_code
 			);
 
@@ -330,13 +330,13 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 		if ( null === $decoded ) {
 			return new WP_Error(
 				'wp_mcp_ai_pro_invalid_json',
-				__( 'Invalid JSON response from EZuite ERP API.', 'wp-mcp-ai-pro' )
+				__( 'Invalid JSON response from EZuite ERP API.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
 		// Check EZuite API response status.
 		if ( isset( $decoded['Status_Code'] ) && 200 !== absint( $decoded['Status_Code'] ) ) {
-			$error_message = isset( $decoded['Message'] ) ? $decoded['Message'] : __( 'Unknown error', 'wp-mcp-ai-pro' );
+			$error_message = isset( $decoded['Message'] ) ? $decoded['Message'] : __( 'Unknown error', 'mcp-ai-wpoos-pro' );
 			return new WP_Error( 'wp_mcp_ai_pro_erp_error', $error_message );
 		}
 
@@ -458,7 +458,7 @@ class WP_MCP_AI_Tool_EZuite_ERP_Get_Products implements WP_MCP_AI_Tool_Interface
 				'wp_mcp_ai_pro_rate_limit_exceeded',
 				sprintf(
 					/* translators: %d: maximum requests allowed per minute */
-					__( 'EZuite ERP API rate limit exceeded. Maximum %d requests per minute allowed.', 'wp-mcp-ai-pro' ),
+					__( 'EZuite ERP API rate limit exceeded. Maximum %d requests per minute allowed.', 'mcp-ai-wpoos-pro' ),
 					$max_per_minute
 				)
 			);

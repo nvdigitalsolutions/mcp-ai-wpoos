@@ -66,7 +66,7 @@ class WP_MCP_AI_Pro_Tool_Generate_Research_Report {
 		);
 	}
 
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		$title       = sanitize_text_field( $arguments['title'] );
 		$sections    = $arguments['sections'];
 		$include_toc = isset( $arguments['include_toc'] ) ? (bool) $arguments['include_toc'] : true;

@@ -67,7 +67,7 @@ class WP_MCP_AI_Pro_Tool_Extract_Structured_Data {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( $arguments, $context ) {
+	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( empty( $arguments['content'] ) || empty( $arguments['selectors'] ) ) {
 			return array(
 				'success' => false,
