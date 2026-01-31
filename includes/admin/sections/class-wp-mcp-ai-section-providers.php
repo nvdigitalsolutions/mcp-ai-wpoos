@@ -398,6 +398,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'options'     => $anthropic_models,
 					'default'     => 'claude-3-5-sonnet-20241022',
 				),
+				'anthropic_vision_model'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Anthropic Vision Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 3+ models support vision capabilities. Claude 3.5 Sonnet and Opus offer the best vision performance.', 'mcp-ai-wpoos' ),
+					'options'     => $anthropic_models,
+					'default'     => 'claude-3-5-sonnet-20241022',
+				),
+				'anthropic_max_image_tokens'         => array(
+					'type'        => 'text',
+					'label'       => __( 'Anthropic Max Image Tokens', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of tokens to allocate for image analysis. Higher values allow more detailed analysis but use more tokens. Leave empty to use model defaults. Typical range: 1000-4000.', 'mcp-ai-wpoos' ),
+					'placeholder' => '1568',
+					'sanitize'    => 'absint',
+				),
 
 				// Google Gemini Settings.
 				'enable_gemini'                      => array(
@@ -849,7 +863,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
