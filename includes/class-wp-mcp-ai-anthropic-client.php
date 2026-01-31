@@ -19,6 +19,19 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		const USER_AGENT   = 'WP-MCP-AI-Anthropic-Client/1.0';
 
 		/**
+		 * Maximum image size in bytes (10MB).
+		 * Anthropic API recommends images under 5MB for optimal performance.
+		 */
+		const MAX_IMAGE_SIZE_BYTES = 10485760; // 10 * 1024 * 1024.
+
+		/**
+		 * Base64 encoding overhead multiplier.
+		 * Base64 encoding increases size by ~33%, so 1.37 accounts for the overhead
+		 * plus some buffer for the data URL prefix.
+		 */
+		const BASE64_OVERHEAD_MULTIPLIER = 1.37;
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -561,8 +574,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			// Handle data: URLs.
 			if ( ! empty( $image_url ) && 0 === strpos( $image_url, 'data:' ) ) {
-				// Validate URL length to prevent memory exhaustion (max 10MB base64).
-				$max_data_url_length = 10 * 1024 * 1024 * 1.37; // Base64 is ~37% larger than binary.
+				// Validate URL length to prevent memory exhaustion.
+				$max_data_url_length = self::MAX_IMAGE_SIZE_BYTES * self::BASE64_OVERHEAD_MULTIPLIER;
 				if ( strlen( $image_url ) > $max_data_url_length ) {
 					WP_MCP_AI_Logger::log_error( 'Data URL too large for image.', array( 'length' => strlen( $image_url ) ) );
 					return null;
@@ -618,10 +631,9 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					return null;
 				}
 
-				// Validate content length before retrieving body (max 10MB).
-				$max_image_size = 10 * 1024 * 1024;
+				// Validate content length before retrieving body.
 				$content_length = wp_remote_retrieve_header( $response, 'content-length' );
-				if ( ! empty( $content_length ) && absint( $content_length ) > $max_image_size ) {
+				if ( ! empty( $content_length ) && absint( $content_length ) > self::MAX_IMAGE_SIZE_BYTES ) {
 					WP_MCP_AI_Logger::log_error(
 						'Remote image too large.',
 						array(
@@ -641,7 +653,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 
 				// Validate actual body size as fallback.
-				if ( strlen( $body ) > $max_image_size ) {
+				if ( strlen( $body ) > self::MAX_IMAGE_SIZE_BYTES ) {
 					WP_MCP_AI_Logger::log_error(
 						'Remote image body too large.',
 						array(
