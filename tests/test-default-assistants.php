@@ -51,7 +51,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 	 * Test that Orchestrator has correct slug and configuration.
 	 */
 	public function test_orchestrator_configuration() {
-		$assistants = WP_MCP_AI_Default_Assistants::get_default_assistants();
+		$assistants   = WP_MCP_AI_Default_Assistants::get_default_assistants();
 		$orchestrator = $assistants[0];
 
 		$this->assertEquals( 'orchestrator-supervisor', $orchestrator['slug'] );
@@ -67,9 +67,8 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 	 * Test that all 6 assistants have unique slugs.
 	 */
 	public function test_all_assistants_have_unique_slugs() {
-		$assistants = WP_MCP_AI_Default_Assistants::get_default_assistants();
-		$slugs = array_column( $assistants, 'slug' );
-
+		$assistants   = WP_MCP_AI_Default_Assistants::get_default_assistants();
+		$slugs        = array_column( $assistants, 'slug' );
 		$unique_slugs = array_unique( $slugs );
 
 		$this->assertCount( 6, $unique_slugs, 'All assistants should have unique slugs' );
@@ -80,7 +79,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 	 */
 	public function test_expected_assistant_slugs() {
 		$assistants = WP_MCP_AI_Default_Assistants::get_default_assistants();
-		$slugs = array_column( $assistants, 'slug' );
+		$slugs      = array_column( $assistants, 'slug' );
 
 		$expected_slugs = array(
 			'orchestrator-supervisor',
@@ -130,7 +129,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 		// Install default assistants.
 		$result = WP_MCP_AI_Default_Assistants::install();
 
-		$this->assertTrue( ! is_wp_error( $result ) || $result === true, 'Installation should succeed or return true' );
+		$this->assertTrue( ! is_wp_error( $result ) || true === $result, 'Installation should succeed or return true' );
 
 		// Verify installation was marked as complete.
 		$this->assertTrue( WP_MCP_AI_Default_Assistants::is_installed() );
@@ -176,9 +175,9 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 			$post_id = $info['assistant_ids'][0]; // Test first assistant.
 
 			// Check for required meta.
-			$provider = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, true );
-			$model = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_MODEL, true );
-			$tools = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
+			$provider      = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_PROVIDER, true );
+			$model         = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_MODEL, true );
+			$tools         = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_TOOLS, true );
 			$system_prompt = get_post_meta( $post_id, WP_MCP_AI_Assistant_CPT::META_SYSTEM_PROMPT, true );
 
 			$this->assertNotEmpty( $provider, 'Provider should be set' );
@@ -200,7 +199,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 		// Reinstall.
 		$result = WP_MCP_AI_Default_Assistants::reinstall();
 
-		$this->assertTrue( ! is_wp_error( $result ) || $result === true );
+		$this->assertTrue( ! is_wp_error( $result ) || true === $result );
 		$this->assertTrue( WP_MCP_AI_Default_Assistants::is_installed() );
 
 		// Verify new installation.
@@ -214,8 +213,8 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 	public function test_uninstall_removes_assistants() {
 		// Install assistants.
 		WP_MCP_AI_Default_Assistants::install();
-		$info = WP_MCP_AI_Default_Assistants::get_installation_info();
-		$assistant_ids = $info['assistant_ids'];
+		$info           = WP_MCP_AI_Default_Assistants::get_installation_info();
+		$assistant_ids  = $info['assistant_ids'];
 
 		// Uninstall.
 		WP_MCP_AI_Default_Assistants::uninstall();
@@ -288,13 +287,13 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 
 			// Specific role checks.
 			if ( in_array( 'parser', $assistant['primary_roles'], true ) ||
-			     in_array( 'auditor', $assistant['primary_roles'], true ) ||
-			     in_array( 'publisher', $assistant['primary_roles'], true ) ) {
+					in_array( 'auditor', $assistant['primary_roles'], true ) ||
+					in_array( 'publisher', $assistant['primary_roles'], true ) ) {
 				$this->assertLessThanOrEqual( 0.3, $temp, "{$assistant['slug']} should have low temperature for precision" );
 			}
 
 			if ( in_array( 'writer', $assistant['primary_roles'], true ) ||
-			     in_array( 'creative', $assistant['primary_roles'], true ) ) {
+					in_array( 'creative', $assistant['primary_roles'], true ) ) {
 				$this->assertGreaterThanOrEqual( 0.5, $temp, "{$assistant['slug']} should have higher temperature for creativity" );
 			}
 		}

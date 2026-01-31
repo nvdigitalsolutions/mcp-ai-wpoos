@@ -46,7 +46,7 @@ class WP_MCP_AI_Default_Assistants {
 				'system_prompt' => self::get_orchestrator_prompt(),
 				'tools'         => array_merge(
 					array(
-						// Base Plugin Tools - System Monitoring & Execution
+						// Base Plugin Tools - System Monitoring & Execution.
 						'get_session_status',
 						'calculate_orchestration_capacity',
 						'get_update_status',
@@ -55,20 +55,20 @@ class WP_MCP_AI_Default_Assistants {
 						'get_system_logs',
 						'get_site_summary',
 						'check_workflow_health',
-						// Agent Orchestration (Base)
+						// Agent Orchestration (Base).
 						'create_agent_team',
 						'delegate_to_agent',
 						'create_assistant',
-						// Workflow Management (Base)
+						// Workflow Management (Base).
 						'list_cron_jobs',
 						'create_cron_job',
 						'delete_cron_job',
 						'execute_workflow',
-						// Resource Management (Base)
+						// Resource Management (Base).
 						'purge_cache',
 						'check_site_security',
 						'suggest_best_model',
-						// Worker oversight (Base)
+						// Worker oversight (Base).
 						'web_search',
 						'run_crawl4ai_job',
 						'create_post',
@@ -76,14 +76,14 @@ class WP_MCP_AI_Default_Assistants {
 						'get_rankmath_seo',
 					),
 					$is_pro_active ? array(
-						// Pro Enhancement - Advanced Orchestration
+						// Pro Enhancement - Advanced Orchestration.
 						'github_repository_operations',
 						'manage_github_codespace',
 						'create_wpcode_snippet',
 						'install_and_activate_plugin',
 						'jetengine_operations',
 						'elementor_operations',
-						// Pro - Advanced Analytics
+						// Pro - Advanced Analytics.
 						'get_google_analytics_report',
 						'get_facebook_instagram_insights',
 						'get_linkedin_insights',
@@ -102,41 +102,41 @@ class WP_MCP_AI_Default_Assistants {
 				'system_prompt' => self::get_research_prompt(),
 				'tools'         => array_merge(
 					array(
-						// Base Plugin Tools - Web Scraping & Research
+						// Base Plugin Tools - Web Scraping & Research.
 						'web_search',
 						'deep_research',
 						'run_crawl4ai_job',
 						'crawl4ai_price_lookup',
-						// WordPress Search (Base)
+						// WordPress Search (Base).
 						'search_content',
 						'semantic_content_search',
 						'semantic_context_search',
 						'get_recent_posts',
 						'search_attachments',
-						// Analysis & Extraction (Base)
+						// Analysis & Extraction (Base).
 						'client_summarize_text',
 						'client_extract_entities',
 						'client_question_answering',
 						'client_analyze_sentiment',
-						// External Data Sources (Base)
+						// External Data Sources (Base).
 						'huggingface_dataset_search',
 						'reliefweb_reports',
 						'get_gdacs_events',
-						// SEO Research (Base)
+						// SEO Research (Base).
 						'get_rankmath_seo',
 						'sitekit_search_console',
 						'sitekit_analytics',
 					),
 					$is_pro_active ? array(
-						// Pro Enhancement - Advanced Research
+						// Pro Enhancement - Advanced Research.
 						'lookup_product_price',
 						'get_import_duty',
 						'verify_information',
-						// Pro - Social Media Research
+						// Pro - Social Media Research.
 						'get_facebook_instagram_insights',
 						'get_linkedin_insights',
 						'get_tiktok_insights',
-						// Pro - Business Intelligence
+						// Pro - Business Intelligence.
 						'get_google_business_insights',
 						'get_google_analytics_report',
 						'get_quickbooks_report',
@@ -153,26 +153,26 @@ class WP_MCP_AI_Default_Assistants {
 				'description'   => __( 'Sequential normalization specialist. Converts raw research data into structured JSON/Objects, validates schemas, transforms unstructured text into embeddings, and prepares data for downstream consumption. Ensures data quality and consistency.', 'mcp-ai-wpoos' ),
 				'system_prompt' => self::get_parser_prompt(),
 				'tools'         => array(
-					// Vector & Embedding
+					// Vector & Embedding.
 					'create_vector_store',
 					'create_text_embeddings',
 					'batch_embed_content',
-					// Data Extraction & Transformation
+					// Data Extraction & Transformation.
 					'client_extract_entities',
 					'client_summarize_text',
 					'client_question_answering',
-					// Dataset Operations
+					// Dataset Operations.
 					'huggingface_dataset_get_rows',
 					'huggingface_dataset_get_statistics',
 					'huggingface_dataset_get_info',
 					'huggingface_dataset_filter',
 					'huggingface_dataset_list_splits',
 					'huggingface_dataset_get_parquet',
-					// Visualization & Charting
+					// Visualization & Charting.
 					'create_chart',
 					'generate_chart',
 					'generate_mermaid',
-					// Validation
+					// Validation.
 					'analyze_code_sequence',
 					'validate_reasoning_chain',
 				),
@@ -188,39 +188,39 @@ class WP_MCP_AI_Default_Assistants {
 				'system_prompt' => self::get_drafter_prompt(),
 				'tools'         => array_merge(
 					array(
-						// Base Plugin Tools - Content Creation
+						// Base Plugin Tools - Content Creation.
 						'create_post',
 						'save_post',
 						'generate_post_excerpt',
-						// Content Enhancement (Base)
+						// Content Enhancement (Base).
 						'auto_categorize_content',
 						'content_recommendation_engine',
 						'suggest_internal_links',
 						'content_freshness_checker',
-						// Image Generation (Base)
+						// Image Generation (Base).
 						'generate_openai_image',
 						'generate_gemini_image',
 						'generate_cloudflareai_image',
 						'generate_image_caption',
 						'generate_image_alt_text',
-						// Video & Audio (Base)
+						// Video & Audio (Base).
 						'generate_sora_video',
 						'generate_veo_video',
 						'generate_music',
 						'generate_openai_speech',
-						// Text Processing (Base)
+						// Text Processing (Base).
 						'client_summarize_text',
 						'client_extract_entities',
 					),
 					$is_pro_active ? array(
-						// Pro Enhancement - Advanced Media
+						// Pro Enhancement - Advanced Media.
 						'ffmpeg_video_operations',
 						'ffmpeg_audio_operations',
-						// Pro - Advanced Publishing
+						// Pro - Advanced Publishing.
 						'elementor_operations',
 						'create_wpcode_snippet',
 						'jetengine_operations',
-						// Pro - Multi-channel Distribution
+						// Pro - Multi-channel Distribution.
 						'post_facebook_instagram',
 						'post_google_business_update',
 						'post_linkedin',
@@ -239,41 +239,41 @@ class WP_MCP_AI_Default_Assistants {
 				'system_prompt' => self::get_auditor_prompt(),
 				'tools'         => array_merge(
 					array(
-						// Base Plugin Tools - SEO Analysis
+						// Base Plugin Tools - SEO Analysis.
 						'get_rankmath_seo',
 						'seo_meta_optimizer',
 						'generate_image_alt_text',
 						'image_alt_text_optimizer',
-						// Content SEO (Base)
+						// Content SEO (Base).
 						'suggest_internal_links',
 						'content_recommendation_engine',
 						'search_content',
 						'semantic_content_search',
-						// Analytics & Performance (Base)
+						// Analytics & Performance (Base).
 						'sitekit_analytics',
 						'sitekit_adsense',
 						'sitekit_pagespeed',
 						'sitekit_search_console',
-						// Content Quality (Base)
+						// Content Quality (Base).
 						'content_freshness_checker',
 						'generate_post_excerpt',
-						// Security & Compliance (Base)
+						// Security & Compliance (Base).
 						'password_strength_analyzer',
 						'check_site_security',
 						'get_site_health',
-						// Research for verification (Base)
+						// Research for verification (Base).
 						'web_search',
 						'client_analyze_sentiment',
 					),
 					$is_pro_active ? array(
-						// Pro Enhancement - Advanced Analytics
+						// Pro Enhancement - Advanced Analytics.
 						'get_google_analytics_report',
 						'get_facebook_instagram_insights',
 						'get_linkedin_insights',
-						// Pro - Compliance & Verification
+						// Pro - Compliance & Verification.
 						'verify_information',
 						'get_quickbooks_report',
-						// Pro - Advanced SEO
+						// Pro - Advanced SEO.
 						'get_google_business_insights',
 					) : array()
 				),
@@ -289,44 +289,44 @@ class WP_MCP_AI_Default_Assistants {
 				'system_prompt' => self::get_publisher_prompt(),
 				'tools'         => array_merge(
 					array(
-						// Base Plugin Tools - Post Management
+						// Base Plugin Tools - Post Management.
 						'create_post',
 						'save_post',
 						'get_recent_posts',
-						// Taxonomy Management (Base)
+						// Taxonomy Management (Base).
 						'create_term',
 						'update_term',
 						'auto_categorize_content',
-						// WooCommerce (Base - if WooCommerce active)
+						// WooCommerce (Base - if WooCommerce active).
 						'create_woo_product',
 						'get_woo_products',
 						'get_woo_recent_orders',
-						// Email & Communications (Base)
+						// Email & Communications (Base).
 						'newsletter_create_email',
 						'newsletter_add_subscriber',
 						'newsletter_get_subscribers',
 						'send_group_email',
-						// Data Operations (Base)
+						// Data Operations (Base).
 						'trigger_all_export',
 						'trigger_all_import',
 						'get_all_import_status',
-						// Media (Base)
+						// Media (Base).
 						'search_attachments',
 						'upload_file_to_wordpress',
 					),
 					$is_pro_active ? array(
-						// Pro Enhancement - Advanced Publishing
+						// Pro Enhancement - Advanced Publishing.
 						'jetengine_operations',
 						'elementor_operations',
 						'create_wpcode_snippet',
-						// Pro - Multi-channel Publishing
+						// Pro - Multi-channel Publishing.
 						'post_facebook_instagram',
 						'post_google_business_update',
 						'post_linkedin',
 						'post_tiktok',
-						// Pro - Calendar & Events
+						// Pro - Calendar & Events.
 						'create_google_calendar_event',
-						// Pro - Business Operations
+						// Pro - Business Operations.
 						'create_quickbooks_invoice',
 					) : array()
 				),
@@ -344,7 +344,7 @@ class WP_MCP_AI_Default_Assistants {
 	 * @return string System prompt.
 	 */
 	protected static function get_orchestrator_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Orchestrator, the root-level supervisor in a hierarchical multi-agent system designed for intelligent content and data orchestration.
 
 ## Core Responsibilities
@@ -400,7 +400,7 @@ PROMPT;
 	 * @return string System prompt.
 	 */
 	protected static function get_research_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Research Operative, a specialized information gathering agent in a multi-agent orchestration system.
 
 ## Core Mission
@@ -460,7 +460,7 @@ PROMPT;
 	 * @return string System prompt.
 	 */
 	protected static function get_parser_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Unstructured Parser, a data normalization and validation specialist in a multi-agent orchestration system.
 
 ## Core Mission
@@ -528,7 +528,7 @@ PROMPT;
 	 * @return string System prompt.
 	 */
 	protected static function get_drafter_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Content Drafter, a creative synthesis specialist in a multi-agent orchestration system.
 
 ## Core Mission
@@ -607,7 +607,7 @@ PROMPT;
 	 * @return string System prompt.
 	 */
 	protected static function get_auditor_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The SEO & Compliance Auditor, a quality assurance specialist in a multi-agent orchestration system.
 
 ## Core Mission
@@ -698,7 +698,7 @@ PROMPT;
 	 * @return string System prompt.
 	 */
 	protected static function get_publisher_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Publisher, the terminal execution specialist in a multi-agent orchestration system.
 
 ## Core Mission
@@ -847,11 +847,14 @@ PROMPT;
 
 		// Mark as installed even if some failed.
 		// This prevents repeated attempts on every activation.
-		update_option( self::INSTALLED_OPTION, array(
-			'installed_at' => current_time( 'mysql' ),
-			'assistant_ids' => $installed_ids,
-			'errors' => $errors,
-		) );
+		update_option(
+			self::INSTALLED_OPTION,
+			array(
+				'installed_at'  => current_time( 'mysql' ),
+				'assistant_ids' => $installed_ids,
+				'errors'        => $errors,
+			)
+		);
 
 		if ( ! empty( $errors ) ) {
 			return new WP_Error(
@@ -880,12 +883,17 @@ PROMPT;
 		// Try current user first, then fall back to any administrator.
 		$author_id = get_current_user_id();
 		if ( ! $author_id || ! user_can( $author_id, 'edit_posts' ) ) {
-			$admins = get_users( array( 'role' => 'administrator', 'number' => 1 ) );
+			$admins = get_users(
+				array(
+					'role'   => 'administrator',
+					'number' => 1,
+				)
+			);
 			if ( ! empty( $admins ) ) {
 				$author_id = $admins[0]->ID;
 			} else {
 				// Absolute fallback: use user ID 1 if it exists.
-				$user_1 = get_user_by( 'ID', 1 );
+				$user_1    = get_user_by( 'ID', 1 );
 				$author_id = $user_1 ? 1 : 0;
 			}
 		}
