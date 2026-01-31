@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/update-use-cases-documentation',
+        'version' => 'dev-copilot/update-use-cases-documentation',
+        'reference' => 'eaecd83e4c75c806db7dc778567bdafed92efde5',
         'pretty_version' => 'dev-copilot/enable-federation-directory',
         'version' => 'dev-copilot/enable-federation-directory',
         'reference' => '8780d97d52f9770684f7933fe7829bbbc8e74fc8',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/update-use-cases-documentation',
+            'version' => 'dev-copilot/update-use-cases-documentation',
+            'reference' => 'eaecd83e4c75c806db7dc778567bdafed92efde5',
             'pretty_version' => 'dev-copilot/enable-federation-directory',
             'version' => 'dev-copilot/enable-federation-directory',
             'reference' => '8780d97d52f9770684f7933fe7829bbbc8e74fc8',
