@@ -551,4 +551,21 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	public function requires_authentication() {
 		return true;
 	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function get_capability_flags() {
+		return array(
+			'requires-credentials',  // Requires AI provider API key.
+			'requires-vision-model', // Requires vision-capable AI model.
+			'read-only',             // Only reads/analyzes data.
+			'external-api',          // Makes external API requests.
+			'network-dependent',     // Requires internet connection.
+			'consumes-tokens',       // Uses AI tokens/credits.
+			'model-dependent',       // Behavior varies by model.
+			'async',                 // May take significant time.
+			'rate-limited',          // Subject to API rate limits.
+		);
+	}
 }
