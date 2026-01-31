@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'pro_word';
+		return 'pro_word_document';
 	}
 
 	/**

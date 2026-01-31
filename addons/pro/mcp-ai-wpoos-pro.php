@@ -1297,8 +1297,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 
 		// Add Document Generation Toolkit tool mappings if enabled.
 		if ( ! empty( $settings['enable_document_generation_toolkit'] ) ) {
-			$pro_tools['pro_pdf']            = 'external-tools';
-			$pro_tools['pro_word']           = 'external-tools';
+			$pro_tools['pro_pdf_document']   = 'external-tools';
+			$pro_tools['pro_word_document']  = 'external-tools';
 			$pro_tools['pro_excel_document'] = 'external-tools';
 		}
 

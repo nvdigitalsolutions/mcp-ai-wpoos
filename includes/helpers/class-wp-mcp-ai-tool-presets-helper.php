@@ -565,8 +565,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document processing.
 					'submit_document_prompt',
 					// Document Generation (Pro).
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel_document',
 					// Search operations.
 					'search_content',
@@ -1044,7 +1044,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Project Management.
 					'create_project',
 					'update_project',
@@ -1110,8 +1110,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Generation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Project Management.
 					'create_project',
 					'update_project',
@@ -1170,7 +1170,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Analytics & Reporting.
 					'create_chart',
@@ -1240,7 +1240,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_construction_drawings',
 					'generate_detail_drawings',
 					'export_architectural_documents',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Charts & Design Boards.
 					'create_chart',
 					// Research & Inspiration.
@@ -1319,7 +1319,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Data & Charts.
 					'create_chart',
 					'pro_excel',
@@ -1371,8 +1371,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Generation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel',
 					// Project & Development Review.
 					'create_project',
@@ -1476,7 +1476,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_jetformbuilder_forms',
 					'get_jetformbuilder_submissions',
 					// Document Generation.
-					'pro_pdf',
+					'pro_pdf_document',
 					'save_post',
 					'create_post',
 					// Social Media.
@@ -1547,8 +1547,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Management.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// SEO & Marketing.
 					'get_rankmath_seo',
 					'google_analytics_report',
@@ -1606,8 +1606,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'send_group_email',
 					'send_whatsapp_message',
 					// Document Generation.
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Social Media Distribution.
 					'post_facebook_instagram',
 					'post_tiktok_video',
@@ -1675,7 +1675,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Communication.
 					'send_group_email',
@@ -1728,8 +1728,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation & Reporting.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Forms & Data Collection.
 					'get_jetformbuilder_forms',
 					'get_jetformbuilder_submissions',
@@ -1789,8 +1789,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation & Logs.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel',
 					// Forms & Checklists.
 					'get_jetformbuilder_forms',
@@ -1863,7 +1863,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'google_analytics_report',
 					'create_chart',
 					// Document Management.
-					'pro_pdf',
+					'pro_pdf_document',
 					'search_attachments',
 					// Research (recipes, trends).
 					'web_search',
@@ -1909,7 +1909,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'resize_image',
 					'crop_image',
 					// Invoicing & Payments.
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Communication.
 					'send_group_email',

@@ -242,8 +242,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	protected function get_tools_list() {
 		return array(
 			// Primary Document Generation Tools.
-			'pro_pdf'              => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
-			'pro_word'             => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
+			'pro_pdf_document'     => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
+			'pro_word_document'    => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
 			'pro_excel_document'   => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
 			
 			// Document Operations & Capabilities.
