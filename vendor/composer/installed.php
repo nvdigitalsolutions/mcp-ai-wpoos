@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/fix-federation-directory-issue',
         'version' => 'dev-copilot/fix-federation-directory-issue',
-        'reference' => '6f5cae24776412d0cdee0215151c28092f19a3a2',
+        'reference' => '1a4e827848185df23f2b169152c6bdda9b564a7b',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -85,7 +85,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/fix-federation-directory-issue',
             'version' => 'dev-copilot/fix-federation-directory-issue',
-            'reference' => '6f5cae24776412d0cdee0215151c28092f19a3a2',
+            'reference' => '1a4e827848185df23f2b169152c6bdda9b564a7b',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
