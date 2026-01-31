@@ -253,23 +253,6 @@ class WP_MCP_AI_Cost_Calculator {
 				'input'  => 1.00,
 				'output' => 5.00,
 			),
-			// Legacy aliases (backward compatibility).
-			'claude-sonnet-4.5'                    => array(
-				'input'  => 3.00,
-				'output' => 15.00,
-			),
-			'claude-haiku-4.5'                     => array(
-				'input'  => 1.00,
-				'output' => 5.00,
-			),
-			'claude-opus-4.1'                      => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
-			'claude-opus-4.0'                      => array(
-				'input'  => 15.00,
-				'output' => 75.00,
-			),
 			// Claude 3.5 series (deprecated Nov 10, 2025).
 			'claude-3.5-sonnet'                    => array(
 				'input'  => 3.00,

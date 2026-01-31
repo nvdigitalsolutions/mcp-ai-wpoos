@@ -196,11 +196,11 @@ class WP_MCP_AI_Model_Service {
 		$models = array();
 
 		// Claude 4 series (multimodal - vision capable) - 2025.
-		$models['claude-sonnet-4.5']          = 'Claude Sonnet 4.5 (Recommended)';
+		$models['claude-sonnet-4-5']          = 'Claude Sonnet 4.5 (Recommended)';
 		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
-		$models['claude-haiku-4.5']           = 'Claude Haiku 4.5 (Fastest)';
-		$models['claude-opus-4.1']            = 'Claude Opus 4.1 (Flagship)';
-		$models['claude-opus-4.0']            = 'Claude Opus 4.0';
+		$models['claude-haiku-4-5']           = 'Claude Haiku 4.5 (Fastest)';
+		$models['claude-opus-4-5']            = 'Claude Opus 4.5 (Flagship)';
+		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025)';
 
 		// Claude 3.5 series (legacy - for backward compatibility).
 		$models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Legacy)';
@@ -607,7 +607,7 @@ class WP_MCP_AI_Model_Service {
 	public function get_default_model_for_provider( $provider ) {
 		$defaults = array(
 			'openai'      => 'gpt-4.1',
-			'anthropic'   => 'claude-sonnet-4.5',
+			'anthropic'   => 'claude-sonnet-4-5',
 			'gemini'      => 'gemini-2.5-flash',
 			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
 			'ollama'      => 'llama3.2',
