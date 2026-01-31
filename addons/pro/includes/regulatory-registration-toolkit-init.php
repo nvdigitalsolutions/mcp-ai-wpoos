@@ -25,11 +25,13 @@ if ( is_admin() ) {
 	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		// Load Toolkit Settings Page.
+		// Load Toolkit Settings Page (old - for reference, will be deprecated).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-regulatory-registration-toolkit-settings-page.php';
 
+		// Load CPT Settings Page (new - with Overview and Tools tabs).
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-regulatory-product-cpt-settings-page.php';
+
 		// Load Product research page.
-		// Note: Product Settings page removed as it's redundant with Toolkit Settings.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php';
 
 		// Load Registration tracking dashboard and research page.
