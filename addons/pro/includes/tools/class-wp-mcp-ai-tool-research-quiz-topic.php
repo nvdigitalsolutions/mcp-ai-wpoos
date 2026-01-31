@@ -417,7 +417,7 @@ class WP_MCP_AI_Tool_Research_Quiz_Topic implements WP_MCP_AI_Tool_Interface, WP
 				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
 
 			case 'anthropic':
-				return 'claude-sonnet-4.5';
+				return 'claude-sonnet-4-5-20250929';
 
 			default:
 				return new WP_Error(

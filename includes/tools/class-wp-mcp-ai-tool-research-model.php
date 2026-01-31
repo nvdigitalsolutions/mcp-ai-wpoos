@@ -429,7 +429,7 @@ class WP_MCP_AI_Tool_Research_Model implements WP_MCP_AI_Tool_Interface, WP_MCP_
 
 			case 'anthropic':
 				// Use Claude Sonnet for research.
-				return 'claude-sonnet-4.5';
+				return 'claude-sonnet-4-5-20250929';
 
 			default:
 				return new WP_Error(

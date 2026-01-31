@@ -195,16 +195,27 @@ class WP_MCP_AI_Model_Service {
 		// The models are static and don't require API access to list.
 		$models = array();
 
-		// Claude 4 series (multimodal - vision capable) - 2025.
-		$models['claude-sonnet-4-5']          = 'Claude Sonnet 4.5 (Recommended)';
-		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025)';
-		$models['claude-haiku-4-5']           = 'Claude Haiku 4.5 (Fastest)';
-		$models['claude-opus-4-5']            = 'Claude Opus 4.5 (Flagship)';
-		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025)';
+		// Claude 4.5 series (multimodal - vision capable) - Latest (2025).
+		$models['claude-sonnet-4-5-20250929'] = 'Claude Sonnet 4.5 (Sep 2025) - Recommended';
+		$models['claude-haiku-4-5-20251001']  = 'Claude Haiku 4.5 (Oct 2025) - Fastest';
+		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025) - Flagship';
+
+		// Claude 4.1 series (multimodal - vision capable).
+		$models['claude-opus-4-1-20250805']   = 'Claude Opus 4.1 (Aug 2025)';
+
+		// Claude 4 series (multimodal - vision capable).
+		$models['claude-sonnet-4-20250514']   = 'Claude Sonnet 4 (May 2025)';
+		$models['claude-opus-4-20250514']     = 'Claude Opus 4 (May 2025)';
+
+		// Claude 3.7 series (multimodal - vision capable).
+		$models['claude-3-7-sonnet-20250219'] = 'Claude 3.7 Sonnet (Feb 2025)';
 
 		// Claude 3.5 series (legacy - for backward compatibility).
 		$models['claude-3-5-sonnet-20241022'] = 'Claude 3.5 Sonnet (Legacy)';
 		$models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Legacy)';
+
+		// Claude 3 series (legacy).
+		$models['claude-3-haiku-20240307']    = 'Claude 3 Haiku (Legacy)';
 
 		return $models;
 	}
@@ -607,7 +618,7 @@ class WP_MCP_AI_Model_Service {
 	public function get_default_model_for_provider( $provider ) {
 		$defaults = array(
 			'openai'      => 'gpt-4.1',
-			'anthropic'   => 'claude-sonnet-4-5',
+			'anthropic'   => 'claude-sonnet-4-5-20250929',
 			'gemini'      => 'gemini-2.5-flash',
 			'huggingface' => 'meta-llama/Llama-3.2-3B-Instruct',
 			'ollama'      => 'llama3.2',
