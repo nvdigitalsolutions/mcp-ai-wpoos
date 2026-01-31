@@ -16,6 +16,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	class WP_MCP_AI_Anthropic_Client {
 		const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 		const API_VERSION  = '2023-06-01';
+		const USER_AGENT   = 'WP-MCP-AI-Anthropic-Client/1.0';
 
 		/**
 		 * Retrieve the configured API key.
@@ -595,7 +596,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					$image_url,
 					array(
 						'timeout'    => 30,
-						'user-agent' => 'WP-MCP-AI-Anthropic-Client/1.0',
+						'user-agent' => self::USER_AGENT,
 					)
 				);
 
@@ -663,7 +664,6 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			// Handle raw base64 data.
 			if ( ! empty( $image_data ) ) {
-				// Assume JPEG if not specified.
 				$media_type = 'jpeg';
 				if ( isset( $segment['media_type'] ) ) {
 					$provided_type = sanitize_text_field( $segment['media_type'] );
@@ -672,6 +672,9 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					} else {
 						$media_type = $provided_type;
 					}
+				} else {
+					// Log warning when media type is assumed.
+					WP_MCP_AI_Logger::log_event( 'anthropic_image_media_type_assumed', 'Media type not specified for base64 image data, assuming JPEG.' );
 				}
 
 				// Normalize jpeg/jpg.
@@ -696,7 +699,16 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return null;
 			}
 
-			WP_MCP_AI_Logger::log_error( 'No valid image data found in segment.', array( 'segment' => $segment ) );
+			WP_MCP_AI_Logger::log_error(
+				'No valid image data found in segment.',
+				array(
+					'segment_type'   => isset( $segment['type'] ) ? $segment['type'] : 'unknown',
+					'has_image_url'  => isset( $segment['image_url'] ),
+					'has_url'        => isset( $segment['url'] ),
+					'has_data'       => isset( $segment['data'] ),
+					'has_media_type' => isset( $segment['media_type'] ),
+				)
+			);
 			return null;
 		}
 
