@@ -598,16 +598,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 					// Validate media type.
 					if ( in_array( strtolower( $media_type ), self::ALLOWED_IMAGE_TYPES, true ) ) {
-						// Normalize jpeg/jpg.
-						if ( 'jpg' === strtolower( $media_type ) ) {
-							$media_type = 'jpeg';
-						}
+						$media_type = $this->normalize_image_media_type( $media_type );
 
 						return array(
 							'type'   => 'image',
 							'source' => array(
 								'type'       => 'base64',
-								'media_type' => 'image/' . strtolower( $media_type ),
+								'media_type' => 'image/' . $media_type,
 								'data'       => $image_data,
 							),
 						);
@@ -696,9 +693,21 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					return null;
 				}
 
-				// Normalize jpeg/jpg.
-				if ( 'jpg' === strtolower( $media_type ) ) {
-					$media_type = 'jpeg';
+				$media_type = $this->normalize_image_media_type( $media_type );
+
+				// Validate that encoded size won't exceed limits before encoding.
+				$estimated_encoded_size = strlen( $body ) * self::BASE64_OVERHEAD_MULTIPLIER;
+				if ( $estimated_encoded_size > self::MAX_DATA_URL_LENGTH ) {
+					WP_MCP_AI_Logger::log_error(
+						'Image size exceeds maximum allowed size after base64 encoding.',
+						array(
+							'url'               => $image_url,
+							'body_size'         => strlen( $body ),
+							'estimated_encoded' => $estimated_encoded_size,
+							'max_allowed'       => self::MAX_DATA_URL_LENGTH,
+						)
+					);
+					return null;
 				}
 
 				// Convert to base64.
@@ -708,7 +717,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					'type'   => 'image',
 					'source' => array(
 						'type'       => 'base64',
-						'media_type' => 'image/' . strtolower( $media_type ),
+						'media_type' => 'image/' . $media_type,
 						'data'       => $image_data,
 					),
 				);
@@ -729,20 +738,17 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					WP_MCP_AI_Logger::log_event( 'anthropic_image_media_type_assumed', 'Media type not specified for base64 image data, assuming JPEG.' );
 				}
 
-				// Normalize jpeg/jpg.
-				if ( 'jpg' === strtolower( $media_type ) ) {
-					$media_type = 'jpeg';
-				}
+				$media_type = $this->normalize_image_media_type( $media_type );
 
 				// Validate media type (jpg already normalized to jpeg above).
 				// Filter out 'jpg' from allowed types since it's normalized to 'jpeg'.
 				$allowed_types_normalized = array_diff( self::ALLOWED_IMAGE_TYPES, array( 'jpg' ) );
-				if ( in_array( strtolower( $media_type ), $allowed_types_normalized, true ) ) {
+				if ( in_array( $media_type, $allowed_types_normalized, true ) ) {
 					return array(
 						'type'   => 'image',
 						'source' => array(
 							'type'       => 'base64',
-							'media_type' => 'image/' . strtolower( $media_type ),
+							'media_type' => 'image/' . $media_type,
 							'data'       => $image_data,
 						),
 					);
@@ -763,6 +769,21 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				)
 			);
 			return null;
+		}
+
+		/**
+		 * Normalize image media type for Anthropic API.
+		 *
+		 * Converts 'jpg' to 'jpeg' to match Anthropic's expected format.
+		 *
+		 * @param string $media_type The media type to normalize (e.g., 'jpg', 'jpeg', 'png').
+		 * @return string The normalized media type.
+		 */
+		protected function normalize_image_media_type( $media_type ) {
+			if ( 'jpg' === strtolower( $media_type ) ) {
+				return 'jpeg';
+			}
+			return strtolower( $media_type );
 		}
 
 		/**
