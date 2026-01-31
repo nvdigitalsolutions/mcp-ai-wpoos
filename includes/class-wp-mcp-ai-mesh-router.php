@@ -160,13 +160,13 @@ class WP_MCP_AI_Mesh_Router {
 				return self::select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context );
 
 			case 'round_robin':
-				return self::select_peer_round_robin( $healthy_peers, $hub_config );
+				return self::select_peer_round_robin( $healthy_peers, $hub_config, $context );
 
 			case 'least_loaded':
-				return self::select_peer_least_loaded( $healthy_peers, $health_metrics );
+				return self::select_peer_least_loaded( $healthy_peers, $health_metrics, $context );
 
 			case 'preferred_with_fallback':
-				return self::select_peer_preferred( $healthy_peers, $hub_config );
+				return self::select_peer_preferred( $healthy_peers, $hub_config, $context );
 
 			default:
 				return self::select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context );
@@ -271,13 +271,32 @@ class WP_MCP_AI_Mesh_Router {
 	}
 
 	/**
-	 * Round-robin peer selection.
+	 * Round-robin peer selection with optional hub prioritization.
+	 *
+	 * Selects peers in a rotating fashion. If hub_config specifies
+	 * hub_only mode, only compute hubs are included in rotation.
 	 *
 	 * @param array $healthy_peers Available healthy peers.
-	 * @param array $hub_config    Compute hub configuration (reserved for consistency with other routing methods).
+	 * @param array $hub_config    Compute hub configuration.
+	 * @param array $context       Request context (for future session affinity).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_round_robin( $healthy_peers, $hub_config ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function select_peer_round_robin( $healthy_peers, $hub_config, $context = array() ) {
+		// Filter to compute hubs only if hub_only mode is enabled.
+		if ( ! empty( $hub_config['hub_only'] ) ) {
+			$hub_peers = array();
+			foreach ( $healthy_peers as $peer ) {
+				if ( self::is_compute_hub( $peer, $hub_config ) ) {
+					$hub_peers[] = $peer;
+				}
+			}
+
+			// Use compute hubs if available, otherwise fall back to all peers.
+			if ( ! empty( $hub_peers ) ) {
+				$healthy_peers = $hub_peers;
+			}
+		}
+
 		$stats      = get_option( self::ROUTING_STATS_OPTION, array() );
 		$last_index = isset( $stats['last_round_robin_index'] ) ? (int) $stats['last_round_robin_index'] : -1;
 
@@ -293,6 +312,8 @@ class WP_MCP_AI_Mesh_Router {
 			array(
 				'selected_peer' => $healthy_peers[ $next_index ]['name'],
 				'index'         => $next_index,
+				'hub_only_mode' => ! empty( $hub_config['hub_only'] ),
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -300,13 +321,14 @@ class WP_MCP_AI_Mesh_Router {
 	}
 
 	/**
-	 * Least-loaded peer selection.
+	 * Least-loaded peer selection with optional context awareness.
 	 *
 	 * @param array $healthy_peers  Available healthy peers.
 	 * @param array $health_metrics All health metrics.
+	 * @param array $context        Request context (for future load-aware features).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_least_loaded( $healthy_peers, $health_metrics ) {
+	protected static function select_peer_least_loaded( $healthy_peers, $health_metrics, $context = array() ) {
 		$least_loaded = null;
 		$min_load     = PHP_INT_MAX;
 
@@ -327,6 +349,7 @@ class WP_MCP_AI_Mesh_Router {
 			array(
 				'selected_peer' => $least_loaded['name'],
 				'load'          => $min_load,
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -337,10 +360,11 @@ class WP_MCP_AI_Mesh_Router {
 	 * Preferred peer with fallback selection.
 	 *
 	 * @param array $healthy_peers Available healthy peers.
-	 * @param array $hub_config    Compute hub configuration.
+	 * @param array $hub_config    Compute hub configuration with preferred_peers list.
+	 * @param array $context       Request context (for future preference features).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_preferred( $healthy_peers, $hub_config ) {
+	protected static function select_peer_preferred( $healthy_peers, $hub_config, $context = array() ) {
 		$preferred_peers = isset( $hub_config['preferred_peers'] ) ? $hub_config['preferred_peers'] : array();
 
 		// Try preferred peers in order.
@@ -352,6 +376,7 @@ class WP_MCP_AI_Mesh_Router {
 						'Preferred peer selected.',
 						array(
 							'selected_peer' => $peer['name'],
+							'context'       => self::sanitize_context_for_logging( $context ),
 						)
 					);
 					return $peer;
@@ -365,6 +390,7 @@ class WP_MCP_AI_Mesh_Router {
 			'No preferred peer available, using fallback.',
 			array(
 				'selected_peer' => $healthy_peers[0]['name'],
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
