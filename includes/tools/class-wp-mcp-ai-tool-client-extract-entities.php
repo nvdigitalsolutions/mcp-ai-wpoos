@@ -104,7 +104,11 @@ class WP_MCP_AI_Tool_Client_Extract_Entities implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||

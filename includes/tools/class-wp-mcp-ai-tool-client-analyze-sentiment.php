@@ -104,7 +104,11 @@ class WP_MCP_AI_Tool_Client_Analyze_Sentiment implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		if ( ! class_exists( 'WP_MCP_AI_Transformers_Enqueue' ) ||

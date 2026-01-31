@@ -182,7 +182,10 @@ class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_To
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Sanitize result for LLM consumption.
+	 *
+	 * @param mixed $result The result to sanitize.
+	 * @return mixed Sanitized result.
 	 */
 	public function sanitize_for_llm( $result ) {
 		// Delegate to the original tool.
@@ -198,7 +201,12 @@ class WP_MCP_AI_Tool_Generate_Veo_Video_Validated extends WP_MCP_AI_Validated_To
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Get async pending metadata.
+	 *
+	 * @param string $job_id    Job identifier.
+	 * @param array  $arguments Tool arguments.
+	 * @param array  $context   Execution context.
+	 * @return array Async pending metadata.
 	 */
 	public function get_async_pending_metadata( $job_id, array $arguments = array(), array $context = array() ) {
 		// Delegate to the original tool.

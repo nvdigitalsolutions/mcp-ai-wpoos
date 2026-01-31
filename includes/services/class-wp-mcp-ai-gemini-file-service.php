@@ -649,7 +649,7 @@ class WP_MCP_AI_Gemini_File_Service {
 	 * @param string   $file_name     Gemini file name.
 	 * @param string   $file_uri      Gemini file URI.
 	 * @param string   $mime_type     File MIME type.
-	 * @param string   $file_url      File URL (optional if attachment_id provided).
+	 * @param string   $video_url     File URL (optional if attachment_id provided).
 	 * @param int|null $attachment_id WordPress attachment ID (optional if file_url provided).
 	 * @return bool True on success, false on failure.
 	 */

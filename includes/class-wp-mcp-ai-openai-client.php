@@ -1091,7 +1091,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 *                               or for multimodal: array of input objects with text/image.
 		 * @param array        $options Optional configuration:
 		 *                               - model: 'omni-moderation-latest' (default) or 'text-moderation-latest'
-		 *                               - timeout: Request timeout in seconds (default: from settings)
+		 *                               - timeout: Request timeout in seconds (default: from settings).
 		 * @return array|WP_Error Array containing moderation results or WP_Error on failure.
 		 *                        Result structure:
 		 *                        - id: Unique moderation request ID

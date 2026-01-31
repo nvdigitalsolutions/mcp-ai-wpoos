@@ -117,7 +117,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 			<?php
 		}
 
-		public function render_content() {
+		/**
+	 * Render the section content.
+	 *
+	 * @return void
+	 */
+	public function render_content() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
 			?>

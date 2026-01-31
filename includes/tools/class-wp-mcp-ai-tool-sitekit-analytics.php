@@ -75,8 +75,6 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * Execute the tool
 	 *
 	 * @since 1.2.0
-	 * @param array $arguments Tool arguments.
-	 * @param array $context   Execution context.
 	 * @return array Tool result
 	 */
 	public function execute( array $arguments = array( ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface., array $context = array() ) {

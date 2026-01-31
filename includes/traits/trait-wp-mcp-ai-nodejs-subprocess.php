@@ -34,7 +34,7 @@ trait WP_MCP_AI_NodeJS_Subprocess {
 	 * @param array  $options      Optional execution options.
 	 *                              - timeout: int, timeout in seconds (default: 30)
 	 *                              - working_dir: string, working directory (default: script directory)
-	 *                              - parse_json: bool, parse output as JSON (default: true)
+	 *                              - parse_json: bool, parse output as JSON (default: true).
 	 * @return array|WP_Error Result array on success, WP_Error on failure.
 	 */
 	protected function execute_nodejs_script( $script_path, array $arguments = array(), array $options = array() ) {

@@ -157,7 +157,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 	 *                        - genre: string (optional genre specification)
 	 *                        - mood: string (optional mood specification)
 	 *                        - format: string (mp3, wav, default: mp3)
-	 *                        - timeout: int (request timeout in seconds)
+	 *                        - timeout: int (request timeout in seconds).
 	 *
 	 * @return array|WP_Error Array with audio data or WP_Error on failure.
 	 *                        Success array contains:

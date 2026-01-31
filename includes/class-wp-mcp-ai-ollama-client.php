@@ -25,17 +25,32 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return isset( $settings['ollama_network_interface'] ) ? sanitize_text_field( $settings['ollama_network_interface'] ) : '';
 		}
 
-		public function get_endpoint_url() {
+		/**
+	 * Get the Ollama endpoint URL.
+	 *
+	 * @return string Endpoint URL.
+	 */
+	public function get_endpoint_url() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['ollama_endpoint_url'] ) ? $settings['ollama_endpoint_url'] : '';
 		}
 
-		public function get_model() {
+		/**
+	 * Get the Ollama model.
+	 *
+	 * @return string Model name.
+	 */
+	public function get_model() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['ollama_model'] ) ? $settings['ollama_model'] : '';
 		}
 
-		public function test_connection() {
+		/**
+	 * Test the Ollama connection.
+	 *
+	 * @return array|WP_Error Connection test result or error.
+	 */
+	public function test_connection() {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No Ollama endpoint URL configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -64,7 +79,12 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 		}
 
-		public function list_models() {
+		/**
+	 * List available models.
+	 *
+	 * @return array|WP_Error Array of models or error.
+	 */
+	public function list_models() {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -102,7 +122,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $models;
 		}
 
-		public function create_chat_completion( array $messages, array $options = array() ) {
+		/**
+	 * Create a chat completion.
+	 *
+	 * @param array $messages Messages to send.
+	 * @param array $options  Optional configuration.
+	 * @return array|WP_Error Chat completion result or error.
+	 */
+	public function create_chat_completion( array $messages, array $options = array() ) {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_ollama_endpoint', __( 'No endpoint configured.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -239,11 +266,25 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $this->normalize_response( $normalized_response, $model );
 		}
 
-		protected function resolve_model( array $options ) {
+		/**
+	 * Resolve the model to use.
+	 *
+	 * @param array $options Options array.
+	 * @return string Model name.
+	 */
+	protected function resolve_model( array $options ) {
 			return ! empty( $options['model'] ) ? sanitize_text_field( $options['model'] ) : $this->get_model();
 		}
 
-		protected function build_payload( array $messages, array $options, $model ) {
+		/**
+	 * Build the payload for the Ollama API.
+	 *
+	 * @param array  $messages Messages to send.
+	 * @param array  $options  Optional configuration.
+	 * @param string $model    Model to use.
+	 * @return array|WP_Error Payload array or error.
+	 */
+	protected function build_payload( array $messages, array $options, $model ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No messages provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
@@ -370,7 +411,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $payload;
 		}
 
-		protected function resolve_timeout( array $options ) {
+		/**
+	 * Resolve the timeout value.
+	 *
+	 * @param array $options Options array.
+	 * @return int Timeout in seconds.
+	 */
+	protected function resolve_timeout( array $options ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 			// Use ignore_execution_time=true for local AI providers since these are external.
@@ -387,7 +434,14 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $timeout;
 		}
 
-		protected function normalize_response( array $response, $model ) {
+		/**
+	 * Normalize the Ollama response.
+	 *
+	 * @param array  $response Response from Ollama.
+	 * @param string $model    Model used.
+	 * @return array Normalized response.
+	 */
+	protected function normalize_response( array $response, $model ) {
 			$message = array( 'role' => 'assistant' );
 			$content = isset( $response['message']['content'] ) ? (string) $response['message']['content'] : '';
 

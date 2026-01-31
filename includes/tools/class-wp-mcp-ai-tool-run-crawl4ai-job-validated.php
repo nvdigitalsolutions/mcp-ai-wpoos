@@ -156,7 +156,10 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job_Validated extends WP_MCP_AI_Validated_Tool
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Sanitize result for LLM consumption.
+	 *
+	 * @param mixed $result The result to sanitize.
+	 * @return mixed Sanitized result.
 	 */
 	public function sanitize_for_llm( $result ) {
 		// Delegate to the original tool.

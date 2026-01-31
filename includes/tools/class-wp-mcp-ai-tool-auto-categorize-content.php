@@ -146,7 +146,11 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.

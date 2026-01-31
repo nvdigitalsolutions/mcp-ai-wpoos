@@ -1329,11 +1329,11 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 *                           Note: Only supported on specific models (Llama 3.1+, DeepSeek, etc.). Not auto-enabled.
 		 *                         - strictValidation: Validate tool arguments before execution (default: true)
 		 *                         - maxRecursiveToolRuns: Maximum recursive tool call depth (default: 5)
-		 *                         - streamFinalResponse: Return streaming response (default: false)
+		 *                         - streamFinalResponse: Return streaming response (default: false).
 		 *                         - verbose: Enable verbose logging (default: false)
 		 *                         - autoTrimTools: Automatically trim tools based on context (default: false)
 		 *                         - maxTools: Maximum tools when auto-trimming (default: 10)
-		 *                         - timeout: Request timeout in seconds
+		 *                         - timeout: Request timeout in seconds.
 		 * @return array|WP_Error Response array or error.
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
