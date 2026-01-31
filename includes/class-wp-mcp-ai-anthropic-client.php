@@ -735,7 +735,8 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 
 				// Validate media type (jpg already normalized to jpeg above).
-				$allowed_types_normalized = array( 'jpeg', 'png', 'gif', 'webp' );
+				// Filter out 'jpg' from allowed types since it's normalized to 'jpeg'.
+				$allowed_types_normalized = array_diff( self::ALLOWED_IMAGE_TYPES, array( 'jpg' ) );
 				if ( in_array( strtolower( $media_type ), $allowed_types_normalized, true ) ) {
 					return array(
 						'type'   => 'image',
