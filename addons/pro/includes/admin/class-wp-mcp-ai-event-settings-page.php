@@ -76,6 +76,48 @@ class WP_MCP_AI_Event_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Event Management Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="toolkit-description">
+				<p><?php esc_html_e( 'AI-powered event creation and management system. Plan, organize, and manage events with AI assistance for venue selection, scheduling, and attendee management.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'Event Planning: AI-assisted event planning and organization', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Venue Management: Find and manage event venues', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Calendar Integration: Sync events with calendars (iCal/Google)', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Attendee Management: Track and manage event attendees', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Real-time Tracking: Track event metrics and attendance', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Research & Add: AI-powered event research and creation', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list for this CPT.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'create_event'                => __( 'Create Event', 'mcp-ai-wpoos-pro' ),
+			'update_event'                => __( 'Update Event', 'mcp-ai-wpoos-pro' ),
+			'get_events'                  => __( 'Get Events', 'mcp-ai-wpoos-pro' ),
+			'delete_event'                => __( 'Delete Event', 'mcp-ai-wpoos-pro' ),
+			'real_time_event_tracking'    => __( 'Real-time Event Tracking', 'mcp-ai-wpoos-pro' ),
+			'create_event_booking'        => __( 'Create Event Booking (DJ)', 'mcp-ai-wpoos-pro' ),
+			'update_event_details'        => __( 'Update Event Details (DJ)', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Render section description.
 	 */
 	public function render_section_description() {
