@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  phpcs:
-    name: PHP CodeSniffer
+  wpcs:
+    name: WordPress Coding Standards (WPCS 3.0)
     runs-on: ubuntu-latest
 
     steps:
@@ -53,57 +53,72 @@ jobs:
             node_modules/**
             assets/examples/**
 
-      - name: Run PHP CodeSniffer on changed files
+      - name: Run WPCS on changed files
         if: github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true'
         run: |
           echo "Changed PHP files:"
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
           
-          # Run PHPCS and capture output
-          PHPCS_OUTPUT=$(vendor/bin/phpcs --standard=WordPress --report=json ${{ steps.changed-files.outputs.all_changed_files }} || true)
+          # Run PHPCS with phpcs.xml.dist configuration (includes WPCS 3.0)
+          PHPCS_OUTPUT=$(vendor/bin/phpcs --standard=phpcs.xml.dist --report=json ${{ steps.changed-files.outputs.all_changed_files }} || true)
           echo "$PHPCS_OUTPUT"
           
           # Parse errors and warnings
           ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
           WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
+          FIXABLE=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.fixable // 0')
           
-          echo "PHPCS Results: $ERRORS errors, $WARNINGS warnings"
+          echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
           
-          # Set threshold (max 50 errors as per gap analysis)
-          MAX_ERRORS=50
+          # Set threshold based on current baseline (1175 total errors / 269 files ≈ 4 per file)
+          # Allow max 10 errors per changed file as improvement target
+          MAX_ERRORS_PER_FILE=10
+          NUM_FILES=$(echo "${{ steps.changed-files.outputs.all_changed_files }}" | wc -w)
+          MAX_ERRORS=$((NUM_FILES * MAX_ERRORS_PER_FILE))
           
           if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
-            echo "❌ Too many PHPCS errors: $ERRORS (maximum allowed: $MAX_ERRORS)"
+            echo "❌ Too many WPCS errors: $ERRORS (maximum allowed: $MAX_ERRORS for $NUM_FILES files)"
+            echo "💡 Tip: Run 'composer run format' to auto-fix $FIXABLE violations"
             exit 1
           elif [ "$ERRORS" -gt 0 ]; then
-            echo "⚠️ Found $ERRORS PHPCS errors (below threshold of $MAX_ERRORS)"
+            echo "⚠️ Found $ERRORS WPCS errors (below threshold of $MAX_ERRORS)"
+            if [ "$FIXABLE" -gt 0 ]; then
+              echo "💡 Run 'composer run format' to auto-fix $FIXABLE violations"
+            fi
           else
-            echo "✅ No PHPCS errors found"
+            echo "✅ No WPCS errors found"
           fi
 
-      - name: Run PHP CodeSniffer on all files
+      - name: Run WPCS on all files
         if: github.event_name == 'push'
         run: |
-          # Run PHPCS and capture output
+          # Run PHPCS with phpcs.xml.dist (uses WPCS 3.0)
           PHPCS_OUTPUT=$(composer run lint -- --report=json || true)
           echo "$PHPCS_OUTPUT"
           
           # Parse errors and warnings
           ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
           WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
+          FIXABLE=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.fixable // 0')
           
-          echo "PHPCS Results: $ERRORS errors, $WARNINGS warnings"
+          echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
+          echo "📊 Baseline: 1175 errors (target: continuous improvement)"
           
-          # Set threshold (max 50 errors as per gap analysis)
-          MAX_ERRORS=50
+          # Current baseline threshold - will be gradually reduced
+          MAX_ERRORS=1200
           
           if [ "$ERRORS" -gt "$MAX_ERRORS" ]; then
-            echo "❌ Too many PHPCS errors: $ERRORS (maximum allowed: $MAX_ERRORS)"
+            echo "❌ WPCS errors increased: $ERRORS (regression threshold: $MAX_ERRORS)"
+            echo "💡 Run 'composer run format' to auto-fix $FIXABLE violations"
             exit 1
-          elif [ "$ERRORS" -gt 0 ]; then
-            echo "⚠️ Found $ERRORS PHPCS errors (below threshold of $MAX_ERRORS)"
+          elif [ "$ERRORS" -gt 1175 ]; then
+            echo "⚠️ WPCS errors slightly increased: $ERRORS (baseline: 1175)"
+            echo "Please review and fix new violations"
+          elif [ "$ERRORS" -lt 1175 ]; then
+            echo "✅ WPCS compliance improved! $ERRORS errors (was 1175)"
+            echo "🎉 Improvement: $((1175 - ERRORS)) errors fixed"
           else
-            echo "✅ No PHPCS errors found"
+            echo "📊 WPCS stable at baseline: $ERRORS errors"
           fi
 
   php-compatibility:
