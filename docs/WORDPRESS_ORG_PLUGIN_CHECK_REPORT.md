@@ -34,7 +34,8 @@ The base plugin meets WordPress.org plugin directory requirements with minor rec
 - ✅ Plugin Name: NV Digital Open Operator System Complete (oOS)
 - ✅ Version: 1.1.0
 - ✅ License: GPLv3 or later
-- ✅ Text Domain: mcp-ai-wpoos
+- ✅ **Text Domain: nvdigital-open-operator-system-oos** (WordPress.org version)
+  - **Note:** Repository uses `mcp-ai-wpoos`, build script transforms to `nvdigital-open-operator-system-oos` for WordPress.org
 - ✅ Domain Path: /languages
 - ✅ Network: true (multisite support)
 
@@ -47,9 +48,14 @@ The base plugin meets WordPress.org plugin directory requirements with minor rec
 ### 2. Code Quality & Security ✅ PASS
 
 #### Text Domain
-- ✅ All translation functions use correct text domain 'mcp-ai-wpoos'
-- ✅ No hardcoded text domains found
-- ✅ Translation functions properly implemented
+- ✅ **Repository text domain**: `mcp-ai-wpoos` (used consistently in all files)
+- ✅ **WordPress.org text domain**: `nvdigital-open-operator-system-oos` (transformed during build)
+- ✅ Build script (`bin/build-wordpress-org-from-base.sh`) automatically transforms all text domains:
+  - `mcp-ai-wpoos-base` → `nvdigital-open-operator-system-oos`
+  - `mcp-ai-wpoos-pro` → `nvdigital-open-operator-system-oos-pro`
+  - `mcp-ai-wpoos` → `nvdigital-open-operator-system-oos`
+- ✅ Transforms plugin headers, PHP files, JavaScript files, and POT files
+- ✅ Translation functions properly implemented throughout codebase
 
 #### Security Practices
 - ✅ No eval() usage found (except in security detection code)
@@ -217,7 +223,7 @@ The plugin includes these Composer dependencies in vendor/:
 |----------|--------|-------|
 | readme.txt Format | ✅ PASS | All required sections present |
 | Plugin Headers | ✅ PASS | Complete and accurate |
-| Text Domain | ✅ PASS | Consistent 'mcp-ai-wpoos' |
+| Text Domain | ✅ PASS | Build transforms to 'nvdigital-open-operator-system-oos' |
 | Security | ✅ PASS | No security concerns |
 | GPL Licensing | ✅ PASS | GPLv3 or later |
 | External Services | ✅ PASS | Comprehensive disclosure |

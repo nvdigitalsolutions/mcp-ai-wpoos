@@ -25,7 +25,10 @@
 - [x] Patent notice with GPL protection commitment
 
 ### ✅ 3. Code Quality Verified
-- [x] Text domain consistent ('mcp-ai-wpoos')
+- [x] Text domain properly managed:
+  - Repository uses 'mcp-ai-wpoos' consistently
+  - Build script transforms to 'nvdigital-open-operator-system-oos' for WordPress.org
+  - Transformation is automatic during build process
 - [x] No security issues (no eval, no obfuscated code)
 - [x] Proper sanitization and escaping
 - [x] WordPress APIs used correctly
@@ -59,9 +62,11 @@
 1. Go to https://wordpress.org/plugins/developers/add/
 2. Fill in plugin details:
    - **Plugin Name:** NV Digital Open Operator System (oOS)
-   - **Plugin Slug:** mcp-ai-wpoos (or wordpress.org assigned)
-   - **Plugin ZIP:** Upload built plugin ZIP from build/ directory
+   - **Plugin Slug:** nvdigital-open-operator-system-oos (preferred) or wordpress.org assigned
+   - **Plugin ZIP:** Upload built plugin ZIP from build/ directory (nvdigital-open-operator-system-oos-{version}.zip)
    - **Description:** From readme.txt short description
+   
+**Note:** The build process automatically transforms the text domain from `mcp-ai-wpoos` (repository) to `nvdigital-open-operator-system-oos` (WordPress.org)
 
 ### Step 3: Initial Review Wait
 - WordPress.org team will review (typically 1-14 days)
@@ -86,7 +91,7 @@ Once approved:
 ### Step 6: Initial SVN Commit
 ```bash
 # Check out SVN repository
-svn co https://plugins.svn.wordpress.org/mcp-ai-wpoos/ ./svn
+svn co https://plugins.svn.wordpress.org/nvdigital-open-operator-system-oos/ ./svn
 
 # Add trunk files
 cd svn
@@ -125,21 +130,32 @@ svn commit -m "Initial plugin submission - version 1.1.0"
 
 ## Build Plugin ZIP for Submission
 
-Use the existing build script to create the base version:
+Use the existing build script to create the WordPress.org version:
 
 ```bash
-# Build base version (WordPress.org compatible)
+# Step 1: Build the base version first (if not already built)
 cd /path/to/mcp-ai-wpoos
+bash bin/build-plugin-zip.sh
+
+# Step 2: Transform to WordPress.org version (changes text domain)
 bash bin/build-wordpress-org-from-base.sh
 
-# Result: build/mcp-ai-wpoos-base-[version].zip
+# Result: build/nvdigital-open-operator-system-oos-[version].zip
 ```
+
+**What the build script does:**
+1. Extracts the base version ZIP
+2. Transforms text domain: `mcp-ai-wpoos` → `nvdigital-open-operator-system-oos`
+3. Updates all PHP and JavaScript files
+4. Renames translation files (.pot)
+5. Renames main plugin file
+6. Creates WordPress.org compatible ZIP
 
 This creates a clean ZIP with:
 - ✅ Base tools only (no Pro features)
 - ✅ Vendor dependencies included
 - ✅ No development files
-- ✅ Proper text domain
+- ✅ **Proper text domain: nvdigital-open-operator-system-oos**
 - ✅ WordPress.org compatible structure
 
 ---
