@@ -60,11 +60,18 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			return;
 		}
 
+		// Enqueue chat assets for test modal.
+		$this->enqueue_chat_assets();
+
 		// Use file modification time for cache busting.
 		$css_path    = WP_MCP_AI_PATH . 'assets/css/admin-multi-agent-dashboard.css';
 		$js_path     = WP_MCP_AI_PATH . 'assets/js/admin-multi-agent-dashboard.js';
 		$css_version = file_exists( $css_path ) ? filemtime( $css_path ) : WP_MCP_AI_VERSION;
 		$js_version  = file_exists( $js_path ) ? filemtime( $js_path ) : WP_MCP_AI_VERSION;
+
+		// Enqueue test assistant CSS for modal styling.
+		$test_css_path    = WP_MCP_AI_PATH . 'assets/css/admin-test-assistant.css';
+		$test_css_version = file_exists( $test_css_path ) ? filemtime( $test_css_path ) : WP_MCP_AI_VERSION;
 
 		// Enqueue shared monitor CSS for consistent styling.
 		$shared_css_path    = WP_MCP_AI_PATH . 'assets/css/admin-monitor-shared.css';
@@ -78,10 +85,29 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		);
 
 		wp_enqueue_style(
+			'wp-mcp-ai-admin-test-assistant',
+			WP_MCP_AI_URL . 'assets/css/admin-test-assistant.css',
+			array( 'wp-mcp-ai-chat' ),
+			$test_css_version
+		);
+
+		wp_enqueue_style(
 			'wp-mcp-ai-multi-agent-dashboard',
 			WP_MCP_AI_URL . 'assets/css/admin-multi-agent-dashboard.css',
 			array( 'wp-mcp-ai-admin-monitor-shared' ),
 			$css_version
+		);
+
+		// Enqueue test assistant JS for modal functionality.
+		$test_js_path    = WP_MCP_AI_PATH . 'assets/js/admin-test-assistant.js';
+		$test_js_version = file_exists( $test_js_path ) ? filemtime( $test_js_path ) : WP_MCP_AI_VERSION;
+
+		wp_enqueue_script(
+			'wp-mcp-ai-admin-test-assistant',
+			WP_MCP_AI_URL . 'assets/js/admin-test-assistant.js',
+			array( 'wp-mcp-ai-chat' ),
+			$test_js_version,
+			true
 		);
 
 		wp_enqueue_script(
@@ -106,6 +132,124 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Enqueue chat interface assets.
+	 * Reused from test page pattern.
+	 *
+	 * @return void
+	 */
+	protected function enqueue_chat_assets() {
+		// Use bundled JavaScript file.
+		$script_relative            = 'assets/js/chat-bundle.min.js';
+		$style_relative             = 'assets/css/chat.css';
+		$cron_status_style_relative = 'assets/css/cron-status.css';
+
+		$script_path            = WP_MCP_AI_URL . $script_relative;
+		$style_path             = WP_MCP_AI_URL . $style_relative;
+		$cron_status_style_path = WP_MCP_AI_URL . $cron_status_style_relative;
+
+		$script_version            = $this->get_asset_version( $script_relative );
+		$style_version             = $this->get_asset_version( $style_relative );
+		$cron_status_style_version = $this->get_asset_version( $cron_status_style_relative );
+
+		wp_enqueue_style(
+			'wp-mcp-ai-cron-status',
+			$cron_status_style_path,
+			array(),
+			$cron_status_style_version
+		);
+
+		wp_enqueue_style(
+			'wp-mcp-ai-chat',
+			$style_path,
+			array( 'wp-mcp-ai-cron-status' ),
+			$style_version
+		);
+
+		wp_enqueue_script(
+			'wp-mcp-ai-chat',
+			$script_path,
+			array(),
+			$script_version,
+			true
+		);
+
+		// Safety check: Ensure REST constants exist.
+		$rest_namespace = defined( 'WP_MCP_AI_REST::REST_NAMESPACE' ) ? WP_MCP_AI_REST::REST_NAMESPACE : 'mcp-ai/v1';
+
+		// Use the shortcode helper method for consistent async tool timeout calculation.
+		$async_timeout_ms = class_exists( 'WP_MCP_AI_Shortcode' )
+			? WP_MCP_AI_Shortcode::get_async_tool_timeout_ms()
+			: 300000;
+
+		// Get plugin settings for cost display and capability flags configuration.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$show_usage_costs = isset( $settings['show_usage_costs'] ) ? (bool) $settings['show_usage_costs'] : false;
+
+		// Allow filtering of cost display setting.
+		$show_usage_costs = apply_filters( 'wp_mcp_ai_show_usage_costs', $show_usage_costs, get_current_user_id() );
+
+		// Get capability flags display setting.
+		$show_capability_flags = isset( $settings['show_capability_flags'] ) ? (bool) $settings['show_capability_flags'] : false;
+
+		// Allow filtering of capability flags display setting.
+		$show_capability_flags = apply_filters( 'wp_mcp_ai_show_capability_flags', $show_capability_flags, get_current_user_id() );
+
+		wp_localize_script(
+			'wp-mcp-ai-chat',
+			'wpMcpAiChat',
+			array(
+				'restUrl'             => esc_url_raw( trailingslashit( rest_url( $rest_namespace ) ) ),
+				'uploadEndpoint'      => esc_url_raw( rest_url( 'wp/v2/media' ) ),
+				'filesEndpoint'       => esc_url_raw( trailingslashit( rest_url( $rest_namespace . '/files' ) ) ),
+				'toolsEndpoint'       => esc_url_raw( rest_url( $rest_namespace . '/tools' ) ),
+				'transcriptsEndpoint' => esc_url_raw( rest_url( $rest_namespace . '/chat-transcripts' ) ),
+				'historyPerPage'      => 20,
+				'currentUserId'       => get_current_user_id(),
+				'nonce'               => wp_create_nonce( 'wp_rest' ),
+				'showUsageCosts'      => $show_usage_costs,
+				'showCapabilityFlags' => $show_capability_flags,
+				'asyncToolTimeout'    => $async_timeout_ms,
+				'strings'             => $this->get_chat_strings(),
+			)
+		);
+	}
+
+	/**
+	 * Get chat interface strings for localization.
+	 *
+	 * @return array
+	 */
+	protected function get_chat_strings() {
+		return array(
+			'placeholder'     => __( 'Ask something…', 'mcp-ai-wpoos' ),
+			'send'            => __( 'Send', 'mcp-ai-wpoos' ),
+			'attachFile'      => __( 'Attach file', 'mcp-ai-wpoos' ),
+			'transcribeAudio' => __( 'Transcribe audio', 'mcp-ai-wpoos' ),
+		);
+	}
+
+	/**
+	 * Get asset version based on file modification time.
+	 *
+	 * @param string $relative_path Asset path relative to plugin root.
+	 * @return string
+	 */
+	protected function get_asset_version( $relative_path ) {
+		$relative_path = ltrim( $relative_path, '/' );
+		$absolute_path = WP_MCP_AI_PATH . $relative_path;
+
+		if ( file_exists( $absolute_path ) ) {
+			$modified = filemtime( $absolute_path );
+
+			if ( $modified ) {
+				return WP_MCP_AI_VERSION . '.' . $modified;
+			}
+		}
+
+		return WP_MCP_AI_VERSION;
 	}
 
 	/**
@@ -185,6 +329,23 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			<div class="multi-agent-documentation">
 				<h2><?php esc_html_e( 'Documentation & Resources', 'mcp-ai-wpoos' ); ?></h2>
 				<?php $this->render_documentation(); ?>
+			</div>
+
+			<!-- Modal container for chat interface -->
+			<div id="wp-mcp-ai-test-modal" class="wp-mcp-ai-test-modal" style="display: none;">
+				<div class="wp-mcp-ai-test-modal__backdrop"></div>
+				<div class="wp-mcp-ai-test-modal__panel">
+					<div class="wp-mcp-ai-test-modal__header">
+						<h2 id="wp-mcp-ai-test-modal__title"><?php echo esc_html__( 'Test Assistant', 'mcp-ai-wpoos' ); ?></h2>
+						<button type="button" class="wp-mcp-ai-test-modal__close" aria-label="<?php echo esc_attr__( 'Close', 'mcp-ai-wpoos' ); ?>">
+							<span class="dashicons dashicons-no-alt"></span>
+						</button>
+					</div>
+					<div class="wp-mcp-ai-test-modal__body">
+						<!-- Chat interface will be initialized here -->
+						<div id="wp-mcp-ai-test-chat-container"></div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<?php
@@ -452,10 +613,18 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 							<span class="dashicons dashicons-edit"></span>
 							<?php esc_html_e( 'Edit', 'mcp-ai-wpoos' ); ?>
 						</a>
-						<a href="<?php echo esc_url( admin_url( 'admin.php?page=mcp-ai-test-assistant&assistant_id=' . $agent['id'] ) ); ?>" class="button button-small">
+						<button
+							type="button"
+							class="button button-small wp-mcp-ai-test-assistant-btn"
+							data-assistant-id="<?php echo esc_attr( $agent['id'] ); ?>"
+							data-assistant-title="<?php echo esc_attr( $agent['title'] ); ?>"
+							data-tool-shortcuts="<?php echo esc_attr( wp_json_encode( $this->get_assistant_tool_shortcuts( $agent['id'] ) ) ); ?>"
+							data-provider="<?php echo esc_attr( $agent['provider'] ); ?>"
+							data-model="<?php echo esc_attr( $agent['model'] ); ?>"
+						>
 							<span class="dashicons dashicons-admin-tools"></span>
 							<?php esc_html_e( 'Test', 'mcp-ai-wpoos' ); ?>
-						</a>
+						</button>
 					</div>
 				</div>
 			<?php endforeach; ?>
@@ -583,6 +752,32 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		}
 
 		wp_send_json_success( array( 'message' => __( 'Default agents reinstalled successfully.', 'mcp-ai-wpoos' ) ) );
+	}
+
+	/**
+	 * Get assistant tool shortcuts.
+	 *
+	 * @param int $assistant_id Assistant post ID.
+	 * @return array Array of tool shortcuts.
+	 */
+	protected function get_assistant_tool_shortcuts( $assistant_id ) {
+		$assistant_id = absint( $assistant_id );
+
+		if ( ! $assistant_id ) {
+			return array();
+		}
+
+		// Safety check: Ensure class exists.
+		if ( ! class_exists( 'WP_MCP_AI_Shortcode' ) ) {
+			return array();
+		}
+
+		// Use the shortcode class method if it exists.
+		if ( method_exists( 'WP_MCP_AI_Shortcode', 'get_assistant_tool_shortcuts' ) ) {
+			return WP_MCP_AI_Shortcode::get_assistant_tool_shortcuts( $assistant_id );
+		}
+
+		return array();
 	}
 }
 
