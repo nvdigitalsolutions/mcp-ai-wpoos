@@ -1028,7 +1028,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				$response_code = wp_remote_retrieve_response_code( $response );
 
 				if ( 200 !== $response_code ) {
-					$error_body = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
 					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
 						/* translators: %d: HTTP status code */
 						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),

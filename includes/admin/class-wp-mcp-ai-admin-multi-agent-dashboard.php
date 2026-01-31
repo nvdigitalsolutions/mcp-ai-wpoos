@@ -358,13 +358,13 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 	 */
 	protected function get_agent_statistics() {
 		$stats = array(
-			'installed'       => WP_MCP_AI_Default_Assistants::is_installed(),
-			'installation'    => WP_MCP_AI_Default_Assistants::get_installation_info(),
-			'agents'          => array(),
-			'total_agents'    => 0,
-			'active_agents'   => 0,
-			'total_tools'     => 0,
-			'is_pro_active'   => defined( 'WP_MCP_AI_PRO_VERSION' ),
+			'installed'     => WP_MCP_AI_Default_Assistants::is_installed(),
+			'installation'  => WP_MCP_AI_Default_Assistants::get_installation_info(),
+			'agents'        => array(),
+			'total_agents'  => 0,
+			'active_agents' => 0,
+			'total_tools'   => 0,
+			'is_pro_active' => defined( 'WP_MCP_AI_PRO_VERSION' ),
 		);
 
 		if ( ! $stats['installed'] ) {
@@ -372,7 +372,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		}
 
 		// Get all default assistants.
-		$default_configs = WP_MCP_AI_Default_Assistants::get_default_assistants();
+		$default_configs       = WP_MCP_AI_Default_Assistants::get_default_assistants();
 		$stats['total_agents'] = count( $default_configs );
 
 		// Build slugs to configs map.
@@ -422,7 +422,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 			$stats['agents'][] = $agent_data;
 
 			if ( 'publish' === $post->post_status ) {
-				$stats['active_agents']++;
+				++$stats['active_agents'];
 			}
 
 			$stats['total_tools'] += $agent_data['tool_count'];
