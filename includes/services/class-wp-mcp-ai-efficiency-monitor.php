@@ -306,7 +306,7 @@ class WP_MCP_AI_Efficiency_Monitor {
 	 * @param array $system_load System load data.
 	 * @return array Resource usage metrics.
 	 */
-	protected function calculate_resource_usage_metrics( $system_load ) {
+	protected function calculate_resource_usage_metrics( $system_load ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for load-aware metrics.
 		return array(
 			'memory_utilization' => $this->get_memory_usage_percentage(),
 			'api_rate_limits'    => $this->get_rate_limit_status(),

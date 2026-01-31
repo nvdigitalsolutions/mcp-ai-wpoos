@@ -280,7 +280,7 @@ class WP_MCP_AI_CLI_SLA {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function enable( $args, $assoc_args ) {
+	public function enable( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for CLI flags.
 		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['sla_prioritization_enabled'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -299,7 +299,7 @@ class WP_MCP_AI_CLI_SLA {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function disable( $args, $assoc_args ) {
+	public function disable( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for CLI flags.
 		$settings                               = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['sla_prioritization_enabled'] = false;
 		update_option( 'wp_mcp_ai_settings', $settings );

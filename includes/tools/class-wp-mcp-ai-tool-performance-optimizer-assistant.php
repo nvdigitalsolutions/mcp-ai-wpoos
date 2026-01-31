@@ -757,7 +757,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 * @param bool $auto_fix Auto-fix flag.
 	 * @return array Configuration result.
 	 */
-	private function configure_object_cache( $auto_fix ) {
+	private function configure_object_cache( $auto_fix ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future auto-fix implementation.
 		return array(
 			'enabled'   => wp_using_ext_object_cache(),
 			'available' => extension_loaded( 'redis' ) || extension_loaded( 'memcached' ),
@@ -772,7 +772,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 * @param bool $auto_fix Auto-fix flag.
 	 * @return array Configuration result.
 	 */
-	private function configure_page_cache( $auto_fix ) {
+	private function configure_page_cache( $auto_fix ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future auto-fix implementation.
 		return array(
 			'enabled' => $this->detect_page_cache(),
 			'note'    => __( 'Consider plugins like WP Super Cache or W3 Total Cache', 'mcp-ai-wpoos' ),
@@ -786,7 +786,7 @@ class WP_MCP_AI_Tool_Performance_Optimizer_Assistant {
 	 * @param bool $auto_fix Auto-fix flag.
 	 * @return array Configuration result.
 	 */
-	private function configure_browser_cache( $auto_fix ) {
+	private function configure_browser_cache( $auto_fix ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future auto-fix implementation.
 		return array(
 			'enabled' => true,
 			'note'    => __( 'Set via .htaccess or server configuration', 'mcp-ai-wpoos' ),

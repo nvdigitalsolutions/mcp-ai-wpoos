@@ -95,7 +95,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param array $config Assistant config.
 		 * @return int
 		 */
-		public function apply_max_agentic_iterations( $iterations, $config = array() ) {
+		public function apply_max_agentic_iterations( $iterations, $config = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_max_agentic_iterations' );
 			return null !== $custom ? absint( $custom ) : $iterations;
 		}
@@ -107,7 +107,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param string $tier Workload tier.
 		 * @return int
 		 */
-		public function apply_resource_max_tokens( $max_tokens, $tier = '' ) {
+		public function apply_resource_max_tokens( $max_tokens, $tier = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_resource_max_tokens' );
 			return null !== $custom ? absint( $custom ) : $max_tokens;
 		}
@@ -120,7 +120,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param int    $max_execution_time Max execution time.
 		 * @return int
 		 */
-		public function apply_resource_request_timeout( $timeout, $tier = '', $max_execution_time = 0 ) {
+		public function apply_resource_request_timeout( $timeout, $tier = '', $max_execution_time = 0 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_resource_request_timeout' );
 			return null !== $custom ? absint( $custom ) : $timeout;
 		}
@@ -132,7 +132,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param array $options Options.
 		 * @return int
 		 */
-		public function apply_max_retries( $retries, $options = array() ) {
+		public function apply_max_retries( $retries, $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_max_retries' );
 			return null !== $custom ? absint( $custom ) : $retries;
 		}
@@ -144,7 +144,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param array $options Options.
 		 * @return int
 		 */
-		public function apply_max_retry_delay( $delay, $options = array() ) {
+		public function apply_max_retry_delay( $delay, $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_max_retry_delay' );
 			return null !== $custom ? absint( $custom ) : $delay;
 		}
@@ -156,7 +156,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param array $context Context.
 		 * @return int
 		 */
-		public function apply_max_attachment_bytes( $bytes, $context = array() ) {
+		public function apply_max_attachment_bytes( $bytes, $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_max_attachment_bytes' );
 			return null !== $custom ? absint( $custom ) : $bytes;
 		}
@@ -190,7 +190,7 @@ if ( ! class_exists( 'WP_MCP_AI_Custom_Filters_Applicator' ) ) {
 		 * @param array  $options        Request options.
 		 * @return string
 		 */
-		public function apply_lm_studio_fallback_model( $fallback_model, $options ) {
+		public function apply_lm_studio_fallback_model( $fallback_model, $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			$custom = $this->get_filter_setting( 'filter_lm_studio_fallback_model' );
 			return null !== $custom ? sanitize_text_field( $custom ) : $fallback_model;
 		}

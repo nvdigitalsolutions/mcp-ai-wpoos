@@ -45,7 +45,7 @@ class WP_MCP_AI_Pattern_Workflow_Templates {
 	 * @param array  $context      Optional context for customization.
 	 * @return array|null Workflow template or null if pattern not found.
 	 */
-	public function get_workflow_template( $pattern_slug, $context = array() ) {
+	public function get_workflow_template( $pattern_slug, $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for context-aware customization.
 		$templates = $this->get_all_templates();
 		return isset( $templates[ $pattern_slug ] ) ? $templates[ $pattern_slug ] : null;
 	}

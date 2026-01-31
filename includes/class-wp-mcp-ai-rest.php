@@ -264,7 +264,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Server   $server  Server instance.
 		 * @return bool
 		 */
-		public function ensure_clean_json_output( $served, $result, $request, $server ) {
+		public function ensure_clean_json_output( $served, $result, $request, $server ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			// Only process our endpoints.
 			$route = $request->get_route();
 			if ( 0 !== strpos( $route, '/' . self::REST_NAMESPACE ) ) {
@@ -5274,7 +5274,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request   Original request.
 		 * @return array|WP_Error Member response or error.
 		 */
-		protected function invoke_team_member( $member_id, $messages, $request ) {
+		protected function invoke_team_member( $member_id, $messages, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 			// Load profession configuration.
 			$profession_config = $this->load_profession_configuration( $member_id, array() );
 
@@ -9466,7 +9466,7 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 		 * @param WP_REST_Request $request REST request instance.
 		 * @return WP_REST_Response
 		 */
-		public function handle_mcp_options( WP_REST_Request $request ) {
+		public function handle_mcp_options( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 			/**
 			 * Filter the Access-Control-Allow-Origin header value for OPTIONS requests.
 			 *

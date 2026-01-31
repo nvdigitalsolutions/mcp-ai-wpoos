@@ -2271,7 +2271,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 * @param array  $options Optional configuration (model, voice, format, speed, timeout).
 		 * @return WP_Error Always returns error as TTS is not supported by Cloudflare Workers AI.
 		 */
-		public function generate_speech( $text, array $options = array() ) {
+		public function generate_speech( $text, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future TTS implementation.
 			// Cloudflare Workers AI does not currently support TTS models.
 			// Models like @cf/deepgram/aura-2-en and @cf/myshell-ai/melotts do not exist in the catalog.
 			return new WP_Error(

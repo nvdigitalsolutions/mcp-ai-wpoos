@@ -426,7 +426,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool True if user has permission.
 	 */
-	public static function check_analytics_permission( $request ) {
+	public static function check_analytics_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
 		// Require manage_options capability.
 		return current_user_can( 'manage_options' );
 	}
@@ -439,7 +439,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 	 * @param string          $param   Parameter name.
 	 * @return bool True if valid.
 	 */
-	public static function validate_user_id( $user_id, $request, $param ) {
+	public static function validate_user_id( $user_id, $request, $param ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API validation callback signature.
 		if ( $user_id <= 0 ) {
 			return false;
 		}
@@ -457,7 +457,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 	 * @param string          $param        Parameter name.
 	 * @return bool True if valid.
 	 */
-	public static function validate_user_ids( $user_ids_str, $request, $param ) {
+	public static function validate_user_ids( $user_ids_str, $request, $param ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API validation callback signature.
 		$user_ids = array_map( 'absint', explode( ',', $user_ids_str ) );
 
 		if ( count( $user_ids ) !== 2 ) {
@@ -486,7 +486,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 	 * @param string          $param          Parameter name.
 	 * @return bool True if valid.
 	 */
-	public static function validate_tool_slugs( $tool_slugs_str, $request, $param ) {
+	public static function validate_tool_slugs( $tool_slugs_str, $request, $param ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API validation callback signature.
 		$tool_slugs = explode( ',', $tool_slugs_str );
 
 		if ( count( $tool_slugs ) !== 2 ) {

@@ -537,7 +537,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array LCP element data.
 	 */
-	private function identify_lcp_element( $url ) {
+	private function identify_lcp_element( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		// Simplified LCP detection - in production would use real metrics.
 		return array(
 			'type'     => 'image',
@@ -566,7 +566,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param array $lcp_element LCP element.
 	 * @return array Recommendations.
 	 */
-	private function get_lcp_recommendations( $lcp_element ) {
+	private function get_lcp_recommendations( $lcp_element ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			__( 'Use fetchpriority="high" on LCP image', 'mcp-ai-wpoos' ),
 			__( 'Preload LCP image with <link rel="preload">', 'mcp-ai-wpoos' ),
@@ -584,7 +584,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array LCP metric data.
 	 */
-	private function check_lcp_metric( $url ) {
+	private function check_lcp_metric( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'metric'  => 'LCP',
 			'name'    => __( 'Largest Contentful Paint', 'mcp-ai-wpoos' ),
@@ -601,7 +601,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array CLS metric data.
 	 */
-	private function check_cls_metric( $url ) {
+	private function check_cls_metric( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'metric' => 'CLS',
 			'name'   => __( 'Cumulative Layout Shift', 'mcp-ai-wpoos' ),
@@ -618,7 +618,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array FID metric data.
 	 */
-	private function check_fid_metric( $url ) {
+	private function check_fid_metric( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'metric' => 'FID',
 			'name'   => __( 'First Input Delay', 'mcp-ai-wpoos' ),
@@ -635,7 +635,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array INP metric data.
 	 */
-	private function check_inp_metric( $url ) {
+	private function check_inp_metric( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'metric' => 'INP',
 			'name'   => __( 'Interaction to Next Paint', 'mcp-ai-wpoos' ),
@@ -652,7 +652,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array Audit result.
 	 */
-	private function audit_responsive_images( $url ) {
+	private function audit_responsive_images( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'status'  => 'requires_validation',
 			'message' => __( 'Run validate_page action for detailed responsive image audit', 'mcp-ai-wpoos' ),
@@ -666,7 +666,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array Audit result.
 	 */
-	private function audit_lazy_loading( $url ) {
+	private function audit_lazy_loading( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'status'  => 'requires_validation',
 			'message' => __( 'Run validate_page action for lazy loading audit', 'mcp-ai-wpoos' ),
@@ -680,7 +680,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array Audit result.
 	 */
-	private function audit_modern_formats( $url ) {
+	private function audit_modern_formats( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'status'  => 'requires_validation',
 			'message' => __( 'Run validate_page action for format audit', 'mcp-ai-wpoos' ),
@@ -694,7 +694,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array Audit result.
 	 */
-	private function audit_explicit_dimensions( $url ) {
+	private function audit_explicit_dimensions( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			'status'  => 'requires_validation',
 			'message' => __( 'Run validate_page action for dimensions audit', 'mcp-ai-wpoos' ),
@@ -708,7 +708,7 @@ class WP_MCP_AI_Tool_Responsive_Image_Validator {
 	 * @param string $url Page URL.
 	 * @return array Recommendations.
 	 */
-	private function get_cwv_recommendations( $url ) {
+	private function get_cwv_recommendations( $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 		return array(
 			__( 'Optimize LCP image with modern formats and CDN', 'mcp-ai-wpoos' ),
 			__( 'Add explicit dimensions to prevent CLS', 'mcp-ai-wpoos' ),

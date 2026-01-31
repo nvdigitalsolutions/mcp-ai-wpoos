@@ -388,7 +388,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 * @param array  $options   Options.
 	 * @return true|WP_Error True if valid, WP_Error otherwise.
 	 */
-	protected function validate_upload_inputs( $file_path, $mime_type, array $options ) {
+	protected function validate_upload_inputs( $file_path, $mime_type, array $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for option-based validation.
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
@@ -515,7 +515,7 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 * @param string $mime_type MIME type.
 	 * @param array  $options   Options.
 	 */
-	protected function log_upload_start( $file_path, $mime_type, array $options ) {
+	protected function log_upload_start( $file_path, $mime_type, array $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for option logging.
 		WP_MCP_AI_Logger::log_event(
 			strtolower( $this->provider_name ) . '_file_upload',
 			sprintf( 'Uploading file to %s File API.', $this->provider_name ),

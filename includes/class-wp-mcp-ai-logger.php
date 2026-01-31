@@ -667,7 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @param mixed $value Raw value.
 		 * @return string
 		 */
-		protected static function redact_sensitive_value( $value ) {
+		protected static function redact_sensitive_value( $value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for context-aware redaction.
 			return '[redacted]';
 		}
 

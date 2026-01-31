@@ -301,7 +301,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int    $page Page number for pagination.
 	 * @return array Export data response
 	 */
-	public function export_user_settings( $email_address, $page = 1 ) {
+	public function export_user_settings( $email_address, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress privacy callback signature.
 		$user = get_user_by( 'email', $email_address );
 		if ( ! $user ) {
 			return array(
@@ -391,7 +391,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int    $page Page number for pagination.
 	 * @return array Erasure response
 	 */
-	public function erase_chat_transcripts( $email_address, $page = 1 ) {
+	public function erase_chat_transcripts( $email_address, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress privacy callback signature.
 		$user = get_user_by( 'email', $email_address );
 		if ( ! $user ) {
 			return array(
@@ -487,7 +487,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int    $page Page number for pagination.
 	 * @return array Erasure response
 	 */
-	public function erase_user_settings( $email_address, $page = 1 ) {
+	public function erase_user_settings( $email_address, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress privacy callback signature.
 		$user = get_user_by( 'email', $email_address );
 		if ( ! $user ) {
 			return array(
@@ -537,7 +537,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int    $page Page number for pagination.
 	 * @return array Erasure response
 	 */
-	public function erase_usage_analytics( $email_address, $page = 1 ) {
+	public function erase_usage_analytics( $email_address, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress privacy callback signature.
 		$user = get_user_by( 'email', $email_address );
 		if ( ! $user ) {
 			return array(
@@ -576,7 +576,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int $page Page number.
 	 * @return array Chat transcripts
 	 */
-	private function get_jet_engine_chat_transcripts( $user_id, $page = 1 ) {
+	private function get_jet_engine_chat_transcripts( $user_id, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future JetEngine integration.
 		// Placeholder for JetEngine CCT integration.
 		// Implementation depends on CCT structure.
 		return array();
@@ -589,7 +589,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int $page Page number.
 	 * @return array Usage analytics
 	 */
-	private function get_jet_engine_usage_analytics( $user_id, $page = 1 ) {
+	private function get_jet_engine_usage_analytics( $user_id, $page = 1 ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future JetEngine integration.
 		// Placeholder for JetEngine CCT integration.
 		// Implementation depends on CCT structure.
 		return array();
@@ -601,7 +601,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int $user_id User ID.
 	 * @return int Number of items deleted
 	 */
-	private function delete_jet_engine_chat_transcripts( $user_id ) {
+	private function delete_jet_engine_chat_transcripts( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future JetEngine integration.
 		// Placeholder for JetEngine CCT integration.
 		// Implementation depends on CCT structure.
 		return 0;
@@ -613,7 +613,7 @@ class WP_MCP_AI_Privacy {
 	 * @param int $user_id User ID.
 	 * @return int Number of items deleted
 	 */
-	private function delete_jet_engine_usage_analytics( $user_id ) {
+	private function delete_jet_engine_usage_analytics( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future JetEngine integration.
 		// Placeholder for JetEngine CCT integration.
 		// Implementation depends on CCT structure.
 		return 0;

@@ -132,7 +132,7 @@ class WP_MCP_AI_ISO27001_Badge {
 	 *
 	 * @param string $hook_suffix Current admin page.
 	 */
-	public function enqueue_badge_styles( $hook_suffix ) {
+	public function enqueue_badge_styles( $hook_suffix ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 		// Add inline styles for badge.
 		$css = '
 		.nvoos-iso27001-badge {

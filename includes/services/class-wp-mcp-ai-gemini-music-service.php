@@ -86,7 +86,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 	 *                        - prompt: string (the prompt used)
 	 *                        - model: string (the model used)
 	 */
-	public function generate_music( $prompt, array $options = array() ) {
+	public function generate_music( $prompt, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for advanced music options.
 		$prompt = trim( (string) $prompt );
 
 		if ( empty( $prompt ) ) {

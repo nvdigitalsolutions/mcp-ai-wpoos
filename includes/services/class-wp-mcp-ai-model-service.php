@@ -190,7 +190,7 @@ class WP_MCP_AI_Model_Service {
 	 * @param array $settings Plugin settings.
 	 * @return array Model list.
 	 */
-	protected function get_anthropic_models( $settings ) {
+	protected function get_anthropic_models( $settings ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future API key validation.
 		// Return models even if API key is not configured, for browsing purposes.
 		// The models are static and don't require API access to list.
 		$models = array();
@@ -492,7 +492,7 @@ class WP_MCP_AI_Model_Service {
 	 * @param bool  $requires_multimodal   Whether multimodal capability is required.
 	 * @return array Model list.
 	 */
-	protected function get_cloudflare_models( $settings, $requires_vision, $requires_multimodal ) {
+	protected function get_cloudflare_models( $settings, $requires_vision, $requires_multimodal ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for capability filtering.
 		// Check if Cloudflare provider is enabled and configured.
 		if ( empty( $settings['enable_cloudflare'] ) || empty( $settings['cloudflare_api_token'] ) || empty( $settings['cloudflare_account_id'] ) ) {
 			return array();

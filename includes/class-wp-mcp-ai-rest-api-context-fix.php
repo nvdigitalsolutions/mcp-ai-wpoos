@@ -150,7 +150,7 @@ class WP_MCP_AI_REST_API_Context_Fix {
 	 * @param WP_REST_Server   $server  Server instance.
 	 * @return bool
 	 */
-	public static function ensure_query_string_preservation( $served, $result, $request, $server ) {
+	public static function ensure_query_string_preservation( $served, $result, $request, $server ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 		// This is primarily a diagnostic hook - we can't actually restore stripped parameters,.
 		// but we can log when they appear to be missing.
 
