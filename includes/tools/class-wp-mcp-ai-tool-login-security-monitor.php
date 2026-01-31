@@ -675,9 +675,10 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param int $user_id User ID.
 	 * @return bool True if erased.
 	 */
-	public function erase_privacy_data( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by privacy callback signature.
+	public function erase_privacy_data( $user_id ) {
 		// Login monitoring data is typically kept for security/audit purposes.
 		// We don't erase it, but anonymize the username.
+		// Note: $user_id would be used if we implemented erasure logic.
 		return true;
 	}
 }

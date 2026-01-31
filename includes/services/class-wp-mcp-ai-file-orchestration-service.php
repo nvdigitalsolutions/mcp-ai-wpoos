@@ -385,10 +385,10 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 *
 	 * @param string $file_path File path.
 	 * @param string $mime_type MIME type.
-	 * @param array  $options   Options.
+	 * @param array  $options   Options (max_size, allowed_types, purpose, etc.).
 	 * @return true|WP_Error True if valid, WP_Error otherwise.
 	 */
-	protected function validate_upload_inputs( $file_path, $mime_type, array $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for option-based validation.
+	protected function validate_upload_inputs( $file_path, $mime_type, array $options ) {
 		if ( empty( $file_path ) || ! file_exists( $file_path ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_file_not_found',
@@ -403,6 +403,39 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 				__( 'MIME type is required for file upload.', 'mcp-ai-wpoos' ),
 				array( 'status' => 400 )
 			);
+		}
+
+		// Validate file size if max_size option is provided.
+		if ( isset( $options['max_size'] ) && $options['max_size'] > 0 ) {
+			$file_size = filesize( $file_path );
+			if ( $file_size > $options['max_size'] ) {
+				return new WP_Error(
+					'wp_mcp_ai_file_too_large',
+					sprintf(
+						/* translators: 1: file size, 2: max size */
+						__( 'File size (%1$s) exceeds maximum allowed size (%2$s).', 'mcp-ai-wpoos' ),
+						size_format( $file_size ),
+						size_format( $options['max_size'] )
+					),
+					array( 'status' => 413 )
+				);
+			}
+		}
+
+		// Validate MIME type if allowed_types option is provided.
+		if ( ! empty( $options['allowed_types'] ) && is_array( $options['allowed_types'] ) ) {
+			if ( ! in_array( $mime_type, $options['allowed_types'], true ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_invalid_mime_type',
+					sprintf(
+						/* translators: 1: mime type, 2: allowed types */
+						__( 'MIME type "%1$s" is not allowed. Allowed types: %2$s', 'mcp-ai-wpoos' ),
+						$mime_type,
+						implode( ', ', $options['allowed_types'] )
+					),
+					array( 'status' => 415 )
+				);
+			}
 		}
 
 		return true;
@@ -513,17 +546,30 @@ abstract class WP_MCP_AI_File_Orchestration_Service {
 	 *
 	 * @param string $file_path File path.
 	 * @param string $mime_type MIME type.
-	 * @param array  $options   Options.
+	 * @param array  $options   Options (display_name, purpose, max_size, etc.).
 	 */
-	protected function log_upload_start( $file_path, $mime_type, array $options ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for option logging.
+	protected function log_upload_start( $file_path, $mime_type, array $options ) {
+		$log_data = array(
+			'file_name' => basename( $file_path ),
+			'mime_type' => $mime_type,
+			'file_size' => file_exists( $file_path ) ? filesize( $file_path ) : 0,
+		);
+
+		// Include relevant options in the log.
+		if ( ! empty( $options['display_name'] ) ) {
+			$log_data['display_name'] = $options['display_name'];
+		}
+		if ( ! empty( $options['purpose'] ) ) {
+			$log_data['purpose'] = $options['purpose'];
+		}
+		if ( isset( $options['max_size'] ) ) {
+			$log_data['max_size'] = $options['max_size'];
+		}
+
 		WP_MCP_AI_Logger::log_event(
 			strtolower( $this->provider_name ) . '_file_upload',
 			sprintf( 'Uploading file to %s File API.', $this->provider_name ),
-			array(
-				'file_name' => basename( $file_path ),
-				'mime_type' => $mime_type,
-				'file_size' => file_exists( $file_path ) ? filesize( $file_path ) : 0,
-			)
+			$log_data
 		);
 	}
 
