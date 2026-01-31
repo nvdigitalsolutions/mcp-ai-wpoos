@@ -1991,8 +1991,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 								<strong><?php esc_html_e( 'Directory Service Disabled', 'mcp-ai-wpoos' ); ?></strong><br>
 								<?php
 								printf(
-									/* translators: %s: URL to general settings */
-									esc_html__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ),
+									/* translators: %s: link to general settings */
+									__( 'The Federation Directory service is currently disabled. Enable it in %s to manage AI Peers.', 'mcp-ai-wpoos' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Format string contains placeholder for escaped HTML link.
 									'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-settings' ) ) . '">' . esc_html__( 'General Settings', 'mcp-ai-wpoos' ) . '</a>'
 								);
 								?>
