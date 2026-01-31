@@ -83,6 +83,82 @@ class WP_MCP_AI_Project_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Project Management Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<p><?php esc_html_e( 'Comprehensive project management system with AI-powered tools for managing projects, tasks, events, timelines, and team collaboration.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><strong><?php esc_html_e( 'Project Management:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Create, track, and manage projects with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Task Management:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Break down projects into manageable tasks with dependencies and assignments', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Event Scheduling:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Schedule meetings, milestones, and deadlines with calendar integration', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Ralph Loop Orchestration:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Autonomous task execution with continuous improvement cycles', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Task Plans:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Markdown-based execution plans with checkbox progress tracking', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'Task Templates:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Reusable templates for common workflows and project types', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><strong><?php esc_html_e( 'High-Performance Storage:', 'mcp-ai-wpoos-pro' ); ?></strong> <?php esc_html_e( 'Automatic CCT (JetEngine) support for enterprise scalability', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			// Project Tools.
+			'research_project'                 => __( 'Research Project', 'mcp-ai-wpoos-pro' ),
+			'create_project'                   => __( 'Create Project', 'mcp-ai-wpoos-pro' ),
+			'update_project'                   => __( 'Update Project', 'mcp-ai-wpoos-pro' ),
+			'list_projects'                    => __( 'List Projects', 'mcp-ai-wpoos-pro' ),
+			'get_project'                      => __( 'Get Project Details', 'mcp-ai-wpoos-pro' ),
+			'delete_project'                   => __( 'Delete Project', 'mcp-ai-wpoos-pro' ),
+
+			// Task Tools.
+			'create_task'                      => __( 'Create Task', 'mcp-ai-wpoos-pro' ),
+			'update_task'                      => __( 'Update Task', 'mcp-ai-wpoos-pro' ),
+			'list_tasks'                       => __( 'List Tasks', 'mcp-ai-wpoos-pro' ),
+			'get_task'                         => __( 'Get Task Details', 'mcp-ai-wpoos-pro' ),
+			'delete_task'                      => __( 'Delete Task', 'mcp-ai-wpoos-pro' ),
+
+			// Event Tools.
+			'create_event'                     => __( 'Create Event', 'mcp-ai-wpoos-pro' ),
+			'update_event'                     => __( 'Update Event', 'mcp-ai-wpoos-pro' ),
+			'list_events'                      => __( 'List Events', 'mcp-ai-wpoos-pro' ),
+			'get_event'                        => __( 'Get Event Details', 'mcp-ai-wpoos-pro' ),
+			'delete_event'                     => __( 'Delete Event', 'mcp-ai-wpoos-pro' ),
+
+			// Ralph Loop Orchestration Tools.
+			'create_task_plan'                 => __( 'Create Task Plan', 'mcp-ai-wpoos-pro' ),
+			'update_task_plan'                 => __( 'Update Task Plan', 'mcp-ai-wpoos-pro' ),
+			'get_task_plan'                    => __( 'Get Task Plan', 'mcp-ai-wpoos-pro' ),
+			'list_task_plans'                  => __( 'List Task Plans', 'mcp-ai-wpoos-pro' ),
+			'manage_autonomous_session'        => __( 'Manage Autonomous Session', 'mcp-ai-wpoos-pro' ),
+			'detect_completion_indicators'     => __( 'Detect Completion Indicators', 'mcp-ai-wpoos-pro' ),
+			'check_exit_conditions'            => __( 'Check Exit Conditions', 'mcp-ai-wpoos-pro' ),
+			'analyze_loop_health'              => __( 'Analyze Loop Health', 'mcp-ai-wpoos-pro' ),
+			'get_session_status'               => __( 'Get Session Status', 'mcp-ai-wpoos-pro' ),
+			'calculate_orchestration_capacity' => __( 'Calculate Orchestration Capacity', 'mcp-ai-wpoos-pro' ),
+
+			// Task Template Tools.
+			'create_template'                  => __( 'Create Task Template', 'mcp-ai-wpoos-pro' ),
+			'list_templates'                   => __( 'List Task Templates', 'mcp-ai-wpoos-pro' ),
+			'instantiate_template'             => __( 'Instantiate Template', 'mcp-ai-wpoos-pro' ),
+			'seed_template_library'            => __( 'Seed Template Library', 'mcp-ai-wpoos-pro' ),
+
+			// Calendar & View Tools.
+			'get_calendar_view'                => __( 'Get Calendar View', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.

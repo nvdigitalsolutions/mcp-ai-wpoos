@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'pro_pdf';
+		return 'pro_pdf_document';
 	}
 
 	/**
