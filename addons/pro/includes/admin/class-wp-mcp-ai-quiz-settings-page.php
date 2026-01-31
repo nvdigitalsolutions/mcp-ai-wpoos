@@ -35,6 +35,59 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 *
+	 * @since 1.2.0
+	 */
+	protected function render_overview_tab() {
+		?>
+		<h2><?php esc_html_e( 'Quiz Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+		
+		<p><?php esc_html_e( 'Comprehensive quiz creation and management system with AI-powered research, grading, analytics, and student submissions.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<ul>
+			<li><?php esc_html_e( 'Quiz Creation: Build quizzes with multiple question types and AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'AI Research: Generate quiz questions from topics using AI research', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Student Submissions: Manage quiz attempts and student responses', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Auto-Grading: Automated grading for multiple choice and objective questions', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Analytics: Track completion rates, average scores, and question difficulty', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Time Limits: Configure time-limited quizzes for assessments', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Passing Scores: Set minimum passing percentages and certificates', 'mcp-ai-wpoos-pro' ); ?></li>
+		</ul>
+
+		<h3><?php esc_html_e( 'Use Cases', 'mcp-ai-wpoos-pro' ); ?></h3>
+		<ul>
+			<li><?php esc_html_e( 'Online learning platforms and educational institutions', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Employee training and certification programs', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'Knowledge assessments and skill evaluations', 'mcp-ai-wpoos-pro' ); ?></li>
+		</ul>
+		<?php
+	}
+
+	/**
+	 * Get tools list.
+	 *
+	 * @since 1.2.0
+	 * @return array Tools list with slugs and names.
+	 */
+	protected function get_tools_list() {
+		return array(
+			'create_quiz'           => __( 'Create Quiz', 'mcp-ai-wpoos-pro' ),
+			'list_quizzes'          => __( 'List Quizzes', 'mcp-ai-wpoos-pro' ),
+			'get_quiz'              => __( 'Get Quiz', 'mcp-ai-wpoos-pro' ),
+			'update_quiz'           => __( 'Update Quiz', 'mcp-ai-wpoos-pro' ),
+			'delete_quiz'           => __( 'Delete Quiz', 'mcp-ai-wpoos-pro' ),
+			'research_quiz_topic'   => __( 'Research Quiz Topic', 'mcp-ai-wpoos-pro' ),
+			'submit_quiz_answer'    => __( 'Submit Quiz Answer', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_submissions'  => __( 'Get Quiz Submissions', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_results'      => __( 'Get Quiz Results', 'mcp-ai-wpoos-pro' ),
+			'grade_quiz'            => __( 'Grade Quiz', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_analytics'    => __( 'Get Quiz Analytics', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Register settings.
 	 */
 	public function register_settings() {
