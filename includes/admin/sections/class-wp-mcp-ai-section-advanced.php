@@ -1783,40 +1783,61 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<!-- Mesh Inbound API Key -->
-				<?php if ( $mesh_enabled && $mesh_inbound_key ) : ?>
-					<div class="wp-mcp-ai-mesh-api-key" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
-						<h4 style="margin-top: 0;"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ); ?></h4>
-						<p class="description">
-							<?php esc_html_e( 'Use this key when configuring other sites to connect to this instance as a mesh peer. Keep this key secure and only share it with trusted administrators.', 'mcp-ai-wpoos' ); ?>
-						</p>
-						<div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
-							<input type="text" readonly value="<?php echo esc_attr( $mesh_inbound_key ); ?>" 
-								id="wp-mcp-ai-mesh-key-display" 
-								style="width: 100%; max-width: 500px; font-family: monospace; font-size: 12px;" />
-							<button type="button" class="button button-secondary" id="wp-mcp-ai-copy-mesh-key">
-								<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span>
-								<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
-							</button>
+				<?php if ( $mesh_enabled ) : ?>
+					<?php if ( $mesh_inbound_key ) : ?>
+						<div class="wp-mcp-ai-mesh-api-key" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
+							<h4 style="margin-top: 0;"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ); ?></h4>
+							<p class="description">
+								<?php esc_html_e( 'This key allows other NV oOS sites to connect to this instance as a mesh peer. Share this key only with trusted administrators who need to configure their sites to communicate with yours.', 'mcp-ai-wpoos' ); ?>
+							</p>
+							<div style="margin: 10px 0; display: flex; align-items: center; gap: 10px;">
+								<input type="text" readonly value="<?php echo esc_attr( $mesh_inbound_key ); ?>" 
+									id="wp-mcp-ai-mesh-key-display" 
+									style="width: 100%; max-width: 500px; font-family: monospace; font-size: 12px;" />
+								<button type="button" class="button button-secondary" id="wp-mcp-ai-copy-mesh-key">
+									<span class="dashicons dashicons-clipboard" style="margin-top: 3px;"></span>
+									<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+								</button>
+							</div>
+							<p class="description" style="margin-top: 10px;">
+								<strong><?php esc_html_e( 'How to use this key:', 'mcp-ai-wpoos' ); ?></strong><br>
+								<?php esc_html_e( '1. Copy this key using the button above', 'mcp-ai-wpoos' ); ?><br>
+								<?php esc_html_e( '2. On the peer site that wants to connect to this instance, go to Advanced → Federation & Mesh', 'mcp-ai-wpoos' ); ?><br>
+								<?php
+								printf(
+									/* translators: %s: JSON example */
+									esc_html__( '3. Add this site to their "Mesh Peer Sites Configuration" JSON with format: %s', 'mcp-ai-wpoos' ),
+									'<code>{"url":"' . esc_html( get_site_url() ) . '","api_key":"[paste key here]","name":"' . esc_html( get_bloginfo( 'name' ) ) . '","enabled":true}</code>'
+								);
+								?>
+							</p>
 						</div>
-					</div>
 
-					<script>
-					jQuery(document).ready(function($) {
-						$('#wp-mcp-ai-copy-mesh-key').on('click', function() {
-							var $input = $('#wp-mcp-ai-mesh-key-display');
-							$input.select();
-							document.execCommand('copy');
-							
-							var $button = $(this);
-							var originalText = $button.html();
-							$button.html('<span class="dashicons dashicons-yes" style="margin-top: 3px; color: #46b450;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos' ) ); ?>');
-							
-							setTimeout(function() {
-								$button.html(originalText);
-							}, 2000);
+						<script>
+						jQuery(document).ready(function($) {
+							$('#wp-mcp-ai-copy-mesh-key').on('click', function() {
+								var $input = $('#wp-mcp-ai-mesh-key-display');
+								$input.select();
+								document.execCommand('copy');
+								
+								var $button = $(this);
+								var originalText = $button.html();
+								$button.html('<span class="dashicons dashicons-yes" style="margin-top: 3px; color: #46b450;"></span> <?php echo esc_js( __( 'Copied!', 'mcp-ai-wpoos' ) ); ?>');
+								
+								setTimeout(function() {
+									$button.html(originalText);
+								}, 2000);
+							});
 						});
-					});
-					</script>
+						</script>
+					<?php else : ?>
+						<div class="notice notice-warning inline" style="margin: 20px 0;">
+							<p>
+								<strong><?php esc_html_e( 'Mesh Inbound API Key Not Generated', 'mcp-ai-wpoos' ); ?></strong><br>
+								<?php esc_html_e( 'The mesh inbound API key should be automatically generated when mesh computing is enabled. Click "Save Settings" below to generate your key.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						</div>
+					<?php endif; ?>
 				<?php endif; ?>
 
 				<!-- Mesh Peer Sites Configuration -->
@@ -1964,6 +1985,19 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									</p>
 								</div>
 							<?php endif; ?>
+						<?php else : ?>
+							<!-- Show helpful info when no peers exist yet -->
+							<div class="notice notice-info inline" style="margin: 15px 0;">
+								<p>
+									<strong><?php esc_html_e( 'No AI Peers Registered Yet', 'mcp-ai-wpoos' ); ?></strong><br>
+									<?php esc_html_e( 'AI Peers allow this site to discover and consume AI capabilities from other NV oOS instances. To get started:', 'mcp-ai-wpoos' ); ?>
+								</p>
+								<ol style="margin: 10px 0 10px 20px;">
+									<li><?php esc_html_e( 'Click "Add New AI Peer" below to register a peer site', 'mcp-ai-wpoos' ); ?></li>
+									<li><?php esc_html_e( 'Provide the peer site\'s URL and well-known endpoint (e.g., https://peer-site.com/.well-known/ai-peer)', 'mcp-ai-wpoos' ); ?></li>
+									<li><?php esc_html_e( 'The peer will be automatically discovered and its capabilities will be available to your assistants', 'mcp-ai-wpoos' ); ?></li>
+								</ol>
+							</div>
 						<?php endif; ?>
 
 						<!-- Add New Peer Button -->
