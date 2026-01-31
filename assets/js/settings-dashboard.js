@@ -455,6 +455,22 @@
 			const $form = $(e.target);
 			const $submit = $form.find('input[type="submit"]');
 			
+			// CRITICAL FIX: Ensure subtab hidden fields are set correctly before submission.
+			// This fixes the issue where subtab settings (like enable_federation_directory) don't persist.
+			// The hidden field value must match the current URL subtab parameter to ensure
+			// correct field sanitization in subtab-aware sections.
+			const urlParams = new URLSearchParams(window.location.search);
+			const currentSubtab = urlParams.get('subtab');
+			if (currentSubtab) {
+				// Find all subtab hidden fields in the form and update their values.
+				$form.find('input[type="hidden"][name^="subtab_"]').each(function() {
+					const $hiddenField = $(this);
+					// Only update if the field exists and subtab matches.
+					// This ensures the correct subtab is marked as active during save.
+					$hiddenField.val(currentSubtab);
+				});
+			}
+			
 			// Get form data for logging.
 			const formData = new FormData($form[0]);
 			const activeTab = formData.get('active_tab');
