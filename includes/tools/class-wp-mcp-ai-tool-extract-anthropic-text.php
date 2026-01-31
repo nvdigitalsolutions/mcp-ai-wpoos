@@ -235,8 +235,6 @@ class WP_MCP_AI_Tool_Extract_Anthropic_Text implements WP_MCP_AI_Tool_Interface,
 					foreach ( $response['content'] as $block ) {
 						if ( isset( $block['text'] ) ) {
 							$extracted_text .= $block['text'];
-						} elseif ( isset( $block['type'] ) && 'text' === $block['type'] && isset( $block['text'] ) ) {
-							$extracted_text .= $block['text'];
 						}
 					}
 				} elseif ( is_string( $response['content'] ) ) {
