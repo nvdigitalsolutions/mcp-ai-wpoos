@@ -163,7 +163,7 @@ class WP_MCP_AI_Tool_Get_Batch_Status implements WP_MCP_AI_Tool_Interface, WP_MC
 			'request_counts' => isset( $result['request_counts'] ) ? $result['request_counts'] : array(),
 			'metadata'       => isset( $result['metadata'] ) ? $result['metadata'] : array(),
 			'summary'        => $this->generate_summary( $result ),
-			'message'        => $this->generate_summary( $result ), // Chat client display
+			'message'        => $this->generate_summary( $result ), // Chat client display.
 			'raw_result'     => $result,
 		);
 

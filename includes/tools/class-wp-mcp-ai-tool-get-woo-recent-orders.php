@@ -144,8 +144,8 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		return array(
-			'message' => $summary_text, // Chat client display
-			'summary' => $summary_text, // Backward compatibility
+			'message' => $summary_text, // Chat client display.
+			'summary' => $summary_text, // Backward compatibility.
 			'orders'  => $results,
 			'count'   => count( $results ),
 		);

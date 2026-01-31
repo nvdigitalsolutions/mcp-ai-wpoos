@@ -157,7 +157,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Cloudflare Workers AI works better with embedded function calling because:
 			// 1. Some models return XML tool calls instead of proper JSON
 			// 2. The embedded approach handles the complete loop automatically
-			// 3. It ensures tools are actually executed and results are returned
+			// 3. It ensures tools are actually executed and results are returned.
 			if ( ! empty( $options['tools'] ) && is_array( $options['tools'] ) ) {
 				// Check if tools have executable functions (needed for embedded calling).
 				$has_executables = $this->tools_have_executables( $options['tools'] );
@@ -448,7 +448,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Previous implementation incorrectly used a separate "system" field which caused
 			// the model to ignore system instructions entirely.
 			//
-			// See: https://developers.cloudflare.com/workers-ai/models/
+			// See: https://developers.cloudflare.com/workers-ai/models/.
 
 			WP_MCP_AI_Logger::log_event(
 				'cloudflare_payload_build',
@@ -503,7 +503,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			// Auto-JSON mode for tool calling has been removed because:
 			// 1. Not all Cloudflare models support JSON mode (added Feb 25, 2025)
 			// 2. Tool calling works without explicit JSON mode on supported models
-			// 3. Using json_object on unsupported models causes "unknown variant" errors
+			// 3. Using json_object on unsupported models causes "unknown variant" errors.
 			if ( isset( $options['response_format'] ) && is_array( $options['response_format'] ) ) {
 				// User explicitly set response_format, use it.
 				// Only include if it's not empty to avoid sending empty arrays.
@@ -706,7 +706,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Some Cloudflare models (e.g., qwen2.5-coder) output tool calls as XML text instead of using
 			// the proper tool_calls array. Detect and parse this format.
-			// Pattern: <name>tool_name</name><arguments>{...}</arguments>
+			// Pattern: <name>tool_name</name><arguments>{...}</arguments>.
 			if ( ! $tool_calls_found && ! empty( $content ) && $this->contains_xml_tool_call( $content ) ) {
 				$parsed_tool_calls = $this->parse_xml_tool_calls( $content );
 
@@ -738,7 +738,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 
 			// Some Cloudflare models output tool calls as plain JSON text in the content
 			// instead of using the proper tool_calls array or XML format.
-			// Pattern: {"type": "function", "name": "tool_name", "parameters": {...}}
+			// Pattern: {"type": "function", "name": "tool_name", "parameters": {...}}.
 			if ( ! $tool_calls_found && ! empty( $content ) && $this->contains_json_tool_call( $content ) ) {
 				$parsed_tool_calls = $this->parse_json_tool_calls( $content );
 
@@ -772,7 +772,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				// Validate and normalize each tool_call to OpenAI format.
 				// Cloudflare may return tool_calls in two formats:
 				// 1. OpenAI format: {"function": {"name": "tool_name", "arguments": {...}}}
-				// 2. Simpler format: {"name": "tool_name", "arguments": {...}}
+				// 2. Simpler format: {"name": "tool_name", "arguments": {...}}.
 				$valid_tool_calls = array();
 				foreach ( $result['tool_calls'] as $index => $tool_call ) {
 					if ( ! is_array( $tool_call ) ) {
@@ -1839,7 +1839,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 			$tool_calls = array();
 
 			// Pattern to match XML tool calls.
-			// Captures: <name>tool_name</name><arguments>{...}</arguments>
+			// Captures: <name>tool_name</name><arguments>{...}</arguments>.
 			$pattern = '/<name>\s*([^<]+)\s*<\/name>\s*<arguments>\s*(\{[^}]*\}|\[[^\]]*\])\s*<\/arguments>/is';
 
 			$matches = array();
@@ -2278,7 +2278,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 				'wp_mcp_ai_cloudflare_tts_unsupported',
 				__( 'Text-to-speech (TTS) is not currently supported by Cloudflare Workers AI. Please use OpenAI, Google Gemini, or Hugging Face providers for speech generation features.', 'mcp-ai-wpoos' ),
 				array(
-					'status'  => 501, // Not Implemented
+					'status'  => 501, // Not Implemented.
 					'actions' => array(
 						'switch_provider'    => __( 'Switch your assistant to OpenAI, Gemini, or Hugging Face provider.', 'mcp-ai-wpoos' ),
 						'configure_openai'   => __( 'Configure an OpenAI API key as a fallback for TTS.', 'mcp-ai-wpoos' ),

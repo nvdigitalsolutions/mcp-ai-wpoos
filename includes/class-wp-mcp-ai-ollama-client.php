@@ -198,7 +198,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				if ( isset( $chunk['message']['content'] ) ) {
 					// Ollama sends incremental content deltas in each chunk.
 					// We need to append (concatenate) each delta to build the full response.
-					// See: https://docs.ollama.com/api/streaming
+					// See: https://docs.ollama.com/api/streaming.
 					$accumulated_content .= (string) $chunk['message']['content'];
 				}
 
@@ -307,7 +307,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Priority order:
 			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
 			// 2. options['num_predict'] (if set, Ollama native parameter)
-			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier)
+			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier).
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$num_predict  = $resource_mgr->get_max_tokens();

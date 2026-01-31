@@ -260,8 +260,8 @@ class WP_MCP_AI_Tool_Generate_Auth0_Token implements WP_MCP_AI_Tool_Interface, W
 		$summary_text = __( 'Auth0 token generated successfully', 'mcp-ai-wpoos' );
 
 		return array(
-			'message'      => $summary_text, // Chat client display
-			'summary'      => $summary_text, // Backward compatibility
+			'message'      => $summary_text, // Chat client display.
+			'summary'      => $summary_text, // Backward compatibility.
 			'access_token' => $token,
 			'token_type'   => $token_type,
 			'expires_in'   => $expires_in,

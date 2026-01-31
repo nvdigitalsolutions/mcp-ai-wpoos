@@ -817,7 +817,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			);
 
 			// Note: Site Creator settings have been moved to their own separate admin page.
-			// See: addons/pro/includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php
+			// See: addons/pro/includes/admin/class-wp-mcp-ai-site-creator-toolkit-settings-page.php.
 
 			return $subtab_groups;
 		}

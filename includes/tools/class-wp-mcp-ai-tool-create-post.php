@@ -315,8 +315,8 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 
 		$response = array(
-			'message'   => $summary_text, // Chat client display
-			'summary'   => $summary_text, // Backward compatibility
+			'message'   => $summary_text, // Chat client display.
+			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $created_post->ID,
 			'title'     => get_the_title( $created_post ),
 			'status'    => get_post_status( $created_post ),

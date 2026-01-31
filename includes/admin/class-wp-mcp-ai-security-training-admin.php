@@ -276,4 +276,4 @@ class WP_MCP_AI_Security_Training_Admin {
 // proper coordination of ISO 27001 admin pages.
 // if ( is_admin() ) {
 // new WP_MCP_AI_Security_Training_Admin();
-// }
+// }.

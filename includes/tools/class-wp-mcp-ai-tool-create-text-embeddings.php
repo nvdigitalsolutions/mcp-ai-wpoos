@@ -212,13 +212,13 @@ class WP_MCP_AI_Tool_Create_Text_Embeddings implements WP_MCP_AI_Tool_Interface,
 				__( 'Created %1$d embeddings using model %2$s.', 'mcp-ai-wpoos' ),
 				count( $embeddings ),
 				$model
-			), // Chat client display
+			), // Chat client display.
 			'summary'    => sprintf(
 				/* translators: 1: number of embeddings, 2: model name */
 				__( 'Created %1$d embeddings using model %2$s.', 'mcp-ai-wpoos' ),
 				count( $embeddings ),
 				$model
-			), // Backward compatibility
+			), // Backward compatibility.
 		);
 	}
 

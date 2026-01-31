@@ -183,8 +183,8 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				'estimated_cost' => 0,
 				'model'          => $model,
 				'provider'       => $provider,
-				'message'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Chat client display
-				'summary'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Backward compatibility
+				'message'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Chat client display.
+				'summary'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Backward compatibility.
 			);
 		}
 

@@ -242,8 +242,8 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 		}
 
 		return array(
-			'message'  => $summary, // Chat client display
-			'summary'  => $summary, // Backward compatibility
+			'message'  => $summary, // Chat client display.
+			'summary'  => $summary, // Backward compatibility.
 			'products' => $results,
 			'count'    => count( $results ),
 		);

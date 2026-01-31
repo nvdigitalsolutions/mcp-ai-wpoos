@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			);
 		}
 
-		// Use trait method to ensure proper message field for chat client
+		// Use trait method to ensure proper message field for chat client.
 		return $this->format_collection_response(
 			$results,
 			sprintf(
@@ -310,7 +310,7 @@ class WP_MCP_AI_Tool_Search_Content implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		}
 
 		if ( empty( $tax_query ) ) {
-			// Use trait method to handle empty results properly
+			// Use trait method to handle empty results properly.
 			return $this->format_empty_result_response(
 				__( 'No taxonomy filters matched.', 'mcp-ai-wpoos' )
 			);

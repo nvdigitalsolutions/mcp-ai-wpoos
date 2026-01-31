@@ -185,23 +185,23 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		if ( $this->has_keywords(
 			$title,
 			array(
-				// Quality Assurance & Testing
+				// Quality Assurance & Testing.
 				'qa engineer',
 				'quality assurance',
 				'quality engineer',
 				'tester',
 				'test engineer',
-				// Editorial & Review
+				// Editorial & Review.
 				'editor',
 				'reviewer',
 				'proofreader',
 				'copy editor',
-				// Audit & Compliance
+				// Audit & Compliance.
 				'auditor',
 				'inspector',
 				'compliance officer',
 				'validator',
-				// Evaluation & Assessment
+				// Evaluation & Assessment.
 				'evaluator',
 				'assessor',
 				'judge',
@@ -234,13 +234,13 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 			$this->has_keywords(
 				$title,
 				array(
-					// Legal
+					// Legal.
 					'attorney',
 					'lawyer',
 					'paralegal',
 					'legal advisor',
 					'judge',
-					// Medical/Healthcare
+					// Medical/Healthcare.
 					'doctor',
 					'physician',
 					'surgeon',
@@ -251,12 +251,12 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'therapist',
 					'psychologist',
 					'psychiatrist',
-					// Financial
+					// Financial.
 					'accountant',
 					'financial advisor',
 					'tax advisor',
 					'bookkeeper',
-					// Scientific/Research
+					// Scientific/Research.
 					'scientist',
 					'researcher',
 					'physicist',
@@ -266,7 +266,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'meteorologist',
 					'oceanographer',
 					'toxicologist',
-					// Regulatory/Compliance
+					// Regulatory/Compliance.
 					'regulatory affairs',
 					'compliance specialist',
 					'drug safety',
@@ -300,29 +300,29 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 		if ( $this->has_keywords(
 			$title,
 			array(
-				// Project/Product Management
+				// Project/Product Management.
 				'project manager',
 				'product manager',
 				'program manager',
 				'scrum master',
-				// Strategic Planning
+				// Strategic Planning.
 				'planner',
 				'strategist',
 				'strategic planner',
 				'urban planner',
 				'event planner',
-				// Coordination
+				// Coordination.
 				'coordinator',
 				'logistics coordinator',
 				'research coordinator',
-				// Architecture (system design, not implementation)
+				// Architecture (system design, not implementation).
 				'architect',
 				'cloud architect',
 				'solutions architect',
 				'systems architect',
 				'enterprise architect',
 				'landscape architect',
-				// Management/Leadership
+				// Management/Leadership.
 				'director',
 				'manager',
 				'administrator',
@@ -357,17 +357,17 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 			$this->has_keywords(
 				$title,
 				array(
-					// Software Development
+					// Software Development.
 					'developer',
 					'programmer',
 					'coder',
 					'software engineer',
-					// Engineering (implementation)
+					// Engineering (implementation).
 					'engineer',
 					'drafter',
 					'technician',
 					'mechanic',
-					// Creative Execution
+					// Creative Execution.
 					'designer',
 					'artist',
 					'photographer',
@@ -376,7 +376,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'editor',
 					'producer',
 					'cinematographer',
-					// Trades/Crafts
+					// Trades/Crafts.
 					'electrician',
 					'plumber',
 					'carpenter',
@@ -385,7 +385,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'machinist',
 					'painter',
 					'roofer',
-					// Operations
+					// Operations.
 					'operator',
 					'driver',
 					'pilot',
@@ -502,7 +502,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 	 */
 	protected function get_default_task_patterns() {
 		return array(
-			// Data & Analytics Professions
+			// Data & Analytics Professions.
 			'data_scientist'                => array(
 				'data_analysis' => array(
 					'steps'         => array( 'get_dataset', 'analyze_data', 'create_chart', 'interpret_results' ),
@@ -525,7 +525,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'batch_embed_content', 'create_vector_store', 'openai_usage_analytics' ),
 				),
 			),
-			// Content Creation Professions
+			// Content Creation Professions.
 			'content_writer'                => array(
 				'article_writing'  => array(
 					'steps'        => array( 'research_topic', 'create_outline', 'write_draft', 'polish' ),
@@ -547,7 +547,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_rankmath_seo', 'seo_meta_optimizer', 'suggest_internal_links', 'save_post' ),
 				),
 			),
-			// Development Professions
+			// Development Professions.
 			'software_developer'            => array(
 				'code_development' => array(
 					'steps'         => array( 'analyze_requirements', 'design_solution', 'implement_code', 'test' ),
@@ -569,7 +569,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'        => array( 'analyze_code_sequence', 'moderate_content', 'save_post' ),
 				),
 			),
-			// Management Professions
+			// Management Professions.
 			'project_manager'               => array(
 				'project_planning'   => array(
 					'steps'         => array( 'define_scope', 'break_down_tasks', 'assign_resources', 'create_timeline' ),
@@ -587,7 +587,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'execute_workflow', 'check_workflow_health', 'get_session_status', 'aggregate_agent_results' ),
 				),
 			),
-			// Quality Assurance Professions
+			// Quality Assurance Professions.
 			'technical_editor'              => array(
 				'content_review'     => array(
 					'steps'        => array( 'read_content', 'check_accuracy', 'verify_quality', 'provide_feedback' ),
@@ -604,7 +604,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_recent_posts', 'auto_categorize_content', 'create_cron_job', 'send_group_email' ),
 				),
 			),
-			// Research Professions
+			// Research Professions.
 			'research_analyst'              => array(
 				'research_task'        => array(
 					'steps'         => array( 'gather_sources', 'analyze_data', 'synthesize_findings', 'document_results' ),
@@ -627,7 +627,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'web_search', 'scrape_product', 'crawl4ai_price_lookup', 'create_chart', 'save_post' ),
 				),
 			),
-			// E-commerce Professions
+			// E-commerce Professions.
 			'ecommerce_manager'             => array(
 				'product_management' => array(
 					'steps'         => array( 'analyze_inventory', 'optimize_listings', 'update_pricing', 'monitor_orders' ),
@@ -644,7 +644,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'        => array( 'get_woo_recent_orders', 'send_group_email', 'client_analyze_sentiment' ),
 				),
 			),
-			// Media & Design Professions
+			// Media & Design Professions.
 			'graphic_designer'              => array(
 				'image_creation'     => array(
 					'steps'         => array( 'conceptualize', 'generate_image', 'edit_refine', 'optimize_export' ),
@@ -674,7 +674,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'generate_sora_video', 'generate_video_caption', 'check_video_status', 'save_post' ),
 				),
 			),
-			// Marketing Professions
+			// Marketing Professions.
 			'digital_marketer'              => array(
 				'campaign_management' => array(
 					'steps'         => array( 'plan_campaign', 'create_content', 'schedule_distribution', 'analyze_results' ),
@@ -696,7 +696,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'        => array( 'newsletter_get_subscribers', 'newsletter_create_email', 'send_group_email', 'newsletter_get_subscriber_stats' ),
 				),
 			),
-			// Security Professions
+			// Security Professions.
 			'security_specialist'           => array(
 				'security_audit'  => array(
 					'steps'         => array( 'scan_vulnerabilities', 'assess_risks', 'recommend_fixes', 'monitor' ),
@@ -714,7 +714,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_user_info', '2fa_setup_assistant', 'user_activity_auditor', 'password_strength_analyzer' ),
 				),
 			),
-			// Translation & Localization
+			// Translation & Localization.
 			'translator'                    => array(
 				'content_translation' => array(
 					'steps'         => array( 'analyze_source', 'translate_content', 'review_quality', 'publish' ),
@@ -727,7 +727,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_recent_posts', 'client_translate_text', 'moderate_content', 'save_post' ),
 				),
 			),
-			// AI/ML Specialist
+			// AI/ML Specialist.
 			'ai_engineer'                   => array(
 				'model_optimization' => array(
 					'steps'         => array( 'research_models', 'test_performance', 'select_best', 'implement' ),
@@ -749,7 +749,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'        => array( 'batch_embed_content', 'create_vector_store', 'manage_vector_store_files', 'semantic_content_search' ),
 				),
 			),
-			// Analytics Specialist
+			// Analytics Specialist.
 			'analytics_specialist'          => array(
 				'website_analytics' => array(
 					'steps'         => array( 'collect_data', 'analyze_metrics', 'visualize_trends', 'report_insights' ),
@@ -762,7 +762,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'sitekit_analytics', 'sitekit_search_console', 'sitekit_pagespeed', 'create_chart', 'save_post' ),
 				),
 			),
-			// Disaster Response Specialist
+			// Disaster Response Specialist.
 			'disaster_coordinator'          => array(
 				'emergency_monitoring' => array(
 					'steps'         => array( 'monitor_events', 'assess_impact', 'coordinate_response', 'report' ),
@@ -775,7 +775,7 @@ class WP_MCP_AI_Profession_Orchestration_Seeder {
 					'tools'         => array( 'get_gdacs_events', 'get_nhc_active_storms', 'reliefweb_reports', 'geocode_address', 'create_chart', 'save_post' ),
 				),
 			),
-			// Real professions from the database
+			// Real professions from the database.
 			'web_developer'                 => array(
 				'website_development' => array(
 					'steps'         => array( 'plan_structure', 'develop_site', 'test_functionality', 'deploy' ),

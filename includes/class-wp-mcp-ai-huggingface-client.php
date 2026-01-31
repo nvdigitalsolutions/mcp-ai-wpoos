@@ -872,7 +872,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			} else {
 				// Use custom endpoint with /audio/transcriptions path (OpenAI-compatible).
 				// This is for dedicated Hugging Face Inference Endpoints with format:
-				// https://<endpoint-name>.endpoints.huggingface.cloud/v1/audio/transcriptions
+				// https://<endpoint-name>.endpoints.huggingface.cloud/v1/audio/transcriptions.
 				$url = untrailingslashit( $endpoint_url ) . '/audio/transcriptions';
 			}
 

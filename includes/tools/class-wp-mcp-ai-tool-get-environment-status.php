@@ -157,8 +157,8 @@ class WP_MCP_AI_Tool_Get_Environment_Status implements WP_MCP_AI_Tool_Interface,
 		);
 
 		return array(
-			'message'     => $summary_text, // Chat client display
-			'summary'     => $summary_text, // Backward compatibility
+			'message'     => $summary_text, // Chat client display.
+			'summary'     => $summary_text, // Backward compatibility.
 			'environment' => $summary,
 		);
 	}

@@ -523,8 +523,8 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 		);
 
 		$response = array(
-			'message'      => $summary_text, // Chat client display
-			'summary'      => $summary_text, // Backward compatibility
+			'message'      => $summary_text, // Chat client display.
+			'summary'      => $summary_text, // Backward compatibility.
 			'product_id'   => $product_id,
 			'product_type' => $saved_product ? $saved_product->get_type() : $product_type,
 			'status'       => $saved_product ? $saved_product->get_status() : 'draft',
