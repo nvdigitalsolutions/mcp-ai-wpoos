@@ -436,7 +436,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		 * Normalize content for Anthropic's content format.
 		 *
 		 * @param mixed $content Message content.
-		 * @return array|string
+		 * @return array|string Array of content blocks if images present, string otherwise.
 		 */
 		protected function normalize_content_for_anthropic( $content ) {
 			// If it's a simple string, return it as-is.
@@ -445,17 +445,259 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return '' !== $text ? $text : '';
 			}
 
-			// If it's an array, convert to Anthropic content blocks.
+			// If it's an array, check for images and convert to Anthropic content blocks.
 			if ( is_array( $content ) ) {
-				$text_parts = $this->normalize_segments_to_text( $content );
+				$content_blocks = array();
+				$has_images     = false;
 
-				// If we have text parts, join them.
+				foreach ( $content as $segment ) {
+					// Handle string segments.
+					if ( is_string( $segment ) || is_numeric( $segment ) ) {
+						$text = trim( wp_kses_post( (string) $segment ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+						continue;
+					}
+
+					// Handle array segments.
+					if ( ! is_array( $segment ) ) {
+						continue;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
+
+					// Handle image types.
+					if ( 'image' === $type || 'image_url' === $type ) {
+						$image_block = $this->build_image_content_block( $segment );
+						if ( null !== $image_block ) {
+							$content_blocks[] = $image_block;
+							$has_images       = true;
+						}
+						continue;
+					}
+
+					// Handle text types.
+					if ( 'input_text' === $type || 'text' === $type ) {
+						$text = '';
+						if ( isset( $segment['text'] ) ) {
+							$text = (string) $segment['text'];
+						} elseif ( isset( $segment['content'] ) ) {
+							$text = (string) $segment['content'];
+						}
+						$text = trim( wp_kses_post( $text ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+						continue;
+					}
+
+					// Default: try to extract text.
+					if ( isset( $segment['text'] ) && '' !== $segment['text'] ) {
+						$text = trim( wp_kses_post( (string) $segment['text'] ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+					}
+				}
+
+				// If we have images, return content blocks array.
+				if ( $has_images && ! empty( $content_blocks ) ) {
+					return $content_blocks;
+				}
+
+				// Otherwise, extract text and join (backward compatible).
+				$text_parts = array();
+				foreach ( $content_blocks as $block ) {
+					if ( isset( $block['type'] ) && 'text' === $block['type'] && isset( $block['text'] ) ) {
+						$text_parts[] = $block['text'];
+					}
+				}
+
 				if ( ! empty( $text_parts ) ) {
 					return implode( "\n\n", $text_parts );
 				}
 			}
 
 			return '';
+		}
+
+		/**
+		 * Build an image content block in Anthropic format.
+		 *
+		 * @param array $segment Image segment with image data.
+		 * @return array|null Anthropic image block or null if invalid.
+		 */
+		protected function build_image_content_block( $segment ) {
+			if ( ! is_array( $segment ) ) {
+				return null;
+			}
+
+			$image_url  = '';
+			$image_data = '';
+
+			// Handle OpenAI-style image_url format.
+			if ( isset( $segment['image_url'] ) ) {
+				if ( is_string( $segment['image_url'] ) ) {
+					$image_url = $segment['image_url'];
+				} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
+					$image_url = $segment['image_url']['url'];
+				}
+			} elseif ( isset( $segment['url'] ) ) {
+				$image_url = $segment['url'];
+			} elseif ( isset( $segment['data'] ) ) {
+				$image_data = $segment['data'];
+			}
+
+			// Handle data: URLs.
+			if ( ! empty( $image_url ) && 0 === strpos( $image_url, 'data:' ) ) {
+				// Extract base64 data from data URL.
+				$matches = array();
+				if ( preg_match( '/^data:image\/(\w+);base64,(.+)$/', $image_url, $matches ) ) {
+					$media_type = $matches[1];
+					$image_data = $matches[2];
+
+					// Validate media type.
+					$allowed_types = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
+					if ( in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+						// Normalize jpeg/jpg.
+						if ( 'jpg' === strtolower( $media_type ) ) {
+							$media_type = 'jpeg';
+						}
+
+						return array(
+							'type'   => 'image',
+							'source' => array(
+								'type'       => 'base64',
+								'media_type' => 'image/' . strtolower( $media_type ),
+								'data'       => $image_data,
+							),
+						);
+					}
+				}
+
+				WP_MCP_AI_Logger::log_error( 'Invalid data URL format for image.', array( 'url' => substr( $image_url, 0, 100 ) ) );
+				return null;
+			}
+
+			// Handle remote URLs - fetch and convert to base64.
+			if ( ! empty( $image_url ) && ( 0 === strpos( $image_url, 'http://' ) || 0 === strpos( $image_url, 'https://' ) ) ) {
+				$response = wp_remote_get(
+					$image_url,
+					array(
+						'timeout'    => 30,
+						'user-agent' => 'WP-MCP-AI-Anthropic-Client/1.0',
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Failed to fetch remote image.',
+						array(
+							'url'   => $image_url,
+							'error' => $response->get_error_message(),
+						)
+					);
+					return null;
+				}
+
+				$body         = wp_remote_retrieve_body( $response );
+				$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+				if ( empty( $body ) ) {
+					WP_MCP_AI_Logger::log_error( 'Empty response body when fetching image.', array( 'url' => $image_url ) );
+					return null;
+				}
+
+				// Determine media type.
+				$media_type = '';
+				if ( ! empty( $content_type ) ) {
+					// Extract main type from content-type header.
+					$content_type_parts = explode( ';', $content_type );
+					$main_type          = trim( $content_type_parts[0] );
+
+					if ( 0 === strpos( $main_type, 'image/' ) ) {
+						$media_type = str_replace( 'image/', '', $main_type );
+					}
+				}
+
+				// Validate media type.
+				$allowed_types = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
+				if ( empty( $media_type ) || ! in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Unsupported image media type.',
+						array(
+							'url'        => $image_url,
+							'media_type' => $media_type,
+						)
+					);
+					return null;
+				}
+
+				// Normalize jpeg/jpg.
+				if ( 'jpg' === strtolower( $media_type ) ) {
+					$media_type = 'jpeg';
+				}
+
+				// Convert to base64.
+				$image_data = base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+
+				return array(
+					'type'   => 'image',
+					'source' => array(
+						'type'       => 'base64',
+						'media_type' => 'image/' . strtolower( $media_type ),
+						'data'       => $image_data,
+					),
+				);
+			}
+
+			// Handle raw base64 data.
+			if ( ! empty( $image_data ) ) {
+				// Assume JPEG if not specified.
+				$media_type = 'jpeg';
+				if ( isset( $segment['media_type'] ) ) {
+					$provided_type = sanitize_text_field( $segment['media_type'] );
+					if ( 0 === strpos( $provided_type, 'image/' ) ) {
+						$media_type = str_replace( 'image/', '', $provided_type );
+					} else {
+						$media_type = $provided_type;
+					}
+				}
+
+				// Normalize jpeg/jpg.
+				if ( 'jpg' === strtolower( $media_type ) ) {
+					$media_type = 'jpeg';
+				}
+
+				// Validate media type.
+				$allowed_types = array( 'jpeg', 'png', 'gif', 'webp' );
+				if ( in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+					return array(
+						'type'   => 'image',
+						'source' => array(
+							'type'       => 'base64',
+							'media_type' => 'image/' . strtolower( $media_type ),
+							'data'       => $image_data,
+						),
+					);
+				}
+
+				WP_MCP_AI_Logger::log_error( 'Unsupported image media type for raw data.', array( 'media_type' => $media_type ) );
+				return null;
+			}
+
+			WP_MCP_AI_Logger::log_error( 'No valid image data found in segment.', array( 'segment' => $segment ) );
+			return null;
 		}
 
 		/**
