@@ -149,7 +149,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Default Model', 'mcp-ai-wpoos' ); ?></th>
-								<td><code><?php echo esc_html( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' ); ?></code></td>
+								<td><code><?php echo esc_html( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5' ); ?></code></td>
 							</tr>
 							<tr>
 								<th><?php esc_html_e( 'Provider Status', 'mcp-ai-wpoos' ); ?></th>
@@ -986,7 +986,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			try {
 				// Test by making a simple completion request.
 				$api_key = $settings['anthropic_api_key'];
-				$model   = isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022';
+				$model   = isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5';
 
 				$response = wp_remote_post(
 					'https://api.anthropic.com/v1/messages',
