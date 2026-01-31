@@ -59,10 +59,13 @@ function wp_mcp_ai_enqueue_document_generation_toolkit_admin_styles( $hook ) {
 		return;
 	}
 
-	// Check if we're on the toolkit settings page.
+	// Check if we're on document template pages.
 	$screen = get_current_screen();
-	if ( ! $screen || 'nvoos-pro-dashboard_page_wp-mcp-ai-document-generation-toolkit-settings' !== $screen->id ) {
-		return;
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_doc_tpl' ), true ) ) {
+		// Also check for new settings page.
+		if ( ! $screen || 'mcp_ai_doc_tpl_page_document-generation-settings' !== $screen->id ) {
+			return;
+		}
 	}
 
 	// Enqueue admin styles if available.
