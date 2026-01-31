@@ -15,8 +15,9 @@ The Anthropic provider integrates Claude AI models into WordPress through the NV
 - Function/tool calling supported
 
 #### Vision & Image Analysis
-- **Image Analysis**: Detailed description and understanding of images
-- **OCR (Text Extraction)**: Extract text from images, documents, and screenshots
+- **Image Analysis**: Detailed description and understanding of images via `analyze_image` tool
+- **Image Alt Text Generation**: Generate accessible alt text via `generate_image_alt_text` tool  
+- **OCR (Text Extraction)**: Extract text from images, documents, and screenshots via `extract_image_text` tool
 - **Visual Question Answering**: Ask questions about image content
 - Supported formats: JPEG, PNG, GIF, WebP
 - Maximum image size: 10MB (5MB recommended for best performance)
@@ -56,17 +57,15 @@ Navigate to **Settings → NV oOS → Providers → Anthropic**:
    - Default: 1568 tokens
    - Range: 1000-4000 tokens
    - Higher values = more detailed analysis but higher cost
-6. **Image Detail Level**:
-   - **Auto** (Recommended): Claude decides based on content
-   - **High**: Maximum detail, more tokens
-   - **Low**: Basic analysis, fewer tokens
 
 ## Available Tools
 
-### Image Analysis Tools
+### Multi-Provider Vision Tools
 
-#### `analyze_anthropic_image`
-Analyzes images with Claude's vision capabilities.
+All vision tools support multiple providers (OpenAI, Anthropic, Gemini). Specify `"provider": "anthropic"` in tool arguments to use Claude.
+
+#### `analyze_image`
+General-purpose image analysis supporting all providers.
 
 **Use Cases:**
 - Describe image content in detail
@@ -79,12 +78,13 @@ Analyzes images with Claude's vision capabilities.
 {
   "attachment_id": 123,
   "prompt": "Describe this product image for an e-commerce listing",
-  "model": "claude-3-5-sonnet-20241022"
+  "provider": "anthropic",
+  "max_tokens": 1024
 }
 ```
 
-#### `extract_anthropic_text`
-Extracts text from images using Claude's OCR capabilities.
+#### `extract_image_text`
+OCR and text extraction supporting all providers. Anthropic recommended for best accuracy.
 
 **Use Cases:**
 - Extract text from screenshots
@@ -96,10 +96,23 @@ Extracts text from images using Claude's OCR capabilities.
 ```json
 {
   "attachment_id": 456,
+  "provider": "anthropic",
   "preserve_layout": true,
   "include_metadata": false
 }
 ```
+
+#### `generate_image_alt_text`
+Generate accessibility-friendly alt text. Now supports Anthropic alongside OpenAI and Gemini.
+
+**Example:**
+```json
+{
+  "attachment_id": 789,
+  "context": "Product photo for online store"
+}
+```
+*Note: Provider is determined by your default provider setting unless explicitly specified.*
 
 ## Best Practices
 
@@ -114,8 +127,8 @@ Extracts text from images using Claude's OCR capabilities.
 
 - Vision requests consume tokens based on image size and detail level
 - Monitor token usage to control costs
-- Use "low" detail for simple OCR or basic analysis
-- Use "high" detail for complex visual reasoning
+- Claude 3.5 Sonnet offers best balance of accuracy and cost
+- Claude 3.5 Haiku is faster and more economical
 
 ### Model Selection
 

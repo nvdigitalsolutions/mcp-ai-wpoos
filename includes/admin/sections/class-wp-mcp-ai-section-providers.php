@@ -412,17 +412,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'placeholder' => '1568',
 					'sanitize'    => 'absint',
 				),
-				'anthropic_image_detail'             => array(
-					'type'        => 'select',
-					'label'       => __( 'Anthropic Image Detail Level', 'mcp-ai-wpoos' ),
-					'description' => __( 'Detail level for image analysis. Auto lets Claude decide based on image content. High provides maximum detail. Low uses fewer tokens for basic analysis.', 'mcp-ai-wpoos' ),
-					'options'     => array(
-						'auto' => 'Auto (Recommended)',
-						'high' => 'High Detail',
-						'low'  => 'Low Detail',
-					),
-					'default'     => 'auto',
-				),
 
 				// Google Gemini Settings.
 				'enable_gemini'                      => array(
@@ -874,7 +863,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens', 'anthropic_image_detail' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',

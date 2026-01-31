@@ -1,17 +1,17 @@
 <?php
 /**
- * Tests for Anthropic vision settings.
+ * Tests for multi-provider vision tools and settings.
  *
- * Ensures that the new Anthropic vision settings are properly registered
- * and can be saved/retrieved.
+ * Ensures that the new multi-provider vision tools (analyze_image, extract_image_text)
+ * are properly registered and Anthropic vision settings work correctly.
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test that Anthropic vision settings work correctly.
+ * Test that multi-provider vision tools and settings work correctly.
  */
-class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
+class WP_MCP_AI_Vision_Tools_Settings_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that Anthropic vision settings can be saved and retrieved.
@@ -24,7 +24,6 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			'anthropic_model'            => 'claude-3-5-sonnet-20241022',
 			'anthropic_vision_model'     => 'claude-3-5-sonnet-20241022',
 			'anthropic_max_image_tokens' => '2048',
-			'anthropic_image_detail'     => 'high',
 		);
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $settings );
@@ -43,12 +42,6 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			'2048',
 			$retrieved['anthropic_max_image_tokens'],
 			'anthropic_max_image_tokens should be saved'
-		);
-
-		$this->assertSame(
-			'high',
-			$retrieved['anthropic_image_detail'],
-			'anthropic_image_detail should be saved'
 		);
 	}
 
@@ -78,49 +71,43 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			$anthropic_fields,
 			'anthropic_max_image_tokens should be in Anthropic tab fields'
 		);
-
-		$this->assertContains(
-			'anthropic_image_detail',
-			$anthropic_fields,
-			'anthropic_image_detail should be in Anthropic tab fields'
-		);
 	}
 
 	/**
-	 * Test that Anthropic vision tools are registered.
+	 * Test that multi-provider vision tools are registered.
 	 */
-	public function test_anthropic_vision_tools_registered() {
+	public function test_multi_provider_vision_tools_registered() {
 		// Get tool registry.
 		$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-		// Check if Anthropic vision tools are registered.
-		$analyze_tool = $registry->get_tool( 'analyze_anthropic_image' );
-		$extract_tool = $registry->get_tool( 'extract_anthropic_text' );
+		// Check if multi-provider vision tools are registered.
+		$analyze_tool = $registry->get_tool( 'analyze_image' );
+		$extract_tool = $registry->get_tool( 'extract_image_text' );
 
 		$this->assertNotNull(
 			$analyze_tool,
-			'analyze_anthropic_image tool should be registered'
+			'analyze_image tool should be registered'
 		);
 
 		$this->assertNotNull(
 			$extract_tool,
-			'extract_anthropic_text tool should be registered'
+			'extract_image_text tool should be registered'
 		);
 
 		// Check tool names.
 		if ( $analyze_tool ) {
 			$this->assertSame(
-				'Analyze Image with Anthropic',
+				'Analyze Image',
 				$analyze_tool->get_name(),
-				'analyze_anthropic_image should have correct name'
+				'analyze_image should have correct name'
 			);
 		}
 
 		if ( $extract_tool ) {
 			$this->assertSame(
-				'Extract Text from Image (Anthropic OCR)',
+				'Extract Text from Image (OCR)',
 				$extract_tool->get_name(),
-				'extract_anthropic_text should have correct name'
+				'extract_image_text should have correct name'
 			);
 		}
 	}
@@ -139,7 +126,6 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			'anthropic_model'            => 'claude-3-5-sonnet-20241022',
 			'anthropic_vision_model'     => 'claude-3-5-sonnet-20241022',
 			'anthropic_max_image_tokens' => '1568',
-			'anthropic_image_detail'     => 'auto',
 		);
 
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
@@ -152,7 +138,6 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			'anthropic_model'            => 'claude-3-5-haiku-20241022',
 			'anthropic_vision_model'     => 'claude-3-5-haiku-20241022',
 			'anthropic_max_image_tokens' => '2048',
-			'anthropic_image_detail'     => 'high',
 		);
 
 		// Sanitize with providers tab context.
@@ -185,12 +170,6 @@ class WP_MCP_AI_Anthropic_Vision_Settings_Test extends WP_UnitTestCase {
 			'2048',
 			$merged['anthropic_max_image_tokens'],
 			'anthropic_max_image_tokens should be updated'
-		);
-
-		$this->assertSame(
-			'high',
-			$merged['anthropic_image_detail'],
-			'anthropic_image_detail should be updated'
 		);
 	}
 }
