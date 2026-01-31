@@ -876,6 +876,20 @@ PROMPT;
 			return $existing->ID; // Return existing ID.
 		}
 
+		// Get a valid admin user for post_author.
+		// Try current user first, then fall back to any administrator.
+		$author_id = get_current_user_id();
+		if ( ! $author_id || ! user_can( $author_id, 'edit_posts' ) ) {
+			$admins = get_users( array( 'role' => 'administrator', 'number' => 1 ) );
+			if ( ! empty( $admins ) ) {
+				$author_id = $admins[0]->ID;
+			} else {
+				// Absolute fallback: use user ID 1 if it exists.
+				$user_1 = get_user_by( 'ID', 1 );
+				$author_id = $user_1 ? 1 : 0;
+			}
+		}
+
 		// Create the post.
 		$post_id = wp_insert_post(
 			array(
@@ -884,7 +898,7 @@ PROMPT;
 				'post_content' => $config['description'],
 				'post_name'    => $config['slug'],
 				'post_status'  => 'publish',
-				'post_author'  => 1, // Default to admin user.
+				'post_author'  => $author_id,
 			),
 			true // Return WP_Error on failure.
 		);

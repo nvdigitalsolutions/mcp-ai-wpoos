@@ -1933,9 +1933,9 @@ add_action(
 			// Install default multi-agent orchestration system.
 			$result = WP_MCP_AI_Default_Assistants::install();
 
-			// Log any errors for debugging.
-			if ( is_wp_error( $result ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Production error logging for activation issues.
+			// Log any errors for debugging using WordPress logging mechanism.
+			if ( is_wp_error( $result ) && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- Development debugging only when WP_DEBUG is enabled.
 				error_log( 'WP_MCP_AI: Failed to install default assistants: ' . $result->get_error_message() );
 			}
 		}
