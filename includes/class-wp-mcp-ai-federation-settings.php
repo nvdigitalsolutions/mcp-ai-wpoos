@@ -21,6 +21,27 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public function __construct() {
 		add_action( 'admin_init', array( $this, 'register_settings' ), 20 );
+		add_action( 'update_option_' . WP_MCP_AI_Admin_Settings::OPTION_NAME, array( $this, 'maybe_flush_rewrite_rules' ), 10, 2 );
+	}
+
+	/**
+	 * Flush rewrite rules when directory setting changes.
+	 *
+	 * This ensures the AI Peers CPT menu appears immediately after enabling
+	 * the directory service, without requiring a manual flush or page refresh.
+	 *
+	 * @param array $old_value Old settings value.
+	 * @param array $new_value New settings value.
+	 */
+	public function maybe_flush_rewrite_rules( $old_value, $new_value ) {
+		// Check if enable_federation_directory setting changed.
+		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
+		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
+
+		// If the directory setting changed, flush rewrite rules.
+		if ( $old_directory_enabled !== $new_directory_enabled ) {
+			flush_rewrite_rules();
+		}
 	}
 
 	/**
