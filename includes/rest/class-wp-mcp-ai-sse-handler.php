@@ -128,6 +128,8 @@ class WP_MCP_AI_SSE_Handler {
 			}
 		}
 
+		// Echo SSE formatted data. JSON data from wp_json_encode is safe.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- SSE protocol format: data already JSON-encoded via wp_json_encode().
 		echo 'data: ' . $json_data . "\n\n";
 
 		// Force flush to send data immediately.

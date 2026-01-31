@@ -277,12 +277,12 @@ class WP_MCP_AI_Security_Audit {
 		</div>
 		<script type="text/javascript">
 		jQuery(document).ready(function($) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe.
-			let findingIndex = <?php echo count( $findings ); ?>;
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Integer count value is safe to output in JavaScript.
+			let findingIndex = <?php echo absint( count( $findings ) ); ?>;
 
 			$('#wp-mcp-ai-add-finding').on('click', function() {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template HTML is properly escaped in get_finding_template().
-				const template = `<?php echo $this->get_finding_template(); ?>`.replace(/INDEX/g, findingIndex);
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Template is escaped for JavaScript context.
+				const template = `<?php echo esc_js( $this->get_finding_template() ); ?>`.replace(/INDEX/g, findingIndex);
 				$('#wp-mcp-ai-findings-list').append(template);
 				findingIndex++;
 			});
@@ -334,7 +334,7 @@ class WP_MCP_AI_Security_Audit {
 		<div class="wp-mcp-ai-finding-row">
 			<h4>
 				<?php /* translators: %d: Finding number */ ?>
-				<?php printf( esc_html__( 'Finding #%d', 'mcp-ai-wpoos' ), $index + 1 ); ?>
+				<?php printf( esc_html__( 'Finding #%d', 'mcp-ai-wpoos' ), absint( $index ) + 1 ); ?>
 				<button type="button" class="button button-small wp-mcp-ai-remove-finding" style="float: right;">
 					<?php esc_html_e( 'Remove', 'mcp-ai-wpoos' ); ?>
 				</button>

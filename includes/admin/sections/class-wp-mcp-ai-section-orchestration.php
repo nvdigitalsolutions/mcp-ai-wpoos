@@ -1979,7 +1979,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 					if ( 'html' === $field['type'] ) {
 						// Close table for section headers, render HTML, reopen table.
 						echo '</table>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
-						echo $field['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
+						echo wp_kses_post( $field['content'] );
 						echo '<table class="form-table" role="presentation">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static HTML tag.
 					} else {
 						$this->render_field( $key, $field );
@@ -2001,7 +2001,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 
 			// Render presets selector.
 			if ( isset( $fields['configuration_presets'] ) ) {
-				echo $fields['configuration_presets']['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
+				echo wp_kses_post( $fields['configuration_presets']['content'] );
 			}
 
 			// Render hidden field for preset tracking.
@@ -2049,11 +2049,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 				if ( isset( $fields[ $key ] ) ) {
 					$field = $fields[ $key ];
 					if ( 'html' === $field['type'] ) {
-						echo $field['content']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional HTML content rendering.
+						echo wp_kses_post( $field['content'] );
 					} elseif ( 'slider' === $field['type'] ) {
 						// Use orchestration renderer for sliders.
 						if ( class_exists( 'WP_MCP_AI_Orchestration_Renderer' ) ) {
-							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+							echo WP_MCP_AI_Orchestration_Renderer::render_slider( $key, $field );
 						}
 					}
 				}
@@ -2225,7 +2226,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Orchestration' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			echo WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+			echo wp_kses_post( WP_MCP_AI_Tools_Orchestration_Renderer::render_tools_view() );
 		}
 
 		/**

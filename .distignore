@@ -22,6 +22,8 @@
 .editorconfig
 .browserslistrc
 .nvmrc
+.codecov.yml
+phpcs.xml.dist
 CODEOWNERS
 
 # Build tools and dependencies
