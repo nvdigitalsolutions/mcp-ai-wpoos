@@ -25,9 +25,6 @@ if ( is_admin() ) {
 	$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
 
 	if ( $is_enabled && ( ! $is_base || $is_pro_active ) ) {
-		// Load toolkit settings page (under Pro Dashboard).
-		require_once __DIR__ . '/admin/class-wp-mcp-ai-project-management-toolkit-settings-page.php';
-
 		// Load Research & Add for CCT/CPT integration.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/research-add/class-wp-mcp-ai-project-management-research-add.php';
 		new WP_MCP_AI_Project_Management_Research_Add();

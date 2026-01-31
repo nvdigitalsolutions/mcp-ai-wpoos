@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Document Template CPT class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-document-template-cpt.php';
+
 // Check if Document Generation toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_document_generation_toolkit'] );
@@ -23,7 +26,8 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load Document Generation admin pages.
 	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-settings-page.php';
+		// Load new CPT-based settings page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
 	}
 
 	// Load Research & Add for CCT/CPT integration.
@@ -33,6 +37,15 @@ if ( $is_enabled && ! $is_base ) {
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/document-generation/.
 }
+
+// Initialize Document Template CPT.
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Document_Template_CPT::init();
+	},
+	5
+);
 
 /**
  * Enqueue document generation toolkit admin styles.
