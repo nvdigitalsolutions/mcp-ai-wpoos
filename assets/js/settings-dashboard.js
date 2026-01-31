@@ -465,11 +465,22 @@
 				// Find all subtab hidden fields in the form and update their values.
 				$form.find('input[type="hidden"][name^="subtab_"]').each(function() {
 					const $hiddenField = $(this);
+					const oldValue = $hiddenField.val();
 					// Only update if the field exists and subtab matches.
 					// This ensures the correct subtab is marked as active during save.
 					$hiddenField.val(currentSubtab);
+					console.log('[NV oOS Settings] Updated subtab hidden field:', $hiddenField.attr('name'), 'from', oldValue, 'to', currentSubtab);
 				});
 			}
+			
+			// Log checkbox states for debugging.
+			const checkboxes = {};
+			$form.find('input[type="checkbox"][name^="wp_mcp_ai_settings"]').each(function() {
+				const $checkbox = $(this);
+				const name = $checkbox.attr('name').replace('wp_mcp_ai_settings[', '').replace(']', '');
+				checkboxes[name] = $checkbox.is(':checked');
+			});
+			console.log('[NV oOS Settings] Checkbox states:', checkboxes);
 			
 			// Get form data for logging.
 			const formData = new FormData($form[0]);
