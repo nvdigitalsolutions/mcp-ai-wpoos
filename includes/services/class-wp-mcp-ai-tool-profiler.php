@@ -301,7 +301,8 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param string $tool_slug Tool slug.
 	 * @return array Recommendations.
 	 */
-	protected function generate_recommendations( $executions, $tool_slug ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. {
+	protected function generate_recommendations( $executions, $tool_slug ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. 
 		$performance = $this->analyze_performance( $executions );
 
 		$recommendations = array(
@@ -333,7 +334,8 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param array  $context Task context.
 	 * @return array Task features.
 	 */
-protected function analyze_task_features( $task_description, $context ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+protected function analyze_task_features( $task_description, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$features = array(
 			'keywords'      => array(),
 			'task_type'     => 'general',

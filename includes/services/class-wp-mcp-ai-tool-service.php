@@ -174,7 +174,8 @@ class WP_MCP_AI_Tool_Service {
 	 * @param int|null $assistant_id Optional assistant ID to filter by capability.
 	 * @return array List of tools.
 	 */
-	public function get_available_tools( $assistant_id = null ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
+	public function get_available_tools( $assistant_id = null ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic.
 		$all_tools = $this->registry->get_tools();
 		$tools     = array();
 
@@ -270,7 +271,8 @@ public function is_tool_enabled_for_assistant( $tool_slug, $assistant_id ) {
 	 * @param int|null $assistant_id Optional assistant ID.
 	 * @return array Tool statistics.
 	 */
-public function get_tool_statistics( $tool_slug, $assistant_id = null ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
+	public function get_tool_statistics( $tool_slug, $assistant_id = null ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic.
 		// This would integrate with usage tracking.
 		// For now, return placeholder.
 		return array(

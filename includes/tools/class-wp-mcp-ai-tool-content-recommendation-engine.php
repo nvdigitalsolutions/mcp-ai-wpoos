@@ -343,7 +343,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 				'total_recommendations' => $total_recommendations,
 				'click_through_rate'    => $click_through_rate,
 				'conversion_rate'       => $conversion_rate,
-			 ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for method-specific recommendations.,
+			),
 			'model_info'          => array(
 				'trained'    => ! empty( $model_info ),
 				'trained_at' => get_option( 'wp_mcp_ai_recommendation_model_trained_at', 0 ),
@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool  $use_semantic_search Use semantic search.
 	 * @return array Similar content.
 	 */
-	private function get_similar_content( $post_id, $limit, $exclude_categories, $include_post_types, $use_semantic_search ) {
+	private function get_similar_content( $post_id, $limit, $exclude_categories, $include_post_types, $use_semantic_search ) 
 		$post = get_post( $post_id );
 
 		if ( ! $post ) {
@@ -582,7 +582,8 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool    $use_semantic_search Use semantic search.
 	 * @return float Similarity score.
 	 */
-	private function calculate_similarity_score( $post1, $post2, $use_semantic_search  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for semantic search. {
+	private function calculate_similarity_score( $post1, $post2, $use_semantic_search  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for semantic search. 
 		$score = 0.0;
 
 		// Category overlap.
@@ -613,7 +614,8 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool    $use_collaborative Use collaborative filtering.
 	 * @return float Personalized score.
 	 */
-private function calculate_personalized_score( $post, $preferences, $use_collaborative  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. {
+private function calculate_personalized_score( $post, $preferences, $use_collaborative  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. 
 		$score = 0.0;
 
 		// Category preference match.

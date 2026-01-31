@@ -169,7 +169,8 @@ class WP_MCP_AI_Performance_Monitor_CCT {
 	 * @param object $type_object JetEngine content type instance.
 	 * @return array Prepared query arguments.
 	 */
-	protected static function prepare_jetengine_query_args( $args, $type_object ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature. {
+	protected static function prepare_jetengine_query_args( $args, $type_object ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature. 
 		$query_args = array();
 
 	foreach ( $args as $field => $value ) {

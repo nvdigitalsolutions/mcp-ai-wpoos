@@ -239,7 +239,8 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @param array  $context Task context.
 	 * @return float Score 0-1.
 	 */
-	protected function calculate_logical_complexity( $task, $context  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+	protected function calculate_logical_complexity( $task, $context  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$task_lower = strtolower( $task );
 		$score      = 0;
 
@@ -393,7 +394,8 @@ protected function requires_domain_expertise( $task, $context ) {
 	 * @param array  $context Task context.
 	 * @return float Score 0-1.
 	 */
-protected function needs_verification( $task, $context  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+protected function needs_verification( $task, $context  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$task_lower = strtolower( $task );
 		$score      = 0;
 
@@ -514,7 +516,8 @@ protected function needs_verification( $task, $context  ) // phpcs:ignore Generi
 		 * @param array $reasoning_output Reasoning output.
 		 * @return float Consistency score 0-1.
 		 */
-		protected function check_logical_consistency( $reasoning_output  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+		protected function check_logical_consistency( $reasoning_output  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		// Simple heuristic: assume consistent unless obvious contradictions.
 		return 0.8; // Placeholder - real implementation would analyze for contradictions.
 		}
@@ -526,7 +529,8 @@ protected function needs_verification( $task, $context  ) // phpcs:ignore Generi
 		 * @param string $task Original task.
 		 * @return float Completeness score 0-1.
 		 */
-		protected function check_completeness( $reasoning_output, $task  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task analysis. {
+		protected function check_completeness( $reasoning_output, $task  ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task analysis. 
 		// Simple heuristic: check if all parts of task appear addressed.
 		if ( empty( $reasoning_output ) ) {
 			return 0.3;
