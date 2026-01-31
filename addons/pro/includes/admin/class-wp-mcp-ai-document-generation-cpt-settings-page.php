@@ -241,16 +241,9 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	 */
 	protected function get_tools_list() {
 		return array(
-			'generate_pdf'         => __( 'Generate PDF Document', 'mcp-ai-wpoos-pro' ),
-			'generate_word'        => __( 'Generate Word Document', 'mcp-ai-wpoos-pro' ),
-			'generate_excel'       => __( 'Generate Excel Spreadsheet', 'mcp-ai-wpoos-pro' ),
-			'html_to_pdf'          => __( 'Convert HTML to PDF', 'mcp-ai-wpoos-pro' ),
-			'merge_pdfs'           => __( 'Merge Multiple PDFs', 'mcp-ai-wpoos-pro' ),
-			'add_watermark_to_pdf' => __( 'Add Watermark to PDF', 'mcp-ai-wpoos-pro' ),
-			'extract_pdf_text'     => __( 'Extract Text from PDF', 'mcp-ai-wpoos-pro' ),
-			'excel_data_import'    => __( 'Import Data from Excel', 'mcp-ai-wpoos-pro' ),
-			'excel_data_export'    => __( 'Export Data to Excel', 'mcp-ai-wpoos-pro' ),
-			'generate_invoice_pdf' => __( 'Generate Invoice PDF', 'mcp-ai-wpoos-pro' ),
+			'pro_pdf'              => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
+			'pro_word'             => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
+			'pro_excel_document'   => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 
