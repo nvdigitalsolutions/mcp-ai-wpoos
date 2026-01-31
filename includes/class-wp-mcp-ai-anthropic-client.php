@@ -16,6 +16,30 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 	class WP_MCP_AI_Anthropic_Client {
 		const API_ENDPOINT = 'https://api.anthropic.com/v1/messages';
 		const API_VERSION  = '2023-06-01';
+		const USER_AGENT   = 'WP-MCP-AI-Anthropic-Client/1.0';
+
+		/**
+		 * Maximum image size in bytes (10MB).
+		 * Anthropic API recommends images under 5MB for optimal performance.
+		 */
+		const MAX_IMAGE_SIZE_BYTES = 10485760; // 10 * 1024 * 1024.
+
+		/**
+		 * Base64 encoding overhead multiplier.
+		 * Base64 encoding increases size by ~33%, so 1.37 accounts for the overhead
+		 * plus some buffer for the data URL prefix.
+		 */
+		const BASE64_OVERHEAD_MULTIPLIER = 1.37;
+
+		/**
+		 * Maximum data URL length (calculated from MAX_IMAGE_SIZE_BYTES).
+		 */
+		const MAX_DATA_URL_LENGTH = 14369951; // MAX_IMAGE_SIZE_BYTES * BASE64_OVERHEAD_MULTIPLIER.
+
+		/**
+		 * Allowed image media types for Anthropic vision API.
+		 */
+		const ALLOWED_IMAGE_TYPES = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
 
 		/**
 		 * Retrieve the configured API key.
@@ -436,7 +460,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		 * Normalize content for Anthropic's content format.
 		 *
 		 * @param mixed $content Message content.
-		 * @return array|string
+		 * @return array|string Array of content blocks if images present, string otherwise.
 		 */
 		protected function normalize_content_for_anthropic( $content ) {
 			// If it's a simple string, return it as-is.
@@ -445,17 +469,321 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				return '' !== $text ? $text : '';
 			}
 
-			// If it's an array, convert to Anthropic content blocks.
+			// If it's an array, check for images and convert to Anthropic content blocks.
 			if ( is_array( $content ) ) {
-				$text_parts = $this->normalize_segments_to_text( $content );
+				$content_blocks = array();
+				$has_images     = false;
 
-				// If we have text parts, join them.
+				foreach ( $content as $segment ) {
+					// Handle string segments.
+					if ( is_string( $segment ) || is_numeric( $segment ) ) {
+						$text = trim( wp_kses_post( (string) $segment ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+						continue;
+					}
+
+					// Handle array segments.
+					if ( ! is_array( $segment ) ) {
+						continue;
+					}
+
+					$type = isset( $segment['type'] ) ? sanitize_key( $segment['type'] ) : 'text';
+
+					// Handle image types.
+					if ( 'image' === $type || 'image_url' === $type ) {
+						$image_block = $this->build_image_content_block( $segment );
+						if ( null !== $image_block ) {
+							$content_blocks[] = $image_block;
+							$has_images       = true;
+						}
+						continue;
+					}
+
+					// Handle text types.
+					if ( 'input_text' === $type || 'text' === $type ) {
+						$text = '';
+						if ( isset( $segment['text'] ) ) {
+							$text = (string) $segment['text'];
+						} elseif ( isset( $segment['content'] ) ) {
+							$text = (string) $segment['content'];
+						}
+						$text = trim( wp_kses_post( $text ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+						continue;
+					}
+
+					// Default: try to extract text.
+					if ( isset( $segment['text'] ) && '' !== $segment['text'] ) {
+						$text = trim( wp_kses_post( (string) $segment['text'] ) );
+						if ( '' !== $text ) {
+							$content_blocks[] = array(
+								'type' => 'text',
+								'text' => $text,
+							);
+						}
+					}
+				}
+
+				// If we have images, return content blocks array.
+				if ( $has_images && ! empty( $content_blocks ) ) {
+					return $content_blocks;
+				}
+
+				// Otherwise, extract text and join (backward compatible).
+				$text_parts = array();
+				foreach ( $content_blocks as $block ) {
+					if ( isset( $block['type'] ) && 'text' === $block['type'] && isset( $block['text'] ) ) {
+						$text_parts[] = $block['text'];
+					}
+				}
+
 				if ( ! empty( $text_parts ) ) {
 					return implode( "\n\n", $text_parts );
 				}
 			}
 
 			return '';
+		}
+
+		/**
+		 * Build an image content block in Anthropic format.
+		 *
+		 * @param array $segment Image segment with image data.
+		 * @return array|null Anthropic image block or null if invalid.
+		 */
+		protected function build_image_content_block( $segment ) {
+			if ( ! is_array( $segment ) ) {
+				return null;
+			}
+
+			$image_url  = '';
+			$image_data = '';
+
+			// Handle OpenAI-style image_url format.
+			if ( isset( $segment['image_url'] ) ) {
+				if ( is_string( $segment['image_url'] ) ) {
+					$image_url = $segment['image_url'];
+				} elseif ( is_array( $segment['image_url'] ) && isset( $segment['image_url']['url'] ) ) {
+					$image_url = $segment['image_url']['url'];
+				}
+			} elseif ( isset( $segment['url'] ) ) {
+				$image_url = $segment['url'];
+			} elseif ( isset( $segment['data'] ) ) {
+				$image_data = $segment['data'];
+			}
+
+			// Handle data: URLs.
+			if ( ! empty( $image_url ) && 0 === strpos( $image_url, 'data:' ) ) {
+				// Validate URL length to prevent memory exhaustion.
+				if ( strlen( $image_url ) > self::MAX_DATA_URL_LENGTH ) {
+					WP_MCP_AI_Logger::log_error( 'Data URL too large for image.', array( 'length' => strlen( $image_url ) ) );
+					return null;
+				}
+
+				// Extract base64 data from data URL.
+				$matches = array();
+				if ( preg_match( '/^data:image\/(\w+);base64,(.+)$/', $image_url, $matches ) ) {
+					$media_type = $matches[1];
+					$image_data = $matches[2];
+
+					// Validate media type.
+					if ( in_array( strtolower( $media_type ), self::ALLOWED_IMAGE_TYPES, true ) ) {
+						$media_type = $this->normalize_image_media_type( $media_type );
+
+						return array(
+							'type'   => 'image',
+							'source' => array(
+								'type'       => 'base64',
+								'media_type' => 'image/' . $media_type,
+								'data'       => $image_data,
+							),
+						);
+					}
+				}
+
+				WP_MCP_AI_Logger::log_error( 'Invalid data URL format for image.', array( 'url' => substr( $image_url, 0, 100 ) ) );
+				return null;
+			}
+
+			// Handle remote URLs - fetch and convert to base64.
+			if ( ! empty( $image_url ) && ( 0 === strpos( $image_url, 'http://' ) || 0 === strpos( $image_url, 'https://' ) ) ) {
+				$response = wp_remote_get(
+					$image_url,
+					array(
+						'timeout'    => 30,
+						'user-agent' => self::USER_AGENT,
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Failed to fetch remote image.',
+						array(
+							'url'   => $image_url,
+							'error' => $response->get_error_message(),
+						)
+					);
+					return null;
+				}
+
+				// Validate content length before retrieving body.
+				$content_length = wp_remote_retrieve_header( $response, 'content-length' );
+				if ( ! empty( $content_length ) && absint( $content_length ) > self::MAX_IMAGE_SIZE_BYTES ) {
+					WP_MCP_AI_Logger::log_error(
+						'Remote image too large.',
+						array(
+							'url'            => $image_url,
+							'content_length' => $content_length,
+						)
+					);
+					return null;
+				}
+
+				$body         = wp_remote_retrieve_body( $response );
+				$content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+				if ( empty( $body ) ) {
+					WP_MCP_AI_Logger::log_error( 'Empty response body when fetching image.', array( 'url' => $image_url ) );
+					return null;
+				}
+
+				// Validate actual body size as fallback.
+				if ( strlen( $body ) > self::MAX_IMAGE_SIZE_BYTES ) {
+					WP_MCP_AI_Logger::log_error(
+						'Remote image body too large.',
+						array(
+							'url'  => $image_url,
+							'size' => strlen( $body ),
+						)
+					);
+					return null;
+				}
+
+				// Determine media type.
+				$media_type = '';
+				if ( ! empty( $content_type ) ) {
+					// Extract main type from content-type header.
+					$content_type_parts = explode( ';', $content_type );
+					$main_type          = trim( $content_type_parts[0] );
+
+					if ( 0 === strpos( $main_type, 'image/' ) ) {
+						$media_type = str_replace( 'image/', '', $main_type );
+					}
+				}
+
+				// Validate media type.
+				if ( empty( $media_type ) || ! in_array( strtolower( $media_type ), self::ALLOWED_IMAGE_TYPES, true ) ) {
+					WP_MCP_AI_Logger::log_error(
+						'Unsupported image media type.',
+						array(
+							'url'        => $image_url,
+							'media_type' => $media_type,
+						)
+					);
+					return null;
+				}
+
+				$media_type = $this->normalize_image_media_type( $media_type );
+
+				// Validate that encoded size won't exceed limits before encoding.
+				$estimated_encoded_size = strlen( $body ) * self::BASE64_OVERHEAD_MULTIPLIER;
+				if ( $estimated_encoded_size > self::MAX_DATA_URL_LENGTH ) {
+					WP_MCP_AI_Logger::log_error(
+						'Image size exceeds maximum allowed size after base64 encoding.',
+						array(
+							'url'               => $image_url,
+							'body_size'         => strlen( $body ),
+							'estimated_encoded' => $estimated_encoded_size,
+							'max_allowed'       => self::MAX_DATA_URL_LENGTH,
+						)
+					);
+					return null;
+				}
+
+				// Convert to base64.
+				$image_data = base64_encode( $body ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+
+				return array(
+					'type'   => 'image',
+					'source' => array(
+						'type'       => 'base64',
+						'media_type' => 'image/' . $media_type,
+						'data'       => $image_data,
+					),
+				);
+			}
+
+			// Handle raw base64 data.
+			if ( ! empty( $image_data ) ) {
+				$media_type = 'jpeg';
+				if ( isset( $segment['media_type'] ) ) {
+					$provided_type = sanitize_text_field( $segment['media_type'] );
+					if ( 0 === strpos( $provided_type, 'image/' ) ) {
+						$media_type = str_replace( 'image/', '', $provided_type );
+					} else {
+						$media_type = $provided_type;
+					}
+				} else {
+					// Log warning when media type is assumed.
+					WP_MCP_AI_Logger::log_event( 'anthropic_image_media_type_assumed', 'Media type not specified for base64 image data, assuming JPEG.' );
+				}
+
+				$media_type = $this->normalize_image_media_type( $media_type );
+
+				// Validate media type (jpg already normalized to jpeg above).
+				// Filter out 'jpg' from allowed types since it's normalized to 'jpeg'.
+				$allowed_types_normalized = array_diff( self::ALLOWED_IMAGE_TYPES, array( 'jpg' ) );
+				if ( in_array( $media_type, $allowed_types_normalized, true ) ) {
+					return array(
+						'type'   => 'image',
+						'source' => array(
+							'type'       => 'base64',
+							'media_type' => 'image/' . $media_type,
+							'data'       => $image_data,
+						),
+					);
+				}
+
+				WP_MCP_AI_Logger::log_error( 'Unsupported image media type for raw data.', array( 'media_type' => $media_type ) );
+				return null;
+			}
+
+			WP_MCP_AI_Logger::log_error(
+				'No valid image data found in segment.',
+				array(
+					'segment_type'   => isset( $segment['type'] ) ? $segment['type'] : 'unknown',
+					'has_image_url'  => isset( $segment['image_url'] ),
+					'has_url'        => isset( $segment['url'] ),
+					'has_data'       => isset( $segment['data'] ),
+					'has_media_type' => isset( $segment['media_type'] ),
+				)
+			);
+			return null;
+		}
+
+		/**
+		 * Normalize image media type for Anthropic API.
+		 *
+		 * Converts 'jpg' to 'jpeg' to match Anthropic's expected format.
+		 *
+		 * @param string $media_type The media type to normalize (e.g., 'jpg', 'jpeg', 'png').
+		 * @return string The normalized media type.
+		 */
+		protected function normalize_image_media_type( $media_type ) {
+			if ( 'jpg' === strtolower( $media_type ) ) {
+				return 'jpeg';
+			}
+			return strtolower( $media_type );
 		}
 
 		/**
