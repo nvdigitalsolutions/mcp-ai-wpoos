@@ -76,6 +76,49 @@ class WP_MCP_AI_Post_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Post Research & Add Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="toolkit-description">
+				<p><?php esc_html_e( 'AI-powered post creation and management tools for WordPress posts. Use AI assistance to research, plan, and create high-quality blog posts with optimized content and SEO.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'AI Research: Research topics and gather information for post content', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Content Generation: Create comprehensive post content with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'SEO Optimization: Automatically optimize posts for search engines', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Interactive Chat Interface: Collaborate with AI to refine post content', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Draft Management: Save and continue post creation across sessions', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Excerpt Generation: Automatically generate engaging post excerpts', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list for this CPT.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'wp_create_post'        => __( 'Create Post', 'mcp-ai-wpoos-pro' ),
+			'wp_save_post'          => __( 'Save Post', 'mcp-ai-wpoos-pro' ),
+			'wp_get_recent_posts'   => __( 'Get Recent Posts', 'mcp-ai-wpoos-pro' ),
+			'research_post'         => __( 'Research Post Topic', 'mcp-ai-wpoos-pro' ),
+			'generate_post_excerpt' => __( 'Generate Post Excerpt', 'mcp-ai-wpoos-pro' ),
+			'wp_search_content'     => __( 'Search Content', 'mcp-ai-wpoos-pro' ),
+			'wp_get_post_meta'      => __( 'Get Post Metadata', 'mcp-ai-wpoos-pro' ),
+			'wp_update_post_meta'   => __( 'Update Post Metadata', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.
