@@ -32,6 +32,16 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 		const BASE64_OVERHEAD_MULTIPLIER = 1.37;
 
 		/**
+		 * Maximum data URL length (calculated from MAX_IMAGE_SIZE_BYTES).
+		 */
+		const MAX_DATA_URL_LENGTH = 14369951; // MAX_IMAGE_SIZE_BYTES * BASE64_OVERHEAD_MULTIPLIER.
+
+		/**
+		 * Allowed image media types for Anthropic vision API.
+		 */
+		const ALLOWED_IMAGE_TYPES = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
+
+		/**
 		 * Retrieve the configured API key.
 		 *
 		 * @return string
@@ -575,8 +585,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 			// Handle data: URLs.
 			if ( ! empty( $image_url ) && 0 === strpos( $image_url, 'data:' ) ) {
 				// Validate URL length to prevent memory exhaustion.
-				$max_data_url_length = self::MAX_IMAGE_SIZE_BYTES * self::BASE64_OVERHEAD_MULTIPLIER;
-				if ( strlen( $image_url ) > $max_data_url_length ) {
+				if ( strlen( $image_url ) > self::MAX_DATA_URL_LENGTH ) {
 					WP_MCP_AI_Logger::log_error( 'Data URL too large for image.', array( 'length' => strlen( $image_url ) ) );
 					return null;
 				}
@@ -588,8 +597,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					$image_data = $matches[2];
 
 					// Validate media type.
-					$allowed_types = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
-					if ( in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+					if ( in_array( strtolower( $media_type ), self::ALLOWED_IMAGE_TYPES, true ) ) {
 						// Normalize jpeg/jpg.
 						if ( 'jpg' === strtolower( $media_type ) ) {
 							$media_type = 'jpeg';
@@ -677,8 +685,7 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 				}
 
 				// Validate media type.
-				$allowed_types = array( 'jpeg', 'jpg', 'png', 'gif', 'webp' );
-				if ( empty( $media_type ) || ! in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+				if ( empty( $media_type ) || ! in_array( strtolower( $media_type ), self::ALLOWED_IMAGE_TYPES, true ) ) {
 					WP_MCP_AI_Logger::log_error(
 						'Unsupported image media type.',
 						array(
@@ -727,9 +734,9 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					$media_type = 'jpeg';
 				}
 
-				// Validate media type.
-				$allowed_types = array( 'jpeg', 'png', 'gif', 'webp' );
-				if ( in_array( strtolower( $media_type ), $allowed_types, true ) ) {
+				// Validate media type (jpg already normalized to jpeg above).
+				$allowed_types_normalized = array( 'jpeg', 'png', 'gif', 'webp' );
+				if ( in_array( strtolower( $media_type ), $allowed_types_normalized, true ) ) {
 					return array(
 						'type'   => 'image',
 						'source' => array(
