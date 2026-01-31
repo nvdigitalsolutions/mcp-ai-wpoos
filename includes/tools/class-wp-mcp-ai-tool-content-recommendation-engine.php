@@ -370,7 +370,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool  $use_semantic_search Use semantic search.
 	 * @return array Similar content.
 	 */
-	private function get_similar_content( $post_id, $limit, $exclude_categories, $include_post_types, $use_semantic_search ) 
+	private function get_similar_content( $post_id, $limit, $exclude_categories, $include_post_types, $use_semantic_search ) {
 		$post = get_post( $post_id );
 
 		if ( ! $post ) {
