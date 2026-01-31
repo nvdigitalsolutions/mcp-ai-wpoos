@@ -952,6 +952,8 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Check_Site_Security'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-check-site-security.php',
 				'WP_MCP_AI_Tool_Generate_Image_Alt_Text'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-alt-text.php',
 				'WP_MCP_AI_Tool_Generate_Image_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-image-caption.php',
+				'WP_MCP_AI_Tool_Analyze_Anthropic_Image'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-anthropic-image.php',
+				'WP_MCP_AI_Tool_Extract_Anthropic_Text'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-extract-anthropic-text.php',
 				'WP_MCP_AI_Tool_Analyze_Video'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-video.php',
 				'WP_MCP_AI_Tool_Generate_Video_Caption'    => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-generate-video-caption.php',
 				'WP_MCP_AI_Tool_Analyze_Comment_Content'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-analyze-comment-content.php',
