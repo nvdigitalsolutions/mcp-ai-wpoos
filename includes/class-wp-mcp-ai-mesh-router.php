@@ -83,6 +83,36 @@ class WP_MCP_AI_Mesh_Router {
 	const QUEUE_LENGTH_MULTIPLIER = 20;
 
 	/**
+	 * Circuit breaker: consecutive failures before opening circuit.
+	 */
+	const CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5;
+
+	/**
+	 * Circuit breaker: seconds before attempting recovery (half-open state).
+	 */
+	const CIRCUIT_BREAKER_TIMEOUT = 30;
+
+	/**
+	 * Circuit breaker: option name for storing circuit states.
+	 */
+	const CIRCUIT_BREAKER_OPTION = 'wp_mcp_ai_mesh_circuit_states';
+
+	/**
+	 * Exponential backoff: initial delay in milliseconds.
+	 */
+	const BACKOFF_INITIAL_DELAY_MS = 100;
+
+	/**
+	 * Exponential backoff: multiplier for each retry.
+	 */
+	const BACKOFF_MULTIPLIER = 2;
+
+	/**
+	 * Exponential backoff: maximum delay in milliseconds.
+	 */
+	const BACKOFF_MAX_DELAY_MS = 5000;
+
+	/**
 	 * Get the optimal peer for a given request using AI-powered analysis.
 	 *
 	 * Analyzes:
@@ -400,6 +430,12 @@ class WP_MCP_AI_Mesh_Router {
 	/**
 	 * Query a remote peer site with automatic retry on failure.
 	 *
+	 * Implements:
+	 * - Circuit breaker pattern
+	 * - Exponential backoff with jitter
+	 * - Automatic failover
+	 * - Dead letter queue integration
+	 *
 	 * @param int    $assistant_id Assistant ID.
 	 * @param string $prompt       Prompt to send.
 	 * @param array  $context      Request context.
@@ -414,16 +450,52 @@ class WP_MCP_AI_Mesh_Router {
 			return $peer;
 		}
 
+		// Check circuit breaker BEFORE attempting request.
+		$peer_name = isset( $peer['name'] ) ? $peer['name'] : '';
+		if ( self::is_circuit_open( $peer_name ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'mesh_circuit_breaker_blocked',
+				'Request blocked by open circuit breaker.',
+				array(
+					'peer'    => $peer_name,
+					'attempt' => $attempt,
+				)
+			);
+
+			// Circuit is open - immediately try different peer.
+			return self::query_with_retry( $assistant_id, $prompt, $context, $attempt + 1 );
+		}
+
+		// Apply exponential backoff delay (except on first attempt).
+		if ( $attempt > 1 ) {
+			$delay_microseconds = self::calculate_backoff_delay( $attempt );
+			usleep( $delay_microseconds );
+
+			WP_MCP_AI_Logger::log_event(
+				'mesh_exponential_backoff',
+				'Applied exponential backoff before retry.',
+				array(
+					'attempt'    => $attempt,
+					'delay_ms'   => $delay_microseconds / 1000,
+					'peer'       => $peer_name,
+				)
+			);
+		}
+
 		// Execute the query.
 		$start_time    = microtime( true );
 		$result        = self::execute_peer_query( $peer, $prompt, $context );
 		$response_time = microtime( true ) - $start_time;
+		$success       = ! is_wp_error( $result );
 
 		// Update health metrics.
-		self::update_health_metrics( $peer['name'], $response_time, ! is_wp_error( $result ) );
+		self::update_health_metrics( $peer_name, $response_time, $success );
+
+		// Update circuit breaker based on result.
+		self::update_circuit_breaker( $peer_name, $success );
 
 		// If successful, return result.
-		if ( ! is_wp_error( $result ) ) {
+		if ( $success ) {
 			return $result;
 		}
 
@@ -433,7 +505,7 @@ class WP_MCP_AI_Mesh_Router {
 				'mesh_routing_retry_exhausted',
 				'Max retry attempts exhausted.',
 				array(
-					'peer'     => $peer['name'],
+					'peer'     => $peer_name,
 					'attempts' => $attempt,
 					'error'    => $result->get_error_message(),
 				)
@@ -452,14 +524,14 @@ class WP_MCP_AI_Mesh_Router {
 				}
 
 				// Generate unique identifier for this failed mesh query.
-				$identifier = md5( $peer['name'] . $prompt . time() );
+				$identifier = md5( $peer_name . $prompt . time() );
 
 				WP_MCP_AI_Dead_Letter_Queue::add(
 					WP_MCP_AI_Dead_Letter_Queue::TYPE_MESH_QUERY,
 					$identifier,
 					array(
 						'assistant_id' => $assistant_id,
-						'peer_name'    => $peer['name'],
+						'peer_name'    => $peer_name,
 						'peer_url'     => isset( $peer['url'] ) ? $peer['url'] : '',
 						'prompt'       => $prompt,
 						'context'      => $context,
@@ -1145,5 +1217,160 @@ class WP_MCP_AI_Mesh_Router {
 		}
 
 		return $safe_context;
+	}
+
+	/**
+	 * Check if circuit breaker is open for a peer.
+	 *
+	 * Circuit breaker states:
+	 * - closed: Normal operation, requests pass through
+	 * - open: Too many failures, block all requests
+	 * - half_open: Testing recovery, allow limited requests
+	 *
+	 * @param string $peer_name Peer name.
+	 * @return bool True if circuit is open (should block requests).
+	 */
+	protected static function is_circuit_open( $peer_name ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			return false; // No circuit state = closed (allow requests).
+		}
+
+		$circuit = $circuits[ $peer_name ];
+
+		// If circuit is closed, allow requests.
+		if ( 'closed' === $circuit['state'] ) {
+			return false;
+		}
+
+		// If circuit is open, check if timeout has elapsed for recovery attempt.
+		if ( 'open' === $circuit['state'] ) {
+			$time_since_open = time() - $circuit['opened_at'];
+			if ( $time_since_open >= self::CIRCUIT_BREAKER_TIMEOUT ) {
+				// Move to half-open state for testing.
+				self::set_circuit_state( $peer_name, 'half_open' );
+				return false; // Allow one request to test.
+			}
+			return true; // Circuit still open, block requests.
+		}
+
+		// If circuit is half-open, allow request (will test recovery).
+		return false;
+	}
+
+	/**
+	 * Update circuit breaker state based on request result.
+	 *
+	 * @param string $peer_name Peer name.
+	 * @param bool   $success   Whether the request succeeded.
+	 */
+	protected static function update_circuit_breaker( $peer_name, $success ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			$circuits[ $peer_name ] = array(
+				'state'               => 'closed',
+				'consecutive_failures' => 0,
+				'opened_at'           => 0,
+			);
+		}
+
+		$circuit = &$circuits[ $peer_name ];
+
+		if ( $success ) {
+			// Success - reset failures and close circuit.
+			$circuit['consecutive_failures'] = 0;
+			if ( 'half_open' === $circuit['state'] || 'open' === $circuit['state'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'mesh_circuit_breaker_closed',
+					'Circuit breaker closed after successful recovery.',
+					array( 'peer' => $peer_name )
+				);
+			}
+			$circuit['state'] = 'closed';
+		} else {
+			// Failure - increment counter.
+			$circuit['consecutive_failures'] = ( $circuit['consecutive_failures'] ?? 0 ) + 1;
+
+			// If in half-open state and failed, reopen circuit.
+			if ( 'half_open' === $circuit['state'] ) {
+				$circuit['state']     = 'open';
+				$circuit['opened_at'] = time();
+				WP_MCP_AI_Logger::log_event(
+					'mesh_circuit_breaker_reopened',
+					'Circuit breaker reopened after failed recovery test.',
+					array( 'peer' => $peer_name )
+				);
+			}
+
+			// If threshold reached, open circuit.
+			if ( $circuit['consecutive_failures'] >= self::CIRCUIT_BREAKER_FAILURE_THRESHOLD ) {
+				if ( 'closed' === $circuit['state'] ) {
+					$circuit['state']     = 'open';
+					$circuit['opened_at'] = time();
+					WP_MCP_AI_Logger::log_event(
+						'mesh_circuit_breaker_opened',
+						'Circuit breaker opened due to consecutive failures.',
+						array(
+							'peer'     => $peer_name,
+							'failures' => $circuit['consecutive_failures'],
+						)
+					);
+				}
+			}
+		}
+
+		update_option( self::CIRCUIT_BREAKER_OPTION, $circuits, false );
+	}
+
+	/**
+	 * Set circuit breaker state.
+	 *
+	 * @param string $peer_name Peer name.
+	 * @param string $state     State: 'closed', 'open', or 'half_open'.
+	 */
+	protected static function set_circuit_state( $peer_name, $state ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			$circuits[ $peer_name ] = array(
+				'state'               => $state,
+				'consecutive_failures' => 0,
+				'opened_at'           => 0,
+			);
+		} else {
+			$circuits[ $peer_name ]['state'] = $state;
+			if ( 'open' === $state ) {
+				$circuits[ $peer_name ]['opened_at'] = time();
+			}
+		}
+
+		update_option( self::CIRCUIT_BREAKER_OPTION, $circuits, false );
+	}
+
+	/**
+	 * Calculate exponential backoff delay for retry.
+	 *
+	 * Uses exponential backoff with jitter to prevent thundering herd.
+	 *
+	 * @param int $attempt Current attempt number (1-indexed).
+	 * @return int Delay in microseconds.
+	 */
+	protected static function calculate_backoff_delay( $attempt ) {
+		// Calculate base delay: initial_delay * (multiplier ^ (attempt - 1)).
+		$base_delay = self::BACKOFF_INITIAL_DELAY_MS * pow( self::BACKOFF_MULTIPLIER, $attempt - 1 );
+
+		// Cap at max delay.
+		$base_delay = min( $base_delay, self::BACKOFF_MAX_DELAY_MS );
+
+		// Add jitter (random ±25%).
+		$jitter     = $base_delay * 0.25;
+		$min_delay  = $base_delay - $jitter;
+		$max_delay  = $base_delay + $jitter;
+		$delay      = wp_rand( (int) $min_delay, (int) $max_delay );
+
+		// Convert milliseconds to microseconds for usleep().
+		return $delay * 1000;
 	}
 }
