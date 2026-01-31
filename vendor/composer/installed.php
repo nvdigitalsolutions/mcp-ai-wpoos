@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-federation-directory-save-issue',
-        'version' => 'dev-copilot/fix-federation-directory-save-issue',
-        'reference' => '485df3e06bb39971cbc19519a0fd1fe7e9ce78a0',
+        'pretty_version' => 'dev-copilot/enable-federation-directory-checkbox',
+        'version' => 'dev-copilot/enable-federation-directory-checkbox',
+        'reference' => '85db3283b480cf9d8746981032a9385ba16e6313',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-federation-directory-save-issue',
-            'version' => 'dev-copilot/fix-federation-directory-save-issue',
-            'reference' => '485df3e06bb39971cbc19519a0fd1fe7e9ce78a0',
+            'pretty_version' => 'dev-copilot/enable-federation-directory-checkbox',
+            'version' => 'dev-copilot/enable-federation-directory-checkbox',
+            'reference' => '85db3283b480cf9d8746981032a9385ba16e6313',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
