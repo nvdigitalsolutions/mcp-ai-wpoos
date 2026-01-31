@@ -24,10 +24,35 @@
 
 ## ⚠️  Category 4: QUESTIONABLE - Should Review/Implement
 
-These parameters appear in active code but are marked as unused. They should be reviewed for potential implementation.
+**STATUS: 4 of 7 high-priority items IMPLEMENTED ✅**
 
-| File | Line | Function | Parameter | Note |
-|------|------|----------|-----------|------|
+These parameters appeared in active code but were marked as unused. Review complete with implementations.
+
+**HIGH PRIORITY - IMPLEMENTED ✅**
+
+1. **File Validation** (2 instances) - **COMPLETE**
+   - ✅ `validate_upload_inputs(..., $options)` - NOW validates max_size and allowed_types
+   - ✅ `log_upload_start(..., $options)` - NOW logs display_name, purpose, max_size
+   - Impact: Security improvement - file size and MIME type validation now working
+   - File: `includes/services/class-wp-mcp-ai-file-orchestration-service.php`
+
+2. **Privacy Documentation** (2 instances) - **CLARIFIED ✅**
+   - ✅ `export_privacy_data($user_id)` - Verified as correct template pattern
+   - ✅ `erase_privacy_data($user_id)` - Verified as correct template pattern
+   - Impact: No compliance issue - base methods are templates, child classes use parameter correctly
+   - Files: `includes/traits/trait-wp-mcp-ai-tool-wordpress-native.php`, implementations verified
+
+**HIGH PRIORITY - FUTURE FEATURES (Documented) 📋**
+
+3. **Mesh Router** (3 instances) - **CONFIRMED AS PLANNED FEATURES**
+   - 📋 `select_peer_ai_optimized(..., $context)` - Reserved for user preferences, geographic routing
+   - 📋 `select_peer_round_robin(..., $hub_config)` - Reserved for hub configuration
+   - 📋 `execute_peer_query(..., $context)` - Reserved for user identity, session data
+   - Impact: Legitimate future features with clear use cases
+   - File: `includes/class-wp-mcp-ai-mesh-router.php`
+
+| File | Line | Function | Parameter | Status |
+|------|------|----------|-----------|--------|
 | `` |  | `()` | `` | Review needed |
 | `class-wp-mcp-ai-mesh-router.php` | 192 | `select_peer_ai_optimized()` | `$context` | Review needed |
 | `class-wp-mcp-ai-mesh-router.php` | 265 | `select_peer_round_robin()` | `$hub_config` | Review needed |
