@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/research-anthropic-models',
+        'version' => 'dev-copilot/research-anthropic-models',
+        'reference' => 'a6b0a3b0b2b71d56cfaeac0fc777e8777f3ba573',
         'pretty_version' => 'dev-copilot/update-settings-pages-format',
         'version' => 'dev-copilot/update-settings-pages-format',
         'reference' => '0627b725bd301ebefea9f1be059e17f19bdb48d4',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/research-anthropic-models',
+            'version' => 'dev-copilot/research-anthropic-models',
+            'reference' => 'a6b0a3b0b2b71d56cfaeac0fc777e8777f3ba573',
             'pretty_version' => 'dev-copilot/update-settings-pages-format',
             'version' => 'dev-copilot/update-settings-pages-format',
             'reference' => '0627b725bd301ebefea9f1be059e17f19bdb48d4',

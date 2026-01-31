@@ -98,8 +98,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+					'claude-sonnet-4-5'          => 'Claude Sonnet 4.5 (Recommended)',
+					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
+					'claude-opus-4-5'            => 'Claude Opus 4.5 (Flagship)',
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Legacy)',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku (Legacy)',
 				);
 			}
 
