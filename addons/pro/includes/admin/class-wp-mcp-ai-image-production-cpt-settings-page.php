@@ -141,6 +141,54 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Image Production Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<p><?php esc_html_e( 'AI-powered image creation and editing toolkit with 15 professional tools for generating, enhancing, and optimizing images.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'AI Image Generation: Create images from text descriptions using DALL-E, Midjourney, or Stable Diffusion', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Background Removal: Automatically remove backgrounds from product photos', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Upscaling: Enhance image resolution using AI-powered upscaling', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Batch Processing: Apply transformations to multiple images at once', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Style Transfer: Apply artistic styles to existing images', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Format Conversion: Convert between formats and optimize for web delivery', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'generate_image_ai'              => __( 'Generate Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'generate_image_variations'      => __( 'Generate Image Variations', 'mcp-ai-wpoos-pro' ),
+			'image_inpainting'               => __( 'Image Inpainting', 'mcp-ai-wpoos-pro' ),
+			'text_to_image_prompt_optimizer' => __( 'Text to Image Prompt Optimizer', 'mcp-ai-wpoos-pro' ),
+			'remove_image_background'        => __( 'Remove Image Background', 'mcp-ai-wpoos-pro' ),
+			'upscale_image_ai'               => __( 'Upscale Image (AI)', 'mcp-ai-wpoos-pro' ),
+			'enhance_image_quality'          => __( 'Enhance Image Quality', 'mcp-ai-wpoos-pro' ),
+			'apply_artistic_style'           => __( 'Apply Artistic Style', 'mcp-ai-wpoos-pro' ),
+			'colorize_image'                 => __( 'Colorize Image', 'mcp-ai-wpoos-pro' ),
+			'compress_image'                 => __( 'Compress Image', 'mcp-ai-wpoos-pro' ),
+			'convert_image_format'           => __( 'Convert Image Format', 'mcp-ai-wpoos-pro' ),
+			'resize_image_smart'             => __( 'Resize Image (Smart)', 'mcp-ai-wpoos-pro' ),
+			'batch_process_images'           => __( 'Batch Process Images', 'mcp-ai-wpoos-pro' ),
+			'generate_responsive_images'     => __( 'Generate Responsive Images', 'mcp-ai-wpoos-pro' ),
+			'optimize_for_web'               => __( 'Optimize for Web', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.

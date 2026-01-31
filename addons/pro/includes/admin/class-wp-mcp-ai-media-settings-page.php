@@ -194,6 +194,51 @@ class WP_MCP_AI_Media_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Media Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<p><?php esc_html_e( 'Advanced media management with AI-powered design generation, template library, and collection management.', 'mcp-ai-wpoos-pro' ); ?></p>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'AI Design Generation: Create graphics and designs using AI-powered tools', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Template Library: Access and manage design templates for various use cases', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Media Collections: Organize media files into collections for better management', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Bulk Operations: Perform batch operations on multiple media files', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Smart Tagging: Automatically tag media with AI-powered content recognition', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Remote Media Sync: Synchronize media across multiple WordPress sites', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'generate_design_ai'      => __( 'Generate Design (AI)', 'mcp-ai-wpoos-pro' ),
+			'browse_template_library' => __( 'Browse Template Library', 'mcp-ai-wpoos-pro' ),
+			'apply_template'          => __( 'Apply Template', 'mcp-ai-wpoos-pro' ),
+			'create_media_collection' => __( 'Create Media Collection', 'mcp-ai-wpoos-pro' ),
+			'add_to_collection'       => __( 'Add to Collection', 'mcp-ai-wpoos-pro' ),
+			'bulk_tag_media'          => __( 'Bulk Tag Media', 'mcp-ai-wpoos-pro' ),
+			'bulk_resize_media'       => __( 'Bulk Resize Media', 'mcp-ai-wpoos-pro' ),
+			'bulk_compress_media'     => __( 'Bulk Compress Media', 'mcp-ai-wpoos-pro' ),
+			'sync_media_to_remote'    => __( 'Sync Media to Remote', 'mcp-ai-wpoos-pro' ),
+			'import_media_from_url'   => __( 'Import Media from URL', 'mcp-ai-wpoos-pro' ),
+			'generate_media_report'   => __( 'Generate Media Report', 'mcp-ai-wpoos-pro' ),
+			'find_unused_media'       => __( 'Find Unused Media', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.
