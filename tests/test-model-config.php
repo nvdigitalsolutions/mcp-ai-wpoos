@@ -50,7 +50,7 @@ class Test_Model_Config extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'gpt-4.1', $configs );
 		$this->assertArrayHasKey( 'gpt-4.1-mini', $configs );
 		$this->assertArrayHasKey( 'gpt-4o', $configs );
-		$this->assertArrayHasKey( 'claude-sonnet-4.5', $configs );
+		$this->assertArrayHasKey( 'claude-sonnet-4-5-20250929', $configs );
 		$this->assertArrayHasKey( 'claude-3-5-sonnet-20241022', $configs );
 		$this->assertArrayHasKey( 'gemini-3-pro-preview', $configs );
 		$this->assertArrayHasKey( 'gemini-2.5-flash', $configs );
