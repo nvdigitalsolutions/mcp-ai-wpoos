@@ -23,6 +23,11 @@ class WP_MCP_AI_Tool_Extract_Anthropic_Text implements WP_MCP_AI_Tool_Interface,
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
+	 * Minimum tokens required for OCR tasks to ensure sufficient output space.
+	 */
+	const MIN_OCR_TOKENS = 2048;
+
+	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
@@ -167,12 +172,12 @@ class WP_MCP_AI_Tool_Extract_Anthropic_Text implements WP_MCP_AI_Tool_Interface,
 				? $settings['anthropic_vision_model']
 				: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' ) );
 
-		// Get max tokens.
-		$max_tokens = 2048; // OCR can produce a lot of text.
+		// Get max tokens - OCR can produce a lot of text.
+		$max_tokens = self::MIN_OCR_TOKENS;
 		if ( isset( $settings['anthropic_max_image_tokens'] ) && ! empty( $settings['anthropic_max_image_tokens'] ) ) {
 			$max_tokens = absint( $settings['anthropic_max_image_tokens'] );
-			if ( $max_tokens < 2048 ) {
-				$max_tokens = 2048; // Ensure sufficient tokens for OCR.
+			if ( $max_tokens < self::MIN_OCR_TOKENS ) {
+				$max_tokens = self::MIN_OCR_TOKENS; // Ensure sufficient tokens for OCR.
 			}
 		}
 

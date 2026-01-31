@@ -163,13 +163,16 @@ class WP_MCP_AI_Tool_Analyze_Anthropic_Image implements WP_MCP_AI_Tool_Interface
 				? $settings['anthropic_vision_model']
 				: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' ) );
 
-		// Get max tokens.
-		$max_tokens = isset( $arguments['max_tokens'] ) && ! empty( $arguments['max_tokens'] )
-			? absint( $arguments['max_tokens'] )
-			: 1024;
+		// Get max tokens - use argument if provided, otherwise fall back to settings, then default.
+		$max_tokens = 1024; // Default.
 
 		if ( isset( $settings['anthropic_max_image_tokens'] ) && ! empty( $settings['anthropic_max_image_tokens'] ) ) {
 			$max_tokens = absint( $settings['anthropic_max_image_tokens'] );
+		}
+
+		// Allow argument to override settings.
+		if ( isset( $arguments['max_tokens'] ) && ! empty( $arguments['max_tokens'] ) ) {
+			$max_tokens = absint( $arguments['max_tokens'] );
 		}
 
 		// Create Anthropic client.
