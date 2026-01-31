@@ -602,7 +602,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$score           += $title_similarity * 0.3;
 
 		return min( 1.0, $score );
-	}
+}
 
 	/**
 	 * Calculate personalized score
@@ -613,7 +613,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param bool    $use_collaborative Use collaborative filtering.
 	 * @return float Personalized score.
 	 */
-	private function calculate_personalized_score( $post, $preferences, $use_collaborative  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. {
+private function calculate_personalized_score( $post, $preferences, $use_collaborative  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. {
 		$score = 0.0;
 
 		// Category preference match.
@@ -636,16 +636,16 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param float   $recency_weight Recency weight.
 	 * @return float Trending score.
 	 */
-	private function calculate_trending_score( $post, $recency_weight ) {
-		$engagement = get_post_meta( $post->ID, '_wp_mcp_ai_engagement_score', true );
-		$engagement = floatval( $engagement );
+private function calculate_trending_score( $post, $recency_weight ) {
+	$engagement = get_post_meta( $post->ID, '_wp_mcp_ai_engagement_score', true );
+	$engagement = floatval( $engagement );
 
-		// Recency factor.
-		$days_old       = ( time() - strtotime( $post->post_date ) ) / DAY_IN_SECONDS;
-		$recency_factor = max( 0, 1 - ( $days_old / 7 ) ); // Decay over 7 days.
+	// Recency factor.
+	$days_old       = ( time() - strtotime( $post->post_date ) ) / DAY_IN_SECONDS;
+	$recency_factor = max( 0, 1 - ( $days_old / 7 ) ); // Decay over 7 days.
 
-		return ( $engagement * ( 1 - $recency_weight ) ) + ( $recency_factor * $recency_weight );
-	}
+	return ( $engagement * ( 1 - $recency_weight ) ) + ( $recency_factor * $recency_weight );
+}
 
 	/**
 	 * Format recommendation
@@ -656,18 +656,18 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param string  $reason Recommendation reason.
 	 * @return array Formatted recommendation.
 	 */
-	private function format_recommendation( $post, $score, $reason ) {
-		return array(
-			'id'        => $post->ID,
-			'title'     => $post->post_title,
-			'url'       => get_permalink( $post->ID ),
-			'excerpt'   => wp_trim_words( $post->post_excerpt ? $post->post_excerpt : $post->post_content, 20 ),
-			'thumbnail' => get_the_post_thumbnail_url( $post->ID, 'medium' ),
-			'date'      => $post->post_date,
-			'score'     => round( $score, 2 ),
-			'reason'    => $reason,
-		);
-	}
+private function format_recommendation( $post, $score, $reason ) {
+	return array(
+		'id'        => $post->ID,
+		'title'     => $post->post_title,
+		'url'       => get_permalink( $post->ID ),
+		'excerpt'   => wp_trim_words( $post->post_excerpt ? $post->post_excerpt : $post->post_content, 20 ),
+		'thumbnail' => get_the_post_thumbnail_url( $post->ID, 'medium' ),
+		'date'      => $post->post_date,
+		'score'     => round( $score, 2 ),
+		'reason'    => $reason,
+	);
+}
 
 	/**
 	 * Get user interactions
@@ -675,9 +675,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @since 1.0.0
 	 * @return array Interactions.
 	 */
-	private function get_user_interactions() {
-		return get_option( 'wp_mcp_ai_user_interactions', array() );
-	}
+private function get_user_interactions() {
+	return get_option( 'wp_mcp_ai_user_interactions', array() );
+}
 
 	/**
 	 * Store interaction
@@ -686,17 +686,17 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $interaction Interaction data.
 	 * @return void
 	 */
-	private function store_interaction( $interaction ) {
-		$interactions   = $this->get_user_interactions();
-		$interactions[] = $interaction;
+private function store_interaction( $interaction ) {
+	$interactions   = $this->get_user_interactions();
+	$interactions[] = $interaction;
 
-		// Keep only last 10000 interactions.
-		if ( count( $interactions ) > 10000 ) {
-			$interactions = array_slice( $interactions, -10000 );
-		}
-
-		update_option( 'wp_mcp_ai_user_interactions', $interactions );
+	// Keep only last 10000 interactions.
+	if ( count( $interactions ) > 10000 ) {
+		$interactions = array_slice( $interactions, -10000 );
 	}
+
+	update_option( 'wp_mcp_ai_user_interactions', $interactions );
+}
 
 	/**
 	 * Update engagement score
@@ -706,23 +706,23 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param string $interaction_type Interaction type.
 	 * @return void
 	 */
-	private function update_engagement_score( $post_id, $interaction_type ) {
-		$current_score = get_post_meta( $post_id, '_wp_mcp_ai_engagement_score', true );
-		$current_score = floatval( $current_score );
+private function update_engagement_score( $post_id, $interaction_type ) {
+	$current_score = get_post_meta( $post_id, '_wp_mcp_ai_engagement_score', true );
+	$current_score = floatval( $current_score );
 
-		// Weight by interaction type.
-		$weights = array(
-			'view'    => 0.1,
-			'click'   => 0.3,
-			'share'   => 0.5,
-			'convert' => 1.0,
-		);
+	// Weight by interaction type.
+	$weights = array(
+		'view'    => 0.1,
+		'click'   => 0.3,
+		'share'   => 0.5,
+		'convert' => 1.0,
+	);
 
-		$weight    = isset( $weights[ $interaction_type ] ) ? $weights[ $interaction_type ] : 0.1;
-		$new_score = min( 1.0, $current_score + ( $weight * 0.01 ) );
+	$weight    = isset( $weights[ $interaction_type ] ) ? $weights[ $interaction_type ] : 0.1;
+	$new_score = min( 1.0, $current_score + ( $weight * 0.01 ) );
 
-		update_post_meta( $post_id, '_wp_mcp_ai_engagement_score', $new_score );
-	}
+	update_post_meta( $post_id, '_wp_mcp_ai_engagement_score', $new_score );
+}
 
 	/**
 	 * Get user reading history
@@ -731,12 +731,12 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param int $user_id User ID.
 	 * @return array Reading history.
 	 */
-	private function get_user_reading_history( $user_id ) {
-		$interactions = $this->get_user_interactions();
-		$history      = array_filter( $interactions, fn( $i ) => $i['user_id'] === $user_id );
+private function get_user_reading_history( $user_id ) {
+	$interactions = $this->get_user_interactions();
+	$history      = array_filter( $interactions, fn( $i ) => $i['user_id'] === $user_id );
 
-		return array_slice( $history, -50 ); // Last 50 interactions.
-	}
+	return array_slice( $history, -50 ); // Last 50 interactions.
+}
 
 	/**
 	 * Extract user preferences
@@ -745,25 +745,25 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $history Reading history.
 	 * @return array Preferences.
 	 */
-	private function extract_user_preferences( $history ) {
-		$category_counts = array();
+private function extract_user_preferences( $history ) {
+	$category_counts = array();
 
-		foreach ( $history as $item ) {
-			$categories = wp_get_post_categories( $item['post_id'] );
-			foreach ( $categories as $cat_id ) {
-				if ( ! isset( $category_counts[ $cat_id ] ) ) {
-					$category_counts[ $cat_id ] = 0;
-				}
-				++$category_counts[ $cat_id ];
+	foreach ( $history as $item ) {
+		$categories = wp_get_post_categories( $item['post_id'] );
+		foreach ( $categories as $cat_id ) {
+			if ( ! isset( $category_counts[ $cat_id ] ) ) {
+				$category_counts[ $cat_id ] = 0;
 			}
+			++$category_counts[ $cat_id ];
 		}
-
-		arsort( $category_counts );
-
-		return array(
-			'categories' => array_keys( array_slice( $category_counts, 0, 5, true ) ),
-		);
 	}
+
+	arsort( $category_counts );
+
+	return array(
+		'categories' => array_keys( array_slice( $category_counts, 0, 5, true ) ),
+	);
+}
 
 	/**
 	 * Build feature vectors
@@ -772,19 +772,19 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $interactions Interactions.
 	 * @return array Feature vectors.
 	 */
-	private function build_feature_vectors( $interactions ) {
-		// Simplified feature extraction.
-		return array_map(
-			function ( $interaction ) {
-				return array(
-					'user_id' => $interaction['user_id'],
-					'post_id' => $interaction['post_id'],
-					'weight'  => 1.0,
-				);
-			},
-			$interactions
-		);
-	}
+private function build_feature_vectors( $interactions ) {
+	// Simplified feature extraction.
+	return array_map(
+		function ( $interaction ) {
+			return array(
+				'user_id' => $interaction['user_id'],
+				'post_id' => $interaction['post_id'],
+				'weight'  => 1.0,
+			);
+		},
+		$interactions
+	);
+}
 
 	/**
 	 * Train recommendation model
@@ -793,14 +793,14 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $features Feature vectors.
 	 * @return array Model statistics.
 	 */
-	private function train_recommendation_model( $features ) {
-		// Simplified training - in production would use actual ML.
-		return array(
-			'features'  => count( $features ),
-			'accuracy'  => 0.85,
-			'algorithm' => 'collaborative_filtering',
-		);
-	}
+private function train_recommendation_model( $features ) {
+	// Simplified training - in production would use actual ML.
+	return array(
+		'features'  => count( $features ),
+		'accuracy'  => 0.85,
+		'algorithm' => 'collaborative_filtering',
+	);
+}
 
 	/**
 	 * Count total recommendations
@@ -808,9 +808,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @since 1.0.0
 	 * @return int Total count.
 	 */
-	private function count_total_recommendations() {
-		return absint( get_option( 'wp_mcp_ai_total_recommendations', 0 ) );
-	}
+private function count_total_recommendations() {
+	return absint( get_option( 'wp_mcp_ai_total_recommendations', 0 ) );
+}
 
 	/**
 	 * Calculate click-through rate
@@ -819,12 +819,12 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $interactions Interactions.
 	 * @return float CTR.
 	 */
-	private function calculate_ctr( $interactions ) {
-		$views  = count( array_filter( $interactions, fn( $i ) => 'view' === $i['interaction_type'] ) );
-		$clicks = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
+private function calculate_ctr( $interactions ) {
+	$views  = count( array_filter( $interactions, fn( $i ) => 'view' === $i['interaction_type'] ) );
+	$clicks = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
 
-		return $views > 0 ? round( ( $clicks / $views ) * 100, 2 ) : 0;
-	}
+	return $views > 0 ? round( ( $clicks / $views ) * 100, 2 ) : 0;
+}
 
 	/**
 	 * Calculate conversion rate
@@ -833,12 +833,12 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $interactions Interactions.
 	 * @return float Conversion rate.
 	 */
-	private function calculate_conversion_rate( $interactions ) {
-		$clicks   = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
-		$converts = count( array_filter( $interactions, fn( $i ) => 'convert' === $i['interaction_type'] ) );
+private function calculate_conversion_rate( $interactions ) {
+	$clicks   = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
+	$converts = count( array_filter( $interactions, fn( $i ) => 'convert' === $i['interaction_type'] ) );
 
-		return $clicks > 0 ? round( ( $converts / $clicks ) * 100, 2 ) : 0;
-	}
+	return $clicks > 0 ? round( ( $converts / $clicks ) * 100, 2 ) : 0;
+}
 
 	/**
 	 * Get top performing content
@@ -847,28 +847,28 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param int $limit Limit.
 	 * @return array Top content.
 	 */
-	private function get_top_performing_content( $limit ) {
-		$args = array(
-			'post_type'      => 'post',
-			'posts_per_page' => $limit,
-			'meta_key'       => '_wp_mcp_ai_engagement_score',
-			'orderby'        => 'meta_value_num',
-			'order'          => 'DESC',
-		);
+private function get_top_performing_content( $limit ) {
+	$args = array(
+		'post_type'      => 'post',
+		'posts_per_page' => $limit,
+		'meta_key'       => '_wp_mcp_ai_engagement_score',
+		'orderby'        => 'meta_value_num',
+		'order'          => 'DESC',
+	);
 
-		$posts = get_posts( $args );
+	$posts = get_posts( $args );
 
-		return array_map(
-			function ( $post ) {
-				return array(
-					'id'               => $post->ID,
-					'title'            => $post->post_title,
-					'engagement_score' => get_post_meta( $post->ID, '_wp_mcp_ai_engagement_score', true ),
-				);
-			},
-			$posts
-		);
-	}
+	return array_map(
+		function ( $post ) {
+			return array(
+				'id'               => $post->ID,
+				'title'            => $post->post_title,
+				'engagement_score' => get_post_meta( $post->ID, '_wp_mcp_ai_engagement_score', true ),
+			);
+		},
+		$posts
+	);
+}
 
 	/**
 	 * Analyze engagement patterns
@@ -877,19 +877,19 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @param array $interactions Interactions.
 	 * @return array Engagement patterns.
 	 */
-	private function analyze_engagement_patterns( $interactions ) {
-		$by_type = array();
+private function analyze_engagement_patterns( $interactions ) {
+	$by_type = array();
 
-		foreach ( $interactions as $interaction ) {
-			$type = $interaction['interaction_type'];
-			if ( ! isset( $by_type[ $type ] ) ) {
-				$by_type[ $type ] = 0;
-			}
-			++$by_type[ $type ];
+	foreach ( $interactions as $interaction ) {
+		$type = $interaction['interaction_type'];
+		if ( ! isset( $by_type[ $type ] ) ) {
+			$by_type[ $type ] = 0;
 		}
-
-		return $by_type;
+		++$by_type[ $type ];
 	}
+
+	return $by_type;
+}
 
 	/**
 	 * Check if tool has privacy data
@@ -897,7 +897,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @since 1.0.0
 	 * @return bool True - stores user interaction data.
 	 */
-	public function has_privacy_data() {
-		return true;
-	}
+public function has_privacy_data() {
+	return true;
+}
 }

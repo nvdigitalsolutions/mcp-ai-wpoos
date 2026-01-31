@@ -289,7 +289,7 @@ class WP_MCP_AI_Reasoning_Controller {
 		}
 
 		return min( 1.0, $score );
-	}
+}
 
 	/**
 	 * Check if task involves code generation
@@ -298,51 +298,51 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @param array  $context Task context.
 	 * @return float Score 0-1.
 	 */
-	protected function involves_code_generation( $task, $context ) {
-		$task_lower = strtolower( $task );
-		$score      = 0;
+protected function involves_code_generation( $task, $context ) {
+	$task_lower = strtolower( $task );
+	$score      = 0;
 
-		// Code-related keywords.
-		$code_keywords = array(
-			'code',
-			'function',
-			'class',
-			'method',
-			'script',
-			'program',
-			'implement',
-			'write code',
-			'develop',
-			'php',
-			'javascript',
-			'python',
-			'css',
-			'html',
-		);
+	// Code-related keywords.
+	$code_keywords = array(
+		'code',
+		'function',
+		'class',
+		'method',
+		'script',
+		'program',
+		'implement',
+		'write code',
+		'develop',
+		'php',
+		'javascript',
+		'python',
+		'css',
+		'html',
+	);
 
-		foreach ( $code_keywords as $keyword ) {
-			if ( false !== strpos( $task_lower, $keyword ) ) {
-				$score += 0.2;
-			}
+	foreach ( $code_keywords as $keyword ) {
+		if ( false !== strpos( $task_lower, $keyword ) ) {
+			$score += 0.2;
 		}
-
-		// Check for code blocks in task.
-		if ( preg_match( '/```|<code>/', $task ) ) {
-			$score += 0.4;
-		}
-
-		// Check context for code generation flag.
-		if ( isset( $context['task_type'] ) && 'code_generation' === $context['task_type'] ) {
-			$score = 1.0;
-		}
-
-		// Check for line count requirement (indicates large code task).
-		if ( preg_match( '/\d{2,}\s*lines/', $task_lower ) ) {
-			$score += 0.3;
-		}
-
-		return min( 1.0, $score );
 	}
+
+	// Check for code blocks in task.
+	if ( preg_match( '/```|<code>/', $task ) ) {
+		$score += 0.4;
+	}
+
+	// Check context for code generation flag.
+	if ( isset( $context['task_type'] ) && 'code_generation' === $context['task_type'] ) {
+		$score = 1.0;
+	}
+
+	// Check for line count requirement (indicates large code task).
+	if ( preg_match( '/\d{2,}\s*lines/', $task_lower ) ) {
+		$score += 0.3;
+	}
+
+	return min( 1.0, $score );
+}
 
 	/**
 	 * Check if task requires domain expertise
@@ -351,40 +351,40 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @param array  $context Task context.
 	 * @return float Score 0-1.
 	 */
-	protected function requires_domain_expertise( $task, $context ) {
-		$task_lower = strtolower( $task );
-		$score      = 0;
+protected function requires_domain_expertise( $task, $context ) {
+	$task_lower = strtolower( $task );
+	$score      = 0;
 
-		// Domain-specific terms.
-		$domain_keywords = array(
-			'technical',
-			'specialized',
-			'expert',
-			'professional',
-			'industry',
-			'compliance',
-			'regulatory',
-			'best practice',
-		);
+	// Domain-specific terms.
+	$domain_keywords = array(
+		'technical',
+		'specialized',
+		'expert',
+		'professional',
+		'industry',
+		'compliance',
+		'regulatory',
+		'best practice',
+	);
 
-		foreach ( $domain_keywords as $keyword ) {
-			if ( false !== strpos( $task_lower, $keyword ) ) {
-				$score += 0.2;
-			}
-		}
-
-		// Check if profession is specified in context.
-		if ( isset( $context['profession_slug'] ) ) {
-			$score += 0.4;
-		}
-
-		// Check for domain-specific jargon (acronyms, technical terms).
-		if ( preg_match( '/\b[A-Z]{3,}\b/', $task ) ) {
+	foreach ( $domain_keywords as $keyword ) {
+		if ( false !== strpos( $task_lower, $keyword ) ) {
 			$score += 0.2;
 		}
-
-		return min( 1.0, $score );
 	}
+
+	// Check if profession is specified in context.
+	if ( isset( $context['profession_slug'] ) ) {
+		$score += 0.4;
+	}
+
+	// Check for domain-specific jargon (acronyms, technical terms).
+	if ( preg_match( '/\b[A-Z]{3,}\b/', $task ) ) {
+		$score += 0.2;
+	}
+
+	return min( 1.0, $score );
+}
 
 	/**
 	 * Check if task needs verification
@@ -393,7 +393,7 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @param array  $context Task context.
 	 * @return float Score 0-1.
 	 */
-	protected function needs_verification( $task, $context  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+protected function needs_verification( $task, $context  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
 		$task_lower = strtolower( $task );
 		$score      = 0;
 
@@ -434,196 +434,196 @@ class WP_MCP_AI_Reasoning_Controller {
 		}
 
 		return min( 1.0, $score );
-	}
-
-	/**
-	 * Calculate reasoning score from indicators
-	 *
-	 * @param array $indicators Indicator scores.
-	 * @return float Overall reasoning score 0-1.
-	 */
-	protected function calculate_reasoning_score( $indicators ) {
-		$score = 0;
-
-		foreach ( $indicators as $indicator => $value ) {
-			$weight = $this->trigger_weights[ $indicator ] ?? 0;
-			$score += $value * $weight;
 		}
 
-		return min( 1.0, $score );
-	}
+		/**
+		 * Calculate reasoning score from indicators
+		 *
+		 * @param array $indicators Indicator scores.
+		 * @return float Overall reasoning score 0-1.
+		 */
+		protected function calculate_reasoning_score( $indicators ) {
+			$score = 0;
 
-	/**
-	 * Get reasoning-enhancing system prompt
-	 *
-	 * @param array $task_info Task information.
-	 * @return string Reasoning prompt.
-	 */
-	protected function get_reasoning_prompt( $task_info ) {
-		$prompt  = "Enhanced Reasoning Mode Activated:\n\n";
-		$prompt .= "Please approach this task with careful, step-by-step reasoning:\n";
-		$prompt .= "1. Break down the problem into clear steps\n";
-		$prompt .= "2. State your assumptions explicitly\n";
-		$prompt .= "3. Show your reasoning for each step\n";
-		$prompt .= "4. Verify your conclusions\n";
-		$prompt .= "5. Consider alternative approaches if needed\n\n";
+			foreach ( $indicators as $indicator => $value ) {
+				$weight = $this->trigger_weights[ $indicator ] ?? 0;
+				$score += $value * $weight;
+			}
 
-		$task_type = $task_info['type'] ?? 'general';
-
-		if ( 'code_generation' === $task_type ) {
-			$prompt .= "For code generation:\n";
-			$prompt .= "- Plan the structure before writing code\n";
-			$prompt .= "- Consider edge cases and error handling\n";
-			$prompt .= "- Follow best practices and coding standards\n";
-			$prompt .= "- Add comments explaining complex logic\n\n";
+			return min( 1.0, $score );
 		}
 
-		return apply_filters( 'wp_mcp_ai_reasoning_prompt', $prompt, $task_info );
-	}
+		/**
+		 * Get reasoning-enhancing system prompt
+		 *
+		 * @param array $task_info Task information.
+		 * @return string Reasoning prompt.
+		 */
+		protected function get_reasoning_prompt( $task_info ) {
+			$prompt  = "Enhanced Reasoning Mode Activated:\n\n";
+			$prompt .= "Please approach this task with careful, step-by-step reasoning:\n";
+			$prompt .= "1. Break down the problem into clear steps\n";
+			$prompt .= "2. State your assumptions explicitly\n";
+			$prompt .= "3. Show your reasoning for each step\n";
+			$prompt .= "4. Verify your conclusions\n";
+			$prompt .= "5. Consider alternative approaches if needed\n\n";
 
-	/**
-	 * Evaluate coherence of reasoning output
-	 *
-	 * @param array $reasoning_output Reasoning output.
-	 * @return float Coherence score 0-1.
-	 */
-	protected function evaluate_coherence( $reasoning_output ) {
-		// Simple heuristic: check if steps are present and connected.
-		if ( empty( $reasoning_output ) || ! is_array( $reasoning_output ) ) {
-			return 0.5; // Neutral score if no structured output.
+			$task_type = $task_info['type'] ?? 'general';
+
+			if ( 'code_generation' === $task_type ) {
+				$prompt .= "For code generation:\n";
+				$prompt .= "- Plan the structure before writing code\n";
+				$prompt .= "- Consider edge cases and error handling\n";
+				$prompt .= "- Follow best practices and coding standards\n";
+				$prompt .= "- Add comments explaining complex logic\n\n";
+			}
+
+			return apply_filters( 'wp_mcp_ai_reasoning_prompt', $prompt, $task_info );
 		}
 
-		$score = 0.7; // Base score.
+		/**
+		 * Evaluate coherence of reasoning output
+		 *
+		 * @param array $reasoning_output Reasoning output.
+		 * @return float Coherence score 0-1.
+		 */
+		protected function evaluate_coherence( $reasoning_output ) {
+			// Simple heuristic: check if steps are present and connected.
+			if ( empty( $reasoning_output ) || ! is_array( $reasoning_output ) ) {
+				return 0.5; // Neutral score if no structured output.
+			}
 
-		// Check for step-by-step structure.
-		if ( isset( $reasoning_output['steps'] ) && is_array( $reasoning_output['steps'] ) ) {
-			$score += 0.2;
+			$score = 0.7; // Base score.
+
+			// Check for step-by-step structure.
+			if ( isset( $reasoning_output['steps'] ) && is_array( $reasoning_output['steps'] ) ) {
+				$score += 0.2;
+			}
+
+			// Check for explanations.
+			if ( isset( $reasoning_output['explanation'] ) ) {
+				$score += 0.1;
+			}
+
+			return min( 1.0, $score );
 		}
 
-		// Check for explanations.
-		if ( isset( $reasoning_output['explanation'] ) ) {
-			$score += 0.1;
-		}
-
-		return min( 1.0, $score );
-	}
-
-	/**
-	 * Check logical consistency
-	 *
-	 * @param array $reasoning_output Reasoning output.
-	 * @return float Consistency score 0-1.
-	 */
-	protected function check_logical_consistency( $reasoning_output  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+		/**
+		 * Check logical consistency
+		 *
+		 * @param array $reasoning_output Reasoning output.
+		 * @return float Consistency score 0-1.
+		 */
+		protected function check_logical_consistency( $reasoning_output  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
 		// Simple heuristic: assume consistent unless obvious contradictions.
 		return 0.8; // Placeholder - real implementation would analyze for contradictions.
-	}
+		}
 
-	/**
-	 * Check completeness
-	 *
-	 * @param array  $reasoning_output Reasoning output.
-	 * @param string $task Original task.
-	 * @return float Completeness score 0-1.
-	 */
-	protected function check_completeness( $reasoning_output, $task  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task analysis. {
+		/**
+		 * Check completeness
+		 *
+		 * @param array  $reasoning_output Reasoning output.
+		 * @param string $task Original task.
+		 * @return float Completeness score 0-1.
+		 */
+		protected function check_completeness( $reasoning_output, $task  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task analysis. {
 		// Simple heuristic: check if all parts of task appear addressed.
 		if ( empty( $reasoning_output ) ) {
 			return 0.3;
 		}
 
 		return 0.75; // Placeholder - real implementation would match task requirements.
-	}
-
-	/**
-	 * Record reasoning decision
-	 *
-	 * @param string $task Task description.
-	 * @param array  $indicators Indicator scores.
-	 * @param float  $reasoning_score Overall score.
-	 * @return void
-	 */
-	protected function record_reasoning_decision( $task, $indicators, $reasoning_score ) {
-		$history = get_option( self::REASONING_HISTORY_KEY, array() );
-
-		if ( ! is_array( $history ) ) {
-			$history = array();
 		}
 
-		$history[] = array(
+		/**
+		 * Record reasoning decision
+		 *
+		 * @param string $task Task description.
+		 * @param array  $indicators Indicator scores.
+		 * @param float  $reasoning_score Overall score.
+		 * @return void
+		 */
+		protected function record_reasoning_decision( $task, $indicators, $reasoning_score ) {
+			$history = get_option( self::REASONING_HISTORY_KEY, array() );
+
+			if ( ! is_array( $history ) ) {
+				$history = array();
+			}
+
+			$history[] = array(
 			'task_hash'       => md5( $task ),
 			'indicators'      => $indicators,
 			'reasoning_score' => $reasoning_score,
 			'activated'       => $reasoning_score > self::REASONING_THRESHOLD,
 			'timestamp'       => time(),
-		);
+			);
 
-		// Limit history size.
-		if ( count( $history ) > self::HISTORY_LIMIT ) {
-			$history = array_slice( $history, -self::HISTORY_LIMIT );
+			// Limit history size.
+			if ( count( $history ) > self::HISTORY_LIMIT ) {
+				$history = array_slice( $history, -self::HISTORY_LIMIT );
+			}
+
+			update_option( self::REASONING_HISTORY_KEY, $history, false );
 		}
 
-		update_option( self::REASONING_HISTORY_KEY, $history, false );
-	}
+		/**
+		 * Store quality metrics
+		 *
+		 * @param string $task Task description.
+		 * @param array  $metrics Quality metrics.
+		 * @return void
+		 */
+		protected function store_quality_metrics( $task, $metrics ) {
+			$stored_metrics = get_option( self::QUALITY_METRICS_KEY, array() );
 
-	/**
-	 * Store quality metrics
-	 *
-	 * @param string $task Task description.
-	 * @param array  $metrics Quality metrics.
-	 * @return void
-	 */
-	protected function store_quality_metrics( $task, $metrics ) {
-		$stored_metrics = get_option( self::QUALITY_METRICS_KEY, array() );
+			if ( ! is_array( $stored_metrics ) ) {
+				$stored_metrics = array();
+			}
 
-		if ( ! is_array( $stored_metrics ) ) {
-			$stored_metrics = array();
-		}
-
-		$stored_metrics[] = array_merge(
+			$stored_metrics[] = array_merge(
 			$metrics,
 			array( 'task_hash' => md5( $task ) )
-		);
+			);
 
-		// Limit size.
-		if ( count( $stored_metrics ) > self::HISTORY_LIMIT ) {
-			$stored_metrics = array_slice( $stored_metrics, -self::HISTORY_LIMIT );
+			// Limit size.
+			if ( count( $stored_metrics ) > self::HISTORY_LIMIT ) {
+				$stored_metrics = array_slice( $stored_metrics, -self::HISTORY_LIMIT );
+			}
+
+			update_option( self::QUALITY_METRICS_KEY, $stored_metrics, false );
 		}
 
-		update_option( self::QUALITY_METRICS_KEY, $stored_metrics, false );
-	}
+		/**
+		 * Get quality metrics history
+		 *
+		 * @param int $days Number of days to retrieve.
+		 * @return array Quality metrics.
+		 */
+		protected function get_quality_metrics_history( $days ) {
+			$metrics = get_option( self::QUALITY_METRICS_KEY, array() );
 
-	/**
-	 * Get quality metrics history
-	 *
-	 * @param int $days Number of days to retrieve.
-	 * @return array Quality metrics.
-	 */
-	protected function get_quality_metrics_history( $days ) {
-		$metrics = get_option( self::QUALITY_METRICS_KEY, array() );
+			if ( ! is_array( $metrics ) ) {
+				return array();
+			}
 
-		if ( ! is_array( $metrics ) ) {
-			return array();
-		}
+			$cutoff = time() - ( $days * DAY_IN_SECONDS );
 
-		$cutoff = time() - ( $days * DAY_IN_SECONDS );
-
-		return array_filter(
+			return array_filter(
 			$metrics,
 			function ( $m ) use ( $cutoff ) {
 				return isset( $m['timestamp'] ) && $m['timestamp'] > $cutoff;
 			}
-		);
-	}
+			);
+		}
 
-	/**
-	 * Clear reasoning history and metrics
-	 *
-	 * @return bool Success status.
-	 */
-	public function clear_history() {
-		delete_option( self::REASONING_HISTORY_KEY );
-		delete_option( self::QUALITY_METRICS_KEY );
-		return true;
-	}
-}
+		/**
+		 * Clear reasoning history and metrics
+		 *
+		 * @return bool Success status.
+		 */
+		public function clear_history() {
+			delete_option( self::REASONING_HISTORY_KEY );
+			delete_option( self::QUALITY_METRICS_KEY );
+			return true;
+		}
+		}

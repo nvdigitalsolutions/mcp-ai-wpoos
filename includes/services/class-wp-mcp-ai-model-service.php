@@ -201,11 +201,11 @@ class WP_MCP_AI_Model_Service {
 		$models['claude-opus-4-5-20251101']   = 'Claude Opus 4.5 (Nov 2025) - Flagship';
 
 		// Claude 4.1 series (multimodal - vision capable).
-		$models['claude-opus-4-1-20250805']   = 'Claude Opus 4.1 (Aug 2025)';
+		$models['claude-opus-4-1-20250805'] = 'Claude Opus 4.1 (Aug 2025)';
 
 		// Claude 4 series (multimodal - vision capable).
-		$models['claude-sonnet-4-20250514']   = 'Claude Sonnet 4 (May 2025)';
-		$models['claude-opus-4-20250514']     = 'Claude Opus 4 (May 2025)';
+		$models['claude-sonnet-4-20250514'] = 'Claude Sonnet 4 (May 2025)';
+		$models['claude-opus-4-20250514']   = 'Claude Opus 4 (May 2025)';
 
 		// Claude 3.7 series (multimodal - vision capable).
 		$models['claude-3-7-sonnet-20250219'] = 'Claude 3.7 Sonnet (Feb 2025)';
@@ -215,7 +215,7 @@ class WP_MCP_AI_Model_Service {
 		$models['claude-3-5-haiku-20241022']  = 'Claude 3.5 Haiku (Legacy)';
 
 		// Claude 3 series (legacy).
-		$models['claude-3-haiku-20240307']    = 'Claude 3 Haiku (Legacy)';
+		$models['claude-3-haiku-20240307'] = 'Claude 3 Haiku (Legacy)';
 
 		return $models;
 	}

@@ -174,33 +174,33 @@ class WP_MCP_AI_Tool_Service {
 	 * @param int|null $assistant_id Optional assistant ID to filter by capability.
 	 * @return array List of tools.
 	 */
-	public function get_available_tools( $assistant_id = null  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
+	public function get_available_tools( $assistant_id = null ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
 		$all_tools = $this->registry->get_tools();
 		$tools     = array();
 
-		foreach ( $all_tools as $tool ) {
-			if ( ! is_object( $tool ) || ! method_exists( $tool, 'get_slug' ) ) {
-				continue;
-			}
-
-			$slug = $tool->get_slug();
-
-			// Check capability if the tool has one.
-			$capability = $this->registry->get_tool_capability( $slug );
-			if ( $capability && ! current_user_can( $capability ) ) {
-				continue; // User doesn't have required capability.
-			}
-
-			$tools[] = array(
-				'slug'        => $slug,
-				'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
-				'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
-				'category'    => 'general', // Default category, can be enhanced later.
-			);
+	foreach ( $all_tools as $tool ) {
+		if ( ! is_object( $tool ) || ! method_exists( $tool, 'get_slug' ) ) {
+			continue;
 		}
 
-		return $tools;
+		$slug = $tool->get_slug();
+
+		// Check capability if the tool has one.
+		$capability = $this->registry->get_tool_capability( $slug );
+		if ( $capability && ! current_user_can( $capability ) ) {
+			continue; // User doesn't have required capability.
+		}
+
+		$tools[] = array(
+			'slug'        => $slug,
+			'name'        => method_exists( $tool, 'get_name' ) ? $tool->get_name() : $slug,
+			'description' => method_exists( $tool, 'get_description' ) ? $tool->get_description() : '',
+			'category'    => 'general', // Default category, can be enhanced later.
+		);
 	}
+
+		return $tools;
+}
 
 	/**
 	 * Validate tool arguments
@@ -209,41 +209,41 @@ class WP_MCP_AI_Tool_Service {
 	 * @param array  $arguments Tool arguments.
 	 * @return true|WP_Error True if valid, WP_Error otherwise.
 	 */
-	public function validate_tool_arguments( $tool_name, $arguments ) {
-		$tool_definition = $this->registry->get_tool_definition( $tool_name );
+public function validate_tool_arguments( $tool_name, $arguments ) {
+	$tool_definition = $this->registry->get_tool_definition( $tool_name );
 
-		if ( ! $tool_definition ) {
+	if ( ! $tool_definition ) {
+		return new WP_Error(
+			'wp_mcp_ai_tool_not_found',
+			sprintf(
+				/* translators: %s: tool name */
+				__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
+				$tool_name
+			)
+		);
+	}
+
+	// Get required parameters.
+	$parameters = $tool_definition['parameters'] ?? array();
+	$required   = $parameters['required'] ?? array();
+
+	// Check required arguments are present.
+	foreach ( $required as $param ) {
+		if ( ! isset( $arguments[ $param ] ) ) {
 			return new WP_Error(
-				'wp_mcp_ai_tool_not_found',
+				'wp_mcp_ai_missing_tool_argument',
 				sprintf(
-					/* translators: %s: tool name */
-					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
+					/* translators: 1: parameter name, 2: tool name */
+					__( 'Missing required argument "%1$s" for tool "%2$s".', 'mcp-ai-wpoos' ),
+					$param,
 					$tool_name
 				)
 			);
 		}
-
-		// Get required parameters.
-		$parameters = $tool_definition['parameters'] ?? array();
-		$required   = $parameters['required'] ?? array();
-
-		// Check required arguments are present.
-		foreach ( $required as $param ) {
-			if ( ! isset( $arguments[ $param ] ) ) {
-				return new WP_Error(
-					'wp_mcp_ai_missing_tool_argument',
-					sprintf(
-						/* translators: 1: parameter name, 2: tool name */
-						__( 'Missing required argument "%1$s" for tool "%2$s".', 'mcp-ai-wpoos' ),
-						$param,
-						$tool_name
-					)
-				);
-			}
-		}
-
-		return true;
 	}
+
+	return true;
+}
 
 	/**
 	 * Check if tool is enabled for assistant
@@ -252,16 +252,16 @@ class WP_MCP_AI_Tool_Service {
 	 * @param int    $assistant_id Assistant ID.
 	 * @return bool True if enabled.
 	 */
-	public function is_tool_enabled_for_assistant( $tool_slug, $assistant_id ) {
-		if ( ! $assistant_id ) {
-			return false;
-		}
-
-		$config        = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
-		$enabled_tools = $config['tools'] ?? array();
-
-		return in_array( $tool_slug, $enabled_tools, true );
+public function is_tool_enabled_for_assistant( $tool_slug, $assistant_id ) {
+	if ( ! $assistant_id ) {
+		return false;
 	}
+
+	$config        = WP_MCP_AI_Assistant_CPT::get_assistant_configuration( $assistant_id );
+	$enabled_tools = $config['tools'] ?? array();
+
+	return in_array( $tool_slug, $enabled_tools, true );
+}
 
 	/**
 	 * Get tool execution statistics
@@ -270,7 +270,7 @@ class WP_MCP_AI_Tool_Service {
 	 * @param int|null $assistant_id Optional assistant ID.
 	 * @return array Tool statistics.
 	 */
-	public function get_tool_statistics( $tool_slug, $assistant_id = null  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
+public function get_tool_statistics( $tool_slug, $assistant_id = null ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic. {
 		// This would integrate with usage tracking.
 		// For now, return placeholder.
 		return array(
@@ -286,15 +286,15 @@ class WP_MCP_AI_Tool_Service {
 	 *
 	 * @return WP_MCP_AI_Tool_Execution_Orchestrator
 	 */
-	private function get_orchestrator() {
-		if ( null === $this->orchestrator ) {
-			if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
-				require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
-			}
-			// Pass registry and null for async_executor (will be lazy-loaded).
-			$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->registry, null );
+private function get_orchestrator() {
+	if ( null === $this->orchestrator ) {
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Execution_Orchestrator' ) ) {
+			require_once WP_MCP_AI_PATH . 'includes/services/class-wp-mcp-ai-tool-execution-orchestrator.php';
 		}
-
-		return $this->orchestrator;
+		// Pass registry and null for async_executor (will be lazy-loaded).
+		$this->orchestrator = new WP_MCP_AI_Tool_Execution_Orchestrator( $this->registry, null );
 	}
+
+	return $this->orchestrator;
+}
 }

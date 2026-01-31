@@ -411,9 +411,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	private function convert_to_format( $file_path, $format, $quality, $preserve_original  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
 		$image_editor = wp_get_image_editor( $file_path );
 
-		if ( is_wp_error( $image_editor ) ) {
-			return array( 'success' => false );
-		}
+	if ( is_wp_error( $image_editor ) ) {
+		return array( 'success' => false );
+	}
 
 		$image_editor->set_quality( $quality );
 
@@ -426,9 +426,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 
 		$saved = $image_editor->save( $new_file, $mime_type );
 
-		if ( is_wp_error( $saved ) ) {
-			return array( 'success' => false );
-		}
+	if ( is_wp_error( $saved ) ) {
+		return array( 'success' => false );
+	}
 
 		return array(
 			'success'   => true,
@@ -436,7 +436,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 			'mime_type' => $mime_type,
 			'format'    => $format,
 		);
-	}
+}
 
 	/**
 	 * Generate responsive image sizes
@@ -447,36 +447,36 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param int    $quality   Quality.
 	 * @return array Generated files.
 	 */
-	private function generate_responsive_sizes( $file_path, $sizes, $quality ) {
-		$generated    = array();
-		$image_editor = wp_get_image_editor( $file_path );
+private function generate_responsive_sizes( $file_path, $sizes, $quality ) {
+	$generated    = array();
+	$image_editor = wp_get_image_editor( $file_path );
 
-		if ( is_wp_error( $image_editor ) ) {
-			return $generated;
-		}
-
-		$path_info = pathinfo( $file_path );
-
-		foreach ( $sizes as $width ) {
-			$image_editor->resize( $width, null, false );
-			$image_editor->set_quality( $quality );
-
-			$new_file = $path_info['dirname'] . '/' . $path_info['filename'] . '-' . $width . 'w.' . $path_info['extension'];
-			$saved    = $image_editor->save( $new_file );
-
-			if ( ! is_wp_error( $saved ) ) {
-				$generated[] = array(
-					'width' => $width,
-					'file'  => $new_file,
-				);
-			}
-
-			// Reset for next size.
-			$image_editor = wp_get_image_editor( $file_path );
-		}
-
+	if ( is_wp_error( $image_editor ) ) {
 		return $generated;
 	}
+
+	$path_info = pathinfo( $file_path );
+
+	foreach ( $sizes as $width ) {
+		$image_editor->resize( $width, null, false );
+		$image_editor->set_quality( $quality );
+
+		$new_file = $path_info['dirname'] . '/' . $path_info['filename'] . '-' . $width . 'w.' . $path_info['extension'];
+		$saved    = $image_editor->save( $new_file );
+
+		if ( ! is_wp_error( $saved ) ) {
+			$generated[] = array(
+				'width' => $width,
+				'file'  => $new_file,
+			);
+		}
+
+		// Reset for next size.
+		$image_editor = wp_get_image_editor( $file_path );
+	}
+
+	return $generated;
+}
 
 	/**
 	 * Build srcset attribute
@@ -486,24 +486,24 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param array $sizes    Sizes.
 	 * @return string Srcset attribute value.
 	 */
-	private function build_srcset( $image_id, $sizes ) {
-		$file_path    = get_attached_file( $image_id );
-		$path_info    = pathinfo( $file_path );
-		$upload_dir   = wp_upload_dir();
-		$srcset_parts = array();
+private function build_srcset( $image_id, $sizes ) {
+	$file_path    = get_attached_file( $image_id );
+	$path_info    = pathinfo( $file_path );
+	$upload_dir   = wp_upload_dir();
+	$srcset_parts = array();
 
-		foreach ( $sizes as $width ) {
-			$filename = $path_info['filename'] . '-' . $width . 'w.' . $path_info['extension'];
-			$file     = $path_info['dirname'] . '/' . $filename;
+	foreach ( $sizes as $width ) {
+		$filename = $path_info['filename'] . '-' . $width . 'w.' . $path_info['extension'];
+		$file     = $path_info['dirname'] . '/' . $filename;
 
-			if ( file_exists( $file ) ) {
-				$url            = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file );
-				$srcset_parts[] = esc_url( $url ) . ' ' . $width . 'w';
-			}
+		if ( file_exists( $file ) ) {
+			$url            = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $file );
+			$srcset_parts[] = esc_url( $url ) . ' ' . $width . 'w';
 		}
-
-		return implode( ', ', $srcset_parts );
 	}
+
+	return implode( ', ', $srcset_parts );
+}
 
 	/**
 	 * Build sizes attribute
@@ -512,7 +512,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param array $sizes Width sizes.
 	 * @return string Sizes attribute.
 	 */
-	private function build_sizes_attribute( $sizes  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for size preservation. {
+private function build_sizes_attribute( $sizes  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for size preservation. {
 		// Default responsive sizes.
 		return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 	}
@@ -525,18 +525,18 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param string $srcset   Srcset value.
 	 * @return string Image HTML.
 	 */
-	private function build_responsive_image_html( $image_id, $srcset ) {
-		$src = wp_get_attachment_image_url( $image_id, 'full' );
-		$alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
+private function build_responsive_image_html( $image_id, $srcset ) {
+	$src = wp_get_attachment_image_url( $image_id, 'full' );
+	$alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
 
-		return sprintf(
-			'<img src="%s" srcset="%s" sizes="%s" alt="%s" loading="lazy" decoding="async">',
-			esc_url( $src ),
-			esc_attr( $srcset ),
-			esc_attr( $this->build_sizes_attribute( array() ) ),
-			esc_attr( $alt )
-		);
-	}
+	return sprintf(
+		'<img src="%s" srcset="%s" sizes="%s" alt="%s" loading="lazy" decoding="async">',
+		esc_url( $src ),
+		esc_attr( $srcset ),
+		esc_attr( $this->build_sizes_attribute( array() ) ),
+		esc_attr( $alt )
+	);
+}
 
 	/**
 	 * Build picture element HTML
@@ -547,44 +547,44 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param bool  $art_direction  Art direction.
 	 * @return string Picture HTML.
 	 */
-	private function build_picture_element( $image_id, $target_formats, $art_direction ) {
-		$sources    = array();
-		$file_path  = get_attached_file( $image_id );
-		$path_info  = pathinfo( $file_path );
-		$upload_dir = wp_upload_dir();
+private function build_picture_element( $image_id, $target_formats, $art_direction ) {
+	$sources    = array();
+	$file_path  = get_attached_file( $image_id );
+	$path_info  = pathinfo( $file_path );
+	$upload_dir = wp_upload_dir();
 
-		foreach ( $target_formats as $format ) {
-			$extension   = $this->get_extension( $format );
-			$format_file = $path_info['dirname'] . '/' . $path_info['filename'] . '.' . $extension;
+	foreach ( $target_formats as $format ) {
+		$extension   = $this->get_extension( $format );
+		$format_file = $path_info['dirname'] . '/' . $path_info['filename'] . '.' . $extension;
 
-			if ( file_exists( $format_file ) ) {
-				$url       = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $format_file );
-				$mime_type = $this->get_mime_type( $format );
+		if ( file_exists( $format_file ) ) {
+			$url       = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $format_file );
+			$mime_type = $this->get_mime_type( $format );
 
-				$media_query = $art_direction ? ' media="(min-width: 768px)"' : '';
-				$sources[]   = sprintf(
-					'<source srcset="%s" type="%s"%s>',
-					esc_url( $url ),
-					esc_attr( $mime_type ),
-					$media_query
-				);
-			}
+			$media_query = $art_direction ? ' media="(min-width: 768px)"' : '';
+			$sources[]   = sprintf(
+				'<source srcset="%s" type="%s"%s>',
+				esc_url( $url ),
+				esc_attr( $mime_type ),
+				$media_query
+			);
 		}
-
-		$src = wp_get_attachment_image_url( $image_id, 'full' );
-		$alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
-
-		$picture  = '<picture>';
-		$picture .= implode( "\n", $sources );
-		$picture .= sprintf(
-			'<img src="%s" alt="%s" loading="lazy" decoding="async">',
-			esc_url( $src ),
-			esc_attr( $alt )
-		);
-		$picture .= '</picture>';
-
-		return $picture;
 	}
+
+	$src = wp_get_attachment_image_url( $image_id, 'full' );
+	$alt = get_post_meta( $image_id, '_wp_attachment_image_alt', true );
+
+	$picture  = '<picture>';
+	$picture .= implode( "\n", $sources );
+	$picture .= sprintf(
+		'<img src="%s" alt="%s" loading="lazy" decoding="async">',
+		esc_url( $src ),
+		esc_attr( $alt )
+	);
+	$picture .= '</picture>';
+
+	return $picture;
+}
 
 	/**
 	 * Get best format from results
@@ -593,20 +593,20 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param array $format_results Format conversion results.
 	 * @return string Best format.
 	 */
-	private function get_best_format( $format_results ) {
-		$smallest      = null;
-		$smallest_size = PHP_INT_MAX;
+private function get_best_format( $format_results ) {
+	$smallest      = null;
+	$smallest_size = PHP_INT_MAX;
 
-		foreach ( $format_results as $format => $result ) {
-			$size = filesize( $result['new_file'] );
-			if ( $size < $smallest_size ) {
-				$smallest_size = $size;
-				$smallest      = $format;
-			}
+	foreach ( $format_results as $format => $result ) {
+		$size = filesize( $result['new_file'] );
+		if ( $size < $smallest_size ) {
+			$smallest_size = $size;
+			$smallest      = $format;
 		}
-
-		return $smallest;
 	}
+
+	return $smallest;
+}
 
 	/**
 	 * Get file extension for format
@@ -615,15 +615,15 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param string $format Format name.
 	 * @return string File extension.
 	 */
-	private function get_extension( $format ) {
-		$extensions = array(
-			'avif' => 'avif',
-			'webp' => 'webp',
-			'jxl'  => 'jxl',
-		);
+private function get_extension( $format ) {
+	$extensions = array(
+		'avif' => 'avif',
+		'webp' => 'webp',
+		'jxl'  => 'jxl',
+	);
 
-		return isset( $extensions[ $format ] ) ? $extensions[ $format ] : 'webp';
-	}
+	return isset( $extensions[ $format ] ) ? $extensions[ $format ] : 'webp';
+}
 
 	/**
 	 * Get MIME type for format
@@ -632,15 +632,15 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param string $format Format name.
 	 * @return string MIME type.
 	 */
-	private function get_mime_type( $format ) {
-		$mime_types = array(
-			'avif' => 'image/avif',
-			'webp' => 'image/webp',
-			'jxl'  => 'image/jxl',
-		);
+private function get_mime_type( $format ) {
+	$mime_types = array(
+		'avif' => 'image/avif',
+		'webp' => 'image/webp',
+		'jxl'  => 'image/jxl',
+	);
 
-		return isset( $mime_types[ $format ] ) ? $mime_types[ $format ] : 'image/webp';
-	}
+	return isset( $mime_types[ $format ] ) ? $mime_types[ $format ] : 'image/webp';
+}
 
 	/**
 	 * Check PHP support for format
@@ -649,18 +649,18 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param string $format Format name.
 	 * @return bool True if supported.
 	 */
-	private function check_php_support( $format ) {
-		switch ( $format ) {
-			case 'avif':
-				return function_exists( 'imageavif' );
-			case 'webp':
-				return function_exists( 'imagewebp' );
-			case 'jxl':
-				return false; // PHP doesn't have native JPEG XL support yet.
-			default:
-				return false;
-		}
+private function check_php_support( $format ) {
+	switch ( $format ) {
+		case 'avif':
+			return function_exists( 'imageavif' );
+		case 'webp':
+			return function_exists( 'imagewebp' );
+		case 'jxl':
+			return false; // PHP doesn't have native JPEG XL support yet.
+		default:
+			return false;
 	}
+}
 
 	/**
 	 * Check if format is recommended
@@ -669,9 +669,9 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param string $format Format name.
 	 * @return bool True if recommended.
 	 */
-	private function is_format_recommended( $format ) {
-		return in_array( $format, array( 'avif', 'webp' ), true );
-	}
+private function is_format_recommended( $format ) {
+	return in_array( $format, array( 'avif', 'webp' ), true );
+}
 
 	/**
 	 * Get conversion recommendations
@@ -681,27 +681,27 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @param int   $converted    Converted count.
 	 * @return array Recommendations.
 	 */
-	private function get_conversion_recommendations( $format_stats, $converted ) {
-		$recommendations = array();
+private function get_conversion_recommendations( $format_stats, $converted ) {
+	$recommendations = array();
 
-		if ( $converted > 0 ) {
-			$recommendations[] = __( 'Successfully converted images to modern formats.', 'mcp-ai-wpoos' );
-		}
-
-		if ( isset( $format_stats['avif'] ) ) {
-			$recommendations[] = sprintf(
-				/* translators: %s: number of AVIF conversions */
-				__( 'Generated %s AVIF images (best compression).', 'mcp-ai-wpoos' ),
-				$format_stats['avif']['count']
-			);
-		}
-
-		$recommendations[] = __( 'Use <picture> element for format fallback chains.', 'mcp-ai-wpoos' );
-		$recommendations[] = __( 'Enable lazy loading for below-the-fold images.', 'mcp-ai-wpoos' );
-		$recommendations[] = __( 'Monitor Core Web Vitals (LCP) after deployment.', 'mcp-ai-wpoos' );
-
-		return $recommendations;
+	if ( $converted > 0 ) {
+		$recommendations[] = __( 'Successfully converted images to modern formats.', 'mcp-ai-wpoos' );
 	}
+
+	if ( isset( $format_stats['avif'] ) ) {
+		$recommendations[] = sprintf(
+			/* translators: %s: number of AVIF conversions */
+			__( 'Generated %s AVIF images (best compression).', 'mcp-ai-wpoos' ),
+			$format_stats['avif']['count']
+		);
+	}
+
+	$recommendations[] = __( 'Use <picture> element for format fallback chains.', 'mcp-ai-wpoos' );
+	$recommendations[] = __( 'Enable lazy loading for below-the-fold images.', 'mcp-ai-wpoos' );
+	$recommendations[] = __( 'Monitor Core Web Vitals (LCP) after deployment.', 'mcp-ai-wpoos' );
+
+	return $recommendations;
+}
 
 	/**
 	 * Check if tool has privacy data
@@ -709,7 +709,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @since 1.0.0
 	 * @return bool False - no privacy data.
 	 */
-	public function has_privacy_data() {
-		return false;
-	}
+public function has_privacy_data() {
+	return false;
+}
 }

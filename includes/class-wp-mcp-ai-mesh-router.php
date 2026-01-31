@@ -475,9 +475,9 @@ class WP_MCP_AI_Mesh_Router {
 				'mesh_exponential_backoff',
 				'Applied exponential backoff before retry.',
 				array(
-					'attempt'    => $attempt,
-					'delay_ms'   => $delay_microseconds / 1000,
-					'peer'       => $peer_name,
+					'attempt'  => $attempt,
+					'delay_ms' => $delay_microseconds / 1000,
+					'peer'     => $peer_name,
 				)
 			);
 		}
@@ -1270,9 +1270,9 @@ class WP_MCP_AI_Mesh_Router {
 
 		if ( ! isset( $circuits[ $peer_name ] ) ) {
 			$circuits[ $peer_name ] = array(
-				'state'               => 'closed',
+				'state'                => 'closed',
 				'consecutive_failures' => 0,
-				'opened_at'           => 0,
+				'opened_at'            => 0,
 			);
 		}
 
@@ -1335,9 +1335,9 @@ class WP_MCP_AI_Mesh_Router {
 
 		if ( ! isset( $circuits[ $peer_name ] ) ) {
 			$circuits[ $peer_name ] = array(
-				'state'               => $state,
+				'state'                => $state,
 				'consecutive_failures' => 0,
-				'opened_at'           => 0,
+				'opened_at'            => 0,
 			);
 		} else {
 			$circuits[ $peer_name ]['state'] = $state;
@@ -1365,10 +1365,10 @@ class WP_MCP_AI_Mesh_Router {
 		$base_delay = min( $base_delay, self::BACKOFF_MAX_DELAY_MS );
 
 		// Add jitter (random ±25%).
-		$jitter     = $base_delay * 0.25;
-		$min_delay  = $base_delay - $jitter;
-		$max_delay  = $base_delay + $jitter;
-		$delay      = wp_rand( (int) $min_delay, (int) $max_delay );
+		$jitter    = $base_delay * 0.25;
+		$min_delay = $base_delay - $jitter;
+		$max_delay = $base_delay + $jitter;
+		$delay     = wp_rand( (int) $min_delay, (int) $max_delay );
 
 		// Convert milliseconds to microseconds for usleep().
 		return $delay * 1000;

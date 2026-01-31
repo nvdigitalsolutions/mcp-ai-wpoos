@@ -301,7 +301,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param string $tool_slug Tool slug.
 	 * @return array Recommendations.
 	 */
-	protected function generate_recommendations( $executions, $tool_slug  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. {
+	protected function generate_recommendations( $executions, $tool_slug ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. {
 		$performance = $this->analyze_performance( $executions );
 
 		$recommendations = array(
@@ -324,7 +324,7 @@ class WP_MCP_AI_Tool_Profiler {
 		}
 
 		return $recommendations;
-	}
+}
 
 	/**
 	 * Analyze task features
@@ -333,7 +333,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param array  $context Task context.
 	 * @return array Task features.
 	 */
-	protected function analyze_task_features( $task_description, $context  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
+protected function analyze_task_features( $task_description, $context ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. {
 		$features = array(
 			'keywords'      => array(),
 			'task_type'     => 'general',
@@ -345,30 +345,30 @@ class WP_MCP_AI_Tool_Profiler {
 		$task_lower = strtolower( $task_description );
 
 		// Detect task type from keywords.
-		if ( preg_match( '/\b(search|find|lookup|query)\b/', $task_lower ) ) {
-			$features['task_type'] = 'search';
-			$features['keywords']  = array( 'search', 'query' );
-		} elseif ( preg_match( '/\b(create|generate|make|build)\b/', $task_lower ) ) {
-			$features['task_type'] = 'create';
-			$features['keywords']  = array( 'create', 'generate' );
-		} elseif ( preg_match( '/\b(analyze|review|check|validate)\b/', $task_lower ) ) {
-			$features['task_type'] = 'analyze';
-			$features['keywords']  = array( 'analyze', 'review' );
-		} elseif ( preg_match( '/\b(update|modify|edit|change)\b/', $task_lower ) ) {
-			$features['task_type'] = 'update';
-			$features['keywords']  = array( 'update', 'modify' );
-		}
+if ( preg_match( '/\b(search|find|lookup|query)\b/', $task_lower ) ) {
+	$features['task_type'] = 'search';
+	$features['keywords']  = array( 'search', 'query' );
+} elseif ( preg_match( '/\b(create|generate|make|build)\b/', $task_lower ) ) {
+	$features['task_type'] = 'create';
+	$features['keywords']  = array( 'create', 'generate' );
+} elseif ( preg_match( '/\b(analyze|review|check|validate)\b/', $task_lower ) ) {
+	$features['task_type'] = 'analyze';
+	$features['keywords']  = array( 'analyze', 'review' );
+} elseif ( preg_match( '/\b(update|modify|edit|change)\b/', $task_lower ) ) {
+	$features['task_type'] = 'update';
+	$features['keywords']  = array( 'update', 'modify' );
+}
 
 		// Detect data type.
-		if ( preg_match( '/\b(image|picture|photo)\b/', $task_lower ) ) {
-			$features['data_type'] = 'image';
-		} elseif ( preg_match( '/\b(video|movie|clip)\b/', $task_lower ) ) {
-			$features['data_type'] = 'video';
-		} elseif ( preg_match( '/\b(audio|sound|music|speech)\b/', $task_lower ) ) {
-			$features['data_type'] = 'audio';
-		} elseif ( preg_match( '/\b(code|program|script|function)\b/', $task_lower ) ) {
-			$features['data_type'] = 'code';
-		}
+if ( preg_match( '/\b(image|picture|photo)\b/', $task_lower ) ) {
+	$features['data_type'] = 'image';
+} elseif ( preg_match( '/\b(video|movie|clip)\b/', $task_lower ) ) {
+	$features['data_type'] = 'video';
+} elseif ( preg_match( '/\b(audio|sound|music|speech)\b/', $task_lower ) ) {
+	$features['data_type'] = 'audio';
+} elseif ( preg_match( '/\b(code|program|script|function)\b/', $task_lower ) ) {
+	$features['data_type'] = 'code';
+}
 
 		return $features;
 	}
@@ -380,45 +380,45 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param array  $task_features Task features.
 	 * @return float Confidence score (0-1).
 	 */
-	protected function calculate_tool_task_fit( $tool_slug, $task_features ) {
-		$tool = $this->registry->get_tool( $tool_slug );
-		if ( ! $tool ) {
-			return 0;
-		}
-
-		$score = 0;
-
-		// Get tool description and name.
-		$tool_text = strtolower( $tool->get_name() . ' ' . $tool->get_description() );
-
-		// Match keywords.
-		foreach ( $task_features['keywords'] as $keyword ) {
-			if ( false !== strpos( $tool_text, $keyword ) ) {
-				$score += 0.2;
-			}
-		}
-
-		// Match data type.
-		if ( false !== strpos( $tool_text, $task_features['data_type'] ) ) {
-			$score += 0.3;
-		}
-
-		// Match task type.
-		if ( false !== strpos( $tool_text, $task_features['task_type'] ) ) {
-			$score += 0.3;
-		}
-
-		// Get historical performance for similar tasks.
-		$profile = $this->profile_tool( $tool_slug );
-		if ( ! is_wp_error( $profile ) ) {
-			$specialization = $profile['specialization'] ?? array();
-			if ( in_array( $task_features['task_type'], $specialization['optimal_use_cases'] ?? array(), true ) ) {
-				$score += 0.2;
-			}
-		}
-
-		return min( 1.0, $score );
+protected function calculate_tool_task_fit( $tool_slug, $task_features ) {
+	$tool = $this->registry->get_tool( $tool_slug );
+	if ( ! $tool ) {
+		return 0;
 	}
+
+	$score = 0;
+
+	// Get tool description and name.
+	$tool_text = strtolower( $tool->get_name() . ' ' . $tool->get_description() );
+
+	// Match keywords.
+	foreach ( $task_features['keywords'] as $keyword ) {
+		if ( false !== strpos( $tool_text, $keyword ) ) {
+			$score += 0.2;
+		}
+	}
+
+	// Match data type.
+	if ( false !== strpos( $tool_text, $task_features['data_type'] ) ) {
+		$score += 0.3;
+	}
+
+	// Match task type.
+	if ( false !== strpos( $tool_text, $task_features['task_type'] ) ) {
+		$score += 0.3;
+	}
+
+	// Get historical performance for similar tasks.
+	$profile = $this->profile_tool( $tool_slug );
+	if ( ! is_wp_error( $profile ) ) {
+		$specialization = $profile['specialization'] ?? array();
+		if ( in_array( $task_features['task_type'], $specialization['optimal_use_cases'] ?? array(), true ) ) {
+			$score += 0.2;
+		}
+	}
+
+	return min( 1.0, $score );
+}
 
 	/**
 	 * Get recommendation reason
@@ -427,14 +427,14 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param array  $task_features Task features.
 	 * @return string Reason for recommendation.
 	 */
-	protected function get_recommendation_reason( $tool_slug, $task_features ) {
-		return sprintf(
-			/* translators: 1: tool slug, 2: task type */
-			__( '%1$s is recommended for %2$s tasks based on keyword matching and historical performance.', 'mcp-ai-wpoos' ),
-			$tool_slug,
-			$task_features['task_type']
-		);
-	}
+protected function get_recommendation_reason( $tool_slug, $task_features ) {
+	return sprintf(
+		/* translators: 1: tool slug, 2: task type */
+		__( '%1$s is recommended for %2$s tasks based on keyword matching and historical performance.', 'mcp-ai-wpoos' ),
+		$tool_slug,
+		$task_features['task_type']
+	);
+}
 
 	/**
 	 * Get cached profile
@@ -442,13 +442,13 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param string $tool_slug Tool slug.
 	 * @return array|false Cached profile or false.
 	 */
-	protected function get_cached_profile( $tool_slug ) {
-		$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
-		if ( ! is_array( $all_profiles ) ) {
-			return false;
-		}
-		return $all_profiles[ $tool_slug ] ?? false;
+protected function get_cached_profile( $tool_slug ) {
+	$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
+	if ( ! is_array( $all_profiles ) ) {
+		return false;
 	}
+	return $all_profiles[ $tool_slug ] ?? false;
+}
 
 	/**
 	 * Cache profile
@@ -456,27 +456,27 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param string $tool_slug Tool slug.
 	 * @param array  $profile Profile data.
 	 */
-	protected function cache_profile( $tool_slug, $profile ) {
-		$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
-		if ( ! is_array( $all_profiles ) ) {
-			$all_profiles = array();
-		}
-		$all_profiles[ $tool_slug ] = $profile;
-		set_transient( self::PROFILE_CACHE_KEY, $all_profiles, self::PROFILE_CACHE_TTL );
+protected function cache_profile( $tool_slug, $profile ) {
+	$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
+	if ( ! is_array( $all_profiles ) ) {
+		$all_profiles = array();
 	}
+	$all_profiles[ $tool_slug ] = $profile;
+	set_transient( self::PROFILE_CACHE_KEY, $all_profiles, self::PROFILE_CACHE_TTL );
+}
 
 	/**
 	 * Invalidate cached profile
 	 *
 	 * @param string $tool_slug Tool slug.
 	 */
-	protected function invalidate_cached_profile( $tool_slug ) {
-		$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
-		if ( is_array( $all_profiles ) && isset( $all_profiles[ $tool_slug ] ) ) {
-			unset( $all_profiles[ $tool_slug ] );
-			set_transient( self::PROFILE_CACHE_KEY, $all_profiles, self::PROFILE_CACHE_TTL );
-		}
+protected function invalidate_cached_profile( $tool_slug ) {
+	$all_profiles = get_transient( self::PROFILE_CACHE_KEY );
+	if ( is_array( $all_profiles ) && isset( $all_profiles[ $tool_slug ] ) ) {
+		unset( $all_profiles[ $tool_slug ] );
+		set_transient( self::PROFILE_CACHE_KEY, $all_profiles, self::PROFILE_CACHE_TTL );
 	}
+}
 
 	/**
 	 * Get recommendation cache key
@@ -485,24 +485,24 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @param array  $context Task context.
 	 * @return string Cache key.
 	 */
-	protected function get_recommendation_cache_key( $task_description, $context ) {
-		return self::RECOMMENDATION_KEY . '_' . md5( $task_description . wp_json_encode( $context ) );
-	}
+protected function get_recommendation_cache_key( $task_description, $context ) {
+	return self::RECOMMENDATION_KEY . '_' . md5( $task_description . wp_json_encode( $context ) );
+}
 
 	/**
 	 * Clear all profile data
 	 */
-	public function clear_profiles() {
-		delete_transient( self::PROFILE_CACHE_KEY );
-	}
+public function clear_profiles() {
+	delete_transient( self::PROFILE_CACHE_KEY );
+}
 
 	/**
 	 * Clear execution history for tool
 	 *
 	 * @param string $tool_slug Tool slug.
 	 */
-	public function clear_tool_history( $tool_slug ) {
-		delete_transient( self::EXECUTION_LOG_KEY . $tool_slug );
-		$this->invalidate_cached_profile( $tool_slug );
-	}
+public function clear_tool_history( $tool_slug ) {
+	delete_transient( self::EXECUTION_LOG_KEY . $tool_slug );
+	$this->invalidate_cached_profile( $tool_slug );
+}
 }

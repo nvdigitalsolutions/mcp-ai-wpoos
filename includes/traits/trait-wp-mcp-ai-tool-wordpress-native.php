@@ -263,7 +263,7 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 	 * @param int $user_id User ID for data export - used by child class implementations.
 	 * @return array Privacy export data.
 	 */
-	protected function export_privacy_data( $user_id  ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base template method; child classes use this parameter for filtering.
+	protected function export_privacy_data( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base template method; child classes use this parameter for filtering.
 		return array();
 	}
 
@@ -279,7 +279,7 @@ trait WP_MCP_AI_Tool_WordPress_Native {
 	 * @param int $user_id User ID for data erasure - used by child class implementations.
 	 * @return array Erasure result with 'items_removed', 'items_retained', 'messages'.
 	 */
-	protected function erase_privacy_data( $user_id  ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base template method; child classes use this parameter for filtering.
+	protected function erase_privacy_data( $user_id ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Base template method; child classes use this parameter for filtering.
 		return array(
 			'items_removed'  => 0,
 			'items_retained' => 0,
