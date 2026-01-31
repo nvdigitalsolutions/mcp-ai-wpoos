@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/check-posts-tab-handling',
+        'version' => 'dev-copilot/check-posts-tab-handling',
+        'reference' => '70b47515b7576a4c53dadacd0c07bbe87d2c0949',
         'pretty_version' => 'dev-copilot/research-anthropic-models',
         'version' => 'dev-copilot/research-anthropic-models',
         'reference' => 'a6b0a3b0b2b71d56cfaeac0fc777e8777f3ba573',
@@ -10,27 +13,9 @@
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'dev' => true,
+        'dev' => false,
     ),
     'versions' => array(
-        'cweagans/composer-configurable-plugin' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => '15433906511a108a1806710e988629fd24b89974',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../cweagans/composer-configurable-plugin',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
-        'cweagans/composer-patches' => array(
-            'pretty_version' => '2.0.0',
-            'version' => '2.0.0.0',
-            'reference' => 'bfa6018a5f864653d9ed899b902ea72f858a2cf7',
-            'type' => 'composer-plugin',
-            'install_path' => __DIR__ . '/../cweagans/composer-patches',
-            'aliases' => array(),
-            'dev_requirement' => true,
-        ),
         'guzzlehttp/guzzle' => array(
             'pretty_version' => '7.10.0',
             'version' => '7.10.0.0',
@@ -68,6 +53,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/check-posts-tab-handling',
+            'version' => 'dev-copilot/check-posts-tab-handling',
+            'reference' => '70b47515b7576a4c53dadacd0c07bbe87d2c0949',
             'pretty_version' => 'dev-copilot/research-anthropic-models',
             'version' => 'dev-copilot/research-anthropic-models',
             'reference' => 'a6b0a3b0b2b71d56cfaeac0fc777e8777f3ba573',
