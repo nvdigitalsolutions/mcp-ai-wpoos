@@ -116,7 +116,7 @@ class WP_MCP_AI_Tool_Manage_Autonomous_Session {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		$action = $arguments['action'];
 
 		switch ( $action ) {

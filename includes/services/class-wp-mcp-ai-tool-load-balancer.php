@@ -241,7 +241,7 @@ class WP_MCP_AI_Tool_Load_Balancer {
 	 * @param array  $context Optional context.
 	 * @return array Ranked tool recommendations with confidence scores.
 	 */
-	public function get_tool_recommendations( $task_description, $context = array() ) {
+	public function get_tool_recommendations( $task_description, $context = array( ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. ) {
 		$registry = $this->get_registry();
 		if ( ! $registry ) {
 			return array();

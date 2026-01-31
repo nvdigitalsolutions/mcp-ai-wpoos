@@ -35,7 +35,7 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 	 * @param string $tier       The current workload tier.
 	 * @return int Modified max tokens.
 	 */
-	public static function apply_budget_management_to_max_tokens( $max_tokens, $tier ) {
+	public static function apply_budget_management_to_max_tokens( $max_tokens, $tier  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature. {
 		// Check if budget management is enabled.
 		$budget_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_budget_management', true );
 
@@ -64,7 +64,7 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 	 * @param bool   $ignore_execution_time Whether execution time constraint was ignored.
 	 * @return int Modified timeout.
 	 */
-	public static function apply_budget_management_to_timeout( $timeout, $tier, $max_execution_time, $ignore_execution_time ) {
+	public static function apply_budget_management_to_timeout( $timeout, $tier, $max_execution_time, $ignore_execution_time  ) // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature. {
 		// Check if budget management is enabled.
 		$budget_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_budget_management', true );
 

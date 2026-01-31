@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Get_Task_Plan {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		// Validate arguments.
 		if ( empty( $arguments['plan_id'] ) ) {
 			return array(
