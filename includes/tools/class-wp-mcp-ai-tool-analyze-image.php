@@ -452,6 +452,20 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_fetch_error',
+					sprintf(
+						/* translators: %d: HTTP response code */
+						__( 'Failed to fetch image, HTTP code %d.', 'mcp-ai-wpoos' ),
+						$response_code
+					),
+					array( 'status' => $response_code )
+				);
+			}
+
 			$image_content = base64_encode( wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 

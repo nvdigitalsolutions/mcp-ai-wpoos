@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 	public function get_parameters_schema() {
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 
-		$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'anthropic';
+		$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 
 		return array(
 			'type'                 => 'object',
@@ -171,7 +171,7 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$provider = isset( $arguments['provider'] ) && ! empty( $arguments['provider'] )
 			? sanitize_text_field( $arguments['provider'] )
-			: ( isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'anthropic' );
+			: ( isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai' );
 
 		// Get max tokens - OCR can produce a lot of text.
 		$max_tokens = self::MIN_OCR_TOKENS;
@@ -482,6 +482,20 @@ class WP_MCP_AI_Tool_Extract_Image_Text implements WP_MCP_AI_Tool_Interface, WP_
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				return new WP_Error(
+					'wp_mcp_ai_image_fetch_error',
+					sprintf(
+						/* translators: %d: HTTP response code */
+						__( 'Failed to fetch image, HTTP code %d.', 'mcp-ai-wpoos' ),
+						$response_code
+					),
+					array( 'status' => $response_code )
+				);
+			}
+
 			$image_content = base64_encode( wp_remote_retrieve_body( $response ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		}
 
