@@ -76,6 +76,48 @@ class WP_MCP_AI_Page_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Page Research & Add Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="toolkit-description">
+				<p><?php esc_html_e( 'AI-powered page creation and management tools for WordPress pages. Use AI assistance to research, plan, and create high-quality pages with optimized content and SEO.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'AI Research: Research topics and gather information for page content', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Content Generation: Create comprehensive page content with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'SEO Optimization: Automatically optimize pages for search engines', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Interactive Chat Interface: Collaborate with AI to refine page content', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Draft Management: Save and continue page creation across sessions', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list for this CPT.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'wp_create_page'        => __( 'Create Page', 'mcp-ai-wpoos-pro' ),
+			'wp_update_page'        => __( 'Update Page', 'mcp-ai-wpoos-pro' ),
+			'wp_get_pages'          => __( 'Get Pages', 'mcp-ai-wpoos-pro' ),
+			'wp_delete_page'        => __( 'Delete Page', 'mcp-ai-wpoos-pro' ),
+			'research_page'         => __( 'Research Page Topic', 'mcp-ai-wpoos-pro' ),
+			'wp_search_content'     => __( 'Search Content', 'mcp-ai-wpoos-pro' ),
+			'wp_get_post_meta'      => __( 'Get Page Metadata', 'mcp-ai-wpoos-pro' ),
+			'wp_update_post_meta'   => __( 'Update Page Metadata', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Sanitize settings.
 	 *
 	 * @param array $input Settings input.
