@@ -59,7 +59,7 @@ class WP_MCP_AI_Tool_Create_Woo_Product implements WP_MCP_AI_Tool_Interface, WP_
 
 	/** {@inheritdoc} */
 	public function get_parameters_schema() {
-		return array(
+		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
 				'reference'             => array(

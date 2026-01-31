@@ -46,7 +46,7 @@ class WP_MCP_AI_Tool_Create_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	 * {@inheritdoc}
 	 */
 	public function get_parameters_schema() {
-		return array(
+		$schema = array(
 			'type'                 => 'object',
 			'properties'           => array(
 				'title'             => array(
