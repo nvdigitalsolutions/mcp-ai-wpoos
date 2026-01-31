@@ -561,6 +561,13 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 
 			// Handle data: URLs.
 			if ( ! empty( $image_url ) && 0 === strpos( $image_url, 'data:' ) ) {
+				// Validate URL length to prevent memory exhaustion (max 10MB base64).
+				$max_data_url_length = 10 * 1024 * 1024 * 1.37; // Base64 is ~37% larger than binary.
+				if ( strlen( $image_url ) > $max_data_url_length ) {
+					WP_MCP_AI_Logger::log_error( 'Data URL too large for image.', array( 'length' => strlen( $image_url ) ) );
+					return null;
+				}
+
 				// Extract base64 data from data URL.
 				$matches = array();
 				if ( preg_match( '/^data:image\/(\w+);base64,(.+)$/', $image_url, $matches ) ) {
@@ -611,11 +618,37 @@ if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
 					return null;
 				}
 
+				// Validate content length before retrieving body (max 10MB).
+				$max_image_size = 10 * 1024 * 1024;
+				$content_length = wp_remote_retrieve_header( $response, 'content-length' );
+				if ( ! empty( $content_length ) && absint( $content_length ) > $max_image_size ) {
+					WP_MCP_AI_Logger::log_error(
+						'Remote image too large.',
+						array(
+							'url'            => $image_url,
+							'content_length' => $content_length,
+						)
+					);
+					return null;
+				}
+
 				$body         = wp_remote_retrieve_body( $response );
 				$content_type = wp_remote_retrieve_header( $response, 'content-type' );
 
 				if ( empty( $body ) ) {
 					WP_MCP_AI_Logger::log_error( 'Empty response body when fetching image.', array( 'url' => $image_url ) );
+					return null;
+				}
+
+				// Validate actual body size as fallback.
+				if ( strlen( $body ) > $max_image_size ) {
+					WP_MCP_AI_Logger::log_error(
+						'Remote image body too large.',
+						array(
+							'url'  => $image_url,
+							'size' => strlen( $body ),
+						)
+					);
 					return null;
 				}
 
