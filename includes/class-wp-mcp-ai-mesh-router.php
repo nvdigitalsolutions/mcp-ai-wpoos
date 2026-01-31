@@ -182,14 +182,16 @@ class WP_MCP_AI_Mesh_Router {
 	 * - Response time history
 	 * - Model availability
 	 * - Predicted queue wait time
+	 * - Geographic proximity (context-aware)
+	 * - User preferences (context-aware)
 	 *
 	 * @param array  $healthy_peers Available healthy peers.
 	 * @param string $prompt        The prompt being sent.
 	 * @param array  $hub_config    Compute hub configuration.
-	 * @param array  $context       Request context (reserved for future use: user preferences, geographic routing, time-based routing).
+	 * @param array  $context       Request context (user preferences, geographic routing, session data).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) {
 		// Analyze prompt complexity.
 		$complexity_score = self::analyze_prompt_complexity( $prompt );
 
@@ -199,23 +201,23 @@ class WP_MCP_AI_Mesh_Router {
 			$score  = 0;
 			$health = $peer['health'];
 
-			// Factor 1: Response time (lower is better) - 25% weight.
+			// Factor 1: Response time (lower is better) - 20% weight.
 			$avg_response_time   = isset( $health['avg_response_time'] ) ? $health['avg_response_time'] : 5.0;
 			$response_time_score = max( 0, 100 - ( $avg_response_time * 10 ) );
-			$score              += $response_time_score * 0.25;
+			$score              += $response_time_score * 0.2;
 
-			// Factor 2: Current load (lower is better) - 20% weight.
+			// Factor 2: Current load (lower is better) - 15% weight.
 			$current_load = isset( $health['current_load'] ) ? $health['current_load'] : 0;
 			$load_score   = max( 0, 100 - ( $current_load * 5 ) );
-			$score       += $load_score * 0.2;
+			$score       += $load_score * 0.15;
 
-			// Factor 3: Success rate - 20% weight.
+			// Factor 3: Success rate - 15% weight.
 			$success_rate = isset( $health['success_rate'] ) ? $health['success_rate'] : 100;
-			$score       += $success_rate * 0.2;
+			$score       += $success_rate * 0.15;
 
-			// Factor 4: Little's Law capacity analysis - 20% weight.
+			// Factor 4: Little's Law capacity analysis - 15% weight.
 			$capacity_score = self::calculate_peer_capacity_score( $health, $avg_response_time );
-			$score         += $capacity_score * 0.2;
+			$score         += $capacity_score * 0.15;
 
 			// Factor 5: Compute hub priority - 15% weight.
 			$is_compute_hub = self::is_compute_hub( $peer, $hub_config );
@@ -224,10 +226,20 @@ class WP_MCP_AI_Mesh_Router {
 				$score += 15;
 			}
 
+			// Factor 6: Geographic proximity - 10% weight (NEW).
+			$geo_score = self::calculate_geographic_score( $peer, $context );
+			$score    += $geo_score * 0.1;
+
+			// Factor 7: User preference matching - 10% weight (NEW).
+			$preference_score = self::calculate_preference_score( $peer, $context );
+			$score           += $preference_score * 0.1;
+
 			$scored_peers[] = array(
-				'peer'           => $peer,
-				'score'          => $score,
-				'capacity_score' => $capacity_score,
+				'peer'             => $peer,
+				'score'            => $score,
+				'capacity_score'   => $capacity_score,
+				'geo_score'        => $geo_score,
+				'preference_score' => $preference_score,
 			);
 		}
 
@@ -239,16 +251,19 @@ class WP_MCP_AI_Mesh_Router {
 			}
 		);
 
-		// Log the routing decision.
+		// Log the routing decision with context awareness.
 		WP_MCP_AI_Logger::log_event(
 			'mesh_routing_ai_optimized',
-			'AI-optimized peer selection completed with Little\'s Law analysis.',
+			'AI-optimized peer selection completed with context-aware routing.',
 			array(
 				'selected_peer'    => $scored_peers[0]['peer']['name'],
 				'score'            => $scored_peers[0]['score'],
 				'capacity_score'   => $scored_peers[0]['capacity_score'],
+				'geo_score'        => $scored_peers[0]['geo_score'],
+				'preference_score' => $scored_peers[0]['preference_score'],
 				'complexity_score' => $complexity_score,
 				'total_peers'      => count( $healthy_peers ),
+				'context'          => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -454,10 +469,10 @@ class WP_MCP_AI_Mesh_Router {
 	 *
 	 * @param array  $peer    Peer configuration.
 	 * @param string $prompt  Prompt to send.
-	 * @param array  $context Request context (reserved for future use: pass user identity, session data, or request metadata to peer).
+	 * @param array  $context Request context (user identity, session data, request metadata).
 	 * @return array|WP_Error Response or error.
 	 */
-	protected static function execute_peer_query( $peer, $prompt, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function execute_peer_query( $peer, $prompt, $context ) {
 		$peer_url = isset( $peer['url'] ) ? trim( $peer['url'] ) : '';
 		$peer_key = isset( $peer['api_key'] ) ? trim( $peer['api_key'] ) : '';
 
@@ -479,10 +494,30 @@ class WP_MCP_AI_Mesh_Router {
 			),
 		);
 
+		// Propagate context metadata if available.
+		if ( ! empty( $context['metadata'] ) ) {
+			$body['metadata'] = $context['metadata'];
+		}
+
 		$headers = array(
 			'Content-Type'         => 'application/json',
 			'X-WP-MCP-AI-Mesh-Key' => $peer_key,
 		);
+
+		// Propagate trace ID for distributed tracing.
+		if ( ! empty( $context['trace_id'] ) ) {
+			$headers['X-Trace-ID'] = sanitize_text_field( $context['trace_id'] );
+		}
+
+		// Propagate user ID for user-specific operations.
+		if ( ! empty( $context['user_id'] ) ) {
+			$headers['X-User-ID'] = absint( $context['user_id'] );
+		}
+
+		// Propagate session ID for session affinity tracking.
+		if ( ! empty( $context['session_id'] ) ) {
+			$headers['X-Session-ID'] = sanitize_text_field( $context['session_id'] );
+		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
@@ -934,5 +969,155 @@ class WP_MCP_AI_Mesh_Router {
 
 		// All good.
 		return __( 'Mesh network is healthy and operating within optimal parameters.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Calculate geographic proximity score for a peer.
+	 *
+	 * Scores peers based on geographic region proximity to reduce latency.
+	 *
+	 * @param array $peer    Peer configuration.
+	 * @param array $context Request context with geo_region.
+	 * @return float Score from 0-100 (100 = same region, 50 = nearby, 0 = far).
+	 */
+	protected static function calculate_geographic_score( $peer, $context ) {
+		// If no geographic context provided, return neutral score.
+		if ( empty( $context['geo_region'] ) ) {
+			return 50.0; // Neutral - no preference.
+		}
+
+		$request_region = strtolower( sanitize_text_field( $context['geo_region'] ) );
+		$peer_region    = isset( $peer['region'] ) ? strtolower( sanitize_text_field( $peer['region'] ) ) : '';
+
+		// Peer region not specified - neutral score.
+		if ( empty( $peer_region ) ) {
+			return 50.0;
+		}
+
+		// Exact region match - highest score.
+		if ( $request_region === $peer_region ) {
+			return 100.0;
+		}
+
+		// Check for regional proximity (e.g., us-east and us-west are nearby).
+		if ( self::are_regions_nearby( $request_region, $peer_region ) ) {
+			return 75.0;
+		}
+
+		// Different continents - lower score.
+		return 25.0;
+	}
+
+	/**
+	 * Calculate user preference matching score for a peer.
+	 *
+	 * Scores peers based on how well they match user preferences.
+	 *
+	 * @param array $peer    Peer configuration.
+	 * @param array $context Request context with user preferences.
+	 * @return float Score from 0-100.
+	 */
+	protected static function calculate_preference_score( $peer, $context ) {
+		// If no preferences provided, return neutral score.
+		if ( empty( $context['preferences'] ) || ! is_array( $context['preferences'] ) ) {
+			return 50.0; // Neutral - no preference.
+		}
+
+		$preferences = $context['preferences'];
+		$score       = 50.0; // Start neutral.
+
+		// Check preferred regions list.
+		if ( ! empty( $preferences['preferred_regions'] ) && is_array( $preferences['preferred_regions'] ) ) {
+			$peer_region = isset( $peer['region'] ) ? strtolower( $peer['region'] ) : '';
+			if ( ! empty( $peer_region ) && in_array( $peer_region, array_map( 'strtolower', $preferences['preferred_regions'] ), true ) ) {
+				$score += 30.0; // Bonus for being in preferred region list.
+			}
+		}
+
+		// Check max latency preference.
+		if ( ! empty( $preferences['max_latency_ms'] ) && isset( $peer['health']['avg_response_time'] ) ) {
+			$peer_latency_ms = $peer['health']['avg_response_time'] * 1000; // Convert to ms.
+			if ( $peer_latency_ms <= $preferences['max_latency_ms'] ) {
+				$score += 20.0; // Bonus for meeting latency requirement.
+			} else {
+				$score -= 20.0; // Penalty for exceeding latency requirement.
+			}
+		}
+
+		// Check compute hub requirement.
+		if ( ! empty( $preferences['require_compute_hub'] ) && self::is_compute_hub( $peer, array() ) ) {
+			$score += 20.0; // Bonus for being a compute hub when required.
+		}
+
+		// Clamp score to 0-100 range.
+		return max( 0.0, min( 100.0, $score ) );
+	}
+
+	/**
+	 * Check if two regions are geographically nearby.
+	 *
+	 * @param string $region1 First region code.
+	 * @param string $region2 Second region code.
+	 * @return bool True if regions are nearby.
+	 */
+	protected static function are_regions_nearby( $region1, $region2 ) {
+		// Define region proximity groups.
+		$proximity_groups = array(
+			'north_america' => array( 'us-east', 'us-west', 'us-central', 'ca-east', 'ca-west' ),
+			'europe'        => array( 'eu-west', 'eu-central', 'eu-north', 'uk' ),
+			'asia_pacific'  => array( 'ap-south', 'ap-southeast', 'ap-northeast', 'ap-east' ),
+			'south_america' => array( 'sa-east', 'sa-west' ),
+		);
+
+		// Check if both regions are in the same proximity group.
+		foreach ( $proximity_groups as $group ) {
+			if ( in_array( $region1, $group, true ) && in_array( $region2, $group, true ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Sanitize context for logging.
+	 *
+	 * Removes sensitive data from context before logging.
+	 *
+	 * @param array $context Request context.
+	 * @return array Sanitized context safe for logging.
+	 */
+	protected static function sanitize_context_for_logging( $context ) {
+		if ( empty( $context ) || ! is_array( $context ) ) {
+			return array();
+		}
+
+		$safe_context = array();
+
+		// Include non-sensitive fields.
+		$safe_fields = array( 'geo_region', 'trace_id', 'session_id' );
+		foreach ( $safe_fields as $field ) {
+			if ( isset( $context[ $field ] ) ) {
+				$safe_context[ $field ] = $context[ $field ];
+			}
+		}
+
+		// Include user ID (safe for internal logging).
+		if ( ! empty( $context['user_id'] ) ) {
+			$safe_context['user_id'] = absint( $context['user_id'] );
+		}
+
+		// Include preferences summary (without sensitive data).
+		if ( ! empty( $context['preferences'] ) && is_array( $context['preferences'] ) ) {
+			$safe_context['preferences'] = array();
+			if ( isset( $context['preferences']['preferred_regions'] ) ) {
+				$safe_context['preferences']['preferred_regions'] = $context['preferences']['preferred_regions'];
+			}
+			if ( isset( $context['preferences']['max_latency_ms'] ) ) {
+				$safe_context['preferences']['max_latency_ms'] = $context['preferences']['max_latency_ms'];
+			}
+		}
+
+		return $safe_context;
 	}
 }
