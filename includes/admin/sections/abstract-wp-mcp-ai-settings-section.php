@@ -133,8 +133,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Check if we're actually processing a form submission for this subtab.
 			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$subtab_field_name = 'subtab_' . $this->get_id();
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.

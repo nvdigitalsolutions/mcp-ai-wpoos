@@ -90,6 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Page' ) ) {
 				// Also show explicit success message if settings were just updated.
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 				if ( isset( $_GET['updated'] ) && 'true' === $_GET['updated'] ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 					$saved_count = isset( $_GET['saved'] ) ? absint( $_GET['saved'] ) : 0;
 					?>
 					<div class="notice notice-success is-dismissible">

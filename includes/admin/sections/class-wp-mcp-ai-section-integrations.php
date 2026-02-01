@@ -473,7 +473,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
 			// Use section-specific field name to avoid conflicts with other sections.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
 				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
@@ -493,6 +493,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					$subtab = $potential_subtab;
 				}
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
 			// Default to 'gmail' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {
@@ -1712,7 +1713,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 							// Otherwise link directly to the integration subtab.
 
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
 							$current_tab           = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
 							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
 
 							$url_args = array(

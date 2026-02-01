@@ -135,6 +135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 			}
 
 			// Handle form submission.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 			if ( isset( $_GET['settings-updated'] ) ) {
 				add_settings_error(
 					'wp_mcp_ai_chart_settings',
