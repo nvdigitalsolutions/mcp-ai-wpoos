@@ -148,6 +148,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// FALLBACK: Also check the legacy 'subtab' field for backward compatibility.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			if ( empty( $submitted_subtab ) && isset( $_POST['subtab'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 				$submitted_subtab = sanitize_key( $_POST['subtab'] );
 			}
 
@@ -161,11 +162,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			//
 			// ENHANCED: Also check if ANY fields from the active subtab are present in POST.
 			// This is a stronger indicator that this is a form submission for this subtab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			if ( empty( $submitted_subtab ) && ! empty( $_POST['wp_mcp_ai_settings'] ) && isset( $subtab_groups[ $active_subtab ] ) ) {
 				// Check if any fields from this subtab are in the POST data.
 				$has_subtab_fields = false;
 				$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
 				foreach ( $active_field_keys as $field_key ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 					if ( isset( $_POST['wp_mcp_ai_settings'][ $field_key ] ) ) {
 						$has_subtab_fields = true;
 						break;
@@ -190,6 +193,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
 				// Enhanced logging: Also log the actual POST subtab field values.
 				$post_subtab_fields = array();
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 				foreach ( $_POST as $key => $value ) {
 					if ( strpos( $key, 'subtab_' ) === 0 ) {
 						$post_subtab_fields[ $key ] = $value;
