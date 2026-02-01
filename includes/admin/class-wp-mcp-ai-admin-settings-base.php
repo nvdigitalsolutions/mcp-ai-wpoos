@@ -61,9 +61,11 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			foreach ( $defaults as $key => $default_value ) {
 				// If key is not present in submitted settings, preserve existing value or use default.
 				if ( ! isset( $settings[ $key ] ) ) {
-					// For boolean defaults (checkboxes), missing key means false (unchecked).
+					// For boolean defaults (checkboxes), preserve existing value instead of forcing to false.
+					// This prevents checkboxes from other tabs/sections from being incorrectly unchecked
+					// when saving settings from a different tab.
 					if ( is_bool( $default_value ) ) {
-						$sanitized[ $key ] = false;
+						$sanitized[ $key ] = isset( $current[ $key ] ) ? (bool) $current[ $key ] : false;
 					} else {
 						// For other types, preserve existing value or use default.
 						$sanitized[ $key ] = isset( $current[ $key ] ) ? $current[ $key ] : $default_value;
