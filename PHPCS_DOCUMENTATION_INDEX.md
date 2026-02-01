@@ -4,7 +4,7 @@
 **Status:** Documentation Suite Complete ✅  
 **Total Documents:** 8 (5 root + 3 in docs/)  
 **Total Violations Analyzed:** 667  
-**Index Size:** 16 KB (515 lines)  
+**Index Size:** 20 KB (576 lines)  
 **Plugin Submission Ready:** ✅ WPCS Compliant  
 
 ---
@@ -487,9 +487,9 @@ After implementing all safe fixes:
 | Document | Size | Best For | Reading Time |
 |----------|------|----------|--------------|
 | **Root Directory** |  |  |  |
-| Documentation Index | 16 KB | Overview, navigation & WP submission | 25 min |
+| Documentation Index | 20 KB | Overview, navigation & WP submission | 30 min |
 | Flowchart | 8.6 KB | Quick decisions | 5 min |
-| Quick Reference | 5.9 KB | Fast lookup | 10 min |
+| Quick Reference | 7.6 KB | Fast lookup | 10 min |
 | Fix Plan | 13 KB | Implementation | 30 min |
 | Ignore Analysis | 76 KB | Understanding unused params | 60 min |
 | **docs/** |  |  |  |
