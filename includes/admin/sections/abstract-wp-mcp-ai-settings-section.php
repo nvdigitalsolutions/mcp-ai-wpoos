@@ -580,7 +580,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
 									error_log(
 										sprintf(
-											'[NV oOS Checkbox Render HTML] Key: %s, $is_checked: %s, Will render checked attr: %s',
+											'[NV oOS Federation Mesh] Checkbox Render: %s, $is_checked: %s, Will render checked attr: %s',
 											$key,
 											$is_checked ? 'true' : 'false',
 											checked( $is_checked, true, false )

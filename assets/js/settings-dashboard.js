@@ -945,6 +945,9 @@
 				// CRITICAL FIX: Force-sync the visual toggle state with actual checkbox state
 				// This ensures the visual slider matches the DOM checkbox state
 				// The CSS toggle relies on :checked pseudo-selector, but we force a reflow to ensure it updates
+				// Note: This may seem redundant since we're setting the prop to its current value,
+				// but it forces the browser to re-evaluate the CSS :checked pseudo-selector which
+				// can fail to update in some edge cases (e.g., dynamically loaded content, AJAX updates)
 				if (isChecked) {
 					// Checkbox is checked - ensure it has the checked property
 					$checkbox.prop('checked', true);
@@ -954,10 +957,6 @@
 					$checkbox.prop('checked', false);
 					logWithTimestamp('[NV oOS Federation Mesh] Ensured checkbox is unchecked: ' + id);
 				}
-				
-				// Force a reflow to ensure CSS updates
-				$checkbox[0].offsetHeight; // eslint-disable-line no-unused-expressions
-				
 				// Verify the visual state after sync
 				const sliderBackgroundAfter = $slider.length > 0 ? $slider.css('background-color') : 'N/A';
 				if (sliderBackgroundColor !== sliderBackgroundAfter) {
