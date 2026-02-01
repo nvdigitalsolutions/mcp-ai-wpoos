@@ -1,7 +1,5 @@
 # PHPCS Violations Decision Flowchart
 
-**WordPress Plugin Submission:** ✅ Ready - Use this flowchart for compliance decisions
-
 ```
 ┌─────────────────────────────────────────────┐
 │  Start: PHPCS Violation Found (667 total)  │
@@ -192,5 +190,3 @@
 ---
 
 **Use this flowchart** when encountering any PHPCS violation to quickly determine the correct action.
-
-**For WordPress.org submission:** All decisions follow WordPress Plugin Review Guidelines. See **PHPCS_DOCUMENTATION_INDEX.md** for complete submission checklist.
