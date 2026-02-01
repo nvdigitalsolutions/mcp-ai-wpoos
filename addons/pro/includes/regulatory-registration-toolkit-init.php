@@ -13,30 +13,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-// Load migration class.
-require_once WP_MCP_AI_PRO_PATH . 'includes/migrations/class-wp-mcp-ai-migrate-requirement-post-type.php';
-
-// Run migration on admin init (only once).
-add_action(
-	'admin_init',
-	function () {
-		// Only run migration if needed.
-		$status = WP_MCP_AI_Migrate_Requirement_Post_Type::get_status();
-		if ( $status['needs_migration'] && ! $status['migration_completed'] ) {
-			// Run migration automatically.
-			$result = WP_MCP_AI_Migrate_Requirement_Post_Type::run();
-
-			// Log result.
-			if ( 'success' === $result['status'] && function_exists( 'wp_mcp_ai_log_activity' ) ) {
-				wp_mcp_ai_log_activity(
-					'migration_requirement_post_type',
-					sprintf( 'Migrated %d requirements from mcp_ai_reg_requirement to mcp_ai_requirement', $result['migrated'] )
-				);
-			}
-		}
-	}
-);
-
 // Load Regulatory Registration CPT class.
 require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-regulatory-registration-cpt.php';
 
@@ -90,7 +66,7 @@ function wp_mcp_ai_enqueue_regulatory_registration_admin_styles( $hook ) {
 			'mcp_ai_registration',
 			'mcp_ai_reg_document',
 			'mcp_ai_reg_country',
-			'mcp_ai_requirement',
+			'mcp_ai_reg_requirement',
 		),
 		true
 	) ) {
