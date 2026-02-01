@@ -1797,7 +1797,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<!-- Mesh Inbound API Key -->
-				<?php if ( $mesh_enabled ) : ?>
+				<?php if ( $mesh_enabled || $federation_enabled || $directory_enabled ) : ?>
 					<?php if ( $mesh_inbound_key ) : ?>
 						<div class="wp-mcp-ai-mesh-api-key" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
 							<h4 style="margin-top: 0;"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ); ?></h4>
@@ -1848,7 +1848,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<div class="notice notice-warning inline" style="margin: 20px 0;">
 							<p>
 								<strong><?php esc_html_e( 'Mesh Inbound API Key Not Generated', 'mcp-ai-wpoos' ); ?></strong><br>
-								<?php esc_html_e( 'The mesh inbound API key should be automatically generated when mesh computing is enabled. Click "Save Settings" below to generate your key.', 'mcp-ai-wpoos' ); ?>
+								<?php esc_html_e( 'The mesh inbound API key should be automatically generated when mesh computing or federation is enabled. Click "Save Settings" below to generate your key.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						</div>
 					<?php endif; ?>
