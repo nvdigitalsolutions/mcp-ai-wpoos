@@ -56,13 +56,6 @@ class WP_MCP_AI_Federation_Settings {
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG
 		);
 
-		add_settings_field(
-			'enable_federation',
-			__( 'Enable Federation', 'mcp-ai-wpoos' ),
-			array( $this, 'render_enable_federation_field' ),
-			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
-			'wp_mcp_ai_federation_section'
-		);
 
 		add_settings_field(
 			'enable_federation_directory',
@@ -123,27 +116,6 @@ class WP_MCP_AI_Federation_Settings {
 		<?php
 	}
 
-	/**
-	 * Render enable federation checkbox.
-	 */
-	public function render_enable_federation_field() {
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$enabled  = isset( $settings['enable_federation_directory'] ) ? (bool) $settings['enable_federation'] : false;
-		?>
-		<label>
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings::OPTION_NAME ); ?>[enable_federation]"
-				value="1"
-				<?php checked( $enabled ); ?>
-			/>
-			<?php esc_html_e( 'Enable federation well-known endpoints', 'mcp-ai-wpoos' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'Publishes /.well-known/ai-peer and /.well-known/jwks.json endpoints for peer discovery.', 'mcp-ai-wpoos' ); ?>
-		</p>
-		<?php
-	}
 
 	/**
 	 * Render enable directory checkbox.
