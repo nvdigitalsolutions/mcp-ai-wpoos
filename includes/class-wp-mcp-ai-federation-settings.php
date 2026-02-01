@@ -253,7 +253,8 @@ class WP_MCP_AI_Federation_Settings {
 		$all_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 		$defaults = array(
-			'enable_federation'   => false,
+			'enable_federation'           => false,
+			'enable_federation_directory' => false,
 			'federation_regions'          => array( 'global' ),
 			'federation_data_tags'        => array(),
 			'federation_qps'              => 5,
@@ -309,6 +310,6 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public static function is_directory_enabled() {
 		$settings = self::get_settings();
-		return ! empty( $settings['enable_federation'] );
+		return ! empty( $settings['enable_federation_directory'] );
 	}
 }

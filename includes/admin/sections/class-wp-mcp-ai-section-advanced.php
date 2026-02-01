@@ -92,6 +92,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				// Federation & Mesh Settings.
 				'enable_federation'             => array(
 					'type'           => 'checkbox',
+					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables federation features including well-known endpoints (/.well-known/ai-peer, /.well-known/jwks.json) for AI peer discovery.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
+				'enable_federation_directory'   => array(
+					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'mcp-ai-wpoos' ),
 					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'mcp-ai-wpoos' ),
@@ -196,6 +203,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
 						'enable_federation',
+						'enable_federation_directory',
 						'federation_regions',
 						'federation_data_tags',
 						'federation_qps',
@@ -1721,9 +1729,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function render_federation_mesh() {
 			// Get mesh computing status from tools settings.
-			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
-			$mesh_enabled       = ! empty( $settings['enable_mesh'] );
-			$directory_enabled  = ! empty( $settings['enable_federation'] );
+			$settings            = WP_MCP_AI_Admin_Settings::get_settings();
+			$mesh_enabled        = ! empty( $settings['enable_mesh'] );
+			$federation_enabled  = ! empty( $settings['enable_federation'] );
+			$directory_enabled   = ! empty( $settings['enable_federation_directory'] );
 
 			// Get AI Peers count only if directory is enabled and post type exists.
 			$total_peers = 0;
@@ -1767,6 +1776,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 									?>
 								</span>
 							<?php endif; ?>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Federation (Well-Known Endpoints):', 'mcp-ai-wpoos' ); ?></strong>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $federation_enabled ? 'success' : 'warning' ); ?>">
+								<?php echo esc_html( $federation_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
+							</span>
 						</li>
 						<li>
 							<strong><?php esc_html_e( 'Federation Directory:', 'mcp-ai-wpoos' ); ?></strong>
