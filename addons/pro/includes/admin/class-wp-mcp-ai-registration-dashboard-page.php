@@ -17,7 +17,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 22 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 10 );
 	}
 
 	/**

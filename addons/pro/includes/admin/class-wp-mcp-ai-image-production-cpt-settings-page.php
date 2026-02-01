@@ -27,7 +27,7 @@ class WP_MCP_AI_Image_Production_Settings_Page extends WP_MCP_AI_CPT_Settings_Pa
 		$this->option_name = 'wp_mcp_ai_image_production_settings';
 		$this->post_type   = 'mcp_ai_image_tpl';
 		$this->page_title  = __( 'Image Production Settings', 'mcp-ai-wpoos-pro' );
-		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
+		$this->menu_title  = __( 'Image Settings', 'mcp-ai-wpoos-pro' );
 		$this->page_slug   = 'image-production-settings';
 
 		// Call parent constructor to set up hooks.

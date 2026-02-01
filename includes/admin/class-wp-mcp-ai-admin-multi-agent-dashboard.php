@@ -24,7 +24,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 22 );
+		add_action( 'admin_menu', array( $this, 'add_menu_page' ), 21 );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_multi_agent_stats', array( $this, 'ajax_get_stats' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_reinstall_agents', array( $this, 'ajax_reinstall_agents' ) );
