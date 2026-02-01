@@ -262,6 +262,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
 			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
 
+			// DEBUG: Log checkbox values in posted data.
+			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
+			if ( $enable_logging ) {
+				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$posted_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $posted_settings[ $key ] ) ) {
+						$posted_checkboxes[ $key ] = $posted_settings[ $key ];
+					} else {
+						$posted_checkboxes[ $key ] = 'NOT_IN_POST';
+					}
+				}
+				error_log(
+					sprintf(
+						'[NV oOS Posted Data] Tab: %s, Checkbox values in $_POST[wp_mcp_ai_settings]: %s',
+						$active_tab,
+						wp_json_encode( $posted_checkboxes )
+					)
+				);
+			}
+
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			// IMPORTANT: Many sections use subtabs with critical data tables:

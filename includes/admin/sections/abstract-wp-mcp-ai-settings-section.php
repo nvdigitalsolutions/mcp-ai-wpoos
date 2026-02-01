@@ -197,10 +197,40 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
+				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] NOT processing section %s - not a form submit for this subtab',
+							$this->get_id()
+						)
+					);
+				}
 				return array();
 			}
 
-			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+			$result = $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+			
+			// DEBUG: Log what's being returned from sanitize_with_subtabs.
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$result_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $result[ $key ] ) ) {
+						$result_checkboxes[ $key ] = $result[ $key ] ? 'true' : 'false';
+					}
+				}
+				if ( ! empty( $result_checkboxes ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] Section %s returning checkboxes: %s',
+							$this->get_id(),
+							wp_json_encode( $result_checkboxes )
+						)
+					);
+				}
+			}
+			
+			return $result;
 		}
 
 		/**
