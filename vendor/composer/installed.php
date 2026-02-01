@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/perform-code-review-feature',
-        'version' => 'dev-copilot/perform-code-review-feature',
-        'reference' => '19c85b49947c4b772e74fa90d07697304fcbf076',
+        'pretty_version' => 'dev-copilot/fix-federation-mesh-subtab',
+        'version' => 'dev-copilot/fix-federation-mesh-subtab',
+        'reference' => 'f50a3888755958638070b19dffcbba07fd09cdee',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/perform-code-review-feature',
-            'version' => 'dev-copilot/perform-code-review-feature',
-            'reference' => '19c85b49947c4b772e74fa90d07697304fcbf076',
+            'pretty_version' => 'dev-copilot/fix-federation-mesh-subtab',
+            'version' => 'dev-copilot/fix-federation-mesh-subtab',
+            'reference' => 'f50a3888755958638070b19dffcbba07fd09cdee',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
