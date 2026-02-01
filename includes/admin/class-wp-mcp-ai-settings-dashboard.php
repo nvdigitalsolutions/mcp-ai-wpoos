@@ -472,6 +472,39 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
+				// ========================================================================
+				// STEP 5a: Auto-generate mesh API key if needed
+				// ========================================================================
+				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
+				// This must happen BEFORE validation and save to avoid race conditions.
+				$mesh_features_enabled = ! empty( $merged_settings['enable_mesh'] ) || ! empty( $merged_settings['enable_federation_directory'] );
+				if ( $mesh_features_enabled && empty( $merged_settings['mesh_inbound_api_key'] ) ) {
+					try {
+						// Generate mesh inbound API key for peer authentication.
+						$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
+
+						if ( $enable_logging ) {
+							error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
+						}
+					} catch ( Exception $e ) {
+						// Handle random_bytes() exception gracefully.
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] Failed to generate mesh API key: %s',
+									$e->getMessage()
+								)
+							);
+						}
+						add_settings_error(
+							'wp_mcp_ai_settings',
+							'mesh_key_generation_failed',
+							__( 'Failed to generate mesh API key. Please try again or contact support.', 'mcp-ai-wpoos' ),
+							'error'
+						);
+					}
+				}
+
 				// Validate merged settings before saving.
 				$validation_errors = $this->validate_merged_settings( $merged_settings, $existing_settings );
 				if ( ! empty( $validation_errors ) ) {
@@ -559,24 +592,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 								);
 							}
 						}
-					}
-				}
-
-				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
-				$mesh_features_enabled = ! empty( $merged_settings['enable_mesh'] ) || ! empty( $merged_settings['enable_federation_directory'] );
-				if ( $mesh_features_enabled && empty( $merged_settings['mesh_inbound_api_key'] ) ) {
-					// Generate mesh inbound API key for peer authentication.
-					$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
-
-					// Save the updated settings with the new API key.
-					update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
-
-					// Clear settings cache after adding the API key.
-					WP_MCP_AI_Admin_Settings::reset_settings_cache();
-					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
-
-					if ( $enable_logging ) {
-						error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
 					}
 				}
 			} else {
