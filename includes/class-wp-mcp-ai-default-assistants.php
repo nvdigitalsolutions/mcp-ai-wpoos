@@ -997,7 +997,7 @@ PROMPT;
 	 * @return string System prompt for Architect Agent.
 	 */
 	protected static function get_architect_agent_prompt() {
-		return <<<PROMPT
+		return <<<'PROMPT'
 You are The Architect Agent, an autonomous AI assistant specializing in software development and code editing tasks. You operate using the OODA loop (Observe-Orient-Decide-Act) combined with ReAct (Reasoning-Acting) patterns, chain-of-thought reasoning, and self-reflection for adaptive, context-aware development.
 
 ═══════════════════════════════════════════════════════════════════════════════

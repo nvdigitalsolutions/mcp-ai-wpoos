@@ -171,7 +171,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						break;
 					}
 				}
-				
+
 				// If we have fields from this subtab in POST, it's definitely a submission for this subtab.
 				if ( $has_subtab_fields ) {
 					$submitted_subtab = $active_subtab;
@@ -225,10 +225,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			}
 
 			$result = $this->sanitize_fields( $input, $active_fields, $is_form_submit );
-			
+
 			// DEBUG: Log what's being returned from sanitize_with_subtabs.
 			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
-				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$checkbox_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 				$result_checkboxes = array();
 				foreach ( $checkbox_keys as $key ) {
 					if ( isset( $result[ $key ] ) ) {
@@ -245,7 +245,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					);
 				}
 			}
-			
+
 			return $result;
 		}
 
@@ -308,10 +308,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					if ( $is_form_submit ) {
 						// Checkbox is checked if present in input with truthy value, unchecked otherwise.
 						// Explicitly check for '0' string (from hidden fields) and treat it as false.
-						$checkbox_value = false;
+						$checkbox_value  = false;
 						$raw_value_debug = 'NOT SET';
 						if ( isset( $filtered_input[ $key ] ) ) {
-							$raw_value = $filtered_input[ $key ];
+							$raw_value       = $filtered_input[ $key ];
 							$raw_value_debug = var_export( $raw_value, true );
 							// Convert '0' string to false, '1' string to true, and use bool cast for other values.
 							$checkbox_value = ( '0' === $raw_value || 0 === $raw_value ) ? false : (bool) $raw_value;
@@ -319,8 +319,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						$sanitized[ $key ] = $checkbox_value;
 
 						// Enhanced logging for checkbox processing - especially for federation/mesh checkboxes.
-						$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-						$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+						$settings               = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+						$enable_logging         = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 						$is_federation_checkbox = in_array( $key, self::FEDERATION_CHECKBOXES, true );
 						if ( ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) && $is_federation_checkbox ) {
 							error_log(
@@ -570,9 +570,9 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							// CRITICAL FIX: Normalize checkbox value to boolean for reliable checked() comparison.
 							// The value might be stored as string "1", integer 1, boolean true, or other truthy values.
 							// Convert to proper boolean to ensure checked() works correctly.
-							$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+							$is_checked     = ! empty( $value ) && '0' !== $value && 0 !== $value;
 							$checkbox_label = isset( $field['checkbox_label'] ) ? $field['checkbox_label'] : '';
-							
+
 							// Enhanced logging for federation/mesh checkboxes to verify render state.
 							if ( in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
 								$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
