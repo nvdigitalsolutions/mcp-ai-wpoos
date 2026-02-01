@@ -50,7 +50,7 @@ class Test_Section_Tools extends WP_UnitTestCase {
 
 		// Check for known fields.
 		$this->assertArrayHasKey( 'enable_mesh_computing', $fields );
-		$this->assertArrayHasKey( 'enable_federation_directory', $fields );
+		$this->assertArrayHasKey( 'enable_federation', $fields );
 		$this->assertArrayHasKey( 'enable_ai_media_library', $fields );
 		$this->assertArrayHasKey( 'enable_ai_comments_moderation', $fields );
 		$this->assertArrayHasKey( 'enable_site_creator', $fields );

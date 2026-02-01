@@ -90,7 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
-				'enable_federation_directory'   => array(
+				'enable_federation'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'mcp-ai-wpoos' ),
@@ -195,7 +195,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'label'  => __( 'Federation & Mesh', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
-						'enable_federation_directory',
+						'enable_federation',
 						'federation_regions',
 						'federation_data_tags',
 						'federation_qps',
@@ -1723,7 +1723,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 			// Get mesh computing status from tools settings.
 			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
 			$mesh_enabled       = ! empty( $settings['enable_mesh'] );
-			$directory_enabled  = ! empty( $settings['enable_federation_directory'] );
+			$directory_enabled  = ! empty( $settings['enable_federation'] );
 
 			// Get AI Peers count only if directory is enabled and post type exists.
 			$total_peers = 0;

@@ -55,7 +55,7 @@ if ( ! class_exists( 'WP_MCP_AI_Simple_Settings_Saver' ) ) {
 				'enable_huggingface'                 => 'checkbox',
 				'enable_high_token_model_switch'     => 'checkbox',
 				'enable_mesh'                        => 'checkbox',
-				'enable_federation_directory'        => 'checkbox',
+				'enable_federation'                  => 'checkbox',
 				'enable_budget_management'           => 'checkbox',
 				'enable_predictive_optimization'     => 'checkbox',
 				'enable_capability_gating'           => 'checkbox',

@@ -412,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				</div>
 
 				<!-- Federation & Mesh -->
-				<?php if ( ! empty( $settings['enable_federation_directory'] ) || ! empty( $settings['enable_mesh'] ) ) : ?>
+				<?php if ( ! empty( $settings['enable_federation'] ) || ! empty( $settings['enable_mesh'] ) ) : ?>
 					<div class="card">
 						<h2><?php esc_html_e( '7. Federation & Mesh Networking', 'mcp-ai-wpoos' ); ?></h2>
 						<table class="widefat striped">
@@ -427,14 +427,14 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 								<tr>
 									<td><strong><?php esc_html_e( 'Federation', 'mcp-ai-wpoos' ); ?></strong></td>
 									<td>
-										<?php if ( ! empty( $settings['enable_federation_directory'] ) ) : ?>
+										<?php if ( ! empty( $settings['enable_federation'] ) ) : ?>
 											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php else : ?>
 											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
 										<?php endif; ?>
 									</td>
 									<td>
-										<?php if ( ! empty( $settings['enable_federation_directory'] ) ) : ?>
+										<?php if ( ! empty( $settings['enable_federation'] ) ) : ?>
 											<?php esc_html_e( 'Region:', 'mcp-ai-wpoos' ); ?>
 											<code><?php echo esc_html( isset( $settings['federation_regions'] ) ? $settings['federation_regions'] : 'global' ); ?></code>
 										<?php endif; ?>
