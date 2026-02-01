@@ -43,7 +43,7 @@ Completed Phase 2 of repository organization, moving the remaining non-essential
 7 implementation/summary files moved from root to `docs/implementation-history/2026/january/`:
 - `IMPLEMENTATION_COMPLETE.md` - Toolkit Enhancement System
 - `IMPLEMENTATION_SUMMARY.md` - Regulatory Registration Toolkit
-- `PR_SUMMARY.md` - PR completion summaries
+- `PR_SUMMARY.md` - PR completion summaries (later moved to `docs/archive/` on February 1)
 - `ORCHESTRATION_MODES_ENHANCEMENT_SUMMARY.md` - Teams dashboard
 - `REGULATORY_TOOLKIT_ENHANCEMENT.md` - Settings page enhancement
 - `TOOLKIT_ENHANCEMENT_README.md` - Toolkit overview

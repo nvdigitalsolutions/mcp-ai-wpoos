@@ -23,7 +23,7 @@ This single document replaces the following root-level files:
 - `MENU_STRUCTURE_VISUAL.md`
 - `REMOTE_SITES_MENU_FIX.md`
 - `REMOTE_SITES_MENU_FIX_VISUAL.md`
-- `PR_SUMMARY.md` (menu-related sections)
+- `PR_SUMMARY.md` (menu-related sections) - now archived in `../../archive/PR_SUMMARY.md`
 
 ## Quick Reference
 

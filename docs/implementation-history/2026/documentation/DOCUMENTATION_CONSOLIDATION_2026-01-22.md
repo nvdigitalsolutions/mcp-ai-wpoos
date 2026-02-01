@@ -14,7 +14,7 @@ Completed comprehensive documentation organization and consolidation of the NV o
 - MENU_STRUCTURE_VISUAL.md
 - REMOTE_SITES_MENU_FIX.md
 - REMOTE_SITES_MENU_FIX_VISUAL.md
-- PR_SUMMARY.md
+- PR_SUMMARY.md (later moved to `docs/archive/` on February 1, 2026)
 
 **Created**:
 - `docs/fixes/menu-fixes/MENU_FIXES_CONSOLIDATED.md`

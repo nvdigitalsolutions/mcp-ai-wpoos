@@ -226,7 +226,7 @@ Fixed critical issues with the `vectorize_image` tool:
 - [Fix Summary PM AI Buttons](FIX_SUMMARY_PM_AI_BUTTONS.md) - Button fix summary
 - [Fix Summary PM Modal](FIX_SUMMARY_PM_MODAL.md) - Modal fix summary
 - [Fix Summary](FIX_SUMMARY.md) - General fix summary
-- [PR Summary](PR_SUMMARY.md) - Pull request summary
+- [PR Summary](../archive/PR_SUMMARY.md) - Pull request summary (archived)
 - [PR Summary PM AI Modal Fix](PR_SUMMARY_PM_AI_MODAL_FIX.md) - Modal fix PR summary
 
 ### Summary
