@@ -27,8 +27,9 @@ if ( $is_enabled && ! $is_base ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-architect-agent-settings-page.php';
 	}
 
-	// Load Architect Agent tools.
-	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_architect_agent_tools' );
+	// Load and register Architect Agent tools immediately.
+	// These tools are loaded when the toolkit is enabled, not via action hook.
+	wp_mcp_ai_load_architect_agent_tools();
 }
 
 /**
