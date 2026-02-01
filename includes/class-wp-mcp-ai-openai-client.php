@@ -3203,10 +3203,73 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$tool['name'] = (string) $tool['name'];
 
+				// Sanitize the parameters schema to ensure OpenAI compatibility.
+				if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['parameters'] ) && is_array( $tool['function']['parameters'] ) ) {
+					$tool['function']['parameters'] = $this->sanitize_parameters_for_openai( $tool['function']['parameters'] );
+				} elseif ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$tool['parameters'] = $this->sanitize_parameters_for_openai( $tool['parameters'] );
+				}
+
 				$normalised[] = $tool;
 			}
 
 			return array_values( $normalised );
+		}
+
+		/**
+		 * Sanitize parameter schema to satisfy OpenAI function calling requirements.
+		 *
+		 * OpenAI requires that function parameters schema:
+		 * - Must have type 'object' at the top level
+		 * - Cannot use 'oneOf', 'anyOf', 'allOf', 'enum', or 'not' at the top level
+		 *
+		 * This method removes unsupported composition keywords at the root level while
+		 * preserving all parameter definitions. Validation logic should be handled
+		 * in the tool's execute() method.
+		 *
+		 * @param array  $schema     JSON Schema object to sanitize.
+		 * @param string $parent_key The parent key to determine context (internal use).
+		 * @return array Sanitized schema compatible with OpenAI API.
+		 */
+		protected function sanitize_parameters_for_openai( array $schema, $parent_key = '' ) {
+			$sanitized = array();
+
+			// At the root level (empty parent_key), remove composition keywords.
+			// These are not allowed at the top level of OpenAI function parameters.
+			if ( '' === $parent_key ) {
+				$root_unsupported = array( 'oneOf', 'anyOf', 'allOf', 'not' );
+				foreach ( $root_unsupported as $keyword ) {
+					if ( isset( $schema[ $keyword ] ) ) {
+						// Log the removal for debugging.
+						WP_MCP_AI_Logger::log_event(
+							'openai_schema_sanitization',
+							"Removed unsupported top-level keyword: {$keyword}",
+							array(
+								'keyword' => $keyword,
+								'context' => 'root_level',
+							)
+						);
+						unset( $schema[ $keyword ] );
+					}
+				}
+
+				// Ensure type is 'object' at the root level.
+				if ( ! isset( $schema['type'] ) ) {
+					$schema['type'] = 'object';
+				}
+			}
+
+			// Recursively process the schema.
+			foreach ( $schema as $key => $value ) {
+				if ( is_array( $value ) ) {
+					// Recursively sanitize nested structures.
+					$sanitized[ $key ] = $this->sanitize_parameters_for_openai( $value, $key );
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+
+			return $sanitized;
 		}
 
 		/**
