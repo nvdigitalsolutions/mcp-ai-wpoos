@@ -516,9 +516,8 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		}
 
 		// Get most recent transcript.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$last_transcript = $wpdb->get_row( // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is defined above; data is properly prepared
+		$last_transcript = $wpdb->get_row(
 			$wpdb->prepare( "SELECT cct_created FROM {$table_name} WHERE assistant_id = %d ORDER BY cct_created DESC LIMIT 1", $assistant_id ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
 
