@@ -158,8 +158,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// before this method is ever invoked, so we know this is a legitimate form submission.
 			// We're simply being more tolerant of which specific subtab field is used to indicate the active tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			//
+			// ENHANCED: Also check if ANY fields from the active subtab are present in POST.
+			// This is a stronger indicator that this is a form submission for this subtab.
 			if ( empty( $submitted_subtab ) && ! empty( $_POST['wp_mcp_ai_settings'] ) && isset( $subtab_groups[ $active_subtab ] ) ) {
-				$submitted_subtab = $active_subtab;
+				// Check if any fields from this subtab are in the POST data.
+				$has_subtab_fields = false;
+				$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+				foreach ( $active_field_keys as $field_key ) {
+					if ( isset( $_POST['wp_mcp_ai_settings'][ $field_key ] ) ) {
+						$has_subtab_fields = true;
+						break;
+					}
+				}
+				
+				// If we have fields from this subtab in POST, it's definitely a submission for this subtab.
+				if ( $has_subtab_fields ) {
+					$submitted_subtab = $active_subtab;
+				}
 			}
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
@@ -172,16 +188,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				// Enhanced logging: Also log the actual POST subtab field values.
+				$post_subtab_fields = array();
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 ) {
+						$post_subtab_fields[ $key ] = $value;
+					}
+				}
 				error_log(
 					sprintf(
-						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s',
+						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s, POST subtab fields: %s',
 						$this->get_id(),
 						$active_subtab,
 						$submitted_subtab,
 						$is_form_submit ? 'YES' : 'NO',
 						count( $active_field_keys ),
 						implode( ', ', array_slice( $active_field_keys, 0, 10 ) ),
-						$subtab_field_name
+						$subtab_field_name,
+						wp_json_encode( $post_subtab_fields )
 					)
 				);
 			}
@@ -189,10 +213,40 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
+				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] NOT processing section %s - not a form submit for this subtab',
+							$this->get_id()
+						)
+					);
+				}
 				return array();
 			}
 
-			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+			$result = $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+			
+			// DEBUG: Log what's being returned from sanitize_with_subtabs.
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$result_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $result[ $key ] ) ) {
+						$result_checkboxes[ $key ] = $result[ $key ] ? 'true' : 'false';
+					}
+				}
+				if ( ! empty( $result_checkboxes ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] Section %s returning checkboxes: %s',
+							$this->get_id(),
+							wp_json_encode( $result_checkboxes )
+						)
+					);
+				}
+			}
+			
+			return $result;
 		}
 
 		/**
@@ -213,6 +267,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				if ( isset( $input[ $key ] ) ) {
 					$filtered_input[ $key ] = $input[ $key ];
+				}
+			}
+
+			// DEBUG: Log filtered input for checkboxes to trace the issue.
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_fields = array();
+				foreach ( $fields as $key => $field ) {
+					if ( isset( $field['type'] ) && 'checkbox' === $field['type'] ) {
+						$checkbox_fields[ $key ] = isset( $input[ $key ] ) ? $input[ $key ] : 'NOT_IN_INPUT';
+					}
+				}
+				if ( ! empty( $checkbox_fields ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Debug] Section: %s, Is Form Submit: %s, Checkbox values in input: %s',
+							$this->get_id(),
+							$is_form_submit ? 'YES' : 'NO',
+							wp_json_encode( $checkbox_fields )
+						)
+					);
 				}
 			}
 
@@ -495,18 +571,26 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							// The value might be stored as string "1", integer 1, boolean true, or other truthy values.
 							// Convert to proper boolean to ensure checked() works correctly.
 							$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+							$checkbox_label = isset( $field['checkbox_label'] ) ? $field['checkbox_label'] : '';
 							?>
-							<label>
-								<input
-									type="checkbox"
-									id="<?php echo esc_attr( $key ); ?>"
-									name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
-									value="1"
-									<?php checked( $is_checked, true ); ?>
-									<?php disabled( $disabled ); ?>
-								/>
-								<?php echo isset( $field['checkbox_label'] ) ? esc_html( $field['checkbox_label'] ) : ''; ?>
-							</label>
+							<div class="wp-mcp-ai-settings-toggle-wrapper">
+								<label class="wp-mcp-ai-settings-toggle-switch" for="<?php echo esc_attr( $key ); ?>">
+									<input
+										type="checkbox"
+										id="<?php echo esc_attr( $key ); ?>"
+										name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+										value="1"
+										<?php checked( $is_checked, true ); ?>
+										<?php disabled( $disabled ); ?>
+									/>
+									<span class="wp-mcp-ai-settings-toggle-slider"></span>
+								</label>
+								<?php if ( ! empty( $checkbox_label ) ) : ?>
+									<label class="wp-mcp-ai-settings-toggle-label" for="<?php echo esc_attr( $key ); ?>">
+										<?php echo esc_html( $checkbox_label ); ?>
+									</label>
+								<?php endif; ?>
+							</div>
 							<?php
 							break;
 

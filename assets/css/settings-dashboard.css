@@ -171,6 +171,82 @@
 	pointer-events: none;
 }
 
+/* Toggle Switch Styles */
+.wp-mcp-ai-settings-toggle-switch {
+	position: relative;
+	display: inline-block;
+	width: 50px;
+	height: 24px;
+	vertical-align: middle;
+	margin-right: 8px;
+}
+
+/* Hide default checkbox */
+.wp-mcp-ai-settings-toggle-switch input[type="checkbox"] {
+	opacity: 0;
+	width: 0;
+	height: 0;
+	position: absolute;
+}
+
+/* The slider */
+.wp-mcp-ai-settings-toggle-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #ccc;
+	border-radius: 24px;
+	transition: background-color 0.4s ease;
+}
+
+.wp-mcp-ai-settings-toggle-slider:before {
+	position: absolute;
+	content: "";
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	border-radius: 50%;
+	transition: transform 0.4s ease;
+}
+
+/* Checked state */
+.wp-mcp-ai-settings-toggle-switch input[type="checkbox"]:checked + .wp-mcp-ai-settings-toggle-slider {
+	background-color: #46b450;
+}
+
+.wp-mcp-ai-settings-toggle-switch input[type="checkbox"]:focus + .wp-mcp-ai-settings-toggle-slider {
+	box-shadow: 0 0 2px 2px rgba(70, 180, 80, 0.3);
+	outline: none;
+}
+
+.wp-mcp-ai-settings-toggle-switch input[type="checkbox"]:checked + .wp-mcp-ai-settings-toggle-slider:before {
+	transform: translateX(26px);
+}
+
+/* Disabled state */
+.wp-mcp-ai-settings-toggle-switch input[type="checkbox"]:disabled + .wp-mcp-ai-settings-toggle-slider {
+	opacity: 0.6;
+	cursor: not-allowed;
+	background-color: #ddd;
+}
+
+/* Toggle label wrapper */
+.wp-mcp-ai-settings-toggle-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.wp-mcp-ai-settings-toggle-label {
+	cursor: pointer;
+	user-select: none;
+}
+
 /* Responsive Design */
 @media screen and (max-width: 782px) {
 	.wp-mcp-ai-settings-dashboard .nav-tab {

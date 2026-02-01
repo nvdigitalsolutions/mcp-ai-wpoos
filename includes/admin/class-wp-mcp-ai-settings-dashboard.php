@@ -262,6 +262,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$active_view     = isset( $_POST['view'] ) ? sanitize_key( $_POST['view'] ) : '';
 			$save_all_tabs   = isset( $_POST['save_all_tabs'] ) && '1' === $_POST['save_all_tabs'];
 
+			// DEBUG: Log checkbox values in posted data.
+			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
+			if ( $enable_logging ) {
+				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$posted_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $posted_settings[ $key ] ) ) {
+						$posted_checkboxes[ $key ] = $posted_settings[ $key ];
+					} else {
+						$posted_checkboxes[ $key ] = 'NOT_IN_POST';
+					}
+				}
+				error_log(
+					sprintf(
+						'[NV oOS Posted Data] Tab: %s, Checkbox values in $_POST[wp_mcp_ai_settings]: %s',
+						$active_tab,
+						wp_json_encode( $posted_checkboxes )
+					)
+				);
+			}
+
 			// Find subtab from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			// IMPORTANT: Many sections use subtabs with critical data tables:
@@ -349,6 +371,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$tab_to_sanitize = $save_all_tabs ? '' : $active_tab;
 				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved   = false;
+
+				// DEBUG: Specifically log checkbox values in sanitized_new to diagnose save issue.
+				if ( $enable_logging ) {
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$sanitized_checkboxes_after = array();
+					foreach ( $checkbox_keys as $key ) {
+						$sanitized_checkboxes_after[ $key ] = isset( $sanitized_new[ $key ] ) ? 
+							( $sanitized_new[ $key ] ? 'true' : 'false' ) : 
+							'NOT_IN_SANITIZED';
+					}
+					error_log(
+						sprintf(
+							'[NV oOS After Sanitize] Tab: %s, Subtab: %s, Checkbox values in sanitized_new: %s',
+							$active_tab,
+							$active_subtab,
+							wp_json_encode( $sanitized_checkboxes_after )
+						)
+					);
+				}
 
 				// Log sanitization results.
 				if ( $enable_logging ) {
@@ -470,6 +511,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				// STEP 5: Merge Settings with Validation
 				// ========================================================================
+				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
+				if ( $enable_logging ) {
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$existing_checkboxes = array();
+					$sanitized_checkboxes = array();
+					foreach ( $checkbox_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) ) {
+							$existing_checkboxes[ $key ] = $existing_settings[ $key ] ? 'true' : 'false';
+						}
+						if ( isset( $sanitized_new[ $key ] ) ) {
+							$sanitized_checkboxes[ $key ] = $sanitized_new[ $key ] ? 'true' : 'false';
+						}
+					}
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Merge] Existing: %s, Sanitized: %s',
+							wp_json_encode( $existing_checkboxes ),
+							wp_json_encode( $sanitized_checkboxes )
+						)
+					);
+				}
+
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
 				// ========================================================================
