@@ -237,8 +237,8 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 						$this->render_overview_tab();
 				}
 				?>
-			</div>
-		</div>
+			</div><!-- .toolkit-settings-content -->
+		</div><!-- .wrap -->
 
 		<style>
 			.toolkit-settings-nav {
@@ -333,7 +333,7 @@ abstract class WP_MCP_AI_Toolkit_Settings_Base {
 				submit_button( __( 'Save Settings', 'mcp-ai-wpoos-pro' ) );
 				?>
 			</form>
-		</div>
+		</div><!-- .toolkit-card -->
 		<?php
 		$this->render_configuration_tab();
 	}

@@ -207,7 +207,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 					</td>
 				</tr>
 			</table>
-		</div>
+		</div><!-- .toolkit-configuration -->
 		<?php
 	}
 
