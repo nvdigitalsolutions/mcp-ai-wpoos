@@ -80,7 +80,7 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that ita_tariff_api_key is in google_analytics subtab.
+	 * Test that ita_tariff_api_key is in ita_tariff subtab.
 	 */
 	public function test_ita_tariff_api_key_in_subtab() {
 		if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
@@ -95,8 +95,8 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 		$subtab_groups = $method->invoke( $section );
 
 		$this->assertArrayHasKey( 'ita_tariff_api_key', $fields, 'ita_tariff_api_key field should be defined' );
-		$this->assertArrayHasKey( 'google_analytics', $subtab_groups, 'google_analytics subtab should exist' );
-		$this->assertContains( 'ita_tariff_api_key', $subtab_groups['google_analytics']['fields'], 'ita_tariff_api_key should be in google_analytics subtab' );
+		$this->assertArrayHasKey( 'ita_tariff', $subtab_groups, 'ita_tariff subtab should exist' );
+		$this->assertContains( 'ita_tariff_api_key', $subtab_groups['ita_tariff']['fields'], 'ita_tariff_api_key should be in ita_tariff subtab' );
 	}
 
 	/**

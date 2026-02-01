@@ -443,7 +443,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'google_analytics',
 					'label'  => $is_pro_active ? __( 'Google Analytics', 'mcp-ai-wpoos' ) : __( 'Google Analytics (Pro)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-chart-bar',
-					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json', 'ita_tariff_api_key' ),
+					'fields' => array( 'google_analytics_property_id', 'google_analytics_credentials', 'google_analytics_credentials_json' ),
+					'pro'    => true,
+				),
+				'ita_tariff'       => array(
+					'id'     => 'ita_tariff',
+					'label'  => $is_pro_active ? __( 'Trade.gov Tariff Rates', 'mcp-ai-wpoos' ) : __( 'Trade.gov Tariff Rates (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-admin-site',
+					'fields' => array( 'ita_tariff_api_key' ),
 					'pro'    => true,
 				),
 				'meta'             => array(
