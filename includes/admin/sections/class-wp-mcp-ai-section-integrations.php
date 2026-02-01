@@ -1714,7 +1714,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 							// Otherwise link directly to the integration subtab.
 
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
-							$current_tab           = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							$current_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for URL construction.
 							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
 

@@ -793,7 +793,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 		 * @return string Active tab ID.
 		 */
 		private function get_active_tab() {
-			$tabs       = WP_MCP_AI_Settings_Registry::get_tabs();
+			$tabs = WP_MCP_AI_Settings_Registry::get_tabs();
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for tab display.
 			$active_tab = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'general';
 

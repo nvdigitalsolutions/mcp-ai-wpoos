@@ -296,13 +296,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 
 			if ( isset( $input['incidents'] ) ) {
 				if ( is_string( $input['incidents'] ) ) {
-					$incidents = array_map( 'trim', explode( ',', $input['incidents'] ) );
-					$incidents = array_map( 'absint', $incidents );
-					$incidents = array_slice( $incidents, 0, 6 );
+					$incidents       = array_map( 'trim', explode( ',', $input['incidents'] ) );
+					$incidents       = array_map( 'absint', $incidents );
+					$incidents       = array_slice( $incidents, 0, 6 );
 					$incidents_count = count( $incidents );
 					while ( $incidents_count < 6 ) {
 						$incidents_count = count( $incidents );
-						$incidents[] = 0;
+						$incidents[]     = 0;
 					}
 					$sanitized['incidents'] = $incidents;
 				} elseif ( is_array( $input['incidents'] ) ) {
@@ -312,13 +312,13 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 
 			if ( isset( $input['vulnerabilities_fixed'] ) ) {
 				if ( is_string( $input['vulnerabilities_fixed'] ) ) {
-					$vulns = array_map( 'trim', explode( ',', $input['vulnerabilities_fixed'] ) );
-					$vulns = array_map( 'absint', $vulns );
-					$vulns = array_slice( $vulns, 0, 6 );
+					$vulns           = array_map( 'trim', explode( ',', $input['vulnerabilities_fixed'] ) );
+					$vulns           = array_map( 'absint', $vulns );
+					$vulns           = array_slice( $vulns, 0, 6 );
 						$vulns_count = count( $vulns );
 					while ( $vulns_count < 6 ) {
 						$vulns[] = 0;
-					$vulns_count = count( $vulns );
+											$vulns_count = count( $vulns );
 					}
 					$sanitized['vulnerabilities_fixed'] = $vulns;
 				} elseif ( is_array( $input['vulnerabilities_fixed'] ) ) {
