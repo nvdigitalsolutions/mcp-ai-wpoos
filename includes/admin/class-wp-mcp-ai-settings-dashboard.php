@@ -470,6 +470,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				// STEP 5: Merge Settings with Validation
 				// ========================================================================
+				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
+				if ( $enable_logging ) {
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$existing_checkboxes = array();
+					$sanitized_checkboxes = array();
+					foreach ( $checkbox_keys as $key ) {
+						if ( isset( $existing_settings[ $key ] ) ) {
+							$existing_checkboxes[ $key ] = $existing_settings[ $key ] ? 'true' : 'false';
+						}
+						if ( isset( $sanitized_new[ $key ] ) ) {
+							$sanitized_checkboxes[ $key ] = $sanitized_new[ $key ] ? 'true' : 'false';
+						}
+					}
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Merge] Existing: %s, Sanitized: %s',
+							wp_json_encode( $existing_checkboxes ),
+							wp_json_encode( $sanitized_checkboxes )
+						)
+					);
+				}
+
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
 				// ========================================================================

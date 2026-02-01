@@ -172,16 +172,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
 			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				// Enhanced logging: Also log the actual POST subtab field values.
+				$post_subtab_fields = array();
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 ) {
+						$post_subtab_fields[ $key ] = $value;
+					}
+				}
 				error_log(
 					sprintf(
-						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s',
+						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s, POST subtab fields: %s',
 						$this->get_id(),
 						$active_subtab,
 						$submitted_subtab,
 						$is_form_submit ? 'YES' : 'NO',
 						count( $active_field_keys ),
 						implode( ', ', array_slice( $active_field_keys, 0, 10 ) ),
-						$subtab_field_name
+						$subtab_field_name,
+						wp_json_encode( $post_subtab_fields )
 					)
 				);
 			}
@@ -213,6 +221,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			foreach ( $fields as $key => $field ) {
 				if ( isset( $input[ $key ] ) ) {
 					$filtered_input[ $key ] = $input[ $key ];
+				}
+			}
+
+			// DEBUG: Log filtered input for checkboxes to trace the issue.
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_fields = array();
+				foreach ( $fields as $key => $field ) {
+					if ( isset( $field['type'] ) && 'checkbox' === $field['type'] ) {
+						$checkbox_fields[ $key ] = isset( $input[ $key ] ) ? $input[ $key ] : 'NOT_IN_INPUT';
+					}
+				}
+				if ( ! empty( $checkbox_fields ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Debug] Section: %s, Is Form Submit: %s, Checkbox values in input: %s',
+							$this->get_id(),
+							$is_form_submit ? 'YES' : 'NO',
+							wp_json_encode( $checkbox_fields )
+						)
+					);
 				}
 			}
 
