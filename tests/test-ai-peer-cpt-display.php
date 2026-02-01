@@ -20,7 +20,6 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation_directory'           => true,
 				'enable_federation_directory' => false,
 			)
 		);
