@@ -138,10 +138,11 @@ class WP_MCP_AI_Text_Chunker {
 			return self::chunk_by_characters( $paragraph, $chunk_size, $overlap );
 		}
 
-		$chunks        = array();
-		$current_chunk = '';
+		$chunks         = array();
+		$current_chunk  = '';
+		$sentence_count = count( $sentences );
 
-		for ( $i = 0; $i < count( $sentences ); $i++ ) {
+		for ( $i = 0; $i < $sentence_count; $i++ ) {
 			$sentence = $sentences[ $i ];
 
 			if ( strlen( $current_chunk ) + strlen( $sentence ) > $chunk_size ) {

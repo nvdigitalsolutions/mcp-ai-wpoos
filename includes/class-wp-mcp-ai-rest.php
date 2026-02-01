@@ -5387,10 +5387,11 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 
 				case 'weighted':
 					// First response gets priority (leader/planner).
-					$primary = $responses[0]['content'];
-					if ( count( $responses ) > 1 ) {
+					$primary        = $responses[0]['content'];
+					$response_count = count( $responses );
+					if ( $response_count > 1 ) {
 						$primary .= "\n\n---\n\n## Additional Perspectives\n\n";
-						for ( $i = 1; $i < count( $responses ); $i++ ) {
+						for ( $i = 1; $i < $response_count; $i++ ) {
 							$primary .= $responses[ $i ]['content'] . "\n\n";
 						}
 					}

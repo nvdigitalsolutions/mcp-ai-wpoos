@@ -154,8 +154,8 @@ class WP_MCP_AI_Security_Training_Admin {
 				<h2><?php echo esc_html__( 'Your Progress', 'mcp-ai-wpoos' ); ?></h2>
 				<p>
 					<?php
-					/* translators: %1$d: completed modules, %2$d: total modules */
 					printf(
+						/* translators: %1$d: completed modules, %2$d: total modules */
 						esc_html__( 'Completed %1$d of %2$d training modules', 'mcp-ai-wpoos' ),
 						count( $completions ),
 						count( $modules )

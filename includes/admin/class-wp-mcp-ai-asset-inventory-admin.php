@@ -115,8 +115,8 @@ class WP_MCP_AI_Asset_Inventory_Admin {
 
 					<p class="wp-mcp-ai-last-updated">
 						<?php
-						/* translators: %s: date and time */
 						printf(
+							/* translators: %s: date and time */
 							esc_html__( 'Last updated: %s', 'mcp-ai-wpoos' ),
 							esc_html( $stats['generated_at'] )
 						);
