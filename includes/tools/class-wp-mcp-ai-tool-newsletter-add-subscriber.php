@@ -134,7 +134,8 @@ class WP_MCP_AI_Tool_Newsletter_Add_Subscriber implements WP_MCP_AI_Tool_Interfa
 		$table = $wpdb->prefix . 'newsletter';
 
 		// Check if subscriber already exists.
-		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		$name    = isset( $arguments['name'] ) ? sanitize_text_field( $arguments['name'] ) : '';
 		$surname = isset( $arguments['surname'] ) ? sanitize_text_field( $arguments['surname'] ) : '';

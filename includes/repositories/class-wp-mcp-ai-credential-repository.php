@@ -81,7 +81,7 @@ class WP_MCP_AI_Credential_Repository {
 			$this->credentials_meta_key
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$results = $wpdb->get_results( $query );
 
 		foreach ( $results as $result ) {
@@ -249,7 +249,7 @@ class WP_MCP_AI_Credential_Repository {
 			$this->credentials_meta_key
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$results         = $wpdb->get_results( $query );
 		$all_credentials = array();
 
@@ -286,7 +286,7 @@ class WP_MCP_AI_Credential_Repository {
 			$this->credentials_meta_key
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$results       = $wpdb->get_results( $query );
 		$removed_count = 0;
 
