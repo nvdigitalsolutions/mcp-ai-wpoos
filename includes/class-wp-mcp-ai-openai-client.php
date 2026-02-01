@@ -3220,12 +3220,13 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * Sanitize parameter schema to satisfy OpenAI function calling requirements.
 		 *
 		 * OpenAI requires that function parameters schema:
-		 * - Must have type 'object' at the top level
-		 * - Cannot use 'oneOf', 'anyOf', 'allOf', 'enum', or 'not' at the top level
+		 * - Must have type 'object' at the root level
+		 * - Cannot use 'oneOf', 'anyOf', 'allOf', or 'not' at the root level
+		 * - However, these composition keywords ARE allowed in nested property definitions
 		 *
-		 * This method removes unsupported composition keywords at the root level while
-		 * preserving all parameter definitions. Validation logic should be handled
-		 * in the tool's execute() method.
+		 * This method removes unsupported composition keywords at the root level only,
+		 * while preserving all property definitions and nested composition keywords.
+		 * Validation logic should be handled in the tool's execute() method.
 		 *
 		 * @param array  $schema     JSON Schema object to sanitize.
 		 * @param string $parent_key The parent key to determine context (internal use).
