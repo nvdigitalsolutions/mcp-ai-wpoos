@@ -462,16 +462,50 @@
 			// correct field sanitization in subtab-aware sections.
 			const urlParams = new URLSearchParams(window.location.search);
 			const currentSubtab = urlParams.get('subtab');
-			if (currentSubtab) {
-				// Find all subtab hidden fields in the form and update their values.
-				$form.find('input[type="hidden"][name^="subtab_"]').each(function() {
+			
+			// Find all subtab hidden fields in the form.
+			const $subtabFields = $form.find('input[type="hidden"][name^="subtab_"]');
+			
+			if ($subtabFields.length > 0) {
+				// Process each subtab hidden field.
+				$subtabFields.each(function() {
 					const $hiddenField = $(this);
+					const fieldName = $hiddenField.attr('name');
 					const oldValue = $hiddenField.val();
-					// Only update if the field exists and subtab matches.
-					// This ensures the correct subtab is marked as active during save.
-					$hiddenField.val(currentSubtab);
-					console.log('[NV oOS Settings] Updated subtab hidden field:', $hiddenField.attr('name'), 'from', oldValue, 'to', currentSubtab);
+					
+					// Determine the correct subtab value to use:
+					// 1. If URL has subtab parameter, use it
+					// 2. Otherwise, keep the existing field value (from PHP rendering)
+					// 3. As last resort, try to detect from active subtab link
+					let newValue = currentSubtab;
+					
+					if (!newValue) {
+						// No URL parameter - check if field already has a valid value.
+						if (oldValue && oldValue !== '') {
+							newValue = oldValue;
+							console.log('[NV oOS Settings] Subtab field', fieldName, 'kept existing value:', oldValue, '(no URL param)');
+						} else {
+							// Try to detect from active subtab link in the section.
+							const $activeSubtab = $form.find('.wp-mcp-ai-subtab-active[data-subtab]');
+							if ($activeSubtab.length > 0) {
+								newValue = $activeSubtab.data('subtab');
+								console.log('[NV oOS Settings] Subtab field', fieldName, 'detected from active link:', newValue);
+							}
+						}
+					}
+					
+					// Update the field value if we have a valid value.
+					if (newValue && newValue !== oldValue) {
+						$hiddenField.val(newValue);
+						console.log('[NV oOS Settings] Updated subtab hidden field:', fieldName, 'from', oldValue, 'to', newValue);
+					} else if (newValue === oldValue) {
+						console.log('[NV oOS Settings] Subtab field', fieldName, 'already has correct value:', newValue);
+					} else {
+						console.warn('[NV oOS Settings] WARNING: Could not determine subtab value for field:', fieldName);
+					}
 				});
+			} else {
+				console.log('[NV oOS Settings] No subtab hidden fields found in form (this is OK for tabs without subtabs)');
 			}
 			
 			// CRITICAL FIX: Add hidden fields for unchecked checkboxes to ensure they're submitted.
@@ -506,6 +540,18 @@
 			console.log('[NV oOS Settings] Checkbox states:', checkboxes);
 			if (uncheckedCheckboxes.length > 0) {
 				console.log('[NV oOS Settings] Added hidden fields for unchecked checkboxes:', uncheckedCheckboxes);
+			}
+			
+			// ENHANCED LOGGING: Specifically log federation/mesh checkbox states for debugging.
+			const federationCheckboxes = ['enable_mesh', 'enable_federation', 'enable_federation_directory'];
+			const federationStates = {};
+			federationCheckboxes.forEach(function(name) {
+				if (typeof checkboxes[name] !== 'undefined') {
+					federationStates[name] = checkboxes[name];
+				}
+			});
+			if (Object.keys(federationStates).length > 0) {
+				console.log('[NV oOS Settings] Federation/Mesh checkbox states at submission:', federationStates);
 			}
 			
 			// Get form data for logging.
