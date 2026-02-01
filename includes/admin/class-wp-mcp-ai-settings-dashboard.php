@@ -350,6 +350,25 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$sanitized_new   = $this->sanitize_settings( $posted_settings, $tab_to_sanitize );
 				$already_saved   = false;
 
+				// DEBUG: Specifically log checkbox values in sanitized_new to diagnose save issue.
+				if ( $enable_logging ) {
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$sanitized_checkboxes_after = array();
+					foreach ( $checkbox_keys as $key ) {
+						$sanitized_checkboxes_after[ $key ] = isset( $sanitized_new[ $key ] ) ? 
+							( $sanitized_new[ $key ] ? 'true' : 'false' ) : 
+							'NOT_IN_SANITIZED';
+					}
+					error_log(
+						sprintf(
+							'[NV oOS After Sanitize] Tab: %s, Subtab: %s, Checkbox values in sanitized_new: %s',
+							$active_tab,
+							$active_subtab,
+							wp_json_encode( $sanitized_checkboxes_after )
+						)
+					);
+				}
+
 				// Log sanitization results.
 				if ( $enable_logging ) {
 					error_log(
