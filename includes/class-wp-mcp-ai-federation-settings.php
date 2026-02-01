@@ -25,21 +25,26 @@ class WP_MCP_AI_Federation_Settings {
 	}
 
 	/**
-	 * Flush rewrite rules when directory setting changes.
+	 * Flush rewrite rules when federation settings change.
 	 *
-	 * This ensures the AI Peers CPT menu appears immediately after enabling
-	 * the directory service, without requiring a manual flush or page refresh.
+	 * This ensures the well-known endpoints and AI Peers CPT menu appears
+	 * immediately after enabling federation features, without requiring a
+	 * manual flush or page refresh.
 	 *
 	 * @param array $old_value Old settings value.
 	 * @param array $new_value New settings value.
 	 */
 	public function maybe_flush_rewrite_rules( $old_value, $new_value ) {
-		// Check if enable_federation setting changed.
-		$old_directory_enabled = ! empty( $old_value['enable_federation'] );
-		$new_directory_enabled = ! empty( $new_value['enable_federation'] );
+		// Check if either federation setting changed.
+		$old_federation_enabled = ! empty( $old_value['enable_federation'] );
+		$new_federation_enabled = ! empty( $new_value['enable_federation'] );
 
-		// If the directory setting changed, flush rewrite rules.
-		if ( $old_directory_enabled !== $new_directory_enabled ) {
+		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
+		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
+
+		// If either setting changed, flush rewrite rules.
+		if ( $old_federation_enabled !== $new_federation_enabled ||
+			$old_directory_enabled !== $new_directory_enabled ) {
 			flush_rewrite_rules();
 		}
 	}
