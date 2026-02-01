@@ -23,13 +23,11 @@ class WP_MCP_AI_Member_Research_Page extends WP_MCP_AI_Research_Add_Base {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->post_type      = 'mcp_ai_member';
-		$this->page_title     = __( 'Research & Add Members', 'mcp-ai-wpoos-pro' );
-		$this->menu_title     = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
-		$this->page_slug      = 'member-research';
-		$this->settings_key   = 'wp_mcp_ai_member_settings';
-		$this->capability     = 'edit_posts';
-		$this->research_title = __( 'Family Member & Pet Research', 'mcp-ai-wpoos-pro' );
+		$this->post_type  = 'mcp_ai_member';
+		$this->page_title = __( 'Research & Add Members', 'mcp-ai-wpoos-pro' );
+		$this->menu_title = __( 'Research & Add', 'mcp-ai-wpoos-pro' );
+		$this->page_slug  = 'member-research';
+		$this->capability = 'edit_posts';
 
 		parent::__construct( 'health' );
 	}
