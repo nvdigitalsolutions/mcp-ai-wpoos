@@ -768,7 +768,8 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 			require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-orchestration-seeder.php';
 		}
 
-		$force = isset( $_POST['force'] ) && $_POST['force'];
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+		$force = isset( $_POST['force'] ) && sanitize_text_field( wp_unslash( $_POST['force'] ) );
 
 		$seeder = new WP_MCP_AI_Profession_Orchestration_Seeder();
 		$result = $seeder->seed_all( $force );
@@ -959,7 +960,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 
 		$transient_prefix = '_transient_wp_mcp_ai_workflow_';
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
-		$transients       = $wpdb->get_results(
+		$transients = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} 
 				WHERE option_name LIKE %s 

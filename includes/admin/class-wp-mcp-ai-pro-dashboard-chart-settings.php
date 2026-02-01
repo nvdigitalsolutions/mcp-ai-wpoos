@@ -299,7 +299,9 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 					$incidents = array_map( 'trim', explode( ',', $input['incidents'] ) );
 					$incidents = array_map( 'absint', $incidents );
 					$incidents = array_slice( $incidents, 0, 6 );
-					while ( count( $incidents ) < 6 ) {
+					$incidents_count = count( $incidents );
+					while ( $incidents_count < 6 ) { {
+						$incidents_count = count( $incidents );
 						$incidents[] = 0;
 					}
 					$sanitized['incidents'] = $incidents;
@@ -313,6 +315,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 					$vulns = array_map( 'trim', explode( ',', $input['vulnerabilities_fixed'] ) );
 					$vulns = array_map( 'absint', $vulns );
 					$vulns = array_slice( $vulns, 0, 6 );
+						$vulns_count = count( $vulns );
 					while ( count( $vulns ) < 6 ) {
 						$vulns[] = 0;
 					}
