@@ -893,6 +893,14 @@
 
 			console.log('[NV oOS Federation Mesh] Diagnostics initialized');
 
+			// Add timestamp helper
+			const logWithTimestamp = function(message, ...args) {
+				const timestamp = new Date().toISOString().split('T')[1].slice(0, -1); // HH:MM:SS.mmm
+				console.log('[' + timestamp + '] ' + message, ...args);
+			};
+
+			logWithTimestamp('[NV oOS Federation Mesh] Diagnostics initialized');
+
 			// Add a visual indicator that diagnostics are running
 			$('.wrap.wp-mcp-ai-settings-dashboard').prepend(
 				'<div class="notice notice-info" style="margin: 15px 0; padding: 10px 15px;">' +
@@ -912,7 +920,7 @@
 				}
 
 				// Log current state
-				console.log('[NV oOS Federation Mesh] Checkbox found:', id, {
+				logWithTimestamp('[NV oOS Federation Mesh] Checkbox found: ' + id, {
 					checked: $checkbox.is(':checked'),
 					disabled: $checkbox.is(':disabled'),
 					visible: $checkbox.is(':visible'),
@@ -923,32 +931,39 @@
 				// Add click handler for debugging
 				$checkbox.on('change', function() {
 					const isChecked = $(this).is(':checked');
-					console.log('[NV oOS Federation Mesh] Checkbox changed:', id, 'New state:', isChecked);
+					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' New state: ' + isChecked);
 				});
 
 				// Check if the checkbox is actually clickable
 				const $label = $('label[for="' + id + '"]');
 				if ($label.length > 0) {
-					console.log('[NV oOS Federation Mesh] Label found for:', id);
+					logWithTimestamp('[NV oOS Federation Mesh] Label found for: ' + id);
 				} else {
 					console.warn('[NV oOS Federation Mesh] No label found for:', id);
 				}
 
 				// Check for overlapping elements that might block clicks
 				const rect = $checkbox[0].getBoundingClientRect();
-				const elementAtPoint = document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2);
-				if (elementAtPoint !== $checkbox[0] && !$checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length) {
+				const centerX = rect.left + rect.width / 2;
+				const centerY = rect.top + rect.height / 2;
+				const elementAtPoint = document.elementFromPoint(centerX, centerY);
+				
+				// Check if element at center is the checkbox itself or within its container
+				const isCheckboxItself = (elementAtPoint === $checkbox[0]);
+				const isWithinContainer = $checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length > 0;
+				
+				if (!isCheckboxItself && !isWithinContainer) {
 					console.warn('[NV oOS Federation Mesh] Element covering checkbox:', id, elementAtPoint);
 				}
 			});
 
 			// Log when save button is clicked
 			$('input[type="submit"][name="submit"]').on('click', function() {
-				console.log('[NV oOS Federation Mesh] Save button clicked');
+				logWithTimestamp('[NV oOS Federation Mesh] Save button clicked');
 				checkboxIds.forEach(function(id) {
 					const $checkbox = $('#' + id);
 					if ($checkbox.length > 0) {
-						console.log('[NV oOS Federation Mesh] Checkbox state at save:', id, $checkbox.is(':checked'));
+						logWithTimestamp('[NV oOS Federation Mesh] Checkbox state at save: ' + id + ' = ' + $checkbox.is(':checked'));
 					}
 				});
 			});
