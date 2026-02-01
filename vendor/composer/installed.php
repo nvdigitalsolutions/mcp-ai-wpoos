@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-switcher-functionality',
-        'version' => 'dev-copilot/fix-switcher-functionality',
-        'reference' => '644c7e46159c37ec74324013392b27eda2300b21',
+        'pretty_version' => 'dev-copilot/fix-mesh-switches-saving-issue',
+        'version' => 'dev-copilot/fix-mesh-switches-saving-issue',
+        'reference' => 'd4cae43c8b60ac093d07b5b3180c8026e9626f51',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-switcher-functionality',
-            'version' => 'dev-copilot/fix-switcher-functionality',
-            'reference' => '644c7e46159c37ec74324013392b27eda2300b21',
+            'pretty_version' => 'dev-copilot/fix-mesh-switches-saving-issue',
+            'version' => 'dev-copilot/fix-mesh-switches-saving-issue',
+            'reference' => 'd4cae43c8b60ac093d07b5b3180c8026e9626f51',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
