@@ -34,7 +34,8 @@ if ( is_admin() ) {
 		// Load Product research page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-reg-product-research-page.php';
 
-		// Load Registration tracking dashboard and research page.
+		// Load Registration settings, dashboard, and research pages.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-settings-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-dashboard-page.php';
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-registration-research-page.php';
 
