@@ -16,8 +16,8 @@
 **Status:** Ready for immediate WordPress.org submission
 
 **New Documentation Files:**
-- ✅ **SUBMISSION_QUICK_SUMMARY.md** - Quick readiness summary with submission steps
-- ✅ **WORDPRESS_ORG_SUBMISSION_READINESS.md** - Comprehensive submission assessment
+- ✅ **[SUBMISSION_QUICK_SUMMARY.md](archive/summaries/SUBMISSION_QUICK_SUMMARY.md)** - Quick readiness summary with submission steps
+- ✅ **[WORDPRESS_ORG_SUBMISSION_READINESS.md](archive/summaries/WORDPRESS_ORG_SUBMISSION_READINESS.md)** - Comprehensive submission assessment
 
 **Readiness Summary:**
 - **Code Quality:** 100% WPCS compliant (0 errors)
@@ -1567,7 +1567,7 @@ Adds "NV oOS" section to Site Health → Info tab with:
 
 **v1.1.0 - Final Updates** (February 2, 2026) - **CURRENT PRODUCTION RELEASE**
 - **Submission Documentation:** WordPress.org submission readiness assessment complete
-- **New Files Added:** SUBMISSION_QUICK_SUMMARY.md and WORDPRESS_ORG_SUBMISSION_READINESS.md
+- **New Files Added:** [SUBMISSION_QUICK_SUMMARY.md](archive/summaries/SUBMISSION_QUICK_SUMMARY.md) and [WORDPRESS_ORG_SUBMISSION_READINESS.md](archive/summaries/WORDPRESS_ORG_SUBMISSION_READINESS.md)
 - **Documentation Total:** 650+ files with complete compliance documentation
 - **Readiness:** 100% across all categories (code quality, requirements, documentation, security)
 - **Status:** ✅ Ready for immediate WordPress.org submission with comprehensive documentation
@@ -1598,8 +1598,8 @@ This plugin has achieved 100% WordPress.org compliance with enhanced GDPR and Si
 **Text Domain:** nvdigital-open-operator-system-oos (WordPress.org) | mcp-ai-wpoos (Repository)
 
 **Quick Start:**
-- See SUBMISSION_QUICK_SUMMARY.md for fast overview
-- See WORDPRESS_ORG_SUBMISSION_READINESS.md for comprehensive assessment
+- See [SUBMISSION_QUICK_SUMMARY.md](archive/summaries/SUBMISSION_QUICK_SUMMARY.md) for fast overview
+- See [WORDPRESS_ORG_SUBMISSION_READINESS.md](archive/summaries/WORDPRESS_ORG_SUBMISSION_READINESS.md) for comprehensive assessment
 
 **Related Documentation:**
 - WORDPRESS_ORG_PLUGIN_CHECK_REPORT.md - Complete compliance audit
