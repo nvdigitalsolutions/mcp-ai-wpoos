@@ -956,17 +956,25 @@
 				}
 
 				// Check for overlapping elements that might block clicks
-				const rect = $checkbox[0].getBoundingClientRect();
-				const centerX = rect.left + rect.width / 2;
-				const centerY = rect.top + rect.height / 2;
-				const elementAtPoint = document.elementFromPoint(centerX, centerY);
-				
-				// Check if element at center is the checkbox itself or within its container
-				const isCheckboxItself = (elementAtPoint === $checkbox[0]);
-				const isWithinContainer = $checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length > 0;
-				
-				if (!isCheckboxItself && !isWithinContainer) {
-					console.warn('[NV oOS Federation Mesh] Element covering checkbox:', id, elementAtPoint);
+				// Note: The checkbox itself is hidden (opacity: 0, width/height: 0), so we check the visible slider
+				if ($slider.length > 0) {
+					const rect = $slider[0].getBoundingClientRect();
+					// Only check if the slider has valid dimensions
+					if (rect.width > 0 && rect.height > 0) {
+						const centerX = rect.left + rect.width / 2;
+						const centerY = rect.top + rect.height / 2;
+						const elementAtPoint = document.elementFromPoint(centerX, centerY);
+						
+						// Check if element at center is the slider itself or within its container
+						const isSliderItself = (elementAtPoint === $slider[0]);
+						const isWithinContainer = $checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length > 0;
+						
+						if (elementAtPoint && !isSliderItself && !isWithinContainer) {
+							console.warn('[NV oOS Federation Mesh] Element covering slider for checkbox:', id, elementAtPoint);
+						} else if (elementAtPoint) {
+							logWithTimestamp('[NV oOS Federation Mesh] Slider clickable for: ' + id);
+						}
+					}
 				}
 			});
 
