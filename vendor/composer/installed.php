@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/revert-phpcs-improvements',
+        'version' => 'dev-copilot/revert-phpcs-improvements',
+        'reference' => '9cd92d5753e620fb2a9c435544db27a345cc08c5',
         'pretty_version' => 'dev-copilot/revert-architect-agent-tools-fix',
         'version' => 'dev-copilot/revert-architect-agent-tools-fix',
         'reference' => '3f80441553bcf4dec6dcdbf9a7cc06897ae226e0',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/revert-phpcs-improvements',
+            'version' => 'dev-copilot/revert-phpcs-improvements',
+            'reference' => '9cd92d5753e620fb2a9c435544db27a345cc08c5',
             'pretty_version' => 'dev-copilot/revert-architect-agent-tools-fix',
             'version' => 'dev-copilot/revert-architect-agent-tools-fix',
             'reference' => '3f80441553bcf4dec6dcdbf9a7cc06897ae226e0',
