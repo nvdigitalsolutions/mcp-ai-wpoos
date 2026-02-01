@@ -331,7 +331,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		$magnitude_b = 0.0;
 
 		$vec_a_count = count( $vec_a );
-	for ( $i = 0; $i < $vec_a_count; $i++ ) {
+			for ( $i = 0; $i < $vec_a_count; $i++ ) {
 			$dot_product += $vec_a[ $i ] * $vec_b[ $i ];
 			$magnitude_a += $vec_a[ $i ] * $vec_a[ $i ];
 			$magnitude_b += $vec_b[ $i ] * $vec_b[ $i ];
@@ -340,7 +340,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		$magnitude_a = sqrt( $magnitude_a );
 		$magnitude_b = sqrt( $magnitude_b );
 
-		if ( $magnitude_a === 0 || $magnitude_b === 0 ) {
+		if ( 0 === $magnitude_a || 0 === $magnitude_b ) {
 			return 0.0;
 		}
 

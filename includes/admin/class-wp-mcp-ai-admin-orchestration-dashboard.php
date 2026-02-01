@@ -950,7 +950,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Try to get from cache first (5 minute cache for dashboard performance).
 		$cache_key = 'wp_mcp_ai_recent_workflows';
 		$cached    = get_transient( $cache_key );
-		
+
 		if ( false !== $cached ) {
 			return $cached;
 		}
@@ -1237,7 +1237,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 		// Try to get stats from cache first (5 minute cache for dashboard performance).
 		$cache_key = 'wp_mcp_ai_agent_memory_stats';
 		$cached    = get_transient( $cache_key );
-		
+
 		if ( false !== $cached ) {
 			$total_contexts   = $cached['total_contexts'];
 			$total_agents     = $cached['total_agents'];

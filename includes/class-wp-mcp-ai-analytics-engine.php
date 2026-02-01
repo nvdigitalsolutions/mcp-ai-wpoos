@@ -149,7 +149,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Calculate median.
 		sort( $values );
-		if ( $count % 2 === 0 ) {
+		if ( 0 === $count % 2 ) {
 			$median = ( $values[ $count / 2 - 1 ] + $values[ $count / 2 ] ) / 2;
 		} else {
 			$median = $values[ floor( $count / 2 ) ];
