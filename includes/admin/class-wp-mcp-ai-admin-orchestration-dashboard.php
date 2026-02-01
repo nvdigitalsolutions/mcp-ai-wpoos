@@ -946,10 +946,19 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @return array List of recent workflows.
 	 */
 	protected function get_recent_workflows() {
+		// Try to get from cache first (5 minute cache for dashboard performance).
+		$cache_key = 'wp_mcp_ai_recent_workflows';
+		$cached    = get_transient( $cache_key );
+		
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
 		// Get all workflow transients.
 		global $wpdb;
 
 		$transient_prefix = '_transient_wp_mcp_ai_workflow_';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
 		$transients       = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT option_name, option_value FROM {$wpdb->options} 
@@ -991,6 +1000,9 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 				);
 			}
 		}
+
+		// Cache the results for 5 minutes.
+		set_transient( $cache_key, $workflows, 5 * MINUTE_IN_SECONDS );
 
 		return $workflows;
 	}
@@ -1221,37 +1233,58 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 	 * @since 1.1.0
 	 */
 	protected function render_agent_memory_stats() {
-		global $wpdb;
+		// Try to get stats from cache first (5 minute cache for dashboard performance).
+		$cache_key = 'wp_mcp_ai_agent_memory_stats';
+		$cached    = get_transient( $cache_key );
+		
+		if ( false !== $cached ) {
+			$total_contexts   = $cached['total_contexts'];
+			$total_agents     = $cached['total_agents'];
+			$contexts_by_type = $cached['contexts_by_type'];
+		} else {
+			global $wpdb;
 
-		// Count total stored contexts.
-		$total_contexts = 0;
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		$transients = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT option_name, option_value FROM {$wpdb->options} 
-				WHERE option_name LIKE %s",
-				$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
-			)
-		);
+			// Count total stored contexts.
+			$total_contexts = 0;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Cached with transient API above.
+			$transients = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT option_name, option_value FROM {$wpdb->options} 
+					WHERE option_name LIKE %s",
+					$wpdb->esc_like( '_transient_mcp_ai_ctx_index_' ) . '%'
+				)
+			);
 
-		$contexts_by_type = array();
-		$total_agents     = 0;
+			$contexts_by_type = array();
+			$total_agents     = 0;
 
-		foreach ( $transients as $transient ) {
-			$index = maybe_unserialize( $transient->option_value );
-			if ( is_array( $index ) && ! empty( $index ) ) {
-				++$total_agents;
-				$total_contexts += count( $index );
+			foreach ( $transients as $transient ) {
+				$index = maybe_unserialize( $transient->option_value );
+				if ( is_array( $index ) && ! empty( $index ) ) {
+					++$total_agents;
+					$total_contexts += count( $index );
 
-				// Count by type.
-				foreach ( $index as $context_id => $context_meta ) {
-					$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
-					if ( ! isset( $contexts_by_type[ $type ] ) ) {
-						$contexts_by_type[ $type ] = 0;
+					// Count by type.
+					foreach ( $index as $context_id => $context_meta ) {
+						$type = isset( $context_meta['type'] ) ? $context_meta['type'] : 'generic';
+						if ( ! isset( $contexts_by_type[ $type ] ) ) {
+							$contexts_by_type[ $type ] = 0;
+						}
+						++$contexts_by_type[ $type ];
 					}
-					++$contexts_by_type[ $type ];
 				}
 			}
+
+			// Cache the results for 5 minutes.
+			set_transient(
+				$cache_key,
+				array(
+					'total_contexts'   => $total_contexts,
+					'total_agents'     => $total_agents,
+					'contexts_by_type' => $contexts_by_type,
+				),
+				5 * MINUTE_IN_SECONDS
+			);
 		}
 
 		?>
@@ -1334,7 +1367,7 @@ class WP_MCP_AI_Admin_Orchestration_Dashboard {
 								if ( ! ( $tool instanceof WP_MCP_AI_Tool_Interface ) ) {
 									continue;
 								}
-								if ( $tool->get_slug() === $tool_slug ) {
+								if ( $tool_slug === $tool->get_slug() ) {
 									?>
 									<li>
 										<strong><?php echo esc_html( $tool_slug ); ?>:</strong>
