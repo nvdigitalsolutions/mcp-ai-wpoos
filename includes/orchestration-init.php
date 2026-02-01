@@ -100,7 +100,7 @@ function wp_mcp_ai_register_orchestration_tools() {
 			$class_name = 'WP_MCP_AI_Tool_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $slug ) ) );
 
 			if ( class_exists( $class_name ) ) {
-				$registry->register( new $class_name() );
+				$registry->register_tool( new $class_name() );
 			}
 		}
 	}

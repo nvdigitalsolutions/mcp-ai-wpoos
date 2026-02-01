@@ -137,41 +137,41 @@ function wp_mcp_ai_load_site_creator_tools() {
 
 	if ( $registry ) {
 		// Research & Discovery.
-		$registry->register( new WP_MCP_AI_Tool_Research_Site_Best_Practices() );
-		$registry->register( new WP_MCP_AI_Tool_Analyze_Competitor_Sites() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Site_Plan() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Research_Site_Best_Practices() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Analyze_Competitor_Sites() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Site_Plan() );
 
 		// Page Building.
-		$registry->register( new WP_MCP_AI_Tool_Generate_Landing_Page() );
-		$registry->register( new WP_MCP_AI_Tool_Create_Homepage_Layout() );
-		$registry->register( new WP_MCP_AI_Tool_Build_About_Page() );
-		$registry->register( new WP_MCP_AI_Tool_Create_Service_Pages() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Blog_Layout() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Landing_Page() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Homepage_Layout() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Build_About_Page() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Service_Pages() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Blog_Layout() );
 
 		// Section Building.
-		$registry->register( new WP_MCP_AI_Tool_Create_Hero_Section() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Feature_Section() );
-		$registry->register( new WP_MCP_AI_Tool_Build_Testimonial_Section() );
-		$registry->register( new WP_MCP_AI_Tool_Create_CTA_Section() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Gallery_Section() );
-		$registry->register( new WP_MCP_AI_Tool_Build_Contact_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Hero_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Feature_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Build_Testimonial_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_CTA_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Gallery_Section() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Build_Contact_Section() );
 
 		// Widget Building.
-		$registry->register( new WP_MCP_AI_Tool_Create_Custom_Widget() );
-		$registry->register( new WP_MCP_AI_Tool_Build_Navigation_Menu() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Sidebar_Widget() );
-		$registry->register( new WP_MCP_AI_Tool_Create_Footer_Widget() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Custom_Widget() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Build_Navigation_Menu() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Sidebar_Widget() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Footer_Widget() );
 
 		// Template Management.
-		$registry->register( new WP_MCP_AI_Tool_Save_Site_Template() );
-		$registry->register( new WP_MCP_AI_Tool_Import_Site_Template() );
-		$registry->register( new WP_MCP_AI_Tool_Export_Template_Kit() );
-		$registry->register( new WP_MCP_AI_Tool_Manage_Template_Versions() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Save_Site_Template() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Import_Site_Template() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Export_Template_Kit() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Manage_Template_Versions() );
 
 		// Integration Tools.
-		$registry->register( new WP_MCP_AI_Tool_Integrate_With_Architect() );
-		$registry->register( new WP_MCP_AI_Tool_Scaffold_Theme_Structure() );
-		$registry->register( new WP_MCP_AI_Tool_Automate_Development_Workflow() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Integrate_With_Architect() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Scaffold_Theme_Structure() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Automate_Development_Workflow() );
 
 		// All 25 tools registered successfully (26 planned - 1 research tool reserved for future).
 		// Section Building - to be implemented.
