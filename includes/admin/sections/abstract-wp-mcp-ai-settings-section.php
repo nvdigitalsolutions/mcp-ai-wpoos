@@ -245,16 +245,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					);
 				}
 			}
-			
+
 			// CRITICAL: Always log federation checkbox sanitization for debugging.
 			// This helps diagnose the persistent issue where enable_federation_directory doesn't save.
 			if ( 'advanced' === $this->get_id() && ! empty( $result ) ) {
-				$fed_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 				$has_fed_keys = false;
-				$fed_values = array();
+				$fed_values   = array();
 				foreach ( $fed_keys as $key ) {
 					if ( isset( $result[ $key ] ) ) {
-						$has_fed_keys = true;
+						$has_fed_keys       = true;
 						$fed_values[ $key ] = var_export( $result[ $key ], true );
 					}
 				}
@@ -270,7 +270,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					);
 				}
 			}
-			
+
 			return $result;
 		}
 
