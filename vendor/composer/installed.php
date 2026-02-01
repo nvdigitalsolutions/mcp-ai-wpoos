@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-undefined-variable-warning',
+        'version' => 'dev-copilot/fix-undefined-variable-warning',
+        'reference' => 'a247538b07c3d30efb7f1dd063b55012cbf36847',
         'pretty_version' => 'dev-copilot/fix-phpcs-violations',
         'version' => 'dev-copilot/fix-phpcs-violations',
         'reference' => 'f6c0a741b0b9962462192b5d04d373b207077e0e',
@@ -83,6 +86,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-undefined-variable-warning',
+            'version' => 'dev-copilot/fix-undefined-variable-warning',
+            'reference' => 'a247538b07c3d30efb7f1dd063b55012cbf36847',
             'pretty_version' => 'dev-copilot/fix-phpcs-violations',
             'version' => 'dev-copilot/fix-phpcs-violations',
             'reference' => 'f6c0a741b0b9962462192b5d04d373b207077e0e',
