@@ -251,15 +251,20 @@ class WP_MCP_AI_OpenAI_Schema_Sanitization_Test extends WP_UnitTestCase {
 					),
 				),
 			),
+			// Add anyOf at root to test it gets removed.
+			'anyOf'      => array(
+				array( 'required' => array( 'field' ) ),
+			),
 		);
 
 		$sanitized = $client->public_sanitize_parameters_for_openai( $schema );
 
-		// At root level, anyOf should not exist (we didn't add it in this test).
-		$this->assertArrayNotHasKey( 'anyOf', $sanitized );
+		// At root level, anyOf should be removed.
+		$this->assertArrayNotHasKey( 'anyOf', $sanitized, 'anyOf should be removed from root level' );
 
-		// But in nested property, anyOf can remain (OpenAI allows it there).
-		$this->assertArrayHasKey( 'anyOf', $sanitized['properties']['field'] );
+		// But in nested property, anyOf should remain (OpenAI allows it there).
+		$this->assertArrayHasKey( 'anyOf', $sanitized['properties']['field'], 'anyOf should be preserved in nested property' );
+		$this->assertCount( 2, $sanitized['properties']['field']['anyOf'], 'nested anyOf options should be intact' );
 	}
 
 	/**
