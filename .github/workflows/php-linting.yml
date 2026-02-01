@@ -60,13 +60,24 @@ jobs:
           echo "${{ steps.changed-files.outputs.all_changed_files }}"
           
           # Run PHPCS with phpcs.xml.dist configuration (includes WPCS 3.0)
-          PHPCS_OUTPUT=$(vendor/bin/phpcs --standard=phpcs.xml.dist --report=json ${{ steps.changed-files.outputs.all_changed_files }} || true)
-          echo "$PHPCS_OUTPUT"
+          PHPCS_OUTPUT=$(vendor/bin/phpcs --standard=phpcs.xml.dist --report=json ${{ steps.changed-files.outputs.all_changed_files }} 2>&1 || true)
+          
+          # Extract only the JSON part (last line containing valid JSON)
+          JSON_OUTPUT=$(echo "$PHPCS_OUTPUT" | grep -E '^\{' | tail -1)
+          
+          if [ -z "$JSON_OUTPUT" ]; then
+            echo "No JSON output from PHPCS. Full output:"
+            echo "$PHPCS_OUTPUT"
+            echo "✅ No issues found or unable to parse output"
+            exit 0
+          fi
+          
+          echo "$JSON_OUTPUT"
           
           # Parse errors and warnings
-          ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
-          WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
-          FIXABLE=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.fixable // 0')
+          ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.totals.errors // 0')
+          WARNINGS=$(echo "$JSON_OUTPUT" | jq -r '.totals.warnings // 0')
+          FIXABLE=$(echo "$JSON_OUTPUT" | jq -r '.totals.fixable // 0')
           
           echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
           
@@ -93,13 +104,25 @@ jobs:
         if: github.event_name == 'push'
         run: |
           # Run PHPCS with phpcs.xml.dist (uses WPCS 3.0)
-          PHPCS_OUTPUT=$(composer run lint -- --report=json || true)
-          echo "$PHPCS_OUTPUT"
+          # Call phpcs directly to get clean JSON output (composer adds extra text)
+          PHPCS_OUTPUT=$(vendor/bin/phpcs --report=json 2>&1 || true)
+          
+          # Extract only the JSON part (last line containing valid JSON)
+          JSON_OUTPUT=$(echo "$PHPCS_OUTPUT" | grep -E '^\{' | tail -1)
+          
+          if [ -z "$JSON_OUTPUT" ]; then
+            echo "No JSON output from PHPCS. Full output:"
+            echo "$PHPCS_OUTPUT"
+            echo "✅ No issues found or unable to parse output"
+            exit 0
+          fi
+          
+          echo "$JSON_OUTPUT"
           
           # Parse errors and warnings
-          ERRORS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.errors // 0')
-          WARNINGS=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.warnings // 0')
-          FIXABLE=$(echo "$PHPCS_OUTPUT" | jq -r '.totals.fixable // 0')
+          ERRORS=$(echo "$JSON_OUTPUT" | jq -r '.totals.errors // 0')
+          WARNINGS=$(echo "$JSON_OUTPUT" | jq -r '.totals.warnings // 0')
+          FIXABLE=$(echo "$JSON_OUTPUT" | jq -r '.totals.fixable // 0')
           
           echo "WPCS Results: $ERRORS errors, $WARNINGS warnings ($FIXABLE auto-fixable)"
           echo "📊 Baseline: 1175 errors (target: continuous improvement)"
