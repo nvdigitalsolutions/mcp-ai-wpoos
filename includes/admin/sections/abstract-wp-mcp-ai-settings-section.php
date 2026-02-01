@@ -223,10 +223,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					// Only process checkboxes if this is actually the form being submitted.
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {
-						// Checkbox is checked if present in input, unchecked otherwise.
-						$checkbox_value = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
+						// Checkbox is checked if present in input with truthy value, unchecked otherwise.
+						// Explicitly check for '0' string (from hidden fields) and treat it as false.
+						$checkbox_value = false;
+						if ( isset( $filtered_input[ $key ] ) ) {
+							$raw_value = $filtered_input[ $key ];
+							// Convert '0' string to false, '1' string to true, and use bool cast for other values.
+							$checkbox_value = ( '0' === $raw_value || 0 === $raw_value ) ? false : (bool) $raw_value;
+						}
 						$sanitized[ $key ] = $checkbox_value;
-						
+
 						// Enhanced logging for checkbox processing.
 						$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 						$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
