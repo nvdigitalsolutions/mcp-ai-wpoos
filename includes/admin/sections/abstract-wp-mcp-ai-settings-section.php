@@ -158,8 +158,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// before this method is ever invoked, so we know this is a legitimate form submission.
 			// We're simply being more tolerant of which specific subtab field is used to indicate the active tab.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			//
+			// ENHANCED: Also check if ANY fields from the active subtab are present in POST.
+			// This is a stronger indicator that this is a form submission for this subtab.
 			if ( empty( $submitted_subtab ) && ! empty( $_POST['wp_mcp_ai_settings'] ) && isset( $subtab_groups[ $active_subtab ] ) ) {
-				$submitted_subtab = $active_subtab;
+				// Check if any fields from this subtab are in the POST data.
+				$has_subtab_fields = false;
+				$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+				foreach ( $active_field_keys as $field_key ) {
+					if ( isset( $_POST['wp_mcp_ai_settings'][ $field_key ] ) ) {
+						$has_subtab_fields = true;
+						break;
+					}
+				}
+				
+				// If we have fields from this subtab in POST, it's definitely a submission for this subtab.
+				if ( $has_subtab_fields ) {
+					$submitted_subtab = $active_subtab;
+				}
 			}
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
