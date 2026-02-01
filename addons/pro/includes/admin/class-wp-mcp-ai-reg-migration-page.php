@@ -242,7 +242,7 @@ class WP_MCP_AI_Reg_Migration_Page {
 		// Validate file type.
 		$file_name = isset( $_FILES['excel_file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['excel_file']['name'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Missing
-		$file_ext  = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
+		$file_ext = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
 
 		if ( ! in_array( $file_ext, array( 'xlsx', 'xls' ), true ) ) {
 			add_settings_error(

@@ -156,24 +156,24 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 * @param array  $context      Execution context.
 	 * @return array Setup result.
 	 */
-	private function handle_setup( $user_id, $method, $phone_number, $context  ) {
+	private function handle_setup( $user_id, $method, $phone_number, $context ) {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface. 
 		// Verify user.
 		$user = get_userdata( $user_id );
-	if ( ! $user ) {
-		return array(
-			'success' => false,
-			'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
-		);
-	}
+		if ( ! $user ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			);
+		}
 
 		// Check permissions.
-	if ( get_current_user_id() !== $user_id && ! current_user_can( 'edit_users' ) ) {
-		return array(
-			'success' => false,
-			'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
-		);
-	}
+		if ( get_current_user_id() !== $user_id && ! current_user_can( 'edit_users' ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
+			);
+		}
 
 		$result = array(
 			'success' => true,
@@ -209,7 +209,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 		$result['instructions'] = $this->get_setup_instructions( $method );
 
 		return $result;
-}
+	}
 
 	/**
 	 * Setup TOTP
@@ -219,43 +219,43 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 * @param WP_User $user    User object.
 	 * @return array TOTP setup data.
 	 */
-private function setup_totp( $user_id, $user ) {
-	// Generate secret key.
-	$secret = $this->generate_totp_secret();
+	private function setup_totp( $user_id, $user ) {
+		// Generate secret key.
+		$secret = $this->generate_totp_secret();
 
-	// Store secret.
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_totp_secret', $secret );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'totp' );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false ); // Not enabled until verified.
+		// Store secret.
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_totp_secret', $secret );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'totp' );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false ); // Not enabled until verified.
 
-	// Generate QR code data.
-	$issuer  = get_bloginfo( 'name' );
-	$account = $user->user_email;
-	$qr_data = sprintf(
-		'otpauth://totp/%s:%s?secret=%s&issuer=%s',
-		rawurlencode( $issuer ),
-		rawurlencode( $account ),
-		$secret,
-		rawurlencode( $issuer )
-	);
+		// Generate QR code data.
+		$issuer  = get_bloginfo( 'name' );
+		$account = $user->user_email;
+		$qr_data = sprintf(
+			'otpauth://totp/%s:%s?secret=%s&issuer=%s',
+			rawurlencode( $issuer ),
+			rawurlencode( $account ),
+			$secret,
+			rawurlencode( $issuer )
+		);
 
-	// Generate QR code URL (using a QR code service).
-	$qr_code_url = sprintf(
-		'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s',
-		rawurlencode( $qr_data )
-	);
+		// Generate QR code URL (using a QR code service).
+		$qr_code_url = sprintf(
+			'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=%s',
+			rawurlencode( $qr_data )
+		);
 
-	return array(
-		'secret'       => $secret,
-		'qr_code_url'  => $qr_code_url,
-		'qr_data'      => $qr_data,
-		'manual_entry' => sprintf(
-			/* translators: %s: secret key */
-			__( 'Manual entry key: %s', 'mcp-ai-wpoos' ),
-			$secret
-		),
-	);
-}
+		return array(
+			'secret'       => $secret,
+			'qr_code_url'  => $qr_code_url,
+			'qr_data'      => $qr_data,
+			'manual_entry' => sprintf(
+				/* translators: %s: secret key */
+				__( 'Manual entry key: %s', 'mcp-ai-wpoos' ),
+				$secret
+			),
+		);
+	}
 
 	/**
 	 * Setup email 2FA
@@ -265,16 +265,16 @@ private function setup_totp( $user_id, $user ) {
 	 * @param WP_User $user    User object.
 	 * @return array Email setup data.
 	 */
-private function setup_email( $user_id, $user ) {
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'email' );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_email', $user->user_email );
+	private function setup_email( $user_id, $user ) {
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'email' );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_email', $user->user_email );
 
-	return array(
-		'email_address' => $user->user_email,
-		'status'        => __( 'Email 2FA configured', 'mcp-ai-wpoos' ),
-	);
-}
+		return array(
+			'email_address' => $user->user_email,
+			'status'        => __( 'Email 2FA configured', 'mcp-ai-wpoos' ),
+		);
+	}
 
 	/**
 	 * Setup SMS 2FA
@@ -285,27 +285,27 @@ private function setup_email( $user_id, $user ) {
 	 * @param string  $phone_number Phone number.
 	 * @return array SMS setup data.
 	 */
-private function setup_sms( $user_id, $user, $phone_number ) {
-	if ( empty( $phone_number ) ) {
+	private function setup_sms( $user_id, $user, $phone_number ) {
+		if ( empty( $phone_number ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'Phone number required for SMS 2FA', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Validate phone number format.
+		$phone_number = preg_replace( '/[^0-9+]/', '', $phone_number );
+
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'sms' );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_phone', $phone_number );
+
 		return array(
-			'success' => false,
-			'error'   => __( 'Phone number required for SMS 2FA', 'mcp-ai-wpoos' ),
+			'phone_number' => $phone_number,
+			'status'       => __( 'SMS 2FA configured', 'mcp-ai-wpoos' ),
+			'note'         => __( 'SMS 2FA requires a third-party SMS service integration', 'mcp-ai-wpoos' ),
 		);
 	}
-
-	// Validate phone number format.
-	$phone_number = preg_replace( '/[^0-9+]/', '', $phone_number );
-
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_method', 'sms' );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_phone', $phone_number );
-
-	return array(
-		'phone_number' => $phone_number,
-		'status'       => __( 'SMS 2FA configured', 'mcp-ai-wpoos' ),
-		'note'         => __( 'SMS 2FA requires a third-party SMS service integration', 'mcp-ai-wpoos' ),
-	);
-}
 
 	/**
 	 * Handle status action
@@ -314,27 +314,27 @@ private function setup_sms( $user_id, $user, $phone_number ) {
 	 * @param int $user_id User ID.
 	 * @return array Status result.
 	 */
-private function handle_status( $user_id ) {
-	$user = get_userdata( $user_id );
-	if ( ! $user ) {
+	private function handle_status( $user_id ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$enabled = (bool) get_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
+		$method  = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
+
 		return array(
-			'success' => false,
-			'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			'success'          => true,
+			'user_id'          => $user_id,
+			'username'         => $user->user_login,
+			'2fa_enabled'      => $enabled,
+			'2fa_method'       => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
+			'has_backup_codes' => $this->has_backup_codes( $user_id ),
 		);
 	}
-
-	$enabled = (bool) get_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
-	$method  = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
-
-	return array(
-		'success'          => true,
-		'user_id'          => $user_id,
-		'username'         => $user->user_login,
-		'2fa_enabled'      => $enabled,
-		'2fa_method'       => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
-		'has_backup_codes' => $this->has_backup_codes( $user_id ),
-	);
-}
 
 	/**
 	 * Handle enable action
@@ -344,33 +344,33 @@ private function handle_status( $user_id ) {
 	 * @param string $method  2FA method.
 	 * @return array Enable result.
 	 */
-private function handle_enable( $user_id, $method ) {
-	$user = get_userdata( $user_id );
-	if ( ! $user ) {
+	private function handle_enable( $user_id, $method ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		// Check if method is configured.
+		$configured_method = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
+		if ( empty( $configured_method ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( '2FA not configured. Please run setup first.', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
+
 		return array(
-			'success' => false,
-			'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			'success' => true,
+			'user_id' => $user_id,
+			'status'  => __( '2FA enabled successfully', 'mcp-ai-wpoos' ),
+			'method'  => $configured_method,
 		);
 	}
-
-	// Check if method is configured.
-	$configured_method = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
-	if ( empty( $configured_method ) ) {
-		return array(
-			'success' => false,
-			'error'   => __( '2FA not configured. Please run setup first.', 'mcp-ai-wpoos' ),
-		);
-	}
-
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
-
-	return array(
-		'success' => true,
-		'user_id' => $user_id,
-		'status'  => __( '2FA enabled successfully', 'mcp-ai-wpoos' ),
-		'method'  => $configured_method,
-	);
-}
 
 	/**
 	 * Handle disable action
@@ -379,23 +379,23 @@ private function handle_enable( $user_id, $method ) {
 	 * @param int $user_id User ID.
 	 * @return array Disable result.
 	 */
-private function handle_disable( $user_id ) {
-	$user = get_userdata( $user_id );
-	if ( ! $user ) {
+	private function handle_disable( $user_id ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
+
 		return array(
-			'success' => false,
-			'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			'success' => true,
+			'user_id' => $user_id,
+			'status'  => __( '2FA disabled', 'mcp-ai-wpoos' ),
 		);
 	}
-
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', false );
-
-	return array(
-		'success' => true,
-		'user_id' => $user_id,
-		'status'  => __( '2FA disabled', 'mcp-ai-wpoos' ),
-	);
-}
 
 	/**
 	 * Handle generate backup codes
@@ -404,24 +404,24 @@ private function handle_disable( $user_id ) {
 	 * @param int $user_id User ID.
 	 * @return array Backup codes result.
 	 */
-private function handle_generate_backup( $user_id ) {
-	$user = get_userdata( $user_id );
-	if ( ! $user ) {
+	private function handle_generate_backup( $user_id ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			);
+		}
+
+		$backup_codes = $this->generate_backup_codes( $user_id );
+
 		return array(
-			'success' => false,
-			'error'   => __( 'User not found', 'mcp-ai-wpoos' ),
+			'success'      => true,
+			'user_id'      => $user_id,
+			'backup_codes' => $backup_codes,
+			'message'      => __( 'Backup codes generated. Store them in a safe place.', 'mcp-ai-wpoos' ),
 		);
 	}
-
-	$backup_codes = $this->generate_backup_codes( $user_id );
-
-	return array(
-		'success'      => true,
-		'user_id'      => $user_id,
-		'backup_codes' => $backup_codes,
-		'message'      => __( 'Backup codes generated. Store them in a safe place.', 'mcp-ai-wpoos' ),
-	);
-}
 
 	/**
 	 * Handle bulk enforcement
@@ -431,47 +431,47 @@ private function handle_generate_backup( $user_id ) {
 	 * @param bool   $force_reset Force reset.
 	 * @return array Bulk enforce result.
 	 */
-private function handle_bulk_enforce( $role, $force_reset ) {
-	if ( ! current_user_can( 'manage_options' ) ) {
-		return array(
-			'success' => false,
-			'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
-		);
-	}
-
-	if ( empty( $role ) ) {
-		return array(
-			'success' => false,
-			'error'   => __( 'Role required for bulk enforcement', 'mcp-ai-wpoos' ),
-		);
-	}
-
-	$users = get_users( array( 'role' => $role ) );
-
-	$enforced = 0;
-	foreach ( $users as $user ) {
-		update_user_meta( $user->ID, 'wp_mcp_ai_2fa_required', true );
-
-		if ( $force_reset ) {
-			update_user_meta( $user->ID, 'wp_mcp_ai_2fa_force_setup', true );
+	private function handle_bulk_enforce( $role, $force_reset ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'Permission denied', 'mcp-ai-wpoos' ),
+			);
 		}
 
-		++$enforced;
-	}
+		if ( empty( $role ) ) {
+			return array(
+				'success' => false,
+				'error'   => __( 'Role required for bulk enforcement', 'mcp-ai-wpoos' ),
+			);
+		}
 
-	return array(
-		'success'        => true,
-		'role'           => $role,
-		'users_affected' => $enforced,
-		'force_reset'    => $force_reset,
-		'message'        => sprintf(
-			/* translators: 1: number of users, 2: role name */
-			__( '2FA enforcement enabled for %1$d users with role: %2$s', 'mcp-ai-wpoos' ),
-			$enforced,
-			$role
-		),
-	);
-}
+		$users = get_users( array( 'role' => $role ) );
+
+		$enforced = 0;
+		foreach ( $users as $user ) {
+			update_user_meta( $user->ID, 'wp_mcp_ai_2fa_required', true );
+
+			if ( $force_reset ) {
+				update_user_meta( $user->ID, 'wp_mcp_ai_2fa_force_setup', true );
+			}
+
+			++$enforced;
+		}
+
+		return array(
+			'success'        => true,
+			'role'           => $role,
+			'users_affected' => $enforced,
+			'force_reset'    => $force_reset,
+			'message'        => sprintf(
+				/* translators: 1: number of users, 2: role name */
+				__( '2FA enforcement enabled for %1$d users with role: %2$s', 'mcp-ai-wpoos' ),
+				$enforced,
+				$role
+			),
+		);
+	}
 
 	/**
 	 * Generate TOTP secret
@@ -479,16 +479,16 @@ private function handle_bulk_enforce( $role, $force_reset ) {
 	 * @since 1.0.0
 	 * @return string Secret key.
 	 */
-private function generate_totp_secret() {
-	$chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 chars.
-	$secret = '';
+	private function generate_totp_secret() {
+		$chars  = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'; // Base32 chars.
+		$secret = '';
 
-	for ( $i = 0; $i < 16; $i++ ) {
-		$secret .= $chars[ wp_rand( 0, strlen( $chars ) - 1 ) ];
+		for ( $i = 0; $i < 16; $i++ ) {
+			$secret .= $chars[ wp_rand( 0, strlen( $chars ) - 1 ) ];
+		}
+
+		return $secret;
 	}
-
-	return $secret;
-}
 
 	/**
 	 * Generate backup codes
@@ -497,24 +497,24 @@ private function generate_totp_secret() {
 	 * @param int $user_id User ID.
 	 * @return array Backup codes.
 	 */
-private function generate_backup_codes( $user_id ) {
-	$codes = array();
+	private function generate_backup_codes( $user_id ) {
+		$codes = array();
 
-	for ( $i = 0; $i < 10; $i++ ) {
-		$codes[] = sprintf(
-			'%04d-%04d-%04d',
-			wp_rand( 1000, 9999 ),
-			wp_rand( 1000, 9999 ),
-			wp_rand( 1000, 9999 )
-		);
+		for ( $i = 0; $i < 10; $i++ ) {
+			$codes[] = sprintf(
+				'%04d-%04d-%04d',
+				wp_rand( 1000, 9999 ),
+				wp_rand( 1000, 9999 ),
+				wp_rand( 1000, 9999 )
+			);
+		}
+
+		// Store hashed codes.
+		$hashed_codes = array_map( 'wp_hash_password', $codes );
+		update_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes', $hashed_codes );
+
+		return $codes;
 	}
-
-	// Store hashed codes.
-	$hashed_codes = array_map( 'wp_hash_password', $codes );
-	update_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes', $hashed_codes );
-
-	return $codes;
-}
 
 	/**
 	 * Check if user has backup codes
@@ -523,10 +523,10 @@ private function generate_backup_codes( $user_id ) {
 	 * @param int $user_id User ID.
 	 * @return bool True if has backup codes.
 	 */
-private function has_backup_codes( $user_id ) {
-	$codes = get_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes', true );
-	return ! empty( $codes ) && is_array( $codes );
-}
+	private function has_backup_codes( $user_id ) {
+		$codes = get_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes', true );
+		return ! empty( $codes ) && is_array( $codes );
+	}
 
 	/**
 	 * Check plugin support
@@ -534,28 +534,28 @@ private function has_backup_codes( $user_id ) {
 	 * @since 1.0.0
 	 * @return array Plugin support status.
 	 */
-private function check_plugin_support() {
-	$plugins = array();
+	private function check_plugin_support() {
+		$plugins = array();
 
-	if ( class_exists( 'wordfence' ) ) {
-		$plugins[] = 'Wordfence Security';
+		if ( class_exists( 'wordfence' ) ) {
+			$plugins[] = 'Wordfence Security';
+		}
+
+		if ( class_exists( 'Two_Factor_Core' ) ) {
+			$plugins[] = 'Two Factor (WordPress.org)';
+		}
+
+		if ( class_exists( 'WP_2FA\Plugin' ) ) {
+			$plugins[] = 'WP 2FA';
+		}
+
+		return array(
+			'available_plugins' => $plugins,
+			'note'              => empty( $plugins )
+				? __( 'No 2FA plugins detected. Native implementation will be used.', 'mcp-ai-wpoos' )
+				: __( '2FA plugins detected. Consider using their native features.', 'mcp-ai-wpoos' ),
+		);
 	}
-
-	if ( class_exists( 'Two_Factor_Core' ) ) {
-		$plugins[] = 'Two Factor (WordPress.org)';
-	}
-
-	if ( class_exists( 'WP_2FA\Plugin' ) ) {
-		$plugins[] = 'WP 2FA';
-	}
-
-	return array(
-		'available_plugins' => $plugins,
-		'note'              => empty( $plugins )
-			? __( 'No 2FA plugins detected. Native implementation will be used.', 'mcp-ai-wpoos' )
-			: __( '2FA plugins detected. Consider using their native features.', 'mcp-ai-wpoos' ),
-	);
-}
 
 	/**
 	 * Get setup instructions
@@ -564,41 +564,41 @@ private function check_plugin_support() {
 	 * @param string $method 2FA method.
 	 * @return array Setup instructions.
 	 */
-private function get_setup_instructions( $method ) {
-	$instructions = array();
+	private function get_setup_instructions( $method ) {
+		$instructions = array();
 
-	switch ( $method ) {
-		case 'totp':
-			$instructions = array(
-				__( '1. Install an authenticator app (Google Authenticator, Authy, or 1Password)', 'mcp-ai-wpoos' ),
-				__( '2. Scan the QR code with your authenticator app', 'mcp-ai-wpoos' ),
-				__( '3. Enter the 6-digit code from your app to verify', 'mcp-ai-wpoos' ),
-				__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
-				__( '5. Enable 2FA to complete setup', 'mcp-ai-wpoos' ),
-			);
-			break;
+		switch ( $method ) {
+			case 'totp':
+				$instructions = array(
+					__( '1. Install an authenticator app (Google Authenticator, Authy, or 1Password)', 'mcp-ai-wpoos' ),
+					__( '2. Scan the QR code with your authenticator app', 'mcp-ai-wpoos' ),
+					__( '3. Enter the 6-digit code from your app to verify', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
+					__( '5. Enable 2FA to complete setup', 'mcp-ai-wpoos' ),
+				);
+				break;
 
-		case 'email':
-			$instructions = array(
-				__( '1. Verify your email address is correct', 'mcp-ai-wpoos' ),
-				__( '2. Enable 2FA to start receiving codes via email', 'mcp-ai-wpoos' ),
-				__( '3. Check your inbox for verification code on next login', 'mcp-ai-wpoos' ),
-				__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
-			);
-			break;
+			case 'email':
+				$instructions = array(
+					__( '1. Verify your email address is correct', 'mcp-ai-wpoos' ),
+					__( '2. Enable 2FA to start receiving codes via email', 'mcp-ai-wpoos' ),
+					__( '3. Check your inbox for verification code on next login', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
+				);
+				break;
 
-		case 'sms':
-			$instructions = array(
-				__( '1. Verify your phone number is correct', 'mcp-ai-wpoos' ),
-				__( '2. Ensure SMS service is configured (requires third-party integration)', 'mcp-ai-wpoos' ),
-				__( '3. Enable 2FA to start receiving codes via SMS', 'mcp-ai-wpoos' ),
-				__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
-			);
-			break;
+			case 'sms':
+				$instructions = array(
+					__( '1. Verify your phone number is correct', 'mcp-ai-wpoos' ),
+					__( '2. Ensure SMS service is configured (requires third-party integration)', 'mcp-ai-wpoos' ),
+					__( '3. Enable 2FA to start receiving codes via SMS', 'mcp-ai-wpoos' ),
+					__( '4. Save your backup codes in a secure location', 'mcp-ai-wpoos' ),
+				);
+				break;
+		}
+
+		return $instructions;
 	}
-
-	return $instructions;
-}
 
 	/**
 	 * Check if tool has privacy data
@@ -606,9 +606,9 @@ private function get_setup_instructions( $method ) {
 	 * @since 1.0.0
 	 * @return bool True if has privacy data.
 	 */
-public function has_privacy_data() {
-	return true; // Stores 2FA secrets and phone numbers.
-}
+	public function has_privacy_data() {
+		return true; // Stores 2FA secrets and phone numbers.
+	}
 
 	/**
 	 * Export privacy data
@@ -617,26 +617,26 @@ public function has_privacy_data() {
 	 * @param int $user_id User ID.
 	 * @return array Privacy data.
 	 */
-public function export_privacy_data( $user_id ) {
-	$method  = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
-	$enabled = get_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
+	public function export_privacy_data( $user_id ) {
+		$method  = get_user_meta( $user_id, 'wp_mcp_ai_2fa_method', true );
+		$enabled = get_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled', true );
 
-	$data = array(
-		'group_label' => __( 'Two-Factor Authentication', 'mcp-ai-wpoos' ),
-		'items'       => array(
-			array(
-				'name'  => __( '2FA Status', 'mcp-ai-wpoos' ),
-				'value' => $enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ),
+		$data = array(
+			'group_label' => __( 'Two-Factor Authentication', 'mcp-ai-wpoos' ),
+			'items'       => array(
+				array(
+					'name'  => __( '2FA Status', 'mcp-ai-wpoos' ),
+					'value' => $enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ),
+				),
+				array(
+					'name'  => __( '2FA Method', 'mcp-ai-wpoos' ),
+					'value' => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
+				),
 			),
-			array(
-				'name'  => __( '2FA Method', 'mcp-ai-wpoos' ),
-				'value' => $method ? $method : __( 'Not configured', 'mcp-ai-wpoos' ),
-			),
-		),
-	);
+		);
 
-	return $data;
-}
+		return $data;
+	}
 
 	/**
 	 * Erase privacy data
@@ -645,14 +645,14 @@ public function export_privacy_data( $user_id ) {
 	 * @param int $user_id User ID.
 	 * @return bool True if erased.
 	 */
-public function erase_privacy_data( $user_id ) {
-	// Remove 2FA configuration.
-	delete_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled' );
-	delete_user_meta( $user_id, 'wp_mcp_ai_2fa_method' );
-	delete_user_meta( $user_id, 'wp_mcp_ai_2fa_totp_secret' );
-	delete_user_meta( $user_id, 'wp_mcp_ai_2fa_phone' );
-	delete_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes' );
+	public function erase_privacy_data( $user_id ) {
+		// Remove 2FA configuration.
+		delete_user_meta( $user_id, 'wp_mcp_ai_2fa_enabled' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_2fa_method' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_2fa_totp_secret' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_2fa_phone' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_2fa_backup_codes' );
 
-	return true;
-}
+		return true;
+	}
 }

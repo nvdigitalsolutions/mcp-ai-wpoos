@@ -41,18 +41,18 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 		$budget_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_budget_management', true );
 
 		// If budget management is disabled, return a high default value.
-	if ( ! $budget_enabled ) {
-		/**
-		 * Filter the maximum tokens when budget management is disabled.
-		 *
-		 * @param int $max_tokens The maximum tokens (default: 128000).
-		 */
-		return apply_filters( 'wp_mcp_ai_resource_max_tokens_unlimited', 128000 );
-	}
+		if ( ! $budget_enabled ) {
+			/**
+			 * Filter the maximum tokens when budget management is disabled.
+			 *
+			 * @param int $max_tokens The maximum tokens (default: 128000).
+			 */
+			return apply_filters( 'wp_mcp_ai_resource_max_tokens_unlimited', 128000 );
+		}
 
 		// Budget management is enabled, return the tier-based value.
 		return $max_tokens;
-}
+	}
 
 	/**
 	 * Apply budget management setting to request timeout.
@@ -65,27 +65,27 @@ class WP_MCP_AI_Orchestration_Budget_Enforcement_Service {
 	 * @param bool   $ignore_execution_time Whether execution time constraint was ignored.
 	 * @return int Modified timeout.
 	 */
-public static function apply_budget_management_to_timeout( $timeout, $tier, $max_execution_time, $ignore_execution_time ) {
+	public static function apply_budget_management_to_timeout( $timeout, $tier, $max_execution_time, $ignore_execution_time ) {
 		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature. 
 		// Check if budget management is enabled.
 		$budget_enabled = WP_MCP_AI_Settings_Registry::get_setting( 'enable_budget_management', true );
 
 		// If budget management is disabled, return high tier timeout unconditionally.
 		// This removes all budget constraints including max_execution_time caps.
-if ( ! $budget_enabled ) {
-	$timeout_map = array(
-		'low'    => 30,
-		'medium' => 60,
-		'high'   => 120,
-	);
+		if ( ! $budget_enabled ) {
+			$timeout_map = array(
+				'low'    => 30,
+				'medium' => 60,
+				'high'   => 120,
+			);
 
-	/**
-	 * Filter the timeout when budget management is disabled.
-	 *
-	 * @param int $timeout The timeout value (default: 120 seconds).
-	 */
-	return apply_filters( 'wp_mcp_ai_resource_request_timeout_unlimited', $timeout_map['high'] );
-}
+			/**
+			 * Filter the timeout when budget management is disabled.
+			 *
+			 * @param int $timeout The timeout value (default: 120 seconds).
+			 */
+			return apply_filters( 'wp_mcp_ai_resource_request_timeout_unlimited', $timeout_map['high'] );
+		}
 
 		// Budget management is enabled, return the tier-based value.
 		return $timeout;
@@ -96,25 +96,25 @@ if ( ! $budget_enabled ) {
 	 *
 	 * @return bool True if capability gating is enabled.
 	 */
-public static function is_capability_gating_enabled() {
-	return WP_MCP_AI_Settings_Registry::get_setting( 'enable_capability_gating', true );
-}
+	public static function is_capability_gating_enabled() {
+		return WP_MCP_AI_Settings_Registry::get_setting( 'enable_capability_gating', true );
+	}
 
 	/**
 	 * Check if cron orchestration is enabled.
 	 *
 	 * @return bool True if cron orchestration is enabled.
 	 */
-public static function is_cron_orchestration_enabled() {
-	return WP_MCP_AI_Settings_Registry::get_setting( 'enable_cron_orchestration', true );
-}
+	public static function is_cron_orchestration_enabled() {
+		return WP_MCP_AI_Settings_Registry::get_setting( 'enable_cron_orchestration', true );
+	}
 
 	/**
 	 * Check if predictive optimization is enabled.
 	 *
 	 * @return bool True if predictive optimization is enabled.
 	 */
-public static function is_predictive_optimization_enabled() {
-	return WP_MCP_AI_Settings_Registry::get_setting( 'enable_predictive_optimization', true );
-}
+	public static function is_predictive_optimization_enabled() {
+		return WP_MCP_AI_Settings_Registry::get_setting( 'enable_predictive_optimization', true );
+	}
 }

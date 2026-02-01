@@ -836,8 +836,8 @@ class WP_MCP_AI_Password_Vault_Admin {
 			wp_die( esc_html__( 'Insufficient permissions.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$server_url     = esc_url_raw( wp_unslash( $_POST['bitwarden_server_url'] ?? '' ) );
-		$email          = sanitize_text_field( wp_unslash( $_POST['bitwarden_email'] ?? '' ) );
+		$server_url = esc_url_raw( wp_unslash( $_POST['bitwarden_server_url'] ?? '' ) );
+		$email      = sanitize_text_field( wp_unslash( $_POST['bitwarden_email'] ?? '' ) );
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Password should not be sanitized or unslashed.
 		$password       = $_POST['bitwarden_password'] ?? '';
 		$auth_method    = sanitize_text_field( wp_unslash( $_POST['auth_method'] ?? 'password' ) );

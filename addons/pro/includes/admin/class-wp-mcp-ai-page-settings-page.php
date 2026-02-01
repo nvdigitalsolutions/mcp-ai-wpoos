@@ -106,14 +106,14 @@ class WP_MCP_AI_Page_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'wp_create_page'        => __( 'Create Page', 'mcp-ai-wpoos-pro' ),
-			'wp_update_page'        => __( 'Update Page', 'mcp-ai-wpoos-pro' ),
-			'wp_get_pages'          => __( 'Get Pages', 'mcp-ai-wpoos-pro' ),
-			'wp_delete_page'        => __( 'Delete Page', 'mcp-ai-wpoos-pro' ),
-			'research_page'         => __( 'Research Page Topic', 'mcp-ai-wpoos-pro' ),
-			'wp_search_content'     => __( 'Search Content', 'mcp-ai-wpoos-pro' ),
-			'wp_get_post_meta'      => __( 'Get Page Metadata', 'mcp-ai-wpoos-pro' ),
-			'wp_update_post_meta'   => __( 'Update Page Metadata', 'mcp-ai-wpoos-pro' ),
+			'wp_create_page'      => __( 'Create Page', 'mcp-ai-wpoos-pro' ),
+			'wp_update_page'      => __( 'Update Page', 'mcp-ai-wpoos-pro' ),
+			'wp_get_pages'        => __( 'Get Pages', 'mcp-ai-wpoos-pro' ),
+			'wp_delete_page'      => __( 'Delete Page', 'mcp-ai-wpoos-pro' ),
+			'research_page'       => __( 'Research Page Topic', 'mcp-ai-wpoos-pro' ),
+			'wp_search_content'   => __( 'Search Content', 'mcp-ai-wpoos-pro' ),
+			'wp_get_post_meta'    => __( 'Get Page Metadata', 'mcp-ai-wpoos-pro' ),
+			'wp_update_post_meta' => __( 'Update Page Metadata', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

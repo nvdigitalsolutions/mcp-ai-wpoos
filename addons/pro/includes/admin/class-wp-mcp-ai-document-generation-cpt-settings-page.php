@@ -182,8 +182,8 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 	protected function check_npm_packages_installed() {
 		$node_modules = WP_MCP_AI_PRO_PATH . 'node_modules';
 		return file_exists( $node_modules . '/pdfkit/package.json' ) &&
-		       file_exists( $node_modules . '/docx/package.json' ) &&
-		       file_exists( $node_modules . '/exceljs/package.json' );
+				file_exists( $node_modules . '/docx/package.json' ) &&
+				file_exists( $node_modules . '/exceljs/package.json' );
 	}
 
 	/**
@@ -245,7 +245,7 @@ class WP_MCP_AI_Document_Generation_Settings_Page extends WP_MCP_AI_CPT_Settings
 			'pro_pdf_document'     => __( 'Pro PDF Document', 'mcp-ai-wpoos-pro' ),
 			'pro_word_document'    => __( 'Pro Word Document', 'mcp-ai-wpoos-pro' ),
 			'pro_excel_document'   => __( 'Pro Excel Document', 'mcp-ai-wpoos-pro' ),
-			
+
 			// Document Operations & Capabilities.
 			'generate_pdf'         => __( 'Generate PDF Document', 'mcp-ai-wpoos-pro' ),
 			'generate_word'        => __( 'Generate Word Document', 'mcp-ai-wpoos-pro' ),

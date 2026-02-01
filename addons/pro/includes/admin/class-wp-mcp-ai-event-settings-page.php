@@ -107,13 +107,13 @@ class WP_MCP_AI_Event_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_event'                => __( 'Create Event', 'mcp-ai-wpoos-pro' ),
-			'update_event'                => __( 'Update Event', 'mcp-ai-wpoos-pro' ),
-			'get_events'                  => __( 'Get Events', 'mcp-ai-wpoos-pro' ),
-			'delete_event'                => __( 'Delete Event', 'mcp-ai-wpoos-pro' ),
-			'real_time_event_tracking'    => __( 'Real-time Event Tracking', 'mcp-ai-wpoos-pro' ),
-			'create_event_booking'        => __( 'Create Event Booking (DJ)', 'mcp-ai-wpoos-pro' ),
-			'update_event_details'        => __( 'Update Event Details (DJ)', 'mcp-ai-wpoos-pro' ),
+			'create_event'             => __( 'Create Event', 'mcp-ai-wpoos-pro' ),
+			'update_event'             => __( 'Update Event', 'mcp-ai-wpoos-pro' ),
+			'get_events'               => __( 'Get Events', 'mcp-ai-wpoos-pro' ),
+			'delete_event'             => __( 'Delete Event', 'mcp-ai-wpoos-pro' ),
+			'real_time_event_tracking' => __( 'Real-time Event Tracking', 'mcp-ai-wpoos-pro' ),
+			'create_event_booking'     => __( 'Create Event Booking (DJ)', 'mcp-ai-wpoos-pro' ),
+			'update_event_details'     => __( 'Update Event Details (DJ)', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

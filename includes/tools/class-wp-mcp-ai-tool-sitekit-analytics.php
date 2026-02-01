@@ -85,22 +85,22 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 		$sitekit = WP_MCP_AI_SiteKit_Integration::get_instance();
 
 		// Check if Site Kit is available.
-	if ( ! $sitekit->is_sitekit_available() ) {
-		return array(
-			'error'    => true,
-			'message'  => __( 'Google Site Kit is not active or configured', 'mcp-ai-wpoos' ),
-			'help_url' => 'https://sitekit.withgoogle.com/documentation/',
-			'action'   => __( 'Please install and configure Google Site Kit plugin', 'mcp-ai-wpoos' ),
-		);
-	}
+		if ( ! $sitekit->is_sitekit_available() ) {
+			return array(
+				'error'    => true,
+				'message'  => __( 'Google Site Kit is not active or configured', 'mcp-ai-wpoos' ),
+				'help_url' => 'https://sitekit.withgoogle.com/documentation/',
+				'action'   => __( 'Please install and configure Google Site Kit plugin', 'mcp-ai-wpoos' ),
+			);
+		}
 
 		// Check user permissions.
-	if ( ! $sitekit->user_has_sitekit_access() ) {
-		return array(
-			'error'   => true,
-			'message' => __( 'You do not have permission to access Google Analytics data', 'mcp-ai-wpoos' ),
-		);
-	}
+		if ( ! $sitekit->user_has_sitekit_access() ) {
+			return array(
+				'error'   => true,
+				'message' => __( 'You do not have permission to access Google Analytics data', 'mcp-ai-wpoos' ),
+			);
+		}
 
 		// Parse arguments.
 		$metric     = isset( $arguments['metric'] ) ? sanitize_text_field( $arguments['metric'] ) : 'sessions';
@@ -132,7 +132,7 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 
 		// Format response for AI assistant.
 		return $this->format_analytics_response( $response, $metric, $date_range, $url );
-}
+	}
 
 	/**
 	 * Map metric name to Site Kit API metric
@@ -141,17 +141,17 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * @param string $metric Metric name.
 	 * @return string API metric name
 	 */
-private function map_metric_to_api( $metric ) {
-	$metric_map = array(
-		'sessions'             => 'ga:sessions',
-		'pageviews'            => 'ga:pageviews',
-		'bounce_rate'          => 'ga:bounceRate',
-		'avg_session_duration' => 'ga:avgSessionDuration',
-		'users'                => 'ga:users',
-	);
+	private function map_metric_to_api( $metric ) {
+		$metric_map = array(
+			'sessions'             => 'ga:sessions',
+			'pageviews'            => 'ga:pageviews',
+			'bounce_rate'          => 'ga:bounceRate',
+			'avg_session_duration' => 'ga:avgSessionDuration',
+			'users'                => 'ga:users',
+		);
 
-	return isset( $metric_map[ $metric ] ) ? $metric_map[ $metric ] : 'ga:sessions';
-}
+		return isset( $metric_map[ $metric ] ) ? $metric_map[ $metric ] : 'ga:sessions';
+	}
 
 	/**
 	 * Map date range to Site Kit format
@@ -160,15 +160,15 @@ private function map_metric_to_api( $metric ) {
 	 * @param string $range Date range.
 	 * @return string Site Kit date range
 	 */
-private function map_date_range( $range ) {
-	$range_map = array(
-		'last_7_days'  => 'last-7-days',
-		'last_28_days' => 'last-28-days',
-		'last_90_days' => 'last-90-days',
-	);
+	private function map_date_range( $range ) {
+		$range_map = array(
+			'last_7_days'  => 'last-7-days',
+			'last_28_days' => 'last-28-days',
+			'last_90_days' => 'last-90-days',
+		);
 
-	return isset( $range_map[ $range ] ) ? $range_map[ $range ] : 'last-28-days';
-}
+		return isset( $range_map[ $range ] ) ? $range_map[ $range ] : 'last-28-days';
+	}
 
 	/**
 	 * Format analytics response for AI
@@ -180,26 +180,26 @@ private function map_date_range( $range ) {
 	 * @param string $url        Optional URL filter.
 	 * @return array Formatted response
 	 */
-private function format_analytics_response( $response, $metric, $date_range, $url = null ) {
-	// Extract data from response (structure depends on Site Kit's actual API).
-	// This is a simplified example - actual implementation would parse Site Kit's response format.
+	private function format_analytics_response( $response, $metric, $date_range, $url = null ) {
+		// Extract data from response (structure depends on Site Kit's actual API).
+		// This is a simplified example - actual implementation would parse Site Kit's response format.
 
-	$formatted = array(
-		'success'    => true,
-		'metric'     => $metric,
-		'date_range' => $date_range,
-		'data'       => $response,
-	);
+		$formatted = array(
+			'success'    => true,
+			'metric'     => $metric,
+			'date_range' => $date_range,
+			'data'       => $response,
+		);
 
-	if ( $url ) {
-		$formatted['filtered_by_url'] = $url;
+		if ( $url ) {
+			$formatted['filtered_by_url'] = $url;
+		}
+
+		// Add human-readable summary.
+		$formatted['summary'] = $this->generate_summary( $response, $metric, $date_range );
+
+		return $formatted;
 	}
-
-	// Add human-readable summary.
-	$formatted['summary'] = $this->generate_summary( $response, $metric, $date_range );
-
-	return $formatted;
-}
 
 	/**
 	 * Generate human-readable summary
@@ -210,17 +210,17 @@ private function format_analytics_response( $response, $metric, $date_range, $ur
 	 * @param string $date_range Date range.
 	 * @return string Summary text
 	 */
-private function generate_summary( $data, $metric, $date_range ) {
-	// This is a simplified example.
-	// Real implementation would parse the actual data structure from Site Kit.
+	private function generate_summary( $data, $metric, $date_range ) {
+		// This is a simplified example.
+		// Real implementation would parse the actual data structure from Site Kit.
 
-	$period = str_replace( '_', ' ', $date_range );
+		$period = str_replace( '_', ' ', $date_range );
 
-	return sprintf(
+		return sprintf(
 		/* translators: 1: metric name, 2: date range */
-		__( 'Analytics data for %1$s over the %2$s', 'mcp-ai-wpoos' ),
-		$metric,
-		$period
-	);
-}
+			__( 'Analytics data for %1$s over the %2$s', 'mcp-ai-wpoos' ),
+			$metric,
+			$period
+		);
+	}
 }

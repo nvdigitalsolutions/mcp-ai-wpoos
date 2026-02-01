@@ -456,8 +456,8 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 
 		// Fetch all registration counts in a single query grouped by country_id.
 		global $wpdb;
-		$country_ids_safe    = array_map( 'intval', $country_ids );
-		$placeholders        = implode( ',', array_fill( 0, count( $country_ids_safe ), '%d' ) );
+		$country_ids_safe = array_map( 'intval', $country_ids );
+		$placeholders     = implode( ',', array_fill( 0, count( $country_ids_safe ), '%d' ) );
 		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 		$query               = "SELECT pm.meta_value as country_id, COUNT(*) as total
 			FROM {$wpdb->posts} p

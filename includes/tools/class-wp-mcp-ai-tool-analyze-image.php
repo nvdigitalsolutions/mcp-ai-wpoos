@@ -55,28 +55,28 @@ class WP_MCP_AI_Tool_Analyze_Image implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'attachment_id'  => array(
+				'attachment_id' => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'WordPress attachment ID containing the image to analyze.', 'mcp-ai-wpoos' ),
 				),
-				'file_id'        => $this->get_file_id_parameter_schema(),
-				'url'            => $this->get_url_parameter_schema( 'image' ),
-				'image_url'      => array(
+				'file_id'       => $this->get_file_id_parameter_schema(),
+				'url'           => $this->get_url_parameter_schema( 'image' ),
+				'image_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'Direct URL to the image. Alternative to attachment_id or file_id.', 'mcp-ai-wpoos' ),
 				),
-				'prompt'         => array(
+				'prompt'        => array(
 					'type'        => 'string',
 					'description' => __( 'Question or instruction for analyzing the image. For example: "Describe this image in detail", "What objects are visible?", "Extract all text from this image".', 'mcp-ai-wpoos' ),
 					'default'     => 'Describe this image in detail, including objects, people, text, colors, and composition.',
 				),
-				'provider'       => array(
+				'provider'      => array(
 					'type'        => 'string',
 					'description' => __( 'AI provider to use: openai, anthropic, or gemini. Defaults to your configured default provider.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'openai', 'anthropic', 'gemini' ),
 					'default'     => $default_provider,
 				),
-				'max_tokens'     => array(
+				'max_tokens'    => array(
 					'type'        => array( 'integer', 'string' ),
 					'description' => __( 'Maximum tokens for the response. Higher values allow more detailed analysis.', 'mcp-ai-wpoos' ),
 					'default'     => 1024,

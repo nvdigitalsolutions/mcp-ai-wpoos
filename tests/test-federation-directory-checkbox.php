@@ -18,13 +18,13 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 		// Simulate saving the federation_mesh subtab with the checkbox checked.
-		$_POST['subtab_advanced'] = 'federation_mesh';
+		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_federation_directory' => '1', // Checked.
 		);
 
 		// Sanitize using the Advanced section.
-		$section = new WP_MCP_AI_Section_Advanced();
+		$section   = new WP_MCP_AI_Section_Advanced();
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// The checkbox should be in the sanitized output.
@@ -52,19 +52,19 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		// Set up initial settings with the checkbox checked.
 		$initial_settings = array(
 			'enable_federation_directory' => true,
-			'federation_regions' => 'global',
+			'federation_regions'          => 'global',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
 		// Simulate saving the federation_mesh subtab with the checkbox unchecked.
-		$_POST['subtab_advanced'] = 'federation_mesh';
+		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
 			// enable_federation_directory is NOT here (unchecked).
 			'federation_regions' => 'us-east',
 		);
 
 		// Sanitize using the Advanced section.
-		$section = new WP_MCP_AI_Section_Advanced();
+		$section   = new WP_MCP_AI_Section_Advanced();
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// The checkbox should be in the sanitized output.
@@ -82,7 +82,7 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		// Merge with existing and update.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
 
 		// Verify the setting was persisted correctly.
@@ -105,11 +105,11 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 		// Simulate the full dashboard save flow.
-		$_POST['subtab_advanced'] = 'federation_mesh';
-		$_POST['active_tab'] = 'advanced';
+		$_POST['subtab_advanced']    = 'federation_mesh';
+		$_POST['active_tab']         = 'advanced';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_federation_directory' => '1',
-			'federation_regions' => 'global',
+			'federation_regions'          => 'global',
 		);
 
 		// Use the Settings Dashboard to sanitize (this is what handles tab-based saves).
@@ -118,7 +118,7 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		// Get existing settings and merge.
 		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing, $sanitized );
+		$merged   = array_merge( $existing, $sanitized );
 
 		// Save to database.
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
@@ -144,12 +144,12 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 		// First save: enable the checkbox.
-		$_POST['subtab_advanced'] = 'federation_mesh';
+		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
 			'enable_federation_directory' => '1',
 		);
 
-		$section = new WP_MCP_AI_Section_Advanced();
+		$section   = new WP_MCP_AI_Section_Advanced();
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $sanitized );
 
@@ -165,8 +165,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		);
 
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
-		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing, $sanitized );
+		$existing  = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$merged    = array_merge( $existing, $sanitized );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
 
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
@@ -181,8 +181,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		);
 
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
-		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$merged = array_merge( $existing, $sanitized );
+		$existing  = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$merged    = array_merge( $existing, $sanitized );
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
 
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );

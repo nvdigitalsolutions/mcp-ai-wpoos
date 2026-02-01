@@ -157,14 +157,14 @@ class WP_MCP_AI_Document_Template_CPT {
 	 */
 	protected static function create_default_categories() {
 		$categories = array(
-			'invoices'    => __( 'Invoices', 'mcp-ai-wpoos-pro' ),
-			'reports'     => __( 'Reports', 'mcp-ai-wpoos-pro' ),
-			'contracts'   => __( 'Contracts', 'mcp-ai-wpoos-pro' ),
-			'receipts'    => __( 'Receipts', 'mcp-ai-wpoos-pro' ),
-			'proposals'   => __( 'Proposals', 'mcp-ai-wpoos-pro' ),
-			'spreadsheets' => __( 'Spreadsheets', 'mcp-ai-wpoos-pro' ),
+			'invoices'      => __( 'Invoices', 'mcp-ai-wpoos-pro' ),
+			'reports'       => __( 'Reports', 'mcp-ai-wpoos-pro' ),
+			'contracts'     => __( 'Contracts', 'mcp-ai-wpoos-pro' ),
+			'receipts'      => __( 'Receipts', 'mcp-ai-wpoos-pro' ),
+			'proposals'     => __( 'Proposals', 'mcp-ai-wpoos-pro' ),
+			'spreadsheets'  => __( 'Spreadsheets', 'mcp-ai-wpoos-pro' ),
 			'presentations' => __( 'Presentations', 'mcp-ai-wpoos-pro' ),
-			'certificates' => __( 'Certificates', 'mcp-ai-wpoos-pro' ),
+			'certificates'  => __( 'Certificates', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $categories as $slug => $name ) {
@@ -190,7 +190,7 @@ class WP_MCP_AI_Document_Template_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type    = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_doc_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_doc_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
@@ -269,10 +269,10 @@ class WP_MCP_AI_Document_Template_CPT {
 	public static function render_config_metabox( $post ) {
 		wp_nonce_field( 'document_template_meta', 'document_template_meta_nonce' );
 
-		$doc_type       = get_post_meta( $post->ID, '_document_type', true );
-		$output_format  = get_post_meta( $post->ID, '_output_format', true );
-		$page_size      = get_post_meta( $post->ID, '_page_size', true );
-		$orientation    = get_post_meta( $post->ID, '_orientation', true );
+		$doc_type        = get_post_meta( $post->ID, '_document_type', true );
+		$output_format   = get_post_meta( $post->ID, '_output_format', true );
+		$page_size       = get_post_meta( $post->ID, '_page_size', true );
+		$orientation     = get_post_meta( $post->ID, '_orientation', true );
 		$enable_branding = get_post_meta( $post->ID, '_enable_branding', true );
 		?>
 		<table class="form-table">
@@ -356,10 +356,10 @@ class WP_MCP_AI_Document_Template_CPT {
 
 		// Save metadata.
 		$fields = array(
-			'document_type'   => 'sanitize_text_field',
-			'output_format'   => 'sanitize_text_field',
-			'page_size'       => 'sanitize_text_field',
-			'orientation'     => 'sanitize_text_field',
+			'document_type' => 'sanitize_text_field',
+			'output_format' => 'sanitize_text_field',
+			'page_size'     => 'sanitize_text_field',
+			'orientation'   => 'sanitize_text_field',
 		);
 
 		foreach ( $fields as $field => $sanitize_callback ) {

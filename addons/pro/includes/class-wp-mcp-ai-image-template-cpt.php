@@ -157,13 +157,13 @@ class WP_MCP_AI_Image_Template_CPT {
 	 */
 	protected static function create_default_categories() {
 		$categories = array(
-			'product-photos'  => __( 'Product Photos', 'mcp-ai-wpoos-pro' ),
-			'social-media'    => __( 'Social Media', 'mcp-ai-wpoos-pro' ),
-			'marketing'       => __( 'Marketing Materials', 'mcp-ai-wpoos-pro' ),
-			'backgrounds'     => __( 'Backgrounds', 'mcp-ai-wpoos-pro' ),
-			'illustrations'   => __( 'Illustrations', 'mcp-ai-wpoos-pro' ),
-			'photography'     => __( 'Photography', 'mcp-ai-wpoos-pro' ),
-			'abstract'        => __( 'Abstract Art', 'mcp-ai-wpoos-pro' ),
+			'product-photos' => __( 'Product Photos', 'mcp-ai-wpoos-pro' ),
+			'social-media'   => __( 'Social Media', 'mcp-ai-wpoos-pro' ),
+			'marketing'      => __( 'Marketing Materials', 'mcp-ai-wpoos-pro' ),
+			'backgrounds'    => __( 'Backgrounds', 'mcp-ai-wpoos-pro' ),
+			'illustrations'  => __( 'Illustrations', 'mcp-ai-wpoos-pro' ),
+			'photography'    => __( 'Photography', 'mcp-ai-wpoos-pro' ),
+			'abstract'       => __( 'Abstract Art', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $categories as $slug => $name ) {
@@ -189,7 +189,7 @@ class WP_MCP_AI_Image_Template_CPT {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
-		$post_type      = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
+		$post_type     = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
 		$is_image_page = ( $post_type === self::POST_TYPE );
 		if ( ! $is_image_page && $screen->post_type !== self::POST_TYPE ) {
 			return;
@@ -268,11 +268,11 @@ class WP_MCP_AI_Image_Template_CPT {
 	public static function render_config_metabox( $post ) {
 		wp_nonce_field( 'image_template_meta', 'image_template_meta_nonce' );
 
-		$ai_provider    = get_post_meta( $post->ID, '_ai_provider', true );
-		$prompt         = get_post_meta( $post->ID, '_generation_prompt', true );
-		$dimensions     = get_post_meta( $post->ID, '_image_dimensions', true );
-		$style          = get_post_meta( $post->ID, '_art_style', true );
-		$output_format  = get_post_meta( $post->ID, '_output_format', true );
+		$ai_provider   = get_post_meta( $post->ID, '_ai_provider', true );
+		$prompt        = get_post_meta( $post->ID, '_generation_prompt', true );
+		$dimensions    = get_post_meta( $post->ID, '_image_dimensions', true );
+		$style         = get_post_meta( $post->ID, '_art_style', true );
+		$output_format = get_post_meta( $post->ID, '_output_format', true );
 		?>
 		<table class="form-table">
 			<tr>
@@ -351,11 +351,11 @@ class WP_MCP_AI_Image_Template_CPT {
 
 		// Save metadata.
 		$fields = array(
-			'ai_provider'        => 'sanitize_text_field',
-			'generation_prompt'  => 'sanitize_textarea_field',
-			'image_dimensions'   => 'sanitize_text_field',
-			'art_style'          => 'sanitize_text_field',
-			'output_format'      => 'sanitize_text_field',
+			'ai_provider'       => 'sanitize_text_field',
+			'generation_prompt' => 'sanitize_textarea_field',
+			'image_dimensions'  => 'sanitize_text_field',
+			'art_style'         => 'sanitize_text_field',
+			'output_format'     => 'sanitize_text_field',
 		);
 
 		foreach ( $fields as $field => $sanitize_callback ) {
@@ -378,7 +378,7 @@ class WP_MCP_AI_Image_Template_CPT {
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$new_columns['preview']    = __( 'Preview', 'mcp-ai-wpoos-pro' );
+				$new_columns['preview']     = __( 'Preview', 'mcp-ai-wpoos-pro' );
 				$new_columns['ai_provider'] = __( 'AI Provider', 'mcp-ai-wpoos-pro' );
 				$new_columns['dimensions']  = __( 'Dimensions', 'mcp-ai-wpoos-pro' );
 			}
