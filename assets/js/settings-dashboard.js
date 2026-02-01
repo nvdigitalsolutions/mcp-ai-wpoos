@@ -919,19 +919,52 @@
 					return;
 				}
 
-				// Log current state
+				// Get the actual checked state from the DOM
+				const isChecked = $checkbox.is(':checked');
+				const checkboxHasCheckedAttr = $checkbox[0].hasAttribute('checked');
+				const $slider = $checkbox.siblings('.wp-mcp-ai-settings-toggle-slider');
+				const sliderBackgroundColor = $slider.length > 0 ? $slider.css('background-color') : 'N/A';
+				
+				// Log current state with visual verification
 				logWithTimestamp('[NV oOS Federation Mesh] Checkbox found: ' + id, {
-					checked: $checkbox.is(':checked'),
+					checked: isChecked,
+					hasCheckedAttribute: checkboxHasCheckedAttr,
 					disabled: $checkbox.is(':disabled'),
 					visible: $checkbox.is(':visible'),
 					name: $checkbox.attr('name'),
-					value: $checkbox.val()
+					value: $checkbox.val(),
+					sliderBgColor: sliderBackgroundColor
 				});
+				
+				// CRITICAL FIX: Force-sync the visual toggle state with actual checkbox state
+				// This ensures the visual slider matches the DOM checkbox state
+				// The CSS toggle relies on :checked pseudo-selector, but we force a reflow to ensure it updates
+				if (isChecked) {
+					// Checkbox is checked - ensure it has the checked property
+					$checkbox.prop('checked', true);
+					logWithTimestamp('[NV oOS Federation Mesh] Ensured checkbox is checked: ' + id);
+				} else {
+					// Checkbox is unchecked - ensure it doesn't have the checked property
+					$checkbox.prop('checked', false);
+					logWithTimestamp('[NV oOS Federation Mesh] Ensured checkbox is unchecked: ' + id);
+				}
+				
+				// Force a reflow to ensure CSS updates
+				$checkbox[0].offsetHeight; // eslint-disable-line no-unused-expressions
+				
+				// Verify the visual state after sync
+				const sliderBackgroundAfter = $slider.length > 0 ? $slider.css('background-color') : 'N/A';
+				if (sliderBackgroundColor !== sliderBackgroundAfter) {
+					logWithTimestamp('[NV oOS Federation Mesh] Slider color updated: ' + id, {
+						before: sliderBackgroundColor,
+						after: sliderBackgroundAfter
+					});
+				}
 
 				// Add click handler for debugging
 				$checkbox.on('change', function() {
-					const isChecked = $(this).is(':checked');
-					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' New state: ' + isChecked);
+					const newIsChecked = $(this).is(':checked');
+					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' New state: ' + newIsChecked);
 				});
 
 				// Check if the checkbox is actually clickable
