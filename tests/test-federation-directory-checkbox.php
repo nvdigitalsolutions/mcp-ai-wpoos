@@ -56,8 +56,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 	public function test_enable_federation_checkbox_saves_when_unchecked() {
 		// Set up initial settings with the checkbox checked.
 		$initial_settings = array(
-			'enable_federation' => true,
-			'federation_regions'          => 'global',
+			'enable_federation'  => true,
+			'federation_regions' => 'global',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
 
@@ -113,8 +113,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['active_tab']         = 'advanced';
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_federation' => '1',
-			'federation_regions'          => 'global',
+			'enable_federation'  => '1',
+			'federation_regions' => 'global',
 		);
 
 		// Use the Settings Dashboard to sanitize (this is what handles tab-based saves).

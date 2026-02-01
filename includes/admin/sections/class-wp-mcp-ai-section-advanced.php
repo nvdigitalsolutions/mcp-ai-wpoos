@@ -1737,10 +1737,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 		 */
 		private function render_federation_mesh() {
 			// Get mesh computing status from tools settings.
-			$settings            = WP_MCP_AI_Admin_Settings::get_settings();
-			$mesh_enabled        = ! empty( $settings['enable_mesh'] );
-			$federation_enabled  = ! empty( $settings['enable_federation'] );
-			$directory_enabled   = ! empty( $settings['enable_federation_directory'] );
+			$settings           = WP_MCP_AI_Admin_Settings::get_settings();
+			$mesh_enabled       = ! empty( $settings['enable_mesh'] );
+			$federation_enabled = ! empty( $settings['enable_federation'] );
+			$directory_enabled  = ! empty( $settings['enable_federation_directory'] );
 
 			// Get AI Peers count only if directory is enabled and post type exists.
 			$total_peers = 0;

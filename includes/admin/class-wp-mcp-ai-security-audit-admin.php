@@ -176,7 +176,7 @@ class WP_MCP_AI_Security_Audit_Admin {
 								<td><?php echo esc_html( $audit_date ? gmdate( 'M j, Y', strtotime( $audit_date ) ) : '-' ); ?></td>
 								<td><?php echo esc_html( $this->format_audit_type( $audit_type ) ); ?></td>
 								<td><?php echo wp_kses_post( $this->format_audit_status( $audit_status ) ); ?></td>
-								<td><?php echo esc_html( $auditor ?: '-' ); ?></td>
+								<td><?php echo esc_html( $auditor ? $auditor : '-' ); ?></td>
 								<td>
 									<?php if ( $findings_count > 0 ) : ?>
 										<span class="wp-mcp-ai-badge badge-findings">
