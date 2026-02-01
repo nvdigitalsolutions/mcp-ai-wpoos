@@ -476,19 +476,20 @@
 			// CRITICAL FIX: Add hidden fields for unchecked checkboxes to ensure they're submitted.
 			// Standard HTML behavior: unchecked checkboxes don't appear in FormData.
 			// This ensures unchecked checkboxes are submitted as value="0" so backend can process them.
+			
+			// First, remove any existing placeholder hidden fields from previous submission attempts.
+			$form.find('input[type="hidden"][data-checkbox-placeholder="true"]').remove();
+			
+			// Then, scan all checkboxes and add hidden fields for unchecked ones.
 			const checkboxes = {};
 			$form.find('input[type="checkbox"][name^="wp_mcp_ai_settings"]').each(function() {
 				const $checkbox = $(this);
-				const name = $checkbox.attr('name').replace('wp_mcp_ai_settings[', '').replace(']', '');
 				const checkboxName = $checkbox.attr('name');
+				const name = checkboxName.replace('wp_mcp_ai_settings[', '').replace(']', '');
 				checkboxes[name] = $checkbox.is(':checked');
 				
 				// If checkbox is unchecked, add a hidden field with value="0" to ensure it's submitted.
-				// Only add if no hidden field with this name already exists.
 				if (!$checkbox.is(':checked')) {
-					// Remove any existing hidden field for this checkbox (from previous submission attempts).
-					$form.find(`input[type="hidden"][name="${checkboxName}"][data-checkbox-placeholder="true"]`).remove();
-					// Add new hidden field with value="0".
 					$form.append(
 						$('<input>')
 							.attr('type', 'hidden')
