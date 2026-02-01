@@ -480,21 +480,30 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
 			// Use section-specific field name to avoid conflicts with other sections.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			$subtab_field_name = 'subtab_' . $this->get_id();
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['connection'] ) ) {
 				// Legacy parameter for backwards compatibility.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST['connection'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['connection'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 				$subtab = sanitize_key( $_GET['connection'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 			} elseif ( isset( $_POST['subtab'] ) ) {
 				// Fallback to legacy field name for backward compatibility.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
 				$subtab = sanitize_key( $_POST['subtab'] );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				// Only use 'subtab' if it's one of our integration subtabs.
 
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 				$potential_subtab = sanitize_key( $_GET['subtab'] );
 				if ( isset( $subtab_groups[ $potential_subtab ] ) ) {
 					$subtab = $potential_subtab;
@@ -1719,7 +1728,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 
 							// Otherwise link directly to the integration subtab.
 
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 							$current_tab           = isset( $_GET['tab'] ) ? sanitize_key( $_GET['tab'] ) : 'tools';
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
 							$current_parent_subtab = isset( $_GET['subtab'] ) ? sanitize_key( $_GET['subtab'] ) : '';
 
 							$url_args = array(
