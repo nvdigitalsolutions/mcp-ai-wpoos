@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/run-wpcs-and-fix-errors',
+        'version' => 'dev-copilot/run-wpcs-and-fix-errors',
+        'reference' => 'e2e77fa42a611a511b0c6a0c66d2fdaa049b8ca8',
         'pretty_version' => 'dev-copilot/fix-invalid-schema-error-again',
         'version' => 'dev-copilot/fix-invalid-schema-error-again',
         'reference' => '0a0e40c247300f91ad02fe55dc0f939df3254f6c',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/run-wpcs-and-fix-errors',
+            'version' => 'dev-copilot/run-wpcs-and-fix-errors',
+            'reference' => 'e2e77fa42a611a511b0c6a0c66d2fdaa049b8ca8',
             'pretty_version' => 'dev-copilot/fix-invalid-schema-error-again',
             'version' => 'dev-copilot/fix-invalid-schema-error-again',
             'reference' => '0a0e40c247300f91ad02fe55dc0f939df3254f6c',

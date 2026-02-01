@@ -79,7 +79,7 @@ class WP_MCP_AI_Analytics_Engine {
 			$denominator += pow( $x_values[ $i ] - $mean_x, 2 );
 		}
 
-		$slope     = ( $denominator != 0 ) ? ( $numerator / $denominator ) : 0;
+		$slope     = ( 0 !== $denominator ) ? ( $numerator / $denominator ) : 0;
 		$intercept = $mean_y - ( $slope * $mean_x );
 
 		// Calculate R-squared.
@@ -92,7 +92,7 @@ class WP_MCP_AI_Analytics_Engine {
 			$ss_res   += pow( $y_values[ $i ] - $predicted, 2 );
 		}
 
-		$r_squared = ( $ss_tot != 0 ) ? ( 1 - ( $ss_res / $ss_tot ) ) : 0;
+		$r_squared = ( 0 !== $ss_tot ) ? ( 1 - ( $ss_res / $ss_tot ) ) : 0;
 		$r_squared = max( 0, min( 1, $r_squared ) ); // Clamp to 0-1.
 
 		// Determine trend direction.
@@ -149,7 +149,7 @@ class WP_MCP_AI_Analytics_Engine {
 
 		// Calculate median.
 		sort( $values );
-		if ( $count % 2 === 0 ) {
+		if ( 0 === $count % 2 ) {
 			$median = ( $values[ $count / 2 - 1 ] + $values[ $count / 2 ] ) / 2;
 		} else {
 			$median = $values[ floor( $count / 2 ) ];
@@ -164,7 +164,7 @@ class WP_MCP_AI_Analytics_Engine {
 		$std_dev  = sqrt( $variance );
 
 		// Coefficient of variation (CV).
-		$cv = ( $mean != 0 ) ? ( $std_dev / $mean ) * 100 : 0;
+		$cv = ( 0 !== $mean ) ? ( $std_dev / $mean ) * 100 : 0;
 
 		return array(
 			'mean'                     => round( $mean, 2 ),
@@ -187,7 +187,7 @@ class WP_MCP_AI_Analytics_Engine {
 	 * @return float Z-score.
 	 */
 	public static function calculate_z_score( $value, $mean, $std_dev ) {
-		if ( $std_dev == 0 ) {
+		if ( 0 === $std_dev ) {
 			return 0;
 		}
 
@@ -320,11 +320,11 @@ class WP_MCP_AI_Analytics_Engine {
 		$total_1 = array_sum( $user_1_totals );
 		$total_2 = array_sum( $user_2_totals );
 
-		$usage_ratio = ( $total_2 != 0 ) ? ( $total_1 / $total_2 ) : 0;
+		$usage_ratio = ( 0 !== $total_2 ) ? ( $total_1 / $total_2 ) : 0;
 		$higher_user = ( $total_1 > $total_2 ) ? $user_id_1 : $user_id_2;
 
 		$avg_usage      = ( $total_1 + $total_2 ) / 2;
-		$difference_pct = ( $avg_usage != 0 ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
+		$difference_pct = ( 0 !== $avg_usage ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
 
 		return array(
 			'user1_stats'    => $user_1_stats,
@@ -389,11 +389,11 @@ class WP_MCP_AI_Analytics_Engine {
 		$total_1 = array_sum( $tool_1_totals );
 		$total_2 = array_sum( $tool_2_totals );
 
-		$usage_ratio  = ( $total_2 != 0 ) ? ( $total_1 / $total_2 ) : 0;
+		$usage_ratio  = ( 0 !== $total_2 ) ? ( $total_1 / $total_2 ) : 0;
 		$popular_tool = ( $total_1 > $total_2 ) ? $tool_slug_1 : $tool_slug_2;
 
 		$avg_usage      = ( $total_1 + $total_2 ) / 2;
-		$difference_pct = ( $avg_usage != 0 ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
+		$difference_pct = ( 0 !== $avg_usage ) ? ( abs( $total_1 - $total_2 ) / $avg_usage ) * 100 : 0;
 
 		return array(
 			'tool1_stats'    => $tool_1_stats,
