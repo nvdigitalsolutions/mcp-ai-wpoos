@@ -6,14 +6,16 @@
  */
 
 /**
- * Test that the Regulatory Registration Toolkit has research enabled.
+ * Test that the Regulatory Registration Toolkit has research disabled.
+ * Research & Add functionality has been moved to its own dedicated page.
  */
 class Test_Regulatory_Toolkit_Research_Flag extends WP_UnitTestCase {
 
 	/**
-	 * Test that the Regulatory Registration Toolkit settings page has research enabled.
+	 * Test that the Regulatory Registration Toolkit settings page has research disabled.
+	 * Research & Add functionality has been moved to its own dedicated page.
 	 */
-	public function test_regulatory_toolkit_has_research_enabled() {
+	public function test_regulatory_toolkit_has_research_disabled() {
 		// Load the settings page class.
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 			$this->markTestSkipped( 'Pro version not available' );
@@ -45,17 +47,18 @@ class Test_Regulatory_Toolkit_Research_Flag extends WP_UnitTestCase {
 		$has_research_property = $reflection->getProperty( 'has_research' );
 		$has_research_property->setAccessible( true );
 
-		// Check that has_research is true.
-		$this->assertTrue(
+		// Check that has_research is false (Research & Add tab removed from settings).
+		$this->assertFalse(
 			$has_research_property->getValue( $settings_page ),
-			'Regulatory Registration Toolkit should have research enabled (has_research should be true)'
+			'Regulatory Registration Toolkit should have research disabled in settings (has_research should be false) since Research & Add has its own dedicated page'
 		);
 	}
 
 	/**
-	 * Test that the research assistant field is registered when has_research is true.
+	 * Test that the research assistant field is NOT registered when has_research is false.
+	 * Research & Add functionality has been moved to its own dedicated page.
 	 */
-	public function test_research_assistant_field_is_registered() {
+	public function test_research_assistant_field_is_not_registered() {
 		// Load the settings page class.
 		if ( ! defined( 'WP_MCP_AI_PRO_PATH' ) ) {
 			$this->markTestSkipped( 'Pro version not available' );
@@ -89,22 +92,17 @@ class Test_Regulatory_Toolkit_Research_Flag extends WP_UnitTestCase {
 		// Get registered settings fields.
 		global $wp_settings_fields;
 
-		// Check that the research_assistant_id field is registered.
+		// Check that the research_assistant_id field is NOT registered.
 		$section = $option_name . '_config_section';
-		$this->assertArrayHasKey(
-			$option_name,
-			$wp_settings_fields,
-			'Settings fields should be registered for ' . $option_name
-		);
-		$this->assertArrayHasKey(
-			$section,
-			$wp_settings_fields[ $option_name ],
-			'Config section should be registered'
-		);
-		$this->assertArrayHasKey(
-			'research_assistant_id',
-			$wp_settings_fields[ $option_name ][ $section ],
-			'research_assistant_id field should be registered when has_research is true'
-		);
+
+		// The section should still exist for other config fields.
+		if ( isset( $wp_settings_fields[ $option_name ][ $section ] ) ) {
+			// But research_assistant_id field should NOT be registered when has_research is false.
+			$this->assertArrayNotHasKey(
+				'research_assistant_id',
+				$wp_settings_fields[ $option_name ][ $section ],
+				'research_assistant_id field should NOT be registered when has_research is false'
+			);
+		}
 	}
 }

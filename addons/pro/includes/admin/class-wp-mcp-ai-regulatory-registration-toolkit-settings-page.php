@@ -25,7 +25,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 		$this->option_name      = 'wp_mcp_ai_regulatory_registration_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-regulatory-registration-toolkit-settings';
 		$this->parent_slug      = 'edit.php?post_type=mcp_ai_reg_product';
-		$this->has_research     = true;
+		$this->has_research     = false;
 		$this->has_remote_sites = false;
 		$this->icon             = 'dashicons-shield-alt';
 
@@ -95,6 +95,7 @@ class WP_MCP_AI_Regulatory_Registration_Toolkit_Settings_Page extends WP_MCP_AI_
 
 			<h3><?php esc_html_e( 'Additional Resources', 'mcp-ai-wpoos-pro' ); ?></h3>
 			<ul>
+				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_registration&page=wp-mcp-ai-registration-research' ) ); ?>"><?php esc_html_e( 'Research & Add Registrations', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'Use AI to research and add registrations', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-registration-dashboard' ) ); ?>"><?php esc_html_e( 'Registration Dashboard', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View all registrations and their status', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_reg_product' ) ); ?>"><?php esc_html_e( 'Manage Products', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View and manage registered products', 'mcp-ai-wpoos-pro' ); ?></li>
 				<li><a href="<?php echo esc_url( admin_url( 'edit.php?post_type=mcp_ai_reg_document' ) ); ?>"><?php esc_html_e( 'Manage Documents', 'mcp-ai-wpoos-pro' ); ?></a> - <?php esc_html_e( 'View and manage regulatory documents', 'mcp-ai-wpoos-pro' ); ?></li>
