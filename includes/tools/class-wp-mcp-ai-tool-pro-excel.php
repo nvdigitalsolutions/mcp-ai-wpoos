@@ -835,13 +835,11 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
-		} else {
+		} elseif ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
 			// Try to find JSON object directly.
-			if ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
-				$json_str = $matches[0];
-			} else {
-				return false;
-			}
+			$json_str = $matches[0];
+		} else {
+			return false;
 		}
 
 		$parsed = json_decode( $json_str, true );
