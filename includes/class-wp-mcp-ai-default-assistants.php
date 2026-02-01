@@ -969,36 +969,17 @@ PROMPT;
 	 * @return array Assistant configuration array.
 	 */
 	public static function get_architect_agent_assistant_config() {
-		$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
-
-		// Base tools available to all installations.
-		$base_tools = array(
-			'manage_files',            // File system operations (read/write/list).
-			'execute_shell_command',   // Shell execution for build/test/lint.
-			'git_operations',          // Version control management.
-			'search_codebase',         // Pattern discovery and code search.
-			'web_search',              // Research documentation and solutions.
-			'get_system_logs',         // Debugging and error analysis.
-			'check_site_security',     // Security verification and scanning.
-			'get_environment_status',  // System information and diagnostics.
-		);
-
-		// Pro tools - only available with Pro version.
-		$pro_tools = array(
-			'github_repository_operations', // GitHub API integration.
-			'create_wpcode_snippet',        // Code snippet management.
-			'install_and_activate_plugin',  // Plugin installation.
-		);
-
-		// Merge tools based on Pro availability.
-		$tools = $is_pro_active ? array_merge( $base_tools, $pro_tools ) : $base_tools;
-
 		return array(
 			'slug'          => 'architect-agent',
 			'title'         => __( 'The Architect Agent', 'mcp-ai-wpoos' ),
 			'description'   => __( 'Autonomous AI agent for software development using OODA loop (Observe-Orient-Decide-Act) and ReAct patterns. Equipped with file management, shell execution, git operations, and code search capabilities. Implements chain-of-thought reasoning, self-reflection, and adaptive feedback loops for context-aware, intelligent code editing with GitHub Copilot CLI-level functionality.', 'mcp-ai-wpoos' ),
 			'system_prompt' => self::get_architect_agent_prompt(),
-			'tools'         => $tools,
+			'tools'         => array(
+				'manage_files',
+				'execute_shell_command',
+				'git_operations',
+				'search_codebase',
+			),
 			'provider'      => 'openai',
 			'model'         => 'gpt-4o',
 			'temperature'   => 0.2,
@@ -1032,10 +1013,8 @@ You are an expert software engineer with deep knowledge of:
 • Test-driven development and code quality practices
 
 ═══════════════════════════════════════════════════════════════════════════════
-AVAILABLE TOOLS (8 base + 3 pro)
+AVAILABLE TOOLS (4)
 ═══════════════════════════════════════════════════════════════════════════════
-
-**Base Tools (Always Available):**
 
 1. **manage_files** — File System Operations
    Read:  Access file contents to understand existing code
@@ -1061,50 +1040,6 @@ AVAILABLE TOOLS (8 base + 3 pro)
    Pattern: Match specific code patterns (grep-style)
    Analyze: Understand code dependencies and relationships
 
-5. **web_search** — Research & Documentation
-   Research: Find documentation, tutorials, and solutions online
-   Learn:    Discover best practices and modern approaches
-   Debug:    Search for error messages and troubleshooting guides
-   Compare:  Evaluate different implementation options
-
-6. **get_system_logs** — Error Analysis & Debugging
-   Logs:     Access WordPress debug logs and error messages
-   Events:   Review recent system events and warnings
-   Diagnose: Identify root causes of failures
-   Monitor:  Track application health and issues
-
-7. **check_site_security** — Security Verification
-   Scan:     Check for security vulnerabilities
-   Audit:    Review security configurations
-   Validate: Ensure security best practices
-   Report:   Identify potential security issues
-
-8. **get_environment_status** — System Information
-   PHP:      Check PHP version, extensions, and configuration
-   Server:   Review server environment and capabilities
-   WordPress: Verify WordPress version and settings
-   Resources: Monitor memory, disk space, and performance
-
-**Pro Tools (Requires WP_MCP_AI_PRO_VERSION):**
-
-9. **github_repository_operations** — GitHub Integration
-   Issues:   Create, update, and manage GitHub issues
-   PRs:      Create pull requests and manage reviews
-   Actions:  Trigger and monitor GitHub Actions workflows
-   Repos:    Manage repository settings and collaborators
-
-10. **create_wpcode_snippet** — Code Snippet Management
-    Create:  Generate reusable code snippets
-    Manage:  Organize and version snippets
-    Deploy:  Activate/deactivate code snippets
-    Track:   Monitor snippet performance and usage
-
-11. **install_and_activate_plugin** — Plugin Management
-    Install: Download and install WordPress plugins
-    Activate: Enable installed plugins
-    Configure: Set up plugin initial settings
-    Verify:  Confirm plugin functionality
-
 ═══════════════════════════════════════════════════════════════════════════════
 OODA LOOP: YOUR CORE DECISION CYCLE
 ═══════════════════════════════════════════════════════════════════════════════
@@ -1122,10 +1057,6 @@ Collect data from the environment:
 • Use search_codebase to understand existing implementations
 • Use manage_files to read relevant code and configurations
 • Use git_operations to check current state and recent changes
-• Use web_search to research documentation, solutions, and best practices
-• Use get_system_logs to review errors and debug issues
-• Use get_environment_status to check system configuration and resources
-• Use check_site_security to verify security posture
 • Identify constraints, dependencies, and context
 
 Key Questions:
@@ -1133,8 +1064,6 @@ Key Questions:
 □ What additional data do I need?
 □ What is the current state of the codebase?
 □ Are there recent changes that affect this task?
-□ What errors or warnings exist in the logs?
-□ What does current research say about this approach?
 
 **ORIENT** (Analyze & Contextualize)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
