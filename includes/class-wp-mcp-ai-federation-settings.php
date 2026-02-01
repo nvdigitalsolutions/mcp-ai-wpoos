@@ -128,7 +128,7 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public function render_enable_federation_field() {
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$enabled  = isset( $settings['enable_federation'] ) ? (bool) $settings['enable_federation'] : false;
+		$enabled  = isset( $settings['enable_federation_directory'] ) ? (bool) $settings['enable_federation'] : false;
 		?>
 		<label>
 			<input
@@ -281,7 +281,6 @@ class WP_MCP_AI_Federation_Settings {
 		$all_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 		$defaults = array(
-			'enable_federation'           => false,
 			'enable_federation_directory' => false,
 			'federation_regions'          => array( 'global' ),
 			'federation_data_tags'        => array(),
@@ -328,7 +327,7 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public static function is_federation_enabled() {
 		$settings = self::get_settings();
-		return ! empty( $settings['enable_federation'] );
+		return ! empty( $settings['enable_federation_directory'] );
 	}
 
 	/**
