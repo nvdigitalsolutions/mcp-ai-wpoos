@@ -482,14 +482,17 @@
 			
 			// Then, scan all checkboxes and add hidden fields for unchecked ones.
 			const checkboxes = {};
+			const uncheckedCheckboxes = [];
 			$form.find('input[type="checkbox"][name^="wp_mcp_ai_settings"]').each(function() {
 				const $checkbox = $(this);
 				const checkboxName = $checkbox.attr('name');
 				const name = checkboxName.replace('wp_mcp_ai_settings[', '').replace(']', '');
-				checkboxes[name] = $checkbox.is(':checked');
+				const isChecked = $checkbox.is(':checked');
+				checkboxes[name] = isChecked;
 				
 				// If checkbox is unchecked, add a hidden field with value="0" to ensure it's submitted.
-				if (!$checkbox.is(':checked')) {
+				if (!isChecked) {
+					uncheckedCheckboxes.push(name);
 					$form.append(
 						$('<input>')
 							.attr('type', 'hidden')
@@ -500,6 +503,9 @@
 				}
 			});
 			console.log('[NV oOS Settings] Checkbox states:', checkboxes);
+			if (uncheckedCheckboxes.length > 0) {
+				console.log('[NV oOS Settings] Added hidden fields for unchecked checkboxes:', uncheckedCheckboxes);
+			}
 			
 			// Get form data for logging.
 			const formData = new FormData($form[0]);
