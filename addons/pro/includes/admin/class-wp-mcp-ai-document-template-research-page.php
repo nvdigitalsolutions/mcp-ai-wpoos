@@ -368,7 +368,7 @@ class WP_MCP_AI_Document_Template_Research_Page {
 	 * @param string $format Data format.
 	 * @return array|WP_Error Result or error.
 	 */
-	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Required by trait interface.
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by trait interface.
 		return new WP_Error( 'not_implemented', __( 'Template import processing coming soon', 'mcp-ai-wpoos-pro' ) );
 	}
 
@@ -554,12 +554,12 @@ class WP_MCP_AI_Document_Template_Research_Page {
 					></textarea>
 					
 					<div class="import-options">
-						<label>
-							<input type="checkbox" name="auto_create" value="1" checked>
+						<label for="auto-create-templates">
+							<input type="checkbox" id="auto-create-templates" name="auto_create" value="1" checked>
 							<?php esc_html_e( 'Automatically create templates (recommended)', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
-						<label>
-							<input type="checkbox" name="validate_data" value="1" checked>
+						<label for="validate-template-data">
+							<input type="checkbox" id="validate-template-data" name="validate_data" value="1" checked>
 							<?php esc_html_e( 'Validate data quality before importing', 'mcp-ai-wpoos-pro' ); ?>
 						</label>
 					</div>
