@@ -572,6 +572,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							// Convert to proper boolean to ensure checked() works correctly.
 							$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
 							$checkbox_label = isset( $field['checkbox_label'] ) ? $field['checkbox_label'] : '';
+							
+							// Enhanced logging for federation/mesh checkboxes to verify render state.
+							if ( in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
+								$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+								$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+								if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+									error_log(
+										sprintf(
+											'[NV oOS Checkbox Render HTML] Key: %s, $is_checked: %s, Will render checked attr: %s',
+											$key,
+											$is_checked ? 'true' : 'false',
+											checked( $is_checked, true, false )
+										)
+									);
+								}
+							}
 							?>
 							<div class="wp-mcp-ai-settings-toggle-wrapper">
 								<label class="wp-mcp-ai-settings-toggle-switch" for="<?php echo esc_attr( $key ); ?>">
