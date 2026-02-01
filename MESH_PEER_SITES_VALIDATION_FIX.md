@@ -2,7 +2,7 @@
 
 ## Problem Summary
 
-When users attempted to enable Federation Mesh features in the NV oOS admin settings, they encountered a validation error that prevented the settings from being saved:
+When users attempted to enable Federation Mesh features in the WP MCP AI (NV oOS) admin settings, they encountered a validation error that prevented the settings from being saved:
 
 ```
 [NV oOS Settings] VALIDATION ERRORS: Mesh peer sites must be an array.

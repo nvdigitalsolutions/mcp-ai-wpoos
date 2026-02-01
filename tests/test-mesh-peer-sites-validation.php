@@ -63,7 +63,7 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 		$_POST['active_tab']                = 'advanced';
 		$_POST['active_subtab']             = 'federation_mesh';
 
-		$peer_json = '[{"url":"https://peer1.example.com","api_key":"mesh_abc123","name":"Peer 1","enabled":true}]';
+		$peer_json = '[{"url":"https://peer1.example.com","api_key":"test_key_placeholder_12345","name":"Peer 1","enabled":true}]';
 
 		$input = array(
 			'enable_mesh'          => 'true',
