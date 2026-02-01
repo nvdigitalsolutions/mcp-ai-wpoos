@@ -54,6 +54,7 @@ class WP_MCP_AI_Federation_Mesh_Checkbox_Fix_Test extends WP_UnitTestCase {
 		);
 
 		// Sanitize the settings.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Test file simulating POST data for testing sanitization logic.
 		$sanitized = $this->section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// Verify enable_mesh is set to false.
@@ -81,6 +82,7 @@ class WP_MCP_AI_Federation_Mesh_Checkbox_Fix_Test extends WP_UnitTestCase {
 			'enable_federation_directory' => '0',
 		);
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Test file simulating POST data for testing sanitization logic.
 		$sanitized = $this->section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// All should be false.
@@ -101,6 +103,7 @@ class WP_MCP_AI_Federation_Mesh_Checkbox_Fix_Test extends WP_UnitTestCase {
 			'enable_federation_directory' => '1',
 		);
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Test file simulating POST data for testing sanitization logic.
 		$sanitized = $this->section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// All should be true.
@@ -133,6 +136,7 @@ class WP_MCP_AI_Federation_Mesh_Checkbox_Fix_Test extends WP_UnitTestCase {
 			'enable_federation_directory' => '1', // Checked.
 		);
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Missing -- Test file simulating POST data for testing sanitization logic.
 		$sanitized = $this->section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
 		// Verify the new state matches user's changes.
