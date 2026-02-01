@@ -472,6 +472,43 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
+				// ========================================================================
+				// STEP 5a: Auto-generate mesh API key if needed
+				// ========================================================================
+				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
+				// This must happen BEFORE validation and save to avoid race conditions.
+				$mesh_features_enabled = ! empty( $merged_settings['enable_mesh'] ) || ! empty( $merged_settings['enable_federation_directory'] );
+				if ( $mesh_features_enabled && empty( $merged_settings['mesh_inbound_api_key'] ) ) {
+					try {
+						// Generate mesh inbound API key for peer authentication.
+						$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
+
+						if ( $enable_logging ) {
+							error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
+						}
+					} catch ( Exception $e ) {
+						// Handle random_bytes() exception gracefully.
+						if ( $enable_logging ) {
+							error_log(
+								sprintf(
+									'[NV oOS Settings] Failed to generate mesh API key: %s',
+									$e->getMessage()
+								)
+							);
+						}
+						add_settings_error(
+							'wp_mcp_ai_settings',
+							'mesh_key_generation_failed',
+							sprintf(
+								/* translators: %s: Error message from exception */
+								__( 'Failed to generate mesh API key due to insufficient system entropy: %s. This is typically a server configuration issue. Please ensure your server has proper random number generation available (check /dev/urandom on Linux systems) or contact your hosting provider.', 'mcp-ai-wpoos' ),
+								esc_html( $e->getMessage() )
+							),
+							'error'
+						);
+					}
+				}
+
 				// Validate merged settings before saving.
 				$validation_errors = $this->validate_merged_settings( $merged_settings, $existing_settings );
 				if ( ! empty( $validation_errors ) ) {
