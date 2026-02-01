@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-checkbox-save-issue',
-        'version' => 'dev-copilot/fix-checkbox-save-issue',
-        'reference' => '94a7656c276a60ed7873785905b5f714ea27631f',
+        'pretty_version' => 'dev-copilot/perform-code-review-feature',
+        'version' => 'dev-copilot/perform-code-review-feature',
+        'reference' => '524264a42469a455486da665f9c0404f47dbe1f3',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-checkbox-save-issue',
-            'version' => 'dev-copilot/fix-checkbox-save-issue',
-            'reference' => '94a7656c276a60ed7873785905b5f714ea27631f',
+            'pretty_version' => 'dev-copilot/perform-code-review-feature',
+            'version' => 'dev-copilot/perform-code-review-feature',
+            'reference' => '524264a42469a455486da665f9c0404f47dbe1f3',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
