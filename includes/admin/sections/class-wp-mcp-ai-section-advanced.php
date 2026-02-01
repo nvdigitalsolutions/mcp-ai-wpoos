@@ -90,18 +90,25 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
+				'enable_mesh'                   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows this instance to participate in mesh computing networks for distributed AI workload processing. Automatically generates a mesh inbound API key for peer connections.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'enable_federation'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Enables federation features including well-known endpoints (/.well-known/ai-peer, /.well-known/jwks.json) for AI peer discovery.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables well-known endpoints (/.well-known/ai-peer, /.well-known/jwks.json) for AI peer discovery. This allows other sites to discover your site\'s capabilities without requiring the full directory service.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_federation_directory'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the full federation directory service including AI Peers custom post type, directory REST API, and peer verification. Requires "Enable Federation" to also publish well-known endpoints for directory participants.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'federation_regions'            => array(
@@ -202,6 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'label'  => __( 'Federation & Mesh', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
+						'enable_mesh',
 						'enable_federation',
 						'enable_federation_directory',
 						'federation_regions',
@@ -1797,7 +1805,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 				</div>
 
 				<!-- Mesh Inbound API Key -->
-				<?php if ( $mesh_enabled ) : ?>
+				<?php if ( $mesh_enabled || $federation_enabled || $directory_enabled ) : ?>
 					<?php if ( $mesh_inbound_key ) : ?>
 						<div class="wp-mcp-ai-mesh-api-key" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 3px solid #2271b1; border-radius: 3px;">
 							<h4 style="margin-top: 0;"><?php esc_html_e( 'Mesh Inbound API Key', 'mcp-ai-wpoos' ); ?></h4>
@@ -1848,7 +1856,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						<div class="notice notice-warning inline" style="margin: 20px 0;">
 							<p>
 								<strong><?php esc_html_e( 'Mesh Inbound API Key Not Generated', 'mcp-ai-wpoos' ); ?></strong><br>
-								<?php esc_html_e( 'The mesh inbound API key should be automatically generated when mesh computing is enabled. Click "Save Settings" below to generate your key.', 'mcp-ai-wpoos' ); ?>
+								<?php esc_html_e( 'The mesh inbound API key should be automatically generated when mesh computing or federation is enabled. Click "Save Settings" below to generate your key.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						</div>
 					<?php endif; ?>
