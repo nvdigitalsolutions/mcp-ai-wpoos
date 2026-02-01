@@ -467,7 +467,7 @@ class WP_MCP_AI_Tool_Pro_Excel implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		return array(
 			'operation'       => 'convert',
 			'excel_version'   => $excel_version,
-			'original'        => $formula ?: $description,
+			'original'        => $formula ? $formula : $description,
 			'lambda_function' => $ai_response['lambda'] ?? '',
 			'usage'           => $ai_response['usage'] ?? '',
 			'benefits'        => $ai_response['benefits'] ?? '',
