@@ -39,9 +39,6 @@ class WP_MCP_AI_Checkbox_Bug_Reproduction_Test extends WP_UnitTestCase {
 		// Sanitize the settings - this is what the form submission does.
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
 
-		// Debug output.
-		error_log( '[Test] Sanitized output: ' . print_r( $sanitized, true ) );
-
 		// Verify that enable_mesh should be set to false.
 		$this->assertArrayHasKey(
 			'enable_mesh',
@@ -97,9 +94,6 @@ class WP_MCP_AI_Checkbox_Bug_Reproduction_Test extends WP_UnitTestCase {
 
 		// Sanitize the settings.
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
-
-		// Debug output.
-		error_log( '[Test] Sanitized output: ' . print_r( $sanitized, true ) );
 
 		// Verify that enable_federation_directory should be true.
 		$this->assertArrayHasKey(
