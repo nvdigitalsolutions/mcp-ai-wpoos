@@ -571,18 +571,26 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							// The value might be stored as string "1", integer 1, boolean true, or other truthy values.
 							// Convert to proper boolean to ensure checked() works correctly.
 							$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+							$checkbox_label = isset( $field['checkbox_label'] ) ? $field['checkbox_label'] : '';
 							?>
-							<label>
-								<input
-									type="checkbox"
-									id="<?php echo esc_attr( $key ); ?>"
-									name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
-									value="1"
-									<?php checked( $is_checked, true ); ?>
-									<?php disabled( $disabled ); ?>
-								/>
-								<?php echo isset( $field['checkbox_label'] ) ? esc_html( $field['checkbox_label'] ) : ''; ?>
-							</label>
+							<div class="wp-mcp-ai-settings-toggle-wrapper">
+								<label class="wp-mcp-ai-settings-toggle-switch" for="<?php echo esc_attr( $key ); ?>">
+									<input
+										type="checkbox"
+										id="<?php echo esc_attr( $key ); ?>"
+										name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+										value="1"
+										<?php checked( $is_checked, true ); ?>
+										<?php disabled( $disabled ); ?>
+									/>
+									<span class="wp-mcp-ai-settings-toggle-slider"></span>
+								</label>
+								<?php if ( ! empty( $checkbox_label ) ) : ?>
+									<label class="wp-mcp-ai-settings-toggle-label" for="<?php echo esc_attr( $key ); ?>">
+										<?php echo esc_html( $checkbox_label ); ?>
+									</label>
+								<?php endif; ?>
+							</div>
 							<?php
 							break;
 
