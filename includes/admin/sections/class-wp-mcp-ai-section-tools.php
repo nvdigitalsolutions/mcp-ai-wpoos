@@ -349,13 +349,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Features fields.
-				'enable_mesh'                            => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Allows this instance to participate in mesh computing networks for distributed AI workload processing. Automatically generates a mesh inbound API key. Configure mesh peer sites in Advanced → Federation & Mesh.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
 				'enable_quiz_system'                     => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Quiz System', 'mcp-ai-wpoos' ),

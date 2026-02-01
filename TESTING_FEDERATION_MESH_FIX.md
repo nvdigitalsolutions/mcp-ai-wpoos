@@ -8,35 +8,69 @@ This guide will help you verify that the federation mesh fix is working correctl
 2. Clear your browser cache (Ctrl+Shift+R or Cmd+Shift+R)
 3. You may need to manually flush permalinks: Go to Settings → Permalinks → Click "Save Changes"
 
-## Test Scenario 1: Enable Federation Only
+## Important: All Settings in One Place! 
 
-**Purpose:** Verify that well-known endpoints are loaded when only `enable_federation` is enabled.
+**All three federation/mesh checkboxes are now in Advanced → Federation & Mesh:**
+- ✅ Enable Mesh Computing (moved from Tools → Features)
+- ✅ Enable Federation
+- ✅ Enable Federation Directory
+
+This makes it easier to manage all related settings in one location.
+
+## Test Scenario 1: Enable Mesh Computing Only
+
+**Purpose:** Verify that mesh computing works independently.
 
 ### Steps:
 
 1. Go to **WP Admin → NV oOS → Settings → Advanced → Federation & Mesh**
 
-2. **Uncheck** "Enable Federation Directory" (if checked)
+2. **Check** "Enable Mesh Computing"
+
+3. **Uncheck** "Enable Federation" (if checked)
+
+4. **Uncheck** "Enable Federation Directory" (if checked)
+
+5. Click **Save Settings**
+
+6. Refresh the page and verify:
+   - ✅ The "Enable Mesh Computing" checkbox stays checked
+   - ✅ Status section shows "Mesh Computing: Enabled"
+   - ✅ The "Mesh Inbound API Key" section appears with a generated key
+   - ❌ Well-known endpoints should NOT be accessible
+   - ❌ The "AI Peers" menu should NOT appear in WordPress admin sidebar
+
+7. Copy the mesh inbound API key from the "Mesh Inbound API Key" section - you'll need it later
+
+## Test Scenario 2: Enable Federation Only
+
+**Purpose:** Verify that well-known endpoints are loaded when only `enable_federation` is enabled.
+
+### Steps:
+
+1. Still on **Advanced → Federation & Mesh** page
+
+2. **Uncheck** "Enable Mesh Computing"
 
 3. **Check** "Enable Federation"
 
-4. Click **Save Settings**
+4. **Uncheck** "Enable Federation Directory"
 
-5. Refresh the page and verify:
+5. Click **Save Settings**
+
+6. Refresh the page and verify:
    - ✅ The "Enable Federation" checkbox stays checked
    - ✅ Status section shows "Federation (Well-Known Endpoints): Enabled"
    - ✅ The "Mesh Inbound API Key" section appears with a generated key
    - ❌ The "AI Peers" menu should NOT appear in WordPress admin sidebar
 
-6. Test well-known endpoints in your browser:
+7. Test well-known endpoints in your browser:
    - Visit: `https://bots.nvdigital.solutions/.well-known/ai-peer`
    - Should see JSON output with site capabilities
    - Visit: `https://bots.nvdigital.solutions/.well-known/jwks.json`
    - Should see JSON output (may be empty if no keys configured)
 
-7. Copy the mesh inbound API key from the "Mesh Inbound API Key" section - you'll need it later
-
-## Test Scenario 2: Enable Federation Directory Only
+## Test Scenario 3: Enable Federation Directory Only
 
 **Purpose:** Verify that full directory features work when only `enable_federation_directory` is enabled.
 
@@ -44,41 +78,44 @@ This guide will help you verify that the federation mesh fix is working correctl
 
 1. Still on **Advanced → Federation & Mesh** page
 
-2. **Uncheck** "Enable Federation"
+2. **Uncheck** "Enable Mesh Computing"
 
-3. **Check** "Enable Federation Directory"
+3. **Uncheck** "Enable Federation"
 
-4. Click **Save Settings**
+4. **Check** "Enable Federation Directory"
 
-5. Refresh the page and verify:
+5. Click **Save Settings**
+
+6. Refresh the page and verify:
    - ✅ The "Enable Federation Directory" checkbox stays checked
    - ✅ Status section shows "Federation Directory: Enabled"
    - ✅ The "Mesh Inbound API Key" section appears (key should be preserved)
    - ✅ The "AI Peers" menu SHOULD appear in WordPress admin sidebar
-
-6. Test well-known endpoints again:
-   - Visit: `https://bots.nvdigital.solutions/.well-known/ai-peer`
-   - Should still see JSON output (still works!)
+   - ✅ Well-known endpoints still work (because directory enables them)
 
 7. Click on **AI Peers** in the admin sidebar
    - Should see the AI Peers management page
    - You can add a new AI Peer if you want to test
 
-## Test Scenario 3: Enable Both Settings (Recommended)
+## Test Scenario 4: Enable All Three Settings (Recommended)
 
-**Purpose:** Verify that all features work when both settings are enabled.
+**Purpose:** Verify that all features work when all settings are enabled.
 
 ### Steps:
 
 1. Still on **Advanced → Federation & Mesh** page
 
-2. **Check** both "Enable Federation" and "Enable Federation Directory"
+2. **Check** all three checkboxes:
+   - Enable Mesh Computing
+   - Enable Federation
+   - Enable Federation Directory
 
 3. Click **Save Settings**
 
 4. Refresh the page and verify:
-   - ✅ Both checkboxes stay checked
+   - ✅ All three checkboxes stay checked
    - ✅ Status section shows:
+     - Mesh Computing: Enabled
      - Federation (Well-Known Endpoints): Enabled
      - Federation Directory: Enabled
    - ✅ The "Mesh Inbound API Key" section appears (key preserved)
@@ -89,34 +126,49 @@ This guide will help you verify that the federation mesh fix is working correctl
    - `/.well-known/jwks.json` - Should work
    - AI Peers admin page - Should work
 
-## Test Scenario 4: Enable Mesh Computing
+## Test Scenario 5: Uncheck and Verify It Saves
 
-**Purpose:** Verify that mesh computing still generates the API key.
+**Purpose:** Verify that you CAN uncheck any checkbox and it will save properly.
 
 ### Steps:
 
-1. Go to **WP Admin → NV oOS → Settings → Tools → Features**
+1. Still on **Advanced → Federation & Mesh** page
 
-2. Find "Enable Mesh Computing" checkbox
+2. **Uncheck** "Enable Federation"
 
-3. **Check** it
+3. Click **Save Settings**
 
-4. Click **Save Settings**
+4. Refresh the page and verify:
+   - ✅ "Enable Federation" is UNCHECKED (saved correctly!)
+   - ✅ "Enable Mesh Computing" is still CHECKED (preserved!)
+   - ✅ "Enable Federation Directory" is still CHECKED (preserved!)
 
-5. Go back to **Advanced → Federation & Mesh**
+5. Now **uncheck** all three checkboxes
 
-6. Verify:
-   - ✅ Status section shows "Mesh Computing: Enabled"
-   - ✅ The "Mesh Inbound API Key" is still present (not regenerated)
+6. Click **Save Settings**
+
+7. Refresh the page and verify:
+   - ✅ All three checkboxes are UNCHECKED (saved correctly!)
+   - ✅ Mesh inbound API key is hidden (no longer generated)
 
 ## Expected Results Summary
 
-| Setting                      | Well-Known Endpoints | AI Peers CPT | API Key Generated | Directory REST API |
-|-----------------------------|---------------------|--------------|-------------------|-------------------|
-| enable_federation only       | ✅ YES              | ❌ NO        | ✅ YES            | ❌ NO             |
-| enable_federation_directory  | ✅ YES              | ✅ YES       | ✅ YES            | ✅ YES            |
-| Both enabled                 | ✅ YES              | ✅ YES       | ✅ YES            | ✅ YES            |
-| enable_mesh only             | ❌ NO               | ❌ NO        | ✅ YES            | ❌ NO             |
+| enable_mesh | enable_federation | enable_federation_directory | Well-Known | AI Peers CPT | API Key | Mesh Computing |
+|------------|-------------------|----------------------------|------------|--------------|---------|----------------|
+| ❌         | ❌               | ❌                         | ❌         | ❌           | ❌      | ❌             |
+| ✅         | ❌               | ❌                         | ❌         | ❌           | ✅      | ✅             |
+| ❌         | ✅               | ❌                         | ✅         | ❌           | ✅      | ❌             |
+| ❌         | ❌               | ✅                         | ✅         | ✅           | ✅      | ❌             |
+| ✅         | ✅               | ❌                         | ✅         | ❌           | ✅      | ✅             |
+| ✅         | ❌               | ✅                         | ✅         | ✅           | ✅      | ✅             |
+| ❌         | ✅               | ✅                         | ✅         | ✅           | ✅      | ❌             |
+| ✅         | ✅               | ✅                         | ✅         | ✅           | ✅      | ✅             |
+
+**Recommended configurations:**
+- **Full federation:** All three enabled
+- **Federation discovery only:** `enable_federation` only
+- **Mesh computing only:** `enable_mesh` only
+- **Lightweight federation:** `enable_mesh` + `enable_federation`
 
 ## Troubleshooting
 
@@ -131,10 +183,7 @@ This guide will help you verify that the federation mesh fix is working correctl
 - Try accessing the endpoints again
 
 ### API key not generated
-- Make sure at least ONE of these is enabled:
-  - Enable Mesh Computing (Tools → Features)
-  - Enable Federation (Advanced → Federation & Mesh)
-  - Enable Federation Directory (Advanced → Federation & Mesh)
+- Make sure at least ONE of the three checkboxes is enabled
 - Click "Save Settings" again to trigger key generation
 
 ### AI Peers menu doesn't appear
@@ -142,12 +191,17 @@ This guide will help you verify that the federation mesh fix is working correctl
 - Make sure you saved the settings
 - Refresh the WordPress admin page
 
+### Setting won't save (keeps reverting)
+- This should be FIXED now with the latest code
+- If still occurring, check browser console for errors
+- Clear all caches and try again
+
 ## Need Help?
 
 If you're still seeing issues:
 
 1. Take screenshots showing:
-   - The Advanced → Federation & Mesh settings page
+   - The Advanced → Federation & Mesh settings page (with all three checkboxes)
    - The status section showing what's enabled
    - The browser console (F12 → Console tab)
 
@@ -167,10 +221,12 @@ If you're still seeing issues:
 
 If all test scenarios pass, the federation mesh fix is working correctly! 
 
-Both checkboxes should:
+All three checkboxes should:
+- ✅ Be in the same location (Advanced → Federation & Mesh)
 - ✅ Stay checked when you save them
-- ✅ Generate API keys automatically
-- ✅ Enable well-known endpoints
+- ✅ Stay unchecked when you save them
+- ✅ Generate API keys automatically when any one is enabled
+- ✅ Enable well-known endpoints when needed
 - ✅ Show correct status in the dashboard
 
-You can now use the federation features as intended.
+You can now use the federation features as intended, all from one convenient location!

@@ -90,6 +90,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'default'        => false,
 				),
 				// Federation & Mesh Settings.
+				'enable_mesh'                   => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Allows this instance to participate in mesh computing networks for distributed AI workload processing. Automatically generates a mesh inbound API key for peer connections.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 				'enable_federation'             => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
@@ -202,6 +209,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'label'  => __( 'Federation & Mesh', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-networking',
 					'fields' => array(
+						'enable_mesh',
 						'enable_federation',
 						'enable_federation_directory',
 						'federation_regions',
