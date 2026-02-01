@@ -1771,8 +1771,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 						</li>
 						<li>
 							<strong><?php esc_html_e( 'Federation Directory:', 'mcp-ai-wpoos' ); ?></strong>
-							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $federation_enabled ? 'success' : 'warning' ); ?>">
-								<?php echo esc_html( $federation_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
+							<span class="wp-mcp-ai-status-badge wp-mcp-ai-status-<?php echo esc_attr( $directory_enabled ? 'success' : 'warning' ); ?>">
+								<?php echo esc_html( $directory_enabled ? __( 'Enabled', 'mcp-ai-wpoos' ) : __( 'Disabled', 'mcp-ai-wpoos' ) ); ?>
 							</span>
 						</li>
 						<li>
