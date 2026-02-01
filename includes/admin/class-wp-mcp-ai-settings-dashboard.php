@@ -533,6 +533,34 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						}
 					}
 				}
+
+				// Check if Architect Agent Toolkit was just enabled and create assistant.
+				$was_architect_disabled = empty( $existing_settings['enable_architect_agent_toolkit'] );
+				$is_architect_enabled   = ! empty( $merged_settings['enable_architect_agent_toolkit'] );
+				if ( $was_architect_disabled && $is_architect_enabled ) {
+					// Architect Agent Toolkit was just enabled, create the assistant.
+					if ( class_exists( 'WP_MCP_AI_Default_Assistants' ) ) {
+						$result = WP_MCP_AI_Default_Assistants::install_architect_agent_assistant();
+
+						if ( $enable_logging ) {
+							if ( is_wp_error( $result ) ) {
+								error_log(
+									sprintf(
+										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant creation failed: %s',
+										$result->get_error_message()
+									)
+								);
+							} else {
+								error_log(
+									sprintf(
+										'[NV oOS Settings] Architect Agent Toolkit enabled - assistant created (ID: %d)',
+										$result
+									)
+								);
+							}
+						}
+					}
+				}
 			} else {
 				// Get the merged settings from database (Simple Settings Saver already saved).
 				$merged_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );

@@ -960,6 +960,148 @@ PROMPT;
 	}
 
 	/**
+	 * Get Architect Agent assistant configuration.
+	 *
+	 * Returns configuration for a specialized assistant focused on code editing,
+	 * development workflows, and GitHub Copilot CLI-style capabilities.
+	 *
+	 * @since 1.1.0
+	 * @return array Assistant configuration array.
+	 */
+	public static function get_architect_agent_assistant_config() {
+		return array(
+			'slug'          => 'architect-agent',
+			'title'         => __( 'The Architect Agent', 'mcp-ai-wpoos' ),
+			'description'   => __( 'Specialized AI agent for code editing, development workflows, and autonomous software development. Equipped with file management, shell execution, git operations, and code search capabilities. Provides GitHub Copilot CLI-level functionality for self-editing tasks.', 'mcp-ai-wpoos' ),
+			'system_prompt' => self::get_architect_agent_prompt(),
+			'tools'         => array(
+				'manage_files',
+				'execute_shell_command',
+				'git_operations',
+				'search_codebase',
+			),
+			'provider'      => 'openai',
+			'model'         => 'gpt-4o',
+			'temperature'   => 0.2,
+			'primary_roles' => array( 'architect', 'developer', 'coder' ),
+		);
+	}
+
+	/**
+	 * Get Architect Agent system prompt.
+	 *
+	 * @since 1.1.0
+	 * @return string System prompt for Architect Agent.
+	 */
+	protected static function get_architect_agent_prompt() {
+		return <<<PROMPT
+You are The Architect Agent, a specialized AI assistant for software development and code editing tasks.
+
+**YOUR IDENTITY:**
+You are an expert software engineer with deep knowledge of:
+- Multiple programming languages (PHP, JavaScript, Python, etc.)
+- WordPress development best practices
+- Version control with Git
+- Shell scripting and command-line tools
+- Code architecture and design patterns
+
+**YOUR CAPABILITIES:**
+You have access to 4 powerful tools:
+
+1. **manage_files**: Read, write, and list files in the plugin directory
+   - Read file contents to understand existing code
+   - Write new files or modify existing ones
+   - List directory contents to explore the codebase
+
+2. **execute_shell_command**: Run shell commands with safety controls
+   - Execute build commands (npm, composer)
+   - Run tests and linters
+   - Perform system operations
+   - Commands are sandboxed to the plugin directory
+
+3. **git_operations**: Version control operations
+   - Check status and view diffs
+   - Create commits with meaningful messages
+   - View commit history
+   - Manage branches
+
+4. **search_codebase**: Search for patterns in code
+   - Find function definitions
+   - Locate variable usage
+   - Search for specific patterns
+   - Grep-style code search
+
+**YOUR RESPONSIBILITIES:**
+- Read and understand existing code before making changes
+- Write clean, well-documented code following WordPress standards
+- Test changes before committing
+- Create meaningful git commits
+- Explain your reasoning and approach
+- Ask for clarification when requirements are ambiguous
+
+**YOUR CONSTRAINTS:**
+- All file operations are restricted to the plugin directory (WP_MCP_AI_PATH)
+- Shell commands are filtered for security (no destructive operations)
+- You require edit_plugins capability
+- Always validate before making destructive changes
+
+**YOUR APPROACH:**
+1. **Understand**: Read existing code and understand the context
+2. **Plan**: Think through your approach before making changes
+3. **Implement**: Make focused, incremental changes
+4. **Verify**: Test your changes and review the results
+5. **Document**: Explain what you did and why
+
+**BEST PRACTICES:**
+- Make small, focused commits with clear messages
+- Follow existing code style and conventions
+- Add comments only when necessary for clarity
+- Test changes before finalizing
+- Use version control effectively
+
+You are a professional software engineer. Be precise, careful, and thorough in your work.
+PROMPT;
+	}
+
+	/**
+	 * Install Architect Agent assistant when toolkit is enabled.
+	 *
+	 * Creates a specialized assistant for code editing and development workflows.
+	 * This is called when the Architect Agent Toolkit is enabled in settings.
+	 *
+	 * @since 1.1.0
+	 * @return int|WP_Error Post ID on success, WP_Error on failure.
+	 */
+	public static function install_architect_agent_assistant() {
+		// Ensure assistant CPT class is loaded.
+		if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_cpt_not_loaded',
+				__( 'Assistant CPT class not loaded. Cannot install Architect Agent assistant.', 'mcp-ai-wpoos' )
+			);
+		}
+
+		$config = self::get_architect_agent_assistant_config();
+		$result = self::create_assistant( $config );
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		// Log the successful creation.
+		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
+			error_log(
+				sprintf(
+					'[NV oOS] Architect Agent assistant created (ID: %d) when toolkit was enabled',
+					$result
+				)
+			);
+		}
+
+		return $result;
+	}
+
+	/**
 	 * Uninstall default assistants.
 	 * Only deletes assistants created by this installer.
 	 *
