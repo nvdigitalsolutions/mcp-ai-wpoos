@@ -107,8 +107,8 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Second save: save other settings while federation directory is still enabled.
 		$input = array(
-			'enable_federation'  => '1',
-			'federation_regions' => 'us-east',
+			'enable_federation' => '1',
+			'federation_regions'          => 'us-east',
 		);
 
 		// Clear the settings cache to force fresh read.
@@ -133,8 +133,8 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Simulate saving with federation directory disabled.
 		$input = array(
-			'enable_federation'  => false,
-			'federation_regions' => 'global',
+			'enable_federation' => false,
+			'federation_regions'          => 'global',
 		);
 
 		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
@@ -157,7 +157,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Simulate enabling both mesh and federation directory.
 		$input = array(
-			'enable_mesh'       => '1',
+			'enable_mesh'                 => '1',
 			'enable_federation' => '1',
 		);
 

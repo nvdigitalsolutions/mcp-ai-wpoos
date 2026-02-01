@@ -317,7 +317,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_Chart_Settings' ) ) {
 					$vulns           = array_slice( $vulns, 0, 6 );
 						$vulns_count = count( $vulns );
 					while ( $vulns_count < 6 ) {
-						$vulns[]                         = 0;
+						$vulns[] = 0;
 											$vulns_count = count( $vulns );
 					}
 					$sanitized['vulnerabilities_fixed'] = $vulns;

@@ -5389,9 +5389,8 @@ if ( ! class_exists( 'WP_MCP_AI_REST' ) ) {
 					// First response gets priority (leader/planner).
 					$primary = $responses[0]['content'];
 					if ( count( $responses ) > 1 ) {
-						$primary          .= "\n\n---\n\n## Additional Perspectives\n\n";
-						$responses_count   = count( $responses );
-						for ( $i = 1; $i < $responses_count; $i++ ) {
+						$primary .= "\n\n---\n\n## Additional Perspectives\n\n";
+						for ( $i = 1; $i < count( $responses ); $i++ ) {
 							$primary .= $responses[ $i ]['content'] . "\n\n";
 						}
 					}

@@ -1121,7 +1121,6 @@ class WP_MCP_AI_Chat_Service {
 				}
 			} catch ( Exception $e ) {
 				// Silently fail - status monitoring should not break the chat.
-				unset( $e ); // Suppress unused variable warning.
 			}
 		}
 
@@ -1137,7 +1136,6 @@ class WP_MCP_AI_Chat_Service {
 				);
 			} catch ( Exception $e ) {
 				// Silently fail.
-				unset( $e ); // Suppress unused variable warning.
 			}
 		}
 
@@ -1151,7 +1149,6 @@ class WP_MCP_AI_Chat_Service {
 				);
 			} catch ( Exception $e ) {
 				// Silently fail.
-				unset( $e ); // Suppress unused variable warning.
 			}
 		}
 

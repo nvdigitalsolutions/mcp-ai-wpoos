@@ -79,8 +79,8 @@ if ( class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 		$grouped[ $group_id ]['tools'][] = array(
 			'slug'        => $slug,
-			'name'        => $tool->get_name() ? $tool->get_name() : $slug,
-			'description' => $tool->get_description() ? $tool->get_description() : '',
+			'name'        => $tool->get_name() ?: $slug,
+			'description' => $tool->get_description() ?: '',
 		);
 	}
 
