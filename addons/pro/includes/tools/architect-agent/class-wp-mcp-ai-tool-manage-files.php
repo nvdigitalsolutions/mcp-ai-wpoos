@@ -91,12 +91,16 @@ class WP_MCP_AI_Tool_Manage_Files implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                   // Pro tier feature.
-			'requires-capability',   // Requires edit_plugins capability.
-			'write',                 // Can modify files.
-			'state-changing',        // Modifies plugin code/files.
-			'local-only',            // Works locally, no external APIs.
-			'reversible',            // Changes can be undone via version control.
+			'pro',                     // Pro tier feature.
+			'requires-capability',     // Requires edit_plugins capability.
+			'write',                   // Can modify files.
+			'state-changing',          // Modifies plugin code/files.
+			'local-only',              // Works locally, no external APIs.
+			'reversible',              // Changes can be undone via version control.
+			'architect-agent',         // Core Architect Agent capability.
+			'code-modification',       // Can modify source code files.
+			'requires-workspace-trust', // Requires workspace trust (security).
+			'development-workflow',    // Part of development lifecycle.
 		);
 	}
 

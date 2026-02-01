@@ -106,10 +106,14 @@ class WP_MCP_AI_Tool_Search_Codebase implements WP_MCP_AI_Tool_Interface, WP_MCP
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                   // Pro tier feature.
-			'requires-capability',   // Requires edit_plugins capability.
-			'read-only',             // Read-only operation.
-			'local-only',            // Works locally, no external APIs.
+			'pro',                     // Pro tier feature.
+			'requires-capability',     // Requires edit_plugins capability.
+			'read-only',               // Read-only operation.
+			'local-only',              // Works locally, no external APIs.
+			'architect-agent',         // Core Architect Agent capability.
+			'code-search',             // Can search codebase.
+			'requires-workspace-trust', // Requires workspace trust (security).
+			'development-workflow',    // Part of development lifecycle.
 		);
 	}
 

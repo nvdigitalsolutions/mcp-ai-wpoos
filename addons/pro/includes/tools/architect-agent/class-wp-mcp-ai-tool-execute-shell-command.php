@@ -118,11 +118,15 @@ class WP_MCP_AI_Tool_Execute_Shell_Command implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                   // Pro tier feature.
-			'requires-capability',   // Requires edit_plugins capability.
-			'state-changing',        // Executes commands that can modify state.
-			'local-only',            // Works locally, no external APIs.
-			'reversible',            // Many operations can be undone.
+			'pro',                     // Pro tier feature.
+			'requires-capability',     // Requires edit_plugins capability.
+			'state-changing',          // Executes commands that can modify state.
+			'local-only',              // Works locally, no external APIs.
+			'reversible',              // Many operations can be undone.
+			'architect-agent',         // Core Architect Agent capability.
+			'shell-execution',         // Can execute shell commands.
+			'requires-workspace-trust', // Requires workspace trust (security).
+			'development-workflow',    // Part of development lifecycle.
 		);
 	}
 
