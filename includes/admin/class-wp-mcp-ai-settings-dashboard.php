@@ -561,6 +561,24 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						}
 					}
 				}
+
+				// Check if mesh networking or federation directory was just enabled and generate API key if needed.
+				$mesh_features_enabled = ! empty( $merged_settings['enable_mesh'] ) || ! empty( $merged_settings['enable_federation_directory'] );
+				if ( $mesh_features_enabled && empty( $merged_settings['mesh_inbound_api_key'] ) ) {
+					// Generate mesh inbound API key for peer authentication.
+					$merged_settings['mesh_inbound_api_key'] = 'mesh_' . bin2hex( random_bytes( 32 ) );
+
+					// Save the updated settings with the new API key.
+					update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
+
+					// Clear settings cache after adding the API key.
+					WP_MCP_AI_Admin_Settings::reset_settings_cache();
+					wp_cache_delete( WP_MCP_AI_Admin_Settings::OPTION_NAME, 'options' );
+
+					if ( $enable_logging ) {
+						error_log( '[NV oOS Settings] Mesh/Federation enabled - auto-generated mesh_inbound_api_key' );
+					}
+				}
 			} else {
 				// Get the merged settings from database (Simple Settings Saver already saved).
 				$merged_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
