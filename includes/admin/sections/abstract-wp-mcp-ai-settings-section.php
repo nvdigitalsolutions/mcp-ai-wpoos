@@ -133,9 +133,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Check if we're actually processing a form submission for this subtab.
 			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$subtab_field_name = 'subtab_' . $this->get_id();
-			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
@@ -310,8 +311,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								$typed_value = absint( $value );
 							}
 						}
-						// Use non-strict comparison to handle string/int type juggling.
-						if ( in_array( $typed_value, $options, false ) ) {
+						// Use strict comparison for in_array check.
+						if ( in_array( $typed_value, $options, true ) ) {
 							$sanitized[ $key ] = $typed_value;
 						}
 						break;

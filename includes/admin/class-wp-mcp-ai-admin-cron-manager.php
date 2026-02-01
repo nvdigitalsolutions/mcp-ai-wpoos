@@ -363,6 +363,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			// Nonce verification not required as this is a read-only display of status after redirect.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
 			if ( isset( $_GET['updated'] ) ) :
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
 				$updated = sanitize_key( wp_unslash( $_GET['updated'] ) );
 				if ( '1' === $updated ) :
 					?>

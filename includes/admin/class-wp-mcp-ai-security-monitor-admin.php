@@ -268,6 +268,7 @@ if ( ! class_exists( 'WP_MCP_AI_Security_Monitor_Admin' ) ) {
 							<?php
 							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
 							if ( isset( $_GET['error'] ) ) {
+							// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just displaying error message from previous request.
 								echo esc_html( urldecode( sanitize_text_field( wp_unslash( $_GET['error'] ) ) ) );
 							} else {
 								esc_html_e( 'Invalid root security key provided.', 'mcp-ai-wpoos' );
