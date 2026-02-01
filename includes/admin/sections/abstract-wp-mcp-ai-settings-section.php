@@ -226,23 +226,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						// Checkbox is checked if present in input with truthy value, unchecked otherwise.
 						// Explicitly check for '0' string (from hidden fields) and treat it as false.
 						$checkbox_value = false;
+						$raw_value_for_logging = 'NOT SET';
 						if ( isset( $filtered_input[ $key ] ) ) {
 							$raw_value = $filtered_input[ $key ];
+							$raw_value_for_logging = var_export( $raw_value, true );
 							// Convert '0' string to false, '1' string to true, and use bool cast for other values.
 							$checkbox_value = ( '0' === $raw_value || 0 === $raw_value ) ? false : (bool) $raw_value;
 						}
 						$sanitized[ $key ] = $checkbox_value;
 
-						// Enhanced logging for checkbox processing.
+						// Enhanced logging for checkbox processing - especially for federation/mesh checkboxes.
 						$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 						$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
-						if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+						$is_federation_checkbox = in_array( $key, array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' ), true );
+						if ( ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) && $is_federation_checkbox ) {
 							error_log(
 								sprintf(
-									'[NV oOS Checkbox] Processing checkbox: %s, In Input: %s, Value: %s',
+									'[NV oOS Checkbox Save] Key: %s, In Input: %s, Raw Value: %s, Final Value: %s (boolean %s)',
 									$key,
 									isset( $filtered_input[ $key ] ) ? 'YES' : 'NO',
-									$checkbox_value ? 'true' : 'false'
+									$raw_value_for_logging,
+									$checkbox_value ? 'true' : 'false',
+									var_export( $checkbox_value, true )
 								)
 							);
 						}
@@ -387,6 +392,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
 
+			// Enhanced logging for federation/mesh checkboxes to help debug display issues.
+			if ( 'checkbox' === $type && in_array( $key, array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' ), true ) ) {
+				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Render] Key: %s, Raw Value: %s (type: %s), Default: %s',
+							$key,
+							var_export( $value, true ),
+							gettype( $value ),
+							var_export( isset( $field['default'] ) ? $field['default'] : '', true )
+						)
+					);
+				}
+			}
+
 			?>
 			<tr>
 				<th scope="row">
@@ -462,6 +484,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							break;
 
 						case 'checkbox':
+							// CRITICAL FIX: Normalize checkbox value to boolean for reliable checked() comparison.
+							// The value might be stored as string "1", integer 1, boolean true, or other truthy values.
+							// Convert to proper boolean to ensure checked() works correctly.
+							$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
 							?>
 							<label>
 								<input
@@ -469,7 +495,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 									id="<?php echo esc_attr( $key ); ?>"
 									name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
 									value="1"
-									<?php checked( $value, true ); ?>
+									<?php checked( $is_checked, true ); ?>
 									<?php disabled( $disabled ); ?>
 								/>
 								<?php echo isset( $field['checkbox_label'] ) ? esc_html( $field['checkbox_label'] ) : ''; ?>
