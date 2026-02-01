@@ -396,7 +396,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Overview' ) ) {
 		 */
 		private function render_features_status_card( $settings ) {
 			$logging_enabled = ! empty( $settings['enable_logging'] );
-			$federation      = ! empty( $settings['enable_federation'] );
+			$federation      = ! empty( $settings['enable_federation_directory'] );
 			$mesh_enabled    = ! empty( $settings['enable_mesh'] );
 
 			// Count configured connectors.
