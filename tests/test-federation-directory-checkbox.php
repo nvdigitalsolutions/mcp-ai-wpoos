@@ -1,12 +1,17 @@
 <?php
 /**
- * Test for Enable Federation Directory checkbox persistence.
+ * Test for Federation Mesh checkbox persistence.
+ *
+ * Tests all three federation mesh checkboxes:
+ * - enable_mesh (Enable Mesh Computing)
+ * - enable_federation (Enable Federation)
+ * - enable_federation_directory (Enable Federation Directory)
  *
  * @package WP_MCP_AI
  */
 
 /**
- * Test that the Enable Federation Directory checkbox saves correctly.
+ * Test that the Federation Mesh checkboxes save correctly.
  */
 class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
@@ -189,6 +194,168 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		$this->assertTrue(
 			! empty( $settings['enable_federation'] ),
 			'Third save: enable_federation should be true again'
+		);
+
+		// Clean up.
+		unset( $_POST['subtab_advanced'] );
+		unset( $_POST['wp_mcp_ai_settings'] );
+	}
+
+	/**
+	 * Test that all three federation mesh checkboxes can be unchecked together.
+	 *
+	 * This is the actual bug scenario reported by the user.
+	 */
+	public function test_all_three_checkboxes_can_be_unchecked() {
+		// Set up initial settings with all three checkboxes enabled.
+		$initial_settings = array(
+			'enable_mesh'                 => true,
+			'enable_federation'           => true,
+			'enable_federation_directory' => true,
+		);
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
+
+		// Simulate saving the federation_mesh subtab with ALL checkboxes unchecked.
+		$_POST['subtab_advanced']    = 'federation_mesh';
+		$_POST['wp_mcp_ai_settings'] = array(
+			// All three checkboxes are NOT here (all unchecked).
+		);
+
+		// Sanitize using the Advanced section.
+		$section   = new WP_MCP_AI_Section_Advanced();
+		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
+
+		// All three checkboxes should be in the sanitized output.
+		$this->assertArrayHasKey(
+			'enable_mesh',
+			$sanitized,
+			'enable_mesh should be in sanitized settings even when unchecked'
+		);
+		$this->assertArrayHasKey(
+			'enable_federation',
+			$sanitized,
+			'enable_federation should be in sanitized settings even when unchecked'
+		);
+		$this->assertArrayHasKey(
+			'enable_federation_directory',
+			$sanitized,
+			'enable_federation_directory should be in sanitized settings even when unchecked'
+		);
+
+		// All three checkboxes should be false.
+		$this->assertFalse(
+			$sanitized['enable_mesh'],
+			'enable_mesh should be false when unchecked'
+		);
+		$this->assertFalse(
+			$sanitized['enable_federation'],
+			'enable_federation should be false when unchecked'
+		);
+		$this->assertFalse(
+			$sanitized['enable_federation_directory'],
+			'enable_federation_directory should be false when unchecked'
+		);
+
+		// Merge with existing and update (simulating full save flow).
+		$existing = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$merged   = array_merge( $existing, $sanitized );
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged );
+
+		// Verify all three settings were persisted correctly.
+		$saved_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+		$this->assertFalse(
+			$saved_settings['enable_mesh'],
+			'enable_mesh should remain false in database after save'
+		);
+		$this->assertFalse(
+			$saved_settings['enable_federation'],
+			'enable_federation should remain false in database after save'
+		);
+		$this->assertFalse(
+			$saved_settings['enable_federation_directory'],
+			'enable_federation_directory should remain false in database after save'
+		);
+
+		// Clean up.
+		unset( $_POST['subtab_advanced'] );
+		unset( $_POST['wp_mcp_ai_settings'] );
+	}
+
+	/**
+	 * Test that enable_mesh checkbox can be unchecked independently.
+	 */
+	public function test_enable_mesh_can_be_unchecked_independently() {
+		// Set up initial settings with all three enabled.
+		$initial_settings = array(
+			'enable_mesh'                 => true,
+			'enable_federation'           => true,
+			'enable_federation_directory' => true,
+		);
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
+
+		// Simulate unchecking only enable_mesh.
+		$_POST['subtab_advanced']    = 'federation_mesh';
+		$_POST['wp_mcp_ai_settings'] = array(
+			// enable_mesh is NOT here (unchecked).
+			'enable_federation'           => '1', // Still checked.
+			'enable_federation_directory' => '1', // Still checked.
+		);
+
+		$section   = new WP_MCP_AI_Section_Advanced();
+		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
+
+		$this->assertFalse(
+			$sanitized['enable_mesh'],
+			'enable_mesh should be false when unchecked'
+		);
+		$this->assertTrue(
+			$sanitized['enable_federation'],
+			'enable_federation should remain true'
+		);
+		$this->assertTrue(
+			$sanitized['enable_federation_directory'],
+			'enable_federation_directory should remain true'
+		);
+
+		// Clean up.
+		unset( $_POST['subtab_advanced'] );
+		unset( $_POST['wp_mcp_ai_settings'] );
+	}
+
+	/**
+	 * Test that enable_federation_directory can be unchecked independently.
+	 */
+	public function test_enable_federation_directory_can_be_unchecked_independently() {
+		// Set up initial settings with all three enabled.
+		$initial_settings = array(
+			'enable_mesh'                 => true,
+			'enable_federation'           => true,
+			'enable_federation_directory' => true,
+		);
+		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
+
+		// Simulate unchecking only enable_federation_directory.
+		$_POST['subtab_advanced']    = 'federation_mesh';
+		$_POST['wp_mcp_ai_settings'] = array(
+			'enable_mesh'       => '1', // Still checked.
+			'enable_federation' => '1', // Still checked.
+			// enable_federation_directory is NOT here (unchecked).
+		);
+
+		$section   = new WP_MCP_AI_Section_Advanced();
+		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
+
+		$this->assertTrue(
+			$sanitized['enable_mesh'],
+			'enable_mesh should remain true'
+		);
+		$this->assertTrue(
+			$sanitized['enable_federation'],
+			'enable_federation should remain true'
+		);
+		$this->assertFalse(
+			$sanitized['enable_federation_directory'],
+			'enable_federation_directory should be false when unchecked'
 		);
 
 		// Clean up.

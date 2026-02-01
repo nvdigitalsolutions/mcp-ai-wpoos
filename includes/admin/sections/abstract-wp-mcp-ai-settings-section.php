@@ -144,22 +144,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
 			// Debug logging for subtab sanitization.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
-				if ( $enable_logging ) {
-					error_log(
-						sprintf(
-							'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s',
-							$this->get_id(),
-							$active_subtab,
-							$submitted_subtab,
-							$is_form_submit ? 'YES' : 'NO',
-							count( $active_field_keys ),
-							implode( ', ', array_slice( $active_field_keys, 0, 10 ) )
-						)
-					);
-				}
+			// ENHANCED: Always log for debugging checkbox persistence issues.
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				error_log(
+					sprintf(
+						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s',
+						$this->get_id(),
+						$active_subtab,
+						$submitted_subtab,
+						$is_form_submit ? 'YES' : 'NO',
+						count( $active_field_keys ),
+						implode( ', ', array_slice( $active_field_keys, 0, 10 ) ),
+						$subtab_field_name
+					)
+				);
 			}
 
 			// If this is not the subtab being submitted, return empty array to avoid.
@@ -207,7 +207,22 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {
 						// Checkbox is checked if present in input, unchecked otherwise.
-						$sanitized[ $key ] = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
+						$checkbox_value = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
+						$sanitized[ $key ] = $checkbox_value;
+						
+						// Enhanced logging for checkbox processing.
+						$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+						$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+						if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+							error_log(
+								sprintf(
+									'[NV oOS Checkbox] Processing checkbox: %s, In Input: %s, Value: %s',
+									$key,
+									isset( $filtered_input[ $key ] ) ? 'YES' : 'NO',
+									$checkbox_value ? 'true' : 'false'
+								)
+							);
+						}
 					}
 					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
