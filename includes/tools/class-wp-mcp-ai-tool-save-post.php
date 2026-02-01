@@ -317,8 +317,8 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		);
 
 		$response = array(
-			'message'   => $summary_text, // Chat client display
-			'summary'   => $summary_text, // Backward compatibility
+			'message'   => $summary_text, // Chat client display.
+			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),

@@ -368,7 +368,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param string $event_type Event type.
 	 * @return string SSE event name.
 	 */
-	protected static function get_sse_event_name_for_job( $job_id, $event_type ) {
+	protected static function get_sse_event_name_for_job( $job_id, $event_type ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for event type routing.
 		// Check if this is a crawl4ai job.
 		if ( strpos( $job_id, 'crawl' ) === 0 || strpos( $job_id, 'crawl4ai' ) === 0 ) {
 			return 'crawl4ai_job_status_update';

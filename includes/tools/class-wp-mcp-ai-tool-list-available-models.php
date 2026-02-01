@@ -132,8 +132,8 @@ class WP_MCP_AI_Tool_List_Available_Models implements WP_MCP_AI_Tool_Interface, 
 
 		return array(
 			'success'     => true,
-			'message'     => $summary_text, // Chat client display
-			'summary'     => $summary_text, // Backward compatibility
+			'message'     => $summary_text, // Chat client display.
+			'summary'     => $summary_text, // Backward compatibility.
 			'models'      => $models,
 			'total_count' => count( $models ),
 		);

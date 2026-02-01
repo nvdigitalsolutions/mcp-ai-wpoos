@@ -235,7 +235,7 @@ class WP_MCP_AI_Model_Config {
 	 * @param string $model  Model identifier.
 	 * @param array  $config Model configuration.
 	 */
-	public static function sync_to_cct( $model, $config ) {
+	public static function sync_to_cct( $model, $config ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future JetEngine CCT integration.
 		// Only sync if JetEngine and the model rate limits CCT are available.
 		if ( ! class_exists( 'WP_MCP_AI_Model_Rate_Limits_CCT' ) ) {
 			return;

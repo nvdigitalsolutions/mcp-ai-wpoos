@@ -684,11 +684,11 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Only apply default if:
 		// 1. Provider is Cloudflare
 		// 2. tool_choice is not already set by user
-		// 3. tools are present
+		// 3. tools are present.
 		$provider = isset( $assistant_config['provider'] ) ? $assistant_config['provider'] : '';
 
 		if ( 'cloudflare' === $provider && ! isset( $options['tool_choice'] ) && ! empty( $options['tools'] ) ) {
-			// Default to "auto" for chat-client to let model decide when tools are needed
+			// Default to "auto" for chat-client to let model decide when tools are needed.
 			$options['tool_choice'] = 'auto';
 
 			// Only log if logger class is available.
@@ -897,7 +897,7 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 
 		// Check if this is a virtual team assistant ID.
 		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
-		// Format: unified_team_{digits} or team_{digits}_member_{digits}
+		// Format: unified_team_{digits} or team_{digits}_member_{digits}.
 		$is_virtual_team_assistant = is_string( $assistant_id_raw ) &&
 			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id_raw );
 

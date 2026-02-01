@@ -1091,7 +1091,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 *                               or for multimodal: array of input objects with text/image.
 		 * @param array        $options Optional configuration:
 		 *                               - model: 'omni-moderation-latest' (default) or 'text-moderation-latest'
-		 *                               - timeout: Request timeout in seconds (default: from settings)
+		 *                               - timeout: Request timeout in seconds (default: from settings).
 		 * @return array|WP_Error Array containing moderation results or WP_Error on failure.
 		 *                        Result structure:
 		 *                        - id: Unique moderation request ID
@@ -4338,7 +4338,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @param array $options  Additional options (model).
 		 * @return int|WP_Error Token count or WP_Error on failure.
 		 */
-		public function count_tokens( array $messages, array $options = array() ) {
+		public function count_tokens( array $messages, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for model-specific token counting.
 			// For OpenAI, we don't have a direct token counting API endpoint,.
 
 			// so we use estimation based on character count.

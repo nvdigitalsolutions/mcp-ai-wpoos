@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/extend-anthropic-provider-settings',
-        'version' => 'dev-copilot/extend-anthropic-provider-settings',
-        'reference' => 'c859db2a27f8999eeb581dd1155e17004acffb80',
+        'pretty_version' => 'dev-copilot/fix-federation-directory-issue',
+        'version' => 'dev-copilot/fix-federation-directory-issue',
+        'reference' => 'e1011f39f5be5e5dafca6a2d62c8102c66f451cf',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/extend-anthropic-provider-settings',
-            'version' => 'dev-copilot/extend-anthropic-provider-settings',
-            'reference' => 'c859db2a27f8999eeb581dd1155e17004acffb80',
+            'pretty_version' => 'dev-copilot/fix-federation-directory-issue',
+            'version' => 'dev-copilot/fix-federation-directory-issue',
+            'reference' => 'e1011f39f5be5e5dafca6a2d62c8102c66f451cf',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

@@ -302,6 +302,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @return array Recommendations.
 	 */
 	protected function generate_recommendations( $executions, $tool_slug ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. 
 		$performance = $this->analyze_performance( $executions );
 
 		$recommendations = array(
@@ -334,6 +335,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @return array Task features.
 	 */
 	protected function analyze_task_features( $task_description, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$features = array(
 			'keywords'      => array(),
 			'task_type'     => 'general',
@@ -429,7 +431,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 */
 	protected function get_recommendation_reason( $tool_slug, $task_features ) {
 		return sprintf(
-			/* translators: 1: tool slug, 2: task type */
+		/* translators: 1: tool slug, 2: task type */
 			__( '%1$s is recommended for %2$s tasks based on keyword matching and historical performance.', 'mcp-ai-wpoos' ),
 			$tool_slug,
 			$task_features['task_type']

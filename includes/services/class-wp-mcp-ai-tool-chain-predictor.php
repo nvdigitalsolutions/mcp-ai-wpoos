@@ -177,7 +177,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	 * @param array $context Execution context.
 	 * @return array Speculation status.
 	 */
-	public function execute_speculative_chain( $predicted_chain, $context ) {
+	public function execute_speculative_chain( $predicted_chain, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware speculation.
 		if ( empty( $predicted_chain ) ) {
 			return array(
 				'prewarmed' => 0,
@@ -369,7 +369,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	 * @param string $task Task description.
 	 * @return array Predicted chain.
 	 */
-	protected function predict_from_patterns( $patterns, $available_tools, $task ) {
+	protected function predict_from_patterns( $patterns, $available_tools, $task ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for semantic matching.
 		if ( empty( $patterns ) ) {
 			return array();
 		}
@@ -540,7 +540,7 @@ class WP_MCP_AI_Tool_Chain_Predictor {
 	 * @param array $dependencies Dependency graph.
 	 * @return array Reordered chain.
 	 */
-	protected function reorder_for_data_flow( $tool_chain, $dependencies ) {
+	protected function reorder_for_data_flow( $tool_chain, $dependencies ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for topological sorting.
 		// For now, preserve original order as dependencies are built from it.
 		// More sophisticated topological sorting could be added here.
 		return $tool_chain;

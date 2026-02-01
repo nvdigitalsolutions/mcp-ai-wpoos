@@ -583,6 +583,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float Similarity score.
 	 */
 	private function calculate_similarity_score( $post1, $post2, $use_semantic_search ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for semantic search. 
 		$score = 0.0;
 
 		// Category overlap.
@@ -614,6 +615,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float Personalized score.
 	 */
 	private function calculate_personalized_score( $post, $preferences, $use_collaborative ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. 
 		$score = 0.0;
 
 		// Category preference match.

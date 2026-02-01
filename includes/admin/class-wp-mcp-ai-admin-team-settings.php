@@ -379,22 +379,22 @@ class WP_MCP_AI_Admin_Team_Settings {
 	protected function get_tools_list() {
 		// Get core WordPress tools available to teams.
 		return array(
-			'wp_create_post'              => __( 'Create Post', 'mcp-ai-wpoos' ),
-			'wp_update_post'              => __( 'Update Post', 'mcp-ai-wpoos' ),
-			'wp_create_page'              => __( 'Create Page', 'mcp-ai-wpoos' ),
-			'wp_update_page'              => __( 'Update Page', 'mcp-ai-wpoos' ),
-			'wp_get_posts'                => __( 'Get Posts', 'mcp-ai-wpoos' ),
-			'wp_search_content'           => __( 'Search Content', 'mcp-ai-wpoos' ),
-			'wp_get_post_meta'            => __( 'Get Post Metadata', 'mcp-ai-wpoos' ),
-			'wp_update_post_meta'         => __( 'Update Post Metadata', 'mcp-ai-wpoos' ),
-			'generate_openai_image'       => __( 'Generate Image (OpenAI)', 'mcp-ai-wpoos' ),
-			'generate_gemini_image'       => __( 'Generate Image (Gemini)', 'mcp-ai-wpoos' ),
-			'resize_image'                => __( 'Resize Image', 'mcp-ai-wpoos' ),
-			'crop_image'                  => __( 'Crop Image', 'mcp-ai-wpoos' ),
-			'rotate_image'                => __( 'Rotate Image', 'mcp-ai-wpoos' ),
-			'web_scrape'                  => __( 'Web Scrape', 'mcp-ai-wpoos' ),
-			'web_search'                  => __( 'Web Search', 'mcp-ai-wpoos' ),
-			'create_assistant'            => __( 'Create Assistant', 'mcp-ai-wpoos' ),
+			'wp_create_post'        => __( 'Create Post', 'mcp-ai-wpoos' ),
+			'wp_update_post'        => __( 'Update Post', 'mcp-ai-wpoos' ),
+			'wp_create_page'        => __( 'Create Page', 'mcp-ai-wpoos' ),
+			'wp_update_page'        => __( 'Update Page', 'mcp-ai-wpoos' ),
+			'wp_get_posts'          => __( 'Get Posts', 'mcp-ai-wpoos' ),
+			'wp_search_content'     => __( 'Search Content', 'mcp-ai-wpoos' ),
+			'wp_get_post_meta'      => __( 'Get Post Metadata', 'mcp-ai-wpoos' ),
+			'wp_update_post_meta'   => __( 'Update Post Metadata', 'mcp-ai-wpoos' ),
+			'generate_openai_image' => __( 'Generate Image (OpenAI)', 'mcp-ai-wpoos' ),
+			'generate_gemini_image' => __( 'Generate Image (Gemini)', 'mcp-ai-wpoos' ),
+			'resize_image'          => __( 'Resize Image', 'mcp-ai-wpoos' ),
+			'crop_image'            => __( 'Crop Image', 'mcp-ai-wpoos' ),
+			'rotate_image'          => __( 'Rotate Image', 'mcp-ai-wpoos' ),
+			'web_scrape'            => __( 'Web Scrape', 'mcp-ai-wpoos' ),
+			'web_search'            => __( 'Web Search', 'mcp-ai-wpoos' ),
+			'create_assistant'      => __( 'Create Assistant', 'mcp-ai-wpoos' ),
 		);
 	}
 

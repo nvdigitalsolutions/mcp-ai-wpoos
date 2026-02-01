@@ -409,6 +409,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @return array Conversion result.
 	 */
 	private function convert_to_format( $file_path, $format, $quality, $preserve_original ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$image_editor = wp_get_image_editor( $file_path );
 
 		if ( is_wp_error( $image_editor ) ) {
@@ -513,6 +514,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 	 * @return string Sizes attribute.
 	 */
 	private function build_sizes_attribute( $sizes ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for size preservation. 
 		// Default responsive sizes.
 		return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
 	}
@@ -690,7 +692,7 @@ class WP_MCP_AI_Tool_Image_Format_Batch_Converter {
 
 		if ( isset( $format_stats['avif'] ) ) {
 			$recommendations[] = sprintf(
-				/* translators: %s: number of AVIF conversions */
+			/* translators: %s: number of AVIF conversions */
 				__( 'Generated %s AVIF images (best compression).', 'mcp-ai-wpoos' ),
 				$format_stats['avif']['count']
 			);

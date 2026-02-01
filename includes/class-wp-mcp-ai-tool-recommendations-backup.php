@@ -327,7 +327,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 * @param string $tool_slug Tool identifier.
 	 * @return string Explanation of recommendation.
 	 */
-	protected static function get_recommendation_reason( $category, $tool_slug ) {
+	protected static function get_recommendation_reason( $category, $tool_slug ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific reasons.
 		$reasons = array(
 			'high_resource'     => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'mcp-ai-wpoos' ),
 			'medium_resource'   => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'mcp-ai-wpoos' ),

@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array Login data.
 	 */
-	private function get_wordpress_login_data( $time_range, $username, $ip_address ) {
+	private function get_wordpress_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future implementation.
 		global $wpdb;
 
 		$data = array(
@@ -371,7 +371,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array Wordfence data.
 	 */
-	private function get_wordfence_data( $time_range, $username, $ip_address ) {
+	private function get_wordfence_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future Wordfence integration.
 		// Placeholder for Wordfence integration.
 		$this->log( 'Wordfence integration available but not implemented yet' );
 
@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array iThemes data.
 	 */
-	private function get_ithemes_data( $time_range, $username, $ip_address ) {
+	private function get_ithemes_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future iThemes Security integration.
 		// Placeholder for iThemes integration.
 		$this->log( 'iThemes Security integration available but not implemented yet' );
 
@@ -419,7 +419,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array WPS Hide Login data.
 	 */
-	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) {
+	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future WPS Hide Login integration.
 		// Placeholder for WPS Hide Login integration.
 		$this->log( 'WPS Hide Login integration available but not implemented yet' );
 
@@ -678,6 +678,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	public function erase_privacy_data( $user_id ) {
 		// Login monitoring data is typically kept for security/audit purposes.
 		// We don't erase it, but anonymize the username.
+		// Note: $user_id would be used if we implemented erasure logic.
 		return true;
 	}
 }

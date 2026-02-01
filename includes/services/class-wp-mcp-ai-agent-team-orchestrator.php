@@ -1089,7 +1089,7 @@ class WP_MCP_AI_Agent_Team_Orchestrator {
 	 * @param array  $task_requirements Task requirements.
 	 * @return array|null Agent data or null.
 	 */
-	protected function find_profession_agent_for_role( $role, $task_requirements = array() ) {
+	protected function find_profession_agent_for_role( $role, $task_requirements = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for role filtering.
 		// Query professions with agent_role meta.
 		$args = array(
 			'post_type'      => 'mcp_ai_profession',

@@ -276,15 +276,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					case 'number':
 						// Handle empty strings differently based on field definition:
 						// 1. If field explicitly allows empty string (e.g., filter fields with default=''),
-						// preserve the empty string for "use auto-detection" functionality
-						// 2. Otherwise, skip empty values to prevent overwriting existing settings
+						// preserve the empty string for "use auto-detection" functionality.
+						// 2. Otherwise, skip empty values to prevent overwriting existing settings.
 						if ( '' === $value ) {
-							// Check if this field explicitly allows empty strings by checking if default is ''
+							// Check if this field explicitly allows empty strings by checking if default is ''.
 							if ( isset( $fields[ $key ]['default'] ) && '' === $fields[ $key ]['default'] ) {
-								// Field intentionally uses empty string (e.g., filter fields for auto-detection)
+								// Field intentionally uses empty string (e.g., filter fields for auto-detection).
 								$sanitized[ $key ] = '';
 							}
-							// Otherwise skip - don't overwrite existing value with empty string
+							// Otherwise skip - don't overwrite existing value with empty string.
 							break;
 						}
 						$sanitized[ $key ] = absint( $value );

@@ -237,7 +237,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		// - OpenAI: tts-1, tts-1-hd (voices: alloy, echo, fable, onyx, nova, shimmer)
 		// - Gemini/Google: Neural2 voices (en-US-Neural2-C, etc.)
 		// - Hugging Face: facebook/mms-tts-eng, microsoft/speecht5_tts, facebook/fastspeech2-en-ljspeech, and more
-		// - Ollama, Cloudflare: Fallback to OpenAI if configured (native TTS not supported)
+		// - Ollama, Cloudflare: Fallback to OpenAI if configured (native TTS not supported).
 
 		if ( '' === $text ) {
 			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );

@@ -281,7 +281,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 		 *
 		 * @return string[]
 		 */
-		public function allow_github_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
+		public function allow_github_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			/**
 			 * Filter the GitHub OAuth authorize endpoint.
 			 *

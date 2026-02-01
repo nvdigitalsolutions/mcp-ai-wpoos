@@ -168,8 +168,8 @@ class WP_MCP_AI_Tool_Geocode_Address implements WP_MCP_AI_Tool_Interface, WP_MCP
 
 		$result = array_merge(
 			array(
-				'message' => $summary, // Chat client display
-				'summary' => $summary, // Backward compatibility
+				'message' => $summary, // Chat client display.
+				'summary' => $summary, // Backward compatibility.
 			),
 			$result
 		);

@@ -266,7 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Nefarious_Usage_Monitor' ) ) {
 		 * @param array $messages     Chat messages.
 		 * @param array $request_data Request data.
 		 */
-		public function monitor_chat_request( $messages, $request_data ) {
+		public function monitor_chat_request( $messages, $request_data ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for request context analysis.
 			if ( ! $this->enabled ) {
 				return;
 			}

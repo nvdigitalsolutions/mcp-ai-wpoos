@@ -468,7 +468,7 @@ class WP_MCP_AI_Security_Audit {
 	 * @param WP_Post $post    Post object.
 	 * @return void
 	 */
-	public function save_audit_meta( $post_id, $post ) {
+	public function save_audit_meta( $post_id, $post ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 		// Verify nonce.
 		if ( ! isset( $_POST['wp_mcp_ai_audit_meta_nonce'] ) ||
 			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_audit_meta_nonce'] ) ), 'wp_mcp_ai_audit_meta' ) ) {

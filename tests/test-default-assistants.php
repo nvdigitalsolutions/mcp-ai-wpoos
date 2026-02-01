@@ -213,8 +213,8 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 	public function test_uninstall_removes_assistants() {
 		// Install assistants.
 		WP_MCP_AI_Default_Assistants::install();
-		$info           = WP_MCP_AI_Default_Assistants::get_installation_info();
-		$assistant_ids  = $info['assistant_ids'];
+		$info          = WP_MCP_AI_Default_Assistants::get_installation_info();
+		$assistant_ids = $info['assistant_ids'];
 
 		// Uninstall.
 		WP_MCP_AI_Default_Assistants::uninstall();
@@ -256,7 +256,7 @@ class Test_Default_Assistants extends WP_UnitTestCase {
 		$assistants = WP_MCP_AI_Default_Assistants::get_default_assistants();
 
 		// Check Orchestrator for base tools.
-		$orchestrator = $assistants[0];
+		$orchestrator       = $assistants[0];
 		$orchestrator_tools = $orchestrator['tools'];
 
 		// These are base plugin tools that should always be present.

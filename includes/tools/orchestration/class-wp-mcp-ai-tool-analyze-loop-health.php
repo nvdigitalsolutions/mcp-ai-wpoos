@@ -82,7 +82,7 @@ class WP_MCP_AI_Tool_Analyze_Loop_Health {
 	 * @param array $context   Execution context.
 	 * @return array
 	 */
-	public function execute( array $arguments = array(), array $context = array() ) {
+	public function execute( array $arguments = array(), array $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		if ( empty( $arguments['session_id'] ) ) {
 			return array(
 				'success' => false,

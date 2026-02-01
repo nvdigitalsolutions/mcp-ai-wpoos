@@ -296,7 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Meta_OAuth_Handler' ) ) {
 		 *
 		 * @return string[]
 		 */
-		public function allow_meta_oauth_redirect_host( $allowed_hosts, $redirect = '' ) {
+		public function allow_meta_oauth_redirect_host( $allowed_hosts, $redirect = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 			/**
 			 * Filter the Meta OAuth authorize endpoint.
 			 *

@@ -94,7 +94,7 @@ class WP_MCP_AI_Security_Training_Admin {
 	 * @param int     $post_id Post ID.
 	 * @param WP_Post $post Post object.
 	 */
-	public function save_training_meta( $post_id, $post ) {
+	public function save_training_meta( $post_id, $post ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 		// Verify nonce.
 		if ( ! isset( $_POST['mcp_ai_training_details_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mcp_ai_training_details_nonce'] ) ), 'mcp_ai_training_details' ) ) {
 			return;
@@ -276,4 +276,4 @@ class WP_MCP_AI_Security_Training_Admin {
 // proper coordination of ISO 27001 admin pages.
 // if ( is_admin() ) {
 // new WP_MCP_AI_Security_Training_Admin();
-// }
+// }.

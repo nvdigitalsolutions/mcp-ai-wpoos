@@ -140,16 +140,16 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_member'          => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
-			'update_member'          => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
-			'get_members'            => __( 'Get Members', 'mcp-ai-wpoos-pro' ),
-			'delete_member'          => __( 'Delete Member', 'mcp-ai-wpoos-pro' ),
-			'create_medical_record'  => __( 'Create Medical Record', 'mcp-ai-wpoos-pro' ),
-			'create_prescription'    => __( 'Create Prescription', 'mcp-ai-wpoos-pro' ),
-			'create_allergy'         => __( 'Create Allergy', 'mcp-ai-wpoos-pro' ),
-			'update_allergy'         => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
-			'create_checkup'         => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
-			'update_checkup'         => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
+			'create_member'         => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
+			'update_member'         => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
+			'get_members'           => __( 'Get Members', 'mcp-ai-wpoos-pro' ),
+			'delete_member'         => __( 'Delete Member', 'mcp-ai-wpoos-pro' ),
+			'create_medical_record' => __( 'Create Medical Record', 'mcp-ai-wpoos-pro' ),
+			'create_prescription'   => __( 'Create Prescription', 'mcp-ai-wpoos-pro' ),
+			'create_allergy'        => __( 'Create Allergy', 'mcp-ai-wpoos-pro' ),
+			'update_allergy'        => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
+			'create_checkup'        => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
+			'update_checkup'        => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

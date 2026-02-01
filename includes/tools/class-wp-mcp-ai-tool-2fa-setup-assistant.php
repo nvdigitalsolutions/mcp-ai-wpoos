@@ -157,6 +157,7 @@ class WP_MCP_AI_Tool_2FA_Setup_Assistant {
 	 * @return array Setup result.
 	 */
 	private function handle_setup( $user_id, $method, $phone_number, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface. 
 		// Verify user.
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {

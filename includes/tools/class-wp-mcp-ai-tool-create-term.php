@@ -184,8 +184,8 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 
 		$response = array(
-			'message'     => $summary_text, // Chat client display
-			'summary'     => $summary_text, // Backward compatibility
+			'message'     => $summary_text, // Chat client display.
+			'summary'     => $summary_text, // Backward compatibility.
 			'term_id'     => $term->term_id,
 			'name'        => $term->name,
 			'slug'        => $term->slug,

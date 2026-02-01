@@ -282,7 +282,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param string $slug Tool slug.
 		 * @return string|null Required capability or null.
 		 */
-		public function get_tool_capability( $slug ) {
+		public function get_tool_capability( $slug ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation.
 			// This method is referenced but not yet implemented.
 			// For now, return null to maintain compatibility.
 			return null;
@@ -1253,7 +1253,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 		 * @param array                           $contexts Execution contexts (e.g., 'client', 'server', 'worker').
 		 * @return bool Whether the tool was registered.
 		 */
-		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) {
+		public function register_tool_with_context( $tool, $contexts = array( 'server' ) ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future context-aware registration.
 			// For now, use legacy registration.
 			return $this->register_tool( $tool );
 		}

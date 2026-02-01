@@ -73,17 +73,17 @@ class WP_MCP_AI_Quiz_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	protected function get_tools_list() {
 		return array(
-			'create_quiz'           => __( 'Create Quiz', 'mcp-ai-wpoos-pro' ),
-			'list_quizzes'          => __( 'List Quizzes', 'mcp-ai-wpoos-pro' ),
-			'get_quiz'              => __( 'Get Quiz', 'mcp-ai-wpoos-pro' ),
-			'update_quiz'           => __( 'Update Quiz', 'mcp-ai-wpoos-pro' ),
-			'delete_quiz'           => __( 'Delete Quiz', 'mcp-ai-wpoos-pro' ),
-			'research_quiz_topic'   => __( 'Research Quiz Topic', 'mcp-ai-wpoos-pro' ),
-			'submit_quiz_answer'    => __( 'Submit Quiz Answer', 'mcp-ai-wpoos-pro' ),
-			'get_quiz_submissions'  => __( 'Get Quiz Submissions', 'mcp-ai-wpoos-pro' ),
-			'get_quiz_results'      => __( 'Get Quiz Results', 'mcp-ai-wpoos-pro' ),
-			'grade_quiz'            => __( 'Grade Quiz', 'mcp-ai-wpoos-pro' ),
-			'get_quiz_analytics'    => __( 'Get Quiz Analytics', 'mcp-ai-wpoos-pro' ),
+			'create_quiz'          => __( 'Create Quiz', 'mcp-ai-wpoos-pro' ),
+			'list_quizzes'         => __( 'List Quizzes', 'mcp-ai-wpoos-pro' ),
+			'get_quiz'             => __( 'Get Quiz', 'mcp-ai-wpoos-pro' ),
+			'update_quiz'          => __( 'Update Quiz', 'mcp-ai-wpoos-pro' ),
+			'delete_quiz'          => __( 'Delete Quiz', 'mcp-ai-wpoos-pro' ),
+			'research_quiz_topic'  => __( 'Research Quiz Topic', 'mcp-ai-wpoos-pro' ),
+			'submit_quiz_answer'   => __( 'Submit Quiz Answer', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_submissions' => __( 'Get Quiz Submissions', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_results'     => __( 'Get Quiz Results', 'mcp-ai-wpoos-pro' ),
+			'grade_quiz'           => __( 'Grade Quiz', 'mcp-ai-wpoos-pro' ),
+			'get_quiz_analytics'   => __( 'Get Quiz Analytics', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

@@ -128,7 +128,11 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
@@ -199,8 +203,8 @@ class WP_MCP_AI_Tool_Create_Batch implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'status'     => isset( $result['status'] ) ? $result['status'] : '',
 			'endpoint'   => isset( $result['endpoint'] ) ? $result['endpoint'] : '',
 			'created_at' => isset( $result['created_at'] ) ? gmdate( 'Y-m-d H:i:s', $result['created_at'] ) : '',
-			'message'    => $summary_text, // Chat client display
-			'summary'    => $summary_text, // Backward compatibility
+			'message'    => $summary_text, // Chat client display.
+			'summary'    => $summary_text, // Backward compatibility.
 			'raw_result' => $result,
 		);
 

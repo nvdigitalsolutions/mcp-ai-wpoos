@@ -294,8 +294,8 @@ class WP_MCP_AI_Tool_Count_Tokens implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		}
 
 		$response = array(
-			'message'          => implode( ' ', $summary_parts ), // Chat client display
-			'summary'          => implode( ' ', $summary_parts ), // Backward compatibility
+			'message'          => implode( ' ', $summary_parts ), // Chat client display.
+			'summary'          => implode( ' ', $summary_parts ), // Backward compatibility.
 			'estimated_tokens' => $estimated_tokens,
 			'counting_method'  => $counting_method,
 			'details'          => $details,

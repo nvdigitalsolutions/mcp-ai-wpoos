@@ -160,7 +160,7 @@ class WP_MCP_AI_WebWorker_Enqueue {
 		return array(
 			'enabled'                   => get_option( 'wp_mcp_ai_enable_web_workers', false ),
 			'embedded_provider_enabled' => $is_pro_available,
-			'browser_support'           => true, // Checked client-side
+			'browser_support'           => true, // Checked client-side.
 		);
 	}
 

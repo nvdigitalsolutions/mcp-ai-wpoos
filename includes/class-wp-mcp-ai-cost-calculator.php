@@ -229,61 +229,78 @@ class WP_MCP_AI_Cost_Calculator {
 		),
 		'anthropic'   => array(
 			// Claude 4.5 series (January 2026).
-			'claude-sonnet-4-5'                    => array(
+			'claude-sonnet-4-5'          => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-sonnet-4-5-20250929'           => array(
+			'claude-sonnet-4-5-20250929' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-opus-4-5'                      => array(
+			'claude-opus-4-5'            => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-opus-4-5-20251101'             => array(
+			'claude-opus-4-5-20251101'   => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-haiku-4-5'                     => array(
+			'claude-haiku-4-5'           => array(
 				'input'  => 1.00,
 				'output' => 5.00,
 			),
-			'claude-haiku-4-5-20251001'            => array(
+			'claude-haiku-4-5-20251001'  => array(
 				'input'  => 1.00,
 				'output' => 5.00,
+			),
+			// Legacy aliases (backward compatibility).
+			'claude-sonnet-4.5'          => array(
+				'input'  => 3.00,
+				'output' => 15.00,
+			),
+			'claude-haiku-4.5'           => array(
+				'input'  => 1.00,
+				'output' => 5.00,
+			),
+			'claude-opus-4.1'            => array(
+				'input'  => 15.00,
+				'output' => 75.00,
+			),
+			'claude-opus-4.0'            => array(
+				'input'  => 15.00,
+				'output' => 75.00,
 			),
 			// Claude 3.5 series (deprecated Nov 10, 2025).
-			'claude-3.5-sonnet'                    => array(
+			'claude-3.5-sonnet'          => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3.5-sonnet-v2'                 => array(
+			'claude-3.5-sonnet-v2'       => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-5-sonnet-20241022'           => array(
+			'claude-3-5-sonnet-20241022' => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-5-haiku-20241022'            => array(
+			'claude-3-5-haiku-20241022'  => array(
 				'input'  => 0.80,
 				'output' => 4.00,
 			),
 			// Claude 3 series (legacy).
-			'claude-3-opus'                        => array(
+			'claude-3-opus'              => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-3-opus-20240229'               => array(
+			'claude-3-opus-20240229'     => array(
 				'input'  => 15.00,
 				'output' => 75.00,
 			),
-			'claude-3-sonnet'                      => array(
+			'claude-3-sonnet'            => array(
 				'input'  => 3.00,
 				'output' => 15.00,
 			),
-			'claude-3-haiku'                       => array(
+			'claude-3-haiku'             => array(
 				'input'  => 0.25,
 				'output' => 1.25,
 			),

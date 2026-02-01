@@ -283,7 +283,7 @@ class WP_MCP_AI_Model_Config_Renderer {
 							?>
 							<optgroup label="<?php echo esc_attr( $group_data['label'] ); ?>">
 								<?php foreach ( $group_data['options'] as $fallback_model_id => $fallback_model_label ) : ?>
-									<?php if ( $fallback_model_id !== $model_id ) : // Don't allow model to be its own fallback ?>
+									<?php if ( $fallback_model_id !== $model_id ) : // Don't allow model to be its own fallback. ?>
 										<option value="<?php echo esc_attr( $fallback_model_id ); ?>" <?php selected( $fallback, $fallback_model_id ); ?>>
 											<?php echo esc_html( $fallback_model_label ); ?>
 										</option>

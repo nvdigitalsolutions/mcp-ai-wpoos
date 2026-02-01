@@ -80,6 +80,7 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 	 * @return array Tool result
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WP_MCP_AI_Tool_Interface.
 		// Get Site Kit integration instance.
 		$sitekit = WP_MCP_AI_SiteKit_Integration::get_instance();
 
@@ -216,7 +217,7 @@ class WP_MCP_AI_Tool_SiteKit_Analytics {
 		$period = str_replace( '_', ' ', $date_range );
 
 		return sprintf(
-			/* translators: 1: metric name, 2: date range */
+		/* translators: 1: metric name, 2: date range */
 			__( 'Analytics data for %1$s over the %2$s', 'mcp-ai-wpoos' ),
 			$metric,
 			$period

@@ -42,7 +42,7 @@ if ( ! class_exists( 'WP_MCP_AI_Response_Attachments' ) ) {
 		 * @param array           $response     Chat response payload.
 		 * @param WP_REST_Request $request      REST request instance.
 		 */
-		public static function handle_chat_response( $assistant_id, $response, $request ) {
+		public static function handle_chat_response( $assistant_id, $response, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for request context.
 			if ( empty( $response ) || ! is_array( $response ) ) {
 				return;
 			}

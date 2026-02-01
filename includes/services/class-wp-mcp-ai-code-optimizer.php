@@ -249,7 +249,7 @@ class WP_MCP_AI_Code_Optimizer {
 	 * @param string $task Task description.
 	 * @return array Dependencies.
 	 */
-	protected function extract_dependencies( $code, $task ) {
+	protected function extract_dependencies( $code, $task ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task-specific extraction.
 		$dependencies = array();
 
 		// Extract use statements (PHP).
@@ -274,7 +274,7 @@ class WP_MCP_AI_Code_Optimizer {
 	 * @param array $dependencies Dependencies.
 	 * @return array Compressed code and structure.
 	 */
-	protected function compress_boilerplate( $sections, $dependencies ) {
+	protected function compress_boilerplate( $sections, $dependencies ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for dependency optimization.
 		$compressed_code = implode( "\n\n", $sections );
 
 		// Remove excessive whitespace.
