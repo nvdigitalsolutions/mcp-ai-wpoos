@@ -132,7 +132,6 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				);
 			} catch ( Exception $e ) {
 				// Silently fail - status monitoring should not break the chat.
-				unset( $e ); // Suppress unused variable warning.
 			}
 		}
 
@@ -146,7 +145,6 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 				);
 			} catch ( Exception $e ) {
 				// Silently fail.
-				unset( $e ); // Suppress unused variable warning.
 			}
 		}
 
@@ -656,8 +654,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		// Self-contained fallback - basic file download implementation.
 		$file_id       = sanitize_text_field( $request->get_param( 'file_id' ) );
 		$download_name = $request->get_param( 'download_name' );
-		$disposition   = $request->get_param( 'disposition' );
-		$disposition   = $disposition ? $disposition : 'attachment';
+		$disposition   = $request->get_param( 'disposition' ) ?: 'attachment';
 
 		if ( empty( $file_id ) ) {
 			return $this->error(
@@ -711,8 +708,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 		$service = $this->get_cron_status_service();
 		$user_id = $this->get_current_user_id();
 
-		$limit        = absint( $request->get_param( 'limit' ) );
-		$limit        = $limit ? $limit : 10;
+		$limit        = absint( $request->get_param( 'limit' ) ) ?: 10;
 		$assistant_id = $request->get_param( 'assistant_id' );
 
 		// Sanitize assistant_id: keep as string if it's a unified team ID, otherwise convert to int.
@@ -720,8 +716,8 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 			$assistant_id = self::sanitize_assistant_id( $assistant_id );
 		}
 
-		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ? $assistant_id : null );
-		$counts = $service->get_status_counts( $user_id, $assistant_id ? $assistant_id : null );
+		$jobs   = $service->get_status_summary( $user_id, $limit, $assistant_id ?: null );
+		$counts = $service->get_status_counts( $user_id, $assistant_id ?: null );
 
 		$response = array(
 			'jobs'          => $jobs,

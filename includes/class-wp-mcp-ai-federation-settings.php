@@ -61,6 +61,7 @@ class WP_MCP_AI_Federation_Settings {
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG
 		);
 
+
 		add_settings_field(
 			'enable_federation',
 			__( 'Enable Directory Service', 'mcp-ai-wpoos' ),

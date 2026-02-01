@@ -60,11 +60,11 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'    => true,
-				'federation_regions'   => 'us, eu, ap',
-				'federation_data_tags' => 'no_pii, gdpr_ok',
-				'federation_qps'       => 10,
-				'federation_burst'     => 20,
+				'enable_federation' => true,
+				'federation_regions'          => 'us, eu, ap',
+				'federation_data_tags'        => 'no_pii, gdpr_ok',
+				'federation_qps'              => 10,
+				'federation_burst'            => 20,
 			)
 		);
 

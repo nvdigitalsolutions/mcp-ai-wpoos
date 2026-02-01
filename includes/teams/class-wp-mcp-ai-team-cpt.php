@@ -468,12 +468,9 @@ class WP_MCP_AI_Team_CPT {
 	public function render_orchestration_meta_box( $post ) {
 		wp_nonce_field( 'wp_mcp_ai_team_orchestration_meta', 'wp_mcp_ai_team_orchestration_meta_nonce' );
 
-		$orchestration_mode   = get_post_meta( $post->ID, self::META_ORCHESTRATION_MODE, true );
-		$orchestration_mode   = $orchestration_mode ? $orchestration_mode : 'single';
-		$workflow_template    = get_post_meta( $post->ID, self::META_WORKFLOW_TEMPLATE, true );
-		$workflow_template    = $workflow_template ? $workflow_template : '{}';
-		$aggregation_strategy = get_post_meta( $post->ID, self::META_RESULT_AGGREGATION_STRATEGY, true );
-		$aggregation_strategy = $aggregation_strategy ? $aggregation_strategy : 'consensus';
+		$orchestration_mode   = get_post_meta( $post->ID, self::META_ORCHESTRATION_MODE, true ) ?: 'single';
+		$workflow_template    = get_post_meta( $post->ID, self::META_WORKFLOW_TEMPLATE, true ) ?: '{}';
+		$aggregation_strategy = get_post_meta( $post->ID, self::META_RESULT_AGGREGATION_STRATEGY, true ) ?: 'consensus';
 
 		// Format JSON for display.
 		$decoded_workflow = json_decode( $workflow_template, true );

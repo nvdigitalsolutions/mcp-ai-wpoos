@@ -378,14 +378,14 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 		}
 
 		// Get all default assistants.
-		$default_configs = WP_MCP_AI_Default_Assistants::get_default_assistants();
-
+		$default_configs       = WP_MCP_AI_Default_Assistants::get_default_assistants();
+		
 		// Also get Architect Agent config if method exists.
 		if ( method_exists( 'WP_MCP_AI_Default_Assistants', 'get_architect_agent_assistant_config' ) ) {
-			$architect_config  = WP_MCP_AI_Default_Assistants::get_architect_agent_assistant_config();
-			$default_configs[] = $architect_config;
+			$architect_config    = WP_MCP_AI_Default_Assistants::get_architect_agent_assistant_config();
+			$default_configs[]   = $architect_config;
 		}
-
+		
 		$stats['total_agents'] = count( $default_configs );
 
 		// Build slugs to configs map.
@@ -396,7 +396,7 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 
 		// Get actual assistant posts.
 		$assistant_ids = isset( $stats['installation']['assistant_ids'] ) ? $stats['installation']['assistant_ids'] : array();
-
+		
 		// Also check for Architect Agent separately since it may be created independently.
 		$architect_agent = get_page_by_path( 'architect-agent', OBJECT, 'mcp_ai_assistant' );
 		if ( $architect_agent && ! in_array( $architect_agent->ID, $assistant_ids, true ) ) {
@@ -628,9 +628,9 @@ class WP_MCP_AI_Admin_Multi_Agent_Dashboard {
 
 		// Render agents grouped by workflow pattern.
 		$pattern_labels = array(
-			'sequential'   => __( 'Sequential Workflow Agents', 'mcp-ai-wpoos' ),
-			'loop'         => __( 'Loop/Reflection Pattern Agents', 'mcp-ai-wpoos' ),
-			'router'       => __( 'Router Pattern Agents', 'mcp-ai-wpoos' ),
+			'sequential' => __( 'Sequential Workflow Agents', 'mcp-ai-wpoos' ),
+			'loop'       => __( 'Loop/Reflection Pattern Agents', 'mcp-ai-wpoos' ),
+			'router'     => __( 'Router Pattern Agents', 'mcp-ai-wpoos' ),
 			'hierarchical' => __( 'Hierarchical Pattern Agents', 'mcp-ai-wpoos' ),
 		);
 

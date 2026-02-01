@@ -266,7 +266,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
 			if ( $enable_logging ) {
-				$checkbox_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 				$posted_checkboxes = array();
 				foreach ( $checkbox_keys as $key ) {
 					if ( isset( $posted_settings[ $key ] ) ) {
@@ -374,11 +374,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 
 				// DEBUG: Specifically log checkbox values in sanitized_new to diagnose save issue.
 				if ( $enable_logging ) {
-					$checkbox_keys              = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
 					$sanitized_checkboxes_after = array();
 					foreach ( $checkbox_keys as $key ) {
-						$sanitized_checkboxes_after[ $key ] = isset( $sanitized_new[ $key ] ) ?
-							( $sanitized_new[ $key ] ? 'true' : 'false' ) :
+						$sanitized_checkboxes_after[ $key ] = isset( $sanitized_new[ $key ] ) ? 
+							( $sanitized_new[ $key ] ? 'true' : 'false' ) : 
 							'NOT_IN_SANITIZED';
 					}
 					error_log(
@@ -513,8 +513,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				// ========================================================================
 				// DEBUG: Log checkbox values before merge to diagnose persistence issue.
 				if ( $enable_logging ) {
-					$checkbox_keys        = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
-					$existing_checkboxes  = array();
+					$checkbox_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$existing_checkboxes = array();
 					$sanitized_checkboxes = array();
 					foreach ( $checkbox_keys as $key ) {
 						if ( isset( $existing_settings[ $key ] ) ) {
