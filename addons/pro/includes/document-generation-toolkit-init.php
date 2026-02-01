@@ -28,6 +28,9 @@ if ( $is_enabled && ! $is_base ) {
 	if ( is_admin() ) {
 		// Load new CPT-based settings page.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
+
+		// Load Research & Add page for document templates.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
 	}
 
 	// Load Research & Add for CCT/CPT integration.
