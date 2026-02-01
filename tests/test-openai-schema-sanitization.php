@@ -5,6 +5,9 @@
  * @package WP_MCP_AI
  */
 
+// phpcs:disable WordPress.Files.FileName.InvalidClassFileName
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
 /**
  * Test helper class to access protected methods.
  */
