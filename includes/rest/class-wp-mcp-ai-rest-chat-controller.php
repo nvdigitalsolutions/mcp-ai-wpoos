@@ -1544,8 +1544,8 @@ class WP_MCP_AI_REST_Chat_Controller extends WP_MCP_AI_REST_Controller_Base {
 		}
 
 		if ( empty( $diagnostic_info['table_exists'] ) && ! empty( $diagnostic_info['table_name'] ) ) {
-			/* translators: %s: Database table name */
 			return sprintf(
+				/* translators: %s: Database table name */
 				__( 'Transcript database table (%s) does not exist. Try deactivating and reactivating the plugin to recreate it.', 'mcp-ai-wpoos' ),
 				esc_html( $diagnostic_info['table_name'] )
 			);
