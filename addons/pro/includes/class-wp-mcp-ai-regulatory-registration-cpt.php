@@ -49,7 +49,7 @@ class WP_MCP_AI_Regulatory_Registration_CPT {
 	 *
 	 * @var string
 	 */
-	const REQUIREMENT_POST_TYPE = 'mcp_ai_requirement';
+	const REQUIREMENT_POST_TYPE = 'mcp_ai_reg_requirement';
 
 	/**
 	 * Initialize the class.

@@ -164,7 +164,7 @@ class WP_MCP_AI_Tool_Get_Regulatory_Requirements implements WP_MCP_AI_Tool_Inter
 
 		// Query requirements.
 		$query_args = array(
-			'post_type'      => 'mcp_ai_requirement',
+			'post_type'      => 'mcp_ai_reg_requirement',
 			'posts_per_page' => $per_page,
 			'paged'          => $page,
 			'meta_query'     => $meta_query,
