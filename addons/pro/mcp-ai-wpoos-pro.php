@@ -980,6 +980,16 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 		 */
 		$pro_tools = apply_filters( 'wp_mcp_ai_pro_tools', $pro_tools );
 
+		/**
+		 * Trigger the action to load toolkit-specific tools.
+		 *
+		 * This allows toolkits (Architect Agent, Site Creator, etc.) to register their tools
+		 * with the registry by hooking into this action.
+		 *
+		 * @since 1.1.0
+		 */
+		do_action( 'wp_mcp_ai_load_pro_tools' );
+
 		foreach ( $pro_tools as $class => $file ) {
 			if ( file_exists( $file ) ) {
 				require_once $file;
