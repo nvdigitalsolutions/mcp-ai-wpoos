@@ -339,7 +339,7 @@ class WP_MCP_AI_Vector_Context_Service {
 		$magnitude_a = sqrt( $magnitude_a );
 		$magnitude_b = sqrt( $magnitude_b );
 
-		if ( $magnitude_a == 0 || $magnitude_b == 0 ) {
+		if ( $magnitude_a === 0 || $magnitude_b === 0 ) {
 			return 0.0;
 		}
 
