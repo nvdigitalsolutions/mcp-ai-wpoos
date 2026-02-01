@@ -90,6 +90,29 @@ class Test_Regulatory_Toolkit_Settings_Page extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that missing boolean fields are not set in sanitized output.
+	 */
+	public function test_sanitize_settings_missing_boolean_fields() {
+		// Input with only some fields present.
+		$input = array(
+			'enable_research'      => '1',
+			'enable_expiry_alerts' => '1',
+			// Other boolean fields intentionally omitted.
+		);
+
+		$sanitized = $this->settings_page->sanitize_settings( $input );
+
+		// Present fields should be set.
+		$this->assertTrue( $sanitized['enable_research'] );
+		$this->assertTrue( $sanitized['enable_expiry_alerts'] );
+
+		// Missing fields should not be in the array.
+		$this->assertArrayNotHasKey( 'enable_pdf_generation', $sanitized );
+		$this->assertArrayNotHasKey( 'enable_excel_export', $sanitized );
+		$this->assertArrayNotHasKey( 'enable_api_sync', $sanitized );
+	}
+
+	/**
 	 * Test that expiry alert days are bounded correctly.
 	 */
 	public function test_sanitize_expiry_alert_days_bounds() {
@@ -117,7 +140,7 @@ class Test_Regulatory_Toolkit_Settings_Page extends WP_UnitTestCase {
 		$sanitized = $this->settings_page->sanitize_settings( $input );
 
 		$this->assertEquals( 10, strlen( $sanitized['product_code_prefix'] ) );
-		$this->assertEquals( 'VERYLONG', substr( $sanitized['product_code_prefix'], 0, 8 ) );
+		$this->assertEquals( 'VERYLONGPR', substr( $sanitized['product_code_prefix'], 0, 10 ) );
 	}
 
 	/**
