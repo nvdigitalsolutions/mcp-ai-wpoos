@@ -804,6 +804,11 @@ class WP_MCP_AI_Shortcode {
 			// Multiple widgets can coexist - each checks state.config.provider in JavaScript.
 			$needs_embedded_provider = $this->is_embedded_provider_available( $assistant_provider );
 
+			// Check if assistant has tools, system prompt, or knowledge (used in multiple places).
+			$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
+			$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
+			$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
+
 			if ( $needs_embedded_provider && ! $is_elementor_editor ) {
 				// Enqueue embedded provider scripts.
 				// WordPress ensures these are only loaded once even if called multiple times.
@@ -812,9 +817,6 @@ class WP_MCP_AI_Shortcode {
 
 				// Enqueue enhanced WebLLM scripts if assistant has tools or knowledge.
 				// This ensures the embedded client can use tool calling and maintains assistant knowledge.
-				$has_tools         = ! empty( $assistant_config_for_provider['tools'] ) && is_array( $assistant_config_for_provider['tools'] );
-				$has_system_prompt = ! empty( $assistant_config_for_provider['system_prompt'] );
-				$has_knowledge     = ! empty( $assistant_config_for_provider['memory_files'] ) || ! empty( $assistant_config_for_provider['vector_store_id'] );
 
 				if ( $has_tools || $has_system_prompt || $has_knowledge ) {
 					// Enqueue tool adapter and function calling client for enhanced capabilities.
