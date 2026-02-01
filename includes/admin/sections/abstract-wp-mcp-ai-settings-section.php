@@ -138,6 +138,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
 
+			// FALLBACK: Also check the legacy 'subtab' field for backward compatibility.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			if ( empty( $submitted_subtab ) && isset( $_POST['subtab'] ) ) {
+				$submitted_subtab = sanitize_key( $_POST['subtab'] );
+			}
+
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
 			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
