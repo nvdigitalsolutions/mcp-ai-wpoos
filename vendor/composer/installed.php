@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-federation-checkbox-issue',
-        'version' => 'dev-copilot/fix-federation-checkbox-issue',
-        'reference' => '68e871262654375a5410c10db923c43d710655b2',
+        'pretty_version' => 'dev-copilot/fix-checkbox-save-issue',
+        'version' => 'dev-copilot/fix-checkbox-save-issue',
+        'reference' => '94a7656c276a60ed7873785905b5f714ea27631f',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-federation-checkbox-issue',
-            'version' => 'dev-copilot/fix-federation-checkbox-issue',
-            'reference' => '68e871262654375a5410c10db923c43d710655b2',
+            'pretty_version' => 'dev-copilot/fix-checkbox-save-issue',
+            'version' => 'dev-copilot/fix-checkbox-save-issue',
+            'reference' => '94a7656c276a60ed7873785905b5f714ea27631f',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
