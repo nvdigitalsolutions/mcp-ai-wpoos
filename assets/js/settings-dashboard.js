@@ -905,6 +905,8 @@
 			$('.wrap.wp-mcp-ai-settings-dashboard').prepend(
 				'<div class="notice notice-info" style="margin: 15px 0; padding: 10px 15px;">' +
 				'<p><strong>🔍 Diagnostics Mode:</strong> Federation Mesh checkbox diagnostics are active. Check browser console (F12) for detailed logs.</p>' +
+				'<p><strong>Note:</strong> The checkbox <code>value</code> attribute is always "1" regardless of checked state. This is normal HTML behavior. ' +
+				'The <code>checked</code> property indicates whether the checkbox is actually selected.</p>' +
 				'</div>'
 			);
 
@@ -919,19 +921,30 @@
 					return;
 				}
 
-				// Log current state
+				// Get the actual checked state from the DOM
+				const isChecked = $checkbox.is(':checked');
+				const $slider = $checkbox.siblings('.wp-mcp-ai-settings-toggle-slider');
+				const sliderBackgroundColor = $slider.length > 0 ? $slider.css('background-color') : 'N/A';
+				
+				// Determine the visual state description
+				const visualState = isChecked ? '✅ ON (checked)' : '❌ OFF (unchecked)';
+				
+				// Log current state with visual verification
 				logWithTimestamp('[NV oOS Federation Mesh] Checkbox found: ' + id, {
-					checked: $checkbox.is(':checked'),
+					visualState: visualState,
+					checked: isChecked,
 					disabled: $checkbox.is(':disabled'),
 					visible: $checkbox.is(':visible'),
 					name: $checkbox.attr('name'),
-					value: $checkbox.val()
+					value: $checkbox.val() + ' (always "1" for checkboxes, use "checked" property for state)',
+					sliderBgColor: sliderBackgroundColor
 				});
 
-				// Add click handler for debugging
+				// Add change handler for debugging
 				$checkbox.on('change', function() {
-					const isChecked = $(this).is(':checked');
-					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' New state: ' + isChecked);
+					const newIsChecked = $(this).is(':checked');
+					const newVisualState = newIsChecked ? '✅ ON' : '❌ OFF';
+					logWithTimestamp('[NV oOS Federation Mesh] Checkbox changed: ' + id + ' → ' + newVisualState + ' (checked=' + newIsChecked + ')');
 				});
 
 				// Check if the checkbox is actually clickable
