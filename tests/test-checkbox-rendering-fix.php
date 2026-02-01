@@ -13,6 +13,19 @@
 class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 
 	/**
+	 * Helper method to test checkbox normalization logic.
+	 *
+	 * This replicates the normalization logic from abstract-wp-mcp-ai-settings-section.php
+	 * line 490 to ensure consistency between rendering and tests.
+	 *
+	 * @param mixed $value The value to normalize.
+	 * @return bool True if checkbox should be checked, false otherwise.
+	 */
+	private function normalize_checkbox_value( $value ) {
+		return ! empty( $value ) && '0' !== $value && 0 !== $value;
+	}
+
+	/**
 	 * Test that boolean true value renders checkbox as checked.
 	 */
 	public function test_boolean_true_renders_checked() {
@@ -26,7 +39,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertTrue( $is_checked, 'Boolean true should result in checkbox being checked' );
 	}
@@ -45,7 +58,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertTrue( $is_checked, 'String "1" should result in checkbox being checked' );
 	}
@@ -64,7 +77,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertTrue( $is_checked, 'Integer 1 should result in checkbox being checked' );
 	}
@@ -83,7 +96,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertFalse( $is_checked, 'Boolean false should result in checkbox being unchecked' );
 	}
@@ -102,7 +115,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertFalse( $is_checked, 'String "0" should result in checkbox being unchecked' );
 	}
@@ -121,7 +134,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertFalse( $is_checked, 'Integer 0 should result in checkbox being unchecked' );
 	}
@@ -138,7 +151,7 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Test the normalization logic from the fix.
-		$is_checked = ! empty( $value ) && '0' !== $value && 0 !== $value;
+		$is_checked = $this->normalize_checkbox_value( $value );
 
 		$this->assertFalse( $is_checked, 'Null/missing value should result in checkbox being unchecked' );
 	}
@@ -174,9 +187,9 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$enable_federation_directory_value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Apply rendering normalization.
-		$enable_mesh_checked                 = ! empty( $enable_mesh_value ) && '0' !== $enable_mesh_value && 0 !== $enable_mesh_value;
-		$enable_federation_checked           = ! empty( $enable_federation_value ) && '0' !== $enable_federation_value && 0 !== $enable_federation_value;
-		$enable_federation_directory_checked = ! empty( $enable_federation_directory_value ) && '0' !== $enable_federation_directory_value && 0 !== $enable_federation_directory_value;
+		$enable_mesh_checked                 = $this->normalize_checkbox_value( $enable_mesh_value );
+		$enable_federation_checked           = $this->normalize_checkbox_value( $enable_federation_value );
+		$enable_federation_directory_checked = $this->normalize_checkbox_value( $enable_federation_directory_value );
 
 		// All should be checked.
 		$this->assertTrue( $enable_mesh_checked, 'enable_mesh checkbox should render as checked' );
@@ -207,9 +220,9 @@ class WP_MCP_AI_Checkbox_Rendering_Fix_Test extends WP_UnitTestCase {
 		$enable_federation_directory_value = WP_MCP_AI_Settings_Registry::get_setting( 'enable_federation_directory', false );
 
 		// Apply rendering normalization.
-		$enable_mesh_checked                 = ! empty( $enable_mesh_value ) && '0' !== $enable_mesh_value && 0 !== $enable_mesh_value;
-		$enable_federation_checked           = ! empty( $enable_federation_value ) && '0' !== $enable_federation_value && 0 !== $enable_federation_value;
-		$enable_federation_directory_checked = ! empty( $enable_federation_directory_value ) && '0' !== $enable_federation_directory_value && 0 !== $enable_federation_directory_value;
+		$enable_mesh_checked                 = $this->normalize_checkbox_value( $enable_mesh_value );
+		$enable_federation_checked           = $this->normalize_checkbox_value( $enable_federation_value );
+		$enable_federation_directory_checked = $this->normalize_checkbox_value( $enable_federation_directory_value );
 
 		// All should be unchecked.
 		$this->assertFalse( $enable_mesh_checked, 'enable_mesh checkbox should render as unchecked' );
