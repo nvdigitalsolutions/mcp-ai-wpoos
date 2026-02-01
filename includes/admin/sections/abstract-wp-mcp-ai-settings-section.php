@@ -144,6 +144,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				$submitted_subtab = sanitize_key( $_POST['subtab'] );
 			}
 
+			// ADDITIONAL FALLBACK: If still empty but we have settings data in POST,
+			// and the active subtab is valid, assume this IS a form submission for the active subtab.
+			// This handles edge cases where the hidden field might not be set correctly.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			if ( empty( $submitted_subtab ) && ! empty( $_POST['wp_mcp_ai_settings'] ) && isset( $subtab_groups[ $active_subtab ] ) ) {
+				$submitted_subtab = $active_subtab;
+			}
+
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
 			// This prevents cross-subtab data clearing when saving one subtab shouldn't affect others.
