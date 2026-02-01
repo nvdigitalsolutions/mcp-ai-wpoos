@@ -1386,6 +1386,18 @@ PROMPT;
 			return $result;
 		}
 
+		// Add the Architect Agent assistant ID to the installed option so it gets tracked.
+		// This ensures it will be properly managed during reinstall operations.
+		$info = get_option( self::INSTALLED_OPTION, array() );
+		if ( ! isset( $info['assistant_ids'] ) ) {
+			$info['assistant_ids'] = array();
+		}
+		// Only add if not already in the list.
+		if ( ! in_array( $result, $info['assistant_ids'], true ) ) {
+			$info['assistant_ids'][] = $result;
+			update_option( self::INSTALLED_OPTION, $info );
+		}
+
 		// Log the successful creation.
 		if ( defined( 'WP_MCP_AI_DEBUG' ) && WP_MCP_AI_DEBUG ) {
 			error_log(
@@ -1429,6 +1441,18 @@ PROMPT;
 	 */
 	public static function reinstall() {
 		self::uninstall();
-		return self::install();
+		$result = self::install();
+
+		// Check if Architect Agent Toolkit is enabled and reinstall it if needed.
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
+		if ( ! empty( $settings['enable_architect_agent_toolkit'] ) ) {
+			$architect_result = self::install_architect_agent_assistant();
+			if ( is_wp_error( $architect_result ) && ! is_wp_error( $result ) ) {
+				// If main install succeeded but architect failed, return the error.
+				return $architect_result;
+			}
+		}
+
+		return $result;
 	}
 }
