@@ -1335,7 +1335,6 @@ if ( ! class_exists( 'WP_MCP_AI_Cloudflare_Client' ) ) {
 		 *                         - maxTools: Maximum tools when auto-trimming (default: 10)
 		 *                         - timeout: Request timeout in seconds.
 		 * @return array|WP_Error Response array or error.
-		 * @throws Exception If tool function is not callable.
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
 			// Configuration options with defaults.
