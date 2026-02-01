@@ -4,6 +4,16 @@ This directory contains historical documentation that has been organized for ref
 
 ## Directory Structure
 
+### `/compliance/`
+WordPress Coding Standards (WPCS) and PHPCS compliance documentation.
+
+**Contains:**
+- PHPCS compliance reports
+- WPCS status reports
+- Compliance verification summaries
+- PHPCS documentation and quick references
+- Violation flowcharts and fix plans
+
 ### `/implementations/`
 Implementation summaries and technical details for features developed over time.
 
@@ -30,6 +40,10 @@ Bug fix summaries and issue resolutions.
 - Issue resolution documents
 - Performance fix reports
 - Security fix summaries
+- Federation and mesh fixes
+- Checkbox implementation fixes
+- Regulatory and API fixes
+- Visual guides for fixes
 
 ### `/features/`
 Feature documentation and specifications.
@@ -68,6 +82,8 @@ Various historical summaries, visual guides, and status documents.
 - Security checks and implementation summaries
 - Token management documentation
 - Optimization recommendations
+- Pull request summaries
+- Submission summaries
 
 ## Current Documentation
 
@@ -93,7 +109,20 @@ When referencing archived documentation:
 2. Use archived docs to understand historical context or evolution of features
 3. Refer to current documentation for latest practices and guidelines
 
+## Recent Organization (February 2026)
+
+On February 1, 2026, the repository underwent a major cleanup to improve production readiness:
+
+- **34 files moved** from root directory to organized archive structure
+- Created `/compliance/` subdirectory for PHPCS/WPCS documentation
+- Consolidated all fix summaries in `/fixes/`
+- Moved PR/submission summaries to archive root
+- Root directory reduced from 40 to 6 essential production files
+
+For complete details, see [MOVED_FROM_ROOT.md](MOVED_FROM_ROOT.md)
+
 ---
 
-**Last Updated:** November 18, 2025  
-**Documentation Reorganization Date:** November 18, 2025
+**Last Updated:** February 1, 2026  
+**Major Reorganization:** February 1, 2026  
+**Previous Reorganization:** November 18, 2025
