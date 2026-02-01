@@ -26,6 +26,7 @@ class WPCapabilityValidator extends ConstraintValidator {
 	 * @param mixed      $value      The value to validate.
 	 * @param Constraint $constraint The constraint.
 	 * @return void
+	 * @throws UnexpectedTypeException If the constraint is not a WPCapability instance.
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPCapability ) {

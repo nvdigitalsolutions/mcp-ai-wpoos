@@ -391,7 +391,8 @@ class WP_MCP_AI_Model_Selector {
 	 */
 	protected static function get_latest_user_message( array $messages ) {
 		// Iterate in reverse to find the most recent user message.
-		for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+		$message_count = count( $messages );
+		for ( $i = $message_count - 1; $i >= 0; $i-- ) {
 			$message = $messages[ $i ];
 
 			if ( ! is_array( $message ) || ! isset( $message['role'] ) ) {
