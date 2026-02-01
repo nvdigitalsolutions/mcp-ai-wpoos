@@ -1616,7 +1616,8 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 		protected function auto_trim_tools( $messages, $tools, $options = array() ) {
 			// Get the last user message.
 			$last_user_message = '';
-			for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+			$message_count     = count( $messages );
+			for ( $i = $message_count - 1; $i >= 0; $i-- ) {
 				if ( isset( $messages[ $i ]['role'] ) && 'user' === $messages[ $i ]['role'] ) {
 					$last_user_message = isset( $messages[ $i ]['content'] ) ? strtolower( (string) $messages[ $i ]['content'] ) : '';
 					break;
