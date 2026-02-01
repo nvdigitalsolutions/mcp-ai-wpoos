@@ -499,7 +499,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						add_settings_error(
 							'wp_mcp_ai_settings',
 							'mesh_key_generation_failed',
-							__( 'Failed to generate mesh API key. Please try again or contact support.', 'mcp-ai-wpoos' ),
+							sprintf(
+								/* translators: %s: Error message from exception */
+								__( 'Failed to generate mesh API key due to insufficient system entropy: %s. This is typically a server configuration issue. Please ensure your server has proper random number generation available (check /dev/urandom on Linux systems) or contact your hosting provider.', 'mcp-ai-wpoos' ),
+								esc_html( $e->getMessage() )
+							),
 							'error'
 						);
 					}
