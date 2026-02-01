@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/move-federation-settings',
-        'version' => 'dev-copilot/move-federation-settings',
-        'reference' => '2c3a83f8a18eaa788661f961c54e05f9151b5b78',
+        'pretty_version' => 'dev-copilot/move-federation-checkbox',
+        'version' => 'dev-copilot/move-federation-checkbox',
+        'reference' => 'a0696f16aac1a58bced9f9231380db3edbb3a271',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/move-federation-settings',
-            'version' => 'dev-copilot/move-federation-settings',
-            'reference' => '2c3a83f8a18eaa788661f961c54e05f9151b5b78',
+            'pretty_version' => 'dev-copilot/move-federation-checkbox',
+            'version' => 'dev-copilot/move-federation-checkbox',
+            'reference' => 'a0696f16aac1a58bced9f9231380db3edbb3a271',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

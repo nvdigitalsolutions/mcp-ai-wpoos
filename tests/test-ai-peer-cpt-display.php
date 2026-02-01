@@ -50,7 +50,6 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'           => true,
 				'enable_federation' => true,
 			)
 		);
@@ -96,7 +95,6 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'           => false,
 				'enable_federation' => false,
 			)
 		);
@@ -129,7 +127,6 @@ class Test_AI_Peer_CPT_Display extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'           => true,
 				'enable_federation' => true,
 			)
 		);
