@@ -94,14 +94,14 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Advanced' ) ) {
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Enables federation features including well-known endpoints (/.well-known/ai-peer, /.well-known/jwks.json) for AI peer discovery.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables well-known endpoints (/.well-known/ai-peer, /.well-known/jwks.json) for AI peer discovery. This allows other sites to discover your site\'s capabilities without requiring the full directory service.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'enable_federation_directory'   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Federation Directory', 'mcp-ai-wpoos' ),
 					'checkbox_label' => __( 'Enable federation directory service', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Allows this site to participate in the federation directory, making it discoverable by other sites in the network. Required for federated AI operations and resource sharing.', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables the full federation directory service including AI Peers custom post type, directory REST API, and peer verification. Requires "Enable Federation" to also publish well-known endpoints for directory participants.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
 				'federation_regions'            => array(
