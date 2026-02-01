@@ -11,7 +11,7 @@
 class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that mesh_inbound_api_key is generated when enable_federation_directory is enabled.
+	 * Test that mesh_inbound_api_key is generated when enable_federation is enabled.
 	 */
 	public function test_mesh_api_key_generated_when_federation_directory_enabled() {
 		// Clear existing settings.
@@ -19,7 +19,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Simulate enabling federation directory without mesh computing.
 		$input = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 		);
 
 		// Use the Admin Settings Base sanitizer (which has the key generation logic).
@@ -93,7 +93,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// First save: enable federation directory.
 		$input = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 		);
 
 		$settings_base = new WP_MCP_AI_Admin_Settings_Base();
@@ -107,7 +107,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Second save: save other settings while federation directory is still enabled.
 		$input = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 			'federation_regions'          => 'us-east',
 		);
 
@@ -133,7 +133,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 
 		// Simulate saving with federation directory disabled.
 		$input = array(
-			'enable_federation_directory' => false,
+			'enable_federation' => false,
 			'federation_regions'          => 'global',
 		);
 
@@ -149,7 +149,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that mesh_inbound_api_key is generated when both enable_mesh and enable_federation_directory are enabled.
+	 * Test that mesh_inbound_api_key is generated when both enable_mesh and enable_federation are enabled.
 	 */
 	public function test_mesh_api_key_generated_when_both_enabled() {
 		// Clear existing settings.
@@ -158,7 +158,7 @@ class WP_MCP_AI_Mesh_API_Key_Generation_Test extends WP_UnitTestCase {
 		// Simulate enabling both mesh and federation directory.
 		$input = array(
 			'enable_mesh'                 => '1',
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 		);
 
 		$settings_base = new WP_MCP_AI_Admin_Settings_Base();

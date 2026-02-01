@@ -105,8 +105,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 			}
 
 			// Generate mesh API key if needed.
-			// Key should be generated when either mesh computing OR federation directory is enabled.
+			// Key should be generated when mesh computing OR either federation setting is enabled.
 			$needs_mesh_key = ( isset( $settings['enable_mesh'] ) && ! empty( $settings['enable_mesh'] ) ) ||
+								( isset( $settings['enable_federation'] ) && ! empty( $settings['enable_federation'] ) ) ||
 								( isset( $settings['enable_federation_directory'] ) && ! empty( $settings['enable_federation_directory'] ) );
 
 			if ( $needs_mesh_key ) {
@@ -402,6 +403,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings_Base' ) ) {
 				'enable_mesh'                          => false,
 				'mesh_inbound_api_key'                 => '',
 				'mesh_peer_sites'                      => array(),
+				'enable_federation'                    => false,
 				'enable_federation_directory'          => false,
 				'federation_regions'                   => 'global',
 				'federation_data_tags'                 => '',

@@ -34,9 +34,9 @@ class WP_MCP_AI_Federation_Settings {
 	 * @param array $new_value New settings value.
 	 */
 	public function maybe_flush_rewrite_rules( $old_value, $new_value ) {
-		// Check if enable_federation_directory setting changed.
-		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
-		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
+		// Check if enable_federation setting changed.
+		$old_directory_enabled = ! empty( $old_value['enable_federation'] );
+		$new_directory_enabled = ! empty( $new_value['enable_federation'] );
 
 		// If the directory setting changed, flush rewrite rules.
 		if ( $old_directory_enabled !== $new_directory_enabled ) {
@@ -58,7 +58,7 @@ class WP_MCP_AI_Federation_Settings {
 
 
 		add_settings_field(
-			'enable_federation_directory',
+			'enable_federation',
 			__( 'Enable Directory Service', 'mcp-ai-wpoos' ),
 			array( $this, 'render_enable_directory_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
@@ -122,12 +122,12 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public function render_enable_directory_field() {
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$enabled  = isset( $settings['enable_federation_directory'] ) ? (bool) $settings['enable_federation_directory'] : false;
+		$enabled  = isset( $settings['enable_federation'] ) ? (bool) $settings['enable_federation'] : false;
 		?>
 		<label>
 			<input
 				type="checkbox"
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings::OPTION_NAME ); ?>[enable_federation_directory]"
+				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings::OPTION_NAME ); ?>[enable_federation]"
 				value="1"
 				<?php checked( $enabled ); ?>
 			/>
@@ -253,6 +253,7 @@ class WP_MCP_AI_Federation_Settings {
 		$all_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 
 		$defaults = array(
+			'enable_federation'           => false,
 			'enable_federation_directory' => false,
 			'federation_regions'          => array( 'global' ),
 			'federation_data_tags'        => array(),
@@ -299,7 +300,7 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public static function is_federation_enabled() {
 		$settings = self::get_settings();
-		return ! empty( $settings['enable_federation_directory'] );
+		return ! empty( $settings['enable_federation'] );
 	}
 
 	/**

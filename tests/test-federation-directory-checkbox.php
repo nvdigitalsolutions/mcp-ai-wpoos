@@ -11,16 +11,16 @@
 class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 	/**
-	 * Test that enable_federation_directory checkbox saves correctly when checked.
+	 * Test that enable_federation checkbox saves correctly when checked.
 	 */
-	public function test_enable_federation_directory_checkbox_saves_when_checked() {
+	public function test_enable_federation_checkbox_saves_when_checked() {
 		// Clear existing settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 		// Simulate saving the federation_mesh subtab with the checkbox checked.
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_federation_directory' => '1', // Checked.
+			'enable_federation' => '1', // Checked.
 		);
 
 		// Sanitize using the Advanced section.
@@ -29,15 +29,15 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		// The checkbox should be in the sanitized output.
 		$this->assertArrayHasKey(
-			'enable_federation_directory',
+			'enable_federation',
 			$sanitized,
-			'enable_federation_directory should be in sanitized settings'
+			'enable_federation should be in sanitized settings'
 		);
 
 		// The checkbox should be true.
 		$this->assertTrue(
-			$sanitized['enable_federation_directory'],
-			'enable_federation_directory should be true when checked'
+			$sanitized['enable_federation'],
+			'enable_federation should be true when checked'
 		);
 
 		// Clean up.
@@ -46,12 +46,12 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that enable_federation_directory checkbox saves correctly when unchecked.
+	 * Test that enable_federation checkbox saves correctly when unchecked.
 	 */
-	public function test_enable_federation_directory_checkbox_saves_when_unchecked() {
+	public function test_enable_federation_checkbox_saves_when_unchecked() {
 		// Set up initial settings with the checkbox checked.
 		$initial_settings = array(
-			'enable_federation_directory' => true,
+			'enable_federation' => true,
 			'federation_regions'          => 'global',
 		);
 		update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $initial_settings );
@@ -59,7 +59,7 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		// Simulate saving the federation_mesh subtab with the checkbox unchecked.
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
-			// enable_federation_directory is NOT here (unchecked).
+			// enable_federation is NOT here (unchecked).
 			'federation_regions' => 'us-east',
 		);
 
@@ -69,15 +69,15 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		// The checkbox should be in the sanitized output.
 		$this->assertArrayHasKey(
-			'enable_federation_directory',
+			'enable_federation',
 			$sanitized,
-			'enable_federation_directory should be in sanitized settings even when unchecked'
+			'enable_federation should be in sanitized settings even when unchecked'
 		);
 
 		// The checkbox should be false.
 		$this->assertFalse(
-			$sanitized['enable_federation_directory'],
-			'enable_federation_directory should be false when unchecked'
+			$sanitized['enable_federation'],
+			'enable_federation should be false when unchecked'
 		);
 
 		// Merge with existing and update.
@@ -88,8 +88,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		// Verify the setting was persisted correctly.
 		$saved_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertFalse(
-			$saved_settings['enable_federation_directory'],
-			'enable_federation_directory should remain false in database after save'
+			$saved_settings['enable_federation'],
+			'enable_federation should remain false in database after save'
 		);
 
 		// Clean up.
@@ -100,7 +100,7 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 	/**
 	 * Test full save flow through Settings Dashboard.
 	 */
-	public function test_enable_federation_directory_through_dashboard_save() {
+	public function test_enable_federation_through_dashboard_save() {
 		// Clear existing settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
@@ -108,7 +108,7 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['active_tab']         = 'advanced';
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 			'federation_regions'          => 'global',
 		);
 
@@ -126,8 +126,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 		// Verify the setting was saved.
 		$saved_settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertTrue(
-			! empty( $saved_settings['enable_federation_directory'] ),
-			'enable_federation_directory should be true in database after dashboard save'
+			! empty( $saved_settings['enable_federation'] ),
+			'enable_federation should be true in database after dashboard save'
 		);
 
 		// Clean up.
@@ -139,14 +139,14 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 	/**
 	 * Test that toggling the checkbox persists correctly across multiple saves.
 	 */
-	public function test_enable_federation_directory_toggle_persistence() {
+	public function test_enable_federation_toggle_persistence() {
 		// Clear existing settings.
 		delete_option( WP_MCP_AI_Admin_Settings::OPTION_NAME );
 
 		// First save: enable the checkbox.
 		$_POST['subtab_advanced']    = 'federation_mesh';
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 		);
 
 		$section   = new WP_MCP_AI_Section_Advanced();
@@ -155,13 +155,13 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertTrue(
-			! empty( $settings['enable_federation_directory'] ),
-			'First save: enable_federation_directory should be true'
+			! empty( $settings['enable_federation'] ),
+			'First save: enable_federation should be true'
 		);
 
 		// Second save: disable the checkbox.
 		$_POST['wp_mcp_ai_settings'] = array(
-			// enable_federation_directory is NOT here (unchecked).
+			// enable_federation is NOT here (unchecked).
 		);
 
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
@@ -171,13 +171,13 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertFalse(
-			! empty( $settings['enable_federation_directory'] ),
-			'Second save: enable_federation_directory should be false'
+			! empty( $settings['enable_federation'] ),
+			'Second save: enable_federation should be false'
 		);
 
 		// Third save: enable again.
 		$_POST['wp_mcp_ai_settings'] = array(
-			'enable_federation_directory' => '1',
+			'enable_federation' => '1',
 		);
 
 		$sanitized = $section->sanitize( $_POST['wp_mcp_ai_settings'] );
@@ -187,8 +187,8 @@ class WP_MCP_AI_Federation_Directory_Checkbox_Test extends WP_UnitTestCase {
 
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$this->assertTrue(
-			! empty( $settings['enable_federation_directory'] ),
-			'Third save: enable_federation_directory should be true again'
+			! empty( $settings['enable_federation'] ),
+			'Third save: enable_federation should be true again'
 		);
 
 		// Clean up.

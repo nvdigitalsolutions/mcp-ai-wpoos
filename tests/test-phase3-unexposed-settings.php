@@ -128,7 +128,7 @@ class Test_Phase3_Unexposed_Settings extends WP_UnitTestCase {
 			'chat_colors',
 			'cloudways_app_id',
 			'cloudways_server_id',
-			'enable_federation_directory',
+			'enable_federation',
 			'federation_regions',
 			'federation_data_tags',
 			'federation_qps',
