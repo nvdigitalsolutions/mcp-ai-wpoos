@@ -20,6 +20,7 @@
 			this.initSliders();
 			this.initPresets();
 			this.initMeshPeers();
+			this.initFederationMeshDiagnostics();
 		},
 
 		/**
@@ -873,6 +874,76 @@
 					alert(error.userMessage || 'An error occurred while applying the preset.');
 					$button.prop('disabled', false).text('Apply Preset');
 				}
+			});
+		},
+
+		/**
+		 * Initialize diagnostics for Federation & Mesh checkboxes.
+		 * Adds console logging and click handlers to help debug checkbox issues.
+		 */
+		initFederationMeshDiagnostics: function() {
+			// Only run on advanced tab, federation_mesh subtab
+			const urlParams = new URLSearchParams(window.location.search);
+			const tab = urlParams.get('tab');
+			const subtab = urlParams.get('subtab');
+			
+			if (tab !== 'advanced' || subtab !== 'federation_mesh') {
+				return;
+			}
+
+			console.log('[NV oOS Federation Mesh] Diagnostics initialized');
+
+			// Target the three federation/mesh checkboxes
+			const checkboxIds = ['enable_mesh', 'enable_federation', 'enable_federation_directory'];
+			
+			checkboxIds.forEach(function(id) {
+				const $checkbox = $('#' + id);
+				
+				if ($checkbox.length === 0) {
+					console.warn('[NV oOS Federation Mesh] Checkbox not found:', id);
+					return;
+				}
+
+				// Log current state
+				console.log('[NV oOS Federation Mesh] Checkbox found:', id, {
+					checked: $checkbox.is(':checked'),
+					disabled: $checkbox.is(':disabled'),
+					visible: $checkbox.is(':visible'),
+					name: $checkbox.attr('name'),
+					value: $checkbox.val()
+				});
+
+				// Add click handler for debugging
+				$checkbox.on('change', function() {
+					const isChecked = $(this).is(':checked');
+					console.log('[NV oOS Federation Mesh] Checkbox changed:', id, 'New state:', isChecked);
+				});
+
+				// Check if the checkbox is actually clickable
+				const $label = $('label[for="' + id + '"]');
+				if ($label.length > 0) {
+					console.log('[NV oOS Federation Mesh] Label found for:', id);
+				} else {
+					console.warn('[NV oOS Federation Mesh] No label found for:', id);
+				}
+
+				// Check for overlapping elements that might block clicks
+				const rect = $checkbox[0].getBoundingClientRect();
+				const elementAtPoint = document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2);
+				if (elementAtPoint !== $checkbox[0] && !$checkbox.closest('.wp-mcp-ai-settings-toggle-switch').find(elementAtPoint).length) {
+					console.warn('[NV oOS Federation Mesh] Element covering checkbox:', id, elementAtPoint);
+				}
+			});
+
+			// Log when save button is clicked
+			$('input[type="submit"][name="submit"]').on('click', function() {
+				console.log('[NV oOS Federation Mesh] Save button clicked');
+				checkboxIds.forEach(function(id) {
+					const $checkbox = $('#' + id);
+					if ($checkbox.length > 0) {
+						console.log('[NV oOS Federation Mesh] Checkbox state at save:', id, $checkbox.is(':checked'));
+					}
+				});
 			});
 		}
 	};
