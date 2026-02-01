@@ -893,6 +893,13 @@
 
 			console.log('[NV oOS Federation Mesh] Diagnostics initialized');
 
+			// Add a visual indicator that diagnostics are running
+			$('.wrap.wp-mcp-ai-settings-dashboard').prepend(
+				'<div class="notice notice-info" style="margin: 15px 0; padding: 10px 15px;">' +
+				'<p><strong>🔍 Diagnostics Mode:</strong> Federation Mesh checkbox diagnostics are active. Check browser console (F12) for detailed logs.</p>' +
+				'</div>'
+			);
+
 			// Target the three federation/mesh checkboxes
 			const checkboxIds = ['enable_mesh', 'enable_federation', 'enable_federation_directory'];
 			
