@@ -94,7 +94,7 @@ class Test_Regulatory_Toolkit_Research_Flag extends WP_UnitTestCase {
 
 		// Check that the research_assistant_id field is NOT registered.
 		$section = $option_name . '_config_section';
-		
+
 		// The section should still exist for other config fields.
 		if ( isset( $wp_settings_fields[ $option_name ][ $section ] ) ) {
 			// But research_assistant_id field should NOT be registered when has_research is false.
