@@ -349,20 +349,6 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				),
 
 				// Features fields.
-				'enable_mesh'                          => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Mesh Computing', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable distributed computing features', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Allows this instance to participate in mesh computing networks.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
-				'enable_federation'                    => array(
-					'type'           => 'checkbox',
-					'label'          => __( 'Enable Federation', 'mcp-ai-wpoos' ),
-					'checkbox_label' => __( 'Enable federated discovery', 'mcp-ai-wpoos' ),
-					'description'    => __( 'Allows this instance to be discovered by and connect to other NV oOS instances.', 'mcp-ai-wpoos' ),
-					'default'        => false,
-				),
 				'enable_quiz_system'                   => array(
 					'type'           => 'checkbox',
 					'label'          => __( 'Enable Quiz System', 'mcp-ai-wpoos' ),
@@ -761,7 +747,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_mesh', 'enable_federation', 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
