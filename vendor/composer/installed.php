@@ -3,7 +3,7 @@
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
         'pretty_version' => 'dev-copilot/extend-fantasy-football-settings-again',
         'version' => 'dev-copilot/extend-fantasy-football-settings-again',
-        'reference' => 'edf9f987edf520118d891557203819d59340d78e',
+        'reference' => '80f71a676b72ea8b783d42c7ecd9bfa6c2164c57',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -49,7 +49,7 @@
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
             'pretty_version' => 'dev-copilot/extend-fantasy-football-settings-again',
             'version' => 'dev-copilot/extend-fantasy-football-settings-again',
-            'reference' => 'edf9f987edf520118d891557203819d59340d78e',
+            'reference' => '80f71a676b72ea8b783d42c7ecd9bfa6c2164c57',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
