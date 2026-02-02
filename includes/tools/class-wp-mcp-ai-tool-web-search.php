@@ -1168,19 +1168,17 @@ class WP_MCP_AI_Tool_Web_Search implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_T
 			$test_encode = wp_json_encode( $validated_item );
 			if ( false !== $test_encode ) {
 				$validated_results[] = $validated_item;
-			} else {
+			} elseif ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				// Log the problematic item for debugging.
-				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_error(
-						'web_search_result_json_encode_failed',
-						'Failed to JSON encode search result item',
-						array(
-							'query'      => $query,
-							'provider'   => $provider,
-							'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
-						)
-					);
-				}
+				WP_MCP_AI_Logger::log_error(
+					'web_search_result_json_encode_failed',
+					'Failed to JSON encode search result item',
+					array(
+						'query'      => $query,
+						'provider'   => $provider,
+						'json_error' => function_exists( 'json_last_error_msg' ) ? json_last_error_msg() : 'Unknown',
+					)
+				);
 			}
 		}
 

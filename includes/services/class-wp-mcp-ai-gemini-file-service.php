@@ -649,7 +649,7 @@ class WP_MCP_AI_Gemini_File_Service {
 	 * @param string   $file_name     Gemini file name.
 	 * @param string   $file_uri      Gemini file URI.
 	 * @param string   $mime_type     File MIME type.
-	 * @param string   $file_url      File URL (optional if attachment_id provided).
+	 * @param string   $video_url     File URL (optional if attachment_id provided).
 	 * @param int|null $attachment_id WordPress attachment ID (optional if file_url provided).
 	 * @return bool True on success, false on failure.
 	 */
@@ -714,16 +714,14 @@ class WP_MCP_AI_Gemini_File_Service {
 				// Transient still exists, use it.
 				$cached_data['cache_key'] = $cache_key;
 				$tracked_files[]          = $cached_data;
-			} else {
+			} elseif ( is_array( $file_data ) && isset( $file_data['file_name'], $file_data['uploaded_at'] ) ) {
 				// Transient expired, but we need the tracking data for cleanup.
 				// Use the file_name and uploaded_at from the tracking list.
-				if ( is_array( $file_data ) && isset( $file_data['file_name'], $file_data['uploaded_at'] ) ) {
-					$tracked_files[] = array(
-						'cache_key'   => $cache_key,
-						'file_name'   => $file_data['file_name'],
-						'uploaded_at' => $file_data['uploaded_at'],
-					);
-				}
+				$tracked_files[] = array(
+					'cache_key'   => $cache_key,
+					'file_name'   => $file_data['file_name'],
+					'uploaded_at' => $file_data['uploaded_at'],
+				);
 			}
 		}
 

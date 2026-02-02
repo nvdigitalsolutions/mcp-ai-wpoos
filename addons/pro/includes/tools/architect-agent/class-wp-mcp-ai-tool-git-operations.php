@@ -103,11 +103,15 @@ class WP_MCP_AI_Tool_Git_Operations implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	 */
 	public function get_capability_flags() {
 		return array(
-			'pro',                   // Pro tier feature.
-			'requires-capability',   // Requires edit_plugins capability.
-			'state-changing',        // Some operations modify git state.
-			'local-only',            // Works locally, no external APIs.
-			'reversible',            // Git operations are reversible.
+			'pro',                     // Pro tier feature.
+			'requires-capability',     // Requires edit_plugins capability.
+			'state-changing',          // Some operations modify git state.
+			'local-only',              // Works locally, no external APIs.
+			'reversible',              // Git operations are reversible.
+			'architect-agent',         // Core Architect Agent capability.
+			'version-control',         // Can perform git operations.
+			'requires-workspace-trust', // Requires workspace trust (security).
+			'development-workflow',    // Part of development lifecycle.
 		);
 	}
 

@@ -189,9 +189,9 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 		}
 
 		return array(
-			'success'    => true,
-			'message'    => __( 'Agent team created successfully.', 'mcp-ai-wpoos' ),
-			'team'       => array(
+			'success'             => true,
+			'message'             => __( 'Agent team created successfully.', 'mcp-ai-wpoos' ),
+			'team'                => array(
 				'team_id'      => $team['team_id'],
 				'task_type'    => $team['task_type'],
 				'template'     => $team['template'],
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 				'status'       => $team['status'],
 				'created_at'   => $team['created_at'],
 			),
-			'next_steps' => array(
+			'next_steps'          => array(
 				__( 'IMPORTANT: Use the agent_id field (not profession) when calling delegate_to_agent', 'mcp-ai-wpoos' ),
 				__( 'Example: delegate_to_agent with agent_id from the members array above', 'mcp-ai-wpoos' ),
 				__( 'When delegating, include team_id in the context parameter for virtual agents', 'mcp-ai-wpoos' ),
@@ -215,17 +215,11 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -243,7 +237,6 @@ class WP_MCP_AI_Tool_Create_Agent_Team implements WP_MCP_AI_Tool_Interface, WP_M
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

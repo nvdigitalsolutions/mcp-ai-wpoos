@@ -268,6 +268,37 @@ class WP_MCP_AI_Tool_EZuite_ERP_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test case-insensitive API action validation.
+	 */
+	public function test_case_insensitive_api_action() {
+		wp_set_current_user( $this->admin_id );
+
+		// Create a test connection.
+		$connection_id = $this->create_test_connection();
+
+		// Test with lowercase api_action.
+		$result = $this->tool->execute(
+			array(
+				'action'        => 'invoke_api',
+				'connection_id' => $connection_id,
+				'api_action'    => 'lx_itempull',
+				'api_body'      => array(
+					array(
+						'Location_Code' => 'TEST',
+					),
+				),
+			),
+			array( 'user_id' => $this->admin_id )
+		);
+
+		// Should not return an invalid_api_action error.
+		// It will fail on actual API call, but validation should pass.
+		if ( is_wp_error( $result ) ) {
+			$this->assertNotEquals( 'wp_mcp_ai_pro_invalid_api_action', $result->get_error_code(), 'Case-insensitive action validation should accept lx_itempull' );
+		}
+	}
+
+	/**
 	 * Test wrong connection type error.
 	 */
 	public function test_wrong_connection_type() {

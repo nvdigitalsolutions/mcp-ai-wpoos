@@ -615,9 +615,9 @@ class WP_MCP_AI_Project_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get project statistics.
-		$total_projects = wp_count_posts( 'mcp_ai_project' );
+		$total_projects  = wp_count_posts( 'mcp_ai_project' );
 		$published_count = isset( $total_projects->publish ) ? $total_projects->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$projects = get_posts(
 			array(
@@ -627,28 +627,28 @@ class WP_MCP_AI_Project_Research_Page {
 			)
 		);
 
-		$complete_count = 0;
+		$complete_count  = 0;
 		$with_start_date = 0;
-		$with_status = 0;
+		$with_status     = 0;
 
 		foreach ( $projects as $project ) {
 			$start_date = get_post_meta( $project->ID, 'start_date', true );
 			$status     = get_post_meta( $project->ID, 'status', true );
 			$has_desc   = ! empty( $project->post_content );
-			
+
 			if ( ! empty( $start_date ) ) {
-				$with_start_date++;
+				++$with_start_date;
 			}
 			if ( ! empty( $status ) ) {
-				$with_status++;
+				++$with_status;
 			}
 			if ( ! empty( $start_date ) && ! empty( $status ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Project Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

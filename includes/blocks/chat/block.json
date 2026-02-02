@@ -6,7 +6,7 @@
 	"title": "AI Chat",
 	"category": "mcp-ai-wpoos",
 	"icon": "format-chat",
-	"description": "Display an AI chat interface powered by WP oOS.",
+	"description": "Display an AI chat interface powered by NV oOS.",
 	"keywords": [ "ai", "chat", "assistant", "conversation", "mcp" ],
 	"textdomain": "wp-mcp-ai",
 	"attributes": {

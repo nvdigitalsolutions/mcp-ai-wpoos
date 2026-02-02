@@ -142,10 +142,10 @@ class WP_MCP_AI_Migrate_Medical_Record_Post_Type {
 		if ( 0 === $total_posts ) {
 			delete_option( 'wp_mcp_ai_migration_medical_record_post_type' );
 			return array(
-				'status'       => 'success',
-				'message'      => __( 'No medical records found to rollback.', 'mcp-ai-wpoos-pro' ),
-				'rolled_back'  => 0,
-				'total'        => 0,
+				'status'      => 'success',
+				'message'     => __( 'No medical records found to rollback.', 'mcp-ai-wpoos-pro' ),
+				'rolled_back' => 0,
+				'total'       => 0,
 			);
 		}
 
@@ -182,14 +182,14 @@ class WP_MCP_AI_Migrate_Medical_Record_Post_Type {
 		delete_option( 'wp_mcp_ai_migration_medical_record_post_type' );
 
 		return array(
-			'status'       => 'success',
-			'message'      => sprintf(
+			'status'      => 'success',
+			'message'     => sprintf(
 				/* translators: %d: number of posts rolled back */
 				__( 'Successfully rolled back %d medical records.', 'mcp-ai-wpoos-pro' ),
 				$updated
 			),
-			'rolled_back'  => $updated,
-			'total'        => $total_posts,
+			'rolled_back' => $updated,
+			'total'       => $total_posts,
 		);
 	}
 

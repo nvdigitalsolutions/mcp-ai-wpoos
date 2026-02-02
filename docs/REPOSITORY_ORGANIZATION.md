@@ -1,7 +1,7 @@
 # Repository Organization
 
-**Last Updated:** January 30, 2026  
-**Organization Date:** January 30, 2026
+**Last Updated:** January 31, 2026  
+**Organization Date:** January 31, 2026
 
 This document describes the organization of the NV oOS repository structure and where different types of files are located.
 
@@ -11,15 +11,17 @@ This document describes the organization of the NV oOS repository structure and 
 
 The root directory contains only essential documentation and configuration files:
 
-### Essential Documentation (8 files)
+### Essential Documentation (3 files)
 1. **[README.md](../README.md)** - Main plugin documentation, features, installation, usage
 2. **[CHANGELOG.md](../CHANGELOG.md)** - Version history and changes
 3. **[CONTRIBUTING.md](../CONTRIBUTING.md)** - Contribution guidelines
-4. **[SECURITY.md](../SECURITY.md)** - Security policy and vulnerability reporting
-5. **[LICENSE](../LICENSE)** - GPLv3 license
-6. **[BUILD.md](../BUILD.md)** - Build and deployment instructions
-7. **[DEPENDENCIES_BUNDLING.md](../DEPENDENCIES_BUNDLING.md)** - NPM dependency management guide
-8. **[CODEOWNERS](../CODEOWNERS)** - Code ownership and review assignments
+
+### Additional Essential Files (moved to docs/)
+4. **[SECURITY.md](security/SECURITY.md)** - Security policy and vulnerability reporting (in docs/security/)
+5. **[LICENSE](../LICENSE)** - GPLv3 license (in root)
+6. **[BUILD.md](BUILD.md)** - Build and deployment instructions (in docs/)
+7. **[DEPENDENCIES_BUNDLING.md](DEPENDENCIES_BUNDLING.md)** - NPM dependency management guide (in docs/)
+8. **[CODEOWNERS](../CODEOWNERS)** - Code ownership and review assignments (in root)
 
 ### Configuration Files
 - **package.json** / **package-lock.json** - NPM dependencies for base plugin
@@ -34,7 +36,6 @@ The root directory contains only essential documentation and configuration files
 - **.editorconfig** - Editor configuration
 - **.nvmrc** - Node version specification
 - **docker-compose.yml** - Local development Docker setup
-- **tool-status.txt** - Tool status labels for Tools Manager
 
 ### Hidden Configuration
 - **.gitignore** - Git ignore rules
@@ -74,8 +75,10 @@ The central location for all plugin documentation:
   - **settings/** - Settings system changes
 - **2025/** - Previous year implementation records
 
-#### `/docs/deployment/` - Deployment Documentation
+### `/docs/deployment/` - Deployment Documentation
 - **PRODUCTION_READY.md** - Production deployment guide
+- **PRODUCTION_COMPOSER.md** - Composer production dependencies management
+- **PRODUCTION_COMPOSER_SETUP.md** - Setup instructions
 - Deployment procedures, optimization, and production configuration
 
 #### `/docs/security/` - Security Documentation
@@ -93,10 +96,21 @@ The central location for all plugin documentation:
 #### `/docs/fixes/` - Bug Fix Documentation
 - Detailed documentation of bug fixes and patches
 - Fix summaries, testing plans, implementation details
+- **/federation/** - Federation directory and mesh computing fixes
+  - `FEDERATION_DIRECTORY_DEBUG.md` - Federation directory checkbox persistence fix
+
+#### `/docs/features/` - Feature Documentation
+- Feature-specific implementation and usage documentation
+- **/multi-agent/** - Multi-agent system documentation
+  - `README-MULTI-AGENT-SYSTEM.md` - Multi-agent orchestration implementation summary
+  - `MULTI_AGENT_DASHBOARD_PREVIEW.md` - Dashboard overview
+  - `MULTI_AGENT_ORCHESTRATION_IMPLEMENTATION.md` - Technical implementation
 
 #### Other `/docs/` Subdirectories:
 - **api/** - API documentation and examples
 - **guides/** - User guides and tutorials
+  - **/admin/** - Administrative guides
+    - `FEDERATION_SETUP_GUIDE.md` - Federation and mesh computing setup
 - **tools/** - Tool documentation and reference
 - **integrations/** - Third-party integration guides
 - And 25+ other specialized documentation directories

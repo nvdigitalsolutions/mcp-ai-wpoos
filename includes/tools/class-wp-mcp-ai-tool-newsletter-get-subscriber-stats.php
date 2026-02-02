@@ -106,10 +106,14 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 			'unsubscribed'  => 0,
 		);
 
-		$stats['total']         = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" );
-		$stats['confirmed']     = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'C' ) );
-		$stats['not_confirmed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'S' ) );
-		$stats['unsubscribed']  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'U' ) );
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+		$stats['total'] = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+		$stats['confirmed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'C' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+		$stats['not_confirmed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'S' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+		$stats['unsubscribed'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE status = %s", 'U' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 		// Get subscribers per list if requested.
 		$include_lists = isset( $arguments['include_lists'] ) ? (bool) $arguments['include_lists'] : true;
@@ -118,7 +122,8 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 		if ( $include_lists ) {
 			for ( $i = 1; $i <= 40; $i++ ) {
 				$list_field = 'list_' . $i;
-				$count      = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$list_field} = 1 AND status = 'C'" );
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table and field names should not be parameterized
+				$count = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE {$list_field} = 1 AND status = 'C'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				if ( $count > 0 ) {
 					$list_stats[ $i ] = $count;
 				}
@@ -148,17 +153,11 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -176,7 +175,6 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscriber_Stats implements WP_MCP_AI_Tool_I
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

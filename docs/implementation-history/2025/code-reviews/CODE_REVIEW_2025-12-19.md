@@ -317,7 +317,7 @@ includes/
    - MCP JSON-RPC 2.0 endpoint
 
 3. **Tool System** (`includes/tools/`)
-   - 65+ built-in tools
+   - 519 built-in tools
    - Interface-based design
    - Capability-based access
    - Extensible registry
@@ -411,7 +411,7 @@ tests/
 
 ✅ **Comprehensive Documentation Includes:**
 - Complete API reference
-- All 65+ tools documented
+- All 519 tools documented
 - Setup and configuration guides
 - Integration guides (JetEngine, WooCommerce, Elementor, Rank Math, WPCode)
 - Troubleshooting guides

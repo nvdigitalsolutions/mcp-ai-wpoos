@@ -259,7 +259,7 @@ For administrators wanting to migrate:
 
 - [Remote Sites System](../MIGRATION_STATUS.md) - Original migration tracking
 - [Connection Migration Analysis](../CONNECTION_MIGRATION_ANALYSIS.md) - Migration planning
-- [Tool Reference](../docs/tool-reference.md) - All 65+ tools documented
+- [Tool Reference](../docs/tool-reference.md) - All 519 tools documented
 
 ## Status: Production Ready ✅
 

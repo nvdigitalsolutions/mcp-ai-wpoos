@@ -21,6 +21,32 @@ class WP_MCP_AI_Federation_Settings {
 	 */
 	public function __construct() {
 		add_action( 'admin_init', array( $this, 'register_settings' ), 20 );
+		add_action( 'update_option_' . WP_MCP_AI_Admin_Settings::OPTION_NAME, array( $this, 'maybe_flush_rewrite_rules' ), 10, 2 );
+	}
+
+	/**
+	 * Flush rewrite rules when federation settings change.
+	 *
+	 * This ensures the well-known endpoints and AI Peers CPT menu appears
+	 * immediately after enabling federation features, without requiring a
+	 * manual flush or page refresh.
+	 *
+	 * @param array $old_value Old settings value.
+	 * @param array $new_value New settings value.
+	 */
+	public function maybe_flush_rewrite_rules( $old_value, $new_value ) {
+		// Check if either federation setting changed.
+		$old_federation_enabled = ! empty( $old_value['enable_federation'] );
+		$new_federation_enabled = ! empty( $new_value['enable_federation'] );
+
+		$old_directory_enabled = ! empty( $old_value['enable_federation_directory'] );
+		$new_directory_enabled = ! empty( $new_value['enable_federation_directory'] );
+
+		// If either setting changed, flush rewrite rules.
+		if ( $old_federation_enabled !== $new_federation_enabled ||
+			$old_directory_enabled !== $new_directory_enabled ) {
+			flush_rewrite_rules();
+		}
 	}
 
 	/**
@@ -37,14 +63,6 @@ class WP_MCP_AI_Federation_Settings {
 
 		add_settings_field(
 			'enable_federation',
-			__( 'Enable Federation', 'mcp-ai-wpoos' ),
-			array( $this, 'render_enable_federation_field' ),
-			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
-			'wp_mcp_ai_federation_section'
-		);
-
-		add_settings_field(
-			'enable_federation_directory',
 			__( 'Enable Directory Service', 'mcp-ai-wpoos' ),
 			array( $this, 'render_enable_directory_field' ),
 			WP_MCP_AI_Admin_Settings::PAGE_SLUG,
@@ -102,10 +120,11 @@ class WP_MCP_AI_Federation_Settings {
 		<?php
 	}
 
+
 	/**
-	 * Render enable federation checkbox.
+	 * Render enable directory checkbox.
 	 */
-	public function render_enable_federation_field() {
+	public function render_enable_directory_field() {
 		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 		$enabled  = isset( $settings['enable_federation'] ) ? (bool) $settings['enable_federation'] : false;
 		?>
@@ -113,28 +132,6 @@ class WP_MCP_AI_Federation_Settings {
 			<input
 				type="checkbox"
 				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings::OPTION_NAME ); ?>[enable_federation]"
-				value="1"
-				<?php checked( $enabled ); ?>
-			/>
-			<?php esc_html_e( 'Enable federation well-known endpoints', 'mcp-ai-wpoos' ); ?>
-		</label>
-		<p class="description">
-			<?php esc_html_e( 'Publishes /.well-known/ai-peer and /.well-known/jwks.json endpoints for peer discovery.', 'mcp-ai-wpoos' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Render enable directory checkbox.
-	 */
-	public function render_enable_directory_field() {
-		$settings = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-		$enabled  = isset( $settings['enable_federation_directory'] ) ? (bool) $settings['enable_federation_directory'] : false;
-		?>
-		<label>
-			<input
-				type="checkbox"
-				name="<?php echo esc_attr( WP_MCP_AI_Admin_Settings::OPTION_NAME ); ?>[enable_federation_directory]"
 				value="1"
 				<?php checked( $enabled ); ?>
 			/>

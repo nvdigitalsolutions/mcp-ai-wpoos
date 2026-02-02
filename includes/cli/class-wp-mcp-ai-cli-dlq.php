@@ -188,7 +188,7 @@ class WP_MCP_AI_CLI_DLQ {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function retry( $args, $assoc_args ) {
+	public function retry( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for CLI flags.
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 			WP_CLI::error( 'Dead Letter Queue class not found.' );
 		}
@@ -231,7 +231,7 @@ class WP_MCP_AI_CLI_DLQ {
 	 * @param array $args       Positional arguments.
 	 * @param array $assoc_args Associative arguments.
 	 */
-	public function dismiss( $args, $assoc_args ) {
+	public function dismiss( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for CLI flags.
 		if ( ! class_exists( 'WP_MCP_AI_Dead_Letter_Queue' ) ) {
 			WP_CLI::error( 'Dead Letter Queue class not found.' );
 		}

@@ -251,10 +251,13 @@ class WP_MCP_AI_Performance_Benchmark {
 			return;
 		}
 
-		do_action( 'qm/debug', array(
-			'label' => 'NV oOS: ' . $label,
-			'data'  => $data,
-		) );
+		do_action(
+			'qm/debug',
+			array(
+				'label' => 'NV oOS: ' . $label,
+				'data'  => $data,
+			)
+		);
 	}
 
 	/**
@@ -290,15 +293,15 @@ class WP_MCP_AI_Performance_Benchmark {
 			);
 		}
 
-		$slow_queries     = array();
+		$slow_queries      = array();
 		$duplicate_queries = array();
-		$query_types      = array();
-		$total_time       = 0;
+		$query_types       = array();
+		$total_time        = 0;
 
 		// Analyze each query.
 		foreach ( $queries as $query ) {
-			$sql  = $query[0];
-			$time = $query[1];
+			$sql         = $query[0];
+			$time        = $query[1];
 			$total_time += $time;
 
 			// Check for slow queries (> 50ms).
@@ -310,13 +313,13 @@ class WP_MCP_AI_Performance_Benchmark {
 			}
 
 			// Track query types.
-			$type = strtoupper( strtok( $sql, ' ' ) );
+			$type                 = strtoupper( strtok( $sql, ' ' ) );
 			$query_types[ $type ] = ( $query_types[ $type ] ?? 0 ) + 1;
 
 			// Check for duplicates.
 			$hash = md5( $sql );
 			if ( isset( $duplicate_queries[ $hash ] ) ) {
-				$duplicate_queries[ $hash ]['count']++;
+				++$duplicate_queries[ $hash ]['count'];
 			} else {
 				$duplicate_queries[ $hash ] = array(
 					'sql'   => $sql,
@@ -326,9 +329,12 @@ class WP_MCP_AI_Performance_Benchmark {
 		}
 
 		// Filter out non-duplicates.
-		$duplicate_queries = array_filter( $duplicate_queries, function( $item ) {
-			return $item['count'] > 1;
-		} );
+		$duplicate_queries = array_filter(
+			$duplicate_queries,
+			function ( $item ) {
+				return $item['count'] > 1;
+			}
+		);
 
 		return array(
 			'total_queries'     => count( $queries ),
@@ -347,7 +353,7 @@ class WP_MCP_AI_Performance_Benchmark {
 	 * @return string HTML report.
 	 */
 	public static function generate_report() {
-		$summary = self::get_summary();
+		$summary        = self::get_summary();
 		$query_analysis = self::analyze_queries();
 
 		ob_start();
@@ -413,7 +419,7 @@ class WP_MCP_AI_Performance_Benchmark {
 		$info['wp_mcp_ai_performance'] = array(
 			'label'  => __( 'NV oOS Performance', 'mcp-ai-wpoos' ),
 			'fields' => array(
-				'benchmarks_count' => array(
+				'benchmarks_count'   => array(
 					'label' => __( 'Total Benchmarks', 'mcp-ai-wpoos' ),
 					'value' => $summary['total_benchmarks'],
 				),
@@ -421,7 +427,7 @@ class WP_MCP_AI_Performance_Benchmark {
 					'label' => __( 'Average Execution Time', 'mcp-ai-wpoos' ),
 					'value' => number_format( $summary['avg_time'], 3 ) . 's',
 				),
-				'peak_memory' => array(
+				'peak_memory'        => array(
 					'label' => __( 'Peak Memory Usage', 'mcp-ai-wpoos' ),
 					'value' => size_format( $summary['peak_memory'] ),
 				),

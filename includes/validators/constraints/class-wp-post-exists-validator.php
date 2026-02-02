@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * WordPress Post Exists Validator
  *
@@ -6,6 +6,7 @@
  *
  * @package WP_MCP_AI
  */
+
 
 namespace WP_MCP_AI\Validators\Constraints;
 
@@ -27,9 +28,12 @@ class WPPostExistsValidator extends ConstraintValidator {
 	 * @param mixed      $value      The value to validate (post ID).
 	 * @param Constraint $constraint The constraint.
 	 * @return void
+	 * @throws UnexpectedTypeException If constraint is not a WPPostExists instance.
+	 * @throws UnexpectedValueException If value is not an integer.
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPPostExists ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- Class name constant, not user input.
 			throw new UnexpectedTypeException( $constraint, WPPostExists::class );
 		}
 
@@ -39,6 +43,7 @@ class WPPostExistsValidator extends ConstraintValidator {
 		}
 
 		if ( ! is_numeric( $value ) && ! is_int( $value ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- String literal, not user input.
 			throw new UnexpectedValueException( $value, 'integer' );
 		}
 

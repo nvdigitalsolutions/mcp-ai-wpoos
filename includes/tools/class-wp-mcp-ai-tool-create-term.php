@@ -184,8 +184,8 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 		);
 
 		$response = array(
-			'message'     => $summary_text, // Chat client display
-			'summary'     => $summary_text, // Backward compatibility
+			'message'     => $summary_text, // Chat client display.
+			'summary'     => $summary_text, // Backward compatibility.
 			'term_id'     => $term->term_id,
 			'name'        => $term->name,
 			'slug'        => $term->slug,
@@ -234,17 +234,11 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -262,7 +256,6 @@ class WP_MCP_AI_Tool_Create_Term implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

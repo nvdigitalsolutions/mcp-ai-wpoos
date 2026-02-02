@@ -172,7 +172,7 @@ class WP_MCP_AI_Tool_Export_Registrations_To_Excel implements WP_MCP_AI_Tool_Int
 							break;
 						case 'status':
 							$statuses = wp_get_post_terms( $registration->ID, 'mcp_ai_reg_status' );
-							$row[] = ! empty( $statuses ) && ! is_wp_error( $statuses ) ? $statuses[0]->name : '';
+							$row[]    = ! empty( $statuses ) && ! is_wp_error( $statuses ) ? $statuses[0]->name : '';
 							break;
 						default:
 							$row[] = get_post_meta( $registration->ID, $field, true );

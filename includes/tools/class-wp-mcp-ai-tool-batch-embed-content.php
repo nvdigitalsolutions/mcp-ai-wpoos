@@ -183,8 +183,8 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 				'estimated_cost' => 0,
 				'model'          => $model,
 				'provider'       => $provider,
-				'message'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Chat client display
-				'summary'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Backward compatibility
+				'message'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Chat client display.
+				'summary'        => __( 'No posts found to process.', 'mcp-ai-wpoos' ), // Backward compatibility.
 			);
 		}
 
@@ -266,34 +266,32 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 
 			if ( is_wp_error( $batch_result ) ) {
 				$errors = count( $texts );
-			} else {
+			} elseif ( isset( $batch_result['embeddings'] ) && is_array( $batch_result['embeddings'] ) ) {
 				// Process results and store embeddings.
-				if ( isset( $batch_result['embeddings'] ) && is_array( $batch_result['embeddings'] ) ) {
-					foreach ( $batch_result['embeddings'] as $index => $embedding ) {
-						if ( ! isset( $post_mapping[ $index ] ) ) {
-							continue;
-						}
+				foreach ( $batch_result['embeddings'] as $index => $embedding ) {
+					if ( ! isset( $post_mapping[ $index ] ) ) {
+						continue;
+					}
 
-						$post_id       = $post_mapping[ $index ]['post_id'];
-						$text_to_embed = $post_mapping[ $index ]['text'];
+					$post_id       = $post_mapping[ $index ]['post_id'];
+					$text_to_embed = $post_mapping[ $index ]['text'];
 
-						if ( $store_in_meta && isset( $embedding['values'] ) ) {
-							$embeddings_data = array(
-								'embeddings' => array(
-									array(
-										'embedding' => $embedding['values'],
-										'index'     => 0,
-									),
+					if ( $store_in_meta && isset( $embedding['values'] ) ) {
+						$embeddings_data = array(
+							'embeddings' => array(
+								array(
+									'embedding' => $embedding['values'],
+									'index'     => 0,
 								),
-								'model'      => $model,
-								'provider'   => 'gemini',
-								'created_at' => gmdate( 'Y-m-d H:i:s' ),
-								'text_hash'  => md5( $text_to_embed ),
-							);
+							),
+							'model'      => $model,
+							'provider'   => 'gemini',
+							'created_at' => gmdate( 'Y-m-d H:i:s' ),
+							'text_hash'  => md5( $text_to_embed ),
+						);
 
-							update_post_meta( $post_id, '_wp_mcp_ai_embeddings', $embeddings_data );
-							++$embedded;
-						}
+						update_post_meta( $post_id, '_wp_mcp_ai_embeddings', $embeddings_data );
+						++$embedded;
 					}
 				}
 			}
@@ -451,17 +449,11 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -479,7 +471,6 @@ class WP_MCP_AI_Tool_Batch_Embed_Content implements WP_MCP_AI_Tool_Interface, WP
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

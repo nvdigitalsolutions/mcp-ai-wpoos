@@ -178,9 +178,10 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 		$where_values[] = $offset;
 
 		if ( ! empty( $where_values ) ) {
-			$query = $wpdb->prepare( $query, $where_values );
+			$query = $wpdb->prepare( $query, $where_values ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$subscribers = $wpdb->get_results( $query );
 
 		// Get total count.
@@ -188,9 +189,10 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 		if ( count( $where_values ) > 2 ) { // Exclude limit and offset from count query.
 			$count_where_values = array_slice( $where_values, 0, -2 );
 			if ( ! empty( $count_where_values ) ) {
-				$count_query = $wpdb->prepare( $count_query, $count_where_values );
+				$count_query = $wpdb->prepare( $count_query, $count_where_values ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$total = (int) $wpdb->get_var( $count_query );
 
 		// Format subscribers.
@@ -234,17 +236,11 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -262,7 +258,6 @@ class WP_MCP_AI_Tool_Newsletter_Get_Subscribers implements WP_MCP_AI_Tool_Interf
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

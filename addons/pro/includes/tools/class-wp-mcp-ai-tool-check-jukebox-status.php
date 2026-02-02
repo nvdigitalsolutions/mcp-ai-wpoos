@@ -106,7 +106,7 @@ class WP_MCP_AI_Tool_Check_Jukebox_Status implements WP_MCP_AI_Tool_Interface, W
 				'step_2' => __( 'Clone the Jukebox repository: git clone https://github.com/openai/jukebox.git', 'mcp-ai-wpoos-pro' ),
 				'step_3' => __( 'Install Jukebox dependencies: pip install -r jukebox/requirements.txt', 'mcp-ai-wpoos-pro' ),
 				'step_4' => __( 'Install additional dependencies: pip install mpi4py av', 'mcp-ai-wpoos-pro' ),
-				'step_5' => __( 'Configure the installation path in WP oOS settings (Settings → WP oOS → Tools → Jukebox).', 'mcp-ai-wpoos-pro' ),
+				'step_5' => __( 'Configure the installation path in NV oOS settings (Settings → NV oOS → Tools → Jukebox).', 'mcp-ai-wpoos-pro' ),
 				'note'   => __( 'Jukebox requires significant GPU resources (CUDA-capable GPU with 16GB+ VRAM recommended).', 'mcp-ai-wpoos-pro' ),
 			);
 		} else {

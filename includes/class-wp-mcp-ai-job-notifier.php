@@ -368,7 +368,7 @@ class WP_MCP_AI_Job_Notifier {
 	 * @param string $event_type Event type.
 	 * @return string SSE event name.
 	 */
-	protected static function get_sse_event_name_for_job( $job_id, $event_type ) {
+	protected static function get_sse_event_name_for_job( $job_id, $event_type ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for event type routing.
 		// Check if this is a crawl4ai job.
 		if ( strpos( $job_id, 'crawl' ) === 0 || strpos( $job_id, 'crawl4ai' ) === 0 ) {
 			return 'crawl4ai_job_status_update';
@@ -383,11 +383,11 @@ class WP_MCP_AI_Job_Notifier {
 		$cached_status = self::get_job_status( $job_id );
 		if ( $cached_status && isset( $cached_status['metadata']['tool'] ) ) {
 			$tool = $cached_status['metadata']['tool'];
-			
+
 			if ( 'run_crawl4ai_job' === $tool || 'crawl4ai' === $tool ) {
 				return 'crawl4ai_job_status_update';
 			}
-			
+
 			if ( 'create_cron_job' === $tool || strpos( $tool, 'cron' ) !== false ) {
 				return 'cron_job_status_update';
 			}
@@ -504,7 +504,7 @@ class WP_MCP_AI_Job_Notifier {
 			'estimated_remaining'  => $estimated_remaining,
 			'estimated_total'      => isset( $estimated_total ) ? $estimated_total : null,
 			'sla_compliance'       => self::calculate_sla_compliance( $elapsed_time, $estimated_remaining, $sla_target ),
-			'predicted_completion' => date( 'c', $current_time + $estimated_remaining ),
+			'predicted_completion' => date( 'c', $current_time + $estimated_remaining ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- Intentional use for ISO 8601 timestamp display.
 		);
 
 		return $status;

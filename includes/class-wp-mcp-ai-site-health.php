@@ -118,33 +118,36 @@ class WP_MCP_AI_Site_Health {
 
 		// Test OpenAI.
 		if ( ! empty( $openai_key ) ) {
-			$providers_configured++;
+			++$providers_configured;
 			$openai_test = $this->test_openai_connection( $openai_key );
 			if ( $openai_test['success'] ) {
-				$providers_working++;
+				++$providers_working;
 			} else {
+				/* translators: %s: OpenAI error message */
 				$issues[] = sprintf( __( 'OpenAI: %s', 'mcp-ai-wpoos' ), $openai_test['message'] );
 			}
 		}
 
 		// Test Gemini.
 		if ( ! empty( $gemini_key ) ) {
-			$providers_configured++;
+			++$providers_configured;
 			$gemini_test = $this->test_gemini_connection( $gemini_key );
 			if ( $gemini_test['success'] ) {
-				$providers_working++;
+				++$providers_working;
 			} else {
+				/* translators: %s: Gemini error message */
 				$issues[] = sprintf( __( 'Gemini: %s', 'mcp-ai-wpoos' ), $gemini_test['message'] );
 			}
 		}
 
 		// Test Ollama.
 		if ( ! empty( $ollama_url ) ) {
-			$providers_configured++;
+			++$providers_configured;
 			$ollama_test = $this->test_ollama_connection( $ollama_url );
 			if ( $ollama_test['success'] ) {
-				$providers_working++;
+				++$providers_working;
 			} else {
+				/* translators: %s: Ollama error message */
 				$issues[] = sprintf( __( 'Ollama: %s', 'mcp-ai-wpoos' ), $ollama_test['message'] );
 			}
 		}
@@ -158,7 +161,7 @@ class WP_MCP_AI_Site_Health {
 				'<p>%s</p>',
 				__( 'You need to configure at least one AI provider (OpenAI, Gemini, or Ollama) for the NV oOS plugin to function.', 'mcp-ai-wpoos' )
 			);
-			$result['actions'] = sprintf(
+			$result['actions']     = sprintf(
 				'<p><a href="%s">%s</a></p>',
 				esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ),
 				__( 'Configure AI Providers', 'mcp-ai-wpoos' )
@@ -189,7 +192,7 @@ class WP_MCP_AI_Site_Health {
 				__( 'All configured AI providers are experiencing issues:', 'mcp-ai-wpoos' ),
 				implode( '</li><li>', array_map( 'esc_html', $issues ) )
 			);
-			$result['actions'] = sprintf(
+			$result['actions']     = sprintf(
 				'<p><a href="%s">%s</a></p>',
 				esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ),
 				__( 'Check AI Provider Settings', 'mcp-ai-wpoos' )
@@ -312,7 +315,7 @@ class WP_MCP_AI_Site_Health {
 				'<p>%s</p>',
 				__( 'Create AI assistants to start using the NV oOS plugin.', 'mcp-ai-wpoos' )
 			);
-			$result['actions'] = sprintf(
+			$result['actions']     = sprintf(
 				'<p><a href="%s">%s</a></p>',
 				esc_url( admin_url( 'post-new.php?post_type=mcp_ai_assistant' ) ),
 				__( 'Create Assistant', 'mcp-ai-wpoos' )
@@ -493,7 +496,7 @@ class WP_MCP_AI_Site_Health {
 		);
 
 		// Assistant count.
-		$assistants = wp_count_posts( 'mcp_ai_assistant' );
+		$assistants                = wp_count_posts( 'mcp_ai_assistant' );
 		$fields['assistant_count'] = array(
 			'label' => __( 'Assistants Created', 'mcp-ai-wpoos' ),
 			'value' => isset( $assistants->publish ) ? $assistants->publish : 0,

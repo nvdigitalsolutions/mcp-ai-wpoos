@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			// Chat interaction events.
-			if ( $type === 'chat_interaction' ) {
+			if ( 'chat_interaction' === $type ) {
 				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
 			}
 
@@ -667,7 +667,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 		 * @param mixed $value Raw value.
 		 * @return string
 		 */
-		protected static function redact_sensitive_value( $value ) {
+		protected static function redact_sensitive_value( $value ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for context-aware redaction.
 			return '[redacted]';
 		}
 

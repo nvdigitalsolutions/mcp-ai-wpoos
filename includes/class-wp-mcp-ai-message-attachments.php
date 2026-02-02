@@ -961,7 +961,7 @@ if ( ! class_exists( 'WP_MCP_AI_Message_Attachments' ) ) {
 			}
 
 			$post = get_post( $attachment_id );
-			if ( $post && (int) $post->post_author === get_current_user_id() ) {
+			if ( $post && get_current_user_id() === (int) $post->post_author ) {
 				return true;
 			}
 

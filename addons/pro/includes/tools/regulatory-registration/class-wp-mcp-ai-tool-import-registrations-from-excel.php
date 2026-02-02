@@ -54,14 +54,14 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 					'type'        => 'object',
 					'description' => __( 'Map Excel columns to registration fields (required)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'product_name'      => array( 'type' => 'string' ),
-						'country'           => array( 'type' => 'string' ),
-						'authority'         => array( 'type' => 'string' ),
-						'cos_number'        => array( 'type' => 'string' ),
-						'submission_date'   => array( 'type' => 'string' ),
-						'approval_date'     => array( 'type' => 'string' ),
-						'expiry_date'       => array( 'type' => 'string' ),
-						'status'            => array( 'type' => 'string' ),
+						'product_name'    => array( 'type' => 'string' ),
+						'country'         => array( 'type' => 'string' ),
+						'authority'       => array( 'type' => 'string' ),
+						'cos_number'      => array( 'type' => 'string' ),
+						'submission_date' => array( 'type' => 'string' ),
+						'approval_date'   => array( 'type' => 'string' ),
+						'expiry_date'     => array( 'type' => 'string' ),
+						'status'          => array( 'type' => 'string' ),
 					),
 				),
 				'auto_link_products' => array(
@@ -153,12 +153,12 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 
 			// Map fields.
 			$registration_data = array();
-			$col_index = 0;
+			$col_index         = 0;
 			foreach ( $field_mapping as $field => $column ) {
 				if ( isset( $row_data[ $col_index ] ) ) {
 					$registration_data[ $field ] = sanitize_text_field( $row_data[ $col_index ] );
 				}
-				$col_index++;
+				++$col_index;
 			}
 
 			// Validate required fields.
@@ -182,12 +182,12 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 
 			// Create registration.
 			$post_title = sprintf( '%s - %s', $registration_data['product_name'], $registration_data['country'] );
-			$post_id = wp_insert_post(
+			$post_id    = wp_insert_post(
 				array(
-					'post_title'   => $post_title,
-					'post_type'    => 'mcp_ai_registration',
-					'post_status'  => 'publish',
-					'post_author'  => $current_user_id,
+					'post_title'  => $post_title,
+					'post_type'   => 'mcp_ai_registration',
+					'post_status' => 'publish',
+					'post_author' => $current_user_id,
 				)
 			);
 
@@ -230,7 +230,7 @@ class WP_MCP_AI_Tool_Import_Registrations_From_Excel implements WP_MCP_AI_Tool_I
 				}
 			}
 
-			$imported++;
+			++$imported;
 		}
 
 		return array(

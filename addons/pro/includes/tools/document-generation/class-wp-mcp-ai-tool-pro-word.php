@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'pro_word';
+		return 'pro_word_document';
 	}
 
 	/**
@@ -336,7 +336,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated Word document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -412,7 +412,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated structured Word document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -488,7 +488,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated formatted Word document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -567,7 +567,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 				/* translators: 1: template type, 2: document title */
 				__( 'Generated %1$s document: %2$s', 'mcp-ai-wpoos' ),
 				str_replace( '_', ' ', $template ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -625,7 +625,7 @@ class WP_MCP_AI_Tool_Pro_Word implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Too
 	 */
 	protected function generate_word_document( array $document_data, array $arguments, array $context ) {
 		// Convert content to HTML for improved formatting.
-		$html_content = $this->convert_to_html( $document_data );
+		$html_content                  = $this->convert_to_html( $document_data );
 		$document_data['html_content'] = $html_content;
 
 		// Create temporary file for document output.
@@ -1175,13 +1175,11 @@ JAVASCRIPT;
 		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
-		} else {
+		} elseif ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
 			// Try to find JSON object directly.
-			if ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
-				$json_str = $matches[0];
-			} else {
-				return false;
-			}
+			$json_str = $matches[0];
+		} else {
+			return false;
 		}
 
 		$parsed = json_decode( $json_str, true );

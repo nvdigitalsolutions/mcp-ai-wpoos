@@ -190,7 +190,7 @@ class WP_MCP_AI_Tool_Analyze_Video implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		$provider = is_array( $api_response ) && isset( $api_response['provider'] ) ? $api_response['provider'] : $default_provider;
 
 		// Generate descriptive message.
-		$message = $analysis_type === 'general'
+		$message = 'general' === $analysis_type
 			? __( 'Video analysis completed.', 'mcp-ai-wpoos' )
 			: sprintf(
 				/* translators: %s: analysis type */
@@ -372,17 +372,11 @@ Be thorough and include specific observations.',
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -400,7 +394,6 @@ Be thorough and include specific observations.',
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

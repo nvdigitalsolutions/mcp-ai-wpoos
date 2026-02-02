@@ -1,9 +1,10 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Tool returning recent WooCommerce orders.
  *
  * @package WP_MCP_AI
  */
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -124,7 +125,11 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$results = array();
 
 		foreach ( $orders as $order ) {
-			/** @var WC_Order $order */
+			/**
+			 * WooCommerce order object.
+			 *
+			 * @var WC_Order $order
+			 */
 			$results[] = array(
 				'id'            => $order->get_id(),
 				'order_number'  => $order->get_order_number(),
@@ -144,8 +149,8 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		);
 
 		return array(
-			'message' => $summary_text, // Chat client display
-			'summary' => $summary_text, // Backward compatibility
+			'message' => $summary_text, // Chat client display.
+			'summary' => $summary_text, // Backward compatibility.
 			'orders'  => $results,
 			'count'   => count( $results ),
 		);
@@ -155,17 +160,11 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -183,7 +182,6 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

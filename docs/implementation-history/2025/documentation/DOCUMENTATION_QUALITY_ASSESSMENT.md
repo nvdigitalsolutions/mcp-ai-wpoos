@@ -53,7 +53,7 @@ The Open Operator System (NV oOS) plugin demonstrates **excellent documentation 
 
 **Outstanding features:**
 - ✅ Detailed README with 1,027 lines covering all aspects
-- ✅ 65+ tools fully documented with examples
+- ✅ 519 tools fully documented with examples
 - ✅ Complete REST API reference with payloads
 - ✅ Step-by-step setup guides for multiple scenarios
 - ✅ Security policies and best practices documented
@@ -369,7 +369,7 @@ Long-term:
 **File:** tool-reference.md (24KB)
 
 **Strengths:**
-- ✅ All 65+ tools documented
+- ✅ All 519 tools documented
 - ✅ Clear categorization
 - ✅ Parameter descriptions
 - ✅ Dependency requirements

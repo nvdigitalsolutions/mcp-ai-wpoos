@@ -243,19 +243,19 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			}
 
 			$formatted_jobs[] = array(
-				'hook'                => $job['hook'],
-				'args'                => $job['args'],
-				'schedule'            => $schedule,
-				'is_active'           => $is_active,
-				'is_recurring'        => $is_recurring,
-				'was_executed'        => $was_executed,
-				'next_run'            => $next_run,
-				'next_run_formatted'  => $next_run ? wp_date( 'Y-m-d H:i:s T', $next_run ) : null,
-				'creator'             => $creator,
+				'hook'                 => $job['hook'],
+				'args'                 => $job['args'],
+				'schedule'             => $schedule,
+				'is_active'            => $is_active,
+				'is_recurring'         => $is_recurring,
+				'was_executed'         => $was_executed,
+				'next_run'             => $next_run,
+				'next_run_formatted'   => $next_run ? wp_date( 'Y-m-d H:i:s T', $next_run ) : null,
+				'creator'              => $creator,
 				'created_at_formatted' => isset( $job['created_at'] ) && $job['created_at'] ? wp_date( 'Y-m-d H:i:s T', (int) $job['created_at'] ) : __( 'Unknown', 'mcp-ai-wpoos' ),
-				'job_id'              => $job['job_id'],
-				'delete_nonce'        => wp_create_nonce( 'wp_mcp_ai_delete_cron_' . $job['job_id'] ),
-				'first_timestamp'     => $first_timestamp,
+				'job_id'               => $job['job_id'],
+				'delete_nonce'         => wp_create_nonce( 'wp_mcp_ai_delete_cron_' . $job['job_id'] ),
+				'first_timestamp'      => $first_timestamp,
 			);
 		}
 
@@ -363,6 +363,7 @@ class WP_MCP_AI_Admin_Cron_Manager {
 			// Nonce verification not required as this is a read-only display of status after redirect.
 			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
 			if ( isset( $_GET['updated'] ) ) :
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for admin notice display.
 				$updated = sanitize_key( wp_unslash( $_GET['updated'] ) );
 				if ( '1' === $updated ) :
 					?>

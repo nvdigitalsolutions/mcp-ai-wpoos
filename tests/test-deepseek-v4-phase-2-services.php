@@ -165,7 +165,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 		$predictor = new WP_MCP_AI_Tool_Chain_Predictor();
 
 		$available_tools = array( 'search_content', 'get_post', 'get_recent_posts' );
-		$predicted = $predictor->predict_tool_chain( 'search for posts', array(), $available_tools );
+		$predicted       = $predictor->predict_tool_chain( 'search for posts', array(), $available_tools );
 
 		$this->assertIsArray( $predicted, 'Predicted chain should be an array' );
 
@@ -203,7 +203,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 		$sequential = $optimized['sequential'];
 		$tool_slugs = array();
 		foreach ( $sequential as $tool_info ) {
-			$tool_slug = is_array( $tool_info ) ? $tool_info['tool_slug'] : $tool_info;
+			$tool_slug    = is_array( $tool_info ) ? $tool_info['tool_slug'] : $tool_info;
 			$tool_slugs[] = $tool_slug;
 		}
 
@@ -225,7 +225,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 		$predictor->clear_history();
 
 		// Record a chain execution.
-		$chain = array( 'search_content', 'get_post' );
+		$chain   = array( 'search_content', 'get_post' );
 		$context = array( 'task_type' => 'research' );
 		$predictor->record_chain_execution( $chain, $context, true );
 
@@ -362,7 +362,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 
 		// Use reflection to check protected method.
 		$reflection = new ReflectionClass( $balancer );
-		$method = $reflection->getMethod( 'get_registry' );
+		$method     = $reflection->getMethod( 'get_registry' );
 		$method->setAccessible( true );
 
 		$registry = $method->invoke( $balancer );
@@ -383,7 +383,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 
 		// Use reflection to check protected method.
 		$reflection = new ReflectionClass( $predictor );
-		$method = $reflection->getMethod( 'get_registry' );
+		$method     = $reflection->getMethod( 'get_registry' );
 		$method->setAccessible( true );
 
 		$registry = $method->invoke( $predictor );
@@ -404,7 +404,7 @@ class Test_DeepSeek_V4_Phase_2_Services extends WP_UnitTestCase {
 
 		// Use reflection to check protected method.
 		$reflection = new ReflectionClass( $monitor );
-		$method = $reflection->getMethod( 'get_load_monitor' );
+		$method     = $reflection->getMethod( 'get_load_monitor' );
 		$method->setAccessible( true );
 
 		$load_monitor = $method->invoke( $monitor );

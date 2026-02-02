@@ -257,7 +257,7 @@ class WP_MCP_AI_HTTP_Helper {
 	 * @param string $url         The URL being requested (unused but part of filter signature).
 	 * @return bool True to allow the request, false to block it.
 	 */
-	public static function allow_private_network_requests( $is_external, $host, $url ) {
+	public static function allow_private_network_requests( $is_external, $host, $url ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 		// If WordPress already considers it external, keep that.
 		if ( $is_external ) {
 			return $is_external;

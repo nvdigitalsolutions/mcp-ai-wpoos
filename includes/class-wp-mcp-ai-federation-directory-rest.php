@@ -236,7 +236,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 	 * @param WP_REST_Request|null $request Request object.
 	 * @return bool|WP_Error True if user is logged in, WP_Error otherwise.
 	 */
-	public function check_user_permission( $request = null ) {
+	public function check_user_permission( $request = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error(
 				'rest_forbidden',
@@ -331,7 +331,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 
 		// Create or update the peer post.
 		$site_url  = isset( $data['site_url'] ) ? $data['site_url'] : '';
-		$site_name = isset( $data['site_name'] ) ? $data['site_name'] : parse_url( $wellknown_url, PHP_URL_HOST );
+		$site_name = isset( $data['site_name'] ) ? $data['site_name'] : wp_parse_url( $wellknown_url, PHP_URL_HOST );
 
 		// Check if peer already exists.
 		$existing_peer = $this->find_peer_by_wellknown_url( $wellknown_url );
@@ -409,6 +409,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
 				'posts_per_page'         => 1,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Necessary for peer lookup by wellknown URL.
 				'meta_query'             => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_WELLKNOWN_URL,
@@ -450,6 +451,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 		);
 
 		if ( 'all' !== $status ) {
+			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Necessary for filtering peers by health status.
 			$query_args['meta_query'] = array(
 				array(
 					'key'   => WP_MCP_AI_AI_Peer_CPT::META_HEALTH_STATUS,
@@ -520,6 +522,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 			array(
 				'post_type'              => WP_MCP_AI_AI_Peer_CPT::POST_TYPE,
 				'posts_per_page'         => -1,
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Necessary for filtering healthy peers for routing.
 				'meta_query'             => array(
 					array(
 						'key'   => WP_MCP_AI_AI_Peer_CPT::META_HEALTH_STATUS,
@@ -627,7 +630,7 @@ class WP_MCP_AI_Federation_Directory_REST {
 	 * @param float  $max_price Max price threshold (reserved for future use).
 	 * @return float Score (0-100).
 	 */
-	protected function calculate_peer_score( $peer_data, $region, $data_tag, $max_price ) {
+	protected function calculate_peer_score( $peer_data, $region, $data_tag, $max_price ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Reserved for future pricing logic.
 		$score = 50.0; // Base score.
 
 		// Region match bonus.

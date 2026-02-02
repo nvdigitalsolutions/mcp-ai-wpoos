@@ -29,7 +29,7 @@ class Test_Architectural_Design_Submenu_Registration extends WP_UnitTestCase {
 		$this->original_settings = get_option( 'wp_mcp_ai_settings', array() );
 
 		// Enable architectural design toolkit.
-		$settings                                      = $this->original_settings;
+		$settings                                        = $this->original_settings;
 		$settings['enable_architectural_design_toolkit'] = true;
 		update_option( 'wp_mcp_ai_settings', $settings );
 

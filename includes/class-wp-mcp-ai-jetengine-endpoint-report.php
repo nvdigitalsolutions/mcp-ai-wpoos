@@ -299,11 +299,13 @@ class WP_MCP_AI_JetEngine_Endpoint_Report {
 /**
  * Public helper for retrieving the JetEngine endpoint report.
  *
+ * @since 1.1.0
+ *
  * @return array{
  *     routes: array<string, array<string, array<int, array{route: string, method: string, description: string}>>>,
  *     coverage: array<string, array<string, bool>>,
  *     missing: array<string, array<int, string>>
- * }
+ * } The JetEngine endpoint report.
  */
 function wp_mcp_ai_get_jetengine_endpoint_report() {
 	return WP_MCP_AI_JetEngine_Endpoint_Report::get_report();

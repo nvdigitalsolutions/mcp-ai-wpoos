@@ -600,7 +600,7 @@ The mesh request simply forwards the chat payload to the peer site's `/chat` end
 
 - [MCP Server Authentication](../../reference/api/mcp-server-authentication.md) - Authentication reference including Auth0, bearer tokens, and nonces
 - [Simple JWT Login Integration](../../reference/api/authentication.md) - Optional JWT authentication integration
-- [Tool Reference](../../reference/tools/tool-reference.md) - All 65+ built-in tools including `query_remote_site`
+- [Tool Reference](../../reference/tools/tool-reference.md) - All 519 built-in tools including `query_remote_site`
 - [REST API Documentation](../../reference/api/rest-api.md) - REST endpoint specifications
 - [Orchestration Layer Architecture](../../architecture/orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md) - Distributed orchestration design
 - [Remote Client Setup](../../getting-started/installation-setup/remote-client-setup.md) - Connecting external MCP clients

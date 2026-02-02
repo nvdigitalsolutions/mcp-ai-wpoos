@@ -344,9 +344,9 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 	 */
 	protected static function get_import_formats() {
 		return array(
-			'csv'   => 'CSV',
-			'xlsx'  => 'Excel',
-			'json'  => 'JSON',
+			'csv'  => 'CSV',
+			'xlsx' => 'Excel',
+			'json' => 'JSON',
 		);
 	}
 
@@ -387,7 +387,7 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 			$has_origin = ! empty( $meta['origin_country'][0] ?? '' );
 
 			if ( $has_brand && $has_inci && $has_origin ) {
-				$complete++;
+				++$complete;
 			} else {
 				if ( ! $has_brand ) {
 					$missing_items[] = sprintf( '%s: Missing brand', $product->post_title );
@@ -455,10 +455,10 @@ class WP_MCP_AI_Reg_Product_Research_Page {
 
 		// Check required fields (10 points each).
 		$required_fields = array(
-			'brand'              => __( 'Brand', 'mcp-ai-wpoos-pro' ),
-			'manufacturer'       => __( 'Manufacturer', 'mcp-ai-wpoos-pro' ),
-			'origin_country'     => __( 'Origin Country', 'mcp-ai-wpoos-pro' ),
-			'inci_ingredients'   => __( 'INCI Ingredients', 'mcp-ai-wpoos-pro' ),
+			'brand'            => __( 'Brand', 'mcp-ai-wpoos-pro' ),
+			'manufacturer'     => __( 'Manufacturer', 'mcp-ai-wpoos-pro' ),
+			'origin_country'   => __( 'Origin Country', 'mcp-ai-wpoos-pro' ),
+			'inci_ingredients' => __( 'INCI Ingredients', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $required_fields as $field => $label ) {

@@ -248,7 +248,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 
 			// Check POST data first (when form is being submitted), then fall back to GET.
 			// Use section-specific field name to avoid conflicts with other sections.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			// phpcs:disable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for UI state.
 			$subtab_field_name = 'subtab_' . $this->get_id();
 			if ( isset( $_POST[ $subtab_field_name ] ) ) {
 				$subtab = sanitize_key( $_POST[ $subtab_field_name ] );
@@ -258,6 +258,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Authentication' ) ) {
 			} elseif ( isset( $_GET['subtab'] ) ) {
 				$subtab = sanitize_key( $_GET['subtab'] );
 			}
+			// phpcs:enable WordPress.Security.NonceVerification.Missing,WordPress.Security.NonceVerification.Recommended
 
 			// Default to 'auth0' if not set or invalid.
 			if ( empty( $subtab ) || ! isset( $subtab_groups[ $subtab ] ) ) {

@@ -300,7 +300,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	 * @param string $version  Version string.
 	 * @return bool
 	 */
-	public static function maybe_suppress_route_warning( $trigger, $function = '', $message = '', $version = '' ) {
+	public static function maybe_suppress_route_warning( $trigger, $function = '', $message = '', $version = '' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 		if ( 'register_rest_route' === $function && false !== strpos( $message, '<code>jet-engine/v2</code>' ) ) {
 			return false;
 		}
@@ -607,7 +607,7 @@ class WP_MCP_AI_JetEngine_Tool_Handlers {
 	 * @param WP_REST_Server|null  $server  REST server instance.
 	 * @return mixed
 	 */
-	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) {
+	public static function maybe_authenticate_proxy_request( $result, $request = null, $server = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 		if ( ! $request instanceof WP_REST_Request ) {
 			return $result;
 		}

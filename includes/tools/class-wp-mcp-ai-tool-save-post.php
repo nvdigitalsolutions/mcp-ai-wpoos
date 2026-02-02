@@ -317,8 +317,8 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 		);
 
 		$response = array(
-			'message'   => $summary_text, // Chat client display
-			'summary'   => $summary_text, // Backward compatibility
+			'message'   => $summary_text, // Chat client display.
+			'summary'   => $summary_text, // Backward compatibility.
 			'ID'        => $updated_post->ID,
 			'title'     => get_the_title( $updated_post ),
 			'status'    => get_post_status( $updated_post ),
@@ -572,17 +572,11 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -600,7 +594,6 @@ class WP_MCP_AI_Tool_Save_Post implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_To
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

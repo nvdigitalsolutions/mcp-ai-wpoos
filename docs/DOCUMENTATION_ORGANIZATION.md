@@ -123,8 +123,10 @@ Total: 650+ files
 - SECURITY_COMPLIANCE_REPORT.md
 
 **Result**: 
-- Root directory now contains only 6 essential documentation files plus 2 supporting files (readme.txt, tool-status.txt)
+- Root directory now contains only 4 essential documentation files plus 1 supporting file (readme.txt)
+- tool-status.txt moved to docs/ directory for better organization
 - Implementation summaries properly grouped by year (2026)
+- Historical phase/status files archived in archive/ directory
 - Deployment and security documentation in appropriate subdirectories
 - No information lost
 - Cleaner, more maintainable root directory

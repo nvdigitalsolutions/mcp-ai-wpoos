@@ -53,44 +53,44 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'post_id'          => array(
+				'post_id'        => array(
 					'type'        => 'integer',
 					'description' => __( 'Post ID to categorize.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'content'          => array(
+				'content'        => array(
 					'type'        => 'string',
 					'description' => __( 'Post content to analyze (if post_id not provided).', 'mcp-ai-wpoos' ),
 				),
-				'title'            => array(
+				'title'          => array(
 					'type'        => 'string',
 					'description' => __( 'Post title to analyze (if post_id not provided).', 'mcp-ai-wpoos' ),
 				),
-				'auto_assign'      => array(
+				'auto_assign'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically assign suggested categories to the post.', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'min_confidence'   => array(
+				'min_confidence' => array(
 					'type'        => 'number',
 					'description' => __( 'Minimum confidence score (0-1) to suggest a category.', 'mcp-ai-wpoos' ),
 					'minimum'     => 0,
 					'maximum'     => 1,
 					'default'     => 0.6,
 				),
-				'max_categories'   => array(
+				'max_categories' => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of categories to suggest.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 					'maximum'     => 10,
 					'default'     => 3,
 				),
-				'taxonomy'         => array(
+				'taxonomy'       => array(
 					'type'        => 'string',
 					'description' => __( 'Taxonomy to use for categorization (default: category).', 'mcp-ai-wpoos' ),
 					'default'     => 'category',
 				),
-				'create_new'       => array(
+				'create_new'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Whether to create new categories if none match.', 'mcp-ai-wpoos' ),
 					'default'     => false,
@@ -107,17 +107,11 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -135,7 +129,6 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 
@@ -153,7 +146,11 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
@@ -233,11 +230,11 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 
 		// Build result.
 		$result = array(
-			'suggestions'    => $filtered_suggestions,
-			'all_scores'     => $suggestions,
-			'auto_assigned'  => $assigned,
-			'post_id'        => $content_data['post_id'] ?? null,
-			'taxonomy'       => $taxonomy,
+			'suggestions'   => $filtered_suggestions,
+			'all_scores'    => $suggestions,
+			'auto_assigned' => $assigned,
+			'post_id'       => $content_data['post_id'] ?? null,
+			'taxonomy'      => $taxonomy,
 		);
 
 		// Cache result if not auto-assigning.
@@ -367,7 +364,7 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 		try {
 			$response = $client->complete(
 				array(
-					'messages' => array(
+					'messages'    => array(
 						array(
 							'role'    => 'user',
 							'content' => $prompt,
@@ -406,17 +403,17 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	private function build_analysis_prompt( $content_data, $categories ) {
 		$category_list = array();
 		foreach ( $categories as $cat ) {
-			$desc = ! empty( $cat['description'] ) ? ' - ' . $cat['description'] : '';
+			$desc            = ! empty( $cat['description'] ) ? ' - ' . $cat['description'] : '';
 			$category_list[] = "- {$cat['name']} (ID: {$cat['id']}){$desc}";
 		}
 
-		$prompt = "Analyze the following content and suggest the most relevant categories from the available list.\n\n";
+		$prompt  = "Analyze the following content and suggest the most relevant categories from the available list.\n\n";
 		$prompt .= "Title: {$content_data['title']}\n\n";
 		$prompt .= "Content:\n{$content_data['content']}\n\n";
 		$prompt .= "Available Categories:\n" . implode( "\n", $category_list ) . "\n\n";
 		$prompt .= "Respond in JSON format with an array of objects containing 'id', 'name', and 'confidence' (0-1).\n";
 		$prompt .= "Only suggest categories that are truly relevant to the content.\n";
-		$prompt .= "Example: [{\"id\": 5, \"name\": \"Technology\", \"confidence\": 0.95}]";
+		$prompt .= 'Example: [{"id": 5, "name": "Technology", "confidence": 0.95}]';
 
 		return $prompt;
 	}
@@ -431,15 +428,18 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	private function parse_ai_response( $response, $categories ) {
 		// Extract JSON from response.
 		if ( preg_match( '/\[[\s\S]*\]/', $response, $matches ) ) {
-			$json = $matches[0];
+			$json        = $matches[0];
 			$suggestions = json_decode( $json, true );
 
 			if ( json_last_error() === JSON_ERROR_NONE && is_array( $suggestions ) ) {
 				// Validate suggestions against available categories.
 				$valid_ids = wp_list_pluck( $categories, 'id' );
-				return array_filter( $suggestions, function( $suggestion ) use ( $valid_ids ) {
-					return isset( $suggestion['id'] ) && in_array( $suggestion['id'], $valid_ids, true );
-				} );
+				return array_filter(
+					$suggestions,
+					function ( $suggestion ) use ( $valid_ids ) {
+						return isset( $suggestion['id'] ) && in_array( $suggestion['id'], $valid_ids, true );
+					}
+				);
 			}
 		}
 
@@ -457,14 +457,20 @@ class WP_MCP_AI_Tool_Auto_Categorize_Content implements WP_MCP_AI_Tool_Interface
 	 */
 	private function filter_suggestions( $suggestions, $min_confidence, $max_categories ) {
 		// Filter by confidence.
-		$filtered = array_filter( $suggestions, function( $suggestion ) use ( $min_confidence ) {
-			return ( $suggestion['confidence'] ?? 0 ) >= $min_confidence;
-		} );
+		$filtered = array_filter(
+			$suggestions,
+			function ( $suggestion ) use ( $min_confidence ) {
+				return ( $suggestion['confidence'] ?? 0 ) >= $min_confidence;
+			}
+		);
 
 		// Sort by confidence (highest first).
-		usort( $filtered, function( $a, $b ) {
-			return ( $b['confidence'] ?? 0 ) <=> ( $a['confidence'] ?? 0 );
-		} );
+		usort(
+			$filtered,
+			function ( $a, $b ) {
+				return ( $b['confidence'] ?? 0 ) <=> ( $a['confidence'] ?? 0 );
+			}
+		);
 
 		// Limit to max categories.
 		return array_slice( $filtered, 0, $max_categories );

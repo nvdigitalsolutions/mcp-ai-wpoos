@@ -28,7 +28,7 @@ class WP_MCP_AI_Pro_Dashboard_Helper {
 	 */
 	public static function init() {
 		// Auto-enqueuing disabled - Pro Dashboard class handles its own asset loading.
-		// add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue_pro_dashboard_assets' ) );
+		// add_action( 'admin_enqueue_scripts', array( __CLASS__, 'maybe_enqueue_pro_dashboard_assets' ) );.
 	}
 
 	/**

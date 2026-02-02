@@ -224,15 +224,18 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'error'                         => __( 'Something went wrong. Please try again.', 'mcp-ai-wpoos' ),
 			'missingAssistant'              => __( 'Builder assistant configuration was not found.', 'mcp-ai-wpoos' ),
 			'notAuthorized'                 => __( 'You do not have permission to use the builder.', 'mcp-ai-wpoos' ),
+			/* translators: %s: tool name */
 			'toolExecuting'                 => __( 'Running tool: %s', 'mcp-ai-wpoos' ),
 			'toolSuccess'                   => __( 'Tool completed successfully.', 'mcp-ai-wpoos' ),
 			'toolError'                     => __( 'The tool request failed.', 'mcp-ai-wpoos' ),
 			'toolQueued'                    => __( 'Tool queued. Results will appear shortly.', 'mcp-ai-wpoos' ),
 			'toolPolling'                   => __( 'Tool is processing…', 'mcp-ai-wpoos' ),
 			'toolTimeout'                   => __( 'Tool timed out before completing.', 'mcp-ai-wpoos' ),
+			/* translators: %s: error message */
 			'toolFailed'                    => __( 'Tool failed: %s', 'mcp-ai-wpoos' ),
 			'speechToolSuccess'             => __( 'Speech audio saved to the Media Library.', 'mcp-ai-wpoos' ),
 			'imageToolSuccess'              => __( 'Image saved to the Media Library.', 'mcp-ai-wpoos' ),
+			/* translators: %s: task description */
 			'toolShortcutLabel'             => __( 'Insert task: %s', 'mcp-ai-wpoos' ),
 			'emptyMessage'                  => __( 'Enter a description before sending.', 'mcp-ai-wpoos' ),
 			'attachFile'                    => __( 'Attach file', 'mcp-ai-wpoos' ),
@@ -243,15 +246,18 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'stopRecording'                 => __( 'Stop recording', 'mcp-ai-wpoos' ),
 			'recordingError'                => __( 'Could not access your microphone. Please allow access or upload an audio file instead.', 'mcp-ai-wpoos' ),
 			'transcriptionError'            => __( 'The transcription request failed. Please try again.', 'mcp-ai-wpoos' ),
+			/* translators: %s: audio filename */
 			'transcriptionSuccess'          => __( 'Inserted transcription from "%s".', 'mcp-ai-wpoos' ),
 			'transcriptionFileTooLarge'     => __( 'The selected audio file is too large. Please choose a file under 25MB.', 'mcp-ai-wpoos' ),
 			'transcribeChooseSource'        => __( 'Press OK to record with your microphone, or Cancel to choose an audio file.', 'mcp-ai-wpoos' ),
 			'attachmentsLabel'              => __( 'Attachments', 'mcp-ai-wpoos' ),
 			'removeAttachment'              => __( 'Remove', 'mcp-ai-wpoos' ),
+			/* translators: %s: filename */
 			'uploadingFile'                 => __( 'Uploading "%s"…', 'mcp-ai-wpoos' ),
 			'uploadError'                   => __( 'The file could not be uploaded. Please try again.', 'mcp-ai-wpoos' ),
 			'uploadInProgress'              => __( 'Please wait for uploads to finish before sending.', 'mcp-ai-wpoos' ),
 			'downloadAttachment'            => __( 'Download attachment', 'mcp-ai-wpoos' ),
+			/* translators: %s: filename */
 			'unsupportedFileType'           => __( '"%s" is not a supported file type. Please choose a different file.', 'mcp-ai-wpoos' ),
 			'unsupportedMultipleFiles'      => __( 'Some selected files are not supported. Please try different files.', 'mcp-ai-wpoos' ),
 			'unsupportedFileLabel'          => __( 'This file', 'mcp-ai-wpoos' ),
@@ -265,8 +271,10 @@ class WP_MCP_AI_Build_Assistant_Page {
 			'historyLoading'                => __( 'Loading conversations…', 'mcp-ai-wpoos' ),
 			'historyEmpty'                  => __( 'No previous conversations yet.', 'mcp-ai-wpoos' ),
 			'historyError'                  => __( 'Unable to load conversation history.', 'mcp-ai-wpoos' ),
+			/* translators: %d: number of messages */
 			'historyMessageCount'           => __( '%d messages', 'mcp-ai-wpoos' ),
 			'historySingleMessage'          => __( '1 message', 'mcp-ai-wpoos' ),
+			/* translators: %s: conversation number */
 			'historyPreviewFallback'        => __( 'Conversation %s', 'mcp-ai-wpoos' ),
 			'historySessionLoading'         => __( 'Loading conversation…', 'mcp-ai-wpoos' ),
 			'historySessionError'           => __( 'Unable to load this conversation. Please try again.', 'mcp-ai-wpoos' ),
@@ -320,7 +328,7 @@ class WP_MCP_AI_Build_Assistant_Page {
 			if ( $screen && isset( $screen->id ) ) {
 				// The screen ID for submenus is typically parent-page_page_menu-slug.
 				// Check for exact match or if it ends with our page slug.
-				return $screen->id === 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant'
+				return 'mcp_ai_assistant_page_wp-mcp-ai-build-assistant' === $screen->id
 					|| false !== strpos( $screen->id, '_page_wp-mcp-ai-build-assistant' );
 			}
 		}

@@ -1091,7 +1091,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 *                               or for multimodal: array of input objects with text/image.
 		 * @param array        $options Optional configuration:
 		 *                               - model: 'omni-moderation-latest' (default) or 'text-moderation-latest'
-		 *                               - timeout: Request timeout in seconds (default: from settings)
+		 *                               - timeout: Request timeout in seconds (default: from settings).
 		 * @return array|WP_Error Array containing moderation results or WP_Error on failure.
 		 *                        Result structure:
 		 *                        - id: Unique moderation request ID
@@ -3203,10 +3203,78 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 
 				$tool['name'] = (string) $tool['name'];
 
+				// Sanitize the parameters schema to ensure OpenAI compatibility.
+				if ( isset( $tool['function'] ) && is_array( $tool['function'] ) && isset( $tool['function']['parameters'] ) && is_array( $tool['function']['parameters'] ) ) {
+					$tool['function']['parameters'] = $this->sanitize_parameters_for_openai( $tool['function']['parameters'] );
+				} elseif ( isset( $tool['parameters'] ) && is_array( $tool['parameters'] ) ) {
+					$tool['parameters'] = $this->sanitize_parameters_for_openai( $tool['parameters'] );
+				}
+
 				$normalised[] = $tool;
 			}
 
 			return array_values( $normalised );
+		}
+
+		/**
+		 * Sanitize parameter schema to satisfy OpenAI function calling requirements.
+		 *
+		 * OpenAI requires that function parameters schema:
+		 * - Must have type 'object' at the root level
+		 * - Cannot use 'oneOf', 'anyOf', 'allOf', or 'not' at the root level
+		 * - However, these composition keywords ARE allowed in nested property definitions
+		 *
+		 * This method removes unsupported composition keywords at the root level only,
+		 * while preserving all property definitions and nested composition keywords.
+		 * Validation logic should be handled in the tool's execute() method.
+		 *
+		 * @param array  $schema     JSON Schema object to sanitize.
+		 * @param string $parent_key The parent key to determine context (internal use).
+		 * @return array Sanitized schema compatible with OpenAI API.
+		 */
+		protected function sanitize_parameters_for_openai( array $schema, $parent_key = '' ) {
+			$sanitized = array();
+
+			// At the root level (empty parent_key), remove composition keywords.
+			// These are not allowed at the top level of OpenAI function parameters.
+			// Note: Composition keywords ARE allowed in nested property schemas.
+			// For example: "field": {"anyOf": [{"type": "string"}, {"type": "number"}]} is valid.
+			if ( '' === $parent_key ) {
+				$root_unsupported = array( 'oneOf', 'anyOf', 'allOf', 'not' );
+				foreach ( $root_unsupported as $keyword ) {
+					if ( isset( $schema[ $keyword ] ) ) {
+						// Log the removal for debugging.
+						WP_MCP_AI_Logger::log_event(
+							'openai_schema_sanitization',
+							"Removed unsupported top-level keyword: {$keyword}",
+							array(
+								'keyword' => $keyword,
+								'context' => 'root_level',
+							)
+						);
+						unset( $schema[ $keyword ] );
+					}
+				}
+
+				// Ensure type is 'object' at the root level.
+				if ( ! isset( $schema['type'] ) ) {
+					$schema['type'] = 'object';
+				}
+			}
+
+			// Recursively process the schema.
+			// When we recurse into nested structures (properties, items, etc.),
+			// the parent_key becomes non-empty, so composition keywords are preserved.
+			foreach ( $schema as $key => $value ) {
+				if ( is_array( $value ) ) {
+					// Recursively sanitize nested structures.
+					$sanitized[ $key ] = $this->sanitize_parameters_for_openai( $value, $key );
+				} else {
+					$sanitized[ $key ] = $value;
+				}
+			}
+
+			return $sanitized;
 		}
 
 		/**
@@ -4338,7 +4406,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 * @param array $options  Additional options (model).
 		 * @return int|WP_Error Token count or WP_Error on failure.
 		 */
-		public function count_tokens( array $messages, array $options = array() ) {
+		public function count_tokens( array $messages, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for model-specific token counting.
 			// For OpenAI, we don't have a direct token counting API endpoint,.
 
 			// so we use estimation based on character count.
@@ -5534,6 +5602,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 		 *                        - maxTools (int): Max tools when trimming. Default: 10.
 		 *                        - model, temperature, timeout, etc.
 		 * @return array|WP_Error Final response or error.
+		 * @throws Exception When tool function is not callable.
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
 			// Configuration options with defaults.
@@ -5947,7 +6016,7 @@ if ( ! class_exists( 'WP_MCP_AI_OpenAI_Client' ) ) {
 					$desc_words = explode( ' ', $tool_desc );
 					foreach ( $desc_words as $word ) {
 						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
-							$score += 1;
+							++$score;
 						}
 					}
 				}

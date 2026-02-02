@@ -44,12 +44,12 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'registration_id'     => array(
+				'registration_id'      => array(
 					'type'        => 'integer',
 					'description' => __( 'Registration ID for dossier generation (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'include_toc'         => array(
+				'include_toc'          => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include table of contents (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -59,11 +59,11 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 					'description' => __( 'Include cover letter (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'watermark'           => array(
+				'watermark'            => array(
 					'type'        => 'string',
 					'description' => __( 'Watermark text for all pages (optional)', 'mcp-ai-wpoos-pro' ),
 				),
-				'template'            => array(
+				'template'             => array(
 					'type'        => 'string',
 					'description' => __( 'Template name to use (optional, default: "standard")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'standard', 'gcc', 'asean', 'eu', 'fda' ),
@@ -131,10 +131,10 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Get registration details.
-		$product_id  = absint( get_post_meta( $registration_id, 'product_id', true ) );
-		$country     = get_post_meta( $registration_id, 'country', true );
-		$authority   = get_post_meta( $registration_id, 'authority', true );
-		$cos_number  = get_post_meta( $registration_id, 'cos_number', true );
+		$product_id = absint( get_post_meta( $registration_id, 'product_id', true ) );
+		$country    = get_post_meta( $registration_id, 'country', true );
+		$authority  = get_post_meta( $registration_id, 'authority', true );
+		$cos_number = get_post_meta( $registration_id, 'cos_number', true );
 
 		// Get product details.
 		$product_name = '';
@@ -172,11 +172,11 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 		}
 
 		// Generate PDF dossier (placeholder implementation).
-		$upload_dir  = wp_upload_dir();
-		$pdf_dir     = $upload_dir['basedir'] . '/regulatory-dossiers';
-		$filename    = sprintf( 'dossier-%d-%s.pdf', $registration_id, gmdate( 'YmdHis' ) );
-		$file_path   = $pdf_dir . '/' . $filename;
-		$file_url    = $upload_dir['baseurl'] . '/regulatory-dossiers/' . $filename;
+		$upload_dir = wp_upload_dir();
+		$pdf_dir    = $upload_dir['basedir'] . '/regulatory-dossiers';
+		$filename   = sprintf( 'dossier-%d-%s.pdf', $registration_id, gmdate( 'YmdHis' ) );
+		$file_path  = $pdf_dir . '/' . $filename;
+		$file_url   = $upload_dir['baseurl'] . '/regulatory-dossiers/' . $filename;
 
 		// Create directory if it doesn't exist.
 		if ( ! file_exists( $pdf_dir ) ) {
@@ -196,17 +196,17 @@ class WP_MCP_AI_Tool_Generate_Pdf_Dossier implements WP_MCP_AI_Tool_Interface, W
 		file_put_contents( $file_path, $pdf_content );
 
 		return array(
-			'success'        => true,
-			'file_path'      => $file_path,
-			'file_url'       => $file_url,
-			'filename'       => $filename,
+			'success'         => true,
+			'file_path'       => $file_path,
+			'file_url'        => $file_url,
+			'filename'        => $filename,
 			'registration_id' => $registration_id,
-			'product_name'   => $product_name,
-			'document_count' => count( $documents ),
-			'file_size'      => filesize( $file_path ),
-			'generated_at'   => current_time( 'mysql' ),
-			'template'       => $template,
-			'watermark'      => $watermark,
+			'product_name'    => $product_name,
+			'document_count'  => count( $documents ),
+			'file_size'       => filesize( $file_path ),
+			'generated_at'    => current_time( 'mysql' ),
+			'template'        => $template,
+			'watermark'       => $watermark,
 		);
 	}
 }
