@@ -532,7 +532,7 @@ class WP_MCP_AI_Security_Manager {
 		}
 
 		// If user is not authenticated, checks stop here.
-		if ( $user_id === 0 ) {
+		if ( 0 === $user_id ) {
 			return true;
 		}
 

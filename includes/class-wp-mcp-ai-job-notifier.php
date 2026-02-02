@@ -504,7 +504,7 @@ class WP_MCP_AI_Job_Notifier {
 			'estimated_remaining'  => $estimated_remaining,
 			'estimated_total'      => isset( $estimated_total ) ? $estimated_total : null,
 			'sla_compliance'       => self::calculate_sla_compliance( $elapsed_time, $estimated_remaining, $sla_target ),
-			'predicted_completion' => date( 'c', $current_time + $estimated_remaining ),
+			'predicted_completion' => date( 'c', $current_time + $estimated_remaining ), // phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- Intentional use for ISO 8601 timestamp display.
 		);
 
 		return $status;

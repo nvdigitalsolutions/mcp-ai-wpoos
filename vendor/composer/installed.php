@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-best-practices-yfinance',
-        'version' => 'dev-copilot/review-best-practices-yfinance',
-        'reference' => '2f6469f3912a2c1c9bcc0f55bbc5ce63960b1111',
+        'pretty_version' => 'dev-copilot/wpcs-restorations-phase-four',
+        'version' => 'dev-copilot/wpcs-restorations-phase-four',
+        'reference' => '651c199eaa177cec852c0cb49961e6d875548287',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-best-practices-yfinance',
-            'version' => 'dev-copilot/review-best-practices-yfinance',
-            'reference' => '2f6469f3912a2c1c9bcc0f55bbc5ce63960b1111',
+            'pretty_version' => 'dev-copilot/wpcs-restorations-phase-four',
+            'version' => 'dev-copilot/wpcs-restorations-phase-four',
+            'reference' => '651c199eaa177cec852c0cb49961e6d875548287',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

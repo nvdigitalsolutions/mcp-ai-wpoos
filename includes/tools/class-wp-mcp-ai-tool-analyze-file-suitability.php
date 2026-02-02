@@ -352,7 +352,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
-		if ( $line_count > 0 && $valid_json === 0 ) {
+		if ( $line_count > 0 && 0 === $valid_json ) {
 			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'mcp-ai-wpoos' );
 		} elseif ( $valid_json < $line_count ) {
 			$warnings[] = __( 'Some lines in JSONL file may not be valid JSON.', 'mcp-ai-wpoos' );

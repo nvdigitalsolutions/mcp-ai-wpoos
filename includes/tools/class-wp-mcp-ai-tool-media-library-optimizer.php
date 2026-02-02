@@ -206,7 +206,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 					'size_human'  => size_format( $file_size ),
 					'format'      => $format,
 					'reason'      => __( 'Large file size', 'mcp-ai-wpoos' ),
-					'recommended' => $format === 'png' ? 'avif' : 'webp',
+					'recommended' => 'png' === $format ? 'avif' : 'webp',
 				);
 			}
 
@@ -550,7 +550,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 
 		// Determine new file path.
 		$path_info = pathinfo( $file_path );
-		$extension = $target_format === 'avif' ? 'avif' : 'webp';
+		$extension = 'avif' === $target_format ? 'avif' : 'webp';
 		$new_file  = $path_info['dirname'] . '/' . $path_info['filename'] . '.' . $extension;
 
 		// Set output format.
@@ -645,7 +645,7 @@ class WP_MCP_AI_Tool_Media_Library_Optimizer {
 			$recommendations[] = __( 'GIF images detected. Consider converting to video formats (MP4, WebM) for animations.', 'mcp-ai-wpoos' );
 		}
 
-		if ( $format_counts['avif'] === 0 && $format_counts['webp'] === 0 ) {
+		if ( 0 === $format_counts['avif'] && 0 === $format_counts['webp'] ) {
 			$recommendations[] = __( 'No modern formats detected. AVIF/WebP conversion highly recommended.', 'mcp-ai-wpoos' );
 		}
 

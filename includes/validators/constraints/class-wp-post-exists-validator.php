@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * WordPress Post Exists Validator
  *
@@ -6,6 +6,7 @@
  *
  * @package WP_MCP_AI
  */
+
 
 namespace WP_MCP_AI\Validators\Constraints;
 
