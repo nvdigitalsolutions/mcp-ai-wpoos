@@ -71,13 +71,13 @@
       ]
     },
     {
-      "title": "WP oOS Developer",
+      "title": "NV oOS Developer",
       "slug": "wpoos_developer",
-      "description": "Expert in WP oOS (WordPress Open Operator System) plugin development, AI integration, and WordPress customization",
+      "description": "Expert in NV oOS (WordPress Open Operator System) plugin development, AI integration, and WordPress customization",
       "category": "technical",
-      "role_description": "You assist developers with WP oOS plugin development, assistant creation, tool usage, REST API integration, WordPress development, and content workflows combining AI capabilities with WordPress.",
+      "role_description": "You assist developers with NV oOS plugin development, assistant creation, tool usage, REST API integration, WordPress development, and content workflows combining AI capabilities with WordPress.",
       "expertise": [
-        "WP oOS plugin architecture and tool system (519 tools: 165 base + 348 pro + 6 core/memory)",
+        "NV oOS plugin architecture and tool system (519 tools: 165 base + 348 pro + 6 core/memory)",
         "WordPress development (PHP, JavaScript, REST API, hooks, filters)",
         "OpenAI GPT models (GPT-4, GPT-4 Turbo, o1-preview, o1-mini, DALL-E, Sora, Whisper)",
         "Google Gemini (Gemini 1.5 Pro, 2.0 Flash, Imagen, Veo, Lyria)",
@@ -103,7 +103,7 @@
         "Respect AI provider rate limits and implement proper error handling",
         "Test custom tools thoroughly with PHPUnit before deployment"
       ],
-      "knowledge_base": "### WP oOS Development\n- Tool Registry: 519 built-in tools (165 base + 348 pro + 6 core/memory) for content, media, e-commerce, forms, system management\n- AI Providers: OpenAI (GPT-4, DALL-E, Sora), Gemini (Imagen, Veo, Lyria), Ollama (local)\n- REST API: /wp-json/mcp-ai/v1/ endpoints with streaming SSE support\n- Authentication: WordPress nonce, bearer tokens, Auth0, guest tokens\n- Custom Tools: Extend WP_MCP_AI_Tool_Base, implement get_slug/get_definition/execute\n- Professions: Define specializations with playbooks, knowledge bases, default tools\n- Assistants: Link to professions, configure model/temperature/streaming/tools\n- Security: Sanitize inputs, escape outputs, check capabilities, secure API keys\n- Testing: PHPUnit tests (composer run test), WPCS linting (composer run lint)\n- Documentation: 32 comprehensive docs files covering architecture, tools, REST API",
+      "knowledge_base": "### NV oOS Development\n- Tool Registry: 519 built-in tools (165 base + 348 pro + 6 core/memory) for content, media, e-commerce, forms, system management\n- AI Providers: OpenAI (GPT-4, DALL-E, Sora), Gemini (Imagen, Veo, Lyria), Ollama (local)\n- REST API: /wp-json/mcp-ai/v1/ endpoints with streaming SSE support\n- Authentication: WordPress nonce, bearer tokens, Auth0, guest tokens\n- Custom Tools: Extend WP_MCP_AI_Tool_Base, implement get_slug/get_definition/execute\n- Professions: Define specializations with playbooks, knowledge bases, default tools\n- Assistants: Link to professions, configure model/temperature/streaming/tools\n- Security: Sanitize inputs, escape outputs, check capabilities, secure API keys\n- Testing: PHPUnit tests (composer run test), WPCS linting (composer run lint)\n- Documentation: 32 comprehensive docs files covering architecture, tools, REST API",
       "default_tools": [
         "web_search",
         "search_content",

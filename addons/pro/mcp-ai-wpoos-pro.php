@@ -65,7 +65,7 @@ if ( ! defined( 'WP_MCP_AI_PRO_URL' ) ) {
  * ============================================================================
  * DEPENDENCY CHECK
  *
- * Verify that Open Operator System (WP oOS) Core is active before loading Pro features.
+ * Verify that Open Operator System (NV oOS) Core is active before loading Pro features.
  * ============================================================================
  */
 
@@ -74,8 +74,8 @@ if ( ! function_exists( 'wp_mcp_ai_pro_check_dependencies' ) ) {
 	 * Check if required dependencies are available.
 	 *
 	 * Pro addon requires either:
-	 * - Open Operator System (WP oOS) Core (separated plugin architecture), OR
-	 * - Open Operator System (WP oOS) combined plugin with tool registry
+	 * - Open Operator System (NV oOS) Core (separated plugin architecture), OR
+	 * - Open Operator System (NV oOS) combined plugin with tool registry
 	 *
 	 * @since 1.0.0
 	 *
@@ -104,7 +104,7 @@ if ( ! function_exists( 'wp_mcp_ai_pro_missing_core_notice' ) ) {
 	 */
 	function wp_mcp_ai_pro_missing_core_notice() {
 		$message = sprintf(
-			'<strong>Open Operator System Pro</strong> requires either <strong>Open Operator System (WP oOS)</strong> or <strong>Open Operator System</strong> to be installed and activated. Please <a href="%s">install Open Operator System (WP oOS)</a> or <a href="%s">Open Operator System</a> first.',
+			'<strong>Open Operator System Pro</strong> requires either <strong>Open Operator System (NV oOS)</strong> or <strong>Open Operator System</strong> to be installed and activated. Please <a href="%s">install Open Operator System (NV oOS)</a> or <a href="%s">Open Operator System</a> first.',
 			esc_url( admin_url( 'plugin-install.php?s=wp-mcp-ai-core&tab=search&type=term' ) ),
 			esc_url( admin_url( 'plugin-install.php?s=wp-open-operator-system&tab=search&type=term' ) )
 		);
@@ -1428,7 +1428,7 @@ function wp_mcp_ai_pro_activate( $network_wide = false ) { // phpcs:ignore Gener
 		// Deactivate self and show error.
 		deactivate_plugins( plugin_basename( WP_MCP_AI_PRO_FILE ) );
 		wp_die(
-			esc_html__( 'Open Operator System Pro requires Open Operator System (WP oOS) to be installed and activated first.', 'mcp-ai-wpoos-pro' ),
+			esc_html__( 'Open Operator System Pro requires Open Operator System (NV oOS) to be installed and activated first.', 'mcp-ai-wpoos-pro' ),
 			esc_html__( 'Plugin Activation Error', 'mcp-ai-wpoos-pro' ),
 			array( 'back_link' => true )
 		);

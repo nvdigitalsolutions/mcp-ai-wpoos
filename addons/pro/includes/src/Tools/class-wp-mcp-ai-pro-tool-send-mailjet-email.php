@@ -191,7 +191,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_mailjet_credentials' => __( 'Add a Mailjet API key and secret in the WP oOS settings.', 'mcp-ai-wpoos-pro' ),
+						'configure_mailjet_credentials' => __( 'Add a Mailjet API key and secret in the NV oOS settings.', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
@@ -233,7 +233,7 @@ class WP_MCP_AI_Pro_Tool_Send_Mailjet_Email implements WP_MCP_AI_Tool_Interface,
 				array(
 					'status'  => 400,
 					'actions' => array(
-						'configure_mailjet_sender' => __( 'Set the Mailjet From Email in the WP oOS settings.', 'mcp-ai-wpoos-pro' ),
+						'configure_mailjet_sender' => __( 'Set the Mailjet From Email in the NV oOS settings.', 'mcp-ai-wpoos-pro' ),
 					),
 				)
 			);
