@@ -154,6 +154,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 	 * Get memory usage information.
 	 *
 	 * @return array Memory usage data.
+	 * @throws Exception If resource manager is not available.
 	 */
 	private static function get_memory_usage() {
 		if ( ! class_exists( 'WP_MCP_AI_Resource_Manager' ) ) {

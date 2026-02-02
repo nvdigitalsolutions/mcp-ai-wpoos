@@ -130,7 +130,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'stuck_jobs'   => isset( $async_health['stuck_jobs'] ) ? $async_health['stuck_jobs'] : 0,
 					'long_running' => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
 				);
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: async health monitoring is optional and should not break REST API response.
 				// Silently fail - status monitoring should not break the chat.
 			}
 		}
@@ -143,7 +143,7 @@ class WP_MCP_AI_REST_Tools_Controller extends WP_MCP_AI_REST_Controller_Base {
 					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
 					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
 				);
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: orchestration health monitoring is optional and should not break REST API response.
 				// Silently fail.
 			}
 		}

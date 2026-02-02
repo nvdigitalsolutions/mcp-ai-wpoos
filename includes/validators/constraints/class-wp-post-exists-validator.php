@@ -27,6 +27,8 @@ class WPPostExistsValidator extends ConstraintValidator {
 	 * @param mixed      $value      The value to validate (post ID).
 	 * @param Constraint $constraint The constraint.
 	 * @return void
+	 * @throws UnexpectedTypeException If constraint is not a WPPostExists instance.
+	 * @throws UnexpectedValueException If value is not an integer.
 	 */
 	public function validate( $value, Constraint $constraint ) {
 		if ( ! $constraint instanceof WPPostExists ) {
