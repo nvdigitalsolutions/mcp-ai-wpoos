@@ -143,6 +143,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
 				'enable_ai_cpt_management'               => __( 'AI CPT Management', 'mcp-ai-wpoos' ),
+				'enable_fantasy_football'                => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
 			);
 
 			$toolkit_status = array();
@@ -685,6 +686,26 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						__( 'configure_email_notifications tool', 'mcp-ai-wpoos' ),
 					),
 				),
+'fantasy_football'                => array(
+'name'          => __( 'Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
+'description'   => __( 'Yahoo Fantasy Sports integration with team management, player research, trade analysis, and league reporting.', 'mcp-ai-wpoos' ),
+'enabled'       => ! empty( $settings['enable_fantasy_football'] ),
+'category'      => 'sports',
+'php_functions' => array(),
+'npm_packages'  => array(),
+'tools_count'   => 9,
+'tools'         => array(
+__( 'yahoo_ff_auth tool', 'mcp-ai-wpoos' ),
+__( 'yahoo_ff_get_leagues tool', 'mcp-ai-wpoos' ),
+__( 'yahoo_ff_get_roster tool', 'mcp-ai-wpoos' ),
+__( 'yahoo_ff_get_player_stats tool', 'mcp-ai-wpoos' ),
+__( 'yahoo_ff_league_standings tool', 'mcp-ai-wpoos' ),
+__( 'yahoo_ff_trade_analyzer tool', 'mcp-ai-wpoos' ),
+__( 'ff_player_research tool', 'mcp-ai-wpoos' ),
+__( 'ff_create_league_report tool', 'mcp-ai-wpoos' ),
+__( 'ff_generate_team_logo tool', 'mcp-ai-wpoos' ),
+),
+),
 			);
 
 			// Check PHP function availability for each toolkit.
