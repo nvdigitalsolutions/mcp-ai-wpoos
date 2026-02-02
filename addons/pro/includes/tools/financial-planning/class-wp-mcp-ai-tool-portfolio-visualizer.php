@@ -83,7 +83,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 	 * @return string
 	 */
 	public function get_description() {
-		return __( 'Visualize investment portfolio allocation and performance. Analyze asset distribution, sector diversification, and risk metrics. Generate detailed breakdowns for informed investment decisions. EDUCATIONAL ONLY - Not investment advice.', 'mcp-ai-wpoos-pro' );
+		return __( 'Visualize investment portfolio allocation and performance. Supports automatic price fetching via yfinance service or manual price input. Analyze asset distribution, sector diversification, and risk metrics. EDUCATIONAL ONLY - Data may be delayed 15 minutes. Not investment advice.', 'mcp-ai-wpoos-pro' );
 	}
 
 	/**
@@ -132,7 +132,12 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 						),
 					),
 				),
-				'view_type' => array(
+				'auto_fetch_prices' => array(
+					'type'        => 'boolean',
+					'description' => __( 'Automatically fetch current prices from yfinance service for holdings without prices', 'mcp-ai-wpoos-pro' ),
+					'default'     => false,
+				),
+				'view_type'         => array(
 					'type'        => 'string',
 					'description' => __( 'Type of visualization', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'allocation', 'performance', 'diversification', 'risk_analysis' ),
@@ -179,11 +184,17 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$holdings  = isset( $arguments['holdings'] ) && is_array( $arguments['holdings'] ) ? $arguments['holdings'] : array();
-		$view_type = isset( $arguments['view_type'] ) ? sanitize_text_field( $arguments['view_type'] ) : 'allocation';
+		$holdings          = isset( $arguments['holdings'] ) && is_array( $arguments['holdings'] ) ? $arguments['holdings'] : array();
+		$view_type         = isset( $arguments['view_type'] ) ? sanitize_text_field( $arguments['view_type'] ) : 'allocation';
+		$auto_fetch_prices = isset( $arguments['auto_fetch_prices'] ) ? (bool) $arguments['auto_fetch_prices'] : false;
 
 		if ( empty( $holdings ) ) {
 			return new WP_Error( 'empty_portfolio', __( 'Portfolio holdings are required.', 'mcp-ai-wpoos-pro' ) );
+		}
+
+		// Auto-fetch prices if requested and service is available.
+		if ( $auto_fetch_prices && $this->is_yfinance_available() ) {
+			$holdings = $this->enrich_holdings_with_prices( $holdings );
 		}
 
 		$portfolio_value   = 0;
@@ -228,6 +239,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 				'gain_loss_pct' => round( $gain_loss_pct, 2 ),
 				'asset_class'   => $asset_class,
 				'sector'        => $sector,
+				'price_source'  => isset( $holding['price_source'] ) ? $holding['price_source'] : 'manual',
 			);
 		}
 
@@ -260,7 +272,7 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 			'sector_breakdown' => $sector_breakdown,
 			'holdings'         => $analyzed_holdings,
 			'view_type'        => $view_type,
-			'disclaimer'       => __( 'EDUCATIONAL ONLY. This visualization is for informational purposes only and does not constitute investment advice. Past performance does not guarantee future results. Consult a licensed financial advisor.', 'mcp-ai-wpoos-pro' ),
+			'disclaimer'       => __( 'EDUCATIONAL ONLY. This visualization is for informational purposes only and does not constitute investment advice. Data from yfinance may be delayed 15 minutes or more. Past performance does not guarantee future results. Consult a licensed financial advisor.', 'mcp-ai-wpoos-pro' ),
 			'message'          => sprintf(
 				/* translators: 1: Portfolio value, 2: Return percentage */
 				__( 'Portfolio value: $%1$s with %2$s%% total return.', 'mcp-ai-wpoos-pro' ),
@@ -268,5 +280,44 @@ class WP_MCP_AI_Tool_Portfolio_Visualizer implements WP_MCP_AI_Tool_Interface, W
 				number_format( $total_return_pct, 2 )
 			),
 		);
+	}
+
+	/**
+	 * Check if yfinance service is available
+	 *
+	 * @return bool
+	 */
+	private function is_yfinance_available() {
+		// Check if service file exists.
+		if ( ! file_exists( WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php' ) ) {
+			return false;
+		}
+
+		// Load the service class if not already loaded.
+		if ( ! class_exists( 'WP_MCP_AI_YFinance_Service' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php';
+		}
+
+		// Check if service is enabled.
+		$service = WP_MCP_AI_YFinance_Service::get_instance();
+		return $service->is_enabled();
+	}
+
+	/**
+	 * Enrich holdings with current prices from yfinance
+	 *
+	 * @param array $holdings Portfolio holdings.
+	 * @return array Holdings with enriched price data.
+	 */
+	private function enrich_holdings_with_prices( $holdings ) {
+		// Load the service class.
+		if ( ! class_exists( 'WP_MCP_AI_YFinance_Service' ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php';
+		}
+
+		$service = WP_MCP_AI_YFinance_Service::get_instance();
+
+		// Use the service's enrich method.
+		return $service->enrich_holdings_with_prices( $holdings );
 	}
 }
