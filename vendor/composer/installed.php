@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-fantasy-football-toolkit',
-        'version' => 'dev-copilot/create-fantasy-football-toolkit',
-        'reference' => 'fe1210d1e819ca3a6b50b6e3718f832b86587b62',
+        'pretty_version' => 'dev-copilot/extend-fantasy-football-settings-again',
+        'version' => 'dev-copilot/extend-fantasy-football-settings-again',
+        'reference' => 'edf9f987edf520118d891557203819d59340d78e',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-fantasy-football-toolkit',
-            'version' => 'dev-copilot/create-fantasy-football-toolkit',
-            'reference' => 'fe1210d1e819ca3a6b50b6e3718f832b86587b62',
+            'pretty_version' => 'dev-copilot/extend-fantasy-football-settings-again',
+            'version' => 'dev-copilot/extend-fantasy-football-settings-again',
+            'reference' => 'edf9f987edf520118d891557203819d59340d78e',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
