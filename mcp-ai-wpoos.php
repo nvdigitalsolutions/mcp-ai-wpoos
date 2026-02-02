@@ -56,11 +56,11 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 /**
  * Define base version mode constant.
  *
- * Defaults to false (full mode with all available tools).
- * Set to true in wp-config.php to enable base mode (core tools only).
+ * Defaults to true (base mode with core tools only).
+ * Set to false in wp-config.php to enable full mode (all available tools).
  */
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-	define( 'WP_MCP_AI_BASE_VERSION', false );
+	define( 'WP_MCP_AI_BASE_VERSION', true );
 }
 
 /**
@@ -348,9 +348,9 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
 	 * Check if base version mode is enabled.
 	 *
-	 * Full version is enabled by default, providing all available tools.
-	 * Base version mode is only active if explicitly set to true in wp-config.php:
-	 * define( 'WP_MCP_AI_BASE_VERSION', true );
+	 * Base version is enabled by default, providing core tools only.
+	 * Full version mode is only active if explicitly set to false in wp-config.php:
+	 * define( 'WP_MCP_AI_BASE_VERSION', false );
 	 *
 	 * Base version mode limits the plugin to core tools only, excluding tools that require
 	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
@@ -379,7 +379,7 @@ if ( ! function_exists( 'wp_mcp_ai_should_load_integrations' ) ) {
 	 * Determine whether third-party plugin integrations should be loaded.
 	 *
 	 * Integrations are loaded when:
-	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+	 * - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION explicitly set to false), OR
 	 * - Pro addon is active (WP_MCP_AI_PRO_VERSION is defined)
 	 *
 	 * This ensures that when using base + pro as separate plugins, JetEngine
@@ -623,7 +623,7 @@ require_once WP_MCP_AI_PATH . 'includes/rest/class-wp-mcp-ai-supplier-security-r
 
 // Load third-party plugin integrations.
 // Integrations are loaded when:
-// - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION not set or false), OR
+// - Plugin is in full version mode (WP_MCP_AI_BASE_VERSION explicitly set to false), OR
 // - Pro addon is active (even with base version).
 if ( wp_mcp_ai_should_load_integrations() ) {
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-jetengine-endpoint-report.php';
