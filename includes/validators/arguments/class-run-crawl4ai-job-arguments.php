@@ -5,8 +5,10 @@
  * Validation class for run_crawl4ai_job tool arguments using Symfony Validator.
  *
  * @package WP_MCP_AI
- * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
  */
+
+// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
+
 
 namespace WP_MCP_AI\Tools\Arguments;
 
