@@ -115,6 +115,7 @@ shared
 # Note: test-capability-flags-integration.php moved to bin/ which is already excluded
 mcp-diagnostic-debug.php
 test-storage-service.html
+examples
 assets/examples
 
 # CDN-dependent features (not compliant with WordPress.org)

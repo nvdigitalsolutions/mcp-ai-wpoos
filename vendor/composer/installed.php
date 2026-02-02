@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/move-ff-settings-to-pro-section',
-        'version' => 'dev-copilot/move-ff-settings-to-pro-section',
-        'reference' => '13f15bbc9ba186e1f8cde10df1a6d475dd963a2f',
+        'pretty_version' => 'dev-copilot/final-wscs-30-review',
+        'version' => 'dev-copilot/final-wscs-30-review',
+        'reference' => 'e9ff7ddd068a486b92bdd749dcebc2dc9e1d8b09',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/move-ff-settings-to-pro-section',
-            'version' => 'dev-copilot/move-ff-settings-to-pro-section',
-            'reference' => '13f15bbc9ba186e1f8cde10df1a6d475dd963a2f',
+            'pretty_version' => 'dev-copilot/final-wscs-30-review',
+            'version' => 'dev-copilot/final-wscs-30-review',
+            'reference' => 'e9ff7ddd068a486b92bdd749dcebc2dc9e1d8b09',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

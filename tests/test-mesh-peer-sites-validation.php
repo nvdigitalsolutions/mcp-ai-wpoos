@@ -35,13 +35,13 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	public function test_empty_mesh_peer_sites_converts_to_array() {
 		// Simulate form submission with empty mesh_peer_sites textarea.
 		$_POST['wp_mcp_ai_settings_nonce'] = wp_create_nonce( 'wp_mcp_ai_settings' );
-		$_POST['active_tab']                = 'advanced';
-		$_POST['active_subtab']             = 'federation_mesh';
+		$_POST['active_tab']               = 'advanced';
+		$_POST['active_subtab']            = 'federation_mesh';
 
 		$input = array(
-			'enable_mesh'          => 'true',
-			'enable_federation'    => 'true',
-			'mesh_peer_sites'      => '', // Empty string from empty textarea.
+			'enable_mesh'       => 'true',
+			'enable_federation' => 'true',
+			'mesh_peer_sites'   => '', // Empty string from empty textarea.
 		);
 
 		// Get the section instance.
@@ -60,14 +60,14 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	 */
 	public function test_valid_json_mesh_peer_sites_decodes_to_array() {
 		$_POST['wp_mcp_ai_settings_nonce'] = wp_create_nonce( 'wp_mcp_ai_settings' );
-		$_POST['active_tab']                = 'advanced';
-		$_POST['active_subtab']             = 'federation_mesh';
+		$_POST['active_tab']               = 'advanced';
+		$_POST['active_subtab']            = 'federation_mesh';
 
 		$peer_json = '[{"url":"https://peer1.example.com","api_key":"test_key_placeholder_12345","name":"Peer 1","enabled":true}]';
 
 		$input = array(
-			'enable_mesh'          => 'true',
-			'mesh_peer_sites'      => $peer_json, // JSON string from textarea.
+			'enable_mesh'     => 'true',
+			'mesh_peer_sites' => $peer_json, // JSON string from textarea.
 		);
 
 		$section   = new WP_MCP_AI_Section_Advanced();
@@ -85,14 +85,14 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	 */
 	public function test_invalid_json_mesh_peer_sites_defaults_to_empty_array() {
 		$_POST['wp_mcp_ai_settings_nonce'] = wp_create_nonce( 'wp_mcp_ai_settings' );
-		$_POST['active_tab']                = 'advanced';
-		$_POST['active_subtab']             = 'federation_mesh';
+		$_POST['active_tab']               = 'advanced';
+		$_POST['active_subtab']            = 'federation_mesh';
 
 		$invalid_json = '{"url":"peer1.example.com", broken json}'; // Invalid JSON.
 
 		$input = array(
-			'enable_mesh'          => 'true',
-			'mesh_peer_sites'      => $invalid_json,
+			'enable_mesh'     => 'true',
+			'mesh_peer_sites' => $invalid_json,
 		);
 
 		$section   = new WP_MCP_AI_Section_Advanced();
@@ -109,10 +109,10 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	public function test_mesh_peer_sites_passes_validation_after_decoding() {
 		// Simulate enabling federation mesh features with empty peer sites.
 		$input = array(
-			'enable_mesh'               => true,
-			'enable_federation'         => true,
+			'enable_mesh'                 => true,
+			'enable_federation'           => true,
 			'enable_federation_directory' => true,
-			'mesh_peer_sites'           => array(), // Already decoded to array.
+			'mesh_peer_sites'             => array(), // Already decoded to array.
 		);
 
 		// Save settings through the dashboard.
@@ -159,23 +159,23 @@ class Test_Mesh_Peer_Sites_Validation extends WP_UnitTestCase {
 	 */
 	public function test_end_to_end_empty_mesh_peer_sites_no_validation_error() {
 		$_POST['wp_mcp_ai_settings_nonce'] = wp_create_nonce( 'wp_mcp_ai_settings' );
-		$_POST['active_tab']                = 'advanced';
-		$_POST['active_subtab']             = 'federation_mesh';
-		$_POST['save_all_tabs']             = '0';
+		$_POST['active_tab']               = 'advanced';
+		$_POST['active_subtab']            = 'federation_mesh';
+		$_POST['save_all_tabs']            = '0';
 
 		// Simulate form data: enable federation features with empty peer sites.
 		$form_data = array(
-			'enable_mesh'               => 'true',
-			'enable_federation'         => 'true',
+			'enable_mesh'                 => 'true',
+			'enable_federation'           => 'true',
 			'enable_federation_directory' => 'true',
-			'mesh_peer_sites'           => '', // Empty textarea.
-			'federation_regions'        => '',
-			'federation_data_tags'      => '',
-			'federation_qps'            => '100',
-			'federation_burst'          => '200',
-			'federation_jwks_keys'      => '',
-			'federation_price_hints'    => '',
-			'mesh_inbound_api_key'      => '',
+			'mesh_peer_sites'             => '', // Empty textarea.
+			'federation_regions'          => '',
+			'federation_data_tags'        => '',
+			'federation_qps'              => '100',
+			'federation_burst'            => '200',
+			'federation_jwks_keys'        => '',
+			'federation_price_hints'      => '',
+			'mesh_inbound_api_key'        => '',
 		);
 
 		$dashboard = new WP_MCP_AI_Settings_Dashboard();

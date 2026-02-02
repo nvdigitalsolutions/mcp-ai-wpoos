@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		if ( ! empty( $arguments['subscriber_id'] ) ) {
 			$subscriber_id = absint( $arguments['subscriber_id'] );
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-			$subscriber    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		} elseif ( ! empty( $arguments['email'] ) ) {
 			$email = sanitize_email( $arguments['email'] );
 			if ( ! is_email( $email ) ) {
