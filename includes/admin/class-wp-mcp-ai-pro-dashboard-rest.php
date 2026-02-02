@@ -766,7 +766,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Dashboard_REST' ) ) {
 				global $wpdb;
 				$checks_table = $wpdb->prefix . 'mcp_ai_compliance_checks';
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
-				$checks       = $wpdb->get_results( "SELECT * FROM $checks_table ORDER BY last_run DESC LIMIT 20", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$checks = $wpdb->get_results( "SELECT * FROM $checks_table ORDER BY last_run DESC LIMIT 20", ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 				if ( ! empty( $checks ) ) {
 					return rest_ensure_response( $checks );

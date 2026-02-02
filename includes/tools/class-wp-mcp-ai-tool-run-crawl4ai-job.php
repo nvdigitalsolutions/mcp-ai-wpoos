@@ -1035,7 +1035,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				if ( '' === $content ) {
 					return '';
 				}
-				$indent  = str_repeat( '    ', max( 0, $list_depth - 1 ) );
+				$indent = str_repeat( '    ', max( 0, $list_depth - 1 ) );
 				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 				$ordered = $node->parentNode && 'ol' === strtolower( $node->parentNode->nodeName );
 				$marker  = $ordered ? '1.' : '-';

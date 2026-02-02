@@ -517,8 +517,8 @@ class WP_MCP_AI_Security_Audit {
 
 		// Save findings.
 		if ( isset( $_POST['wp_mcp_ai_findings'] ) && is_array( $_POST['wp_mcp_ai_findings'] ) ) {
-			$findings        = array();
-			$findings_input  = wp_unslash( $_POST['wp_mcp_ai_findings'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in loop below.
+			$findings       = array();
+			$findings_input = wp_unslash( $_POST['wp_mcp_ai_findings'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in loop below.
 			foreach ( $findings_input as $finding ) {
 				$findings[] = array(
 					'control'        => isset( $finding['control'] ) ? sanitize_text_field( $finding['control'] ) : '',
