@@ -44,13 +44,13 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'action'        => array(
+				'action'       => array(
 					'type'        => 'string',
 					'description' => __( 'Action to perform: "get_auth_url" to generate authorization URL, "get_status" to check authentication status, "revoke" to remove stored credentials.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'get_auth_url', 'get_status', 'revoke' ),
 					'default'     => 'get_status',
 				),
-				'callback_url'  => array(
+				'callback_url' => array(
 					'type'        => 'string',
 					'description' => __( 'Callback URL for OAuth redirect (required for get_auth_url action).', 'mcp-ai-wpoos' ),
 				),
@@ -167,12 +167,12 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 		}
 
 		return array(
-			'action'           => 'get_status',
-			'authenticated'    => $is_authenticated,
-			'token_expired'    => $is_expired,
-			'expires_at'       => $expires_at ? gmdate( 'Y-m-d H:i:s', (int) $expires_at ) : null,
-			'has_refresh'      => ! empty( $refresh_token ),
-			'configuration'    => array(
+			'action'        => 'get_status',
+			'authenticated' => $is_authenticated,
+			'token_expired' => $is_expired,
+			'expires_at'    => $expires_at ? gmdate( 'Y-m-d H:i:s', (int) $expires_at ) : null,
+			'has_refresh'   => ! empty( $refresh_token ),
+			'configuration' => array(
 				'client_id_set'     => ! empty( get_option( 'wp_mcp_ai_yahoo_client_id' ) ),
 				'client_secret_set' => ! empty( get_option( 'wp_mcp_ai_yahoo_client_secret' ) ),
 			),

@@ -43,13 +43,13 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'season'      => array(
+				'season'   => array(
 					'type'        => 'integer',
 					'description' => __( 'NFL season year (e.g., 2025). Defaults to current season.', 'mcp-ai-wpoos' ),
 					'minimum'     => 2000,
 					'maximum'     => 2099,
 				),
-				'game_key'    => array(
+				'game_key' => array(
 					'type'        => 'string',
 					'description' => __( 'Yahoo game key (e.g., "nfl" for NFL). Defaults to "nfl".', 'mcp-ai-wpoos' ),
 					'default'     => 'nfl',
@@ -129,9 +129,9 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 		$leagues = $this->parse_leagues_response( $data );
 
 		return array(
-			'season'       => $season,
-			'game_key'     => $game_key,
-			'leagues'      => $leagues,
+			'season'        => $season,
+			'game_key'      => $game_key,
+			'leagues'       => $leagues,
 			'total_leagues' => count( $leagues ),
 		);
 	}
@@ -221,8 +221,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 			);
 		}
 
-		$body  = wp_remote_retrieve_body( $response );
-		$data  = json_decode( $body, true );
+		$body = wp_remote_retrieve_body( $response );
+		$data = json_decode( $body, true );
 
 		if ( empty( $data['access_token'] ) ) {
 			return new WP_Error(
@@ -355,18 +355,18 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues implements WP_MCP_AI_Tool_Interface, W
 	 */
 	protected function sanitize_league_data( array $league ) {
 		return array(
-			'league_id'      => isset( $league[0]['league_id'] ) ? sanitize_text_field( $league[0]['league_id'] ) : '',
-			'league_key'     => isset( $league[0]['league_key'] ) ? sanitize_text_field( $league[0]['league_key'] ) : '',
-			'name'           => isset( $league[0]['name'] ) ? sanitize_text_field( $league[0]['name'] ) : '',
-			'season'         => isset( $league[0]['season'] ) ? absint( $league[0]['season'] ) : 0,
-			'scoring_type'   => isset( $league[0]['scoring_type'] ) ? sanitize_text_field( $league[0]['scoring_type'] ) : '',
-			'league_type'    => isset( $league[0]['league_type'] ) ? sanitize_text_field( $league[0]['league_type'] ) : '',
-			'num_teams'      => isset( $league[0]['num_teams'] ) ? absint( $league[0]['num_teams'] ) : 0,
-			'current_week'   => isset( $league[0]['current_week'] ) ? absint( $league[0]['current_week'] ) : 0,
-			'start_week'     => isset( $league[0]['start_week'] ) ? absint( $league[0]['start_week'] ) : 0,
-			'end_week'       => isset( $league[0]['end_week'] ) ? absint( $league[0]['end_week'] ) : 0,
-			'is_finished'    => isset( $league[0]['is_finished'] ) ? (bool) $league[0]['is_finished'] : false,
-			'url'            => isset( $league[0]['url'] ) ? esc_url_raw( $league[0]['url'] ) : '',
+			'league_id'    => isset( $league[0]['league_id'] ) ? sanitize_text_field( $league[0]['league_id'] ) : '',
+			'league_key'   => isset( $league[0]['league_key'] ) ? sanitize_text_field( $league[0]['league_key'] ) : '',
+			'name'         => isset( $league[0]['name'] ) ? sanitize_text_field( $league[0]['name'] ) : '',
+			'season'       => isset( $league[0]['season'] ) ? absint( $league[0]['season'] ) : 0,
+			'scoring_type' => isset( $league[0]['scoring_type'] ) ? sanitize_text_field( $league[0]['scoring_type'] ) : '',
+			'league_type'  => isset( $league[0]['league_type'] ) ? sanitize_text_field( $league[0]['league_type'] ) : '',
+			'num_teams'    => isset( $league[0]['num_teams'] ) ? absint( $league[0]['num_teams'] ) : 0,
+			'current_week' => isset( $league[0]['current_week'] ) ? absint( $league[0]['current_week'] ) : 0,
+			'start_week'   => isset( $league[0]['start_week'] ) ? absint( $league[0]['start_week'] ) : 0,
+			'end_week'     => isset( $league[0]['end_week'] ) ? absint( $league[0]['end_week'] ) : 0,
+			'is_finished'  => isset( $league[0]['is_finished'] ) ? (bool) $league[0]['is_finished'] : false,
+			'url'          => isset( $league[0]['url'] ) ? esc_url_raw( $league[0]['url'] ) : '',
 		);
 	}
 

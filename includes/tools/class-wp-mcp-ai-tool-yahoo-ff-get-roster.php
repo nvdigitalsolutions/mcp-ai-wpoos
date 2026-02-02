@@ -151,11 +151,11 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Roster implements WP_MCP_AI_Tool_Interface, WP
 		$roster_data = $this->parse_roster_response( $data );
 
 		return array(
-			'league_key' => $league_key,
-			'team_key'   => $roster_data['team_key'] ?? $team_key,
-			'team_name'  => $roster_data['team_name'] ?? '',
-			'week'       => $week,
-			'roster'     => $roster_data['players'] ?? array(),
+			'league_key'    => $league_key,
+			'team_key'      => $roster_data['team_key'] ?? $team_key,
+			'team_name'     => $roster_data['team_name'] ?? '',
+			'week'          => $week,
+			'roster'        => $roster_data['players'] ?? array(),
 			'total_players' => count( $roster_data['players'] ?? array() ),
 		);
 	}
@@ -326,18 +326,18 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Roster implements WP_MCP_AI_Tool_Interface, WP
 		$player_info = $player[0] ?? array();
 
 		return array(
-			'player_key'       => isset( $player_info['player_key'] ) ? sanitize_text_field( $player_info['player_key'] ) : '',
-			'player_id'        => isset( $player_info['player_id'] ) ? absint( $player_info['player_id'] ) : 0,
-			'name'             => isset( $player_info['name']['full'] ) ? sanitize_text_field( $player_info['name']['full'] ) : '',
-			'first_name'       => isset( $player_info['name']['first'] ) ? sanitize_text_field( $player_info['name']['first'] ) : '',
-			'last_name'        => isset( $player_info['name']['last'] ) ? sanitize_text_field( $player_info['name']['last'] ) : '',
-			'position'         => isset( $player_info['display_position'] ) ? sanitize_text_field( $player_info['display_position'] ) : '',
+			'player_key'         => isset( $player_info['player_key'] ) ? sanitize_text_field( $player_info['player_key'] ) : '',
+			'player_id'          => isset( $player_info['player_id'] ) ? absint( $player_info['player_id'] ) : 0,
+			'name'               => isset( $player_info['name']['full'] ) ? sanitize_text_field( $player_info['name']['full'] ) : '',
+			'first_name'         => isset( $player_info['name']['first'] ) ? sanitize_text_field( $player_info['name']['first'] ) : '',
+			'last_name'          => isset( $player_info['name']['last'] ) ? sanitize_text_field( $player_info['name']['last'] ) : '',
+			'position'           => isset( $player_info['display_position'] ) ? sanitize_text_field( $player_info['display_position'] ) : '',
 			'eligible_positions' => isset( $player_info['eligible_positions'] ) ? $this->parse_positions( $player_info['eligible_positions'] ) : array(),
-			'team'             => isset( $player_info['editorial_team_abbr'] ) ? sanitize_text_field( $player_info['editorial_team_abbr'] ) : '',
-			'bye_week'         => isset( $player_info['bye_weeks']['week'] ) ? absint( $player_info['bye_weeks']['week'] ) : 0,
-			'status'           => isset( $player_info['status'] ) ? sanitize_text_field( $player_info['status'] ) : '',
-			'selected_position' => isset( $player[1]['selected_position'] ) ? sanitize_text_field( $player[1]['selected_position'][0]['position'] ) : '',
-			'is_editable'      => isset( $player_info['is_editable'] ) ? (bool) $player_info['is_editable'] : false,
+			'team'               => isset( $player_info['editorial_team_abbr'] ) ? sanitize_text_field( $player_info['editorial_team_abbr'] ) : '',
+			'bye_week'           => isset( $player_info['bye_weeks']['week'] ) ? absint( $player_info['bye_weeks']['week'] ) : 0,
+			'status'             => isset( $player_info['status'] ) ? sanitize_text_field( $player_info['status'] ) : '',
+			'selected_position'  => isset( $player[1]['selected_position'] ) ? sanitize_text_field( $player[1]['selected_position'][0]['position'] ) : '',
+			'is_editable'        => isset( $player_info['is_editable'] ) ? (bool) $player_info['is_editable'] : false,
 		);
 	}
 

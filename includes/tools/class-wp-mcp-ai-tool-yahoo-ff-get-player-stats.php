@@ -43,15 +43,15 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats implements WP_MCP_AI_Tool_Interfa
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'league_key'  => array(
+				'league_key' => array(
 					'type'        => 'string',
 					'description' => __( 'Yahoo league key (e.g., "nfl.l.123456"). Required to get league-specific scoring.', 'mcp-ai-wpoos' ),
 				),
-				'player_key'  => array(
+				'player_key' => array(
 					'type'        => 'string',
 					'description' => __( 'Yahoo player key (e.g., "nfl.p.12345"). Required to identify specific player.', 'mcp-ai-wpoos' ),
 				),
-				'week'        => array(
+				'week'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Week number to retrieve stats for. If omitted, retrieves season stats.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
@@ -150,15 +150,15 @@ class WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats implements WP_MCP_AI_Tool_Interfa
 		$stats_data = $this->parse_stats_response( $data );
 
 		return array(
-			'league_key'    => $league_key,
-			'player_key'    => $player_key,
-			'player_name'   => $stats_data['player_name'] ?? '',
-			'position'      => $stats_data['position'] ?? '',
-			'team'          => $stats_data['team'] ?? '',
-			'week'          => $week,
-			'stats_type'    => $week ? 'week' : 'season',
+			'league_key'     => $league_key,
+			'player_key'     => $player_key,
+			'player_name'    => $stats_data['player_name'] ?? '',
+			'position'       => $stats_data['position'] ?? '',
+			'team'           => $stats_data['team'] ?? '',
+			'week'           => $week,
+			'stats_type'     => $week ? 'week' : 'season',
 			'fantasy_points' => $stats_data['fantasy_points'] ?? 0,
-			'stats'         => $stats_data['stats'] ?? array(),
+			'stats'          => $stats_data['stats'] ?? array(),
 		);
 	}
 

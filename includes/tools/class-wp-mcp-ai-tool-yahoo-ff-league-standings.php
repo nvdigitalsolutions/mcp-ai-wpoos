@@ -141,9 +141,9 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 		$standings = $this->parse_standings( $data );
 
 		$result = array(
-			'league_key'   => $league_key,
-			'standings'    => $standings,
-			'total_teams'  => count( $standings ),
+			'league_key'  => $league_key,
+			'standings'   => $standings,
+			'total_teams' => count( $standings ),
 		);
 
 		// Generate chart if requested.
@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 			$chart_html = $this->generate_standings_chart( $standings, $chart_type, $league_key );
 
 			if ( ! is_wp_error( $chart_html ) ) {
-				$result['chart_html'] = $chart_html;
+				$result['chart_html']        = $chart_html;
 				$result['has_visualization'] = true;
 			}
 		}
@@ -217,7 +217,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 				continue;
 			}
 
-			$team_info = $team[0];
+			$team_info      = $team[0];
 			$standings_info = array();
 
 			// Parse team standings.
@@ -271,10 +271,10 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 	 * @return string HTML chart.
 	 */
 	protected function generate_bar_chart( $standings ) {
-		$labels       = array();
-		$points_for   = array();
+		$labels         = array();
+		$points_for     = array();
 		$points_against = array();
-		$wins         = array();
+		$wins           = array();
 
 		foreach ( $standings as $team ) {
 			$labels[]         = $team['team_name'];
@@ -284,8 +284,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$chart_config = array(
-			'type' => 'bar',
-			'data' => array(
+			'type'    => 'bar',
+			'data'    => array(
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
@@ -308,14 +308,14 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 				'responsive'          => true,
 				'maintainAspectRatio' => true,
 				'plugins'             => array(
-					'title'   => array(
+					'title'  => array(
 						'display' => true,
 						'text'    => __( 'League Standings - Points Comparison', 'mcp-ai-wpoos' ),
 						'font'    => array(
 							'size' => 18,
 						),
 					),
-					'legend'  => array(
+					'legend' => array(
 						'display'  => true,
 						'position' => 'top',
 					),
@@ -370,8 +370,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 		}
 
 		$chart_config = array(
-			'type' => 'radar',
-			'data' => array(
+			'type'    => 'radar',
+			'data'    => array(
 				'labels'   => $labels,
 				'datasets' => $datasets,
 			),
@@ -379,14 +379,14 @@ class WP_MCP_AI_Tool_Yahoo_FF_League_Standings implements WP_MCP_AI_Tool_Interfa
 				'responsive'          => true,
 				'maintainAspectRatio' => true,
 				'plugins'             => array(
-					'title'   => array(
+					'title'  => array(
 						'display' => true,
 						'text'    => __( 'League Standings - Top 5 Teams Analysis', 'mcp-ai-wpoos' ),
 						'font'    => array(
 							'size' => 18,
 						),
 					),
-					'legend'  => array(
+					'legend' => array(
 						'display'  => true,
 						'position' => 'top',
 					),

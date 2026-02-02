@@ -43,11 +43,11 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'league_key'         => array(
+				'league_key'       => array(
 					'type'        => 'string',
 					'description' => __( 'Yahoo league key (e.g., "nfl.l.123456"). Required to get league-specific scoring.', 'mcp-ai-wpoos' ),
 				),
-				'team_a_players'     => array(
+				'team_a_players'   => array(
 					'type'        => 'array',
 					'description' => __( 'Array of player keys Team A is offering (giving away).', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -55,7 +55,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 					),
 					'minItems'    => 1,
 				),
-				'team_b_players'     => array(
+				'team_b_players'   => array(
 					'type'        => 'array',
 					'description' => __( 'Array of player keys Team B is offering (receiving by Team A).', 'mcp-ai-wpoos' ),
 					'items'       => array(
@@ -63,19 +63,19 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 					),
 					'minItems'    => 1,
 				),
-				'weeks_to_analyze'   => array(
+				'weeks_to_analyze' => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of past weeks to analyze for trends (default: 4).', 'mcp-ai-wpoos' ),
 					'default'     => 4,
 					'minimum'     => 1,
 					'maximum'     => 17,
 				),
-				'include_chart'      => array(
+				'include_chart'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Generate visual comparison chart using Chart.js (default: true).', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'chart_type'         => array(
+				'chart_type'       => array(
 					'type'        => 'string',
 					'description' => __( 'Chart type for visualization: "bar" for comparison, "line" for trends.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'bar', 'line' ),
@@ -140,14 +140,14 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 		$analysis = $this->analyze_trade( $team_a_stats, $team_b_stats );
 
 		$result = array(
-			'league_key'      => $league_key,
-			'trade_analysis'  => $analysis,
-			'team_a_total'    => $analysis['team_a_total_points'],
-			'team_b_total'    => $analysis['team_b_total_points'],
+			'league_key'       => $league_key,
+			'trade_analysis'   => $analysis,
+			'team_a_total'     => $analysis['team_a_total_points'],
+			'team_b_total'     => $analysis['team_b_total_points'],
 			'point_difference' => $analysis['point_difference'],
-			'recommendation'  => $analysis['recommendation'],
-			'team_a_players'  => $team_a_stats,
-			'team_b_players'  => $team_b_stats,
+			'recommendation'   => $analysis['recommendation'],
+			'team_a_players'   => $team_a_stats,
+			'team_b_players'   => $team_b_stats,
 		);
 
 		// Generate chart if requested.
@@ -160,7 +160,7 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 			);
 
 			if ( ! is_wp_error( $chart_html ) ) {
-				$result['chart_html'] = $chart_html;
+				$result['chart_html']        = $chart_html;
 				$result['has_visualization'] = true;
 			}
 		}
@@ -208,10 +208,10 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 	/**
 	 * Fetch player statistics from Yahoo API.
 	 *
-	 * @param string      $league_key   League key.
-	 * @param string      $player_key   Player key.
-	 * @param int|null    $week         Week number or null for season.
-	 * @param string      $access_token Access token.
+	 * @param string   $league_key   League key.
+	 * @param string   $player_key   Player key.
+	 * @param int|null $week         Week number or null for season.
+	 * @param string   $access_token Access token.
 	 * @return array|WP_Error Player stats or error.
 	 */
 	protected function fetch_player_stats( $league_key, $player_key, $week, $access_token ) {
@@ -354,14 +354,14 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 				__( 'Favorable for Team A - You would gain approximately %.1f%% more value.', 'mcp-ai-wpoos' ),
 				abs( $percentage )
 			);
-			$verdict        = 'favorable';
+			$verdict = 'favorable';
 		} else {
 			$recommendation = sprintf(
 				/* translators: %.1f percentage disadvantage */
 				__( 'Unfavorable for Team A - You would lose approximately %.1f%% value.', 'mcp-ai-wpoos' ),
 				abs( $percentage )
 			);
-			$verdict        = 'unfavorable';
+			$verdict = 'unfavorable';
 		}
 
 		return array(
@@ -385,9 +385,9 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 	 */
 	protected function generate_trade_comparison_chart( $team_a_stats, $team_b_stats, $analysis, $chart_type ) {
 		// Prepare chart data.
-		$labels       = array();
-		$team_a_data  = array();
-		$team_b_data  = array();
+		$labels      = array();
+		$team_a_data = array();
+		$team_b_data = array();
 
 		// Add Team A players.
 		foreach ( $team_a_stats as $player ) {
@@ -413,8 +413,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer implements WP_MCP_AI_Tool_Interface
 
 		// Build Chart.js configuration.
 		$chart_config = array(
-			'type' => $chart_type,
-			'data' => array(
+			'type'    => $chart_type,
+			'data'    => array(
 				'labels'   => $labels,
 				'datasets' => array(
 					array(
