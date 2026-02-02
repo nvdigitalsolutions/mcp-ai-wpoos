@@ -56,11 +56,14 @@ if ( ! defined( 'WP_MCP_AI_URL' ) ) {
 /**
  * Define base version mode constant.
  *
- * Defaults to false (full mode with all available tools).
- * Set to true in wp-config.php to enable base mode (core tools only).
+ * Defaults to true (base mode with core tools only - 165 tools).
+ * Set to false in wp-config.php to enable full mode (all available tools - 519 tools).
+ *
+ * Example in wp-config.php:
+ * define( 'WP_MCP_AI_BASE_VERSION', false ); // Enable full version with 519 tools
  */
 if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) ) {
-	define( 'WP_MCP_AI_BASE_VERSION', false );
+	define( 'WP_MCP_AI_BASE_VERSION', true );
 }
 
 /**
@@ -348,12 +351,13 @@ if ( ! function_exists( 'wp_mcp_ai_is_base_version' ) ) {
 	/**
 	 * Check if base version mode is enabled.
 	 *
-	 * Full version is enabled by default, providing all available tools.
-	 * Base version mode is only active if explicitly set to true in wp-config.php:
-	 * define( 'WP_MCP_AI_BASE_VERSION', true );
+	 * Base version is enabled by default, providing core tools only (165 tools).
+	 * Full version mode (519 tools) is active if explicitly set to false in wp-config.php:
+	 * define( 'WP_MCP_AI_BASE_VERSION', false );
 	 *
-	 * Base version mode limits the plugin to core tools only, excluding tools that require
+	 * Base version mode (default) limits the plugin to core tools only, excluding tools that require
 	 * third-party plugins (WooCommerce, JetEngine, Elementor, etc.) and external API integrations.
+	 * Full version mode enables all available tools including Pro addons (348 additional tools).
 	 *
 	 * @return bool Whether base version mode is active.
 	 */

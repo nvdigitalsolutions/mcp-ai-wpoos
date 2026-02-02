@@ -1226,17 +1226,21 @@ NV oOS works perfectly with vanilla WordPress, but certain features require thir
   - External messaging services (4)
   - QuickBooks (1)
 
-### Full Version Installation (Opt-in)
+### Version Control
 
-To enable the **Full Version** with all third-party integrations and external API tools, add this constant to your `wp-config.php` file:
+**Default Behavior (Base Version - 165 tools):**
+When you clone the repository, the plugin runs in **Base Version** mode by default. This includes 165 core tools without requiring third-party plugins or external API credentials.
+
+**Enabling Full Version (519 tools):**
+To enable the **Full Version** with all Pro addons, third-party integrations, and external API tools, add this constant to your `wp-config.php` file:
 
 ```php
-define( 'WP_MCP_AI_BASE_VERSION', false );
+define( 'WP_MCP_AI_BASE_VERSION', false ); // Enable complete version with 519 tools
 ```
 
 📖 See BASE-VERSION.md for the complete tool list and customization options.
 
-**When to use Base Version:**
+**When to use Base Version (default):**
 - Starting fresh with WordPress
 - Testing or development environments
 - Simpler installations without external dependencies

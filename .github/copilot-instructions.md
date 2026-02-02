@@ -257,9 +257,14 @@ class Test_Feature extends WP_UnitTestCase {
 
 The plugin has two modes:
 - **Base Version** (default): 165 core tools, no third-party dependencies
-- **Full Version**: All 519 tools including WooCommerce, JetEngine, and Pro addons (165 base + 348 pro + 6 core/memory)
+- **Full Version** (opt-in): All 519 tools including WooCommerce, JetEngine, and Pro addons (165 base + 348 pro + 6 core/memory)
 
-Control with: `define( 'WP_MCP_AI_BASE_VERSION', true/false );`
+**Default behavior**: When the repository is cloned, it runs in Base Version mode (165 tools).
+
+**Enabling Full Version**: Add to `wp-config.php`:
+```php
+define( 'WP_MCP_AI_BASE_VERSION', false ); // Enable full version with 519 tools
+```
 
 When adding features, consider which version they belong to.
 

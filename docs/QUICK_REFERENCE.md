@@ -475,8 +475,9 @@ $usage = $tracker->get_usage( $user_id );
 
 ### wp-config.php Constants
 ```php
-// Base version mode (fewer tools)
-define( 'WP_MCP_AI_BASE_VERSION', true );
+// Version Mode Control (default is base version with 165 tools)
+define( 'WP_MCP_AI_BASE_VERSION', true );  // Base version - 165 core tools (default)
+define( 'WP_MCP_AI_BASE_VERSION', false ); // Complete version - 519 tools (base + pro)
 
 // Crawl4AI endpoint
 define( 'WP_MCP_AI_CRAWL4AI_BASE_URL', 'http://localhost:8000' );
