@@ -349,7 +349,8 @@ class WP_MCP_AI_Section_RabbitMQ extends WP_MCP_AI_Settings_Section {
 			<?php endif; ?>
 		</div>
 
-		<?php if ( $enabled && $extension_loaded ) :
+		<?php
+		if ( $enabled && $extension_loaded ) :
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Small inline script for admin section functionality on this admin page only
 			?>
 			<script>

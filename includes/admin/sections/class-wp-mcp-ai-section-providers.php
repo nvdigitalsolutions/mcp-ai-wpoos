@@ -98,8 +98,11 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 			// Fallback to minimal list.
 			if ( empty( $anthropic_models ) ) {
 				$anthropic_models = array(
-					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Latest)',
-					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku',
+					'claude-sonnet-4-5'          => 'Claude Sonnet 4.5 (Recommended)',
+					'claude-haiku-4-5'           => 'Claude Haiku 4.5 (Fastest)',
+					'claude-opus-4-5'            => 'Claude Opus 4.5 (Flagship)',
+					'claude-3-5-sonnet-20241022' => 'Claude 3.5 Sonnet (Legacy)',
+					'claude-3-5-haiku-20241022'  => 'Claude 3.5 Haiku (Legacy)',
 				);
 			}
 
@@ -394,6 +397,20 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'description' => __( 'The default Claude model to use for Anthropic requests. Claude 3.5 Sonnet offers the best balance of intelligence and speed. Claude 3.5 Haiku is faster and more economical for simpler tasks.', 'mcp-ai-wpoos' ),
 					'options'     => $anthropic_models,
 					'default'     => 'claude-3-5-sonnet-20241022',
+				),
+				'anthropic_vision_model'             => array(
+					'type'        => 'select',
+					'label'       => __( 'Anthropic Vision Model', 'mcp-ai-wpoos' ),
+					'description' => __( 'Default model for image analysis and vision tasks via Anthropic. All Claude 3+ models support vision capabilities. Claude 3.5 Sonnet and Opus offer the best vision performance.', 'mcp-ai-wpoos' ),
+					'options'     => $anthropic_models,
+					'default'     => 'claude-3-5-sonnet-20241022',
+				),
+				'anthropic_max_image_tokens'         => array(
+					'type'        => 'text',
+					'label'       => __( 'Anthropic Max Image Tokens', 'mcp-ai-wpoos' ),
+					'description' => __( 'Maximum number of tokens to allocate for image analysis. Higher values allow more detailed analysis but use more tokens. Leave empty to use model defaults. Typical range: 1000-4000.', 'mcp-ai-wpoos' ),
+					'placeholder' => '1568',
+					'sanitize'    => 'absint',
 				),
 
 				// Google Gemini Settings.
@@ -846,7 +863,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					'id'     => 'anthropic',
 					'label'  => __( 'Anthropic', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-generic',
-					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model' ),
+					'fields' => array( 'enable_anthropic', 'anthropic_api_key', 'anthropic_model', 'anthropic_vision_model', 'anthropic_max_image_tokens' ),
 				),
 				'gemini'               => array(
 					'id'     => 'gemini',
@@ -1073,9 +1090,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Providers' ) ) {
 					</div>
 				<?php if ( $description ) : ?>
 						<p class="description"><?php echo wp_kses_post( $description ); ?></p>
-					<?php endif;
+					<?php
+					endif;
 					// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-					?>
+				?>
 					<style>
 						#wp-mcp-ai-provider-sortable {
 							list-style: none;

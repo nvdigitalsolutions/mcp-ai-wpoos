@@ -44,13 +44,13 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'grouping'      => array(
+				'grouping'            => array(
 					'type'        => 'string',
 					'description' => __( 'Group results by (optional, default: "status")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'status', 'country', 'product', 'month' ),
 					'default'     => 'status',
 				),
-				'include_trends' => array(
+				'include_trends'      => array(
 					'type'        => 'boolean',
 					'description' => __( 'Include historical trends (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -105,9 +105,9 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to generate pipeline reports.', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$grouping             = ! empty( $arguments['grouping'] ) ? sanitize_text_field( $arguments['grouping'] ) : 'status';
-		$include_trends       = isset( $arguments['include_trends'] ) ? (bool) $arguments['include_trends'] : true;
-		$include_bottlenecks  = isset( $arguments['include_bottlenecks'] ) ? (bool) $arguments['include_bottlenecks'] : true;
+		$grouping            = ! empty( $arguments['grouping'] ) ? sanitize_text_field( $arguments['grouping'] ) : 'status';
+		$include_trends      = isset( $arguments['include_trends'] ) ? (bool) $arguments['include_trends'] : true;
+		$include_bottlenecks = isset( $arguments['include_bottlenecks'] ) ? (bool) $arguments['include_bottlenecks'] : true;
 
 		// Get all registrations.
 		$registrations_query = new WP_Query(
@@ -127,7 +127,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 				$group_key = '';
 				switch ( $grouping ) {
 					case 'status':
-						$statuses = wp_get_post_terms( $post->ID, 'mcp_ai_reg_status' );
+						$statuses  = wp_get_post_terms( $post->ID, 'mcp_ai_reg_status' );
 						$group_key = ! empty( $statuses ) && ! is_wp_error( $statuses ) ? $statuses[0]->name : 'Unknown';
 						break;
 					case 'country':
@@ -136,7 +136,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 					case 'product':
 						$product_id = get_post_meta( $post->ID, 'product_id', true );
 						if ( $product_id ) {
-							$product = get_post( $product_id );
+							$product   = get_post( $product_id );
 							$group_key = $product ? $product->post_title : 'Unknown';
 						} else {
 							$group_key = 'Unknown';
@@ -149,23 +149,23 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 
 				if ( ! isset( $pipeline_data[ $group_key ] ) ) {
 					$pipeline_data[ $group_key ] = array(
-						'count'           => 0,
-						'registrations'   => array(),
+						'count'         => 0,
+						'registrations' => array(),
 					);
 				}
 
-				$pipeline_data[ $group_key ]['count']++;
+				++$pipeline_data[ $group_key ]['count'];
 				$pipeline_data[ $group_key ]['registrations'][] = $post->ID;
 
 				// Calculate stage time.
 				$submission_date = get_post_meta( $post->ID, 'submission_date', true );
 				$approval_date   = get_post_meta( $post->ID, 'approval_date', true );
-				
+
 				if ( $submission_date ) {
 					$submission_time = strtotime( $submission_date );
-					$current_time = $approval_date ? strtotime( $approval_date ) : time();
-					$days_in_stage = floor( ( $current_time - $submission_time ) / DAY_IN_SECONDS );
-					
+					$current_time    = $approval_date ? strtotime( $approval_date ) : time();
+					$days_in_stage   = floor( ( $current_time - $submission_time ) / DAY_IN_SECONDS );
+
 					$statuses = wp_get_post_terms( $post->ID, 'mcp_ai_reg_status' );
 					if ( ! empty( $statuses ) && ! is_wp_error( $statuses ) ) {
 						$status = $statuses[0]->name;
@@ -201,7 +201,7 @@ class WP_MCP_AI_Tool_Generate_Pipeline_Report implements WP_MCP_AI_Tool_Interfac
 
 				foreach ( $registrations_query->posts as $post ) {
 					if ( gmdate( 'Y-m', strtotime( $post->post_date ) ) === $month ) {
-						$count++;
+						++$count;
 					}
 				}
 

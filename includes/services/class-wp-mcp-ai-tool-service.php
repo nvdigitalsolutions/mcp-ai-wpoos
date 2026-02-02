@@ -175,6 +175,7 @@ class WP_MCP_AI_Tool_Service {
 	 * @return array List of tools.
 	 */
 	public function get_available_tools( $assistant_id = null ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic.
 		$all_tools = $this->registry->get_tools();
 		$tools     = array();
 
@@ -216,7 +217,7 @@ class WP_MCP_AI_Tool_Service {
 			return new WP_Error(
 				'wp_mcp_ai_tool_not_found',
 				sprintf(
-					/* translators: %s: tool name */
+				/* translators: %s: tool name */
 					__( 'Tool "%s" not found.', 'mcp-ai-wpoos' ),
 					$tool_name
 				)
@@ -233,7 +234,7 @@ class WP_MCP_AI_Tool_Service {
 				return new WP_Error(
 					'wp_mcp_ai_missing_tool_argument',
 					sprintf(
-						/* translators: 1: parameter name, 2: tool name */
+					/* translators: 1: parameter name, 2: tool name */
 						__( 'Missing required argument "%1$s" for tool "%2$s".', 'mcp-ai-wpoos' ),
 						$param,
 						$tool_name
@@ -271,6 +272,7 @@ class WP_MCP_AI_Tool_Service {
 	 * @return array Tool statistics.
 	 */
 	public function get_tool_statistics( $tool_slug, $assistant_id = null ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for assistant-specific logic.
 		// This would integrate with usage tracking.
 		// For now, return placeholder.
 		return array(

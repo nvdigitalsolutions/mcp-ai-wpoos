@@ -407,7 +407,7 @@ class WP_MCP_AI_REST_Cost_Manager {
 	 * @param string          $param   Parameter name.
 	 * @return bool True if valid, false otherwise.
 	 */
-	public static function validate_user_id( $user_id, $request, $param ) {
+	public static function validate_user_id( $user_id, $request, $param ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API validation callback signature.
 		$user = get_userdata( $user_id );
 
 		if ( ! $user ) {

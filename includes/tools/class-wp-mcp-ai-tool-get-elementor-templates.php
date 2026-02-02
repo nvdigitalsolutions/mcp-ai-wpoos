@@ -198,8 +198,8 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 		);
 
 		return array(
-			'message'   => $summary_text, // Chat client display
-			'summary'   => $summary_text, // Backward compatibility
+			'message'   => $summary_text, // Chat client display.
+			'summary'   => $summary_text, // Backward compatibility.
 			'templates' => $results,
 			'count'     => count( $results ),
 		);
@@ -270,17 +270,11 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -298,7 +292,6 @@ class WP_MCP_AI_Tool_Get_Elementor_Templates implements WP_MCP_AI_Tool_Interface
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

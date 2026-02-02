@@ -227,9 +227,9 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 		foreach ( $columns as $key => $value ) {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
-				$new_columns['spec_number'] = __( 'Number', 'mcp-ai-wpoos-pro' );
+				$new_columns['spec_number']  = __( 'Number', 'mcp-ai-wpoos-pro' );
 				$new_columns['csi_division'] = __( 'CSI Division', 'mcp-ai-wpoos-pro' );
-				$new_columns['project'] = __( 'Project', 'mcp-ai-wpoos-pro' );
+				$new_columns['project']      = __( 'Project', 'mcp-ai-wpoos-pro' );
 			}
 		}
 		return $new_columns;
@@ -253,7 +253,7 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 				$divisions = get_the_terms( $post_id, 'mcp_ai_arch_spec_div' );
 				if ( $divisions && ! is_wp_error( $divisions ) ) {
 					$division_names = array_map(
-						function( $term ) {
+						function ( $term ) {
 							return $term->name;
 						},
 						$divisions
@@ -289,7 +289,7 @@ class WP_MCP_AI_Architectural_Specification_CPT {
 	 * @return array Modified sortable columns.
 	 */
 	public static function sortable_columns( $columns ) {
-		$columns['spec_number'] = 'spec_number';
+		$columns['spec_number']  = 'spec_number';
 		$columns['csi_division'] = 'csi_division';
 		return $columns;
 	}

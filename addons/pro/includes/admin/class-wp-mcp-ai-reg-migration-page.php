@@ -218,6 +218,8 @@ class WP_MCP_AI_Reg_Migration_Page {
 
 	/**
 	 * Handle import form submission.
+	 *
+	 * Note: Nonce verification is performed by the calling function render_page().
 	 */
 	private static function handle_import() {
 		// Check capabilities.
@@ -226,7 +228,8 @@ class WP_MCP_AI_Reg_Migration_Page {
 		}
 
 		// Validate file upload.
-		if ( ! isset( $_FILES['excel_file'] ) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK ) {
+		// phpcs:disable WordPress.Security.NonceVerification.Missing
+		if ( ! isset( $_FILES['excel_file'] ) || ! isset( $_FILES['excel_file']['error'] ) || UPLOAD_ERR_OK !== $_FILES['excel_file']['error'] ) {
 			add_settings_error(
 				'wp_mcp_ai_import',
 				'file_upload_error',
@@ -237,9 +240,10 @@ class WP_MCP_AI_Reg_Migration_Page {
 		}
 
 		// Validate file type.
-		$file_name = sanitize_file_name( $_FILES['excel_file']['name'] );
-		$file_ext  = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
-		
+		$file_name = isset( $_FILES['excel_file']['name'] ) ? sanitize_file_name( wp_unslash( $_FILES['excel_file']['name'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Missing
+		$file_ext = strtolower( pathinfo( $file_name, PATHINFO_EXTENSION ) );
+
 		if ( ! in_array( $file_ext, array( 'xlsx', 'xls' ), true ) ) {
 			add_settings_error(
 				'wp_mcp_ai_import',

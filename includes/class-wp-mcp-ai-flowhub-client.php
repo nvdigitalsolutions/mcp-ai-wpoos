@@ -398,7 +398,7 @@ if ( ! class_exists( 'WP_MCP_AI_Flowhub_Client' ) ) {
 			}
 
 			// Build the endpoint with location_id in the path.
-			// Flowhub API format: /v0/locations/{location_id}/inventoryNonZero
+			// Flowhub API format: /v0/locations/{location_id}/inventoryNonZero.
 			$location_id = $this->get_location_id();
 			if ( empty( $location_id ) ) {
 				return new WP_Error(

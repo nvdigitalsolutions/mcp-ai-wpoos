@@ -61,7 +61,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 	private function __construct() {
 		// Hook into WP cron for automatic context pruning.
 		add_action( 'wp_mcp_ai_prune_expired_contexts', array( $this, 'prune_expired_contexts' ) );
-		
+
 		// Schedule daily pruning if not already scheduled.
 		if ( ! wp_next_scheduled( 'wp_mcp_ai_prune_expired_contexts' ) ) {
 			wp_schedule_event( time(), 'daily', 'wp_mcp_ai_prune_expired_contexts' );
@@ -210,12 +210,12 @@ class WP_MCP_AI_Agent_Context_Manager {
 
 		// Build session data.
 		$session_data = array(
-			'agent_id'        => $agent_id,
-			'session_id'      => $session_id ? $session_id : 'session_' . time(),
-			'context_count'   => count( $contexts ),
-			'contexts'        => $contexts,
+			'agent_id'         => $agent_id,
+			'session_id'       => $session_id ? $session_id : 'session_' . time(),
+			'context_count'    => count( $contexts ),
+			'contexts'         => $contexts,
 			'contexts_by_type' => $grouped,
-			'recovered_at'    => current_time( 'mysql' ),
+			'recovered_at'     => current_time( 'mysql' ),
 		);
 
 		return $session_data;
@@ -233,7 +233,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 	public function prioritize_context( $context_items, $token_budget, $current_task = array(), $weights = array() ) {
 		// Use the prioritize_context tool if available.
 		$tool_registry = WP_MCP_AI_Tool_Registry::get_instance();
-		$tool = $tool_registry->get_tool( 'prioritize_context' );
+		$tool          = $tool_registry->get_tool( 'prioritize_context' );
 
 		if ( $tool ) {
 			$result = $tool->execute(
@@ -281,7 +281,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 
 		foreach ( $transients as $transient ) {
 			$transient_key = str_replace( '_transient_', '', $transient->option_name );
-			$context_data = maybe_unserialize( $transient->option_value );
+			$context_data  = maybe_unserialize( $transient->option_value );
 
 			// Check if expired.
 			if ( isset( $context_data['expires_at'] ) ) {
@@ -289,7 +289,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 				if ( $expires_timestamp && $current_time > $expires_timestamp ) {
 					// Delete expired context.
 					delete_transient( $transient_key );
-					$pruned_count++;
+					++$pruned_count;
 				}
 			}
 		}
@@ -304,7 +304,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		);
 
 		foreach ( $indexes as $index ) {
-			$index_key = str_replace( '_transient_', '', $index->option_name );
+			$index_key  = str_replace( '_transient_', '', $index->option_name );
 			$index_data = maybe_unserialize( $index->option_value );
 
 			if ( is_array( $index_data ) ) {
@@ -399,20 +399,20 @@ class WP_MCP_AI_Agent_Context_Manager {
 			if ( ! isset( $stats['by_type'][ $type ] ) ) {
 				$stats['by_type'][ $type ] = 0;
 			}
-			$stats['by_type'][ $type ]++;
+			++$stats['by_type'][ $type ];
 
 			// Count by importance.
 			$importance = isset( $entry['importance'] ) ? $entry['importance'] : 'medium';
 			if ( ! isset( $stats['by_importance'][ $importance ] ) ) {
 				$stats['by_importance'][ $importance ] = 0;
 			}
-			$stats['by_importance'][ $importance ]++;
+			++$stats['by_importance'][ $importance ];
 
 			// Count expired.
 			if ( isset( $entry['expires_at'] ) ) {
 				$expires_timestamp = strtotime( $entry['expires_at'] );
 				if ( $expires_timestamp && $current_time > $expires_timestamp ) {
-					$stats['expired_count']++;
+					++$stats['expired_count'];
 				}
 			}
 		}
@@ -443,7 +443,7 @@ class WP_MCP_AI_Agent_Context_Manager {
 		foreach ( $context_index as $ctx_id => $entry ) {
 			$transient_key = self::CONTEXT_PREFIX . md5( $agent_id . '_' . $ctx_id );
 			delete_transient( $transient_key );
-			$deleted_count++;
+			++$deleted_count;
 		}
 
 		// Delete the index.

@@ -47,63 +47,63 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Content Recommendation Engine', 'mcp-ai-wpoos' ),
-			'description'          => __( 'AI-powered related content recommendations with personalization, collaborative filtering, semantic similarity, and user behavior tracking for 2026 standards.', 'mcp-ai-wpoos' ),
-			'category'             => 'content',
-			'required_capability'  => 'edit_posts',
-			'parameters'           => array(
-				'action'                => array(
+			'name'                => __( 'Content Recommendation Engine', 'mcp-ai-wpoos' ),
+			'description'         => __( 'AI-powered related content recommendations with personalization, collaborative filtering, semantic similarity, and user behavior tracking for 2026 standards.', 'mcp-ai-wpoos' ),
+			'category'            => 'content',
+			'required_capability' => 'edit_posts',
+			'parameters'          => array(
+				'action'              => array(
 					'type'        => 'string',
 					'description' => __( 'Action: get_recommendations, train_model, track_interaction, or analyze_performance', 'mcp-ai-wpoos' ),
 					'required'    => true,
 					'enum'        => array( 'get_recommendations', 'train_model', 'track_interaction', 'analyze_performance' ),
 				),
-				'post_id'               => array(
+				'post_id'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Post ID to get recommendations for', 'mcp-ai-wpoos' ),
 				),
-				'user_id'               => array(
+				'user_id'             => array(
 					'type'        => 'integer',
 					'description' => __( 'User ID for personalized recommendations', 'mcp-ai-wpoos' ),
 				),
-				'recommendation_type'   => array(
+				'recommendation_type' => array(
 					'type'        => 'string',
 					'description' => __( 'Type: similar_content, personalized, trending, or category_based', 'mcp-ai-wpoos' ),
 					'default'     => 'similar_content',
 					'enum'        => array( 'similar_content', 'personalized', 'trending', 'category_based' ),
 				),
-				'limit'                 => array(
+				'limit'               => array(
 					'type'        => 'integer',
 					'description' => __( 'Number of recommendations to return (default: 5)', 'mcp-ai-wpoos' ),
 					'default'     => 5,
 				),
-				'exclude_categories'    => array(
+				'exclude_categories'  => array(
 					'type'        => 'array',
 					'description' => __( 'Category IDs to exclude', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'integer' ),
 				),
-				'include_post_types'    => array(
+				'include_post_types'  => array(
 					'type'        => 'array',
 					'description' => __( 'Post types to include (default: post)', 'mcp-ai-wpoos' ),
 					'items'       => array( 'type' => 'string' ),
 					'default'     => array( 'post' ),
 				),
-				'use_semantic_search'   => array(
+				'use_semantic_search' => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use semantic similarity for recommendations', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'use_collaborative'     => array(
+				'use_collaborative'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Use collaborative filtering based on user behavior', 'mcp-ai-wpoos' ),
 					'default'     => true,
 				),
-				'recency_weight'        => array(
+				'recency_weight'      => array(
 					'type'        => 'number',
 					'description' => __( 'Weight for recent content (0.0-1.0, default: 0.3)', 'mcp-ai-wpoos' ),
 					'default'     => 0.3,
 				),
-				'interaction_type'      => array(
+				'interaction_type'    => array(
 					'type'        => 'string',
 					'description' => __( 'Interaction type: view, click, share, or convert', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'view', 'click', 'share', 'convert' ),
@@ -124,17 +124,17 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$start_time = microtime( true );
 
 		// Validate parameters.
-		$action                = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'get_recommendations';
-		$post_id               = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
-		$user_id               = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : get_current_user_id();
-		$recommendation_type   = isset( $arguments['recommendation_type'] ) ? sanitize_text_field( $arguments['recommendation_type'] ) : 'similar_content';
-		$limit                 = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
-		$exclude_categories    = isset( $arguments['exclude_categories'] ) && is_array( $arguments['exclude_categories'] ) ? array_map( 'absint', $arguments['exclude_categories'] ) : array();
-		$include_post_types    = isset( $arguments['include_post_types'] ) && is_array( $arguments['include_post_types'] ) ? array_map( 'sanitize_text_field', $arguments['include_post_types'] ) : array( 'post' );
-		$use_semantic_search   = isset( $arguments['use_semantic_search'] ) ? (bool) $arguments['use_semantic_search'] : true;
-		$use_collaborative     = isset( $arguments['use_collaborative'] ) ? (bool) $arguments['use_collaborative'] : true;
-		$recency_weight        = isset( $arguments['recency_weight'] ) ? floatval( $arguments['recency_weight'] ) : 0.3;
-		$interaction_type      = isset( $arguments['interaction_type'] ) ? sanitize_text_field( $arguments['interaction_type'] ) : 'view';
+		$action              = isset( $arguments['action'] ) ? sanitize_text_field( $arguments['action'] ) : 'get_recommendations';
+		$post_id             = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
+		$user_id             = isset( $arguments['user_id'] ) ? absint( $arguments['user_id'] ) : get_current_user_id();
+		$recommendation_type = isset( $arguments['recommendation_type'] ) ? sanitize_text_field( $arguments['recommendation_type'] ) : 'similar_content';
+		$limit               = isset( $arguments['limit'] ) ? absint( $arguments['limit'] ) : 5;
+		$exclude_categories  = isset( $arguments['exclude_categories'] ) && is_array( $arguments['exclude_categories'] ) ? array_map( 'absint', $arguments['exclude_categories'] ) : array();
+		$include_post_types  = isset( $arguments['include_post_types'] ) && is_array( $arguments['include_post_types'] ) ? array_map( 'sanitize_text_field', $arguments['include_post_types'] ) : array( 'post' );
+		$use_semantic_search = isset( $arguments['use_semantic_search'] ) ? (bool) $arguments['use_semantic_search'] : true;
+		$use_collaborative   = isset( $arguments['use_collaborative'] ) ? (bool) $arguments['use_collaborative'] : true;
+		$recency_weight      = isset( $arguments['recency_weight'] ) ? floatval( $arguments['recency_weight'] ) : 0.3;
+		$interaction_type    = isset( $arguments['interaction_type'] ) ? sanitize_text_field( $arguments['interaction_type'] ) : 'view';
 
 		// Before execution hook.
 		$this->do_before_execute( $arguments, $context );
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	private function handle_get_recommendations( $post_id, $user_id, $recommendation_type, $limit, $exclude_categories, $include_post_types, $use_semantic_search, $use_collaborative, $recency_weight ) {
 		// Check cache first.
 		$cache_key = $this->generate_cache_key( array( $post_id, $user_id, $recommendation_type, $limit ) );
-		$cached = $this->get_cached_result( array( 'cache_key' => $cache_key ) );
+		$cached    = $this->get_cached_result( array( 'cache_key' => $cache_key ) );
 
 		if ( false !== $cached ) {
 			$cached['from_cache'] = true;
@@ -227,9 +227,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			'count'               => count( $recommendations ),
 			'recommendations'     => $recommendations,
 			'algorithm'           => array(
-				'semantic_search'   => $use_semantic_search,
-				'collaborative'     => $use_collaborative,
-				'recency_weight'    => $recency_weight,
+				'semantic_search' => $use_semantic_search,
+				'collaborative'   => $use_collaborative,
+				'recency_weight'  => $recency_weight,
 			),
 			'from_cache'          => false,
 		);
@@ -309,9 +309,9 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$this->invalidate_cache();
 
 		return array(
-			'success'      => true,
-			'interaction'  => $interaction,
-			'message'      => __( 'Interaction tracked successfully', 'mcp-ai-wpoos' ),
+			'success'     => true,
+			'interaction' => $interaction,
+			'message'     => __( 'Interaction tracked successfully', 'mcp-ai-wpoos' ),
 		);
 	}
 
@@ -323,12 +323,12 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	private function handle_analyze_performance() {
 		$interactions = $this->get_user_interactions();
-		$model_info = get_option( 'wp_mcp_ai_recommendation_model', array() );
+		$model_info   = get_option( 'wp_mcp_ai_recommendation_model', array() );
 
 		// Calculate metrics.
 		$total_recommendations = $this->count_total_recommendations();
-		$click_through_rate = $this->calculate_ctr( $interactions );
-		$conversion_rate = $this->calculate_conversion_rate( $interactions );
+		$click_through_rate    = $this->calculate_ctr( $interactions );
+		$conversion_rate       = $this->calculate_conversion_rate( $interactions );
 
 		// Top performing content.
 		$top_content = $this->get_top_performing_content( 10 );
@@ -337,21 +337,21 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$engagement_patterns = $this->analyze_engagement_patterns( $interactions );
 
 		return array(
-			'success'     => true,
-			'metrics'     => array(
+			'success'             => true,
+			'metrics'             => array(
 				'total_interactions'    => count( $interactions ),
 				'total_recommendations' => $total_recommendations,
 				'click_through_rate'    => $click_through_rate,
 				'conversion_rate'       => $conversion_rate,
 			),
-			'model_info'  => array(
+			'model_info'          => array(
 				'trained'    => ! empty( $model_info ),
 				'trained_at' => get_option( 'wp_mcp_ai_recommendation_model_trained_at', 0 ),
 				'accuracy'   => isset( $model_info['accuracy'] ) ? $model_info['accuracy'] : 0,
 			),
-			'top_content' => $top_content,
+			'top_content'         => $top_content,
 			'engagement_patterns' => $engagement_patterns,
-			'recommendations' => array(
+			'recommendations'     => array(
 				__( 'Retrain model weekly for better accuracy', 'mcp-ai-wpoos' ),
 				__( 'A/B test different recommendation types', 'mcp-ai-wpoos' ),
 				__( 'Optimize content based on engagement patterns', 'mcp-ai-wpoos' ),
@@ -401,7 +401,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		// Score posts by similarity.
 		$scored_posts = array();
 		foreach ( $posts as $similar_post ) {
-			$score = $this->calculate_similarity_score( $post, $similar_post, $use_semantic_search );
+			$score          = $this->calculate_similarity_score( $post, $similar_post, $use_semantic_search );
 			$scored_posts[] = array(
 				'post'  => $similar_post,
 				'score' => $score,
@@ -464,7 +464,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		// Score based on user preferences.
 		$scored_posts = array();
 		foreach ( $posts as $post ) {
-			$score = $this->calculate_personalized_score( $post, $preferences, $use_collaborative );
+			$score          = $this->calculate_personalized_score( $post, $preferences, $use_collaborative );
 			$scored_posts[] = array(
 				'post'  => $post,
 				'score' => $score,
@@ -514,7 +514,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		// Score by engagement and recency.
 		$scored_posts = array();
 		foreach ( $posts as $post ) {
-			$score = $this->calculate_trending_score( $post, $recency_weight );
+			$score          = $this->calculate_trending_score( $post, $recency_weight );
 			$scored_posts[] = array(
 				'post'  => $post,
 				'score' => $score,
@@ -583,23 +583,24 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float Similarity score.
 	 */
 	private function calculate_similarity_score( $post1, $post2, $use_semantic_search ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for semantic search. 
 		$score = 0.0;
 
 		// Category overlap.
-		$cats1 = wp_get_post_categories( $post1->ID );
-		$cats2 = wp_get_post_categories( $post2->ID );
+		$cats1            = wp_get_post_categories( $post1->ID );
+		$cats2            = wp_get_post_categories( $post2->ID );
 		$category_overlap = count( array_intersect( $cats1, $cats2 ) ) / max( count( $cats1 ), count( $cats2 ), 1 );
-		$score += $category_overlap * 0.4;
+		$score           += $category_overlap * 0.4;
 
 		// Tag overlap.
-		$tags1 = wp_get_post_tags( $post1->ID, array( 'fields' => 'ids' ) );
-		$tags2 = wp_get_post_tags( $post2->ID, array( 'fields' => 'ids' ) );
+		$tags1       = wp_get_post_tags( $post1->ID, array( 'fields' => 'ids' ) );
+		$tags2       = wp_get_post_tags( $post2->ID, array( 'fields' => 'ids' ) );
 		$tag_overlap = count( array_intersect( $tags1, $tags2 ) ) / max( count( $tags1 ), count( $tags2 ), 1 );
-		$score += $tag_overlap * 0.3;
+		$score      += $tag_overlap * 0.3;
 
 		// Title similarity (basic).
 		$title_similarity = similar_text( strtolower( $post1->post_title ), strtolower( $post2->post_title ) ) / max( strlen( $post1->post_title ), strlen( $post2->post_title ), 1 );
-		$score += $title_similarity * 0.3;
+		$score           += $title_similarity * 0.3;
 
 		return min( 1.0, $score );
 	}
@@ -614,16 +615,17 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float Personalized score.
 	 */
 	private function calculate_personalized_score( $post, $preferences, $use_collaborative ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for collaborative filtering. 
 		$score = 0.0;
 
 		// Category preference match.
 		$post_categories = wp_get_post_categories( $post->ID );
-		$category_match = count( array_intersect( $post_categories, $preferences['categories'] ) ) / max( count( $preferences['categories'] ), 1 );
-		$score += $category_match * 0.6;
+		$category_match  = count( array_intersect( $post_categories, $preferences['categories'] ) ) / max( count( $preferences['categories'] ), 1 );
+		$score          += $category_match * 0.6;
 
 		// Engagement score.
 		$engagement = get_post_meta( $post->ID, '_wp_mcp_ai_engagement_score', true );
-		$score += floatval( $engagement ) * 0.4;
+		$score     += floatval( $engagement ) * 0.4;
 
 		return min( 1.0, $score );
 	}
@@ -641,7 +643,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 		$engagement = floatval( $engagement );
 
 		// Recency factor.
-		$days_old = ( time() - strtotime( $post->post_date ) ) / DAY_IN_SECONDS;
+		$days_old       = ( time() - strtotime( $post->post_date ) ) / DAY_IN_SECONDS;
 		$recency_factor = max( 0, 1 - ( $days_old / 7 ) ); // Decay over 7 days.
 
 		return ( $engagement * ( 1 - $recency_weight ) ) + ( $recency_factor * $recency_weight );
@@ -687,7 +689,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return void
 	 */
 	private function store_interaction( $interaction ) {
-		$interactions = $this->get_user_interactions();
+		$interactions   = $this->get_user_interactions();
 		$interactions[] = $interaction;
 
 		// Keep only last 10000 interactions.
@@ -718,7 +720,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			'convert' => 1.0,
 		);
 
-		$weight = isset( $weights[ $interaction_type ] ) ? $weights[ $interaction_type ] : 0.1;
+		$weight    = isset( $weights[ $interaction_type ] ) ? $weights[ $interaction_type ] : 0.1;
 		$new_score = min( 1.0, $current_score + ( $weight * 0.01 ) );
 
 		update_post_meta( $post_id, '_wp_mcp_ai_engagement_score', $new_score );
@@ -733,7 +735,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 */
 	private function get_user_reading_history( $user_id ) {
 		$interactions = $this->get_user_interactions();
-		$history = array_filter( $interactions, fn( $i ) => $i['user_id'] === $user_id );
+		$history      = array_filter( $interactions, fn( $i ) => $i['user_id'] === $user_id );
 
 		return array_slice( $history, -50 ); // Last 50 interactions.
 	}
@@ -754,7 +756,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 				if ( ! isset( $category_counts[ $cat_id ] ) ) {
 					$category_counts[ $cat_id ] = 0;
 				}
-				$category_counts[ $cat_id ]++;
+				++$category_counts[ $cat_id ];
 			}
 		}
 
@@ -820,7 +822,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float CTR.
 	 */
 	private function calculate_ctr( $interactions ) {
-		$views = count( array_filter( $interactions, fn( $i ) => 'view' === $i['interaction_type'] ) );
+		$views  = count( array_filter( $interactions, fn( $i ) => 'view' === $i['interaction_type'] ) );
 		$clicks = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
 
 		return $views > 0 ? round( ( $clicks / $views ) * 100, 2 ) : 0;
@@ -834,7 +836,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 	 * @return float Conversion rate.
 	 */
 	private function calculate_conversion_rate( $interactions ) {
-		$clicks = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
+		$clicks   = count( array_filter( $interactions, fn( $i ) => 'click' === $i['interaction_type'] ) );
 		$converts = count( array_filter( $interactions, fn( $i ) => 'convert' === $i['interaction_type'] ) );
 
 		return $clicks > 0 ? round( ( $converts / $clicks ) * 100, 2 ) : 0;
@@ -885,7 +887,7 @@ class WP_MCP_AI_Tool_Content_Recommendation_Engine {
 			if ( ! isset( $by_type[ $type ] ) ) {
 				$by_type[ $type ] = 0;
 			}
-			$by_type[ $type ]++;
+			++$by_type[ $type ];
 		}
 
 		return $by_type;

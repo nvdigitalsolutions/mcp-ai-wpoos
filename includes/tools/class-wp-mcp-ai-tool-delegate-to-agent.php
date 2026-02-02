@@ -126,11 +126,16 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 
 		// Merge execution context with task context to preserve team_id and other workflow data.
 		// This ensures virtual agents can be resolved properly.
-		$merged_context = array_merge( $task_context, array_filter( array(
-			'team_id'      => isset( $context['team_id'] ) ? $context['team_id'] : null,
-			'workflow_id'  => isset( $context['workflow_id'] ) ? $context['workflow_id'] : null,
-			'assistant_id' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
-		) ) );
+		$merged_context = array_merge(
+			$task_context,
+			array_filter(
+				array(
+					'team_id'      => isset( $context['team_id'] ) ? $context['team_id'] : null,
+					'workflow_id'  => isset( $context['workflow_id'] ) ? $context['workflow_id'] : null,
+					'assistant_id' => isset( $context['assistant_id'] ) ? $context['assistant_id'] : null,
+				)
+			)
+		);
 
 		// Log delegation attempt for debugging.
 		WP_MCP_AI_Logger::log_event(
@@ -178,10 +183,10 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 				'agent_delegation_failed',
 				'Agent delegation encountered an error',
 				array(
-					'agent_id'    => $agent_id,
-					'error_code'  => $result->get_error_code(),
-					'error_msg'   => $result->get_error_message(),
-					'team_id'     => isset( $merged_context['team_id'] ) ? $merged_context['team_id'] : 'none',
+					'agent_id'   => $agent_id,
+					'error_code' => $result->get_error_code(),
+					'error_msg'  => $result->get_error_message(),
+					'team_id'    => isset( $merged_context['team_id'] ) ? $merged_context['team_id'] : 'none',
 				)
 			);
 
@@ -213,8 +218,8 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 					$merged_context['task_name'],
 					'completed',
 					array(
-						'agent_id'      => $agent_id,
-						'agent_name'    => $result['agent_name'],
+						'agent_id'       => $agent_id,
+						'agent_name'     => $result['agent_name'],
 						'execution_time' => 0, // Actual execution happens async.
 					)
 				);
@@ -246,17 +251,11 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -274,7 +273,6 @@ class WP_MCP_AI_Tool_Delegate_To_Agent implements WP_MCP_AI_Tool_Interface, WP_M
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

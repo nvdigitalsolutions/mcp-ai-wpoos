@@ -237,7 +237,7 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 		// - OpenAI: tts-1, tts-1-hd (voices: alloy, echo, fable, onyx, nova, shimmer)
 		// - Gemini/Google: Neural2 voices (en-US-Neural2-C, etc.)
 		// - Hugging Face: facebook/mms-tts-eng, microsoft/speecht5_tts, facebook/fastspeech2-en-ljspeech, and more
-		// - Ollama, Cloudflare: Fallback to OpenAI if configured (native TTS not supported)
+		// - Ollama, Cloudflare: Fallback to OpenAI if configured (native TTS not supported).
 
 		if ( '' === $text ) {
 			return new WP_Error( 'wp_mcp_ai_missing_text', __( 'No text was supplied for the speech request.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -676,17 +676,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -704,7 +698,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Speech implements WP_MCP_AI_Tool_Interface,
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

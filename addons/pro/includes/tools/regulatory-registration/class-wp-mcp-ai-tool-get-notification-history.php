@@ -180,22 +180,22 @@ class WP_MCP_AI_Tool_Get_Notification_History implements WP_MCP_AI_Tool_Interfac
 				if ( ! isset( $stats['by_type'][ $type ] ) ) {
 					$stats['by_type'][ $type ] = 0;
 				}
-				$stats['by_type'][ $type ]++;
+				++$stats['by_type'][ $type ];
 			}
 		}
 
 		return array(
-			'success'     => true,
-			'total'       => count( $filtered_history ),
-			'limit'       => $limit,
-			'filters'     => array(
+			'success'      => true,
+			'total'        => count( $filtered_history ),
+			'limit'        => $limit,
+			'filters'      => array(
 				'notification_type' => $notification_type,
 				'registration_id'   => $registration_id,
 				'start_date'        => $start_date,
 				'end_date'          => $end_date,
 			),
-			'statistics'  => $stats,
-			'history'     => $filtered_history,
+			'statistics'   => $stats,
+			'history'      => $filtered_history,
 			'retrieved_at' => current_time( 'mysql' ),
 		);
 	}

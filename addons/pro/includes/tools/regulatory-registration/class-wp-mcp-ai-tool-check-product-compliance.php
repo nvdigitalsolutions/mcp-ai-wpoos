@@ -213,7 +213,7 @@ class WP_MCP_AI_Tool_Check_Product_Compliance implements WP_MCP_AI_Tool_Interfac
 
 		$query = new WP_Query(
 			array(
-				'post_type'      => 'mcp_ai_reg_requirement',
+				'post_type'      => 'mcp_ai_requirement',
 				'posts_per_page' => -1,
 				'meta_query'     => $meta_query,
 			)

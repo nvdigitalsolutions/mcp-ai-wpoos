@@ -3,6 +3,8 @@
  * Interface that all WP MCP AI tools must implement.
  *
  * @package WP_MCP_AI
+ *
+ * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- All tool-related interfaces are grouped here for maintainability. These interfaces work together to define the tool system architecture.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

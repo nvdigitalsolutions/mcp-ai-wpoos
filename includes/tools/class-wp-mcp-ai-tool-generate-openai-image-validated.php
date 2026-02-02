@@ -133,7 +133,10 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Sanitize result for LLM consumption.
+	 *
+	 * @param mixed $result The result to sanitize.
+	 * @return mixed Sanitized result.
 	 */
 	public function sanitize_for_llm( $result ) {
 		// Delegate to the original tool.
@@ -144,17 +147,11 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -172,7 +169,6 @@ class WP_MCP_AI_Tool_Generate_OpenAI_Image_Validated extends WP_MCP_AI_Validated
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 

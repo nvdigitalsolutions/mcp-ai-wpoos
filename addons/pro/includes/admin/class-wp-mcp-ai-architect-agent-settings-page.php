@@ -77,6 +77,25 @@ class WP_MCP_AI_Architect_Agent_Settings_Page {
 					<li><strong>search_codebase</strong> - <?php esc_html_e( 'Advanced code pattern search with grep-style matching', 'mcp-ai-wpoos-pro' ); ?></li>
 				</ul>
 
+				<h3><?php esc_html_e( 'Capability Flags (11 Total)', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p>
+					<?php
+					esc_html_e(
+						'Each tool declares capability flags that provide metadata about its behavior and security requirements:',
+						'mcp-ai-wpoos-pro'
+					);
+					?>
+				</p>
+				<ul>
+					<li><strong>architect-agent</strong> - <?php esc_html_e( 'Core Architect Agent capability', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>code-modification</strong> - <?php esc_html_e( 'Can modify source code files', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>shell-execution</strong> - <?php esc_html_e( 'Can execute shell commands', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>version-control</strong> - <?php esc_html_e( 'Can perform git operations', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>code-search</strong> - <?php esc_html_e( 'Can search codebase', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>requires-workspace-trust</strong> - <?php esc_html_e( 'Requires workspace trust (security model)', 'mcp-ai-wpoos-pro' ); ?></li>
+					<li><strong>development-workflow</strong> - <?php esc_html_e( 'Part of development lifecycle', 'mcp-ai-wpoos-pro' ); ?></li>
+				</ul>
+
 				<h3><?php esc_html_e( 'Security Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 				<ul>
 					<li><?php esc_html_e( 'Requires edit_plugins capability', 'mcp-ai-wpoos-pro' ); ?></li>

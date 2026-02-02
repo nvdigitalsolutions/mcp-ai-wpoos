@@ -13,6 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Document Template CPT class.
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-document-template-cpt.php';
+
 // Check if Document Generation toolkit is enabled.
 $settings   = get_option( 'wp_mcp_ai_settings', array() );
 $is_enabled = ! empty( $settings['enable_document_generation_toolkit'] );
@@ -23,7 +26,11 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load Document Generation admin pages.
 	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-settings-page.php';
+		// Load new CPT-based settings page.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-generation-cpt-settings-page.php';
+
+		// Load Research & Add page for document templates.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-document-template-research-page.php';
 	}
 
 	// Load Research & Add for CCT/CPT integration.
@@ -33,6 +40,15 @@ if ( $is_enabled && ! $is_base ) {
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/tools/document-generation/.
 }
+
+// Initialize Document Template CPT.
+add_action(
+	'init',
+	function () {
+		WP_MCP_AI_Document_Template_CPT::init();
+	},
+	5
+);
 
 /**
  * Enqueue document generation toolkit admin styles.
@@ -46,10 +62,13 @@ function wp_mcp_ai_enqueue_document_generation_toolkit_admin_styles( $hook ) {
 		return;
 	}
 
-	// Check if we're on the toolkit settings page.
+	// Check if we're on document template pages.
 	$screen = get_current_screen();
-	if ( ! $screen || 'nvoos-pro-dashboard_page_wp-mcp-ai-document-generation-toolkit-settings' !== $screen->id ) {
-		return;
+	if ( ! $screen || ! in_array( $screen->post_type, array( 'mcp_ai_doc_tpl' ), true ) ) {
+		// Also check for new settings page.
+		if ( ! $screen || 'mcp_ai_doc_tpl_page_document-generation-settings' !== $screen->id ) {
+			return;
+		}
 	}
 
 	// Enqueue admin styles if available.

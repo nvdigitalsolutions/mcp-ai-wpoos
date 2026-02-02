@@ -256,7 +256,7 @@ class WP_MCP_AI_REST_Validator {
 	 * @param string          $param   The parameter name.
 	 * @return bool|WP_Error True if valid, WP_Error if invalid.
 	 */
-	public function validate_mcp_params( $value, $request, $param ) {
+	public function validate_mcp_params( $value, $request, $param ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API validation callback signature.
 		// This validates the params object for MCP requests.
 		// The structure depends on the method, so we validate based on that.
 		$method = $request->get_param( 'method' );

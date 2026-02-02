@@ -200,7 +200,7 @@ if ( ! class_exists( 'WP_MCP_AI_Cron_Manager' ) ) {
 				$event = wp_get_scheduled_event( $hook, $args );
 				if ( ! $event ) {
 					// Check if we should remove the job based on retention period.
-					if ( $retention_period === 0 ) {
+					if ( 0 === $retention_period ) {
 						// Remove immediately if retention is disabled.
 						unset( $jobs[ $job_id ] );
 						$changed = true;

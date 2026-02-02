@@ -44,16 +44,16 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'member_id'            => array(
+				'member_id'             => array(
 					'type'        => 'integer',
 					'description' => __( 'Member ID this health information belongs to (required)', 'mcp-ai-wpoos-pro' ),
 					'minimum'     => 1,
 				),
-				'raw_information'      => array(
+				'raw_information'       => array(
 					'type'        => 'string',
 					'description' => __( 'Raw, unstructured health information text to parse and organize. Can include medical records, prescriptions, allergies, checkup notes, policy details, etc.', 'mcp-ai-wpoos-pro' ),
 				),
-				'auto_create_records'  => array(
+				'auto_create_records'   => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically create the parsed records in the system (default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
@@ -153,16 +153,16 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		}
 
 		return array(
-			'success'                 => true,
-			'member_id'               => $member_id,
-			'member_name'             => $member->post_title,
-			'parsed_data'             => $parsed_data,
-			'records_created'         => $auto_create && ! $confirmation_required,
-			'created_records'         => $created_records,
-			'confirmation_required'   => $confirmation_required,
-			'attachment_ids'          => $attachment_ids,
-			'source_documents_kept'   => ! empty( $attachment_ids ),
-			'parsing_summary'         => $this->generate_parsing_summary( $parsed_data, $created_records, $attachment_ids ),
+			'success'               => true,
+			'member_id'             => $member_id,
+			'member_name'           => $member->post_title,
+			'parsed_data'           => $parsed_data,
+			'records_created'       => $auto_create && ! $confirmation_required,
+			'created_records'       => $created_records,
+			'confirmation_required' => $confirmation_required,
+			'attachment_ids'        => $attachment_ids,
+			'source_documents_kept' => ! empty( $attachment_ids ),
+			'parsing_summary'       => $this->generate_parsing_summary( $parsed_data, $created_records, $attachment_ids ),
 		);
 	}
 
@@ -182,9 +182,9 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			'allergies'       => array(),
 			'demographics'    => array(),
 			'metadata'        => array(
-				'parsed_at'       => current_time( 'mysql' ),
-				'data_quality'    => array(),
-				'completeness'    => 0,
+				'parsed_at'    => current_time( 'mysql' ),
+				'data_quality' => array(),
+				'completeness' => 0,
 			),
 		);
 
@@ -201,9 +201,9 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				// Empty line might indicate end of a section.
 				if ( ! empty( $current_record ) && null !== $current_section ) {
 					// Validate and assess data quality before adding.
-					$current_record = $this->validate_and_enhance_record( $current_record, $current_section );
+					$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 					$parsed[ $current_section ][] = $current_record;
-					$current_record                = array();
+					$current_record               = array();
 				}
 				continue;
 			}
@@ -213,19 +213,17 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			if ( $detected_type ) {
 				// Save previous record if any.
 				if ( ! empty( $current_record ) && null !== $current_section ) {
-					$current_record = $this->validate_and_enhance_record( $current_record, $current_section );
+					$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 					$parsed[ $current_section ][] = $current_record;
 				}
 				$current_section = $detected_type;
 				$current_record  = array( 'raw_line' => $line );
-			} else {
+			} elseif ( null !== $current_section ) {
 				// Add to current record.
-				if ( null !== $current_section ) {
-					if ( ! isset( $current_record['content'] ) ) {
-						$current_record['content'] = '';
-					}
-					$current_record['content'] .= $line . "\n";
+				if ( ! isset( $current_record['content'] ) ) {
+					$current_record['content'] = '';
 				}
+				$current_record['content'] .= $line . "\n";
 			}
 
 			// Extract specific data patterns.
@@ -234,7 +232,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 		// Save last record.
 		if ( ! empty( $current_record ) && null !== $current_section ) {
-			$current_record = $this->validate_and_enhance_record( $current_record, $current_section );
+			$current_record               = $this->validate_and_enhance_record( $current_record, $current_section );
 			$parsed[ $current_section ][] = $current_record;
 		}
 
@@ -253,10 +251,10 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 		if ( ! $has_data ) {
 			$parsed['medical_records'][] = array(
-				'title'       => __( 'Imported Health Information', 'mcp-ai-wpoos-pro' ),
-				'content'     => $raw_text,
-				'record_type' => 'general',
-				'date'        => current_time( 'Y-m-d' ),
+				'title'        => __( 'Imported Health Information', 'mcp-ai-wpoos-pro' ),
+				'content'      => $raw_text,
+				'record_type'  => 'general',
+				'date'         => current_time( 'Y-m-d' ),
 				'data_quality' => array(
 					'completeness' => 30, // Low completeness for unstructured data.
 					'accuracy'     => 'unknown',
@@ -583,8 +581,8 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				unset( $record['date'] );
 			} else {
 				// Check if date is in reasonable range (not in future, not too old).
-				$now          = current_time( 'timestamp' );
-				$century_ago  = strtotime( '-100 years' );
+				$now         = current_time( 'timestamp' );
+				$century_ago = strtotime( '-100 years' );
 				if ( $date_timestamp > $now ) {
 					$quality_score -= 5;
 					$issues[]       = 'future_date';
@@ -617,8 +615,8 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			case 'allergies':
 				// Allergies should have severity.
 				if ( empty( $record['severity'] ) ) {
-					$quality_score -= 15;
-					$issues[]       = 'missing_severity';
+					$quality_score     -= 15;
+					$issues[]           = 'missing_severity';
 					$record['severity'] = 'moderate'; // Default to moderate for safety.
 				}
 				break;
@@ -634,7 +632,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 			case 'medical_records':
 				// Medical records should have type.
 				if ( empty( $record['record_type'] ) ) {
-					$quality_score -= 5;
+					$quality_score        -= 5;
 					$record['record_type'] = 'general';
 				}
 				break;
@@ -687,8 +685,8 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 	 * @return array Quality assessment.
 	 */
 	private function assess_data_quality( $parsed ) {
-		$total_records = 0;
-		$total_score   = 0;
+		$total_records        = 0;
+		$total_score          = 0;
 		$quality_distribution = array(
 			'high'   => 0,
 			'medium' => 0,
@@ -700,10 +698,10 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 				foreach ( $parsed[ $type ] as $record ) {
 					if ( isset( $record['data_quality']['score'] ) ) {
 						$total_score += $record['data_quality']['score'];
-						$total_records++;
-						
+						++$total_records;
+
 						if ( isset( $record['data_quality']['status'] ) ) {
-							$quality_distribution[ $record['data_quality']['status'] ]++;
+							++$quality_distribution[ $record['data_quality']['status'] ];
 						}
 					}
 				}
@@ -713,11 +711,11 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 		$average_score = $total_records > 0 ? round( $total_score / $total_records ) : 0;
 
 		return array(
-			'average_score'        => $average_score,
-			'total_records'        => $total_records,
-			'distribution'         => $quality_distribution,
-			'overall_assessment'   => $average_score >= 80 ? 'excellent' : ( $average_score >= 60 ? 'good' : ( $average_score >= 40 ? 'fair' : 'poor' ) ),
-			'recommendations'      => $this->get_quality_recommendations( $average_score, $quality_distribution ),
+			'average_score'      => $average_score,
+			'total_records'      => $total_records,
+			'distribution'       => $quality_distribution,
+			'overall_assessment' => $average_score >= 80 ? 'excellent' : ( $average_score >= 60 ? 'good' : ( $average_score >= 40 ? 'fair' : 'poor' ) ),
+			'recommendations'    => $this->get_quality_recommendations( $average_score, $quality_distribution ),
 		);
 	}
 
@@ -735,7 +733,7 @@ class WP_MCP_AI_Tool_Parse_Health_Information implements WP_MCP_AI_Tool_Interfac
 
 		foreach ( self::RECORD_TYPES as $section ) {
 			if ( ! empty( $parsed[ $section ] ) ) {
-				$filled_sections++;
+				++$filled_sections;
 			}
 		}
 

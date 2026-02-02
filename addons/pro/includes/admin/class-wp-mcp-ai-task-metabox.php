@@ -287,7 +287,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save due date.
 		if ( isset( $_POST['task_due_date'] ) ) {
-			$due_date = sanitize_text_field( $_POST['task_due_date'] );
+			$due_date = sanitize_text_field( wp_unslash( $_POST['task_due_date'] ) );
 			if ( empty( $due_date ) || self::validate_date( $due_date ) ) {
 				update_post_meta( $post_id, '_task_due_date', $due_date );
 			}
@@ -308,7 +308,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save category.
 		if ( isset( $_POST['task_category'] ) ) {
-			$category        = sanitize_key( $_POST['task_category'] );
+			$category         = sanitize_key( $_POST['task_category'] );
 			$valid_categories = array( 'general', 'bug', 'feature', 'maintenance', 'research', 'documentation', 'design', 'testing' );
 			if ( in_array( $category, $valid_categories, true ) ) {
 				update_post_meta( $post_id, '_task_category', $category );
@@ -317,13 +317,13 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save tags.
 		if ( isset( $_POST['task_tags'] ) ) {
-			$tags = sanitize_text_field( $_POST['task_tags'] );
+			$tags = sanitize_text_field( wp_unslash( $_POST['task_tags'] ) );
 			update_post_meta( $post_id, '_task_tags', $tags );
 		}
 
 		// Save estimated effort.
 		if ( isset( $_POST['task_estimated_effort'] ) ) {
-			$estimated_effort = sanitize_text_field( $_POST['task_estimated_effort'] );
+			$estimated_effort = sanitize_text_field( wp_unslash( $_POST['task_estimated_effort'] ) );
 			if ( is_numeric( $estimated_effort ) && $estimated_effort >= 0 ) {
 				update_post_meta( $post_id, '_task_estimated_effort', floatval( $estimated_effort ) );
 			} elseif ( empty( $estimated_effort ) ) {
@@ -333,7 +333,7 @@ class WP_MCP_AI_Task_Metabox {
 
 		// Save actual effort.
 		if ( isset( $_POST['task_actual_effort'] ) ) {
-			$actual_effort = sanitize_text_field( $_POST['task_actual_effort'] );
+			$actual_effort = sanitize_text_field( wp_unslash( $_POST['task_actual_effort'] ) );
 			if ( is_numeric( $actual_effort ) && $actual_effort >= 0 ) {
 				update_post_meta( $post_id, '_task_actual_effort', floatval( $actual_effort ) );
 			} elseif ( empty( $actual_effort ) ) {

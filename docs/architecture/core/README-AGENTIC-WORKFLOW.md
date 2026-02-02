@@ -92,7 +92,7 @@ All automatically in ~5 seconds!
 
 ### What tools are available?
 
-**65+ built-in tools** including:
+**519 built-in tools** (165 base + 348 pro + 6 core/memory) including:
 - WordPress content (posts, pages, media)
 - WooCommerce (products, orders)
 - JetEngine (custom tables, relations)
@@ -271,7 +271,7 @@ Result: Automated site audit
 
 ## 🔗 Related Documentation
 
-- **[Tool Reference](../../reference/tools/tool-reference.md)** - All 65+ tools catalog
+- **[Tool Reference](../../reference/tools/tool-reference.md)** - All 519 tools catalog
 - **[REST API](../../reference/api/rest-api.md)** - API documentation
 - **[Best Practices](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage recommendations
 - **[Authentication](../../reference/api/mcp-server-authentication.md)** - Security setup

@@ -949,7 +949,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 
 		$markdown = '';
 
-		foreach ( $body->childNodes as $child ) {
+		foreach ( $body->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 			$markdown .= $this->render_dom_node_to_markdown( $child, 0 );
 		}
 
@@ -968,7 +968,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	 */
 	protected function render_dom_node_to_markdown( $node, $list_depth = 0 ) {
 		if ( $node instanceof DOMText ) {
-			$text = preg_replace( '/\s+/u', ' ', $node->wholeText );
+			$text = preg_replace( '/\s+/u', ' ', $node->wholeText ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 			return $text;
 		}
 
@@ -976,7 +976,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			return '';
 		}
 
-		$tag      = strtolower( $node->tagName );
+		$tag      = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 		$contents = $this->render_dom_children_to_markdown( $node, $list_depth );
 
 		switch ( $tag ) {
@@ -1003,6 +1003,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			case 'i':
 				return '_' . trim( $contents ) . '_';
 			case 'code':
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 				if ( strtolower( $node->parentNode->nodeName ) === 'pre' ) {
 					return $contents;
 				}
@@ -1024,6 +1025,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			case 'ul':
 			case 'ol':
 				$output = "\n";
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 				foreach ( $node->childNodes as $child ) {
 					$output .= $this->render_dom_node_to_markdown( $child, $list_depth + 1 );
 				}
@@ -1033,7 +1035,8 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 				if ( '' === $content ) {
 					return '';
 				}
-				$indent  = str_repeat( '    ', max( 0, $list_depth - 1 ) );
+				$indent = str_repeat( '    ', max( 0, $list_depth - 1 ) );
+				// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 				$ordered = $node->parentNode && 'ol' === strtolower( $node->parentNode->nodeName );
 				$marker  = $ordered ? '1.' : '-';
 				$content = preg_replace( '/\n+/', "\n" . $indent . '    ', $content );
@@ -1060,6 +1063,7 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	protected function render_dom_children_to_markdown( $node, $list_depth ) {
 		$buffer = '';
 
+		// phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM API property name.
 		foreach ( $node->childNodes as $child ) {
 			$buffer .= $this->render_dom_node_to_markdown( $child, $list_depth );
 		}
@@ -1960,17 +1964,11 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -1988,7 +1986,6 @@ class WP_MCP_AI_Tool_Run_Crawl4AI_Job implements WP_MCP_AI_Tool_Interface, WP_MC
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

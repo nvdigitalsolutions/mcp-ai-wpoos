@@ -19,13 +19,13 @@ require_once WP_MCP_AI_PRO_PATH . 'includes/migrations/class-wp-mcp-ai-migrate-m
 // Run migration on admin init (only once).
 add_action(
 	'admin_init',
-	function() {
+	function () {
 		// Only run migration if needed.
 		$status = WP_MCP_AI_Migrate_Medical_Record_Post_Type::get_status();
 		if ( $status['needs_migration'] && ! $status['migration_completed'] ) {
 			// Run migration automatically.
 			$result = WP_MCP_AI_Migrate_Medical_Record_Post_Type::run();
-			
+
 			// Log result.
 			if ( 'success' === $result['status'] && function_exists( 'wp_mcp_ai_log_activity' ) ) {
 				wp_mcp_ai_log_activity(

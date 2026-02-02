@@ -31,9 +31,11 @@ class WP_MCP_AI_Admin_Create_Team_Button {
 	 */
 	public static function enqueue_scripts( $hook ) {
 		// Only load on the assistant list page.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only parameter check for script enqueue.
 		if ( 'edit.php' !== $hook || ! isset( $_GET['post_type'] ) || 'mcp_ai_assistant' !== $_GET['post_type'] ) {
 			return;
 		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		wp_enqueue_style(
 			'wp-mcp-ai-create-team-modal',

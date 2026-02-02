@@ -20,6 +20,7 @@ Quick start guides and installation documentation for Open Operator System (NV o
 - [Deployment Troubleshooting](installation-setup/deployment-troubleshooting.md) - Common deployment issues
 - [Cloudflare Tunnel Setup](installation-setup/cloudflare-tunnel-setup.md) - Secure remote access
 - [Multisite Support](installation-setup/multisite-support.md) - WordPress multisite configuration
+- [Trade.gov API Setup](TRADE-GOV-API-SETUP.md) - Configure Trade.gov Tariff Rates API for import duty lookups
 
 ### Quick Starts
 - [MCP Testing Quick Start](quick-starts/QUICK-START-MCP-TESTING.md) - Test MCP endpoint quickly

@@ -108,27 +108,27 @@ class Test_Workflow_Health_Check extends WP_UnitTestCase {
 		$workflows = array();
 
 		// Stale workflow.
-		$stale_id = 'wf_stale_' . uniqid();
+		$stale_id    = 'wf_stale_' . uniqid();
 		$workflows[] = array(
-			'workflow_id'  => $stale_id,
-			'state'        => 'initialized',
-			'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 400 ),
+			'workflow_id' => $stale_id,
+			'state'       => 'initialized',
+			'created_at'  => gmdate( 'Y-m-d H:i:s', time() - 400 ),
 		);
 
 		// Recent workflow.
-		$recent_id = 'wf_recent_' . uniqid();
+		$recent_id   = 'wf_recent_' . uniqid();
 		$workflows[] = array(
-			'workflow_id'  => $recent_id,
-			'state'        => 'initialized',
-			'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 60 ),
+			'workflow_id' => $recent_id,
+			'state'       => 'initialized',
+			'created_at'  => gmdate( 'Y-m-d H:i:s', time() - 60 ),
 		);
 
 		// Running workflow.
-		$running_id = 'wf_running_' . uniqid();
+		$running_id  = 'wf_running_' . uniqid();
 		$workflows[] = array(
-			'workflow_id'  => $running_id,
-			'state'        => 'running',
-			'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 30 ),
+			'workflow_id' => $running_id,
+			'state'       => 'running',
+			'created_at'  => gmdate( 'Y-m-d H:i:s', time() - 30 ),
 		);
 
 		// Store workflows as transients.
@@ -200,11 +200,11 @@ class Test_Workflow_Health_Check extends WP_UnitTestCase {
 		// Create a stale workflow.
 		$workflow_id   = 'wf_test_' . uniqid();
 		$workflow_data = array(
-			'workflow_id'  => $workflow_id,
-			'team_id'      => 'team_test_' . uniqid(),
-			'state'        => 'initialized',
-			'created_at'   => gmdate( 'Y-m-d H:i:s', time() - 400 ),
-			'tasks'        => array(),
+			'workflow_id' => $workflow_id,
+			'team_id'     => 'team_test_' . uniqid(),
+			'state'       => 'initialized',
+			'created_at'  => gmdate( 'Y-m-d H:i:s', time() - 400 ),
+			'tasks'       => array(),
 		);
 
 		$transient_key = 'wp_mcp_ai_workflow_' . sanitize_key( $workflow_id );

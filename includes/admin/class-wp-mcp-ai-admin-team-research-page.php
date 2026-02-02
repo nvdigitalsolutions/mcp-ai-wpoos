@@ -338,11 +338,11 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		$post_type = class_exists( 'WP_MCP_AI_Team_CPT' ) ? WP_MCP_AI_Team_CPT::POST_TYPE : 'mcp_ai_team';
-		
+
 		// Get team statistics.
 		$total_teams     = wp_count_posts( $post_type );
 		$published_count = isset( $total_teams->publish ) ? $total_teams->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$teams = get_posts(
 			array(
@@ -352,32 +352,32 @@ class WP_MCP_AI_Admin_Team_Research_Page {
 			)
 		);
 
-		$complete_count      = 0;
-		$with_members        = 0;
-		$with_orchestration  = 0;
-		$with_driver         = 0;
+		$complete_count     = 0;
+		$with_members       = 0;
+		$with_orchestration = 0;
+		$with_driver        = 0;
 
 		foreach ( $teams as $team ) {
 			$members       = get_post_meta( $team->ID, '_wp_mcp_ai_team_members', true );
 			$orchestration = get_post_meta( $team->ID, '_wp_mcp_ai_team_orchestration_mode', true );
 			$driver        = get_post_meta( $team->ID, '_wp_mcp_ai_team_driver_assistant_id', true );
-			
+
 			if ( ! empty( $members ) && is_array( $members ) ) {
-				$with_members++;
+				++$with_members;
 			}
 			if ( ! empty( $orchestration ) ) {
-				$with_orchestration++;
+				++$with_orchestration;
 			}
 			if ( ! empty( $driver ) ) {
-				$with_driver++;
+				++$with_driver;
 			}
 			if ( ! empty( $members ) && ! empty( $orchestration ) && ! empty( $driver ) ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Team Data Quality', 'mcp-ai-wpoos' ); ?></h2>

@@ -412,7 +412,7 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 				</div>
 
 				<!-- Federation & Mesh -->
-				<?php if ( ! empty( $settings['enable_federation'] ) || ! empty( $settings['enable_mesh'] ) ) : ?>
+				<?php if ( ! empty( $settings['enable_federation'] ) || ! empty( $settings['enable_federation_directory'] ) || ! empty( $settings['enable_mesh'] ) ) : ?>
 					<div class="card">
 						<h2><?php esc_html_e( '7. Federation & Mesh Networking', 'mcp-ai-wpoos' ); ?></h2>
 						<table class="widefat striped">
@@ -438,6 +438,34 @@ if ( ! class_exists( 'WP_MCP_AI_MCP_Server_Diagnostic' ) ) {
 											<?php esc_html_e( 'Region:', 'mcp-ai-wpoos' ); ?>
 											<code><?php echo esc_html( isset( $settings['federation_regions'] ) ? $settings['federation_regions'] : 'global' ); ?></code>
 										<?php endif; ?>
+									</td>
+								</tr>
+								<tr>
+									<td><strong><?php esc_html_e( 'Federation Directory', 'mcp-ai-wpoos' ); ?></strong></td>
+									<td>
+										<?php if ( ! empty( $settings['enable_federation_directory'] ) ) : ?>
+											<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
+										<?php else : ?>
+											<span style="color: red;">✗ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
+										<?php endif; ?>
+									</td>
+									<td>
+										<?php
+										if ( ! empty( $settings['enable_federation_directory'] ) && post_type_exists( 'ai_peer' ) ) {
+											$ai_peer_count = wp_count_posts( 'ai_peer' );
+											$total_peers   = 0;
+											foreach ( (array) $ai_peer_count as $status => $count ) {
+												if ( ! in_array( $status, array( 'trash', 'auto-draft' ), true ) ) {
+													$total_peers += absint( $count );
+												}
+											}
+											printf(
+												/* translators: %d: number of AI peers */
+												esc_html__( '%d AI peers registered', 'mcp-ai-wpoos' ),
+												absint( $total_peers )
+											);
+										}
+										?>
 									</td>
 								</tr>
 								<tr>

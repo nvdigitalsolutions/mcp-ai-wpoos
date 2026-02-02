@@ -72,7 +72,7 @@ The agentic workflow enables AI assistants to autonomously execute tools in a lo
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Tool Registry                             │
-│  - 65+ built-in tools                                        │
+│  - 519 built-in tools (165 base + 348 pro + 6 core/memory)  │
 │  - Tool validation                                           │
 │  - Capability checking                                       │
 │  - Result formatting                                         │
@@ -548,7 +548,7 @@ add_action( 'wp_mcp_ai_agentic_metrics', function( $metrics ) {
 
 ## Additional Resources
 
-- [Tool Reference](../../reference/tools/tool-reference.md) - Complete list of 65+ tools
+- [Tool Reference](../../reference/tools/tool-reference.md) - Complete list of 519 tools
 - [REST API Documentation](../../reference/api/rest-api.md) - API endpoints and authentication
 - [Testing Guide](../../guides/developer/testing/TESTING-CHAT-OPTIMIZATIONS.md) - Performance testing
 - [Quick Reference](../../QUICK_REFERENCE.md) - Common tasks

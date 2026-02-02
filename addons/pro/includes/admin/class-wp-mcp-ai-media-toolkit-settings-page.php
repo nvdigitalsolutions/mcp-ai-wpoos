@@ -21,7 +21,7 @@ class WP_MCP_AI_Media_Toolkit_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 	 */
 	public function __construct() {
 		$this->toolkit_slug     = 'media';
-		$this->toolkit_name     = __( 'Media Toolkit', 'mcp-ai-wpoos-pro' );
+		$this->toolkit_name     = __( 'Media Settings', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_media_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-media-toolkit-settings';
 		$this->has_research     = true;

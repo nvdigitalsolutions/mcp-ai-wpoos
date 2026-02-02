@@ -11,6 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
 require_once WP_MCP_AI_PATH . 'includes/traits/trait-wp-mcp-ai-attachment-file-resolver.php';
+require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-anthropic-client.php';
 
 /**
  * Generates descriptive alt text for images using AI vision models.
@@ -216,6 +217,8 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 
 		if ( 'gemini' === $provider ) {
 			return $this->call_gemini_vision( $image_url, $image_content, $prompt, $settings );
+		} elseif ( 'anthropic' === $provider ) {
+			return $this->call_anthropic_vision( $image_url, $image_content, $prompt, $settings );
 		} else {
 			// Default to OpenAI.
 			return $this->call_openai_vision( $image_url, $image_content, $prompt, $settings );
@@ -436,21 +439,127 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 		);
 	}
 
+	/**
+	 * Call Anthropic vision model.
+	 *
+	 * @param string $image_url     Image URL.
+	 * @param string $image_content Base64 image content.
+	 * @param string $prompt        Prompt for the model.
+	 * @param array  $settings      Plugin settings.
+	 * @return array|WP_Error Alt text with metadata or error.
+	 */
+	private function call_anthropic_vision( $image_url, $image_content, $prompt, $settings ) {
+		if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+			return new WP_Error(
+				'wp_mcp_ai_missing_class',
+				__( 'Anthropic client class not found.', 'mcp-ai-wpoos' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$client = new WP_MCP_AI_Anthropic_Client();
+
+		// Get model from settings.
+		$model = isset( $settings['anthropic_vision_model'] ) && ! empty( $settings['anthropic_vision_model'] )
+			? $settings['anthropic_vision_model']
+			: ( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-3-5-sonnet-20241022' );
+
+		// Build messages with image content.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => array(
+					array(
+						'type'      => 'image_url',
+						'image_url' => array(
+							'url' => $image_url,
+						),
+					),
+					array(
+						'type' => 'text',
+						'text' => $prompt,
+					),
+				),
+			),
+		);
+
+		try {
+			$response = $client->create_chat_completion(
+				$messages,
+				array(
+					'model'      => $model,
+					'max_tokens' => 150, // Alt text should be concise.
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			// Extract the alt text.
+			$alt_text = '';
+			if ( isset( $response['choices'][0]['message']['content'] ) ) {
+				$alt_text = $response['choices'][0]['message']['content'];
+			} elseif ( isset( $response['content'] ) ) {
+				if ( is_array( $response['content'] ) ) {
+					foreach ( $response['content'] as $block ) {
+						if ( isset( $block['text'] ) ) {
+							$alt_text .= $block['text'];
+						}
+					}
+				} elseif ( is_string( $response['content'] ) ) {
+					$alt_text = $response['content'];
+				}
+			}
+
+			if ( empty( $alt_text ) ) {
+				return new WP_Error(
+					'wp_mcp_ai_empty_response',
+					__( 'Anthropic returned an empty response.', 'mcp-ai-wpoos' ),
+					array( 'status' => 500 )
+				);
+			}
+
+			// Extract usage metadata if available.
+			$usage = null;
+			if ( isset( $response['usage'] ) && is_array( $response['usage'] ) ) {
+				$usage = array(
+					'prompt_tokens'     => isset( $response['usage']['input_tokens'] ) ? (int) $response['usage']['input_tokens'] : 0,
+					'completion_tokens' => isset( $response['usage']['output_tokens'] ) ? (int) $response['usage']['output_tokens'] : 0,
+					'total_tokens'      => ( isset( $response['usage']['input_tokens'] ) ? (int) $response['usage']['input_tokens'] : 0 ) + ( isset( $response['usage']['output_tokens'] ) ? (int) $response['usage']['output_tokens'] : 0 ),
+				);
+			}
+
+			// Return text with metadata for cost tracking.
+			return array(
+				'text'     => trim( $alt_text ),
+				'provider' => 'anthropic',
+				'model'    => $model,
+				'usage'    => $usage,
+			);
+
+		} catch ( Exception $e ) {
+			return new WP_Error(
+				'wp_mcp_ai_anthropic_error',
+				sprintf(
+					/* translators: %s: error message */
+					__( 'Anthropic API error: %s', 'mcp-ai-wpoos' ),
+					$e->getMessage()
+				),
+				array( 'status' => 500 )
+			);
+		}
+	}
+
 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -468,7 +577,6 @@ class WP_MCP_AI_Tool_Generate_Image_Alt_Text implements WP_MCP_AI_Tool_Interface
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

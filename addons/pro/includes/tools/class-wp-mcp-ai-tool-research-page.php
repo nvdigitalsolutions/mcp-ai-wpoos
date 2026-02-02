@@ -531,7 +531,7 @@ class WP_MCP_AI_Tool_Research_Page implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 				return ! empty( $settings['gemini_default_model'] ) ? $settings['gemini_default_model'] : 'gemini-2.5-flash';
 
 			case 'anthropic':
-				return 'claude-sonnet-4.5';
+				return 'claude-sonnet-4-5-20250929';
 
 			default:
 				return new WP_Error(

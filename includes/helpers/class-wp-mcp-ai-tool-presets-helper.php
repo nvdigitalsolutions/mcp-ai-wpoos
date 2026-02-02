@@ -38,11 +38,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 	 */
 	public static function get_presets() {
 		$presets = array(
-			// =================================================================
+			// =================================================================.
 			// CORE FUNCTIONALITY PRESETS
-			// =================================================================
+			// =================================================================.
 
-			'agentic_workflow'         => array(
+			'agentic_workflow'          => array(
 				'name'        => __( '🤖 Agentic Workflow', 'mcp-ai-wpoos' ),
 				'description' => __( 'DeepSeek V4 multi-agent orchestration tools for team composition, delegation, memory management, and result aggregation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -65,7 +65,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'ai_ml'                    => array(
+			'ai_ml'                     => array(
 				'name'        => __( '🧠 AI/ML Operations', 'mcp-ai-wpoos' ),
 				'description' => __( 'AI model management, embeddings, batches, vector stores, and ML operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -107,7 +107,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'media_generation'         => array(
+			'media_generation'          => array(
 				'name'        => __( '🎨 Media Generation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Image, video, and audio generation tools across multiple AI providers', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -186,7 +186,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'content_writing'          => array(
+			'content_writing'           => array(
 				'name'        => __( '✍️ Content Writing', 'mcp-ai-wpoos' ),
 				'description' => __( 'Tools for creating, managing, and optimizing content, posts, and pages', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -235,7 +235,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'ecommerce'                => array(
+			'ecommerce'                 => array(
 				'name'        => __( '🛒 E-commerce', 'mcp-ai-wpoos' ),
 				'description' => __( 'WooCommerce, product management, and e-commerce operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -288,7 +288,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'site_management'          => array(
+			'site_management'           => array(
 				'name'        => __( '⚙️ Site Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'WordPress core management, monitoring, and system operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -323,7 +323,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'seo_marketing'            => array(
+			'seo_marketing'             => array(
 				'name'        => __( '📈 SEO & Marketing', 'mcp-ai-wpoos' ),
 				'description' => __( 'SEO analysis, social media management, and marketing automation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -374,7 +374,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'gutenberg_blocks'         => array(
+			'gutenberg_blocks'          => array(
 				'name'        => __( '🧱 Gutenberg & Blocks', 'mcp-ai-wpoos' ),
 				'description' => __( 'Gutenberg block patterns, FSE, and WordPress editor tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -391,7 +391,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'development'              => array(
+			'development'               => array(
 				'name'        => __( '💻 Development', 'mcp-ai-wpoos' ),
 				'description' => __( 'Code management, CLI operations, and technical development tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -424,7 +424,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'data_analytics'           => array(
+			'data_analytics'            => array(
 				'name'        => __( '📊 Data & Analytics', 'mcp-ai-wpoos' ),
 				'description' => __( 'Data collection, reporting, analytics, and business intelligence', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -480,7 +480,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'design_professional'      => array(
+			'design_professional'       => array(
 				'name'        => __( '🎨 Design Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Visual design, rendering, branding, creative production, and architectural design tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -539,7 +539,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'crawling_scraping'        => array(
+			'crawling_scraping'         => array(
 				'name'        => __( '🕷️ Web Crawling & Scraping', 'mcp-ai-wpoos' ),
 				'description' => __( 'Web scraping, crawling, and data extraction tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -554,7 +554,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'files_documents'          => array(
+			'files_documents'           => array(
 				'name'        => __( '📁 Files & Documents', 'mcp-ai-wpoos' ),
 				'description' => __( 'File management, search, and document processing tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -565,8 +565,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document processing.
 					'submit_document_prompt',
 					// Document Generation (Pro).
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel_document',
 					// Search operations.
 					'search_content',
@@ -580,7 +580,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'scheduling_automation'    => array(
+			'scheduling_automation'     => array(
 				'name'        => __( '⏰ Scheduling & Automation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Cron jobs, task scheduling, and workflow automation tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -608,7 +608,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'authentication_security'  => array(
+			'authentication_security'   => array(
 				'name'        => __( '🔐 Authentication & Security', 'mcp-ai-wpoos' ),
 				'description' => __( 'Authentication tokens, security checks, and access control', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -632,7 +632,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'communication_messaging'  => array(
+			'communication_messaging'   => array(
 				'name'        => __( '💬 Communication & Messaging', 'mcp-ai-wpoos' ),
 				'description' => __( 'Email, SMS, messaging, and communication tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -655,7 +655,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'assistant_management'     => array(
+			'assistant_management'      => array(
 				'name'        => __( '🤖 Assistant Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'AI assistant creation, configuration, and management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -676,11 +676,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			// =================================================================
+			// =================================================================.
 			// PROFESSION-SPECIFIC PRESETS
-			// =================================================================
+			// =================================================================.
 
-			'healthcare'               => array(
+			'healthcare'                => array(
 				'name'        => __( '⚕️ Healthcare Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Medical, clinical, and healthcare management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -751,7 +751,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'legal'                    => array(
+			'legal'                     => array(
 				'name'        => __( '⚖️ Legal Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Legal research, document management, and compliance tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -788,7 +788,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'education'                => array(
+			'education'                 => array(
 				'name'        => __( '🎓 Education Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Educational content, course management, and learning tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -865,7 +865,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'finance_business'         => array(
+			'finance_business'          => array(
 				'name'        => __( '💼 Finance & Business', 'mcp-ai-wpoos' ),
 				'description' => __( 'Financial analysis, business intelligence, and reporting tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -914,7 +914,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'science_research'         => array(
+			'science_research'          => array(
 				'name'        => __( '🔬 Science & Research', 'mcp-ai-wpoos' ),
 				'description' => __( 'Scientific research, data analysis, and academic tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -961,7 +961,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'real_estate'              => array(
+			'real_estate'               => array(
 				'name'        => __( '🏠 Real Estate', 'mcp-ai-wpoos' ),
 				'description' => __( 'Property management, listings, and real estate operations', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -999,7 +999,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'architect'                => array(
+			'architect'                 => array(
 				'name'        => __( '🏗️ Architect', 'mcp-ai-wpoos' ),
 				'description' => __( 'Architectural design, planning, building codes, and construction documentation tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1044,7 +1044,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Project Management.
 					'create_project',
 					'update_project',
@@ -1067,7 +1067,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'engineering'              => array(
+			'engineering'               => array(
 				'name'        => __( '⚙️ Engineering Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Civil, structural, MEP engineering with analysis, calculations, and technical documentation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1110,8 +1110,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Generation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Project Management.
 					'create_project',
 					'update_project',
@@ -1128,7 +1128,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'construction_management'  => array(
+			'construction_management'   => array(
 				'name'        => __( '👷 Construction Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'Construction planning, scheduling, cost estimation, and project coordination tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1170,7 +1170,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Analytics & Reporting.
 					'create_chart',
@@ -1198,7 +1198,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'interior_designer'        => array(
+			'interior_designer'         => array(
 				'name'        => __( '🛋️ Interior Designer', 'mcp-ai-wpoos' ),
 				'description' => __( 'Interior space planning, FF&E specification, material selection, and design visualization', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1240,7 +1240,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'generate_construction_drawings',
 					'generate_detail_drawings',
 					'export_architectural_documents',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Charts & Design Boards.
 					'create_chart',
 					// Research & Inspiration.
@@ -1269,7 +1269,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'landscape_architect'      => array(
+			'landscape_architect'       => array(
 				'name'        => __( '🌳 Landscape Architect', 'mcp-ai-wpoos' ),
 				'description' => __( 'Site design, planting plans, hardscape design, and sustainable landscape solutions', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1319,7 +1319,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'create_post',
 					'search_attachments',
 					'submit_document_prompt',
-					'pro_pdf',
+					'pro_pdf_document',
 					// Data & Charts.
 					'create_chart',
 					'pro_excel',
@@ -1338,7 +1338,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'urban_planner'            => array(
+			'urban_planner'             => array(
 				'name'        => __( '🏙️ Urban Planner', 'mcp-ai-wpoos' ),
 				'description' => __( 'Comprehensive planning, zoning, land use policy, and community development tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1371,8 +1371,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Generation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel',
 					// Project & Development Review.
 					'create_project',
@@ -1423,7 +1423,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'dj_musician'              => array(
+			'dj_musician'               => array(
 				'name'        => __( '🎵 DJ & Music Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'DJ services, music production, event management, and audio engineering', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1476,7 +1476,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'get_jetformbuilder_forms',
 					'get_jetformbuilder_submissions',
 					// Document Generation.
-					'pro_pdf',
+					'pro_pdf_document',
 					'save_post',
 					'create_post',
 					// Social Media.
@@ -1488,7 +1488,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'sales_crm'                => array(
+			'sales_crm'                 => array(
 				'name'        => __( '💼 Sales & CRM Professional', 'mcp-ai-wpoos' ),
 				'description' => __( 'Sales pipeline, CRM management, lead tracking, and customer relationships', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1547,15 +1547,15 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Document Management.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// SEO & Marketing.
 					'get_rankmath_seo',
 					'google_analytics_report',
 				),
 			),
 
-			'film_video_production'    => array(
+			'film_video_production'     => array(
 				'name'        => __( '🎬 Film & Video Production', 'mcp-ai-wpoos' ),
 				'description' => __( 'Film production, video editing, cinematography, and post-production', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1606,8 +1606,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'send_group_email',
 					'send_whatsapp_message',
 					// Document Generation.
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Social Media Distribution.
 					'post_facebook_instagram',
 					'post_tiktok_video',
@@ -1675,7 +1675,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation.
 					'save_post',
 					'create_post',
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Communication.
 					'send_group_email',
@@ -1691,7 +1691,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'emergency_services'       => array(
+			'emergency_services'        => array(
 				'name'        => __( '🚨 Emergency Services & Public Safety', 'mcp-ai-wpoos' ),
 				'description' => __( 'Emergency response, disaster management, public safety, and first responders', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1728,8 +1728,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation & Reporting.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					// Forms & Data Collection.
 					'get_jetformbuilder_forms',
 					'get_jetformbuilder_submissions',
@@ -1752,7 +1752,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'maritime_aviation'        => array(
+			'maritime_aviation'         => array(
 				'name'        => __( '✈️ Maritime, Aviation & Transportation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Maritime operations, aviation, logistics, and transportation management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1789,8 +1789,8 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					// Documentation & Logs.
 					'save_post',
 					'create_post',
-					'pro_pdf',
-					'pro_word',
+					'pro_pdf_document',
+					'pro_word_document',
 					'pro_excel',
 					// Forms & Checklists.
 					'get_jetformbuilder_forms',
@@ -1810,7 +1810,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'food_service'             => array(
+			'food_service'              => array(
 				'name'        => __( '👨‍🍳 Food Service & Culinary', 'mcp-ai-wpoos' ),
 				'description' => __( 'Restaurant management, culinary arts, food service, and hospitality', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1863,7 +1863,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'google_analytics_report',
 					'create_chart',
 					// Document Management.
-					'pro_pdf',
+					'pro_pdf_document',
 					'search_attachments',
 					// Research (recipes, trends).
 					'web_search',
@@ -1875,7 +1875,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'skilled_trades'           => array(
+			'skilled_trades'            => array(
 				'name'        => __( '🔧 Skilled Trades & Construction', 'mcp-ai-wpoos' ),
 				'description' => __( 'Electricians, plumbers, HVAC, carpenters, welders, and skilled tradespeople', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1909,7 +1909,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 					'resize_image',
 					'crop_image',
 					// Invoicing & Payments.
-					'pro_pdf',
+					'pro_pdf_document',
 					'pro_excel',
 					// Communication.
 					'send_group_email',
@@ -1937,7 +1937,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'travel_hospitality'       => array(
+			'travel_hospitality'        => array(
 				'name'        => __( '✈️ Travel & Hospitality', 'mcp-ai-wpoos' ),
 				'description' => __( 'Tourism, hospitality, and travel industry tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -1976,7 +1976,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'public_service'           => array(
+			'public_service'            => array(
 				'name'        => __( '🏛️ Public Service & Government', 'mcp-ai-wpoos' ),
 				'description' => __( 'Government, public administration, and civic tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2011,11 +2011,11 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			// =================================================================
+			// =================================================================.
 			// PROJECT MANAGEMENT & ORCHESTRATION
-			// =================================================================
+			// =================================================================.
 
-			'autonomous_orchestration' => array(
+			'autonomous_orchestration'  => array(
 				'name'        => __( '🎯 Autonomous Orchestration', 'mcp-ai-wpoos' ),
 				'description' => __( 'Task planning, autonomous sessions, health monitoring, and capacity management for continuous AI workflow loops', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2056,7 +2056,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'task_planning'            => array(
+			'task_planning'             => array(
 				'name'        => __( '📋 Task Planning', 'mcp-ai-wpoos' ),
 				'description' => __( 'Create and manage task plans with progress tracking', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2069,7 +2069,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'research_automation'      => array(
+			'research_automation'       => array(
 				'name'        => __( '🔍 Research Automation', 'mcp-ai-wpoos' ),
 				'description' => __( 'Multi-source research with aggregation, verification, and professional report generation', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2095,7 +2095,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'workflow_monitoring'      => array(
+			'workflow_monitoring'       => array(
 				'name'        => __( '📊 Workflow Monitoring', 'mcp-ai-wpoos' ),
 				'description' => __( 'Monitor autonomous sessions, health status, and system capacity', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2108,10 +2108,10 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			// NEW PRO TOOLKIT PRESETS (2026)
-			// =================================================================
+			// NEW PRO TOOLKIT PRESETS (2026).
+			// =================================================================.
 
-			'business_analytics'       => array(
+			'business_analytics'        => array(
 				'name'        => __( '📊 Business Analytics & BI', 'mcp-ai-wpoos' ),
 				'description' => __( 'Advanced analytics, data warehousing, churn prediction, and business intelligence tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2137,7 +2137,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'financial_planning'       => array(
+			'financial_planning'        => array(
 				'name'        => __( '💰 Financial Planning & Wealth', 'mcp-ai-wpoos' ),
 				'description' => __( 'Retirement planning, investment analysis, budget tracking, and personal finance tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2174,7 +2174,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'multilingual_global'      => array(
+			'multilingual_global'       => array(
 				'name'        => __( '🌍 Multilingual & Global Content', 'mcp-ai-wpoos' ),
 				'description' => __( 'Translation, localization, and multilingual content management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2199,7 +2199,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'video_production'         => array(
+			'video_production'          => array(
 				'name'        => __( '🎬 Video Production & Editing', 'mcp-ai-wpoos' ),
 				'description' => __( 'Video creation, editing, optimization, and production tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2230,7 +2230,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'predictive_analytics'     => array(
+			'predictive_analytics'      => array(
 				'name'        => __( '🔮 Predictive Analytics & ML', 'mcp-ai-wpoos' ),
 				'description' => __( 'Machine learning, churn prediction, forecasting, and predictive modeling', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2256,7 +2256,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'data_warehousing'         => array(
+			'data_warehousing'          => array(
 				'name'        => __( '🗄️ Data Warehousing & ETL', 'mcp-ai-wpoos' ),
 				'description' => __( 'Data warehouse sync, ETL operations, and data integration tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2288,7 +2288,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'content_creator_pro'      => array(
+			'content_creator_pro'       => array(
 				'name'        => __( '🎥 Content Creator Pro', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete content creation suite: writing, images, video, audio, and multilingual', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2331,7 +2331,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'saas_platform'            => array(
+			'saas_platform'             => array(
 				'name'        => __( '🚀 SaaS Platform', 'mcp-ai-wpoos' ),
 				'description' => __( 'Complete SaaS toolkit: analytics, churn prediction, billing, and customer management', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2367,7 +2367,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'media_templates'          => array(
+			'media_templates'           => array(
 				'name'        => __( '🎬 Media Templates & Collections', 'mcp-ai-wpoos' ),
 				'description' => __( 'Media template management and collection processing tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2399,7 +2399,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'music_production'         => array(
+			'music_production'          => array(
 				'name'        => __( '🎵 Music & Audio Production', 'mcp-ai-wpoos' ),
 				'description' => __( 'Music generation, jukebox management, and audio production tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2417,7 +2417,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'research_tools'           => array(
+			'research_tools'            => array(
 				'name'        => __( '🔬 Research & Analysis', 'mcp-ai-wpoos' ),
 				'description' => __( 'Research tools for posts, products, projects, places, policies, and more', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2447,7 +2447,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'math_science'             => array(
+			'math_science'              => array(
 				'name'        => __( '🧮 Mathematics & Science', 'mcp-ai-wpoos' ),
 				'description' => __( 'Mathematical computation, equation solving, and scientific tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2467,7 +2467,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'project_management'       => array(
+			'project_management'        => array(
 				'name'        => __( '📋 Project & Task Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'Project planning, task management, and team coordination tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2503,7 +2503,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'legal_compliance'         => array(
+			'legal_compliance'          => array(
 				'name'        => __( '⚖️ Legal & Policy Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'Policy management, legal research, and compliance tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2535,7 +2535,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'location_services'        => array(
+			'location_services'         => array(
 				'name'        => __( '📍 Location & Place Management', 'mcp-ai-wpoos' ),
 				'description' => __( 'Place management, geospatial analysis, and location-based tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(
@@ -2559,7 +2559,7 @@ class WP_MCP_AI_Tool_Presets_Helper {
 				),
 			),
 
-			'developer_advanced'       => array(
+			'developer_advanced'        => array(
 				'name'        => __( '⚙️ Developer Advanced Tools', 'mcp-ai-wpoos' ),
 				'description' => __( 'Advanced development, API integration, and system management tools', 'mcp-ai-wpoos' ),
 				'tools'       => array(

@@ -78,7 +78,7 @@ class WP_MCP_AI_ECA_CPT {
 		// Check if we're on an ECA or student post type page.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Just checking URL parameter for display logic.
 		$post_type   = isset( $_GET['post_type'] ) ? sanitize_key( $_GET['post_type'] ) : '';
-		$is_eca_page = ( $post_type === self::POST_TYPE || $post_type === self::STUDENT_POST_TYPE );
+		$is_eca_page = ( self::POST_TYPE === $post_type || self::STUDENT_POST_TYPE === $post_type );
 		if ( ! $is_eca_page ) {
 			return;
 		}
@@ -391,14 +391,14 @@ class WP_MCP_AI_ECA_CPT {
 
 		// Register default ECA categories.
 		$default_categories = array(
-			'sports'           => __( 'Sports', 'mcp-ai-wpoos-pro' ),
-			'arts-music'       => __( 'Arts & Music', 'mcp-ai-wpoos-pro' ),
-			'academic'         => __( 'Academic', 'mcp-ai-wpoos-pro' ),
-			'health-wellness'  => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
-			'technology'       => __( 'Technology', 'mcp-ai-wpoos-pro' ),
-			'community'        => __( 'Community Service', 'mcp-ai-wpoos-pro' ),
-			'leadership'       => __( 'Leadership', 'mcp-ai-wpoos-pro' ),
-			'other'            => __( 'Other', 'mcp-ai-wpoos-pro' ),
+			'sports'          => __( 'Sports', 'mcp-ai-wpoos-pro' ),
+			'arts-music'      => __( 'Arts & Music', 'mcp-ai-wpoos-pro' ),
+			'academic'        => __( 'Academic', 'mcp-ai-wpoos-pro' ),
+			'health-wellness' => __( 'Health & Wellness', 'mcp-ai-wpoos-pro' ),
+			'technology'      => __( 'Technology', 'mcp-ai-wpoos-pro' ),
+			'community'       => __( 'Community Service', 'mcp-ai-wpoos-pro' ),
+			'leadership'      => __( 'Leadership', 'mcp-ai-wpoos-pro' ),
+			'other'           => __( 'Other', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_categories as $slug => $name ) {

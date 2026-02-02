@@ -731,7 +731,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Datasets_Client' ) ) {
 		protected function get_dataset_name_suggestions( $dataset ) {
 			// Map of old/common names to their current canonical names.
 			// All names verified against HuggingFace Hub as of December 2024.
-			// See: https://huggingface.co/datasets
+			// See: https://huggingface.co/datasets.
 			$dataset_map = array(
 				// Text Classification & Sentiment Analysis.
 				'imdb'            => 'stanfordnlp/imdb',

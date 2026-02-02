@@ -123,17 +123,11 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -151,7 +145,6 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -167,7 +160,11 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
@@ -253,9 +250,12 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 		$events = array_merge( $events, $this->get_security_plugin_logs( $user_id, $event_type, $time_range ) );
 
 		// Sort by timestamp descending.
-		usort( $events, function( $a, $b ) {
-			return $b['timestamp'] <=> $a['timestamp'];
-		} );
+		usort(
+			$events,
+			function ( $a, $b ) {
+				return $b['timestamp'] <=> $a['timestamp'];
+			}
+		);
 
 		// Limit results.
 		$events = array_slice( $events, 0, $limit );
@@ -342,6 +342,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 				);
 			}
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 			$results = $wpdb->get_results( $query );
 
 			foreach ( $results as $row ) {
@@ -383,6 +384,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 				);
 			}
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 			$results = $wpdb->get_results( $query );
 
 			foreach ( $results as $user ) {
@@ -479,29 +481,32 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 	 * @return array Suspicious events only.
 	 */
 	private function filter_suspicious_events( $events ) {
-		return array_filter( $events, function( $event ) {
-			// Flag high and critical severity events.
-			if ( isset( $event['severity'] ) && in_array( $event['severity'], array( 'high', 'critical' ), true ) ) {
-				return true;
-			}
+		return array_filter(
+			$events,
+			function ( $event ) {
+				// Flag high and critical severity events.
+				if ( isset( $event['severity'] ) && in_array( $event['severity'], array( 'high', 'critical' ), true ) ) {
+					return true;
+				}
 
-			// Flag multiple failed login attempts.
-			if ( 'failed_login' === $event['type'] ) {
-				return true;
-			}
+				// Flag multiple failed login attempts.
+				if ( 'failed_login' === $event['type'] ) {
+					return true;
+				}
 
-			// Flag role escalations.
-			if ( 'role_change' === $event['type'] ) {
-				// Check if escalating to administrator.
-				if ( isset( $event['details']['meta_value'] ) && is_array( $event['details']['meta_value'] ) ) {
-					if ( isset( $event['details']['meta_value']['administrator'] ) ) {
-						return true;
+				// Flag role escalations.
+				if ( 'role_change' === $event['type'] ) {
+					// Check if escalating to administrator.
+					if ( isset( $event['details']['meta_value'] ) && is_array( $event['details']['meta_value'] ) ) {
+						if ( isset( $event['details']['meta_value']['administrator'] ) ) {
+							return true;
+						}
 					}
 				}
-			}
 
-			return false;
-		} );
+				return false;
+			}
+		);
 	}
 
 	/**
@@ -530,12 +535,12 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 			if ( ! isset( $summary['event_breakdown'][ $type ] ) ) {
 				$summary['event_breakdown'][ $type ] = 0;
 			}
-			$summary['event_breakdown'][ $type ]++;
+			++$summary['event_breakdown'][ $type ];
 
 			// Count by severity.
 			$severity = $event['severity'] ?? 'low';
 			if ( isset( $summary['severity_counts'][ $severity ] ) ) {
-				$summary['severity_counts'][ $severity ]++;
+				++$summary['severity_counts'][ $severity ];
 			}
 
 			// Track unique users.

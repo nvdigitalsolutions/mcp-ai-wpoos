@@ -153,7 +153,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 	 */
 	public function test_retrieve_agent_memory_retrieval() {
 		// First, store a context.
-		$store_tool = $this->registry->get_tool( 'store_agent_context' );
+		$store_tool   = $this->registry->get_tool( 'store_agent_context' );
 		$store_result = $store_tool->execute(
 			array(
 				'agent_id'     => 456,
@@ -172,7 +172,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$context_id = $store_result['context_id'];
 
 		// Now retrieve it by context_id.
-		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
+		$retrieve_tool   = $this->registry->get_tool( 'retrieve_agent_memory' );
 		$retrieve_result = $retrieve_tool->execute(
 			array(
 				'agent_id'   => 456,
@@ -225,7 +225,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 
 		// Search for "machine learning".
 		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
-		$result = $retrieve_tool->execute(
+		$result        = $retrieve_tool->execute(
 			array(
 				'agent_id' => 789,
 				'query'    => 'machine learning',
@@ -278,7 +278,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 
 		// Filter by importance: critical only.
 		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
-		$result = $retrieve_tool->execute(
+		$result        = $retrieve_tool->execute(
 			array(
 				'agent_id' => 999,
 				'filters'  => array(
@@ -321,7 +321,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 
 		// Try to retrieve - should fail.
 		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
-		$result = $retrieve_tool->execute(
+		$result        = $retrieve_tool->execute(
 			array(
 				'agent_id'   => 111,
 				'context_id' => $context_id,
@@ -540,7 +540,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		);
 
 		$this->assertTrue( $result['success'], 'Recency-based prioritization should succeed' );
-		
+
 		// New context should be first.
 		$first_context = $result['prioritized'][0];
 		$this->assertEquals( 'ctx_new', $first_context['context_id'], 'New context should be prioritized' );
@@ -661,8 +661,8 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$manager = wp_mcp_ai_get_agent_context_manager();
 
 		// Store context.
-		$result = $manager->store_context(
-			$agent_id = 888,
+		$result           = $manager->store_context(
+			$agent_id     = 888,
 			$context_type = 'learning',
 			$context_data = array(
 				'title'      => 'Test Learning via Service',
@@ -670,7 +670,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 				'importance' => 'high',
 				'tags'       => array( 'test', 'service' ),
 			),
-			$ttl = 3600
+			$ttl          = 3600
 		);
 
 		$this->assertTrue( $result['success'], 'Store via service should succeed' );
@@ -689,9 +689,30 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$manager = wp_mcp_ai_get_agent_context_manager();
 
 		// Store multiple contexts.
-		$manager->store_context( 777, 'learning', array( 'title' => 'L1', 'content' => 'Learning 1' ) );
-		$manager->store_context( 777, 'learning', array( 'title' => 'L2', 'content' => 'Learning 2' ) );
-		$manager->store_context( 777, 'fact', array( 'title' => 'F1', 'content' => 'Fact 1' ) );
+		$manager->store_context(
+			777,
+			'learning',
+			array(
+				'title'   => 'L1',
+				'content' => 'Learning 1',
+			)
+		);
+		$manager->store_context(
+			777,
+			'learning',
+			array(
+				'title'   => 'L2',
+				'content' => 'Learning 2',
+			)
+		);
+		$manager->store_context(
+			777,
+			'fact',
+			array(
+				'title'   => 'F1',
+				'content' => 'Fact 1',
+			)
+		);
 
 		$stats = $manager->get_context_stats( 777 );
 
@@ -708,8 +729,22 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$manager = wp_mcp_ai_get_agent_context_manager();
 
 		// Store contexts for agent.
-		$manager->store_context( 666, 'learning', array( 'title' => 'L1', 'content' => 'Learning 1' ) );
-		$manager->store_context( 666, 'preference', array( 'title' => 'P1', 'content' => 'Preference 1' ) );
+		$manager->store_context(
+			666,
+			'learning',
+			array(
+				'title'   => 'L1',
+				'content' => 'Learning 1',
+			)
+		);
+		$manager->store_context(
+			666,
+			'preference',
+			array(
+				'title'   => 'P1',
+				'content' => 'Preference 1',
+			)
+		);
 
 		// Recover session.
 		$session = $manager->recover_session( 666, 'test_session_123' );
@@ -727,8 +762,22 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$manager = wp_mcp_ai_get_agent_context_manager();
 
 		// Store contexts.
-		$manager->store_context( 555, 'note', array( 'title' => 'N1', 'content' => 'Note 1' ) );
-		$manager->store_context( 555, 'note', array( 'title' => 'N2', 'content' => 'Note 2' ) );
+		$manager->store_context(
+			555,
+			'note',
+			array(
+				'title'   => 'N1',
+				'content' => 'Note 1',
+			)
+		);
+		$manager->store_context(
+			555,
+			'note',
+			array(
+				'title'   => 'N2',
+				'content' => 'Note 2',
+			)
+		);
 
 		// Verify they exist.
 		$stats_before = $manager->get_context_stats( 555 );
@@ -751,7 +800,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 	public function test_end_to_end_context_workflow() {
 		// Step 1: Store multiple contexts via tool.
 		$store_tool = $this->registry->get_tool( 'store_agent_context' );
-		
+
 		$contexts_data = array(
 			array(
 				'type' => 'learning',
@@ -794,7 +843,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		}
 
 		// Step 2: Retrieve all contexts.
-		$retrieve_tool = $this->registry->get_tool( 'retrieve_agent_memory' );
+		$retrieve_tool   = $this->registry->get_tool( 'retrieve_agent_memory' );
 		$retrieve_result = $retrieve_tool->execute(
 			array(
 				'agent_id' => 1234,
@@ -807,7 +856,7 @@ class Test_Agent_Memory_Tools extends WP_UnitTestCase {
 		$this->assertGreaterThanOrEqual( 3, $retrieve_result['count'], 'Should retrieve all 3 contexts' );
 
 		// Step 3: Prioritize contexts for a specific task.
-		$prioritize_tool = $this->registry->get_tool( 'prioritize_context' );
+		$prioritize_tool   = $this->registry->get_tool( 'prioritize_context' );
 		$prioritize_result = $prioritize_tool->execute(
 			array(
 				'context_items' => $retrieve_result['contexts'],

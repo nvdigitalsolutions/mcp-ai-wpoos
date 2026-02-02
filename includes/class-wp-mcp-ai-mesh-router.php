@@ -83,6 +83,36 @@ class WP_MCP_AI_Mesh_Router {
 	const QUEUE_LENGTH_MULTIPLIER = 20;
 
 	/**
+	 * Circuit breaker: consecutive failures before opening circuit.
+	 */
+	const CIRCUIT_BREAKER_FAILURE_THRESHOLD = 5;
+
+	/**
+	 * Circuit breaker: seconds before attempting recovery (half-open state).
+	 */
+	const CIRCUIT_BREAKER_TIMEOUT = 30;
+
+	/**
+	 * Circuit breaker: option name for storing circuit states.
+	 */
+	const CIRCUIT_BREAKER_OPTION = 'wp_mcp_ai_mesh_circuit_states';
+
+	/**
+	 * Exponential backoff: initial delay in milliseconds.
+	 */
+	const BACKOFF_INITIAL_DELAY_MS = 100;
+
+	/**
+	 * Exponential backoff: multiplier for each retry.
+	 */
+	const BACKOFF_MULTIPLIER = 2;
+
+	/**
+	 * Exponential backoff: maximum delay in milliseconds.
+	 */
+	const BACKOFF_MAX_DELAY_MS = 5000;
+
+	/**
 	 * Get the optimal peer for a given request using AI-powered analysis.
 	 *
 	 * Analyzes:
@@ -160,13 +190,13 @@ class WP_MCP_AI_Mesh_Router {
 				return self::select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context );
 
 			case 'round_robin':
-				return self::select_peer_round_robin( $healthy_peers, $hub_config );
+				return self::select_peer_round_robin( $healthy_peers, $hub_config, $context );
 
 			case 'least_loaded':
-				return self::select_peer_least_loaded( $healthy_peers, $health_metrics );
+				return self::select_peer_least_loaded( $healthy_peers, $health_metrics, $context );
 
 			case 'preferred_with_fallback':
-				return self::select_peer_preferred( $healthy_peers, $hub_config );
+				return self::select_peer_preferred( $healthy_peers, $hub_config, $context );
 
 			default:
 				return self::select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context );
@@ -182,14 +212,16 @@ class WP_MCP_AI_Mesh_Router {
 	 * - Response time history
 	 * - Model availability
 	 * - Predicted queue wait time
+	 * - Geographic proximity (context-aware)
+	 * - User preferences (context-aware)
 	 *
 	 * @param array  $healthy_peers Available healthy peers.
 	 * @param string $prompt        The prompt being sent.
 	 * @param array  $hub_config    Compute hub configuration.
-	 * @param array  $context       Request context (reserved for future use: user preferences, geographic routing, time-based routing).
+	 * @param array  $context       Request context (user preferences, geographic routing, session data).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function select_peer_ai_optimized( $healthy_peers, $prompt, $hub_config, $context ) {
 		// Analyze prompt complexity.
 		$complexity_score = self::analyze_prompt_complexity( $prompt );
 
@@ -199,23 +231,23 @@ class WP_MCP_AI_Mesh_Router {
 			$score  = 0;
 			$health = $peer['health'];
 
-			// Factor 1: Response time (lower is better) - 25% weight.
+			// Factor 1: Response time (lower is better) - 20% weight.
 			$avg_response_time   = isset( $health['avg_response_time'] ) ? $health['avg_response_time'] : 5.0;
 			$response_time_score = max( 0, 100 - ( $avg_response_time * 10 ) );
-			$score              += $response_time_score * 0.25;
+			$score              += $response_time_score * 0.2;
 
-			// Factor 2: Current load (lower is better) - 20% weight.
+			// Factor 2: Current load (lower is better) - 15% weight.
 			$current_load = isset( $health['current_load'] ) ? $health['current_load'] : 0;
 			$load_score   = max( 0, 100 - ( $current_load * 5 ) );
-			$score       += $load_score * 0.2;
+			$score       += $load_score * 0.15;
 
-			// Factor 3: Success rate - 20% weight.
+			// Factor 3: Success rate - 15% weight.
 			$success_rate = isset( $health['success_rate'] ) ? $health['success_rate'] : 100;
-			$score       += $success_rate * 0.2;
+			$score       += $success_rate * 0.15;
 
-			// Factor 4: Little's Law capacity analysis - 20% weight.
+			// Factor 4: Little's Law capacity analysis - 15% weight.
 			$capacity_score = self::calculate_peer_capacity_score( $health, $avg_response_time );
-			$score         += $capacity_score * 0.2;
+			$score         += $capacity_score * 0.15;
 
 			// Factor 5: Compute hub priority - 15% weight.
 			$is_compute_hub = self::is_compute_hub( $peer, $hub_config );
@@ -224,10 +256,20 @@ class WP_MCP_AI_Mesh_Router {
 				$score += 15;
 			}
 
+			// Factor 6: Geographic proximity - 10% weight (NEW).
+			$geo_score = self::calculate_geographic_score( $peer, $context );
+			$score    += $geo_score * 0.1;
+
+			// Factor 7: User preference matching - 10% weight (NEW).
+			$preference_score = self::calculate_preference_score( $peer, $context );
+			$score           += $preference_score * 0.1;
+
 			$scored_peers[] = array(
-				'peer'           => $peer,
-				'score'          => $score,
-				'capacity_score' => $capacity_score,
+				'peer'             => $peer,
+				'score'            => $score,
+				'capacity_score'   => $capacity_score,
+				'geo_score'        => $geo_score,
+				'preference_score' => $preference_score,
 			);
 		}
 
@@ -239,16 +281,19 @@ class WP_MCP_AI_Mesh_Router {
 			}
 		);
 
-		// Log the routing decision.
+		// Log the routing decision with context awareness.
 		WP_MCP_AI_Logger::log_event(
 			'mesh_routing_ai_optimized',
-			'AI-optimized peer selection completed with Little\'s Law analysis.',
+			'AI-optimized peer selection completed with context-aware routing.',
 			array(
 				'selected_peer'    => $scored_peers[0]['peer']['name'],
 				'score'            => $scored_peers[0]['score'],
 				'capacity_score'   => $scored_peers[0]['capacity_score'],
+				'geo_score'        => $scored_peers[0]['geo_score'],
+				'preference_score' => $scored_peers[0]['preference_score'],
 				'complexity_score' => $complexity_score,
 				'total_peers'      => count( $healthy_peers ),
+				'context'          => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -256,13 +301,32 @@ class WP_MCP_AI_Mesh_Router {
 	}
 
 	/**
-	 * Round-robin peer selection.
+	 * Round-robin peer selection with optional hub prioritization.
+	 *
+	 * Selects peers in a rotating fashion. If hub_config specifies
+	 * hub_only mode, only compute hubs are included in rotation.
 	 *
 	 * @param array $healthy_peers Available healthy peers.
-	 * @param array $hub_config    Compute hub configuration (reserved for consistency with other routing methods).
+	 * @param array $hub_config    Compute hub configuration.
+	 * @param array $context       Request context (for future session affinity).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_round_robin( $healthy_peers, $hub_config ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function select_peer_round_robin( $healthy_peers, $hub_config, $context = array() ) {
+		// Filter to compute hubs only if hub_only mode is enabled.
+		if ( ! empty( $hub_config['hub_only'] ) ) {
+			$hub_peers = array();
+			foreach ( $healthy_peers as $peer ) {
+				if ( self::is_compute_hub( $peer, $hub_config ) ) {
+					$hub_peers[] = $peer;
+				}
+			}
+
+			// Use compute hubs if available, otherwise fall back to all peers.
+			if ( ! empty( $hub_peers ) ) {
+				$healthy_peers = $hub_peers;
+			}
+		}
+
 		$stats      = get_option( self::ROUTING_STATS_OPTION, array() );
 		$last_index = isset( $stats['last_round_robin_index'] ) ? (int) $stats['last_round_robin_index'] : -1;
 
@@ -278,6 +342,8 @@ class WP_MCP_AI_Mesh_Router {
 			array(
 				'selected_peer' => $healthy_peers[ $next_index ]['name'],
 				'index'         => $next_index,
+				'hub_only_mode' => ! empty( $hub_config['hub_only'] ),
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -285,13 +351,14 @@ class WP_MCP_AI_Mesh_Router {
 	}
 
 	/**
-	 * Least-loaded peer selection.
+	 * Least-loaded peer selection with optional context awareness.
 	 *
 	 * @param array $healthy_peers  Available healthy peers.
 	 * @param array $health_metrics All health metrics.
+	 * @param array $context        Request context (for future load-aware features).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_least_loaded( $healthy_peers, $health_metrics ) {
+	protected static function select_peer_least_loaded( $healthy_peers, $health_metrics, $context = array() ) {
 		$least_loaded = null;
 		$min_load     = PHP_INT_MAX;
 
@@ -312,6 +379,7 @@ class WP_MCP_AI_Mesh_Router {
 			array(
 				'selected_peer' => $least_loaded['name'],
 				'load'          => $min_load,
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -322,10 +390,11 @@ class WP_MCP_AI_Mesh_Router {
 	 * Preferred peer with fallback selection.
 	 *
 	 * @param array $healthy_peers Available healthy peers.
-	 * @param array $hub_config    Compute hub configuration.
+	 * @param array $hub_config    Compute hub configuration with preferred_peers list.
+	 * @param array $context       Request context (for future preference features).
 	 * @return array Selected peer configuration.
 	 */
-	protected static function select_peer_preferred( $healthy_peers, $hub_config ) {
+	protected static function select_peer_preferred( $healthy_peers, $hub_config, $context = array() ) {
 		$preferred_peers = isset( $hub_config['preferred_peers'] ) ? $hub_config['preferred_peers'] : array();
 
 		// Try preferred peers in order.
@@ -337,6 +406,7 @@ class WP_MCP_AI_Mesh_Router {
 						'Preferred peer selected.',
 						array(
 							'selected_peer' => $peer['name'],
+							'context'       => self::sanitize_context_for_logging( $context ),
 						)
 					);
 					return $peer;
@@ -350,6 +420,7 @@ class WP_MCP_AI_Mesh_Router {
 			'No preferred peer available, using fallback.',
 			array(
 				'selected_peer' => $healthy_peers[0]['name'],
+				'context'       => self::sanitize_context_for_logging( $context ),
 			)
 		);
 
@@ -358,6 +429,12 @@ class WP_MCP_AI_Mesh_Router {
 
 	/**
 	 * Query a remote peer site with automatic retry on failure.
+	 *
+	 * Implements:
+	 * - Circuit breaker pattern
+	 * - Exponential backoff with jitter
+	 * - Automatic failover
+	 * - Dead letter queue integration
 	 *
 	 * @param int    $assistant_id Assistant ID.
 	 * @param string $prompt       Prompt to send.
@@ -373,16 +450,52 @@ class WP_MCP_AI_Mesh_Router {
 			return $peer;
 		}
 
+		// Check circuit breaker BEFORE attempting request.
+		$peer_name = isset( $peer['name'] ) ? $peer['name'] : '';
+		if ( self::is_circuit_open( $peer_name ) ) {
+			WP_MCP_AI_Logger::log_event(
+				'mesh_circuit_breaker_blocked',
+				'Request blocked by open circuit breaker.',
+				array(
+					'peer'    => $peer_name,
+					'attempt' => $attempt,
+				)
+			);
+
+			// Circuit is open - immediately try different peer.
+			return self::query_with_retry( $assistant_id, $prompt, $context, $attempt + 1 );
+		}
+
+		// Apply exponential backoff delay (except on first attempt).
+		if ( $attempt > 1 ) {
+			$delay_microseconds = self::calculate_backoff_delay( $attempt );
+			usleep( $delay_microseconds );
+
+			WP_MCP_AI_Logger::log_event(
+				'mesh_exponential_backoff',
+				'Applied exponential backoff before retry.',
+				array(
+					'attempt'  => $attempt,
+					'delay_ms' => $delay_microseconds / 1000,
+					'peer'     => $peer_name,
+				)
+			);
+		}
+
 		// Execute the query.
 		$start_time    = microtime( true );
 		$result        = self::execute_peer_query( $peer, $prompt, $context );
 		$response_time = microtime( true ) - $start_time;
+		$success       = ! is_wp_error( $result );
 
 		// Update health metrics.
-		self::update_health_metrics( $peer['name'], $response_time, ! is_wp_error( $result ) );
+		self::update_health_metrics( $peer_name, $response_time, $success );
+
+		// Update circuit breaker based on result.
+		self::update_circuit_breaker( $peer_name, $success );
 
 		// If successful, return result.
-		if ( ! is_wp_error( $result ) ) {
+		if ( $success ) {
 			return $result;
 		}
 
@@ -392,7 +505,7 @@ class WP_MCP_AI_Mesh_Router {
 				'mesh_routing_retry_exhausted',
 				'Max retry attempts exhausted.',
 				array(
-					'peer'     => $peer['name'],
+					'peer'     => $peer_name,
 					'attempts' => $attempt,
 					'error'    => $result->get_error_message(),
 				)
@@ -411,14 +524,14 @@ class WP_MCP_AI_Mesh_Router {
 				}
 
 				// Generate unique identifier for this failed mesh query.
-				$identifier = md5( $peer['name'] . $prompt . time() );
+				$identifier = md5( $peer_name . $prompt . time() );
 
 				WP_MCP_AI_Dead_Letter_Queue::add(
 					WP_MCP_AI_Dead_Letter_Queue::TYPE_MESH_QUERY,
 					$identifier,
 					array(
 						'assistant_id' => $assistant_id,
-						'peer_name'    => $peer['name'],
+						'peer_name'    => $peer_name,
 						'peer_url'     => isset( $peer['url'] ) ? $peer['url'] : '',
 						'prompt'       => $prompt,
 						'context'      => $context,
@@ -454,10 +567,10 @@ class WP_MCP_AI_Mesh_Router {
 	 *
 	 * @param array  $peer    Peer configuration.
 	 * @param string $prompt  Prompt to send.
-	 * @param array  $context Request context (reserved for future use: pass user identity, session data, or request metadata to peer).
+	 * @param array  $context Request context (user identity, session data, request metadata).
 	 * @return array|WP_Error Response or error.
 	 */
-	protected static function execute_peer_query( $peer, $prompt, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	protected static function execute_peer_query( $peer, $prompt, $context ) {
 		$peer_url = isset( $peer['url'] ) ? trim( $peer['url'] ) : '';
 		$peer_key = isset( $peer['api_key'] ) ? trim( $peer['api_key'] ) : '';
 
@@ -479,10 +592,30 @@ class WP_MCP_AI_Mesh_Router {
 			),
 		);
 
+		// Propagate context metadata if available.
+		if ( ! empty( $context['metadata'] ) ) {
+			$body['metadata'] = $context['metadata'];
+		}
+
 		$headers = array(
 			'Content-Type'         => 'application/json',
 			'X-WP-MCP-AI-Mesh-Key' => $peer_key,
 		);
+
+		// Propagate trace ID for distributed tracing.
+		if ( ! empty( $context['trace_id'] ) ) {
+			$headers['X-Trace-ID'] = sanitize_text_field( $context['trace_id'] );
+		}
+
+		// Propagate user ID for user-specific operations.
+		if ( ! empty( $context['user_id'] ) ) {
+			$headers['X-User-ID'] = absint( $context['user_id'] );
+		}
+
+		// Propagate session ID for session affinity tracking.
+		if ( ! empty( $context['session_id'] ) ) {
+			$headers['X-Session-ID'] = sanitize_text_field( $context['session_id'] );
+		}
 
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : 30;
@@ -934,5 +1067,310 @@ class WP_MCP_AI_Mesh_Router {
 
 		// All good.
 		return __( 'Mesh network is healthy and operating within optimal parameters.', 'mcp-ai-wpoos' );
+	}
+
+	/**
+	 * Calculate geographic proximity score for a peer.
+	 *
+	 * Scores peers based on geographic region proximity to reduce latency.
+	 *
+	 * @param array $peer    Peer configuration.
+	 * @param array $context Request context with geo_region.
+	 * @return float Score from 0-100 (100 = same region, 50 = nearby, 0 = far).
+	 */
+	protected static function calculate_geographic_score( $peer, $context ) {
+		// If no geographic context provided, return neutral score.
+		if ( empty( $context['geo_region'] ) ) {
+			return 50.0; // Neutral - no preference.
+		}
+
+		$request_region = strtolower( sanitize_text_field( $context['geo_region'] ) );
+		$peer_region    = isset( $peer['region'] ) ? strtolower( sanitize_text_field( $peer['region'] ) ) : '';
+
+		// Peer region not specified - neutral score.
+		if ( empty( $peer_region ) ) {
+			return 50.0;
+		}
+
+		// Exact region match - highest score.
+		if ( $request_region === $peer_region ) {
+			return 100.0;
+		}
+
+		// Check for regional proximity (e.g., us-east and us-west are nearby).
+		if ( self::are_regions_nearby( $request_region, $peer_region ) ) {
+			return 75.0;
+		}
+
+		// Different continents - lower score.
+		return 25.0;
+	}
+
+	/**
+	 * Calculate user preference matching score for a peer.
+	 *
+	 * Scores peers based on how well they match user preferences.
+	 *
+	 * @param array $peer    Peer configuration.
+	 * @param array $context Request context with user preferences.
+	 * @return float Score from 0-100.
+	 */
+	protected static function calculate_preference_score( $peer, $context ) {
+		// If no preferences provided, return neutral score.
+		if ( empty( $context['preferences'] ) || ! is_array( $context['preferences'] ) ) {
+			return 50.0; // Neutral - no preference.
+		}
+
+		$preferences = $context['preferences'];
+		$score       = 50.0; // Start neutral.
+
+		// Check preferred regions list.
+		if ( ! empty( $preferences['preferred_regions'] ) && is_array( $preferences['preferred_regions'] ) ) {
+			$peer_region = isset( $peer['region'] ) ? strtolower( $peer['region'] ) : '';
+			if ( ! empty( $peer_region ) && in_array( $peer_region, array_map( 'strtolower', $preferences['preferred_regions'] ), true ) ) {
+				$score += 30.0; // Bonus for being in preferred region list.
+			}
+		}
+
+		// Check max latency preference.
+		if ( ! empty( $preferences['max_latency_ms'] ) && isset( $peer['health']['avg_response_time'] ) ) {
+			$peer_latency_ms = $peer['health']['avg_response_time'] * 1000; // Convert to ms.
+			if ( $peer_latency_ms <= $preferences['max_latency_ms'] ) {
+				$score += 20.0; // Bonus for meeting latency requirement.
+			} else {
+				$score -= 20.0; // Penalty for exceeding latency requirement.
+			}
+		}
+
+		// Check compute hub requirement.
+		if ( ! empty( $preferences['require_compute_hub'] ) && self::is_compute_hub( $peer, array() ) ) {
+			$score += 20.0; // Bonus for being a compute hub when required.
+		}
+
+		// Clamp score to 0-100 range.
+		return max( 0.0, min( 100.0, $score ) );
+	}
+
+	/**
+	 * Check if two regions are geographically nearby.
+	 *
+	 * @param string $region1 First region code.
+	 * @param string $region2 Second region code.
+	 * @return bool True if regions are nearby.
+	 */
+	protected static function are_regions_nearby( $region1, $region2 ) {
+		// Define region proximity groups.
+		$proximity_groups = array(
+			'north_america' => array( 'us-east', 'us-west', 'us-central', 'ca-east', 'ca-west' ),
+			'europe'        => array( 'eu-west', 'eu-central', 'eu-north', 'uk' ),
+			'asia_pacific'  => array( 'ap-south', 'ap-southeast', 'ap-northeast', 'ap-east' ),
+			'south_america' => array( 'sa-east', 'sa-west' ),
+		);
+
+		// Check if both regions are in the same proximity group.
+		foreach ( $proximity_groups as $group ) {
+			if ( in_array( $region1, $group, true ) && in_array( $region2, $group, true ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Sanitize context for logging.
+	 *
+	 * Removes sensitive data from context before logging.
+	 *
+	 * @param array $context Request context.
+	 * @return array Sanitized context safe for logging.
+	 */
+	protected static function sanitize_context_for_logging( $context ) {
+		if ( empty( $context ) || ! is_array( $context ) ) {
+			return array();
+		}
+
+		$safe_context = array();
+
+		// Include non-sensitive fields.
+		$safe_fields = array( 'geo_region', 'trace_id', 'session_id' );
+		foreach ( $safe_fields as $field ) {
+			if ( isset( $context[ $field ] ) ) {
+				$safe_context[ $field ] = $context[ $field ];
+			}
+		}
+
+		// Include user ID (safe for internal logging).
+		if ( ! empty( $context['user_id'] ) ) {
+			$safe_context['user_id'] = absint( $context['user_id'] );
+		}
+
+		// Include preferences summary (without sensitive data).
+		if ( ! empty( $context['preferences'] ) && is_array( $context['preferences'] ) ) {
+			$safe_context['preferences'] = array();
+			if ( isset( $context['preferences']['preferred_regions'] ) ) {
+				$safe_context['preferences']['preferred_regions'] = $context['preferences']['preferred_regions'];
+			}
+			if ( isset( $context['preferences']['max_latency_ms'] ) ) {
+				$safe_context['preferences']['max_latency_ms'] = $context['preferences']['max_latency_ms'];
+			}
+		}
+
+		return $safe_context;
+	}
+
+	/**
+	 * Check if circuit breaker is open for a peer.
+	 *
+	 * Circuit breaker states:
+	 * - closed: Normal operation, requests pass through
+	 * - open: Too many failures, block all requests
+	 * - half_open: Testing recovery, allow limited requests
+	 *
+	 * @param string $peer_name Peer name.
+	 * @return bool True if circuit is open (should block requests).
+	 */
+	protected static function is_circuit_open( $peer_name ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			return false; // No circuit state = closed (allow requests).
+		}
+
+		$circuit = $circuits[ $peer_name ];
+
+		// If circuit is closed, allow requests.
+		if ( 'closed' === $circuit['state'] ) {
+			return false;
+		}
+
+		// If circuit is open, check if timeout has elapsed for recovery attempt.
+		if ( 'open' === $circuit['state'] ) {
+			$time_since_open = time() - $circuit['opened_at'];
+			if ( $time_since_open >= self::CIRCUIT_BREAKER_TIMEOUT ) {
+				// Move to half-open state for testing.
+				self::set_circuit_state( $peer_name, 'half_open' );
+				return false; // Allow one request to test.
+			}
+			return true; // Circuit still open, block requests.
+		}
+
+		// If circuit is half-open, allow request (will test recovery).
+		return false;
+	}
+
+	/**
+	 * Update circuit breaker state based on request result.
+	 *
+	 * @param string $peer_name Peer name.
+	 * @param bool   $success   Whether the request succeeded.
+	 */
+	protected static function update_circuit_breaker( $peer_name, $success ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			$circuits[ $peer_name ] = array(
+				'state'                => 'closed',
+				'consecutive_failures' => 0,
+				'opened_at'            => 0,
+			);
+		}
+
+		$circuit = &$circuits[ $peer_name ];
+
+		if ( $success ) {
+			// Success - reset failures and close circuit.
+			$circuit['consecutive_failures'] = 0;
+			if ( 'half_open' === $circuit['state'] || 'open' === $circuit['state'] ) {
+				WP_MCP_AI_Logger::log_event(
+					'mesh_circuit_breaker_closed',
+					'Circuit breaker closed after successful recovery.',
+					array( 'peer' => $peer_name )
+				);
+			}
+			$circuit['state'] = 'closed';
+		} else {
+			// Failure - increment counter.
+			$circuit['consecutive_failures'] = ( $circuit['consecutive_failures'] ?? 0 ) + 1;
+
+			// If in half-open state and failed, reopen circuit.
+			if ( 'half_open' === $circuit['state'] ) {
+				$circuit['state']     = 'open';
+				$circuit['opened_at'] = time();
+				WP_MCP_AI_Logger::log_event(
+					'mesh_circuit_breaker_reopened',
+					'Circuit breaker reopened after failed recovery test.',
+					array( 'peer' => $peer_name )
+				);
+			}
+
+			// If threshold reached, open circuit.
+			if ( $circuit['consecutive_failures'] >= self::CIRCUIT_BREAKER_FAILURE_THRESHOLD ) {
+				if ( 'closed' === $circuit['state'] ) {
+					$circuit['state']     = 'open';
+					$circuit['opened_at'] = time();
+					WP_MCP_AI_Logger::log_event(
+						'mesh_circuit_breaker_opened',
+						'Circuit breaker opened due to consecutive failures.',
+						array(
+							'peer'     => $peer_name,
+							'failures' => $circuit['consecutive_failures'],
+						)
+					);
+				}
+			}
+		}
+
+		update_option( self::CIRCUIT_BREAKER_OPTION, $circuits, false );
+	}
+
+	/**
+	 * Set circuit breaker state.
+	 *
+	 * @param string $peer_name Peer name.
+	 * @param string $state     State: 'closed', 'open', or 'half_open'.
+	 */
+	protected static function set_circuit_state( $peer_name, $state ) {
+		$circuits = get_option( self::CIRCUIT_BREAKER_OPTION, array() );
+
+		if ( ! isset( $circuits[ $peer_name ] ) ) {
+			$circuits[ $peer_name ] = array(
+				'state'                => $state,
+				'consecutive_failures' => 0,
+				'opened_at'            => 0,
+			);
+		} else {
+			$circuits[ $peer_name ]['state'] = $state;
+			if ( 'open' === $state ) {
+				$circuits[ $peer_name ]['opened_at'] = time();
+			}
+		}
+
+		update_option( self::CIRCUIT_BREAKER_OPTION, $circuits, false );
+	}
+
+	/**
+	 * Calculate exponential backoff delay for retry.
+	 *
+	 * Uses exponential backoff with jitter to prevent thundering herd.
+	 *
+	 * @param int $attempt Current attempt number (1-indexed).
+	 * @return int Delay in microseconds.
+	 */
+	protected static function calculate_backoff_delay( $attempt ) {
+		// Calculate base delay: initial_delay * (multiplier ^ (attempt - 1)).
+		$base_delay = self::BACKOFF_INITIAL_DELAY_MS * pow( self::BACKOFF_MULTIPLIER, $attempt - 1 );
+
+		// Cap at max delay.
+		$base_delay = min( $base_delay, self::BACKOFF_MAX_DELAY_MS );
+
+		// Add jitter (random ±25%).
+		$jitter    = $base_delay * 0.25;
+		$min_delay = $base_delay - $jitter;
+		$max_delay = $base_delay + $jitter;
+		$delay     = wp_rand( (int) $min_delay, (int) $max_delay );
+
+		// Convert milliseconds to microseconds for usleep().
+		return $delay * 1000;
 	}
 }

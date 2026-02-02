@@ -90,6 +90,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 		 */
 		public static function show_rotation_notices() {
 			// Success notice.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for success message display.
 			if ( isset( $_GET['key_rotation_success'] ) && get_transient( 'wp_mcp_ai_key_rotation_success' ) ) {
 				delete_transient( 'wp_mcp_ai_key_rotation_success' );
 				?>
@@ -103,6 +104,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Key_Rotation' ) ) {
 			}
 
 			// Error notice.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only query parameter for error message display.
 			if ( isset( $_GET['key_rotation_error'] ) ) {
 				$error = get_transient( 'wp_mcp_ai_key_rotation_error' );
 				if ( $error ) {

@@ -81,8 +81,8 @@ class Test_Orchestration_Dashboard_System_Status extends WP_UnitTestCase {
 		$method     = $reflection->getMethod( 'get_dashboard_data' );
 		$method->setAccessible( true );
 
-		$data          = $method->invoke( $this->dashboard );
-		$cron_status   = $data['system_status']['cron'];
+		$data        = $method->invoke( $this->dashboard );
+		$cron_status = $data['system_status']['cron'];
 
 		// Verify cron status structure.
 		$this->assertIsArray( $cron_status, 'Cron status should be an array' );

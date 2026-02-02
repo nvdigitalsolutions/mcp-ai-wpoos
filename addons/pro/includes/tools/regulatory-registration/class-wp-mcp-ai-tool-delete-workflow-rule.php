@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Delete_Workflow_Rule implements WP_MCP_AI_Tool_Interface, W
 		update_option( 'wp_mcp_ai_workflow_rules', $workflow_rules );
 
 		// Log deletion.
-		$workflow_log = get_option( 'wp_mcp_ai_workflow_log', array() );
+		$workflow_log   = get_option( 'wp_mcp_ai_workflow_log', array() );
 		$workflow_log[] = array(
 			'timestamp' => current_time( 'mysql' ),
 			'user_id'   => $current_user_id,

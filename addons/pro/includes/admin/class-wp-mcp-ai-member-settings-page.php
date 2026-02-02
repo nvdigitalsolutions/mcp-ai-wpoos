@@ -108,6 +108,52 @@ class WP_MCP_AI_Member_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	}
 
 	/**
+	 * Render overview tab.
+	 */
+	protected function render_overview_tab() {
+		?>
+		<div class="toolkit-card">
+			<h2><?php esc_html_e( 'Member Management Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
+			
+			<div class="toolkit-description">
+				<p><?php esc_html_e( 'AI-powered health and wellness member management for families and pets. Track health records, medications, allergies, checkups, and prescriptions with comprehensive AI assistance.', 'mcp-ai-wpoos-pro' ); ?></p>
+			</div>
+
+			<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<ul>
+				<li><?php esc_html_e( 'Family Members: Manage health records for all family members', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Pet Health: Track health records for family pets', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Medical Records: Store and manage comprehensive medical records', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Medications: Track prescriptions and medication schedules', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Allergies: Monitor allergies and adverse reactions', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Checkups: Schedule and track routine health checkups', 'mcp-ai-wpoos-pro' ); ?></li>
+				<li><?php esc_html_e( 'Research & Add: AI-assisted member profile creation', 'mcp-ai-wpoos-pro' ); ?></li>
+			</ul>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Get tools list for this CPT.
+	 *
+	 * @return array
+	 */
+	protected function get_tools_list() {
+		return array(
+			'create_member'         => __( 'Create Member', 'mcp-ai-wpoos-pro' ),
+			'update_member'         => __( 'Update Member', 'mcp-ai-wpoos-pro' ),
+			'get_members'           => __( 'Get Members', 'mcp-ai-wpoos-pro' ),
+			'delete_member'         => __( 'Delete Member', 'mcp-ai-wpoos-pro' ),
+			'create_medical_record' => __( 'Create Medical Record', 'mcp-ai-wpoos-pro' ),
+			'create_prescription'   => __( 'Create Prescription', 'mcp-ai-wpoos-pro' ),
+			'create_allergy'        => __( 'Create Allergy', 'mcp-ai-wpoos-pro' ),
+			'update_allergy'        => __( 'Update Allergy', 'mcp-ai-wpoos-pro' ),
+			'create_checkup'        => __( 'Create Checkup', 'mcp-ai-wpoos-pro' ),
+			'update_checkup'        => __( 'Update Checkup', 'mcp-ai-wpoos-pro' ),
+		);
+	}
+
+	/**
 	 * Render section description.
 	 */
 	public function render_section_description() {

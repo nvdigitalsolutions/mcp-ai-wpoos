@@ -101,17 +101,11 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -129,7 +123,6 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -147,7 +140,11 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
@@ -352,7 +349,7 @@ class WP_MCP_AI_Tool_Generate_Post_Excerpt implements WP_MCP_AI_Tool_Interface, 
 
 		$content_preview = wp_trim_words( $content_data['content'], 300 );
 
-		$prompt = "Generate a compelling excerpt for the following content.\n\n";
+		$prompt  = "Generate a compelling excerpt for the following content.\n\n";
 		$prompt .= "Title: {$content_data['title']}\n\n";
 		$prompt .= "Content:\n{$content_preview}\n\n";
 		$prompt .= "Requirements:\n";

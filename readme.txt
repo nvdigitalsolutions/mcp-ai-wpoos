@@ -3,7 +3,7 @@ Contributors: nvdigitalsolutions
 Donate link: https://nvdigitalsolutions.com/wpoos
 Tags: ai, chatbot, openai, assistant, automation
 Requires at least: 6.0
-Tested up to: 6.7
+Tested up to: 6.9
 Requires PHP: 7.4
 Stable tag: 1.1.0
 License: GPLv3 or later

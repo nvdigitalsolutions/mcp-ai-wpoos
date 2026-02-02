@@ -31,7 +31,6 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		$defaults = WP_MCP_AI_Admin_Settings::get_default_settings();
 
 		$this->assertArrayHasKey( 'enable_federation', $defaults );
-		$this->assertArrayHasKey( 'enable_federation_directory', $defaults );
 		$this->assertArrayHasKey( 'federation_regions', $defaults );
 		$this->assertArrayHasKey( 'federation_data_tags', $defaults );
 		$this->assertArrayHasKey( 'federation_qps', $defaults );
@@ -39,7 +38,6 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 
 		// Check defaults.
 		$this->assertFalse( $defaults['enable_federation'] );
-		$this->assertFalse( $defaults['enable_federation_directory'] );
 		$this->assertSame( 'global', $defaults['federation_regions'] );
 		$this->assertSame( '', $defaults['federation_data_tags'] );
 		$this->assertSame( 5, $defaults['federation_qps'] );
@@ -55,7 +53,6 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 
 		$this->assertIsArray( $settings );
 		$this->assertFalse( $settings['enable_federation'] );
-		$this->assertFalse( $settings['enable_federation_directory'] );
 		$this->assertIsArray( $settings['federation_regions'] );
 		$this->assertContains( 'global', $settings['federation_regions'] );
 
@@ -63,19 +60,17 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation'           => true,
-				'enable_federation_directory' => true,
-				'federation_regions'          => 'us, eu, ap',
-				'federation_data_tags'        => 'no_pii, gdpr_ok',
-				'federation_qps'              => 10,
-				'federation_burst'            => 20,
+				'enable_federation'    => true,
+				'federation_regions'   => 'us, eu, ap',
+				'federation_data_tags' => 'no_pii, gdpr_ok',
+				'federation_qps'       => 10,
+				'federation_burst'     => 20,
 			)
 		);
 
 		$settings = WP_MCP_AI_Federation_Settings::get_settings();
 
 		$this->assertTrue( $settings['enable_federation'] );
-		$this->assertTrue( $settings['enable_federation_directory'] );
 		$this->assertIsArray( $settings['federation_regions'] );
 		$this->assertContains( 'us', $settings['federation_regions'] );
 		$this->assertContains( 'eu', $settings['federation_regions'] );
@@ -116,7 +111,7 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation_directory' => true,
+				'enable_federation' => true,
 			)
 		);
 
@@ -311,7 +306,7 @@ class WP_MCP_AI_Federation_Test extends WP_UnitTestCase {
 		update_option(
 			WP_MCP_AI_Admin_Settings::OPTION_NAME,
 			array(
-				'enable_federation_directory' => true,
+				'enable_federation' => true,
 			)
 		);
 

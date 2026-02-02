@@ -872,7 +872,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 			} else {
 				// Use custom endpoint with /audio/transcriptions path (OpenAI-compatible).
 				// This is for dedicated Hugging Face Inference Endpoints with format:
-				// https://<endpoint-name>.endpoints.huggingface.cloud/v1/audio/transcriptions
+				// https://<endpoint-name>.endpoints.huggingface.cloud/v1/audio/transcriptions.
 				$url = untrailingslashit( $endpoint_url ) . '/audio/transcriptions';
 			}
 
@@ -1242,6 +1242,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 		 *                        - maxTools (int): Max tools when trimming. Default: 10.
 		 *                        - model, temperature, timeout, etc.
 		 * @return array|WP_Error Final response or error.
+		 * @throws Exception If tool function is not callable.
 		 */
 		public function run_with_tools( array $messages, array $tools = array(), array $options = array() ) {
 			// Configuration options with defaults.
@@ -1646,7 +1647,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					$desc_words = explode( ' ', $tool_desc );
 					foreach ( $desc_words as $word ) {
 						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
-							$score += 1;
+							++$score;
 						}
 					}
 				}

@@ -132,7 +132,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( empty( $settings['enable_site_creator'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The site_creator tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
+				__( 'The site_creator tool is disabled. Enable it in NV oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 
@@ -284,7 +284,7 @@ class WP_MCP_AI_Pro_Tool_Site_Creator implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( ! empty( $theme_config['theme_json'] ) || ! empty( $theme_config['industry'] ) || ! empty( $theme_config['custom_templates'] ) ) {
 			// Load theme.json generator.
 			if ( ! class_exists( 'WP_MCP_AI_Theme_JSON_Generator' ) ) {
-				$helper_path = dirname( dirname( __FILE__ ) ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
+				$helper_path = dirname( __DIR__ ) . '/helpers/class-wp-mcp-ai-theme-json-generator.php';
 				if ( file_exists( $helper_path ) ) {
 					require_once $helper_path;
 				}

@@ -601,9 +601,9 @@ class WP_MCP_AI_Product_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get product statistics.
-		$total_products = wp_count_posts( 'product' );
+		$total_products  = wp_count_posts( 'product' );
 		$published_count = isset( $total_products->publish ) ? $total_products->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$products = get_posts(
 			array(
@@ -614,8 +614,8 @@ class WP_MCP_AI_Product_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_sku = 0;
-		$with_price = 0;
+		$with_sku       = 0;
+		$with_price     = 0;
 
 		foreach ( $products as $product ) {
 			// Check if WooCommerce is active before using WC functions.
@@ -628,20 +628,20 @@ class WP_MCP_AI_Product_Research_Page {
 				$has_price = false;
 			}
 			$has_desc = ! empty( $product->post_content );
-			
+
 			if ( $has_sku ) {
-				$with_sku++;
+				++$with_sku;
 			}
 			if ( $has_price ) {
-				$with_price++;
+				++$with_price;
 			}
 			if ( $has_sku && $has_price && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Product Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

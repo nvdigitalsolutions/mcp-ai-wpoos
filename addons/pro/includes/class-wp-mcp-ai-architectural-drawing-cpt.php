@@ -169,18 +169,18 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 
 		// Register default drawing types based on AIA/NCS standards.
 		$default_drawing_types = array(
-			'floor-plan'       => __( 'Floor Plan (A-FLOR)', 'mcp-ai-wpoos-pro' ),
-			'elevation'        => __( 'Elevation (A-ELEV)', 'mcp-ai-wpoos-pro' ),
-			'section'          => __( 'Section (A-SECT)', 'mcp-ai-wpoos-pro' ),
-			'detail'           => __( 'Detail (A-DETL)', 'mcp-ai-wpoos-pro' ),
-			'ceiling-plan'     => __( 'Reflected Ceiling Plan (A-RCPN)', 'mcp-ai-wpoos-pro' ),
-			'site-plan'        => __( 'Site Plan (A-SITE)', 'mcp-ai-wpoos-pro' ),
-			'3d-rendering'     => __( '3D Rendering', 'mcp-ai-wpoos-pro' ),
-			'schedule'         => __( 'Schedule (Door/Window/Finish)', 'mcp-ai-wpoos-pro' ),
-			'structural'       => __( 'Structural Drawing', 'mcp-ai-wpoos-pro' ),
-			'mechanical'       => __( 'Mechanical (HVAC)', 'mcp-ai-wpoos-pro' ),
-			'electrical'       => __( 'Electrical', 'mcp-ai-wpoos-pro' ),
-			'plumbing'         => __( 'Plumbing', 'mcp-ai-wpoos-pro' ),
+			'floor-plan'   => __( 'Floor Plan (A-FLOR)', 'mcp-ai-wpoos-pro' ),
+			'elevation'    => __( 'Elevation (A-ELEV)', 'mcp-ai-wpoos-pro' ),
+			'section'      => __( 'Section (A-SECT)', 'mcp-ai-wpoos-pro' ),
+			'detail'       => __( 'Detail (A-DETL)', 'mcp-ai-wpoos-pro' ),
+			'ceiling-plan' => __( 'Reflected Ceiling Plan (A-RCPN)', 'mcp-ai-wpoos-pro' ),
+			'site-plan'    => __( 'Site Plan (A-SITE)', 'mcp-ai-wpoos-pro' ),
+			'3d-rendering' => __( '3D Rendering', 'mcp-ai-wpoos-pro' ),
+			'schedule'     => __( 'Schedule (Door/Window/Finish)', 'mcp-ai-wpoos-pro' ),
+			'structural'   => __( 'Structural Drawing', 'mcp-ai-wpoos-pro' ),
+			'mechanical'   => __( 'Mechanical (HVAC)', 'mcp-ai-wpoos-pro' ),
+			'electrical'   => __( 'Electrical', 'mcp-ai-wpoos-pro' ),
+			'plumbing'     => __( 'Plumbing', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_drawing_types as $slug => $name ) {
@@ -216,13 +216,13 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 
 		// Register default drawing statuses.
 		$default_statuses = array(
-			'draft'        => __( 'Draft', 'mcp-ai-wpoos-pro' ),
-			'in-progress'  => __( 'In Progress', 'mcp-ai-wpoos-pro' ),
-			'review'       => __( 'Under Review', 'mcp-ai-wpoos-pro' ),
-			'approved'     => __( 'Approved', 'mcp-ai-wpoos-pro' ),
-			'issued'       => __( 'Issued for Construction', 'mcp-ai-wpoos-pro' ),
-			'as-built'     => __( 'As-Built', 'mcp-ai-wpoos-pro' ),
-			'superseded'   => __( 'Superseded', 'mcp-ai-wpoos-pro' ),
+			'draft'       => __( 'Draft', 'mcp-ai-wpoos-pro' ),
+			'in-progress' => __( 'In Progress', 'mcp-ai-wpoos-pro' ),
+			'review'      => __( 'Under Review', 'mcp-ai-wpoos-pro' ),
+			'approved'    => __( 'Approved', 'mcp-ai-wpoos-pro' ),
+			'issued'      => __( 'Issued for Construction', 'mcp-ai-wpoos-pro' ),
+			'as-built'    => __( 'As-Built', 'mcp-ai-wpoos-pro' ),
+			'superseded'  => __( 'Superseded', 'mcp-ai-wpoos-pro' ),
 		);
 
 		foreach ( $default_statuses as $slug => $name ) {
@@ -246,9 +246,9 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 			$new_columns[ $key ] = $value;
 			if ( 'title' === $key ) {
 				$new_columns['drawing_number'] = __( 'Number', 'mcp-ai-wpoos-pro' );
-				$new_columns['drawing_type'] = __( 'Type', 'mcp-ai-wpoos-pro' );
+				$new_columns['drawing_type']   = __( 'Type', 'mcp-ai-wpoos-pro' );
 				$new_columns['drawing_status'] = __( 'Status', 'mcp-ai-wpoos-pro' );
-				$new_columns['project'] = __( 'Project', 'mcp-ai-wpoos-pro' );
+				$new_columns['project']        = __( 'Project', 'mcp-ai-wpoos-pro' );
 			}
 		}
 		return $new_columns;
@@ -272,7 +272,7 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 				$types = get_the_terms( $post_id, 'mcp_ai_arch_draw_type' );
 				if ( $types && ! is_wp_error( $types ) ) {
 					$type_names = array_map(
-						function( $term ) {
+						function ( $term ) {
 							return $term->name;
 						},
 						$types
@@ -287,7 +287,7 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 				$statuses = get_the_terms( $post_id, 'mcp_ai_arch_draw_status' );
 				if ( $statuses && ! is_wp_error( $statuses ) ) {
 					$status_names = array_map(
-						function( $term ) {
+						function ( $term ) {
 							return $term->name;
 						},
 						$statuses
@@ -324,7 +324,7 @@ class WP_MCP_AI_Architectural_Drawing_CPT {
 	 */
 	public static function sortable_columns( $columns ) {
 		$columns['drawing_number'] = 'drawing_number';
-		$columns['drawing_type'] = 'drawing_type';
+		$columns['drawing_type']   = 'drawing_type';
 		$columns['drawing_status'] = 'drawing_status';
 		return $columns;
 	}

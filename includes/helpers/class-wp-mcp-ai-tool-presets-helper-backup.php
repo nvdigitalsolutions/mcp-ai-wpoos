@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Tool Presets Helper.
  *
@@ -6,6 +6,7 @@
  *
  * @package WP_MCP_AI
  */
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

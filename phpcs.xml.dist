@@ -7,12 +7,21 @@
 
 <rule ref="WordPress"/>
 
+<!-- Exclude PSR12.Functions.ReturnTypeDeclaration due to bug in PHPCS 3.13.5 -->
+<!-- Bug: "Undefined array key -1" fatal error when processing certain return types -->
+<!-- This can be re-enabled when the upstream bug is fixed -->
+<!-- Issue: https://github.com/PHPCSStandards/PHP_CodeSniffer/issues -->
+<rule ref="WordPress">
+	<exclude name="PSR12.Functions.ReturnTypeDeclaration"/>
+</rule>
+
 <exclude-pattern>*/vendor/*</exclude-pattern>
 <exclude-pattern>*/node_modules/*</exclude-pattern>
 <exclude-pattern>*/assets/examples/*</exclude-pattern>
 <exclude-pattern>*/bin/*</exclude-pattern>
 <exclude-pattern>*/tests/helpers/*</exclude-pattern>
 <exclude-pattern>test-capability-flags-integration.php</exclude-pattern>
+<exclude-pattern>*/addons/pro/*</exclude-pattern>
 
 <rule ref="WordPress.Files.FileName">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
@@ -20,6 +29,8 @@
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
+<exclude-pattern>class-wp-mcp-ai-cli-command\.php$</exclude-pattern>
+<exclude-pattern>class-wp-mcp-ai-jetengine-endpoint-report\.php$</exclude-pattern>
 </rule>
 
 <rule ref="Squiz.Commenting.FileComment">

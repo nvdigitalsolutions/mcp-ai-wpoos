@@ -32,7 +32,7 @@ class WP_MCP_AI_Reasoning_Controller {
 	/**
 	 * Storage keys
 	 */
-	const QUALITY_METRICS_KEY = 'wp_mcp_ai_reasoning_quality_metrics';
+	const QUALITY_METRICS_KEY   = 'wp_mcp_ai_reasoning_quality_metrics';
 	const REASONING_HISTORY_KEY = 'wp_mcp_ai_reasoning_history';
 
 	/**
@@ -48,10 +48,10 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @var array
 	 */
 	protected $trigger_weights = array(
-		'multi_step'         => 0.3,
-		'logical_complexity' => 0.25,
-		'code_generation'    => 0.2,
-		'domain_expertise'   => 0.15,
+		'multi_step'          => 0.3,
+		'logical_complexity'  => 0.25,
+		'code_generation'     => 0.2,
+		'domain_expertise'    => 0.15,
 		'verification_needed' => 0.1,
 	);
 
@@ -171,10 +171,13 @@ class WP_MCP_AI_Reasoning_Controller {
 			);
 		}
 
-		$total = count( $metrics );
-		$successful = array_filter( $metrics, function( $m ) {
-			return ! empty( $m['success'] );
-		} );
+		$total      = count( $metrics );
+		$successful = array_filter(
+			$metrics,
+			function ( $m ) {
+				return ! empty( $m['success'] );
+			}
+		);
 
 		return array(
 			'total_tasks'      => $total,
@@ -197,8 +200,16 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Keywords indicating multi-step process.
 		$multi_step_keywords = array(
-			'then', 'after', 'next', 'finally', 'first', 'second',
-			'step by step', 'and then', 'followed by', 'subsequently',
+			'then',
+			'after',
+			'next',
+			'finally',
+			'first',
+			'second',
+			'step by step',
+			'and then',
+			'followed by',
+			'subsequently',
 		);
 
 		$score = 0;
@@ -229,13 +240,21 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @return float Score 0-1.
 	 */
 	protected function calculate_logical_complexity( $task, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Complex logical operators.
 		$logical_keywords = array(
-			'if', 'unless', 'because', 'therefore', 'however',
-			'although', 'whereas', 'given that', 'assuming',
+			'if',
+			'unless',
+			'because',
+			'therefore',
+			'however',
+			'although',
+			'whereas',
+			'given that',
+			'assuming',
 		);
 
 		foreach ( $logical_keywords as $keyword ) {
@@ -246,8 +265,14 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Mathematical or analytical terms.
 		$analytical_keywords = array(
-			'calculate', 'analyze', 'compare', 'evaluate',
-			'assess', 'determine', 'prove', 'verify',
+			'calculate',
+			'analyze',
+			'compare',
+			'evaluate',
+			'assess',
+			'determine',
+			'prove',
+			'verify',
 		);
 
 		foreach ( $analytical_keywords as $keyword ) {
@@ -276,13 +301,24 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function involves_code_generation( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Code-related keywords.
 		$code_keywords = array(
-			'code', 'function', 'class', 'method', 'script',
-			'program', 'implement', 'write code', 'develop',
-			'php', 'javascript', 'python', 'css', 'html',
+			'code',
+			'function',
+			'class',
+			'method',
+			'script',
+			'program',
+			'implement',
+			'write code',
+			'develop',
+			'php',
+			'javascript',
+			'python',
+			'css',
+			'html',
 		);
 
 		foreach ( $code_keywords as $keyword ) {
@@ -318,12 +354,18 @@ class WP_MCP_AI_Reasoning_Controller {
 	 */
 	protected function requires_domain_expertise( $task, $context ) {
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Domain-specific terms.
 		$domain_keywords = array(
-			'technical', 'specialized', 'expert', 'professional',
-			'industry', 'compliance', 'regulatory', 'best practice',
+			'technical',
+			'specialized',
+			'expert',
+			'professional',
+			'industry',
+			'compliance',
+			'regulatory',
+			'best practice',
 		);
 
 		foreach ( $domain_keywords as $keyword ) {
@@ -353,13 +395,21 @@ class WP_MCP_AI_Reasoning_Controller {
 	 * @return float Score 0-1.
 	 */
 	protected function needs_verification( $task, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$task_lower = strtolower( $task );
-		$score = 0;
+		$score      = 0;
 
 		// Verification keywords.
 		$verification_keywords = array(
-			'verify', 'validate', 'check', 'confirm', 'ensure',
-			'test', 'review', 'double-check', 'accuracy',
+			'verify',
+			'validate',
+			'check',
+			'confirm',
+			'ensure',
+			'test',
+			'review',
+			'double-check',
+			'accuracy',
 		);
 
 		foreach ( $verification_keywords as $keyword ) {
@@ -370,8 +420,13 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		// Critical or high-stakes tasks.
 		$critical_keywords = array(
-			'critical', 'important', 'security', 'production',
-			'live', 'customer-facing', 'compliance',
+			'critical',
+			'important',
+			'security',
+			'production',
+			'live',
+			'customer-facing',
+			'compliance',
 		);
 
 		foreach ( $critical_keywords as $keyword ) {
@@ -383,12 +438,12 @@ class WP_MCP_AI_Reasoning_Controller {
 		return min( 1.0, $score );
 	}
 
-	/**
-	 * Calculate reasoning score from indicators
-	 *
-	 * @param array $indicators Indicator scores.
-	 * @return float Overall reasoning score 0-1.
-	 */
+		/**
+		 * Calculate reasoning score from indicators
+		 *
+		 * @param array $indicators Indicator scores.
+		 * @return float Overall reasoning score 0-1.
+		 */
 	protected function calculate_reasoning_score( $indicators ) {
 		$score = 0;
 
@@ -400,14 +455,14 @@ class WP_MCP_AI_Reasoning_Controller {
 		return min( 1.0, $score );
 	}
 
-	/**
-	 * Get reasoning-enhancing system prompt
-	 *
-	 * @param array $task_info Task information.
-	 * @return string Reasoning prompt.
-	 */
+		/**
+		 * Get reasoning-enhancing system prompt
+		 *
+		 * @param array $task_info Task information.
+		 * @return string Reasoning prompt.
+		 */
 	protected function get_reasoning_prompt( $task_info ) {
-		$prompt = "Enhanced Reasoning Mode Activated:\n\n";
+		$prompt  = "Enhanced Reasoning Mode Activated:\n\n";
 		$prompt .= "Please approach this task with careful, step-by-step reasoning:\n";
 		$prompt .= "1. Break down the problem into clear steps\n";
 		$prompt .= "2. State your assumptions explicitly\n";
@@ -428,12 +483,12 @@ class WP_MCP_AI_Reasoning_Controller {
 		return apply_filters( 'wp_mcp_ai_reasoning_prompt', $prompt, $task_info );
 	}
 
-	/**
-	 * Evaluate coherence of reasoning output
-	 *
-	 * @param array $reasoning_output Reasoning output.
-	 * @return float Coherence score 0-1.
-	 */
+		/**
+		 * Evaluate coherence of reasoning output
+		 *
+		 * @param array $reasoning_output Reasoning output.
+		 * @return float Coherence score 0-1.
+		 */
 	protected function evaluate_coherence( $reasoning_output ) {
 		// Simple heuristic: check if steps are present and connected.
 		if ( empty( $reasoning_output ) || ! is_array( $reasoning_output ) ) {
@@ -455,25 +510,27 @@ class WP_MCP_AI_Reasoning_Controller {
 		return min( 1.0, $score );
 	}
 
-	/**
-	 * Check logical consistency
-	 *
-	 * @param array $reasoning_output Reasoning output.
-	 * @return float Consistency score 0-1.
-	 */
+		/**
+		 * Check logical consistency
+		 *
+		 * @param array $reasoning_output Reasoning output.
+		 * @return float Consistency score 0-1.
+		 */
 	protected function check_logical_consistency( $reasoning_output ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		// Simple heuristic: assume consistent unless obvious contradictions.
 		return 0.8; // Placeholder - real implementation would analyze for contradictions.
 	}
 
-	/**
-	 * Check completeness
-	 *
-	 * @param array  $reasoning_output Reasoning output.
-	 * @param string $task Original task.
-	 * @return float Completeness score 0-1.
-	 */
+		/**
+		 * Check completeness
+		 *
+		 * @param array  $reasoning_output Reasoning output.
+		 * @param string $task Original task.
+		 * @return float Completeness score 0-1.
+		 */
 	protected function check_completeness( $reasoning_output, $task ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for task analysis. 
 		// Simple heuristic: check if all parts of task appear addressed.
 		if ( empty( $reasoning_output ) ) {
 			return 0.3;
@@ -482,14 +539,14 @@ class WP_MCP_AI_Reasoning_Controller {
 		return 0.75; // Placeholder - real implementation would match task requirements.
 	}
 
-	/**
-	 * Record reasoning decision
-	 *
-	 * @param string $task Task description.
-	 * @param array  $indicators Indicator scores.
-	 * @param float  $reasoning_score Overall score.
-	 * @return void
-	 */
+		/**
+		 * Record reasoning decision
+		 *
+		 * @param string $task Task description.
+		 * @param array  $indicators Indicator scores.
+		 * @param float  $reasoning_score Overall score.
+		 * @return void
+		 */
 	protected function record_reasoning_decision( $task, $indicators, $reasoning_score ) {
 		$history = get_option( self::REASONING_HISTORY_KEY, array() );
 
@@ -513,13 +570,13 @@ class WP_MCP_AI_Reasoning_Controller {
 		update_option( self::REASONING_HISTORY_KEY, $history, false );
 	}
 
-	/**
-	 * Store quality metrics
-	 *
-	 * @param string $task Task description.
-	 * @param array  $metrics Quality metrics.
-	 * @return void
-	 */
+		/**
+		 * Store quality metrics
+		 *
+		 * @param string $task Task description.
+		 * @param array  $metrics Quality metrics.
+		 * @return void
+		 */
 	protected function store_quality_metrics( $task, $metrics ) {
 		$stored_metrics = get_option( self::QUALITY_METRICS_KEY, array() );
 
@@ -540,12 +597,12 @@ class WP_MCP_AI_Reasoning_Controller {
 		update_option( self::QUALITY_METRICS_KEY, $stored_metrics, false );
 	}
 
-	/**
-	 * Get quality metrics history
-	 *
-	 * @param int $days Number of days to retrieve.
-	 * @return array Quality metrics.
-	 */
+		/**
+		 * Get quality metrics history
+		 *
+		 * @param int $days Number of days to retrieve.
+		 * @return array Quality metrics.
+		 */
 	protected function get_quality_metrics_history( $days ) {
 		$metrics = get_option( self::QUALITY_METRICS_KEY, array() );
 
@@ -557,17 +614,17 @@ class WP_MCP_AI_Reasoning_Controller {
 
 		return array_filter(
 			$metrics,
-			function( $m ) use ( $cutoff ) {
+			function ( $m ) use ( $cutoff ) {
 				return isset( $m['timestamp'] ) && $m['timestamp'] > $cutoff;
 			}
 		);
 	}
 
-	/**
-	 * Clear reasoning history and metrics
-	 *
-	 * @return bool Success status.
-	 */
+		/**
+		 * Clear reasoning history and metrics
+		 *
+		 * @return bool Success status.
+		 */
 	public function clear_history() {
 		delete_option( self::REASONING_HISTORY_KEY );
 		delete_option( self::QUALITY_METRICS_KEY );

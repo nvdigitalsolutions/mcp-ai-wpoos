@@ -44,7 +44,7 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'countries'         => array(
+				'countries'          => array(
 					'type'        => 'array',
 					'description' => __( 'Specific countries to analyze (optional, analyzes all if not provided)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 					'description' => __( 'Include country comparison (optional, default: true)', 'mcp-ai-wpoos-pro' ),
 					'default'     => true,
 				),
-				'sort_by'           => array(
+				'sort_by'            => array(
 					'type'        => 'string',
 					'description' => __( 'Sort results by metric (optional, default: "total")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'total', 'approval_rate', 'avg_approval_days', 'active' ),
@@ -140,39 +140,39 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 
 				if ( ! isset( $country_data[ $country ] ) ) {
 					$country_data[ $country ] = array(
-						'total'            => 0,
-						'active'           => 0,
-						'pending'          => 0,
-						'expired'          => 0,
-						'approval_days'    => array(),
-						'authority'        => get_post_meta( $post->ID, 'authority', true ),
+						'total'         => 0,
+						'active'        => 0,
+						'pending'       => 0,
+						'expired'       => 0,
+						'approval_days' => array(),
+						'authority'     => get_post_meta( $post->ID, 'authority', true ),
 					);
 				}
 
-				$country_data[ $country ]['total']++;
+				++$country_data[ $country ]['total'];
 
 				// Get status.
 				$statuses = wp_get_post_terms( $post->ID, 'mcp_ai_reg_status' );
 				if ( ! empty( $statuses ) && ! is_wp_error( $statuses ) ) {
 					$status_slug = $statuses[0]->slug;
 					if ( in_array( $status_slug, array( 'approved', 'active' ), true ) ) {
-						$country_data[ $country ]['active']++;
+						++$country_data[ $country ]['active'];
 					} elseif ( in_array( $status_slug, array( 'submitted', 'pending', 'under-review' ), true ) ) {
-						$country_data[ $country ]['pending']++;
+						++$country_data[ $country ]['pending'];
 					}
 				}
 
 				// Check expiry.
 				$expiry_date = get_post_meta( $post->ID, 'expiry_date', true );
 				if ( $expiry_date && strtotime( $expiry_date ) < time() ) {
-					$country_data[ $country ]['expired']++;
+					++$country_data[ $country ]['expired'];
 				}
 
 				// Calculate approval time.
 				$submission_date = get_post_meta( $post->ID, 'submission_date', true );
 				$approval_date   = get_post_meta( $post->ID, 'approval_date', true );
 				if ( $submission_date && $approval_date ) {
-					$days = floor( ( strtotime( $approval_date ) - strtotime( $submission_date ) ) / DAY_IN_SECONDS );
+					$days                                        = floor( ( strtotime( $approval_date ) - strtotime( $submission_date ) ) / DAY_IN_SECONDS );
 					$country_data[ $country ]['approval_days'][] = $days;
 				}
 			}
@@ -181,19 +181,19 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 		// Calculate metrics for each country.
 		$performance_metrics = array();
 		foreach ( $country_data as $country => $data ) {
-			$approval_rate = $data['total'] > 0 ? round( ( $data['active'] / $data['total'] ) * 100, 2 ) : 0;
+			$approval_rate     = $data['total'] > 0 ? round( ( $data['active'] / $data['total'] ) * 100, 2 ) : 0;
 			$avg_approval_days = ! empty( $data['approval_days'] ) ? round( array_sum( $data['approval_days'] ) / count( $data['approval_days'] ), 1 ) : 0;
 
 			$performance_metrics[ $country ] = array(
-				'country'              => $country,
-				'authority'            => $data['authority'],
-				'total_registrations'  => $data['total'],
-				'active'               => $data['active'],
-				'pending'              => $data['pending'],
-				'expired'              => $data['expired'],
-				'approval_rate'        => $approval_rate,
-				'avg_approval_days'    => $avg_approval_days,
-				'compliance_score'     => $this->calculate_compliance_score( $data, $approval_rate ),
+				'country'             => $country,
+				'authority'           => $data['authority'],
+				'total_registrations' => $data['total'],
+				'active'              => $data['active'],
+				'pending'             => $data['pending'],
+				'expired'             => $data['expired'],
+				'approval_rate'       => $approval_rate,
+				'avg_approval_days'   => $avg_approval_days,
+				'compliance_score'    => $this->calculate_compliance_score( $data, $approval_rate ),
 			);
 		}
 
@@ -212,13 +212,13 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 		}
 
 		return array(
-			'success'      => true,
-			'report_type'  => 'country_performance',
-			'generated_at' => current_time( 'mysql' ),
+			'success'         => true,
+			'report_type'     => 'country_performance',
+			'generated_at'    => current_time( 'mysql' ),
 			'total_countries' => count( $performance_metrics ),
-			'metrics'      => $performance_metrics,
-			'comparison'   => $comparison,
-			'sorted_by'    => $sort_by,
+			'metrics'         => $performance_metrics,
+			'comparison'      => $comparison,
+			'sorted_by'       => $sort_by,
 		);
 	}
 
@@ -234,7 +234,7 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 
 		if ( $data['total'] > 0 ) {
 			$expired_ratio = $data['expired'] / $data['total'];
-			$score += ( 1 - $expired_ratio ) * 40; // Expiry compliance weight: 40%.
+			$score        += ( 1 - $expired_ratio ) * 40; // Expiry compliance weight: 40%.
 		}
 
 		return round( $score, 2 );
@@ -247,9 +247,9 @@ class WP_MCP_AI_Tool_Generate_Country_Performance implements WP_MCP_AI_Tool_Inte
 	 * @return array Comparison data.
 	 */
 	private function generate_comparison( $metrics ) {
-		$totals = array_column( $metrics, 'total_registrations' );
+		$totals         = array_column( $metrics, 'total_registrations' );
 		$approval_rates = array_column( $metrics, 'approval_rate' );
-		$approval_days = array_column( $metrics, 'avg_approval_days' );
+		$approval_days  = array_column( $metrics, 'avg_approval_days' );
 
 		return array(
 			'highest_volume'        => array_keys( $metrics )[0],

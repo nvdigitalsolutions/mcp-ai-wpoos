@@ -15,7 +15,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test basic theme.json generation.
 	 */
 	public function test_basic_generation() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 
@@ -35,7 +35,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test settings section generation.
 	 */
 	public function test_settings_generation() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$settings   = $theme_json['settings'];
@@ -64,7 +64,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test styles section generation.
 	 */
 	public function test_styles_generation() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$styles     = $theme_json['styles'];
@@ -91,7 +91,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test custom templates generation.
 	 */
 	public function test_custom_templates() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$custom_templates = array(
 			array(
@@ -117,7 +117,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test template parts generation.
 	 */
 	public function test_template_parts() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$template_parts = array(
 			array(
@@ -142,7 +142,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test industry-specific color palettes.
 	 */
 	public function test_industry_color_palettes() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$industries = array( 'technology', 'healthcare', 'finance', 'ecommerce' );
 
@@ -165,7 +165,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test theme.json validation.
 	 */
 	public function test_validation() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		// Valid theme.json.
 		$valid_json = array(
@@ -199,7 +199,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test JSON conversion.
 	 */
 	public function test_json_conversion() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$json       = WP_MCP_AI_Theme_JSON_Generator::to_json( $theme_json, true );
@@ -217,7 +217,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test default color palette.
 	 */
 	public function test_default_color_palette() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$palette    = $theme_json['settings']['color']['palette'];
@@ -234,7 +234,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test fluid typography.
 	 */
 	public function test_fluid_typography() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$font_sizes = $theme_json['settings']['typography']['fontSizes'];
@@ -256,7 +256,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test spacing scale generation.
 	 */
 	public function test_spacing_scale() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json    = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$spacing_scale = $theme_json['settings']['spacing']['spacingScale'];
@@ -272,7 +272,7 @@ class Test_Theme_JSON_Generator extends WP_UnitTestCase {
 	 * Test shadow presets.
 	 */
 	public function test_shadow_presets() {
-		require_once dirname( dirname( __FILE__ ) ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
+		require_once dirname( __DIR__ ) . '/addons/pro/includes/helpers/class-wp-mcp-ai-theme-json-generator.php';
 
 		$theme_json = WP_MCP_AI_Theme_JSON_Generator::generate();
 		$shadows    = $theme_json['settings']['shadow']['presets'];

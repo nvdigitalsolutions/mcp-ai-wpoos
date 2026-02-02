@@ -577,7 +577,7 @@ class WP_MCP_AI_Enhanced_Token_Tracking {
 	 * @param string $old_model Previous model name (might be OpenAI model).
 	 * @return string Inferred Gemini model.
 	 */
-	private static function infer_gemini_model_from_tool( $tool, $old_model ) {
+	private static function infer_gemini_model_from_tool( $tool, $old_model ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for model migration logic.
 		// Image-related Gemini tools use the Gemini image model.
 		if ( in_array( $tool, array( 'generate_gemini_image', 'edit_gemini_image' ), true ) ) {
 			return 'gemini-2.5-flash-image';

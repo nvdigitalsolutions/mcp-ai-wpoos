@@ -1,0 +1,32 @@
+# yfinance Microservice Dependencies
+# Python 3.8+ required
+
+# Core dependencies
+yfinance>=0.2.40
+Flask>=3.0.0
+Flask-CORS>=4.0.0
+
+# Data handling
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP client
+requests>=2.31.0
+
+# Caching (optional, for advanced caching)
+redis>=5.0.0  # Optional: For distributed caching
+
+# Rate limiting
+ratelimit>=2.2.1
+
+# Logging
+python-json-logger>=2.0.7
+
+# Environment variables
+python-dotenv>=1.0.0
+
+# Testing (dev dependencies)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-mock>=3.12.0
+requests-mock>=1.11.0

@@ -3,7 +3,7 @@
  * NV oOS Provider Connectivity Diagnostic Page
  *
  * Test connectivity and configuration for all AI providers:
- * OpenAI, Google Gemini, Ollama (local AI), LM Studio, and Google Maps Platform.
+ * OpenAI, Anthropic, Google Gemini, Ollama (local AI), LM Studio, and Google Maps Platform.
  *
  * @package WP_MCP_AI
  */
@@ -81,7 +81,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 			<div class="wrap">
 				<h1><?php esc_html_e( 'AI Provider Connectivity Diagnostics', 'mcp-ai-wpoos' ); ?></h1>
 				<p class="description">
-					<?php esc_html_e( 'Test connectivity and configuration for all AI providers including OpenAI, Google Gemini, Ollama, LM Studio, and Google Maps Platform.', 'mcp-ai-wpoos' ); ?>
+					<?php esc_html_e( 'Test connectivity and configuration for all AI providers including OpenAI, Anthropic, Google Gemini, Ollama, LM Studio, and Google Maps Platform.', 'mcp-ai-wpoos' ); ?>
 				</p>
 
 				<!-- OpenAI -->
@@ -131,9 +131,66 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					<?php endif; ?>
 				</div>
 
+				<!-- Anthropic (Claude) -->
+				<div class="card">
+					<h2><?php esc_html_e( '2. Anthropic (Claude)', 'mcp-ai-wpoos' ); ?></h2>
+					<table class="widefat striped">
+						<tbody>
+							<tr>
+								<th style="width: 30%;"><?php esc_html_e( 'API Key Configured', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['anthropic_api_key'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Yes', 'mcp-ai-wpoos' ); ?></span>
+										<code><?php echo esc_html( substr( $settings['anthropic_api_key'], 0, 12 ) . '...' ); ?></code>
+									<?php else : ?>
+										<span style="color: red;">✗ <?php esc_html_e( 'Not Configured', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Default Model', 'mcp-ai-wpoos' ); ?></th>
+								<td><code><?php echo esc_html( isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5' ); ?></code></td>
+							</tr>
+							<tr>
+								<th><?php esc_html_e( 'Provider Status', 'mcp-ai-wpoos' ); ?></th>
+								<td>
+									<?php if ( ! empty( $settings['enable_anthropic'] ) ) : ?>
+										<span style="color: green;">✓ <?php esc_html_e( 'Enabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php else : ?>
+										<span style="color: orange;">⚠ <?php esc_html_e( 'Disabled', 'mcp-ai-wpoos' ); ?></span>
+									<?php endif; ?>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<div id="anthropic-test-result" style="margin: 15px 0;"></div>
+
+					<button
+						type="button"
+						class="button button-primary test-provider"
+						data-provider="anthropic"
+						<?php echo esc_attr( empty( $settings['anthropic_api_key'] ) ? 'disabled' : '' ); ?>>
+						<?php esc_html_e( 'Test Anthropic Connection', 'mcp-ai-wpoos' ); ?>
+					</button>
+
+					<?php if ( empty( $settings['anthropic_api_key'] ) ) : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Configure your Anthropic API key in settings to enable testing.', 'mcp-ai-wpoos' ); ?>
+							<a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=providers' ) ); ?>">
+								<?php esc_html_e( 'Go to Settings', 'mcp-ai-wpoos' ); ?>
+							</a>
+						</p>
+					<?php else : ?>
+						<p class="description" style="margin-top: 10px;">
+							<?php esc_html_e( 'Anthropic provides Claude models, known for their strong reasoning capabilities and large context windows. Claude 3.5 Sonnet offers excellent performance for complex tasks.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+
 				<!-- Google Gemini -->
 				<div class="card">
-					<h2><?php esc_html_e( '2. Google Gemini', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '3. Google Gemini', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -180,7 +237,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Hugging Face -->
 				<div class="card">
-					<h2><?php esc_html_e( '3. Hugging Face', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '4. Hugging Face', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -239,7 +296,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Ollama (Local AI) -->
 				<div class="card">
-					<h2><?php esc_html_e( '4. Ollama (Local AI)', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '5. Ollama (Local AI)', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -291,7 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- LM Studio (Local AI) -->
 				<div class="card">
-					<h2><?php esc_html_e( '5. LM Studio (Local AI)', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '6. LM Studio (Local AI)', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -343,7 +400,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Cloudflare Workers AI -->
 				<div class="card">
-					<h2><?php esc_html_e( '6. Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '7. Cloudflare Workers AI', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -420,7 +477,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 				if ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION ) :
 					?>
 				<div class="card">
-					<h2><?php esc_html_e( '7. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '8. Embedded LLM (Local AI - Pro)', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -477,7 +534,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Google Maps Platform -->
 				<div class="card">
-					<h2><?php esc_html_e( '8. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '9. Google Maps Platform', 'mcp-ai-wpoos' ); ?></h2>
 					<table class="widefat striped">
 						<tbody>
 							<tr>
@@ -524,13 +581,16 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Provider Summary -->
 				<div class="card">
-					<h2><?php esc_html_e( '9. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '10. Provider Summary', 'mcp-ai-wpoos' ); ?></h2>
 					<?php
 					$default_provider = isset( $settings['default_provider'] ) ? $settings['default_provider'] : 'openai';
 					$configured       = array();
 
 					if ( ! empty( $settings['openai_api_key'] ) ) {
 						$configured[] = 'OpenAI';
+					}
+					if ( ! empty( $settings['anthropic_api_key'] ) ) {
+						$configured[] = 'Anthropic';
 					}
 					if ( ! empty( $settings['gemini_api_key'] ) ) {
 						$configured[] = 'Gemini';
@@ -597,7 +657,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 
 				<!-- Troubleshooting -->
 				<div class="card">
-					<h2><?php esc_html_e( '10. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
+					<h2><?php esc_html_e( '11. Troubleshooting Guide', 'mcp-ai-wpoos' ); ?></h2>
 
 					<h3><?php esc_html_e( 'Common Issues:', 'mcp-ai-wpoos' ); ?></h3>
 					<ul>
@@ -615,6 +675,15 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 								<li><?php esc_html_e( 'Verify API key is correct and active', 'mcp-ai-wpoos' ); ?></li>
 								<li><?php esc_html_e( 'Check Google AI Studio for API quota limits', 'mcp-ai-wpoos' ); ?></li>
 								<li><?php esc_html_e( 'Ensure Generative Language API is enabled in Google Cloud Console', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						</li>
+						<li>
+							<strong><?php esc_html_e( 'Anthropic connection fails:', 'mcp-ai-wpoos' ); ?></strong>
+							<ul>
+								<li><?php esc_html_e( 'Verify API key is correct and active', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Check Anthropic Console for API quota and usage limits', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Ensure server can connect to api.anthropic.com (not blocked by firewall)', 'mcp-ai-wpoos' ); ?></li>
+								<li><?php esc_html_e( 'Verify the selected Claude model is available with your API tier', 'mcp-ai-wpoos' ); ?></li>
 							</ul>
 						</li>
 						<li>
@@ -670,6 +739,7 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						<li><a href="<?php echo esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard' ) ); ?>"><?php esc_html_e( 'Plugin Settings', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="<?php echo esc_url( admin_url( 'tools.php?page=wp-mcp-ai-mcp-diagnostic' ) ); ?>"><?php esc_html_e( 'MCP Server Diagnostic', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://platform.openai.com/api-keys" target="_blank"><?php esc_html_e( 'OpenAI API Keys', 'mcp-ai-wpoos' ); ?></a></li>
+						<li><a href="https://console.anthropic.com/" target="_blank"><?php esc_html_e( 'Anthropic Console', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://aistudio.google.com/app/apikey" target="_blank"><?php esc_html_e( 'Google AI Studio', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://console.cloud.google.com/google/maps-apis/credentials" target="_blank"><?php esc_html_e( 'Google Cloud Console - Maps API', 'mcp-ai-wpoos' ); ?></a></li>
 						<li><a href="https://dash.cloudflare.com/" target="_blank"><?php esc_html_e( 'Cloudflare Dashboard', 'mcp-ai-wpoos' ); ?></a></li>
@@ -775,6 +845,10 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 					self::test_openai( $settings );
 					break;
 
+				case 'anthropic':
+					self::test_anthropic( $settings );
+					break;
+
 				case 'gemini':
 					self::test_gemini( $settings );
 					break;
@@ -877,6 +951,107 @@ if ( ! class_exists( 'WP_MCP_AI_Provider_Diagnostics' ) ) {
 						'details' => array(
 							__( 'Models Available', 'mcp-ai-wpoos' ) => $model_count,
 							__( 'Default Model', 'mcp-ai-wpoos' ) => isset( $settings['default_model'] ) ? $settings['default_model'] : 'gpt-4o-mini',
+						),
+					)
+				);
+			} catch ( Exception $e ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: error message */
+							__( 'Test failed: %s', 'mcp-ai-wpoos' ),
+							$e->getMessage()
+						),
+					)
+				);
+			}
+		}
+
+		/**
+		 * Test Anthropic connection.
+		 *
+		 * @param array $settings Plugin settings.
+		 */
+		private static function test_anthropic( $settings ) {
+			if ( empty( $settings['anthropic_api_key'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'Anthropic API key is not configured.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			if ( ! class_exists( 'WP_MCP_AI_Anthropic_Client' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Anthropic client class not found.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			try {
+				// Test by making a simple completion request.
+				$api_key = $settings['anthropic_api_key'];
+				$model   = isset( $settings['anthropic_model'] ) ? $settings['anthropic_model'] : 'claude-sonnet-4-5';
+
+				$response = wp_remote_post(
+					'https://api.anthropic.com/v1/messages',
+					array(
+						'headers' => array(
+							'Content-Type'      => 'application/json',
+							'x-api-key'         => $api_key,
+							'anthropic-version' => '2023-06-01',
+						),
+						'body'    => wp_json_encode(
+							array(
+								'model'      => $model,
+								'max_tokens' => 10,
+								'messages'   => array(
+									array(
+										'role'    => 'user',
+										'content' => 'Hello',
+									),
+								),
+							)
+						),
+						'timeout' => 30,
+					)
+				);
+
+				if ( is_wp_error( $response ) ) {
+					wp_send_json_error(
+						array(
+							'message' => sprintf(
+								/* translators: %s: error message */
+								__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							),
+						)
+					);
+					return;
+				}
+
+				$response_code = wp_remote_retrieve_response_code( $response );
+
+				if ( 200 !== $response_code ) {
+					$error_body    = json_decode( wp_remote_retrieve_body( $response ), true );
+					$error_message = isset( $error_body['error']['message'] ) ? $error_body['error']['message'] : sprintf(
+						/* translators: %d: HTTP status code */
+						__( 'API returned error code: %d', 'mcp-ai-wpoos' ),
+						$response_code
+					);
+
+					wp_send_json_error(
+						array(
+							'message' => $error_message,
+						)
+					);
+					return;
+				}
+
+				$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+				wp_send_json_success(
+					array(
+						'message' => __( 'Anthropic connection successful!', 'mcp-ai-wpoos' ),
+						'details' => array(
+							__( 'Model', 'mcp-ai-wpoos' ) => $model,
+							__( 'API Version', 'mcp-ai-wpoos' ) => '2023-06-01',
+							__( 'Response Status', 'mcp-ai-wpoos' ) => isset( $body['stop_reason'] ) ? $body['stop_reason'] : __( 'OK', 'mcp-ai-wpoos' ),
 						),
 					)
 				);

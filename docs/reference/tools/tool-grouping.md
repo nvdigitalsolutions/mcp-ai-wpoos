@@ -2,7 +2,7 @@
 
 ## Overview
 
-The NV oOS plugin organizes its 65+ tools into 3 high-level categories based on their dependencies and requirements. This grouping helps users understand what's needed to use each tool and makes the admin UI more intuitive.
+The NV oOS plugin organizes its 519 tools (165 base + 348 pro + 6 core/memory) into 3 high-level categories based on their dependencies and requirements. This grouping helps users understand what's needed to use each tool and makes the admin UI more intuitive.
 
 ## The 3 Tool Categories
 

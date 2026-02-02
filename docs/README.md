@@ -30,6 +30,7 @@ Complete technical reference
 ### 🏗️ **[Architecture](architecture/)**
 System design and patterns
 - **[Agentic Workflow](architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md)** ⭐ Comprehensive
+- **[Multi-Agent System](features/multi-agent/README-MULTI-AGENT-SYSTEM.md)** - Multi-agent orchestration implementation
 - **[Orchestration](architecture/orchestration/)** - Orchestration layer
 - **[Integrations](architecture/integrations/)** - Elementor, JetEngine
 
@@ -45,6 +46,12 @@ Problem-solving guides
 - **[Deployment](troubleshooting/deployment/)** - Installation issues
 - **[Chat](troubleshooting/chat/)** - Chat functionality problems
 - **[Common Issues](troubleshooting/common/)** - General problems
+- **[Federation Setup](guides/admin/FEDERATION_SETUP_GUIDE.md)** - Federation and mesh computing setup
+
+### 🔧 **[Deployment](deployment/)**
+Deployment and production guides
+- **[Production Composer Setup](deployment/PRODUCTION_COMPOSER.md)** - Composer dependencies for production
+- **[Production Ready Guide](deployment/PRODUCTION_READY.md)** - Production deployment checklist
 
 ### 📅 **[Implementation History](implementation-history/)**
 Historical documentation (2025)

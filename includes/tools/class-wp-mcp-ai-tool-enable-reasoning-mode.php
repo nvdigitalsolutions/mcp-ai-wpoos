@@ -90,17 +90,11 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -118,7 +112,6 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 
@@ -127,14 +120,18 @@ class WP_MCP_AI_Tool_Enable_Reasoning_Mode implements WP_MCP_AI_Tool_Interface, 
 	 */
 	public function get_capability_flags() {
 		return array(
-			'safe'        => true,
-			'modifies-wp' => false,
+			'safe'          => true,
+			'modifies-wp'   => false,
 			'deterministic' => false, // Can vary based on historical data.
 		);
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate required parameters.
