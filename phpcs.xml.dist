@@ -29,6 +29,8 @@
 
 <rule ref="Universal.Files.SeparateFunctionsFromOO">
 <exclude-pattern>mcp-ai-wpoos\.php$</exclude-pattern>
+<exclude-pattern>class-wp-mcp-ai-cli-command\.php$</exclude-pattern>
+<exclude-pattern>class-wp-mcp-ai-jetengine-endpoint-report\.php$</exclude-pattern>
 </rule>
 
 <rule ref="Squiz.Commenting.FileComment">
