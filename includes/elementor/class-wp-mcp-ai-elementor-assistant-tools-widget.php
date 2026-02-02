@@ -410,8 +410,7 @@ class WP_MCP_AI_Elementor_Assistant_Tools_Widget extends \Elementor\Widget_Base 
 
 		// Fallback for older WordPress versions.
 		// Output static JavaScript for copy functionality. Content is static and safe.
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static JavaScript code from ob_get_clean(), no user input.
-		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline script for Elementor assistant tools widget functionality.
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped,WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Static JavaScript code from ob_get_clean(), no user input. Inline script for Elementor assistant tools widget functionality.
 		echo '<script>' . $script . '</script>';
 	}
 
