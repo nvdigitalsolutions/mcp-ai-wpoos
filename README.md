@@ -91,7 +91,17 @@
 
 ## 🧩 Overview
 
-Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
+Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.
+
+**Privacy & Terms Notice:** This plugin connects to external AI services. Review each provider's policies:
+- **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
+- **Google Gemini**: [Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)  
+- **Anthropic**: [Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
+- **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
+- **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
+- **Ollama**: Self-hosted (no external data transmission)
+
+See the complete [External Services Reference](docs/EXTERNAL_SERVICES.md) for all 17 services.  
 
 The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
 
@@ -101,7 +111,7 @@ The plugin works standalone with **127 unique base tools** and optionally extend
 
 **NV oOS** is specifically designed to help **small to medium-sized businesses** fast-track their outdated, stale, or insecure company websites to modern technology standards—**without the need to add yet another wrapper around API calls**. Instead, we're trying to **peel back decades of API wrappers with the help of AI**, providing:
 
-- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, Hugging Face, Cloudflare Worker AI, and Ollama without custom development
+- **Direct AI Integration** - No middleware required. Connect directly to OpenAI, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama without custom development
 - **Security-First Architecture** - Built-in protection against nefarious usage with active monitoring and prevention systems
 - **Enterprise-Grade Features** - Access to capabilities typically requiring expensive custom development
 - **Compliance & Audit Tools** - Comprehensive logging, rate limiting, and usage tracking built-in
@@ -1067,7 +1077,7 @@ composer install --no-dev --classmap-authoritative
 - ✅ 95 base tools (more with optional third-party plugins)
 - ✅ MCP server functionality (`/wp-json/mcp-ai/v1/`)
 - ✅ Browser-based chat history (localStorage, 24 hours)
-- ✅ OpenAI/Gemini/Ollama/Hugging Face/Cloudflare integrations
+- ✅ OpenAI/Gemini/Anthropic/Ollama/Hugging Face/Cloudflare integrations
 
 **What requires JetEngine:**
 - ❌ Server-side chat transcript storage (chat history only in browser without it)
@@ -1328,9 +1338,17 @@ Complete these after installation to unlock every integration point:
 - [ ] **Configure Root Security Key** (Optional) by adding `define( 'WP_MCP_AI_ROOT_SECURITY_KEY', 'your-secure-key' );` to wp-config.php. This provides an additional security layer that can be enabled during emergency shutdown to require authentication before re-initializing the plugin.【F:docs/root-security-key.md†L1-L511】
 - [ ] **Enable Pro Dashboard** (Optional) by adding `define( 'WP_MCP_AI_PRO_DASHBOARD_ENABLED', true );` to wp-config.php. This activates the dedicated Pro Dashboard with ISO/IEC 27001 compliance monitoring, reporting, and management tools. See [Pro Dashboard Documentation](docs/compliance/iso27001/PRO-DASHBOARD-IMPLEMENTATION.md) for details.
 
-## 🧠 Language Model Providers (OpenAI, Gemini, Ollama, LM Studio, Hugging Face & Cloudflare)
+## 🧠 Language Model Providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face & Cloudflare)
 
-A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+A dedicated router transparently forwards chat completions to the active provider, allowing each request to target OpenAI, Gemini, Anthropic, a local Ollama instance, LM Studio, Hugging Face, or Cloudflare Worker AI while sharing the same assistant UX.【F:includes/class-wp-mcp-ai-language-model-router.php†L12-L86】 Configure the required API keys, default models, and the global default provider in **Settings → NV oOS** so new assistants inherit sensible defaults and administrators can switch providers without code changes.【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L124-L333】【F:includes/admin/class-wp-mcp-ai-admin-settings.php†L505-L530】 Assistants can still override provider, model, and generation parameters on a per-post basis.
+
+**Privacy & Terms:** All AI providers have specific terms and privacy policies:
+- **OpenAI**: [Terms](https://openai.com/policies/terms-of-use) | [Privacy](https://openai.com/privacy)
+- **Google Gemini**: [Terms](https://ai.google.dev/terms) | [Privacy](https://ai.google.dev/privacy)
+- **Anthropic**: [Terms](https://www.anthropic.com/legal/consumer-terms) | [Privacy](https://www.anthropic.com/legal/privacy)
+- **Cloudflare**: [Terms](https://www.cloudflare.com/terms/) | [Privacy](https://www.cloudflare.com/privacypolicy/)
+- **Hugging Face**: [Terms](https://huggingface.co/terms-of-service) | [Privacy](https://huggingface.co/privacy)
+- **Ollama/LM Studio**: Self-hosted (no external data transmission)
 
 ### LM Studio Support
 
@@ -1348,7 +1366,7 @@ The plugin includes an intelligent provider priority system that automatically t
 
 - **Drag and drop** providers to set your preferred order
 - **Automatic fallback** - if the first provider fails, the system tries the next one
-- **Visual management** - see all available providers (OpenAI, Gemini, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
+- **Visual management** - see all available providers (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face, Cloudflare) in one sortable list
 - **Flexible prioritization** - adjust based on cost, performance, or availability needs
 
 The first provider in the list serves as the default. If any provider returns an error, the router automatically attempts the next provider in the list until one succeeds. This ensures maximum uptime and resilience without manual intervention. All fallback attempts are logged for debugging and monitoring.
@@ -1542,7 +1560,7 @@ Administrators with `manage_options` capability can view comprehensive token usa
 - Reset personal usage data button
 
 **Detailed Breakdown:**
-- Usage by provider (OpenAI, Gemini, Ollama, LM Studio, Hugging Face, Cloudflare)
+- Usage by provider (OpenAI, Gemini, Anthropic, Ollama, LM Studio, Hugging Face, Cloudflare)
 - Usage by specific model (e.g., `gpt-4.1-mini`, `gemini-2.0-flash`)
 - Request counts per provider/model combination
 - Last used timestamp for each model
@@ -1647,7 +1665,7 @@ NV oOS includes several performance optimizations to enhance the chat experience
 NV oOS includes **intelligent mesh compute routing** that automatically distributes AI workload across multiple sites OR multiple providers using AI-powered decision-making. This feature works in two modes:
 
 1. **Multi-Site Mesh**: Distribute load across multiple WordPress installations
-2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, Hugging Face, Cloudflare, and Ollama on one site
+2. **Single-Site Multi-Provider**: Balance load across OpenAI, Gemini, Anthropic, Hugging Face, Cloudflare, and Ollama on one site
 
 Both modes use the same AI-powered routing engine to optimize for cost, performance, and reliability.
 
@@ -1663,7 +1681,7 @@ Both modes use the same AI-powered routing engine to optimize for cost, performa
 ### Quick Start Examples
 
 **Single-Site Setup** (No mesh required):
-- Configure multiple AI providers (OpenAI + Gemini + Hugging Face + Cloudflare + Ollama)
+- Configure multiple AI providers (OpenAI + Gemini + Anthropic + Hugging Face + Cloudflare + Ollama)
 - Set assistant routing strategy to "AI Optimized"
 - Save 90% on costs by routing simple queries to cheaper models
 
