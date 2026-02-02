@@ -679,6 +679,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'description'    => __( 'Enables 15 regulatory registration tools for managing product registrations, compliance documents, regulatory requirements, and multi-country submissions (Sri Lanka NMRA, UAE, Saudi SFDA, Qatar, Kuwait, Oman, India). This feature is only available in the Pro addon.', 'mcp-ai-wpoos' ),
 					'default'        => false,
 				),
+				'enable_fantasy_football'                => array(
+					'type'           => 'checkbox',
+					'label'          => __( 'Enable Fantasy Football Toolkit', 'mcp-ai-wpoos' ),
+					'checkbox_label' => __( 'Enable fantasy football tools and management', 'mcp-ai-wpoos' ),
+					'description'    => __( 'Enables 9 tools for managing fantasy football teams, analyzing trades, researching players, and generating league reports. Requires Yahoo Fantasy Sports API credentials configured in the Fantasy Football Settings page. Includes OAuth authentication, roster management, player statistics, trade analysis, and AI-powered team logo generation.', 'mcp-ai-wpoos' ),
+					'default'        => false,
+				),
 			);
 
 			// Site Creator is a Pro feature - show promotional notice in base version.
@@ -747,7 +754,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 					'id'     => 'features',
 					'label'  => __( 'Pro Features', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-admin-tools',
-					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit' ),
+					'fields' => array( 'enable_quiz_system', 'enable_media_toolkit', 'enable_document_generation_toolkit', 'enable_project_management', 'enable_places_management', 'enable_ai_cpt_management', 'enable_eca_management', 'enable_health_wellness_management', 'enable_cloudways_toolkit', 'enable_ecommerce_toolkit', 'enable_social_media_toolkit', 'enable_analytics_toolkit', 'enable_multilingual_toolkit', 'enable_video_production_toolkit', 'enable_financial_planner_toolkit', 'enable_calendar_booking_toolkit', 'enable_dj_management_toolkit', 'enable_image_production_toolkit', 'enable_ai_tool_builder_toolkit', 'enable_architect_agent_toolkit', 'enable_architectural_design_toolkit', 'enable_site_creator_toolkit', 'enable_regulatory_registration_toolkit', 'enable_fantasy_football' ),
 				),
 				'configuration'       => array(
 					'id'     => 'configuration',
@@ -932,6 +939,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 				'enable_architectural_design_toolkit'    => 160,  // 16 tools, 3D modeling, rendering.
 				'enable_site_creator_toolkit'            => 104,  // 26 tools, page/section/widget builders, AI automation.
 				'enable_regulatory_registration_toolkit' => 80,   // 15 tools, multi-country registration management.
+				'enable_fantasy_football'                => 40,   // 9 tools, Yahoo Fantasy Sports API integration.
 			);
 		}
 
@@ -1050,7 +1058,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_image_production_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_architect_agent_toolkit]"],' +
-							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"]'
+							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_fantasy_football]"]'
 						);
 
 						function updateToolkitMemory() {
