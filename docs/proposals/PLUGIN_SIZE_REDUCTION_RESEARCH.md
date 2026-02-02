@@ -76,7 +76,7 @@ This means:
 ### Current Loading Mechanism
 
 **Constants**:
-- `WP_MCP_AI_BASE_VERSION` (default: `false`) - Controls feature availability
+- `WP_MCP_AI_BASE_VERSION` (default: `true`) - Controls feature availability
 - `WP_MCP_AI_PRO_VERSION` - Indicates Pro addon is active
 
 **Tool Loading**:
