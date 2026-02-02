@@ -5,7 +5,7 @@
  * @package WP_MCP_AI
  */
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Files.OneClassPerFile.MultipleFound -- CLI command file with multiple command classes.
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Files.OneClassPerFile.MultipleFound, PSR1.Files.SideEffects.FoundWithSymbols -- CLI command file with multiple command classes and helper functions.
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
