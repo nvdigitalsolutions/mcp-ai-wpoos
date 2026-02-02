@@ -1,12 +1,10 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Validation arguments for get_user_info tool.
  *
  * @package WP_MCP_AI
  * @since 1.0.0
  */
-
-// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 
 namespace WP_MCP_AI\Tools\Arguments;
 

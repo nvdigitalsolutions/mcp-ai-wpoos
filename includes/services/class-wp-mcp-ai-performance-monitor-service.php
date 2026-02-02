@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * JetEngine Custom Content Type registration for Plugin Performance Monitoring.
  *
@@ -7,8 +7,6 @@
  *
  * @package WP_MCP_AI
  */
-
-// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 
 
 if ( ! defined( 'ABSPATH' ) ) {

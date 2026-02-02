@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Generate OpenAI Speech Tool Arguments Validation
  *
@@ -6,8 +6,6 @@
  *
  * @package WP_MCP_AI
  */
-
-// phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 
 
 namespace WP_MCP_AI\Tools\Arguments;
