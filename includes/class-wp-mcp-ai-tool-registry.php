@@ -588,6 +588,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'yahoo_ff_league_standings'          => 'external-tools',
 				'ff_generate_team_logo'              => 'external-tools',
 				'ff_create_league_report'            => 'external-tools',
+				'ff_player_research'                 => 'external-tools',
 			);
 
 			// Quiz tool mappings are now handled by the Pro addon.
@@ -1033,6 +1034,7 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
 				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'     => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
 				'WP_MCP_AI_Tool_FF_Create_League_Report'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
+				'WP_MCP_AI_Tool_FF_Player_Research'        => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
 				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
