@@ -618,6 +618,24 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			$pro_tools  = array_merge( $pro_tools, $quiz_tools );
 		}
 
+		// Add Fantasy Football tools if enabled.
+		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
+			$ff_tools = array(
+				// Yahoo Fantasy Sports API tools.
+				'WP_MCP_AI_Tool_Yahoo_FF_Auth'               => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues'        => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Roster'         => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
+				// AI-powered FF tools.
+				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
+				'WP_MCP_AI_Tool_FF_Create_League_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
+				'WP_MCP_AI_Tool_FF_Player_Research'          => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-player-research.php',
+			);
+			$pro_tools  = array_merge( $pro_tools, $ff_tools );
+		}
+
 		// Add places management tools if enabled.
 		if ( ! empty( $settings['enable_places_management'] ) ) {
 			$places_tools = array(
@@ -1224,6 +1242,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			$pro_tools['get_quiz_submissions'] = 'wordpress-core';
 			$pro_tools['get_quiz_results']     = 'wordpress-core';
 			$pro_tools['get_quiz_analytics']   = 'wordpress-core';
+		}
+
+		// Add Fantasy Football tool mappings if enabled.
+		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
+			$pro_tools['yahoo_ff_auth']              = 'external-tools';
+			$pro_tools['yahoo_ff_get_leagues']       = 'external-tools';
+			$pro_tools['yahoo_ff_get_roster']        = 'external-tools';
+			$pro_tools['yahoo_ff_get_player_stats']  = 'external-tools';
+			$pro_tools['yahoo_ff_trade_analyzer']    = 'external-tools';
+			$pro_tools['yahoo_ff_league_standings']  = 'external-tools';
+			$pro_tools['ff_generate_team_logo']      = 'external-tools';
+			$pro_tools['ff_create_league_report']    = 'external-tools';
+			$pro_tools['ff_player_research']         = 'external-tools';
 		}
 
 		// Add project management tool mappings if enabled.
