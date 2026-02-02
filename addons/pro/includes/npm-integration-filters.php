@@ -295,6 +295,200 @@ function wp_mcp_ai_fluent_ffmpeg_transcode_video_handler( $result, $params ) {
 
 /**
  * ============================================================================
+ * YFINANCE FILTER HANDLERS
+ * ============================================================================
+ */
+
+/**
+ * Get ticker information from yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array|WP_Error Ticker information or error.
+ */
+function wp_mcp_ai_yfinance_ticker_info_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'ticker_info', $params, 15 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'yfinance_ticker_info_failed',
+			$result_data['error'] ?? __( 'Failed to fetch ticker information.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data['data'] ?? array();
+}
+
+/**
+ * Get current price from yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array|WP_Error Price data or error.
+ */
+function wp_mcp_ai_yfinance_current_price_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'current_price', $params, 15 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'yfinance_price_failed',
+			$result_data['error'] ?? __( 'Failed to fetch current price.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data['data'] ?? array();
+}
+
+/**
+ * Get batch prices from yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array|WP_Error Batch price data or error.
+ */
+function wp_mcp_ai_yfinance_batch_prices_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'batch_prices', $params, 20 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'yfinance_batch_prices_failed',
+			$result_data['error'] ?? __( 'Failed to fetch batch prices.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data['data'] ?? array();
+}
+
+/**
+ * Get price history from yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array|WP_Error Historical price data or error.
+ */
+function wp_mcp_ai_yfinance_price_history_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'price_history', $params, 20 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'yfinance_history_failed',
+			$result_data['error'] ?? __( 'Failed to fetch price history.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data;
+}
+
+/**
+ * Search ticker symbols using yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array|WP_Error Search results or error.
+ */
+function wp_mcp_ai_yfinance_search_ticker_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'search', $params, 10 );
+
+	if ( is_wp_error( $output ) ) {
+		return $output;
+	}
+
+	$result_data = json_decode( $output, true );
+
+	if ( ! $result_data || ! isset( $result_data['success'] ) || ! $result_data['success'] ) {
+		return new WP_Error(
+			'yfinance_search_failed',
+			$result_data['error'] ?? __( 'Failed to search ticker symbols.', 'mcp-ai-wpoos-pro' )
+		);
+	}
+
+	return $result_data['results'] ?? array();
+}
+
+/**
+ * Check health of yfinance service
+ *
+ * @param array|false $result Result from previous filters.
+ * @param array       $params Request parameters.
+ * @return array Health status.
+ */
+function wp_mcp_ai_yfinance_health_check_handler( $result, $params ) {
+	// If already handled by another filter, return it.
+	if ( false !== $result ) {
+		return $result;
+	}
+
+	$service_file = WP_MCP_AI_PRO_PATH . 'node-services/yfinance-client.js';
+	$output       = wp_mcp_ai_exec_node_service( $service_file, 'health', $params, 5 );
+
+	if ( is_wp_error( $output ) ) {
+		return array(
+			'success' => false,
+			'error'   => $output->get_error_message(),
+		);
+	}
+
+	$result_data = json_decode( $output, true );
+
+	return $result_data ?? array( 'success' => false );
+}
+
+/**
+ * ============================================================================
  * REGISTRATION FUNCTIONS
  * ============================================================================
  */
@@ -324,6 +518,18 @@ function wp_mcp_ai_register_ffmpeg_filters() {
 }
 
 /**
+ * Register yfinance filter handlers
+ */
+function wp_mcp_ai_register_yfinance_filters() {
+	add_filter( 'wp_mcp_ai_yfinance_ticker_info', 'wp_mcp_ai_yfinance_ticker_info_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_yfinance_current_price', 'wp_mcp_ai_yfinance_current_price_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_yfinance_batch_prices', 'wp_mcp_ai_yfinance_batch_prices_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_yfinance_price_history', 'wp_mcp_ai_yfinance_price_history_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_yfinance_search_ticker', 'wp_mcp_ai_yfinance_search_ticker_handler', 10, 2 );
+	add_filter( 'wp_mcp_ai_yfinance_health_check', 'wp_mcp_ai_yfinance_health_check_handler', 10, 2 );
+}
+
+/**
  * Register all NPM package filter handlers
  *
  * Call this function to enable all NPM package integrations at once.
@@ -332,6 +538,7 @@ function wp_mcp_ai_register_all_npm_filters() {
 	wp_mcp_ai_register_prettier_filters();
 	wp_mcp_ai_register_mjml_filters();
 	wp_mcp_ai_register_ffmpeg_filters();
+	wp_mcp_ai_register_yfinance_filters();
 }
 
 /**
