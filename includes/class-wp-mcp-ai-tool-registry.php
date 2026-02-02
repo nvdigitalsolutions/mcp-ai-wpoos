@@ -579,6 +579,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'huggingface_dataset_is_valid'       => 'external-tools',
 				'huggingface_dataset_filter'         => 'external-tools',
 				'huggingface_recommended_datasets'   => 'external-tools',
+				// Yahoo Fantasy Football Toolkit.
+				'yahoo_ff_auth'                      => 'external-tools',
+				'yahoo_ff_get_leagues'               => 'external-tools',
+				'yahoo_ff_get_roster'                => 'external-tools',
+				'yahoo_ff_get_player_stats'          => 'external-tools',
+				'yahoo_ff_trade_analyzer'            => 'external-tools',
+				'yahoo_ff_league_standings'          => 'external-tools',
 			);
 
 			// Quiz tool mappings are now handled by the Pro addon.
@@ -1015,6 +1022,13 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 
 			// Additional tools that require third-party plugins or external API credentials.
 			$extended_tools = array(
+				// Yahoo Fantasy Football Toolkit.
+				'WP_MCP_AI_Tool_Yahoo_FF_Auth'             => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-auth.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Leagues'      => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Roster'       => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-roster.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
+				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
 				'WP_MCP_AI_Tool_Get_Elementor_Templates'   => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-elementor-templates.php',
 				'WP_MCP_AI_Tool_Import_Elementor_Template_Kit' => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-import-elementor-template-kit.php',
 				'WP_MCP_AI_Tool_Get_Woo_Orders'            => WP_MCP_AI_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-woo-recent-orders.php',
