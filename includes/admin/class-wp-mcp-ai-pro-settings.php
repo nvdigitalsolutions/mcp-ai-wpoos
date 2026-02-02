@@ -1150,7 +1150,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 						<td><strong><?php esc_html_e( 'Base Version Mode', 'mcp-ai-wpoos' ); ?></strong></td>
 						<td>
 							<span class="wp-mcp-ai-status-badge <?php echo esc_attr( $status['base_version'] ? 'active' : 'inactive' ); ?>">
-								<?php echo $status['base_version'] ? esc_html__( 'Active (35 core tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (65+ tools)', 'mcp-ai-wpoos' ); ?>
+								<?php echo $status['base_version'] ? esc_html__( 'Active (165 base tools)', 'mcp-ai-wpoos' ) : esc_html__( 'Inactive (519 total tools)', 'mcp-ai-wpoos' ); ?>
 							</span>
 						</td>
 					</tr>

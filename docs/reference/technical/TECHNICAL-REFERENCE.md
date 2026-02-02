@@ -1646,7 +1646,7 @@ WP Admin → NV oOS → Orchestration Dashboard
 ### Base vs Full Version
 
 **Base Version:**
-- 35 core tools
+- 165 base tools
 - No third-party dependencies
 - WordPress core only
 

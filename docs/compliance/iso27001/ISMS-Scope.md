@@ -36,7 +36,7 @@ The NV oOS plugin provides:
 ### 3.1 In Scope
 
 #### 3.1.1 Products and Services
-- **Core Plugin:** Base WordPress plugin with 35 core tools
+- **Core Plugin:** Base WordPress plugin with 165 base tools
 - **Full Version:** Complete plugin with 519 tools (165 base + 348 pro + 6 core/memory) and integrations
 - **Documentation:** All technical and user documentation
 - **Support Services:** Plugin support and maintenance
