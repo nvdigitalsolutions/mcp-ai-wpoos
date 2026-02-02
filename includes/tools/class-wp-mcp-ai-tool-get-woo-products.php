@@ -169,7 +169,11 @@ class WP_MCP_AI_Tool_Get_Woo_Products implements WP_MCP_AI_Tool_Interface, WP_MC
 					continue;
 				}
 
-				/** @var WC_Product $product */
+				/**
+				 * WooCommerce product object.
+				 *
+				 * @var WC_Product $product
+				 */
 				// Check if this is a variable product.
 				$is_variable = method_exists( $product, 'is_type' ) && $product->is_type( 'variable' );
 

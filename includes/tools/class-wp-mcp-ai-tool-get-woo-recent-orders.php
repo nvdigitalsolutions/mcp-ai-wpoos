@@ -124,7 +124,11 @@ class WP_MCP_AI_Tool_Get_Woo_Orders implements WP_MCP_AI_Tool_Interface, WP_MCP_
 		$results = array();
 
 		foreach ( $orders as $order ) {
-			/** @var WC_Order $order */
+			/**
+			 * WooCommerce order object.
+			 *
+			 * @var WC_Order $order
+			 */
 			$results[] = array(
 				'id'            => $order->get_id(),
 				'order_number'  => $order->get_order_number(),
