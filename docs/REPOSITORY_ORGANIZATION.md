@@ -36,7 +36,6 @@ The root directory contains only essential documentation and configuration files
 - **.editorconfig** - Editor configuration
 - **.nvmrc** - Node version specification
 - **docker-compose.yml** - Local development Docker setup
-- **tool-status.txt** - Tool status labels for Tools Manager
 
 ### Hidden Configuration
 - **.gitignore** - Git ignore rules

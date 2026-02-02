@@ -2236,7 +2236,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 		}
 
 		/**
-		 * Load tool status labels from tool-status.txt file.
+		 * Load tool status labels from docs/tool-status.txt file.
 		 *
 		 * @return array Associative array of tool slug => status label.
 		 */
@@ -2249,7 +2249,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 			}
 
 			$status_labels = array();
-			$status_file   = WP_MCP_AI_PATH . 'tool-status.txt';
+			$status_file   = WP_MCP_AI_PATH . 'docs/tool-status.txt';
 
 			// Check if file exists.
 			if ( ! file_exists( $status_file ) ) {
