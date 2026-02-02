@@ -6,7 +6,7 @@ Website: https://nvdigitalsolutions.com
 
 === OVERVIEW ===
 
-NV oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 65+ built-in tools for content management, media generation, e-commerce, forms, and system automation.
+NV oOS (WordPress Open Operator System) is an enterprise-grade WordPress plugin that provides a comprehensive AI Assistant framework. It integrates OpenAI GPT models, Google Gemini, and Ollama (local AI) through the Model Context Protocol (MCP), offering 519 built-in tools (165 base + 348 pro + 6 core/memory) for content management, media generation, e-commerce, forms, and system automation.
 
 === ARCHITECTURE ===
 
@@ -24,7 +24,7 @@ Core Components:
    - Manages authentication credentials (bearer tokens)
    
 3. Tool Registry
-   - Central management of 65+ built-in tools
+   - Central management of 519 built-in tools (165 base + 348 pro + 6 core/memory)
    - Extension system for custom tools
    - Capability-based access control
    - Structured parameter validation with Symfony Validator
@@ -512,9 +512,9 @@ Development:
 === VERSION INFORMATION ===
 
 NV oOS Versions:
-- Base Version: 35 core tools, no third-party dependencies
-- Full Version: 65+ tools including integrations
-- Pro Addon: Video processing tools (FFmpeg required)
+- Base Version: 165 core tools, no third-party dependencies
+- Full Version: 519 tools including integrations (165 base + 348 pro + 6 core/memory)
+- Pro Addon: 348 pro tools including video processing (FFmpeg required)
 
 WordPress Requirements:
 - WordPress: 6.0 or higher
@@ -533,7 +533,7 @@ Optional Plugin Dependencies:
 
 2024-12-19: Created comprehensive NV oOS Developer knowledge base
 - Complete architecture overview and component descriptions
-- All 65+ tools documented with categories and use cases
+- All 519 tools documented with categories and use cases
 - Multi-provider AI integration details (OpenAI, Gemini, Ollama)
 - REST API endpoint documentation with authentication methods
 - Security best practices and performance optimization guides
