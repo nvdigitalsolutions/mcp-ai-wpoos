@@ -5,6 +5,7 @@
  * Provides reusable functionality for tool selection presets across the plugin.
  *
  * @package WP_MCP_AI
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {

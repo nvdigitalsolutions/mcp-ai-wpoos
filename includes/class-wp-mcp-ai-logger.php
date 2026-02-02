@@ -205,7 +205,7 @@ if ( ! class_exists( 'WP_MCP_AI_Logger' ) ) {
 			}
 
 			// Chat interaction events.
-			if ( $type === 'chat_interaction' ) {
+			if ( 'chat_interaction' === $type ) {
 				return WP_MCP_AI_Admin_Settings::is_chat_interaction_logging_enabled();
 			}
 

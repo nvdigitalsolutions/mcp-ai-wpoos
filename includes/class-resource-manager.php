@@ -3,6 +3,7 @@
  * Resource Manager for dynamic AI resource management.
  *
  * @package WP_MCP_AI
+ * phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
