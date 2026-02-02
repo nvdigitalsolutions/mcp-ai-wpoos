@@ -1735,18 +1735,7 @@ class WP_MCP_AI_Tool_Token_Limits {
 		$message = sprintf(
 			/* translators: 1: User name, 2: Tool name, 3: Current usage, 4: Projected usage, 5: Limit, 6: Current tier */
 			__(
-				"Hi %1\$s,\n\n" .
-				"Based on your recent usage patterns, you're projected to exceed your daily token limit for the '%2\$s' tool.\n\n" .
-				"Current Usage: %3\$s tokens\n" .
-				"Projected Usage: %4\$s tokens\n" .
-				"Daily Limit: %5\$s tokens\n" .
-				"Current Tier: %6\$s\n\n" .
-				"To avoid service interruption, consider:\n" .
-				"- Optimizing your queries\n" .
-				"- Upgrading to a higher tier\n" .
-				"- Spreading usage throughout the day\n\n" .
-				"Thank you,\n" .
-				'NV oOS Team',
+				"Hi %1\$s,\n\nBased on your recent usage patterns, you're projected to exceed your daily token limit for the '%2\$s' tool.\n\nCurrent Usage: %3\$s tokens\nProjected Usage: %4\$s tokens\nDaily Limit: %5\$s tokens\nCurrent Tier: %6\$s\n\nTo avoid service interruption, consider:\n- Optimizing your queries\n- Upgrading to a higher tier\n- Spreading usage throughout the day\n\nThank you,\nNV oOS Team",
 				'mcp-ai-wpoos'
 			),
 			$user->display_name,

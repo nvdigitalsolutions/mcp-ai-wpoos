@@ -579,7 +579,7 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 
 		foreach ( $toolkits as $toolkit_slug => $toolkit_info ) {
 			// Get tools tagged for this profession in this toolkit.
-			$toolkit_tools = $this->toolkit_registry->get_toolkit_tools( $toolkit_slug );
+			$toolkit_tools    = $this->toolkit_registry->get_toolkit_tools( $toolkit_slug );
 			$profession_tools = $this->toolkit_registry->get_tools_by_profession( $profession_slug );
 
 			// Find intersection.
@@ -587,11 +587,11 @@ class WP_MCP_AI_Profession_Tool_Recommender {
 
 			if ( ! empty( $relevant_tools ) ) {
 				$recommendations[ $toolkit_slug ] = array(
-					'name'             => $toolkit_info['name'],
-					'description'      => $toolkit_info['description'],
-					'primary_pattern'  => $toolkit_info['primary_pattern'],
-					'tool_count'       => count( $relevant_tools ),
-					'tools'            => $relevant_tools,
+					'name'            => $toolkit_info['name'],
+					'description'     => $toolkit_info['description'],
+					'primary_pattern' => $toolkit_info['primary_pattern'],
+					'tool_count'      => count( $relevant_tools ),
+					'tools'           => $relevant_tools,
 				);
 			}
 		}

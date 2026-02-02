@@ -40,7 +40,7 @@ class WP_MCP_AI_Function_Call_Validator {
 	/**
 	 * Constructor
 	 *
-	 * @param WP_MCP_AI_Tool_Registry|null                  $registry Tool registry.
+	 * @param WP_MCP_AI_Tool_Registry|null               $registry Tool registry.
 	 * @param WP_MCP_AI_Tool_Execution_Orchestrator|null $orchestrator Tool orchestrator.
 	 */
 	public function __construct( $registry = null, $orchestrator = null ) {
@@ -66,6 +66,7 @@ class WP_MCP_AI_Function_Call_Validator {
 			if ( ! $tool ) {
 				return array(
 					'valid'           => false,
+					/* translators: %s: Tool slug */
 					'errors'          => array( sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $tool_slug ) ),
 					'normalized_args' => array(),
 				);
@@ -75,8 +76,8 @@ class WP_MCP_AI_Function_Call_Validator {
 
 		// Validate based on schema type.
 		if ( isset( $schema['type'] ) && 'object' === $schema['type'] ) {
-			$result = $this->validate_object( $arguments, $schema, '' );
-			$errors = $result['errors'];
+			$result          = $this->validate_object( $arguments, $schema, '' );
+			$errors          = $result['errors'];
 			$normalized_args = $result['value'];
 		} else {
 			$errors[] = __( 'Root schema must be of type "object"', 'mcp-ai-wpoos' );
@@ -105,9 +106,12 @@ class WP_MCP_AI_Function_Call_Validator {
 			$errors[] = sprintf(
 				/* translators: %s: property path */
 				__( 'Value at %s must be an object/array', 'mcp-ai-wpoos' ),
-				$path ?: 'root'
+				$path ? $path : 'root'
 			);
-			return array( 'errors' => $errors, 'value' => $normalized );
+			return array(
+				'errors' => $errors,
+				'value'  => $normalized,
+			);
 		}
 
 		$properties = $schema['properties'] ?? array();
@@ -120,7 +124,7 @@ class WP_MCP_AI_Function_Call_Validator {
 					/* translators: 1: property name, 2: property path */
 					__( 'Required property "%1$s" missing at %2$s', 'mcp-ai-wpoos' ),
 					$req_prop,
-					$path ?: 'root'
+					$path ? $path : 'root'
 				);
 			}
 		}
@@ -137,12 +141,15 @@ class WP_MCP_AI_Function_Call_Validator {
 				continue;
 			}
 
-			$prop_result = $this->validate_value( $value[ $prop_name ], $prop_schema, $prop_path );
-			$errors = array_merge( $errors, $prop_result['errors'] );
+			$prop_result              = $this->validate_value( $value[ $prop_name ], $prop_schema, $prop_path );
+			$errors                   = array_merge( $errors, $prop_result['errors'] );
 			$normalized[ $prop_name ] = $prop_result['value'];
 		}
 
-		return array( 'errors' => $errors, 'value' => $normalized );
+		return array(
+			'errors' => $errors,
+			'value'  => $normalized,
+		);
 	}
 
 	/**
@@ -163,16 +170,19 @@ class WP_MCP_AI_Function_Call_Validator {
 				__( 'Value at %s must be an array', 'mcp-ai-wpoos' ),
 				$path
 			);
-			return array( 'errors' => $errors, 'value' => $normalized );
+			return array(
+				'errors' => $errors,
+				'value'  => $normalized,
+			);
 		}
 
 		$items_schema = $schema['items'] ?? array();
 
 		// Validate each item.
 		foreach ( $value as $index => $item ) {
-			$item_path = $path . '[' . $index . ']';
-			$item_result = $this->validate_value( $item, $items_schema, $item_path );
-			$errors = array_merge( $errors, $item_result['errors'] );
+			$item_path    = $path . '[' . $index . ']';
+			$item_result  = $this->validate_value( $item, $items_schema, $item_path );
+			$errors       = array_merge( $errors, $item_result['errors'] );
 			$normalized[] = $item_result['value'];
 		}
 
@@ -195,7 +205,10 @@ class WP_MCP_AI_Function_Call_Validator {
 			);
 		}
 
-		return array( 'errors' => $errors, 'value' => $normalized );
+		return array(
+			'errors' => $errors,
+			'value'  => $normalized,
+		);
 	}
 
 	/**
@@ -213,14 +226,20 @@ class WP_MCP_AI_Function_Call_Validator {
 		// Handle null values.
 		if ( is_null( $value ) ) {
 			if ( isset( $schema['nullable'] ) && $schema['nullable'] ) {
-				return array( 'errors' => array(), 'value' => null );
+				return array(
+					'errors' => array(),
+					'value'  => null,
+				);
 			}
 			$errors[] = sprintf(
 				/* translators: %s: property path */
 				__( 'Value at %s cannot be null', 'mcp-ai-wpoos' ),
 				$path
 			);
-			return array( 'errors' => $errors, 'value' => $value );
+			return array(
+				'errors' => $errors,
+				'value'  => $value,
+			);
 		}
 
 		// Validate based on type.
@@ -310,7 +329,10 @@ class WP_MCP_AI_Function_Call_Validator {
 			);
 		}
 
-		return array( 'errors' => $errors, 'value' => $value );
+		return array(
+			'errors' => $errors,
+			'value'  => $value,
+		);
 	}
 
 	/**
@@ -339,12 +361,13 @@ class WP_MCP_AI_Function_Call_Validator {
 				if ( ! $tool ) {
 					$level_results[ $call_id ] = new WP_Error(
 						'tool_not_found',
+						/* translators: %s: Tool slug */
 						sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $call_data['tool_slug'] )
 					);
 					continue;
 				}
 
-				$result = $tool->execute( $resolved_args, $context );
+				$result                    = $tool->execute( $resolved_args, $context );
 				$level_results[ $call_id ] = $result;
 			}
 
@@ -371,6 +394,7 @@ class WP_MCP_AI_Function_Call_Validator {
 			if ( ! $tool ) {
 				$errors[ $call_id ] = new WP_Error(
 					'tool_not_found',
+					/* translators: %s: Tool slug */
 					sprintf( __( 'Tool %s not found', 'mcp-ai-wpoos' ), $call_data['tool_slug'] )
 				);
 				continue;
@@ -378,7 +402,7 @@ class WP_MCP_AI_Function_Call_Validator {
 
 			// Execute tool (in PHP, we can't truly parallelize, but we batch them).
 			try {
-				$result = $tool->execute( $call_data['arguments'], $context );
+				$result              = $tool->execute( $call_data['arguments'], $context );
 				$results[ $call_id ] = $result;
 			} catch ( Exception $e ) {
 				$errors[ $call_id ] = new WP_Error(
@@ -390,11 +414,11 @@ class WP_MCP_AI_Function_Call_Validator {
 
 		// Aggregate results.
 		return array(
-			'results'         => $results,
-			'errors'          => $errors,
-			'total_calls'     => count( $tool_calls ),
-			'successful'      => count( $results ),
-			'failed'          => count( $errors ),
+			'results'     => $results,
+			'errors'      => $errors,
+			'total_calls' => count( $tool_calls ),
+			'successful'  => count( $results ),
+			'failed'      => count( $errors ),
 		);
 	}
 
@@ -409,7 +433,9 @@ class WP_MCP_AI_Function_Call_Validator {
 		$processed = array();
 
 		// Simple topological sort.
-		while ( count( $processed ) < count( $tool_calls_tree ) ) {
+		$total_count = count( $tool_calls_tree );
+		// phpcs:ignore Generic.CodeAnalysis.ForLoopWithTestFunctionCall.NotAllowed, Squiz.PHP.DisallowSizeFunctionsInLoops.Found -- $processed array grows inside loop, count() must be called each iteration.
+		while ( count( $processed ) < $total_count ) {
 			$current_level = array();
 
 			foreach ( $tool_calls_tree as $call_id => $call_data ) {
@@ -430,7 +456,7 @@ class WP_MCP_AI_Function_Call_Validator {
 
 				if ( $all_deps_met ) {
 					$current_level[ $call_id ] = $call_data;
-					$processed[] = $call_id;
+					$processed[]               = $call_id;
 				}
 			}
 
@@ -458,7 +484,7 @@ class WP_MCP_AI_Function_Call_Validator {
 		foreach ( $arguments as $key => $value ) {
 			if ( is_string( $value ) && 0 === strpos( $value, '$ref:' ) ) {
 				// Reference to previous result.
-				$ref_path = substr( $value, 5 ); // Remove '$ref:' prefix.
+				$ref_path         = substr( $value, 5 ); // Remove '$ref:' prefix.
 				$resolved[ $key ] = $this->resolve_reference( $ref_path, $previous_results );
 			} elseif ( is_array( $value ) ) {
 				$resolved[ $key ] = $this->resolve_dependencies( $value, $previous_results );

@@ -176,22 +176,21 @@ class WP_MCP_AI_Tool_Generate_Chart implements WP_MCP_AI_Tool_Interface {
 		);
 	}
 
-/**
- * Get extended tool definition including toolkit metadata.
- *
- * @since 1.1.0
- *
- * @return array Tool definition with metadata.
- */
-public function get_definition() {
-	return array(
-		'name'                  => $this->get_name(),
-		'description'           => $this->get_description(),
-		'toolkit'               => 'data_analytics',
-		'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
-		'profession_tags'       => array( 'data_scientist', 'business_analyst' ),
-		'risk_level'            => 'info',
-	);
-}
-
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'data_analytics',
+			'pattern_compatibility' => array( 'orchestrator', 'sequential' ),
+			'profession_tags'       => array( 'data_scientist', 'business_analyst' ),
+			'risk_level'            => 'info',
+		);
+	}
 }

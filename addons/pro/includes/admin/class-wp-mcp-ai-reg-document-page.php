@@ -322,7 +322,7 @@ class WP_MCP_AI_Reg_Document_Page {
 		);
 
 		// Count total documents.
-		$total_query = new WP_Query(
+		$total_query              = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
 				'post_status'    => 'publish',
@@ -333,10 +333,10 @@ class WP_MCP_AI_Reg_Document_Page {
 		$stats['total_documents'] = $total_query->found_posts;
 
 		$today      = current_time( 'Y-m-d' );
-		$in_30_days = date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
+		$in_30_days = gmdate( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
 
 		// Count expiring soon (within 30 days).
-		$expiring_query = new WP_Query(
+		$expiring_query         = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
 				'post_status'    => 'publish',
@@ -355,7 +355,7 @@ class WP_MCP_AI_Reg_Document_Page {
 		$stats['expiring_soon'] = $expiring_query->found_posts;
 
 		// Count expired.
-		$expired_query = new WP_Query(
+		$expired_query    = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_reg_document',
 				'post_status'    => 'publish',
@@ -384,7 +384,7 @@ class WP_MCP_AI_Reg_Document_Page {
 	 */
 	private static function render_expiring_documents() {
 		$today      = current_time( 'Y-m-d' );
-		$in_30_days = date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
+		$in_30_days = gmdate( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) );
 
 		$query = new WP_Query(
 			array(
@@ -423,7 +423,7 @@ class WP_MCP_AI_Reg_Document_Page {
 								if ( ! empty( $doc_type ) ) {
 									echo esc_html( $doc_type[0] ) . ' • ';
 								}
-								echo esc_html__( 'Expires:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( date( 'M d, Y', strtotime( $expiry_date ) ) );
+								echo esc_html__( 'Expires:', 'mcp-ai-wpoos-pro' ) . ' ' . esc_html( gmdate( 'M d, Y', strtotime( $expiry_date ) ) );
 								?>
 							</div>
 						</div>
@@ -472,18 +472,23 @@ class WP_MCP_AI_Reg_Document_Page {
 
 		// Fetch all document counts in a single query grouped by term_id.
 		global $wpdb;
-		$document_counts = $wpdb->get_results(
-			"SELECT tr.term_taxonomy_id, COUNT(*) as total
+		$term_ids_safe = array_map( 'intval', $term_ids );
+		$placeholders  = implode( ',', array_fill( 0, count( $term_ids_safe ), '%d' ) );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		$query           = "SELECT tr.term_taxonomy_id, COUNT(*) as total
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
 			INNER JOIN {$wpdb->term_taxonomy} tt ON tr.term_taxonomy_id = tt.term_taxonomy_id
 			WHERE p.post_type = 'mcp_ai_reg_document'
 			AND p.post_status = 'publish'
 			AND tt.taxonomy = 'mcp_ai_doc_type'
-			AND tt.term_id IN (" . implode( ',', array_map( 'intval', $term_ids ) ) . ')
-			GROUP BY tr.term_taxonomy_id',
+			AND tt.term_id IN ($placeholders)
+			GROUP BY tr.term_taxonomy_id";
+		$document_counts = $wpdb->get_results(
+			$wpdb->prepare( $query, $term_ids_safe ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		// Convert to associative array for quick lookup.
 		$counts_by_term = array();
@@ -544,6 +549,7 @@ class WP_MCP_AI_Reg_Document_Page {
 								if ( ! empty( $doc_type ) ) {
 									echo esc_html( $doc_type[0] ) . ' • ';
 								}
+								/* translators: %s: Time elapsed since document was added (e.g., "2 hours", "3 days") */
 								echo esc_html( sprintf( __( 'Added %s ago', 'mcp-ai-wpoos-pro' ), human_time_diff( get_the_time( 'U' ), current_time( 'timestamp' ) ) ) );
 								?>
 							</div>

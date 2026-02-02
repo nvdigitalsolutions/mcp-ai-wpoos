@@ -90,7 +90,7 @@ class WP_MCP_AI_Assistant_Builder_Blocks {
 	 * @param WP_Block_Editor_Context $context    Block editor context.
 	 * @return array Modified categories.
 	 */
-	public static function register_block_category( $categories, $context ) {
+	public static function register_block_category( $categories, $context ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress filter signature.
 		return array_merge(
 			array(
 				array(

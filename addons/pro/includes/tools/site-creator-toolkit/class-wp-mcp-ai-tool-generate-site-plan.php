@@ -124,7 +124,7 @@ class WP_MCP_AI_Tool_Generate_Site_Plan implements WP_MCP_AI_Tool_Interface, WP_
 		if ( empty( $settings['enable_site_creator_toolkit'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The Site Creator Toolkit is disabled. Enable it in WP oOS → Tools & Features settings.', 'mcp-ai-wpoos-pro' )
+				__( 'The Site Creator Toolkit is disabled. Enable it in NV oOS → Tools & Features settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

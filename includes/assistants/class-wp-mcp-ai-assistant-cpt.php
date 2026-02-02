@@ -115,7 +115,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 *
 		 * @param array $selected_tools Currently selected tool slugs.
 		 */
-		protected function render_tool_presets( $selected_tools ) {
+		protected function render_tool_presets( $selected_tools ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for preset filtering.
 			// Get all available tools for validation.
 			$available_tools = array();
 			foreach ( $this->registry->get_tools() as $tool ) {
@@ -390,6 +390,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 					echo '<summary class="wp-mcp-ai-prebuilt-shortcuts__summary">';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-title">' . esc_html( $tool_name ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-badge">';
+					/* translators: %d: number of shortcuts */
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-count">' . esc_html( sprintf( _n( '%d shortcut', '%d shortcuts', $shortcut_count, 'mcp-ai-wpoos' ), $shortcut_count ) ) . '</span>';
 					echo '<span class="wp-mcp-ai-prebuilt-shortcuts__summary-mode" aria-live="polite">' . esc_html( $mode_label ) . '</span>';
 					echo '</span>';
@@ -4064,7 +4065,7 @@ if ( ! class_exists( 'WP_MCP_AI_Assistant_CPT' ) ) {
 		 * @param int     $post_id Post ID being deleted.
 		 * @param WP_Post $post    Post object being deleted (optional, provided by WordPress).
 		 */
-		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) {
+		public function cleanup_deleted_assistant_credentials( $post_id, $post = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by WordPress hook signature.
 			// Post type check is no longer needed since we use delete_{post_type} hook.
 			WP_MCP_AI_Credentials::purge_assistant_credentials( $post_id );
 

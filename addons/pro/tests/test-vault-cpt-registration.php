@@ -51,7 +51,7 @@ class Test_Vault_CPT_Registration extends WP_UnitTestCase {
 	 */
 	public function test_vault_item_cpt_configuration() {
 		$post_type = get_post_type_object( 'mcp_vault_item' );
-		
+
 		$this->assertFalse( $post_type->public, 'Vault item should not be public' );
 		$this->assertFalse( $post_type->publicly_queryable, 'Vault item should not be publicly queryable' );
 		$this->assertTrue( $post_type->show_in_rest, 'Vault item should be available in REST API' );
@@ -63,7 +63,7 @@ class Test_Vault_CPT_Registration extends WP_UnitTestCase {
 	 */
 	public function test_administrator_has_vault_capabilities() {
 		$admin_role = get_role( 'administrator' );
-		
+
 		$this->assertNotNull( $admin_role, 'Administrator role should exist' );
 		$this->assertTrue( $admin_role->has_cap( 'edit_own_vault_items' ), 'Admin should have edit_own_vault_items capability' );
 		$this->assertTrue( $admin_role->has_cap( 'read_own_vault_items' ), 'Admin should have read_own_vault_items capability' );
@@ -78,7 +78,7 @@ class Test_Vault_CPT_Registration extends WP_UnitTestCase {
 	 */
 	public function test_vault_item_cpt_supports() {
 		$post_type = get_post_type_object( 'mcp_vault_item' );
-		
+
 		$this->assertTrue( post_type_supports( 'mcp_vault_item', 'title' ), 'Vault item should support title' );
 		$this->assertTrue( post_type_supports( 'mcp_vault_item', 'author' ), 'Vault item should support author' );
 	}
@@ -88,7 +88,7 @@ class Test_Vault_CPT_Registration extends WP_UnitTestCase {
 	 */
 	public function test_vault_folder_cpt_configuration() {
 		$post_type = get_post_type_object( 'mcp_vault_folder' );
-		
+
 		$this->assertFalse( $post_type->public, 'Vault folder should not be public' );
 		$this->assertFalse( $post_type->publicly_queryable, 'Vault folder should not be publicly queryable' );
 		$this->assertTrue( $post_type->show_in_rest, 'Vault folder should be available in REST API' );

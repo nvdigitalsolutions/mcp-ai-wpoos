@@ -449,13 +449,13 @@ class WP_MCP_AI_Media_Design_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get template statistics.
-		$total_templates = wp_count_posts( 'mcp_ai_media_tpl' );
+		$total_templates          = wp_count_posts( 'mcp_ai_media_tpl' );
 		$template_published_count = isset( $total_templates->publish ) ? $total_templates->publish : 0;
-		
+
 		// Get collection statistics.
-		$total_collections = wp_count_posts( 'mcp_ai_media_coll' );
+		$total_collections          = wp_count_posts( 'mcp_ai_media_coll' );
 		$collection_published_count = isset( $total_collections->publish ) ? $total_collections->publish : 0;
-		
+
 		// Calculate template quality metrics.
 		$templates = get_posts(
 			array(
@@ -466,21 +466,21 @@ class WP_MCP_AI_Media_Design_Page {
 		);
 
 		$template_complete_count = 0;
-		$with_operation = 0;
-		$with_params    = 0;
+		$with_operation          = 0;
+		$with_params             = 0;
 
 		foreach ( $templates as $template ) {
 			$operation  = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_operation', true );
 			$parameters = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_parameters', true );
-			
+
 			if ( ! empty( $operation ) ) {
-				$with_operation++;
+				++$with_operation;
 			}
 			if ( ! empty( $parameters ) && is_array( $parameters ) ) {
-				$with_params++;
+				++$with_params;
 			}
 			if ( ! empty( $operation ) && ! empty( $parameters ) ) {
-				$template_complete_count++;
+				++$template_complete_count;
 			}
 		}
 
@@ -494,27 +494,27 @@ class WP_MCP_AI_Media_Design_Page {
 		);
 
 		$collection_complete_count = 0;
-		$with_images = 0;
-		$with_template = 0;
+		$with_images               = 0;
+		$with_template             = 0;
 
 		foreach ( $collections as $collection ) {
-			$images = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_images', true );
+			$images      = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_images', true );
 			$template_id = get_post_meta( $collection->ID, '_wp_mcp_ai_media_coll_template', true );
-			
+
 			if ( ! empty( $images ) && is_array( $images ) && count( $images ) > 0 ) {
-				$with_images++;
+				++$with_images;
 			}
 			if ( ! empty( $template_id ) ) {
-				$with_template++;
+				++$with_template;
 			}
 			if ( ! empty( $images ) && is_array( $images ) && count( $images ) > 0 ) {
-				$collection_complete_count++;
+				++$collection_complete_count;
 			}
 		}
 
-		$template_completeness = $template_published_count > 0 ? round( ( $template_complete_count / $template_published_count ) * 100 ) : 0;
+		$template_completeness   = $template_published_count > 0 ? round( ( $template_complete_count / $template_published_count ) * 100 ) : 0;
 		$collection_completeness = $collection_published_count > 0 ? round( ( $collection_complete_count / $collection_published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Media Template Quality', 'mcp-ai-wpoos-pro' ); ?></h2>
@@ -668,10 +668,10 @@ class WP_MCP_AI_Media_Design_Page {
 					<tbody>
 						<?php foreach ( $templates as $template ) : ?>
 							<?php
-							$operation  = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_operation', true );
-							$parameters = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_parameters', true );
+							$operation   = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_operation', true );
+							$parameters  = get_post_meta( $template->ID, '_wp_mcp_ai_media_tpl_parameters', true );
 							$param_count = is_array( $parameters ) ? count( $parameters ) : 0;
-							$edit_url   = admin_url( 'post.php?post=' . $template->ID . '&action=edit' );
+							$edit_url    = admin_url( 'post.php?post=' . $template->ID . '&action=edit' );
 							?>
 							<tr>
 								<td>

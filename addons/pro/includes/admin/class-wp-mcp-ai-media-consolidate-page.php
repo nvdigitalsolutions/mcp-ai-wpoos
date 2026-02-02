@@ -41,7 +41,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	public static function add_menu_page() {
 		add_submenu_page(
-			'upload.php', // Media Library menu
+			'upload.php', // Media Library menu.
 			__( 'Consolidate & Add Media', 'mcp-ai-wpoos-pro' ),
 			__( 'Consolidate & Add', 'mcp-ai-wpoos-pro' ),
 			'upload_files',
@@ -148,12 +148,12 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function get_validation_schema() {
 		return array(
-			'required_fields'     => array(
-				'title'    => __( 'Media Title', 'mcp-ai-wpoos-pro' ),
-				'file'     => __( 'File/URL', 'mcp-ai-wpoos-pro' ),
-				'type'     => __( 'Media Type', 'mcp-ai-wpoos-pro' ),
+			'required_fields'    => array(
+				'title' => __( 'Media Title', 'mcp-ai-wpoos-pro' ),
+				'file'  => __( 'File/URL', 'mcp-ai-wpoos-pro' ),
+				'type'  => __( 'Media Type', 'mcp-ai-wpoos-pro' ),
 			),
-			'recommended_fields'  => array(
+			'recommended_fields' => array(
 				'alt_text'    => __( 'Alt Text (Accessibility)', 'mcp-ai-wpoos-pro' ),
 				'caption'     => __( 'Caption', 'mcp-ai-wpoos-pro' ),
 				'description' => __( 'Description', 'mcp-ai-wpoos-pro' ),
@@ -162,15 +162,15 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 				'license'     => __( 'License/Copyright', 'mcp-ai-wpoos-pro' ),
 				'dimensions'  => __( 'Dimensions/Resolution', 'mcp-ai-wpoos-pro' ),
 			),
-			'validation_rules'    => array(
-				'file' => array(
+			'validation_rules'   => array(
+				'file'       => array(
 					'type'          => 'file',
 					'allowed_types' => array( 'image', 'video', 'audio', 'application' ),
 					'max_size'      => wp_max_upload_size(),
 				),
-				'alt_text' => array(
-					'type'       => 'string',
-					'max_length' => 125, // SEO best practice
+				'alt_text'   => array(
+					'type'         => 'string',
+					'max_length'   => 125, // SEO best practice.
 					'required_for' => array( 'image' ),
 				),
 				'dimensions' => array(
@@ -178,28 +178,28 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 					'format' => 'widthxheight (e.g., 1920x1080)',
 				),
 			),
-			'quality_dimensions'  => array(
+			'quality_dimensions' => array(
 				'accessibility' => __( 'Alt text for images, captions for videos', 'mcp-ai-wpoos-pro' ),
 				'organization'  => __( 'Proper categorization and tagging', 'mcp-ai-wpoos-pro' ),
 				'metadata'      => __( 'Complete EXIF and custom metadata', 'mcp-ai-wpoos-pro' ),
 				'licensing'     => __( 'Copyright and usage rights documented', 'mcp-ai-wpoos-pro' ),
 				'optimization'  => __( 'Appropriate file sizes and formats', 'mcp-ai-wpoos-pro' ),
 			),
-			'template_fields'     => array(
-				'template_name'     => __( 'Template Name', 'mcp-ai-wpoos-pro' ),
-				'template_type'     => __( 'Type (Social, Print, Web, etc.)', 'mcp-ai-wpoos-pro' ),
-				'dimensions'        => __( 'Canvas Dimensions', 'mcp-ai-wpoos-pro' ),
-				'color_mode'        => __( 'Color Mode (RGB/CMYK)', 'mcp-ai-wpoos-pro' ),
-				'layers'            => __( 'Layer Information', 'mcp-ai-wpoos-pro' ),
-				'fonts_used'        => __( 'Required Fonts', 'mcp-ai-wpoos-pro' ),
-				'design_software'   => __( 'Source Software', 'mcp-ai-wpoos-pro' ),
+			'template_fields'    => array(
+				'template_name'   => __( 'Template Name', 'mcp-ai-wpoos-pro' ),
+				'template_type'   => __( 'Type (Social, Print, Web, etc.)', 'mcp-ai-wpoos-pro' ),
+				'dimensions'      => __( 'Canvas Dimensions', 'mcp-ai-wpoos-pro' ),
+				'color_mode'      => __( 'Color Mode (RGB/CMYK)', 'mcp-ai-wpoos-pro' ),
+				'layers'          => __( 'Layer Information', 'mcp-ai-wpoos-pro' ),
+				'fonts_used'      => __( 'Required Fonts', 'mcp-ai-wpoos-pro' ),
+				'design_software' => __( 'Source Software', 'mcp-ai-wpoos-pro' ),
 			),
-			'collection_fields'   => array(
-				'collection_name'   => __( 'Collection Name', 'mcp-ai-wpoos-pro' ),
-				'collection_type'   => __( 'Type (Brand, Campaign, Project)', 'mcp-ai-wpoos-pro' ),
-				'client'            => __( 'Client/Brand', 'mcp-ai-wpoos-pro' ),
-				'date_created'      => __( 'Creation Date', 'mcp-ai-wpoos-pro' ),
-				'status'            => __( 'Status (Active, Archived, Draft)', 'mcp-ai-wpoos-pro' ),
+			'collection_fields'  => array(
+				'collection_name' => __( 'Collection Name', 'mcp-ai-wpoos-pro' ),
+				'collection_type' => __( 'Type (Brand, Campaign, Project)', 'mcp-ai-wpoos-pro' ),
+				'client'          => __( 'Client/Brand', 'mcp-ai-wpoos-pro' ),
+				'date_created'    => __( 'Creation Date', 'mcp-ai-wpoos-pro' ),
+				'status'          => __( 'Status (Active, Archived, Draft)', 'mcp-ai-wpoos-pro' ),
 			),
 		);
 	}
@@ -248,18 +248,18 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		}
 
 		$media_items = array();
-		$temp_dir = wp_upload_dir()['basedir'] . '/temp-media-import-' . uniqid();
+		$temp_dir    = wp_upload_dir()['basedir'] . '/temp-media-import-' . uniqid();
 		wp_mkdir_p( $temp_dir );
 
-		for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+		for ( $i = 0; $i < $zip->num_files; $i++ ) {
 			$filename = $zip->getNameIndex( $i );
-			
+
 			// Skip directories and hidden files.
 			if ( substr( $filename, -1 ) === '/' || strpos( basename( $filename ), '.' ) === 0 ) {
 				continue;
 			}
 
-			$file_info = pathinfo( $filename );
+			$file_info     = pathinfo( $filename );
 			$media_items[] = array(
 				'title'     => $file_info['filename'],
 				'filename'  => $filename,
@@ -284,7 +284,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			return new WP_Error( 'empty_csv', __( 'CSV file is empty', 'mcp-ai-wpoos-pro' ) );
 		}
 
-		$headers = str_getcsv( array_shift( $lines ) );
+		$headers     = str_getcsv( array_shift( $lines ) );
 		$media_items = array();
 
 		foreach ( $lines as $line ) {
@@ -297,7 +297,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 				continue;
 			}
 
-			$item = array_combine( $headers, $values );
+			$item          = array_combine( $headers, $values );
 			$media_items[] = $this->normalize_media_data( $item );
 		}
 
@@ -332,22 +332,22 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function normalize_media_data( $media ) {
 		$normalized = array();
-		
+
 		foreach ( $media as $key => $value ) {
-			$key_lower = strtolower( trim( $key ) );
+			$key_lower                = strtolower( trim( $key ) );
 			$normalized[ $key_lower ] = trim( $value );
 		}
 
 		// Map common field variations.
 		$field_map = array(
-			'name'          => 'title',
-			'filename'      => 'file',
-			'url'           => 'file',
-			'alt'           => 'alt_text',
-			'alternative'   => 'alt_text',
-			'desc'          => 'description',
-			'category'      => 'collection',
-			'folder'        => 'collection',
+			'name'        => 'title',
+			'filename'    => 'file',
+			'url'         => 'file',
+			'alt'         => 'alt_text',
+			'alternative' => 'alt_text',
+			'desc'        => 'description',
+			'category'    => 'collection',
+			'folder'      => 'collection',
 		);
 
 		foreach ( $field_map as $old_key => $new_key ) {
@@ -367,7 +367,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function get_mime_type_from_extension( $extension ) {
 		$extension = strtolower( $extension );
-		
+
 		$mime_types = array(
 			'jpg'  => 'image/jpeg',
 			'jpeg' => 'image/jpeg',
@@ -392,7 +392,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function calculate_completeness() {
 		$entity = $this->current_entity;
-		
+
 		if ( 'templates' === $entity ) {
 			return $this->calculate_templates_completeness();
 		} elseif ( 'collections' === $entity ) {
@@ -422,7 +422,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		);
 
 		$templates = get_posts( $args );
-		$total = count( $templates );
+		$total     = count( $templates );
 
 		if ( 0 === $total ) {
 			return array(
@@ -431,41 +431,41 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			);
 		}
 
-		$schema = $this->get_validation_schema();
+		$schema          = $this->get_validation_schema();
 		$template_fields = array_keys( $schema['template_fields'] );
-		$total_fields = count( $template_fields );
-		$filled_count = 0;
+		$total_fields    = count( $template_fields );
+		$filled_count    = 0;
 
 		foreach ( $templates as $template ) {
 			$template_filled = 0;
-			
+
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_template_name', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_template_type', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_dimensions', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_color_mode', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_layers', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_fonts', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 			if ( get_post_meta( $template->ID, '_wp_mcp_ai_software', true ) ) {
-				$template_filled++;
+				++$template_filled;
 			}
 
 			$filled_count += $template_filled;
 		}
 
 		$average_filled = $total > 0 ? $filled_count / $total : 0;
-		$percentage = round( ( $average_filled / $total_fields ) * 100 );
+		$percentage     = round( ( $average_filled / $total_fields ) * 100 );
 
 		$missing = array();
 		if ( $percentage < 80 ) {
@@ -509,35 +509,35 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			);
 		}
 
-		$schema = $this->get_validation_schema();
+		$schema            = $this->get_validation_schema();
 		$collection_fields = array_keys( $schema['collection_fields'] );
-		$total_fields = count( $collection_fields );
-		$filled_count = 0;
+		$total_fields      = count( $collection_fields );
+		$filled_count      = 0;
 
 		foreach ( $collections as $collection ) {
 			$collection_filled = 0;
-			
+
 			if ( ! empty( $collection->name ) ) {
-				$collection_filled++;
+				++$collection_filled;
 			}
 			if ( get_term_meta( $collection->term_id, 'collection_type', true ) ) {
-				$collection_filled++;
+				++$collection_filled;
 			}
 			if ( get_term_meta( $collection->term_id, 'client', true ) ) {
-				$collection_filled++;
+				++$collection_filled;
 			}
 			if ( get_term_meta( $collection->term_id, 'date_created', true ) ) {
-				$collection_filled++;
+				++$collection_filled;
 			}
 			if ( get_term_meta( $collection->term_id, 'status', true ) ) {
-				$collection_filled++;
+				++$collection_filled;
 			}
 
 			$filled_count += $collection_filled;
 		}
 
 		$average_filled = $total > 0 ? $filled_count / $total : 0;
-		$percentage = round( ( $average_filled / $total_fields ) * 100 );
+		$percentage     = round( ( $average_filled / $total_fields ) * 100 );
 
 		$missing = array();
 		if ( $percentage < 70 ) {
@@ -567,7 +567,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		);
 
 		$attachments = get_posts( $args );
-		$total = count( $attachments );
+		$total       = count( $attachments );
 
 		if ( 0 === $total ) {
 			return array(
@@ -576,54 +576,54 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			);
 		}
 
-		$required_count = 3; // title, alt_text (for images), file
-		$recommended_count = 4; // caption, description, tags, license
-		$total_fields = $required_count + $recommended_count;
-		$filled_count = 0;
-		$missing_alt_text = 0;
+		$required_count    = 3; // Title, alt_text (for images), file.
+		$recommended_count = 4; // Caption, description, tags, license.
+		$total_fields      = $required_count + $recommended_count;
+		$filled_count      = 0;
+		$missing_alt_text  = 0;
 
 		foreach ( $attachments as $attachment ) {
 			$attachment_filled = 0;
-			
+
 			// Required fields.
 			if ( ! empty( $attachment->post_title ) ) {
-				$attachment_filled++;
+				++$attachment_filled;
 			}
 			if ( ! empty( $attachment->guid ) ) {
-				$attachment_filled++;
+				++$attachment_filled;
 			}
-			
+
 			// Alt text (critical for images).
 			if ( wp_attachment_is_image( $attachment->ID ) ) {
 				$alt_text = get_post_meta( $attachment->ID, '_wp_attachment_image_alt', true );
 				if ( ! empty( $alt_text ) ) {
-					$attachment_filled++;
+					++$attachment_filled;
 				} else {
-					$missing_alt_text++;
+					++$missing_alt_text;
 				}
 			} else {
-				$attachment_filled++; // Not applicable to non-images.
+				++$attachment_filled; // Not applicable to non-images.
 			}
 
 			// Recommended fields.
 			if ( ! empty( $attachment->post_excerpt ) ) { // Caption.
-				$attachment_filled++;
+				++$attachment_filled;
 			}
 			if ( ! empty( $attachment->post_content ) ) { // Description.
-				$attachment_filled++;
+				++$attachment_filled;
 			}
 			if ( get_post_meta( $attachment->ID, '_wp_mcp_ai_tags', true ) ) {
-				$attachment_filled++;
+				++$attachment_filled;
 			}
 			if ( get_post_meta( $attachment->ID, '_wp_mcp_ai_license', true ) ) {
-				$attachment_filled++;
+				++$attachment_filled;
 			}
 
 			$filled_count += $attachment_filled;
 		}
 
 		$average_filled = $total > 0 ? $filled_count / $total : 0;
-		$percentage = round( ( $average_filled / $total_fields ) * 100 );
+		$percentage     = round( ( $average_filled / $total_fields ) * 100 );
 
 		$missing = array();
 		if ( $missing_alt_text > 0 ) {
@@ -660,7 +660,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 * @return array Quality score data.
 	 */
 	protected function calculate_item_quality_score( $item ) {
-		$score = 100;
+		$score  = 100;
 		$issues = array();
 
 		$attachment_id = isset( $item['id'] ) ? absint( $item['id'] ) : 0;
@@ -683,7 +683,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 		// Check title.
 		if ( empty( $attachment->post_title ) ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_title';
 		}
 
@@ -691,17 +691,17 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 		if ( wp_attachment_is_image( $attachment_id ) ) {
 			$alt_text = get_post_meta( $attachment_id, '_wp_attachment_image_alt', true );
 			if ( empty( $alt_text ) ) {
-				$score -= 25; // Heavy penalty for missing alt text.
+				$score   -= 25; // Heavy penalty for missing alt text.
 				$issues[] = 'missing_alt_text';
 			} elseif ( strlen( $alt_text ) > 125 ) {
-				$score -= 5; // Minor penalty for too-long alt text.
+				$score   -= 5; // Minor penalty for too-long alt text.
 				$issues[] = 'alt_text_too_long';
 			}
 		}
 
 		// Check description.
 		if ( empty( $attachment->post_content ) ) {
-			$score -= 15;
+			$score   -= 15;
 			$issues[] = 'missing_description';
 		}
 
@@ -721,7 +721,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 			if ( $file_path && file_exists( $file_path ) ) {
 				$file_size = filesize( $file_path );
 				if ( $file_size > 2 * 1024 * 1024 ) { // 2MB.
-					$score -= 10;
+					$score   -= 10;
 					$issues[] = 'large_file_size';
 				}
 			}
@@ -729,13 +729,13 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 
 		// Determine quality level.
 		if ( $score >= 80 ) {
-			$level = 'high';
+			$level  = 'high';
 			$status = __( 'Excellent', 'mcp-ai-wpoos-pro' );
 		} elseif ( $score >= 50 ) {
-			$level = 'medium';
+			$level  = 'medium';
 			$status = __( 'Good', 'mcp-ai-wpoos-pro' );
 		} else {
-			$level = 'low';
+			$level  = 'low';
 			$status = __( 'Needs Improvement', 'mcp-ai-wpoos-pro' );
 		}
 
@@ -778,7 +778,7 @@ class WP_MCP_AI_Media_Consolidate_Page extends WP_MCP_AI_Consolidate_Add_Base {
 	 */
 	protected function render_entity_form_fields() {
 		$entity = $this->current_entity;
-		
+
 		if ( 'templates' === $entity ) {
 			$this->render_template_form_fields();
 		} elseif ( 'collections' === $entity ) {

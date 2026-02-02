@@ -55,9 +55,9 @@ class Test_Post_Type_Name_Length extends WP_UnitTestCase {
 		// Plugin post type prefixes.
 		$plugin_prefixes = array( 'mcp_', 'mcp_ai_' );
 
-		$post_types          = get_post_types( array(), 'objects' );
-		$invalid_post_types  = array();
-		$plugin_post_types   = array();
+		$post_types         = get_post_types( array(), 'objects' );
+		$invalid_post_types = array();
+		$plugin_post_types  = array();
 
 		foreach ( $post_types as $post_type_name => $post_type_object ) {
 			// Check if this is a plugin post type.

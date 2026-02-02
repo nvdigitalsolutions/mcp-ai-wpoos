@@ -56,10 +56,7 @@ class WP_MCP_AI_Agent_Role_Planner extends WP_MCP_AI_Agent_Role_Base {
 	 */
 	public function get_system_prompt_additions() {
 		return __(
-			'You are a Planner agent responsible for analyzing complex tasks and breaking them down into manageable subtasks. ' .
-			'When given a complex task, analyze it carefully and create a structured plan with clear subtasks, dependencies, and success criteria. ' .
-			'Delegate subtasks to appropriate executor agents and coordinate their efforts. ' .
-			'Think step-by-step and ensure each subtask is well-defined and achievable.',
+			'You are a Planner agent responsible for analyzing complex tasks and breaking them down into manageable subtasks. When given a complex task, analyze it carefully and create a structured plan with clear subtasks, dependencies, and success criteria. Delegate subtasks to appropriate executor agents and coordinate their efforts. Think step-by-step and ensure each subtask is well-defined and achievable.',
 			'mcp-ai-wpoos'
 		);
 	}

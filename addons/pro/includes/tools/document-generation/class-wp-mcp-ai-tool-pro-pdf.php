@@ -54,7 +54,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'pro_pdf';
+		return 'pro_pdf_document';
 	}
 
 	/**
@@ -330,7 +330,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated PDF document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -409,7 +409,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated structured PDF document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -488,7 +488,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 			'text'          => sprintf(
 				/* translators: %s: document title */
 				__( 'Generated formatted PDF document: %s', 'mcp-ai-wpoos' ),
-				$title ?: __( 'Untitled', 'mcp-ai-wpoos' )
+				$title ? $title : __( 'Untitled', 'mcp-ai-wpoos' )
 			),
 		);
 
@@ -565,7 +565,7 @@ class WP_MCP_AI_Tool_Pro_PDF implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool
 	 */
 	protected function generate_pdf_document( array $document_data, array $arguments, array $context ) {
 		// Convert content to HTML for improved formatting.
-		$html_content = $this->convert_to_html( $document_data );
+		$html_content                  = $this->convert_to_html( $document_data );
 		$document_data['html_content'] = $html_content;
 
 		// Create temporary file for PDF output.
@@ -1045,13 +1045,11 @@ JAVASCRIPT;
 		$json_pattern = '/```(?:json)?\s*(\{.*?\})\s*```/s';
 		if ( preg_match( $json_pattern, $content, $matches ) ) {
 			$json_str = $matches[1];
-		} else {
+		} elseif ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
 			// Try to find JSON object directly.
-			if ( preg_match( '/\{.*\}/s', $content, $matches ) ) {
-				$json_str = $matches[0];
-			} else {
-				return false;
-			}
+			$json_str = $matches[0];
+		} else {
+			return false;
 		}
 
 		$parsed = json_decode( $json_str, true );

@@ -1119,7 +1119,7 @@ class WP_MCP_AI_Chat_Service {
 						++$status['cron']['failed'];
 					}
 				}
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: cron status monitoring is optional and should not break chat functionality.
 				// Silently fail - status monitoring should not break the chat.
 			}
 		}
@@ -1134,7 +1134,7 @@ class WP_MCP_AI_Chat_Service {
 					'long_running'   => isset( $async_health['long_running'] ) ? $async_health['long_running'] : 0,
 					'cron_scheduled' => isset( $async_health['cron_scheduled'] ) ? $async_health['cron_scheduled'] : false,
 				);
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: async health monitoring is optional and should not break chat functionality.
 				// Silently fail.
 			}
 		}
@@ -1147,7 +1147,7 @@ class WP_MCP_AI_Chat_Service {
 					'status' => isset( $health_status['status'] ) ? $health_status['status'] : 'unknown',
 					'label'  => isset( $health_status['label'] ) ? $health_status['label'] : 'Unknown',
 				);
-			} catch ( Exception $e ) {
+			} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Intentionally silent: orchestration health monitoring is optional and should not break chat functionality.
 				// Silently fail.
 			}
 		}

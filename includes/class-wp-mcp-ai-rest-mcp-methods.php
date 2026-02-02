@@ -217,7 +217,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
-	protected function mcp_tools_list( $params, WP_REST_Request $request ) {
+	protected function mcp_tools_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		// Check if assistant_id is provided in params.
@@ -575,7 +575,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array|WP_Error
 	 */
-	protected function mcp_resources_list( $params, WP_REST_Request $request ) {
+	protected function mcp_resources_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
 		$assistant_id = 0;
 
 		if ( isset( $params['assistant_id'] ) ) {
@@ -641,7 +641,7 @@ trait WP_MCP_AI_REST_MCP_Methods {
 	 * @param WP_REST_Request $request REST request instance.
 	 * @return array
 	 */
-	protected function mcp_prompts_list( $params, WP_REST_Request $request ) {
+	protected function mcp_prompts_list( $params, WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by MCP protocol method signature.
 		$prompts = array();
 
 		// Get all assistants as prompts.

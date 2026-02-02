@@ -34,7 +34,7 @@ class WP_MCP_AI_Chat_Transcript_Recorder {
 
 		// Check if this is a virtual team assistant ID.
 		// These are constructed by the Test Team interface and don't correspond to real assistant posts.
-		// Format: unified_team_{digits} or team_{digits}_member_{digits}
+		// Format: unified_team_{digits} or team_{digits}_member_{digits}.
 		$is_virtual_team_assistant = is_string( $assistant_id ) &&
 			preg_match( '/^(unified_team_\d+|team_\d+_member_\d+)$/', $assistant_id );
 

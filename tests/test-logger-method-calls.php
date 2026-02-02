@@ -55,7 +55,7 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 		}
 
 		$orchestrator = new WP_MCP_AI_Agent_Team_Orchestrator();
-		
+
 		// Call compose_team which internally uses logger
 		$task_requirements = array(
 			'task_type' => 'content',
@@ -79,7 +79,7 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 		$tool = new WP_MCP_AI_Tool_Create_Agent_Team();
 
 		$arguments = array(
-			'task_type' => 'content',
+			'task_type'    => 'content',
 			'requirements' => array(
 				'expertise_needed' => array( 'marketing' ),
 			),
@@ -102,8 +102,8 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 	 * Test no files still use WP_MCP_AI_Logger::log() incorrectly
 	 */
 	public function test_no_files_use_incorrect_logger_call() {
-		$plugin_dir = dirname( dirname( __FILE__ ) );
-		
+		$plugin_dir = dirname( __DIR__ );
+
 		// Files that were fixed
 		$fixed_files = array(
 			'includes/services/class-wp-mcp-ai-agent-communication-service.php',
@@ -117,21 +117,21 @@ class Test_Logger_Method_Calls extends WP_UnitTestCase {
 
 		foreach ( $fixed_files as $file ) {
 			$file_path = $plugin_dir . '/' . $file;
-			
+
 			if ( ! file_exists( $file_path ) ) {
 				continue;
 			}
 
 			$content = file_get_contents( $file_path );
-			
+
 			// Check that file doesn't contain "WP_MCP_AI_Logger::log(" without "log_event", "log_error", etc.
 			$pattern = '/WP_MCP_AI_Logger::log\s*\(/';
 			preg_match_all( $pattern, $content, $matches, PREG_OFFSET_CAPTURE );
 
 			foreach ( $matches[0] as $match ) {
-				$offset = $match[1];
+				$offset  = $match[1];
 				$context = substr( $content, $offset, 50 );
-				
+
 				// Make sure it's not a valid method like log_event, log_error, etc.
 				$this->assertMatchesRegularExpression(
 					'/log_(event|error|warning|info|debug|critical|chat_interaction|tool_execution)/',

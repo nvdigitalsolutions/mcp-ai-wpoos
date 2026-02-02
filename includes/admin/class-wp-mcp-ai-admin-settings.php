@@ -4344,9 +4344,9 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_Settings' ) ) {
 		<p class="description">
 			<?php esc_html_e( 'Drag and drop to reorder providers. The system will try providers in this order when one fails or is unavailable. The first provider is used as the default.', 'mcp-ai-wpoos' ); ?>
 		</p>
-		<?php
+			<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for provider sortable list styling and layout on this admin page only
-		?>
+			?>
 		<style>
 			#wp-mcp-ai-provider-sortable {
 				list-style: none;

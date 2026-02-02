@@ -271,7 +271,8 @@ class WP_MCP_AI_Elementor_Dashboard_Tool_Matrix_Widget extends \Elementor\Widget
 				echo '<td class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--slug"><code>' . esc_html( $formatted_entry['slug'] ) . '</code></td>';
 
 				if ( $has_capability_notes ) {
-					echo '<td class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . $formatted_entry['capability'] . '</td>';
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
+					echo '<td class="wp-mcp-ai-tool-matrix__cell wp-mcp-ai-tool-matrix__cell--capability">' . wp_kses_post( $formatted_entry['capability'] ) . '</td>';
 				}
 
 				if ( $has_descriptions ) {

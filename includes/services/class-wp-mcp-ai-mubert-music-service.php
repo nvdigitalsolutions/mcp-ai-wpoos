@@ -117,7 +117,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 
-		if ( $status_code === 401 || $status_code === 403 ) {
+		if ( 401 === $status_code || 403 === $status_code ) {
 			return new WP_Error(
 				'wp_mcp_ai_mubert_auth_failed',
 				__( 'Invalid Mubert API key. Please check your API key in Settings.', 'mcp-ai-wpoos' ),
@@ -125,7 +125,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 			);
 		}
 
-		if ( $status_code !== 200 && $status_code !== 201 ) {
+		if ( 200 !== $status_code && 201 !== $status_code ) {
 			$body          = wp_remote_retrieve_body( $response );
 			$data          = json_decode( $body, true );
 			$error_message = isset( $data['error'] ) ? $data['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
@@ -157,7 +157,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 	 *                        - genre: string (optional genre specification)
 	 *                        - mood: string (optional mood specification)
 	 *                        - format: string (mp3, wav, default: mp3)
-	 *                        - timeout: int (request timeout in seconds)
+	 *                        - timeout: int (request timeout in seconds).
 	 *
 	 * @return array|WP_Error Array with audio data or WP_Error on failure.
 	 *                        Success array contains:
@@ -258,7 +258,7 @@ class WP_MCP_AI_Mubert_Music_Service {
 		$body        = wp_remote_retrieve_body( $response );
 		$data        = json_decode( $body, true );
 
-		if ( $status_code !== 200 ) {
+		if ( 200 !== $status_code ) {
 			$error_message = isset( $data['error'] ) ? $data['error'] : __( 'Unknown error', 'mcp-ai-wpoos' );
 
 			WP_MCP_AI_Logger::log_error(

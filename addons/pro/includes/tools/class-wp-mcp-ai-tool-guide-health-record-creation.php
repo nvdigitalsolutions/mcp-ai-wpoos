@@ -151,7 +151,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'demographics' === $focus ) {
 			$demo_gaps = $this->analyze_demographics( $member_id, $member_type );
 			if ( ! empty( $demo_gaps ) ) {
-				$gaps             = array_merge( $gaps, $demo_gaps );
+				$gaps                         = array_merge( $gaps, $demo_gaps );
 				$completeness['demographics'] = false;
 			} else {
 				$completeness['demographics'] = true;
@@ -162,7 +162,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'policies' === $focus ) {
 			$policy_gaps = $this->analyze_policies( $member_id, $member_type );
 			if ( ! empty( $policy_gaps ) ) {
-				$gaps                      = array_merge( $gaps, $policy_gaps );
+				$gaps                     = array_merge( $gaps, $policy_gaps );
 				$completeness['policies'] = false;
 			} else {
 				$completeness['policies'] = true;
@@ -173,8 +173,8 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'allergies' === $focus ) {
 			$allergy_gaps = $this->analyze_allergies( $member_id );
 			if ( ! empty( $allergy_gaps ) ) {
-				$priority_gaps               = array_merge( $priority_gaps, $allergy_gaps );
-				$gaps                        = array_merge( $gaps, $allergy_gaps );
+				$priority_gaps             = array_merge( $priority_gaps, $allergy_gaps );
+				$gaps                      = array_merge( $gaps, $allergy_gaps );
 				$completeness['allergies'] = false;
 			} else {
 				$completeness['allergies'] = true;
@@ -185,7 +185,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'medical_records' === $focus ) {
 			$record_gaps = $this->analyze_medical_records( $member_id );
 			if ( ! empty( $record_gaps ) ) {
-				$gaps                              = array_merge( $gaps, $record_gaps );
+				$gaps                            = array_merge( $gaps, $record_gaps );
 				$completeness['medical_records'] = false;
 			} else {
 				$completeness['medical_records'] = true;
@@ -196,7 +196,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'checkups' === $focus ) {
 			$checkup_gaps = $this->analyze_checkups( $member_id, $member_type );
 			if ( ! empty( $checkup_gaps ) ) {
-				$gaps                       = array_merge( $gaps, $checkup_gaps );
+				$gaps                     = array_merge( $gaps, $checkup_gaps );
 				$completeness['checkups'] = false;
 			} else {
 				$completeness['checkups'] = true;
@@ -207,7 +207,7 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		if ( 'all' === $focus || 'prescriptions' === $focus ) {
 			$prescription_gaps = $this->analyze_prescriptions( $member_id );
 			if ( ! empty( $prescription_gaps ) ) {
-				$gaps                            = array_merge( $gaps, $prescription_gaps );
+				$gaps                          = array_merge( $gaps, $prescription_gaps );
 				$completeness['prescriptions'] = false;
 			} else {
 				$completeness['prescriptions'] = true;
@@ -366,8 +366,8 @@ class WP_MCP_AI_Tool_Guide_Health_Record_Creation implements WP_MCP_AI_Tool_Inte
 		// Check for upcoming checkups.
 		$upcoming_checkups = get_posts(
 			array(
-				'post_type'  => 'mcp_ai_checkup',
-				'meta_query' => array(
+				'post_type'      => 'mcp_ai_checkup',
+				'meta_query'     => array(
 					array(
 						'key'   => '_checkup_member_id',
 						'value' => $member_id,

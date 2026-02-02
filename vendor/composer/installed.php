@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/final-wscs-30-review',
+        'version' => 'dev-copilot/final-wscs-30-review',
+        'reference' => 'e9ff7ddd068a486b92bdd749dcebc2dc9e1d8b09',
         'pretty_version' => 'dev-copilot/fix-switches-not-changing',
         'version' => 'dev-copilot/fix-switches-not-changing',
         'reference' => 'cc9af6a3a03449e303c0a85ccb88c8aaabeab9b5',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/final-wscs-30-review',
+            'version' => 'dev-copilot/final-wscs-30-review',
+            'reference' => 'e9ff7ddd068a486b92bdd749dcebc2dc9e1d8b09',
             'pretty_version' => 'dev-copilot/fix-switches-not-changing',
             'version' => 'dev-copilot/fix-switches-not-changing',
             'reference' => 'cc9af6a3a03449e303c0a85ccb88c8aaabeab9b5',

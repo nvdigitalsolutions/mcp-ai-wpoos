@@ -75,10 +75,10 @@ function wp_mcp_ai_register_orchestration_tools() {
 
 	$registry = WP_MCP_AI_Tool_Registry::get_instance();
 
-	// Base orchestration tools directory
+	// Base orchestration tools directory.
 	$tools_dir = WP_MCP_AI_PATH . 'includes/tools/orchestration/';
 
-	// Register 9 core orchestration tools
+	// Register 9 core orchestration tools.
 	$core_tools = array(
 		'create_task_plan'                 => 'class-wp-mcp-ai-tool-create-task-plan.php',
 		'update_task_plan'                 => 'class-wp-mcp-ai-tool-update-task-plan.php',
@@ -96,11 +96,11 @@ function wp_mcp_ai_register_orchestration_tools() {
 		if ( file_exists( $file_path ) ) {
 			require_once $file_path;
 
-			// Convert slug to class name
+			// Convert slug to class name.
 			$class_name = 'WP_MCP_AI_Tool_' . str_replace( ' ', '_', ucwords( str_replace( '_', ' ', $slug ) ) );
 
 			if ( class_exists( $class_name ) ) {
-				$registry->register( new $class_name() );
+				$registry->register_tool( new $class_name() );
 			}
 		}
 	}
@@ -117,11 +117,11 @@ add_action( 'wp_mcp_ai_tools_init', 'wp_mcp_ai_register_orchestration_tools' );
  * @deprecated This function should not load any dashboard - removed to prevent conflicts.
  */
 function wp_mcp_ai_load_orchestration_dashboard() {
-	// Base dashboard is loaded from mcp-ai-wpoos.php (class-wp-mcp-ai-admin-orchestration-dashboard.php)
-	// Pro dashboard should be loaded by the Pro addon only
-	// Leaving this function empty for backwards compatibility
+	// Base dashboard is loaded from mcp-ai-wpoos.php (class-wp-mcp-ai-admin-orchestration-dashboard.php).
+	// Pro dashboard should be loaded by the Pro addon only.
+	// Leaving this function empty for backwards compatibility.
 }
-// Note: Keeping the hook for backwards compatibility, but function does nothing now
+// Note: Keeping the hook for backwards compatibility, but function does nothing now.
 add_action( 'admin_init', 'wp_mcp_ai_load_orchestration_dashboard' );
 
 /**

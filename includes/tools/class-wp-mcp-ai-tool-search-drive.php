@@ -166,7 +166,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_drive_missing_credentials',
-				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the WP oOS settings.', 'mcp-ai-wpoos' )
+				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -180,8 +180,8 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		$settings = WP_MCP_AI_Admin_Settings::get_settings();
 		$timeout  = isset( $settings['request_timeout'] ) ? max( 5, absint( $settings['request_timeout'] ) ) : 30;
 
-		$max_results        = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 10;
-		$max_results_limit  = isset( $settings['search_drive_max_results'] ) ? absint( $settings['search_drive_max_results'] ) : 50;
+		$max_results       = isset( $arguments['max_results'] ) ? absint( $arguments['max_results'] ) : 10;
+		$max_results_limit = isset( $settings['search_drive_max_results'] ) ? absint( $settings['search_drive_max_results'] ) : 50;
 		if ( $max_results < 1 ) {
 			$max_results = 1;
 		}
@@ -392,17 +392,11 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -420,7 +414,6 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

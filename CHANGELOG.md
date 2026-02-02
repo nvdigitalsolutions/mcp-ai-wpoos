@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Repository Organization
+- **Repository Root Cleanup (February 2, 2026)**: Archived historical status files and reorganized structure
+  - **Archive Created**: New `archive/` directory with three subdirectories for historical documentation
+    - `archive/development-phases/` - Phase completion files (PHASE_2-4_COMPLETE.md, WPCS_RESTORATION_PLAN.md)
+    - `archive/production-status/` - Production readiness files (PRODUCTION_READY.md, etc.)
+    - `archive/wordpress-org-submission/` - Submission verification files
+  - **Tool Status Moved**: `tool-status.txt` relocated from root to `docs/tool-status.txt`
+    - Updated 2 PHP files to reference new location (class-wp-mcp-ai-section-tools.php, class-wp-mcp-ai-tool-registry.php)
+    - Updated 5 documentation files with corrected paths
+  - **Result**: Root directory now contains only 4 essential files (README.md, CHANGELOG.md, CONTRIBUTING.md, readme.txt)
+  - **Benefits**: Cleaner repository presentation; historical context preserved; improved maintainability
+
 ### Security
 - **Security Hardening (January 29, 2026)**: Fixed 4 critical and high severity vulnerabilities
   - **SSRF in Webhook Registration (Critical)**: Fixed webhook URL validation to block private IP ranges, AWS metadata endpoints, and restrict to http/https protocols only

@@ -137,21 +137,21 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 
 		$registrations_query = new WP_Query( $query_args );
 
-		$today = time();
+		$today        = time();
 		$forecast_end = strtotime( "+{$forecast_months} months" );
 
 		$expiry_data = array(
-			'expired'      => array(),
-			'high_risk'    => array(),
-			'medium_risk'  => array(),
-			'low_risk'     => array(),
-			'by_month'     => array(),
-			'by_country'   => array(),
+			'expired'     => array(),
+			'high_risk'   => array(),
+			'medium_risk' => array(),
+			'low_risk'    => array(),
+			'by_month'    => array(),
+			'by_country'  => array(),
 		);
 
 		// Initialize monthly buckets.
 		for ( $i = 0; $i <= $forecast_months; $i++ ) {
-			$month_key = gmdate( 'Y-m', strtotime( "+{$i} months" ) );
+			$month_key                             = gmdate( 'Y-m', strtotime( "+{$i} months" ) );
 			$expiry_data['by_month'][ $month_key ] = 0;
 		}
 
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 				if ( $expiry_time <= $forecast_end && $expiry_time >= $today ) {
 					$month_key = gmdate( 'Y-m', $expiry_time );
 					if ( isset( $expiry_data['by_month'][ $month_key ] ) ) {
-						$expiry_data['by_month'][ $month_key ]++;
+						++$expiry_data['by_month'][ $month_key ];
 					}
 				}
 
@@ -200,14 +200,14 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 					if ( ! isset( $expiry_data['by_country'][ $country ] ) ) {
 						$expiry_data['by_country'][ $country ] = 0;
 					}
-					$expiry_data['by_country'][ $country ]++;
+					++$expiry_data['by_country'][ $country ];
 				}
 			}
 		}
 
 		// Generate recommendations.
 		$recommendations = array();
-		
+
 		if ( count( $expiry_data['expired'] ) > 0 ) {
 			$recommendations[] = sprintf(
 				/* translators: %d: number of expired registrations */
@@ -219,7 +219,7 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 		if ( count( $expiry_data['high_risk'] ) > 0 ) {
 			$recommendations[] = sprintf(
 				/* translators: %d: number of high-risk registrations */
-				__( 'High Priority: %d registrations expiring within %d days.', 'mcp-ai-wpoos-pro' ),
+				__( 'High Priority: %1$d registrations expiring within %2$d days.', 'mcp-ai-wpoos-pro' ),
 				count( $expiry_data['high_risk'] ),
 				$risk_threshold
 			);
@@ -228,27 +228,27 @@ class WP_MCP_AI_Tool_Generate_Expiry_Forecast implements WP_MCP_AI_Tool_Interfac
 		if ( count( $expiry_data['medium_risk'] ) > 0 ) {
 			$recommendations[] = sprintf(
 				/* translators: %d: number of medium-risk registrations */
-				__( 'Planning Required: %d registrations expiring within %d days.', 'mcp-ai-wpoos-pro' ),
+				__( 'Planning Required: %1$d registrations expiring within %2$d days.', 'mcp-ai-wpoos-pro' ),
 				count( $expiry_data['medium_risk'] ),
 				$risk_threshold * 2
 			);
 		}
 
 		return array(
-			'success'          => true,
-			'report_type'      => 'expiry_forecast',
-			'generated_at'     => current_time( 'mysql' ),
-			'forecast_months'  => $forecast_months,
-			'risk_threshold'   => $risk_threshold,
-			'summary'          => array(
-				'total_expiring'  => count( $expiry_data['expired'] ) + count( $expiry_data['high_risk'] ) + count( $expiry_data['medium_risk'] ) + count( $expiry_data['low_risk'] ),
-				'expired'         => count( $expiry_data['expired'] ),
-				'high_risk'       => count( $expiry_data['high_risk'] ),
-				'medium_risk'     => count( $expiry_data['medium_risk'] ),
-				'low_risk'        => count( $expiry_data['low_risk'] ),
+			'success'         => true,
+			'report_type'     => 'expiry_forecast',
+			'generated_at'    => current_time( 'mysql' ),
+			'forecast_months' => $forecast_months,
+			'risk_threshold'  => $risk_threshold,
+			'summary'         => array(
+				'total_expiring' => count( $expiry_data['expired'] ) + count( $expiry_data['high_risk'] ) + count( $expiry_data['medium_risk'] ) + count( $expiry_data['low_risk'] ),
+				'expired'        => count( $expiry_data['expired'] ),
+				'high_risk'      => count( $expiry_data['high_risk'] ),
+				'medium_risk'    => count( $expiry_data['medium_risk'] ),
+				'low_risk'       => count( $expiry_data['low_risk'] ),
 			),
-			'expiry_data'      => $expiry_data,
-			'recommendations'  => $recommendations,
+			'expiry_data'     => $expiry_data,
+			'recommendations' => $recommendations,
 		);
 	}
 }

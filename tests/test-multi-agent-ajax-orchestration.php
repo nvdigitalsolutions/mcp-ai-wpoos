@@ -190,9 +190,9 @@ class Test_Multi_Agent_AJAX_Orchestration extends WP_Ajax_UnitTestCase {
 		// Set up AJAX request with multiple tool limits.
 		$_POST['action'] = 'wp_mcp_ai_save_tool_limits';
 		$_POST['limits'] = array(
-			'get_user_info'      => 100,
-			'get_recent_posts'   => 200,
-			'search_content'     => 150,
+			'get_user_info'    => 100,
+			'get_recent_posts' => 200,
+			'search_content'   => 150,
 		);
 		$_POST['nonce']  = wp_create_nonce( 'wp_mcp_ai_dashboard' );
 

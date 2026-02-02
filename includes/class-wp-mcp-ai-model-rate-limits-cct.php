@@ -1116,7 +1116,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 
 			// Anthropic Claude 4 Series - 2025 Models.
 			array(
-				'model_name'                => 'claude-sonnet-4.5',
+				'model_name'                => 'claude-sonnet-4-5-20250929',
 				'provider'                  => 'anthropic',
 				'tpm_limit'                 => 80000,
 				'rpm_limit'                 => 100,
@@ -1131,7 +1131,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'notes'                     => 'Claude Sonnet 4.5 (Recommended). Exceptional coding, agentic tasks, long-form analysis. 200k context, 1M beta option.',
 			),
 			array(
-				'model_name'                => 'claude-haiku-4.5',
+				'model_name'                => 'claude-haiku-4-5-20251001',
 				'provider'                  => 'anthropic',
 				'tpm_limit'                 => 100000,
 				'rpm_limit'                 => 150,
@@ -1146,7 +1146,7 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'notes'                     => 'Claude Haiku 4.5 (Fastest). Most cost-efficient for real-time, high-volume workloads. 200k context.',
 			),
 			array(
-				'model_name'                => 'claude-opus-4.1',
+				'model_name'                => 'claude-opus-4-1-20250805',
 				'provider'                  => 'anthropic',
 				'tpm_limit'                 => 40000,
 				'rpm_limit'                 => 50,
@@ -1159,21 +1159,6 @@ class WP_MCP_AI_Model_Rate_Limits_CCT {
 				'cost_per_1k_input_tokens'  => 0.015,
 				'cost_per_1k_output_tokens' => 0.075,
 				'notes'                     => 'Claude Opus 4.1 (Flagship). Deep reasoning for specialized research, enterprise, advanced coding. 200k context, max 32k output.',
-			),
-			array(
-				'model_name'                => 'claude-opus-4.0',
-				'provider'                  => 'anthropic',
-				'tpm_limit'                 => 30000,
-				'rpm_limit'                 => 40,
-				'context_window'            => 200000,
-				'max_output_tokens'         => 32000,
-				'tier'                      => 'tier-2',
-				'supports_streaming'        => true,
-				'supports_function_calling' => true,
-				'supports_vision'           => true,
-				'cost_per_1k_input_tokens'  => 0.015,
-				'cost_per_1k_output_tokens' => 0.075,
-				'notes'                     => 'Claude Opus 4.0. Previous flagship with strong reasoning capabilities.',
 			),
 
 			// Anthropic Claude 3.5 Series - Legacy (Backward Compatibility).

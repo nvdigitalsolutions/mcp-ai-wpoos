@@ -54,53 +54,53 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 		return array(
 			'type'       => 'object',
 			'properties' => array(
-				'attachment_id'    => array(
+				'attachment_id' => array(
 					'type'        => 'integer',
 					'description' => __( 'WordPress attachment ID to generate alt text for.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'image_url'        => array(
+				'image_url'     => array(
 					'type'        => 'string',
 					'description' => __( 'Image URL to analyze (if attachment_id not provided).', 'mcp-ai-wpoos' ),
 					'format'      => 'uri',
 				),
-				'context'          => array(
+				'context'       => array(
 					'type'        => 'string',
 					'description' => __( 'Context about how/where the image is used.', 'mcp-ai-wpoos' ),
 				),
-				'focus_keyword'    => array(
+				'focus_keyword' => array(
 					'type'        => 'string',
 					'description' => __( 'Primary keyword to include in alt text (optional).', 'mcp-ai-wpoos' ),
 				),
-				'max_length'       => array(
+				'max_length'    => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum alt text length in characters.', 'mcp-ai-wpoos' ),
 					'minimum'     => 50,
 					'maximum'     => 125,
 					'default'     => 125,
 				),
-				'tone'             => array(
+				'tone'          => array(
 					'type'        => 'string',
 					'description' => __( 'Writing tone for alt text.', 'mcp-ai-wpoos' ),
 					'enum'        => array( 'descriptive', 'concise', 'detailed', 'professional' ),
 					'default'     => 'descriptive',
 				),
-				'auto_save'        => array(
+				'auto_save'     => array(
 					'type'        => 'boolean',
 					'description' => __( 'Automatically save alt text to attachment (requires attachment_id).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'batch_mode'       => array(
+				'batch_mode'    => array(
 					'type'        => 'boolean',
 					'description' => __( 'Process multiple images without alt text (requires post_id or limit).', 'mcp-ai-wpoos' ),
 					'default'     => false,
 				),
-				'post_id'          => array(
+				'post_id'       => array(
 					'type'        => 'integer',
 					'description' => __( 'Post ID to process images from (for batch mode).', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
 				),
-				'limit'            => array(
+				'limit'         => array(
 					'type'        => 'integer',
 					'description' => __( 'Maximum number of images to process in batch mode.', 'mcp-ai-wpoos' ),
 					'minimum'     => 1,
@@ -120,17 +120,11 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -148,7 +142,6 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 			'risk_level'            => 'standard',
 
 		);
-
 	}
 
 
@@ -167,7 +160,11 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
@@ -282,7 +279,7 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 	 * @return array|WP_Error Results.
 	 */
 	private function process_batch( $arguments, $context ) {
-		$limit = $arguments['limit'] ?? 10;
+		$limit   = $arguments['limit'] ?? 10;
 		$post_id = $arguments['post_id'] ?? 0;
 
 		// Get images without alt text.
@@ -315,7 +312,14 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 			);
 		}
 
-		$success_count = count( array_filter( $results, function( $r ) { return $r['success']; } ) );
+		$success_count = count(
+			array_filter(
+				$results,
+				function ( $r ) {
+					return $r['success'];
+				}
+			)
+		);
 
 		return array(
 			'processed'     => count( $results ),
@@ -455,7 +459,7 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 		$focus_keyword = $arguments['focus_keyword'] ?? '';
 		$context       = $arguments['context'] ?? '';
 
-		$prompt = "Generate SEO-optimized and accessible alt text for this image.\n\n";
+		$prompt  = "Generate SEO-optimized and accessible alt text for this image.\n\n";
 		$prompt .= "Requirements:\n";
 		$prompt .= "- Maximum {$max_length} characters\n";
 		$prompt .= "- Be {$tone} and specific\n";
@@ -489,12 +493,12 @@ class WP_MCP_AI_Tool_Image_Alt_Text_Optimizer implements WP_MCP_AI_Tool_Interfac
 		$focus_keyword = $arguments['focus_keyword'] ?? '';
 
 		$validation = array(
-			'length_ok'        => false,
-			'no_prefix'        => false,
-			'has_keyword'      => false,
-			'not_too_short'    => false,
-			'all_passed'       => false,
-			'issues'           => array(),
+			'length_ok'     => false,
+			'no_prefix'     => false,
+			'has_keyword'   => false,
+			'not_too_short' => false,
+			'all_passed'    => false,
+			'issues'        => array(),
 		);
 
 		// Check length.

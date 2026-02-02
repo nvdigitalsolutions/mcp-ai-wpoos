@@ -35,7 +35,7 @@ trait WP_MCP_AI_Tool_Restrict_From_Chat_Client {
 		$endpoint = isset( $context['endpoint'] ) ? $context['endpoint'] : '';
 
 		// Check if explicitly allowed.
-		$allow_sensitive_tools = isset( $context['allow_sensitive_tools'] ) && $context['allow_sensitive_tools'] === true;
+		$allow_sensitive_tools = isset( $context['allow_sensitive_tools'] ) && true === $context['allow_sensitive_tools'];
 
 		// If allow_sensitive_tools is true, allow execution everywhere.
 		if ( $allow_sensitive_tools ) {

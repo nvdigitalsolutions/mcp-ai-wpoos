@@ -66,7 +66,7 @@ if ( ! class_exists( 'WP_MCP_AI_Integration_Auth0_Github' ) ) {
 		 * @param WP_REST_Request $request Current REST request.
 		 * @return array
 		 */
-		public static function maybe_enrich_payload( $payload, $request ) {
+		public static function maybe_enrich_payload( $payload, $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for request context.
 			if ( ! self::is_enabled() || ! is_array( $payload ) ) {
 				return $payload;
 			}

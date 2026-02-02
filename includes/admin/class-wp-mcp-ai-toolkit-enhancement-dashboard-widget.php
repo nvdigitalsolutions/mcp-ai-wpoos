@@ -90,8 +90,8 @@ class WP_MCP_AI_Toolkit_Enhancement_Dashboard_Widget {
 
 				// Get tool counts for each toolkit.
 				foreach ( $toolkits as $slug => $toolkit ) {
-					$tools                    = $toolkit_registry->get_toolkit_tools( $slug );
-					$toolkit_counts[ $slug ]  = array(
+					$tools                   = $toolkit_registry->get_toolkit_tools( $slug );
+					$toolkit_counts[ $slug ] = array(
 						'name'  => $toolkit['name'],
 						'count' => count( $tools ),
 						'icon'  => isset( $toolkit['icon'] ) ? $toolkit['icon'] : '🔧',

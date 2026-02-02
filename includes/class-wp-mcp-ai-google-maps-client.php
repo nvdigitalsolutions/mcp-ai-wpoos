@@ -137,6 +137,7 @@ if ( ! class_exists( 'WP_MCP_AI_Google_Maps_Client' ) ) {
 			}
 
 			if ( isset( $decoded['status'] ) && 'OK' !== $decoded['status'] ) {
+				/* translators: %s: Google Maps API status code */
 				$error_message = isset( $decoded['error_message'] ) ? $decoded['error_message'] : sprintf( __( 'Google Maps status: %s', 'mcp-ai-wpoos' ), $decoded['status'] );
 
 				return new WP_Error(

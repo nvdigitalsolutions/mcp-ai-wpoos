@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Get_Import_Duty implements WP_MCP_AI_Tool_Interface, WP
 			if ( false !== strpos( $location, 'developer.trade.gov' ) ) {
 				return new WP_Error(
 					'wp_mcp_ai_duty_api_redirect',
-					__( 'The tariff service redirected the request. Verify that your Trade.gov API key is valid and stored in the settings.', 'mcp-ai-wpoos-pro' )
+					__( 'The tariff service redirected the request. Verify that your Trade.gov API key is valid and stored in NV oOS > General Settings > Tools & Features > External Tools > Trade.gov Tariff Rates.', 'mcp-ai-wpoos-pro' )
 				);
 			}
 		}

@@ -288,7 +288,7 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 			/* translators: 1: total results, 2: dimension name, 3: date range, 4: total clicks, 5: total impressions */
 			__( 'Found %1$d %2$s in the %3$s with %4$d total clicks and %5$d total impressions', 'mcp-ai-wpoos' ),
 			count( $results ),
-			$dimension === 'query' ? __( 'queries', 'mcp-ai-wpoos' ) : $dimension . 's',
+			'query' === $dimension ? __( 'queries', 'mcp-ai-wpoos' ) : $dimension . 's',
 			str_replace( '_', ' ', $date_range ),
 			$total_clicks,
 			$total_impressions
@@ -305,22 +305,21 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 		return WP_MCP_AI_Tool_Capability_Flags_Interface::CAPABILITY_CAN_USE_IF_ADMIN;
 	}
 
-/**
- * Get extended tool definition including toolkit metadata.
- *
- * @since 1.1.0
- *
- * @return array Tool definition with metadata.
- */
-public function get_definition() {
-	return array(
-		'name'                  => $this->get_name(),
-		'description'           => $this->get_description(),
-		'toolkit'               => 'ecommerce_business',
-		'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
-		'profession_tags'       => array( 'seo_specialist', 'marketing_manager' ),
-		'risk_level'            => 'info',
-	);
-}
-
+	/**
+	 * Get extended tool definition including toolkit metadata.
+	 *
+	 * @since 1.1.0
+	 *
+	 * @return array Tool definition with metadata.
+	 */
+	public function get_definition() {
+		return array(
+			'name'                  => $this->get_name(),
+			'description'           => $this->get_description(),
+			'toolkit'               => 'ecommerce_business',
+			'pattern_compatibility' => array( 'orchestrator', 'peer_to_peer' ),
+			'profession_tags'       => array( 'seo_specialist', 'marketing_manager' ),
+			'risk_level'            => 'info',
+		);
+	}
 }

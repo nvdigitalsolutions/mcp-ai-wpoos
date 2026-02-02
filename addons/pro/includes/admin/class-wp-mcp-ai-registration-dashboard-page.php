@@ -17,7 +17,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	 * Initialize the class.
 	 */
 	public static function init() {
-		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 22 );
+		add_action( 'admin_menu', array( __CLASS__, 'add_menu_page' ), 10 );
 	}
 
 	/**
@@ -303,16 +303,16 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 	 */
 	private static function get_registration_stats() {
 		$stats = array(
-			'total_products'     => 0,
+			'total_products'      => 0,
 			'total_registrations' => 0,
-			'approved'           => 0,
-			'under_review'       => 0,
-			'draft'              => 0,
-			'expiring_soon'      => 0,
+			'approved'            => 0,
+			'under_review'        => 0,
+			'draft'               => 0,
+			'expiring_soon'       => 0,
 		);
 
 		// Count products.
-		$products_query = new WP_Query(
+		$products_query          = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_reg_product',
 				'post_status'    => 'publish',
@@ -324,7 +324,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 		wp_reset_postdata();
 
 		// Count registrations.
-		$registrations_query = new WP_Query(
+		$registrations_query          = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_registration',
 				'post_status'    => 'any',
@@ -338,7 +338,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 		// Count by status (using taxonomy if available).
 		$approved_term = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
 		if ( $approved_term ) {
-			$approved_query = new WP_Query(
+			$approved_query    = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_registration',
 					'post_status'    => 'any',
@@ -359,7 +359,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 
 		$review_term = get_term_by( 'name', 'Under Review', 'mcp_ai_reg_status' );
 		if ( $review_term ) {
-			$review_query = new WP_Query(
+			$review_query          = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_registration',
 					'post_status'    => 'any',
@@ -380,7 +380,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 
 		$draft_term = get_term_by( 'name', 'Draft', 'mcp_ai_reg_status' );
 		if ( $draft_term ) {
-			$draft_query = new WP_Query(
+			$draft_query    = new WP_Query(
 				array(
 					'post_type'      => 'mcp_ai_registration',
 					'post_status'    => 'any',
@@ -400,7 +400,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 		}
 
 		// Count expiring soon (within 30 days).
-		$expiring_query = new WP_Query(
+		$expiring_query         = new WP_Query(
 			array(
 				'post_type'      => 'mcp_ai_registration',
 				'post_status'    => 'any',
@@ -411,7 +411,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 						'key'     => 'expiry_date',
 						'value'   => array(
 							current_time( 'Y-m-d' ),
-							date( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) ),
+							gmdate( 'Y-m-d', strtotime( '+30 days', current_time( 'timestamp' ) ) ),
 						),
 						'compare' => 'BETWEEN',
 						'type'    => 'DATE',
@@ -456,16 +456,21 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 
 		// Fetch all registration counts in a single query grouped by country_id.
 		global $wpdb;
-		$registration_counts = $wpdb->get_results(
-			"SELECT pm.meta_value as country_id, COUNT(*) as total
+		$country_ids_safe = array_map( 'intval', $country_ids );
+		$placeholders     = implode( ',', array_fill( 0, count( $country_ids_safe ), '%d' ) );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+		$query               = "SELECT pm.meta_value as country_id, COUNT(*) as total
 			FROM {$wpdb->posts} p
 			INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 			WHERE p.post_type = 'mcp_ai_registration'
 			AND pm.meta_key = 'country_id'
-			AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
-			GROUP BY pm.meta_value',
+			AND pm.meta_value IN ($placeholders)
+			GROUP BY pm.meta_value";
+		$registration_counts = $wpdb->get_results(
+			$wpdb->prepare( $query, $country_ids_safe ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			ARRAY_A
 		);
+		// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 		// Convert to associative array for quick lookup.
 		$counts_by_country = array();
@@ -474,26 +479,26 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 		}
 
 		// Get approved term once.
-		$approved_term = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
+		$approved_term              = get_term_by( 'name', 'Approved', 'mcp_ai_reg_status' );
 		$approved_counts_by_country = array();
 
 		if ( $approved_term ) {
 			// Fetch approved registration counts in a single query.
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+			$approved_query  = "SELECT pm.meta_value as country_id, COUNT(*) as total
+				FROM {$wpdb->posts} p
+				INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
+				INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
+				WHERE p.post_type = 'mcp_ai_registration'
+				AND pm.meta_key = 'country_id'
+				AND pm.meta_value IN ($placeholders)
+				AND tr.term_taxonomy_id = %d
+				GROUP BY pm.meta_value";
 			$approved_counts = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT pm.meta_value as country_id, COUNT(*) as total
-					FROM {$wpdb->posts} p
-					INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
-					INNER JOIN {$wpdb->term_relationships} tr ON p.ID = tr.object_id
-					WHERE p.post_type = 'mcp_ai_registration'
-					AND pm.meta_key = 'country_id'
-					AND pm.meta_value IN (" . implode( ',', array_map( 'intval', $country_ids ) ) . ')
-					AND tr.term_taxonomy_id = %d
-					GROUP BY pm.meta_value',
-					$approved_term->term_taxonomy_id
-				),
+				$wpdb->prepare( $approved_query, array_merge( $country_ids_safe, array( $approved_term->term_taxonomy_id ) ) ), // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 				ARRAY_A
 			);
+			// phpcs:enable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
 
 			foreach ( $approved_counts as $row ) {
 				$approved_counts_by_country[ $row['country_id'] ] = (int) $row['total'];
@@ -506,7 +511,7 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 			$countries_query->the_post();
 			$country_id = get_the_ID();
 
-			$total = isset( $counts_by_country[ $country_id ] ) ? $counts_by_country[ $country_id ] : 0;
+			$total    = isset( $counts_by_country[ $country_id ] ) ? $counts_by_country[ $country_id ] : 0;
 			$approved = isset( $approved_counts_by_country[ $country_id ] ) ? $approved_counts_by_country[ $country_id ] : 0;
 
 			$countries[] = array(
@@ -547,7 +552,12 @@ class WP_MCP_AI_Registration_Dashboard_Page {
 					<li class="activity-item">
 						<strong><?php the_title(); ?></strong>
 						<span class="activity-type"> - <?php echo esc_html( $post_type_object->labels->singular_name ); ?></span>
-						<div class="activity-time"><?php echo esc_html( sprintf( __( 'Modified %s ago', 'mcp-ai-wpoos-pro' ), human_time_diff( get_the_modified_time( 'U' ), current_time( 'timestamp' ) ) ) ); ?></div>
+						<div class="activity-time">
+							<?php
+							/* translators: %s: Time elapsed since the post was modified (e.g., "2 hours", "3 days") */
+							echo esc_html( sprintf( __( 'Modified %s ago', 'mcp-ai-wpoos-pro' ), human_time_diff( get_the_modified_time( 'U' ), current_time( 'timestamp' ) ) ) );
+							?>
+						</div>
 					</li>
 					<?php
 				}

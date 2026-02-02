@@ -92,17 +92,11 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -120,7 +114,6 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 
@@ -137,7 +130,11 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Start performance tracking.
@@ -268,7 +265,7 @@ class WP_MCP_AI_Tool_Content_Freshness_Checker implements WP_MCP_AI_Tool_Interfa
 		// Check links if requested.
 		$broken_links = array();
 		if ( $check_links ) {
-			$broken_links       = $this->check_links_in_content( $post->post_content );
+			$broken_links         = $this->check_links_in_content( $post->post_content );
 			$scores['link_score'] = empty( $broken_links ) ? 100 : max( 0, 100 - ( count( $broken_links ) * 10 ) );
 		}
 

@@ -1,0 +1,394 @@
+/**
+ * Multi-Agent Dashboard Styles
+ *
+ * @package WP_MCP_AI
+ */
+
+.wp-mcp-ai-multi-agent-dashboard {
+	max-width: 1400px;
+}
+
+.wp-mcp-ai-multi-agent-dashboard h1 {
+	margin-bottom: 0.5rem;
+}
+
+.wp-mcp-ai-multi-agent-dashboard .description {
+	margin-bottom: 2rem;
+	color: #646970;
+}
+
+/* Status Banner */
+.multi-agent-status-banner {
+	margin: 2rem 0;
+}
+
+.status-banner {
+	display: flex;
+	align-items: center;
+	padding: 1.5rem;
+	border-radius: 8px;
+	border-left: 4px solid;
+}
+
+.status-banner.status-success {
+	background: #e7f5e7;
+	border-color: #46b450;
+}
+
+.status-banner.status-warning {
+	background: #fff8e5;
+	border-color: #ffb900;
+}
+
+.status-banner .dashicons {
+	font-size: 32px;
+	width: 32px;
+	height: 32px;
+	margin-right: 1rem;
+}
+
+.status-banner.status-success .dashicons {
+	color: #46b450;
+}
+
+.status-banner.status-warning .dashicons {
+	color: #ffb900;
+}
+
+.status-content strong {
+	display: block;
+	font-size: 16px;
+	margin-bottom: 0.25rem;
+}
+
+.status-content p {
+	margin: 0;
+	color: #646970;
+}
+
+/* Quick Stats Grid */
+.multi-agent-stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 1.5rem;
+	margin: 2rem 0;
+}
+
+.stat-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 1.5rem;
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	transition: box-shadow 0.2s;
+}
+
+.stat-card:hover {
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+	font-size: 2rem;
+	line-height: 1;
+}
+
+.stat-value {
+	font-size: 2rem;
+	font-weight: 600;
+	color: #1d2327;
+	line-height: 1;
+}
+
+.stat-label {
+	font-size: 0.875rem;
+	color: #646970;
+	margin-top: 0.25rem;
+}
+
+/* Agent Grid */
+.multi-agent-grid-container {
+	margin: 2rem 0;
+}
+
+.section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+	margin: 0;
+}
+
+.section-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.agent-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+	gap: 1.5rem;
+}
+
+.agent-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 1.5rem;
+	transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.agent-card:hover {
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	transform: translateY(-2px);
+}
+
+.agent-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 1rem;
+}
+
+.agent-title {
+	font-size: 1.125rem;
+	margin: 0;
+	color: #1d2327;
+	flex: 1;
+}
+
+.agent-status {
+	padding: 0.25rem 0.75rem;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.agent-status.status-active {
+	background: #e7f5e7;
+	color: #46b450;
+}
+
+.agent-status.status-inactive {
+	background: #f0f0f1;
+	color: #646970;
+}
+
+.agent-roles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-bottom: 1rem;
+}
+
+.role-badge {
+	background: #f0f0f1;
+	color: #2271b1;
+	padding: 0.25rem 0.75rem;
+	border-radius: 4px;
+	font-size: 0.75rem;
+	font-weight: 500;
+}
+
+.agent-description {
+	color: #646970;
+	font-size: 0.875rem;
+	line-height: 1.5;
+	margin: 0 0 1rem;
+}
+
+.agent-meta {
+	background: #f6f7f7;
+	border-radius: 4px;
+	padding: 1rem;
+	margin-bottom: 1rem;
+}
+
+.meta-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 0.25rem 0;
+}
+
+.meta-label {
+	color: #646970;
+	font-size: 0.875rem;
+}
+
+.meta-value {
+	font-weight: 600;
+	color: #1d2327;
+	font-size: 0.875rem;
+}
+
+.agent-actions {
+	display: flex;
+	gap: 0.5rem;
+}
+
+.agent-actions .button-small {
+	flex: 1;
+	text-align: center;
+	justify-content: center;
+}
+
+/* Workflow Diagram */
+.workflow-diagram-container {
+	margin: 3rem 0;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 2rem;
+}
+
+.workflow-diagram {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.workflow-step {
+	background: #f6f7f7;
+	border: 2px solid #dcdcde;
+	border-radius: 8px;
+	padding: 1rem;
+	text-align: center;
+	min-width: 120px;
+	transition: all 0.2s;
+}
+
+.workflow-step:hover {
+	border-color: #2271b1;
+	box-shadow: 0 2px 8px rgba(34, 113, 177, 0.1);
+}
+
+.workflow-step.workflow-supervisor {
+	background: linear-gradient(135deg, #f0f7ff 0%, #e7f2ff 100%);
+	border-color: #2271b1;
+}
+
+.step-icon {
+	font-size: 2rem;
+	margin-bottom: 0.5rem;
+}
+
+.step-label {
+	font-weight: 600;
+	font-size: 0.875rem;
+	color: #1d2327;
+}
+
+.step-description {
+	font-size: 0.75rem;
+	color: #646970;
+	margin-top: 0.25rem;
+}
+
+.workflow-arrow {
+	font-size: 1.5rem;
+	color: #2271b1;
+	font-weight: bold;
+}
+
+.workflow-note {
+	text-align: center;
+	color: #646970;
+	font-size: 0.875rem;
+	font-style: italic;
+	margin: 0;
+}
+
+/* Documentation */
+.multi-agent-documentation {
+	margin: 3rem 0;
+}
+
+.documentation-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 1.5rem;
+}
+
+.doc-card {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 1.5rem;
+}
+
+.doc-card h3 {
+	margin: 0 0 0.5rem;
+	font-size: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.doc-card h3 .dashicons {
+	color: #2271b1;
+}
+
+.doc-card p {
+	color: #646970;
+	font-size: 0.875rem;
+	margin: 0 0 1rem;
+}
+
+.doc-card .button {
+	width: 100%;
+	text-align: center;
+	justify-content: center;
+}
+
+/* No Agents Message */
+.no-agents-message {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 8px;
+	padding: 3rem;
+	text-align: center;
+}
+
+.no-agents-message p {
+	color: #646970;
+	font-size: 1rem;
+	margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+	.agent-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.workflow-diagram {
+		flex-direction: column;
+	}
+
+	.workflow-arrow {
+		transform: rotate(90deg);
+	}
+
+	.section-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+
+	.section-actions {
+		width: 100%;
+	}
+
+	.section-actions .button {
+		flex: 1;
+	}
+}

@@ -381,13 +381,16 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			<?php
 			// Render filter bar if component is available.
 			if ( class_exists( 'WP_MCP_AI_Tools_Filter_Bar_Renderer' ) ) {
-				echo WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
-					array(
-						'tab'          => 'token_manager',
-						'view'         => 'per_tool',
-						'search'       => esc_attr( $search ),
-						'filter_group' => esc_attr( $filter_group ),
-						'clear_url'    => esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ) ),
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+				echo wp_kses_post(
+					WP_MCP_AI_Tools_Filter_Bar_Renderer::render(
+						array(
+							'tab'          => 'token_manager',
+							'view'         => 'per_tool',
+							'search'       => esc_attr( $search ),
+							'filter_group' => esc_attr( $filter_group ),
+							'clear_url'    => esc_url( admin_url( 'admin.php?page=' . WP_MCP_AI_Settings_Dashboard::PAGE_SLUG . '&tab=token_manager&view=per_tool' ) ),
+						)
 					)
 				);
 			}
@@ -800,9 +803,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			</div>
 		</div>
 
-		<?php
+			<?php
 		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Small inline styles for admin section layout and styling on this admin page only
-		?>
+			?>
 		<style>
 			.wp-mcp-ai-tool-row-recommended {
 				background-color: #fffbf0 !important;
@@ -1163,10 +1166,12 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Token_Manager' ) ) {
 			}
 
 			// Delegate rendering to the renderer class (SoC).
-			echo WP_MCP_AI_Model_Config_Renderer::render_model_table();
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML.
+			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_model_table() );
 
 			// Output JavaScript for inline editing.
-			echo WP_MCP_AI_Model_Config_Renderer::render_javascript();
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Renderer outputs escaped HTML and JavaScript.
+			echo wp_kses_post( WP_MCP_AI_Model_Config_Renderer::render_javascript() );
 		}
 
 		/**

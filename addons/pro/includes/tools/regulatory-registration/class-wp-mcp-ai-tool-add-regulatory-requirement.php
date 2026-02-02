@@ -133,7 +133,7 @@ class WP_MCP_AI_Tool_Add_Regulatory_Requirement implements WP_MCP_AI_Tool_Interf
 		// Create requirement post.
 		$requirement_data = array(
 			'post_title'   => sanitize_text_field( $arguments['title'] ),
-			'post_type'    => 'mcp_ai_reg_requirement',
+			'post_type'    => 'mcp_ai_requirement',
 			'post_status'  => 'publish',
 			'post_content' => ! empty( $arguments['description'] ) ? sanitize_textarea_field( $arguments['description'] ) : '',
 		);

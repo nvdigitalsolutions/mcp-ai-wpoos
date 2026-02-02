@@ -64,15 +64,15 @@ class WP_MCP_AI_HTML_Formatter {
 	 */
 	public function create_document( $content, $options = array() ) {
 		$defaults = array(
-			'title'        => 'Document',
-			'author'       => '',
-			'font_family'  => $this->default_font_family,
-			'font_size'    => $this->default_font_size,
-			'line_height'  => $this->default_line_height,
-			'margin'       => '1in',
-			'page_width'   => $this->page_width . 'px',
-			'text_align'   => 'left',
-			'orientation'  => 'portrait',
+			'title'       => 'Document',
+			'author'      => '',
+			'font_family' => $this->default_font_family,
+			'font_size'   => $this->default_font_size,
+			'line_height' => $this->default_line_height,
+			'margin'      => '1in',
+			'page_width'  => $this->page_width . 'px',
+			'text_align'  => 'left',
+			'orientation' => 'portrait',
 		);
 
 		$options = wp_parse_args( $options, $defaults );
@@ -410,11 +410,11 @@ CSS;
 		}
 
 		$defaults = array(
-			'headers'     => true,
-			'striped'     => false,
-			'bordered'    => true,
-			'hover'       => false,
-			'align'       => 'left',
+			'headers'  => true,
+			'striped'  => false,
+			'bordered' => true,
+			'hover'    => false,
+			'align'    => 'left',
 		);
 
 		$options = wp_parse_args( $options, $defaults );

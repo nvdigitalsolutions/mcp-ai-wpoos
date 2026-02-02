@@ -46,7 +46,7 @@ class WP_MCP_AI_Agent_Communication_Service {
 
 		// Check if target is a virtual agent.
 		$is_virtual_target = is_string( $to_agent_id ) && 0 === strpos( $to_agent_id, 'virtual_' );
-		
+
 		// For virtual agents, validate they exist in a team context.
 		if ( $is_virtual_target ) {
 			$virtual_agent = $this->get_virtual_agent_data( $to_agent_id, $context );
@@ -67,7 +67,7 @@ class WP_MCP_AI_Agent_Communication_Service {
 					__( 'Valid agent IDs required for delegation.', 'mcp-ai-wpoos' )
 				);
 			}
-			
+
 			$to_agent = get_post( $to_agent_id );
 			if ( ! $to_agent || 'mcp_ai_assistant' !== $to_agent->post_type ) {
 				return new WP_Error(
@@ -82,10 +82,10 @@ class WP_MCP_AI_Agent_Communication_Service {
 
 		// Validate source agent (can be 0 for system-level delegation).
 		$is_virtual_source = is_string( $from_agent_id ) && 0 === strpos( $from_agent_id, 'virtual_' );
-		
+
 		if ( ! $is_virtual_source ) {
 			$from_agent_id = absint( $from_agent_id );
-			
+
 			// Source validation is optional - 0 means system/user delegation.
 			if ( $from_agent_id > 0 ) {
 				$from_agent = get_post( $from_agent_id );

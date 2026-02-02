@@ -260,8 +260,9 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 		$dot_product = 0.0;
 		$magnitude_a = 0.0;
 		$magnitude_b = 0.0;
+		$vector_size = count( $vector_a );
 
-		for ( $i = 0; $i < count( $vector_a ); $i++ ) {
+		for ( $i = 0; $i < $vector_size; $i++ ) {
 			$dot_product += $vector_a[ $i ] * $vector_b[ $i ];
 			$magnitude_a += $vector_a[ $i ] * $vector_a[ $i ];
 			$magnitude_b += $vector_b[ $i ] * $vector_b[ $i ];
@@ -281,17 +282,11 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -309,7 +304,6 @@ class WP_MCP_AI_Tool_Semantic_Content_Search implements WP_MCP_AI_Tool_Interface
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

@@ -120,7 +120,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function get_inventory( $request ) {
+	public function get_inventory( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$inventory = WP_MCP_AI_Asset_Inventory::get_instance()->get_asset_inventory();
 
 		if ( ! $inventory ) {
@@ -148,7 +148,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function trigger_discovery( $request ) {
+	public function trigger_discovery( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$assets = WP_MCP_AI_Asset_Inventory::get_instance()->discover_assets();
 
 		return new WP_REST_Response(
@@ -168,7 +168,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error Response object or error.
 	 */
-	public function get_statistics( $request ) {
+	public function get_statistics( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API callback signature.
 		$stats = WP_MCP_AI_Asset_Inventory::get_instance()->get_asset_statistics();
 
 		return new WP_REST_Response(
@@ -228,7 +228,7 @@ class WP_MCP_AI_Asset_Inventory_REST {
 	 * @param WP_REST_Request $request Request object.
 	 * @return bool True if user has permission, false otherwise.
 	 */
-	public function check_admin_permission( $request ) {
+	public function check_admin_permission( $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by REST API permission callback signature.
 		return current_user_can( 'manage_options' );
 	}
 }

@@ -58,14 +58,23 @@ class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Int
 				'recipients'        => array(
 					'type'        => 'array',
 					'description' => __( 'Email addresses to notify (optional)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array( 'type' => 'string', 'format' => 'email' ),
+					'items'       => array(
+						'type'   => 'string',
+						'format' => 'email',
+					),
 				),
 				'conditions'        => array(
 					'type'        => 'object',
 					'description' => __( 'Notification trigger conditions (optional)', 'mcp-ai-wpoos-pro' ),
 					'properties'  => array(
-						'days_before_expiry' => array( 'type' => 'integer', 'minimum' => 1 ),
-						'countries'          => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+						'days_before_expiry' => array(
+							'type'    => 'integer',
+							'minimum' => 1,
+						),
+						'countries'          => array(
+							'type'  => 'array',
+							'items' => array( 'type' => 'string' ),
+						),
 						'status_from'        => array( 'type' => 'string' ),
 						'status_to'          => array( 'type' => 'string' ),
 					),
@@ -132,11 +141,11 @@ class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Int
 
 		// Update configuration for this notification type.
 		$notification_settings[ $notification_type ] = array(
-			'enabled'     => $enabled,
-			'recipients'  => $recipients,
-			'conditions'  => $conditions,
-			'updated_at'  => current_time( 'mysql' ),
-			'updated_by'  => $current_user_id,
+			'enabled'    => $enabled,
+			'recipients' => $recipients,
+			'conditions' => $conditions,
+			'updated_at' => current_time( 'mysql' ),
+			'updated_by' => $current_user_id,
 		);
 
 		// Save settings.
@@ -150,7 +159,7 @@ class WP_MCP_AI_Tool_Configure_Email_Notifications implements WP_MCP_AI_Tool_Int
 			'action'            => $enabled ? 'enabled' : 'disabled',
 		);
 
-		$notification_log = get_option( 'wp_mcp_ai_notification_log', array() );
+		$notification_log   = get_option( 'wp_mcp_ai_notification_log', array() );
 		$notification_log[] = $log_entry;
 		update_option( 'wp_mcp_ai_notification_log', array_slice( $notification_log, -100 ) ); // Keep last 100 entries.
 

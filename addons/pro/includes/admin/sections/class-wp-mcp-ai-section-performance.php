@@ -1,6 +1,6 @@
 <?php
 /**
- * Performance Monitoring Admin Section for WP oOS.
+ * Performance Monitoring Admin Section for NV oOS.
  *
  * Provides admin interface for:
  * - Real-time performance metrics

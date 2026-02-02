@@ -116,6 +116,133 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 					</td>
 				</tr>
 			</table>
+
+			<h3><?php esc_html_e( 'Market Data Integration (yfinance)', 'mcp-ai-wpoos-pro' ); ?></h3>
+			<p class="description">
+				<?php esc_html_e( 'Configure automatic market data fetching for portfolio tools using the yfinance service.', 'mcp-ai-wpoos-pro' ); ?>
+			</p>
+
+			<table class="form-table">
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Enable yfinance Service', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$settings = get_option( 'wp_mcp_ai_settings', array() );
+						$is_enabled = ! empty( $settings['enable_yfinance_service'] );
+						?>
+						<label>
+							<input type="checkbox" name="wp_mcp_ai_settings[enable_yfinance_service]" value="1" <?php checked( $is_enabled ); ?> />
+							<?php esc_html_e( 'Enable automatic price fetching from yfinance microservice', 'mcp-ai-wpoos-pro' ); ?>
+						</label>
+						<p class="description">
+							<?php esc_html_e( 'When enabled, portfolio tools can automatically fetch current stock prices instead of requiring manual input.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'yfinance Service URL', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$service_url = isset( $settings['yfinance_service_url'] ) ? $settings['yfinance_service_url'] : 'http://localhost:5000';
+						?>
+						<input type="url" name="wp_mcp_ai_settings[yfinance_service_url]" value="<?php echo esc_attr( $service_url ); ?>" class="regular-text" />
+						<p class="description">
+							<?php esc_html_e( 'URL of the yfinance Python microservice (default: http://localhost:5000)', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<?php
+						// Check service health if enabled.
+						if ( $is_enabled ) :
+							if ( ! class_exists( 'WP_MCP_AI_YFinance_Service' ) ) {
+								require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php';
+							}
+							$yf_service = WP_MCP_AI_YFinance_Service::get_instance();
+							$health = $yf_service->check_health();
+							?>
+							<p>
+								<strong><?php esc_html_e( 'Service Status:', 'mcp-ai-wpoos-pro' ); ?></strong>
+								<?php if ( isset( $health['success'] ) && $health['success'] ) : ?>
+									<span style="color: green;">● <?php esc_html_e( 'Online', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php if ( isset( $health['version'] ) ) : ?>
+										<span class="description">(<?php echo esc_html( $health['version'] ); ?>)</span>
+									<?php endif; ?>
+								<?php else : ?>
+									<span style="color: red;">● <?php esc_html_e( 'Offline', 'mcp-ai-wpoos-pro' ); ?></span>
+									<?php if ( isset( $health['error'] ) ) : ?>
+										<br><span class="description"><?php echo esc_html( $health['error'] ); ?></span>
+									<?php endif; ?>
+								<?php endif; ?>
+							</p>
+						<?php endif; ?>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Cache Duration', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<?php
+						$cache_ttl = isset( $settings['yfinance_cache_ttl'] ) ? absint( $settings['yfinance_cache_ttl'] ) : 15;
+						?>
+						<input type="number" name="wp_mcp_ai_settings[yfinance_cache_ttl]" value="<?php echo esc_attr( $cache_ttl ); ?>" min="1" max="1440" class="small-text" />
+						<span><?php esc_html_e( 'minutes', 'mcp-ai-wpoos-pro' ); ?></span>
+						<p class="description">
+							<?php esc_html_e( 'How long to cache price data before fetching fresh data (default: 15 minutes)', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+					</td>
+				</tr>
+				<tr>
+					<th scope="row"><?php esc_html_e( 'Cache Management', 'mcp-ai-wpoos-pro' ); ?></th>
+					<td>
+						<button type="button" class="button" id="clear-yfinance-cache">
+							<?php esc_html_e( 'Clear All Cached Prices', 'mcp-ai-wpoos-pro' ); ?>
+						</button>
+						<p class="description">
+							<?php esc_html_e( 'Clear all cached market data to force fresh fetches on next request.', 'mcp-ai-wpoos-pro' ); ?>
+						</p>
+						<div id="clear-cache-result" style="margin-top: 10px;"></div>
+					</td>
+				</tr>
+			</table>
+
+			<div class="notice notice-info inline">
+				<p>
+					<strong><?php esc_html_e( 'Important:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php esc_html_e( 'The yfinance service must be running for automatic price fetching to work. See the documentation for setup instructions.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+				<p>
+					<strong><?php esc_html_e( 'Educational Use Only:', 'mcp-ai-wpoos-pro' ); ?></strong>
+					<?php esc_html_e( 'Market data from yfinance is for educational purposes only and may be delayed by 15 minutes or more. Not for actual trading decisions.', 'mcp-ai-wpoos-pro' ); ?>
+				</p>
+			</div>
+
+			<script>
+			jQuery(document).ready(function($) {
+				$('#clear-yfinance-cache').on('click', function() {
+					var button = $(this);
+					var resultDiv = $('#clear-cache-result');
+					
+					button.prop('disabled', true).text('<?php esc_html_e( 'Clearing...', 'mcp-ai-wpoos-pro' ); ?>');
+					resultDiv.html('');
+					
+					$.post(ajaxurl, {
+						action: 'wp_mcp_ai_clear_yfinance_cache',
+						nonce: '<?php echo esc_js( wp_create_nonce( 'wp_mcp_ai_clear_yfinance_cache' ) ); ?>'
+					}, function(response) {
+						button.prop('disabled', false).text('<?php esc_html_e( 'Clear All Cached Prices', 'mcp-ai-wpoos-pro' ); ?>');
+						
+						if (response.success) {
+							resultDiv.html('<span style="color: green;">✓ ' + response.data.message + '</span>');
+						} else {
+							resultDiv.html('<span style="color: red;">✗ ' + response.data.message + '</span>');
+						}
+						
+						setTimeout(function() {
+							resultDiv.fadeOut(function() {
+								$(this).html('').show();
+							});
+						}, 3000);
+					});
+				});
+			});
+			</script>
 		</div>
 		<?php
 	}
@@ -154,6 +281,38 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 		);
 	}
 }
+
+/**
+ * AJAX handler to clear yfinance cache
+ */
+function wp_mcp_ai_ajax_clear_yfinance_cache() {
+	// Check nonce.
+	check_ajax_referer( 'wp_mcp_ai_clear_yfinance_cache', 'nonce' );
+
+	// Check capabilities.
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_send_json_error( array(
+			'message' => __( 'You do not have permission to clear cache.', 'mcp-ai-wpoos-pro' ),
+		) );
+	}
+
+	// Load service class.
+	if ( ! class_exists( 'WP_MCP_AI_YFinance_Service' ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/services/class-wp-mcp-ai-yfinance-service.php';
+	}
+
+	$service = WP_MCP_AI_YFinance_Service::get_instance();
+	$cleared = $service->clear_all_caches();
+
+	wp_send_json_success( array(
+		'message' => sprintf(
+			/* translators: %d: number of caches cleared */
+			__( 'Successfully cleared %d cached prices.', 'mcp-ai-wpoos-pro' ),
+			$cleared
+		),
+	) );
+}
+add_action( 'wp_ajax_wp_mcp_ai_clear_yfinance_cache', 'wp_mcp_ai_ajax_clear_yfinance_cache' );
 
 // Initialize settings page.
 if ( is_admin() ) {
