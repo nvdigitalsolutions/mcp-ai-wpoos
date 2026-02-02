@@ -3,7 +3,7 @@
  * Generic REST Tool for calling arbitrary REST API endpoints.
  *
  * Enables AI assistants to integrate with plugins and services
- * that haven't been explicitly integrated into WP oOS.
+ * that haven't been explicitly integrated into NV oOS.
  *
  * @package WP_MCP_AI_Pro
  */

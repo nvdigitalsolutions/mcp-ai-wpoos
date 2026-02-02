@@ -199,7 +199,7 @@ echo "  - auto: Try free first, fallback to paid (default)\n";
 echo "  - free: Use only free method\n";
 echo "  - paid: Use only paid method\n";
 echo "\nTo configure API key:\n";
-echo "  WP Admin → Settings → WP oOS → Tools → External Tools\n";
+echo "  WP Admin → Settings → NV oOS → Tools → External Tools\n";
 echo "  Add your remove.bg API key from https://www.remove.bg/api\n";
 echo str_repeat( '=', 60 ) . "\n";
 

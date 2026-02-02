@@ -153,7 +153,7 @@ class WP_MCP_AI_Pro_Tool_Get_QuickBooks_Report implements WP_MCP_AI_Tool_Interfa
 		if ( '' === $company_id || '' === $api_key ) {
 			return new WP_Error(
 				'wp_mcp_ai_quickbooks_missing_credentials',
-				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the WP oOS settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
+				__( 'QuickBooks credentials are not configured. Add the company ID and API key in the NV oOS settings or use a Remote Sites connection.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

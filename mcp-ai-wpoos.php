@@ -212,7 +212,7 @@ if ( file_exists( WP_MCP_AI_PATH . 'vendor/autoload.php' ) ) {
 
 if ( ! function_exists( 'wp_mcp_ai_core_loaded' ) ) {
 	/**
-	 * Check if Open Operator System (WP oOS) Core is loaded.
+	 * Check if Open Operator System (NV oOS) Core is loaded.
 	 *
 	 * This function serves as a marker for add-ons (like Open Operator System Pro) to verify that
 	 * the core plugin is active and ready before registering their features.
@@ -802,7 +802,7 @@ if ( is_admin() ) {
 	// Load add assistant page (submenu of AI Assistants CPT - renamed to Create Assistant).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-add-assistant-page.php';
 
-	// Load HuggingFace Datasets admin page (submenu of WP oOS Dashboard).
+	// Load HuggingFace Datasets admin page (submenu of NV oOS Dashboard).
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-datasets-admin-page.php';
 	WP_MCP_AI_Add_Assistant_Page::init();
 

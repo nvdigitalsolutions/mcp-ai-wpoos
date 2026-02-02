@@ -82,7 +82,7 @@ class WP_MCP_AI_Pro_Tool_Update_Option implements WP_MCP_AI_Tool_Interface, WP_M
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_option_updates'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The update_option tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
+				__( 'The update_option tool is disabled. Enable it in NV oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

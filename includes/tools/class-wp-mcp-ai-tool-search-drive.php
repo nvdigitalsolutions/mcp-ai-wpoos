@@ -166,7 +166,7 @@ class WP_MCP_AI_Tool_Search_Drive implements WP_MCP_AI_Tool_Interface, WP_MCP_AI
 		if ( '' === $client_id || '' === $client_secret || '' === $refresh_token ) {
 			return new WP_Error(
 				'wp_mcp_ai_drive_missing_credentials',
-				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the WP oOS settings.', 'mcp-ai-wpoos' )
+				__( 'Google Drive API credentials are not configured. Add the client ID, client secret, and refresh token either in a Google Drive connection (Remote Sites) or in the NV oOS settings.', 'mcp-ai-wpoos' )
 			);
 		}
 

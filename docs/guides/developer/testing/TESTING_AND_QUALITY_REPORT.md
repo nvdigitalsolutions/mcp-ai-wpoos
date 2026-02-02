@@ -447,7 +447,7 @@ public function permissions_check( WP_REST_Request $request ) {
    - Complete feature overview
    - Installation instructions
    - Configuration guide
-   - Tool reference (65+ tools)
+   - Tool reference (519 tools)
    - API documentation
    - Development guide
 
@@ -461,7 +461,7 @@ public function permissions_check( WP_REST_Request $request ) {
    - `docs/rest-api.md` - Complete REST API reference
    - `docs/mcp-endpoint.md` - MCP JSON-RPC 2.0 endpoint
    - `docs/mcp-server-authentication.md` - Auth methods
-   - `docs/tool-reference.md` - All 65+ tools documented
+   - `docs/tool-reference.md` - All 519 tools documented
 
 4. **Setup & Configuration**
    - `docs/mcp-ai-plugin-setup-checklist.md` - Step-by-step setup
