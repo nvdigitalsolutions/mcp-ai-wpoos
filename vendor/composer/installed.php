@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/proposal-enhance-pro-plugin',
+        'version' => 'dev-copilot/proposal-enhance-pro-plugin',
+        'reference' => '1d6cd4e2a33422397363aa043f798d61ca077248',
         'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script',
         'version' => 'dev-copilot/rebuild-all-zips-with-script',
         'reference' => '47ff3b92176eced88d1d60acd318b689dc20ff97',
@@ -47,6 +50,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/proposal-enhance-pro-plugin',
+            'version' => 'dev-copilot/proposal-enhance-pro-plugin',
+            'reference' => '1d6cd4e2a33422397363aa043f798d61ca077248',
             'pretty_version' => 'dev-copilot/rebuild-all-zips-with-script',
             'version' => 'dev-copilot/rebuild-all-zips-with-script',
             'reference' => '47ff3b92176eced88d1d60acd318b689dc20ff97',
