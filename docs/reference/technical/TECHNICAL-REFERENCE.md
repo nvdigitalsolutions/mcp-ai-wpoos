@@ -1651,7 +1651,7 @@ WP Admin → NV oOS → Orchestration Dashboard
 - WordPress core only
 
 **Full Version:**
-- 65+ tools
+- 519 tools (165 base + 348 pro + 6 core/memory)
 - JetEngine integration
 - WooCommerce tools
 - Elementor widgets

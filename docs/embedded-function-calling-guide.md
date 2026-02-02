@@ -408,7 +408,7 @@ if (result.tool_calls) {
 
 ### Available WordPress Tools
 
-The plugin provides 65+ tools including:
+The plugin provides 519 tools (165 base + 348 pro + 6 core/memory) including:
 
 - **Content Management**: `create_post`, `update_post`, `delete_post`
 - **User Management**: `create_user`, `update_user`

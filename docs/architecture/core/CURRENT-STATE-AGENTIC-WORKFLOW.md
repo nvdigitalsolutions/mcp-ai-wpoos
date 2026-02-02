@@ -121,7 +121,7 @@ Open Operator System (NV oOS) implements a sophisticated **agentic workflow** wh
 │                              ↓                                   │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │  Tool Registry                                              │ │
-│  │  - 65+ built-in tools                                       │ │
+│  │  - 519 built-in tools (165 base + 348 pro + 6 core/memory) │ │
 │  │  - Tool discovery                                           │ │
 │  │  - Capability checking                                      │ │
 │  │  - Execution orchestration                                  │ │
@@ -854,7 +854,7 @@ The loop has a maximum iteration limit to prevent:
 
 ### Tool Registry
 
-The **Tool Registry** manages all 65+ built-in tools and any custom tools.
+The **Tool Registry** manages all 519 built-in tools (165 base + 348 pro + 6 core/memory) and any custom tools.
 
 #### Tool Structure
 
@@ -1016,7 +1016,7 @@ class WP_MCP_AI_Tool_Get_Recent_Posts implements WP_MCP_AI_Tool_Interface {
 
 ### Tool Categories
 
-**65+ built-in tools** organized by category:
+**519 built-in tools** (165 base + 348 pro + 6 core/memory) organized by category:
 
 | Category | Count | Examples |
 |----------|-------|----------|
@@ -1804,7 +1804,7 @@ Iteration 3:
 ## Related Documentation
 
 - **[agentic-workflow-architecture.md](agentic-workflow-architecture.md)** - Detailed architecture
-- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All 65+ tools documented
+- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All 519 tools documented
 - **[rest-api.md](../../reference/api/rest-api.md)** - REST API reference
 - **[ORCHESTRATION-LAYER-ARCHITECTURE.md](../orchestration/ORCHESTRATION-LAYER-ARCHITECTURE.md)** - Orchestration details
 - **[BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage best practices

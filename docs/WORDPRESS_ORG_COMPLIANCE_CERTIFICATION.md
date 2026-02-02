@@ -1269,7 +1269,7 @@ echo wp_json_encode( $data );
 
 4. **Tool Functionality Check**
    - Verifies tool registry initialization
-   - Counts available tools (65+ tools)
+   - Counts available tools (519 tools: 165 base + 348 pro + 6 core/memory)
    - Checks tool loading status
    - Status: Good (tools loaded) / Critical (registry failed)
 

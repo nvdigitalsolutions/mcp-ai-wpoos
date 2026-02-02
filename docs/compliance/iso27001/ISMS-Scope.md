@@ -26,7 +26,7 @@ This document defines the scope and boundaries of the Information Security Manag
 The NV oOS plugin provides:
 - Multi-provider AI integration (OpenAI GPT, Google Gemini, Ollama)
 - Model Context Protocol (MCP) tool execution framework
-- 65+ built-in tools for WordPress operations
+- 519 built-in tools (165 base + 348 pro + 6 core/memory) for WordPress operations
 - Custom assistant creation and management
 - Chat interface for end-users
 - Integration with WordPress, WooCommerce, JetEngine, Elementor
@@ -37,7 +37,7 @@ The NV oOS plugin provides:
 
 #### 3.1.1 Products and Services
 - **Core Plugin:** Base WordPress plugin with 35 core tools
-- **Full Version:** Complete plugin with 65+ tools and integrations
+- **Full Version:** Complete plugin with 519 tools (165 base + 348 pro + 6 core/memory) and integrations
 - **Documentation:** All technical and user documentation
 - **Support Services:** Plugin support and maintenance
 

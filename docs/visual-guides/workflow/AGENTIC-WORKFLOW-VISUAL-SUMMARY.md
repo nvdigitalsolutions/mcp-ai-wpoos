@@ -158,7 +158,7 @@
 │                        │  │  • OpenAI / Gemini / Ollama│  │ │
 │                        │  └────────────────────────────┘  │ │
 │                        │  ┌────────────────────────────┐  │ │
-│                        │  │  Tool Registry (65+ tools) │  │ │
+│                        │  │  Tool Registry (519 tools) │  │ │
 │                        │  │  • Capability checking     │  │ │
 │                        │  │  • Execution & caching     │  │ │
 │                        │  └────────────────────────────┘  │ │
@@ -322,7 +322,7 @@ Tool Call Received
 
 - **[CURRENT-STATE-AGENTIC-WORKFLOW.md](../../architecture/core/CURRENT-STATE-AGENTIC-WORKFLOW.md)** - Complete detailed guide
 - **[agentic-workflow-architecture.md](../../architecture/core/agentic-workflow-architecture.md)** - Technical architecture
-- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All 65+ tools catalog
+- **[tool-reference.md](../../reference/tools/tool-reference.md)** - All 519 tools catalog
 - **[rest-api.md](../../reference/api/rest-api.md)** - REST API documentation
 - **[BEST_PRACTICES.md](../../guides/developer/best-practices/BEST_PRACTICES.md)** - Usage best practices
 
