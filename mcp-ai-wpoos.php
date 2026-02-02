@@ -585,9 +585,6 @@ require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
-// Fantasy Football module initialization.
-require_once WP_MCP_AI_PATH . 'includes/fantasy-football/fantasy-football-init.php';
-
 // Load project management initialization moved to Pro addon.
 // require_once WP_MCP_AI_PATH . 'includes/project-management-init.php';.
 

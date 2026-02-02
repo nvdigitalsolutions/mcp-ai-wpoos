@@ -579,18 +579,9 @@ if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
 				'huggingface_dataset_is_valid'       => 'external-tools',
 				'huggingface_dataset_filter'         => 'external-tools',
 				'huggingface_recommended_datasets'   => 'external-tools',
-				// Yahoo Fantasy Football Toolkit.
-				'yahoo_ff_auth'                      => 'external-tools',
-				'yahoo_ff_get_leagues'               => 'external-tools',
-				'yahoo_ff_get_roster'                => 'external-tools',
-				'yahoo_ff_get_player_stats'          => 'external-tools',
-				'yahoo_ff_trade_analyzer'            => 'external-tools',
-				'yahoo_ff_league_standings'          => 'external-tools',
-				'ff_generate_team_logo'              => 'external-tools',
-				'ff_create_league_report'            => 'external-tools',
-				'ff_player_research'                 => 'external-tools',
 			);
 
+			// Fantasy Football tool mappings are now handled by the Pro addon.
 			// Quiz tool mappings are now handled by the Pro addon.
 
 			/**
