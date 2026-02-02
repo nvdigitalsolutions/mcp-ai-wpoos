@@ -882,9 +882,9 @@ Status labels are displayed as **3-letter abbreviations** (e.g., "STA" for stabl
 
 **Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
 
-Status labels are managed via the [`tool-status.txt`](tool-status.txt) file in the repository root. To assign a status label to a tool:
+Status labels are managed via the [`tool-status.txt`](docs/tool-status.txt) file in the repository. To assign a status label to a tool:
 
-1. Open `tool-status.txt` in a text editor
+1. Open `docs/tool-status.txt` in a text editor
 2. Add a line in the format: `tool_slug = status_label`
 3. Save the file - changes appear immediately in the Tools Manager
 

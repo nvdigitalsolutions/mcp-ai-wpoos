@@ -1051,7 +1051,7 @@ Essential files only (reduced from 30 to 5 files):
 4. SECURITY.md - Security policy
 5. BUILD.md - Build instructions
 
-**Note:** Previously had readme.txt and tool-status.txt in root, but core MD files are the essentials.
+**Note:** readme.txt is in root for WordPress.org, and tool-status.txt has been moved to docs/ for better organization.
 
 ### Categories
 - **Setup & Installation:** 4 documents
