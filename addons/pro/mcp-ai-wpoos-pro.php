@@ -275,6 +275,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+		// Load Fantasy Football toolkit if enabled.
+		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football-toolkit-init.php';
+		}
+
 		// Load Media Toolkit if enabled (Pro feature).
 		require_once WP_MCP_AI_PRO_PATH . 'includes/media-toolkit-init.php';
 
