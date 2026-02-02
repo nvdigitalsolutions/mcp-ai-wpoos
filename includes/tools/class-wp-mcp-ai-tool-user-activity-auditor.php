@@ -342,6 +342,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 				);
 			}
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 			$results = $wpdb->get_results( $query );
 
 			foreach ( $results as $row ) {
@@ -383,6 +384,7 @@ class WP_MCP_AI_Tool_User_Activity_Auditor implements WP_MCP_AI_Tool_Interface, 
 				);
 			}
 
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 			$results = $wpdb->get_results( $query );
 
 			foreach ( $results as $user ) {

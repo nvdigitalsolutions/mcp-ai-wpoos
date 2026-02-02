@@ -536,16 +536,16 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$merged_settings = array_merge( $existing_settings, $sanitized_new );
 
 				// CRITICAL: Always log federation checkbox merge for debugging.
-				$fed_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
-				$has_fed = false;
+				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$has_fed      = false;
 				$before_merge = array();
-				$after_merge = array();
+				$after_merge  = array();
 				foreach ( $fed_keys as $key ) {
 					if ( isset( $existing_settings[ $key ] ) || isset( $sanitized_new[ $key ] ) || isset( $merged_settings[ $key ] ) ) {
-						$has_fed = true;
-						$before_merge[ $key ] = isset( $existing_settings[ $key ] ) ? var_export( $existing_settings[ $key ], true ) : 'NOT_SET';
+						$has_fed                = true;
+						$before_merge[ $key ]   = isset( $existing_settings[ $key ] ) ? var_export( $existing_settings[ $key ], true ) : 'NOT_SET';
 						$from_sanitized[ $key ] = isset( $sanitized_new[ $key ] ) ? var_export( $sanitized_new[ $key ], true ) : 'NOT_SET';
-						$after_merge[ $key ] = isset( $merged_settings[ $key ] ) ? var_export( $merged_settings[ $key ], true ) : 'NOT_SET';
+						$after_merge[ $key ]    = isset( $merged_settings[ $key ] ) ? var_export( $merged_settings[ $key ], true ) : 'NOT_SET';
 					}
 				}
 				if ( $has_fed ) {
@@ -558,7 +558,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 						)
 					);
 				}
-
 
 				// ========================================================================
 				// STEP 5a: Auto-generate mesh API key if needed
@@ -622,12 +621,12 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					$update_result = update_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, $merged_settings, true );
 
 					// CRITICAL: Always log federation checkbox save result for debugging.
-					$fed_keys = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
-					$has_fed = false;
+					$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+					$has_fed      = false;
 					$saved_values = array();
 					foreach ( $fed_keys as $key ) {
 						if ( isset( $merged_settings[ $key ] ) ) {
-							$has_fed = true;
+							$has_fed              = true;
 							$saved_values[ $key ] = var_export( $merged_settings[ $key ], true );
 						}
 					}
@@ -640,7 +639,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 							)
 						);
 						// Immediately read back from database to verify.
-						$verified = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+						$verified        = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 						$verified_values = array();
 						foreach ( $fed_keys as $key ) {
 							if ( isset( $verified[ $key ] ) ) {
@@ -654,7 +653,6 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 							)
 						);
 					}
-
 
 					if ( $enable_logging ) {
 						error_log(

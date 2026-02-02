@@ -142,9 +142,10 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 		$where_values[] = $offset;
 
 		if ( ! empty( $where_values ) ) {
-			$query = $wpdb->prepare( $query, $where_values );
+			$query = $wpdb->prepare( $query, $where_values ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		}
 
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$emails = $wpdb->get_results( $query );
 
 		// Get total count.
@@ -152,16 +153,18 @@ class WP_MCP_AI_Tool_Newsletter_Get_Emails implements WP_MCP_AI_Tool_Interface, 
 		if ( count( $where_values ) > 2 ) {
 			$count_where_values = array_slice( $where_values, 0, -2 );
 			if ( ! empty( $count_where_values ) ) {
-				$count_query = $wpdb->prepare( $count_query, $count_where_values );
+				$count_query = $wpdb->prepare( $count_query, $count_where_values ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 			}
 		}
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$total = (int) $wpdb->get_var( $count_query );
 
 		// Format emails.
 		$results = array();
 		foreach ( $emails as $email ) {
 			$stats_table = $wpdb->prefix . 'newsletter_stats';
-			$sent_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
+			$sent_count  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats_table} WHERE email_id = %d", $email->id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			$results[] = array(
 				'id'         => (int) $email->id,

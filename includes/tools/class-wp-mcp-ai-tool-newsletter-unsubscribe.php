@@ -110,13 +110,15 @@ class WP_MCP_AI_Tool_Newsletter_Unsubscribe implements WP_MCP_AI_Tool_Interface,
 		$subscriber = null;
 		if ( ! empty( $arguments['subscriber_id'] ) ) {
 			$subscriber_id = absint( $arguments['subscriber_id'] );
-			$subscriber    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+			$subscriber    = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $subscriber_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		} elseif ( ! empty( $arguments['email'] ) ) {
 			$email = sanitize_email( $arguments['email'] );
 			if ( ! is_email( $email ) ) {
 				return new WP_Error( 'wp_mcp_ai_invalid_email', __( 'Invalid email address.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 			}
-			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Table or query variable should not be parameterized
+			$subscriber = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE email = %s", $email ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		} else {
 			return new WP_Error( 'wp_mcp_ai_missing_identifier', __( 'Either email or subscriber_id is required.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
 		}

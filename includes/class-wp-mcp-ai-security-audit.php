@@ -517,15 +517,16 @@ class WP_MCP_AI_Security_Audit {
 
 		// Save findings.
 		if ( isset( $_POST['wp_mcp_ai_findings'] ) && is_array( $_POST['wp_mcp_ai_findings'] ) ) {
-			$findings = array();
-			foreach ( $_POST['wp_mcp_ai_findings'] as $finding ) {
+			$findings        = array();
+			$findings_input  = wp_unslash( $_POST['wp_mcp_ai_findings'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized in loop below.
+			foreach ( $findings_input as $finding ) {
 				$findings[] = array(
-					'control'        => isset( $finding['control'] ) ? sanitize_text_field( wp_unslash( $finding['control'] ) ) : '',
-					'severity'       => isset( $finding['severity'] ) ? sanitize_text_field( wp_unslash( $finding['severity'] ) ) : '',
-					'status'         => isset( $finding['status'] ) ? sanitize_text_field( wp_unslash( $finding['status'] ) ) : '',
-					'description'    => isset( $finding['description'] ) ? sanitize_textarea_field( wp_unslash( $finding['description'] ) ) : '',
-					'recommendation' => isset( $finding['recommendation'] ) ? sanitize_textarea_field( wp_unslash( $finding['recommendation'] ) ) : '',
-					'due_date'       => isset( $finding['due_date'] ) ? sanitize_text_field( wp_unslash( $finding['due_date'] ) ) : '',
+					'control'        => isset( $finding['control'] ) ? sanitize_text_field( $finding['control'] ) : '',
+					'severity'       => isset( $finding['severity'] ) ? sanitize_text_field( $finding['severity'] ) : '',
+					'status'         => isset( $finding['status'] ) ? sanitize_text_field( $finding['status'] ) : '',
+					'description'    => isset( $finding['description'] ) ? sanitize_textarea_field( $finding['description'] ) : '',
+					'recommendation' => isset( $finding['recommendation'] ) ? sanitize_textarea_field( $finding['recommendation'] ) : '',
+					'due_date'       => isset( $finding['due_date'] ) ? sanitize_text_field( $finding['due_date'] ) : '',
 				);
 			}
 			update_post_meta( $post_id, '_wp_mcp_ai_audit_findings', $findings );

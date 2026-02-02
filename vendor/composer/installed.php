@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/wpcs-review-of-plugin',
+        'version' => 'dev-copilot/wpcs-review-of-plugin',
+        'reference' => '3ac798d9462e754e97b3911166681d8d925b236e',
         'pretty_version' => 'dev-copilot/fix-architect-agent-seeding',
         'version' => 'dev-copilot/fix-architect-agent-seeding',
         'reference' => '639816065826dedc33c96dd7d2c2509f956ef400',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/wpcs-review-of-plugin',
+            'version' => 'dev-copilot/wpcs-review-of-plugin',
+            'reference' => '3ac798d9462e754e97b3911166681d8d925b236e',
             'pretty_version' => 'dev-copilot/fix-architect-agent-seeding',
             'version' => 'dev-copilot/fix-architect-agent-seeding',
             'reference' => '639816065826dedc33c96dd7d2c2509f956ef400',

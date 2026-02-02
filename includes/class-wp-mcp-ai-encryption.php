@@ -175,7 +175,7 @@ if ( ! class_exists( 'WP_MCP_AI_Encryption' ) ) {
 				self::ENCRYPTED_SECRET_META_KEY
 			);
 
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared
 			$results = $wpdb->get_results( $query );
 
 			if ( empty( $results ) ) {
