@@ -573,7 +573,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 		// Configure Anthropic settings.
 		$settings                      = get_option( 'wp_mcp_ai_settings', array() );
 		$settings['anthropic_api_key'] = 'test_anthropic_api_key';
-		$settings['anthropic_model']   = 'claude-sonnet-4.5';
+		$settings['anthropic_model']   = 'claude-sonnet-4-5-20250929';
 		update_option( 'wp_mcp_ai_settings', $settings );
 
 		$_POST['nonce']    = wp_create_nonce( 'wp-mcp-ai-professional-selector' );
@@ -598,7 +598,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 			$this->assertNotEmpty( $response['data']['models'], 'Anthropic should return models when API key is configured' );
 			// Verify some expected Claude models are present.
 			$model_ids = array_keys( $response['data']['models'] );
-			$this->assertContains( 'claude-sonnet-4.5', $model_ids, 'Should include Claude Sonnet 4.5' );
+			$this->assertContains( 'claude-sonnet-4-5-20250929', $model_ids, 'Should include Claude Sonnet 4.5' );
 		}
 	}
 
@@ -639,7 +639,7 @@ class Test_Professional_Selector_Model_Loading extends WP_Ajax_UnitTestCase {
 
 		// Verify some expected Claude models are present.
 		$model_ids = array_keys( $response['data']['models'] );
-		$this->assertContains( 'claude-sonnet-4.5', $model_ids, 'Should include Claude Sonnet 4.5' );
-		$this->assertContains( 'claude-opus-4.1', $model_ids, 'Should include Claude Opus 4.1' );
+		$this->assertContains( 'claude-sonnet-4-5-20250929', $model_ids, 'Should include Claude Sonnet 4.5' );
+		$this->assertContains( 'claude-opus-4-1-20250805', $model_ids, 'Should include Claude Opus 4.1' );
 	}
 }

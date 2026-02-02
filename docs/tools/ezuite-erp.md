@@ -112,6 +112,8 @@ Executes an EZuite ERP API action to query or modify data.
 
 ## Supported API Actions
 
+**Note**: API action names are **case-insensitive**. You can use `lx_itempull`, `LX_ItemPull`, or any other casing variation. The tool will automatically normalize the action name to the correct format for the EZuite API.
+
 ### LX_ItemPull
 
 Retrieves items from the ERP system inventory.
@@ -137,6 +139,7 @@ Pull all items from the ERP system using connection conn_abc123
 
 **Important Notes**:
 - `api_body` is required for all API actions
+- API action names are case-insensitive (e.g., `lx_itempull` works the same as `LX_ItemPull`)
 - Using `Location_Code: "ALL"` may return large datasets - use specific location codes when possible
 - For production use, consider filtering by specific locations to improve performance
 

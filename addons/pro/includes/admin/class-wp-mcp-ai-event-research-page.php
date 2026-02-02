@@ -593,9 +593,9 @@ class WP_MCP_AI_Event_Research_Page {
 	 */
 	protected static function render_review_workflow() {
 		// Get event statistics.
-		$total_events = wp_count_posts( 'mcp_ai_event' );
+		$total_events    = wp_count_posts( 'mcp_ai_event' );
 		$published_count = isset( $total_events->publish ) ? $total_events->publish : 0;
-		
+
 		// Calculate data quality metrics.
 		$events = get_posts(
 			array(
@@ -606,28 +606,28 @@ class WP_MCP_AI_Event_Research_Page {
 		);
 
 		$complete_count = 0;
-		$with_dates = 0;
-		$with_location = 0;
+		$with_dates     = 0;
+		$with_location  = 0;
 
 		foreach ( $events as $event ) {
 			$start_date = get_post_meta( $event->ID, 'start_date', true );
 			$end_date   = get_post_meta( $event->ID, 'end_date', true );
 			$location   = get_post_meta( $event->ID, 'location', true );
 			$has_desc   = ! empty( $event->post_content );
-			
+
 			if ( ! empty( $start_date ) && ! empty( $end_date ) ) {
-				$with_dates++;
+				++$with_dates;
 			}
 			if ( ! empty( $location ) ) {
-				$with_location++;
+				++$with_location;
 			}
 			if ( ! empty( $start_date ) && ! empty( $location ) && $has_desc ) {
-				$complete_count++;
+				++$complete_count;
 			}
 		}
 
 		$completeness = $published_count > 0 ? round( ( $complete_count / $published_count ) * 100 ) : 0;
-		
+
 		?>
 		<div class="wp-mcp-ai-consolidate-section">
 			<h2><?php esc_html_e( 'Event Quality Dashboard', 'mcp-ai-wpoos-pro' ); ?></h2>

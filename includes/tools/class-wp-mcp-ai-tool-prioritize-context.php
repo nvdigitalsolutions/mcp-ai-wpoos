@@ -100,16 +100,16 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 					'type'        => 'object',
 					'description' => __( 'Current task description for relevance scoring', 'mcp-ai-wpoos' ),
 					'properties'  => array(
-						'query'       => array(
+						'query'    => array(
 							'type'        => 'string',
 							'description' => __( 'Task query or description', 'mcp-ai-wpoos' ),
 						),
-						'keywords'    => array(
+						'keywords' => array(
 							'type'        => 'array',
 							'description' => __( 'Important keywords for matching', 'mcp-ai-wpoos' ),
 							'items'       => array( 'type' => 'string' ),
 						),
-						'type'        => array(
+						'type'     => array(
 							'type'        => 'string',
 							'description' => __( 'Task type (research, analysis, creation, etc.)', 'mcp-ai-wpoos' ),
 						),
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 				continue; // Skip invalid items.
 			}
 
-			$score = $this->calculate_context_score( $item, $current_task, $weights );
+			$score  = $this->calculate_context_score( $item, $current_task, $weights );
 			$tokens = $this->estimate_tokens( $item['content'] );
 
 			$scored_items[] = array(
@@ -202,9 +202,12 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		// Sort by score (highest first).
-		usort( $scored_items, function( $a, $b ) {
-			return $b['score'] <=> $a['score'];
-		});
+		usort(
+			$scored_items,
+			function ( $a, $b ) {
+				return $b['score'] <=> $a['score'];
+			}
+		);
 
 		// Select items within token budget.
 		$selected_items = array();
@@ -339,14 +342,14 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 			return 0.5; // Neutral if no task provided.
 		}
 
-		$score = 0.0;
-		$title = isset( $item['title'] ) ? strtolower( $item['title'] ) : '';
+		$score   = 0.0;
+		$title   = isset( $item['title'] ) ? strtolower( $item['title'] ) : '';
 		$content = isset( $item['content'] ) ? strtolower( $item['content'] ) : '';
-		$tags = isset( $item['tags'] ) ? array_map( 'strtolower', $item['tags'] ) : array();
+		$tags    = isset( $item['tags'] ) ? array_map( 'strtolower', $item['tags'] ) : array();
 
 		// Match against query.
 		if ( isset( $current_task['query'] ) ) {
-			$query = strtolower( $current_task['query'] );
+			$query       = strtolower( $current_task['query'] );
 			$query_words = explode( ' ', $query );
 
 			// Title matches (high weight).
@@ -422,7 +425,7 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 		}
 
 		$age_seconds = time() - $stored_timestamp;
-		$age_days = $age_seconds / 86400;
+		$age_days    = $age_seconds / 86400;
 
 		// Exponential decay: newer = higher score.
 		// Perfect score for items < 1 day old.
@@ -459,17 +462,11 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -487,7 +484,6 @@ class WP_MCP_AI_Tool_Prioritize_Context implements WP_MCP_AI_Tool_Interface, WP_
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

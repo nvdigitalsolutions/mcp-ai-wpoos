@@ -44,23 +44,23 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'date_range'      => array(
+				'date_range'       => array(
 					'type'        => 'string',
 					'description' => __( 'Date range for analysis (optional, default: "last_year")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'last_month', 'last_quarter', 'last_year', 'custom' ),
 					'default'     => 'last_year',
 				),
-				'start_date'      => array(
+				'start_date'       => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for custom range (format: YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'        => array(
+				'end_date'         => array(
 					'type'        => 'string',
 					'description' => __( 'End date for custom range (format: YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'grouping'        => array(
+				'grouping'         => array(
 					'type'        => 'string',
 					'description' => __( 'Group costs by (optional, default: "country")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'country', 'product', 'type', 'month' ),
@@ -148,7 +148,7 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 
 		$registrations_query = new WP_Query( $query_args );
 
-		$cost_data = array();
+		$cost_data   = array();
 		$total_costs = 0;
 
 		if ( $registrations_query->have_posts() ) {
@@ -165,19 +165,25 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 				$group_key = '';
 				switch ( $grouping ) {
 					case 'country':
-						$group_key = get_post_meta( $post->ID, 'country', true ) ?: 'Unknown';
+						$group_key = get_post_meta( $post->ID, 'country', true );
+						if ( ! $group_key ) {
+							$group_key = 'Unknown';
+						}
 						break;
 					case 'product':
 						$product_id = get_post_meta( $post->ID, 'product_id', true );
 						if ( $product_id ) {
-							$product = get_post( $product_id );
+							$product   = get_post( $product_id );
 							$group_key = $product ? $product->post_title : 'Unknown';
 						} else {
 							$group_key = 'Unknown';
 						}
 						break;
 					case 'type':
-						$group_key = get_post_meta( $post->ID, 'registration_type', true ) ?: 'Unknown';
+						$group_key = get_post_meta( $post->ID, 'registration_type', true );
+						if ( ! $group_key ) {
+							$group_key = 'Unknown';
+						}
 						break;
 					case 'month':
 						$group_key = gmdate( 'Y-m', strtotime( $post->post_date ) );
@@ -194,7 +200,7 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 					);
 				}
 
-				$cost_data[ $group_key ]['count']++;
+				++$cost_data[ $group_key ]['count'];
 				$cost_data[ $group_key ]['registration_fees'] += $registration_fee;
 				$cost_data[ $group_key ]['renewal_fees']      += $renewal_fee;
 				$cost_data[ $group_key ]['additional_fees']   += $additional_fees;
@@ -227,7 +233,7 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 
 			$forecast_total = 0;
 			foreach ( $forecast_query->posts as $post ) {
-				$renewal_fee = (float) get_post_meta( $post->ID, '_renewal_fee', true );
+				$renewal_fee     = (float) get_post_meta( $post->ID, '_renewal_fee', true );
 				$forecast_total += $renewal_fee;
 
 				$expiry_month = gmdate( 'Y-m', strtotime( get_post_meta( $post->ID, 'expiry_date', true ) ) );
@@ -244,19 +250,19 @@ class WP_MCP_AI_Tool_Generate_Cost_Analysis implements WP_MCP_AI_Tool_Interface,
 		$avg_cost_per_registration = $registrations_query->found_posts > 0 ? round( $total_costs / $registrations_query->found_posts, 2 ) : 0;
 
 		return array(
-			'success'                   => true,
-			'report_type'               => 'cost_analysis',
-			'generated_at'              => current_time( 'mysql' ),
-			'date_range'                => $date_range,
-			'grouping'                  => $grouping,
-			'summary'                   => array(
-				'total_registrations'   => $registrations_query->found_posts,
-				'total_costs'           => round( $total_costs, 2 ),
+			'success'                 => true,
+			'report_type'             => 'cost_analysis',
+			'generated_at'            => current_time( 'mysql' ),
+			'date_range'              => $date_range,
+			'grouping'                => $grouping,
+			'summary'                 => array(
+				'total_registrations'       => $registrations_query->found_posts,
+				'total_costs'               => round( $total_costs, 2 ),
 				'avg_cost_per_registration' => $avg_cost_per_registration,
 			),
-			'cost_breakdown'            => $cost_data,
-			'forecast'                  => $forecast,
-			'forecast_total_next_12m'   => isset( $forecast_total ) ? round( $forecast_total, 2 ) : 0,
+			'cost_breakdown'          => $cost_data,
+			'forecast'                => $forecast,
+			'forecast_total_next_12m' => isset( $forecast_total ) ? round( $forecast_total, 2 ) : 0,
 		);
 	}
 }

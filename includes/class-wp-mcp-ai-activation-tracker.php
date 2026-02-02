@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class WP_MCP_AI_Activation_Tracker
  *
  * Handles plugin activation tracking in a privacy-first manner.
- * 
+ *
  * Privacy Features:
  * - Opt-out available via filter hook and settings
  * - No personally identifiable information collected
@@ -70,14 +70,14 @@ class WP_MCP_AI_Activation_Tracker {
 
 		// Prepare tracking data (all non-identifying).
 		$tracking_data = array(
-			'plugin_variant'     => sanitize_text_field( $plugin_variant ),
-			'plugin_version'     => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
-			'wordpress_version'  => get_bloginfo( 'version' ),
-			'php_version'        => PHP_VERSION,
-			'locale'             => get_locale(),
-			'multisite'          => is_multisite(),
-			'site_hash'          => self::get_site_hash(),
-			'timestamp'          => time(),
+			'plugin_variant'    => sanitize_text_field( $plugin_variant ),
+			'plugin_version'    => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+			'wordpress_version' => get_bloginfo( 'version' ),
+			'php_version'       => PHP_VERSION,
+			'locale'            => get_locale(),
+			'multisite'         => is_multisite(),
+			'site_hash'         => self::get_site_hash(),
+			'timestamp'         => time(),
 		);
 
 		// Add Pro version if available.
@@ -114,10 +114,10 @@ class WP_MCP_AI_Activation_Tracker {
 	 */
 	private static function get_site_hash() {
 		$site_url = get_site_url();
-		
+
 		// Use WordPress salts for additional security.
 		$salt = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'wp_mcp_ai_default_salt';
-		
+
 		// Generate a non-reversible hash.
 		return hash_hmac( 'sha256', $site_url, $salt );
 	}
@@ -129,7 +129,7 @@ class WP_MCP_AI_Activation_Tracker {
 	 */
 	private static function is_local_environment() {
 		$site_url = get_site_url();
-		
+
 		// Check for common local development URLs.
 		$local_hosts = array(
 			'localhost',
@@ -218,13 +218,13 @@ class WP_MCP_AI_Activation_Tracker {
 
 		// Prepare tracking data.
 		$tracking_data = array(
-			'event'              => 'deactivation',
-			'plugin_variant'     => sanitize_text_field( $plugin_variant ),
-			'plugin_version'     => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
-			'wordpress_version'  => get_bloginfo( 'version' ),
-			'php_version'        => PHP_VERSION,
-			'site_hash'          => self::get_site_hash(),
-			'timestamp'          => time(),
+			'event'             => 'deactivation',
+			'plugin_variant'    => sanitize_text_field( $plugin_variant ),
+			'plugin_version'    => defined( 'WP_MCP_AI_VERSION' ) ? WP_MCP_AI_VERSION : 'unknown',
+			'wordpress_version' => get_bloginfo( 'version' ),
+			'php_version'       => PHP_VERSION,
+			'site_hash'         => self::get_site_hash(),
+			'timestamp'         => time(),
 		);
 
 		/**

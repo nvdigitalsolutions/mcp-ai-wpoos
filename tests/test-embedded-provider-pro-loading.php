@@ -35,7 +35,7 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
 		$status = WP_MCP_AI_WebWorker_Enqueue::get_feature_status();
-		
+
 		$this->assertArrayHasKey( 'embedded_provider_enabled', $status, 'Status should include embedded_provider_enabled' );
 		$this->assertTrue( $status['embedded_provider_enabled'], 'Embedded provider should be enabled in Pro version' );
 	}
@@ -48,7 +48,7 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		$this->assertFalse( WP_MCP_AI_BASE_VERSION, 'Test expects Pro version' );
 
 		$status = WP_MCP_AI_LangChain_Enqueue::get_feature_status();
-		
+
 		$this->assertArrayHasKey( 'embedded_provider_enabled', $status, 'Status should include embedded_provider_enabled' );
 		$this->assertTrue( $status['embedded_provider_enabled'], 'Embedded provider should be enabled in Pro version' );
 	}
@@ -90,7 +90,7 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		// Check it's marked as auto-enabled.
 		$this->assertTrue( $fields['enable_embedded']['default'], 'Should default to true (auto-enabled)' );
 		$this->assertTrue( $fields['enable_embedded']['disabled'], 'Should be disabled (read-only)' );
-		
+
 		// Check label indicates auto-enablement.
 		$this->assertStringContainsString(
 			'Auto-enabled',
@@ -115,9 +115,9 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 		$this->assertTrue( $status['embedded_provider_enabled'], 'Step 2: Feature should be enabled' );
 
 		// Step 3: Subtab is visible.
-		$section = new WP_MCP_AI_Section_Providers();
+		$section    = new WP_MCP_AI_Section_Providers();
 		$reflection = new ReflectionClass( $section );
-		$method = $reflection->getMethod( 'get_subtab_groups' );
+		$method     = $reflection->getMethod( 'get_subtab_groups' );
 		$method->setAccessible( true );
 		$subtabs = $method->invoke( $section );
 		$this->assertArrayHasKey( 'embedded', $subtabs, 'Step 3: Subtab should be visible' );
@@ -136,7 +136,7 @@ class WP_MCP_AI_Embedded_Provider_Auto_Enable_Test extends WP_UnitTestCase {
 
 		// No settings need to be saved.
 		$settings = get_option( 'wp_mcp_ai_settings', array() );
-		
+
 		// Even if enable_embedded is not set, Pro detection should work.
 		$is_pro = defined( 'WP_MCP_AI_PRO_VERSION' ) || ( ! defined( 'WP_MCP_AI_BASE_VERSION' ) || ! WP_MCP_AI_BASE_VERSION );
 		$this->assertTrue( $is_pro, 'Pro should be detected without any settings' );

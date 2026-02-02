@@ -141,7 +141,7 @@ class WP_MCP_AI_Pro_License {
 
 		check_admin_referer( 'wp_mcp_ai_license_activation', 'wp_mcp_ai_license_nonce' );
 
-		$license_key = sanitize_text_field( $_POST['wp_mcp_ai_license_key'] ?? '' );
+		$license_key = isset( $_POST['wp_mcp_ai_license_key'] ) ? sanitize_text_field( wp_unslash( $_POST['wp_mcp_ai_license_key'] ) ) : '';
 
 		if ( empty( $license_key ) ) {
 			add_settings_error(

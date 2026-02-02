@@ -62,7 +62,10 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 				'recipients'      => array(
 					'type'        => 'array',
 					'description' => __( 'Email addresses to notify (optional, uses configured recipients if not provided)', 'mcp-ai-wpoos-pro' ),
-					'items'       => array( 'type' => 'string', 'format' => 'email' ),
+					'items'       => array(
+						'type'   => 'string',
+						'format' => 'email',
+					),
 				),
 				'notes'           => array(
 					'type'        => 'string',
@@ -155,7 +158,7 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 			$registration->post_title
 		);
 
-		$message  = sprintf(
+		$message = sprintf(
 			/* translators: %s: registration title */
 			__( 'The status of registration "%s" has changed:', 'mcp-ai-wpoos-pro' ),
 			$registration->post_title
@@ -184,7 +187,7 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 		$emails_sent = 0;
 		foreach ( $recipients as $recipient ) {
 			if ( wp_mail( $recipient, $subject, $message ) ) {
-				$emails_sent++;
+				++$emails_sent;
 			}
 		}
 
@@ -199,7 +202,7 @@ class WP_MCP_AI_Tool_Send_Status_Change_Notification implements WP_MCP_AI_Tool_I
 			'recipients'      => $recipients,
 		);
 
-		$notification_history = get_option( 'wp_mcp_ai_notification_history', array() );
+		$notification_history   = get_option( 'wp_mcp_ai_notification_history', array() );
 		$notification_history[] = $notification_log;
 		update_option( 'wp_mcp_ai_notification_history', array_slice( $notification_history, -100 ) );
 

@@ -87,7 +87,7 @@ class WP_MCP_AI_Pro_Tool_Install_And_Activate_Plugin implements WP_MCP_AI_Tool_I
 		if ( empty( $settings['enable_site_creator'] ) || empty( $settings['site_creator_allow_plugin_install'] ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_feature_disabled',
-				__( 'The install_and_activate_plugin tool is disabled. Enable it in WP oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
+				__( 'The install_and_activate_plugin tool is disabled. Enable it in NV oOS → Tools & Features → Site Creator settings.', 'mcp-ai-wpoos-pro' )
 			);
 		}
 

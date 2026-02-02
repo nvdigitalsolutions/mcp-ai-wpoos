@@ -151,12 +151,12 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 
 			// Map fields.
 			$product_data = array();
-			$col_index = 0;
+			$col_index    = 0;
 			foreach ( $field_mapping as $field => $column ) {
 				if ( isset( $row_data[ $col_index ] ) ) {
 					$product_data[ $field ] = sanitize_text_field( $row_data[ $col_index ] );
 				}
-				$col_index++;
+				++$col_index;
 			}
 
 			// Check for required fields.
@@ -173,7 +173,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 			if ( $skip_duplicates ) {
 				$existing = get_page_by_title( $product_data['name'], OBJECT, 'mcp_ai_reg_product' );
 				if ( $existing ) {
-					$skipped++;
+					++$skipped;
 					continue;
 				}
 			}
@@ -181,10 +181,10 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 			// Create product.
 			$post_id = wp_insert_post(
 				array(
-					'post_title'   => $product_data['name'],
-					'post_type'    => 'mcp_ai_reg_product',
-					'post_status'  => 'publish',
-					'post_author'  => $current_user_id,
+					'post_title'  => $product_data['name'],
+					'post_type'   => 'mcp_ai_reg_product',
+					'post_status' => 'publish',
+					'post_author' => $current_user_id,
 				)
 			);
 
@@ -209,7 +209,7 @@ class WP_MCP_AI_Tool_Import_Products_From_Excel implements WP_MCP_AI_Tool_Interf
 				update_post_meta( $post_id, 'category', $product_data['category'] );
 			}
 
-			$imported++;
+			++$imported;
 		}
 
 		return array(

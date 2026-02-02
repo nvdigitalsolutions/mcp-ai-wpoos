@@ -202,19 +202,19 @@ class WP_MCP_AI_Toolkit_Enhancement_Integration {
 		$pattern_stats = $this->pattern_registry->get_pattern_statistics();
 
 		return array(
-			'toolkits'     => array(
-				'total'             => count( $this->toolkit_registry->get_all_toolkits() ),
-				'tools_mapped'      => $toolkit_stats['mapped_tools'],
-				'tools_unmapped'    => $toolkit_stats['unmapped_tools'],
-				'coverage_percent'  => $toolkit_stats['coverage_percent'],
+			'toolkits'    => array(
+				'total'            => count( $this->toolkit_registry->get_all_toolkits() ),
+				'tools_mapped'     => $toolkit_stats['mapped_tools'],
+				'tools_unmapped'   => $toolkit_stats['unmapped_tools'],
+				'coverage_percent' => $toolkit_stats['coverage_percent'],
 			),
-			'patterns'     => array(
+			'patterns'    => array(
 				'total'              => $pattern_stats['total_patterns'],
 				'by_complexity'      => $pattern_stats['by_complexity'],
 				'by_scalability'     => $pattern_stats['by_scalability'],
 				'by_fault_tolerance' => $pattern_stats['by_fault_tolerance'],
 			),
-			'integration'  => array(
+			'integration' => array(
 				'toolkit_pattern_mappings' => count( $pattern_stats['toolkit_coverage'] ),
 				'workflow_templates'       => count( $this->workflow_templates->get_all_templates() ),
 			),

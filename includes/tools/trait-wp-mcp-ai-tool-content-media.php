@@ -22,12 +22,12 @@ trait WP_MCP_AI_Tool_Content_Media {
 		return array(
 			'content_images' => array(
 				'type'        => 'array',
-				'description' => __( 'Array of images to embed in the content. Maximum 5 images. Each can be an attachment ID or URL.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Array of images to embed in the content. Maximum 5 images. Each can be an attachment ID or URL.', 'mcp-ai-wpoos' ),
 				'items'       => array(
 					'type'       => 'object',
 					'properties' => array(
 						'source'   => array(
-							'description' => __( 'Image source - either attachment ID (integer) or URL (string)', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Image source - either attachment ID (integer) or URL (string)', 'mcp-ai-wpoos' ),
 							'anyOf'       => array(
 								array( 'type' => 'integer' ),
 								array( 'type' => 'string' ),
@@ -35,15 +35,15 @@ trait WP_MCP_AI_Tool_Content_Media {
 						),
 						'caption'  => array(
 							'type'        => 'string',
-							'description' => __( 'Optional caption for the image', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Optional caption for the image', 'mcp-ai-wpoos' ),
 						),
 						'alt'      => array(
 							'type'        => 'string',
-							'description' => __( 'Optional alt text for accessibility', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Optional alt text for accessibility', 'mcp-ai-wpoos' ),
 						),
 						'position' => array(
 							'type'        => 'string',
-							'description' => __( 'Position in content: start, middle, end', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Position in content: start, middle, end', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'start', 'middle', 'end' ),
 							'default'     => 'middle',
 						),
@@ -54,22 +54,22 @@ trait WP_MCP_AI_Tool_Content_Media {
 			),
 			'content_charts' => array(
 				'type'        => 'array',
-				'description' => __( 'Array of charts to embed in the content. Maximum 3 charts. Uses Chart.js for rendering.', 'mcp-ai-wpoos-pro' ),
+				'description' => __( 'Array of charts to embed in the content. Maximum 3 charts. Uses Chart.js for rendering.', 'mcp-ai-wpoos' ),
 				'items'       => array(
 					'type'       => 'object',
 					'properties' => array(
 						'type'     => array(
 							'type'        => 'string',
-							'description' => __( 'Chart type', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Chart type', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea' ),
 						),
 						'title'    => array(
 							'type'        => 'string',
-							'description' => __( 'Chart title', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Chart title', 'mcp-ai-wpoos' ),
 						),
 						'data'     => array(
 							'type'        => 'object',
-							'description' => __( 'Chart data with labels and datasets', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Chart data with labels and datasets', 'mcp-ai-wpoos' ),
 							'properties'  => array(
 								'labels'   => array(
 									'type'  => 'array',
@@ -92,7 +92,7 @@ trait WP_MCP_AI_Tool_Content_Media {
 						),
 						'position' => array(
 							'type'        => 'string',
-							'description' => __( 'Position in content: start, middle, end', 'mcp-ai-wpoos-pro' ),
+							'description' => __( 'Position in content: start, middle, end', 'mcp-ai-wpoos' ),
 							'enum'        => array( 'start', 'middle', 'end' ),
 							'default'     => 'middle',
 						),

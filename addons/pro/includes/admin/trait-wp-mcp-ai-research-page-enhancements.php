@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+
 /**
  * Import Handler Trait
  *
@@ -139,7 +141,7 @@ trait WP_MCP_AI_Research_Page_Import_Handler {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
-		$data   = isset( $_POST['data'] ) ? wp_unslash( $_POST['data'] ) : '';
+		$data   = isset( $_POST['data'] ) ? sanitize_textarea_field( wp_unslash( $_POST['data'] ) ) : '';
 		$format = isset( $_POST['format'] ) ? sanitize_key( $_POST['format'] ) : 'csv';
 
 		$result = static::process_import_data( $data, $format );
@@ -159,7 +161,7 @@ trait WP_MCP_AI_Research_Page_Import_Handler {
 	 * @param string $format Data format.
 	 * @return array|WP_Error Result or error.
 	 */
-	protected static function process_import_data( $data, $format ) {
+	protected static function process_import_data( $data, $format ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		return new WP_Error( 'not_implemented', __( 'Import processing not implemented', 'mcp-ai-wpoos-pro' ) );
 	}
 }
@@ -252,7 +254,7 @@ trait WP_MCP_AI_Research_Page_Consolidation {
 					<tbody>
 						<?php foreach ( $items as $item ) : ?>
 							<?php
-							$quality = static::calculate_quality_score( $item );
+							$quality  = static::calculate_quality_score( $item );
 							$edit_url = static::get_edit_url( $item );
 							?>
 							<tr>
@@ -318,7 +320,7 @@ trait WP_MCP_AI_Research_Page_Consolidation {
 	 * @param array $item Item data.
 	 * @return array Quality data.
 	 */
-	protected static function calculate_quality_score( $item ) {
+	protected static function calculate_quality_score( $item ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
 		return array(
 			'score'  => 0,
 			'level'  => 'low',
@@ -474,11 +476,11 @@ trait WP_MCP_AI_Research_Page_Mode_Tabs {
 	 * @param string $current_mode Current active mode.
 	 */
 	protected static function render_mode_tabs( $current_mode = '' ) {
-		// Get current mode from query string if not provided
+		// Get current mode from query string if not provided.
 		if ( empty( $current_mode ) ) {
 			$current_mode = self::get_current_mode();
 		}
-		
+
 		$modes = array(
 			'chat'        => array(
 				'icon'  => '💬',
@@ -517,7 +519,7 @@ trait WP_MCP_AI_Research_Page_Mode_Tabs {
 	 */
 	protected static function get_current_mode() {
 		$mode = isset( $_GET['mode'] ) ? sanitize_key( $_GET['mode'] ) : 'chat'; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		
+
 		$valid_modes = array( 'chat', 'import', 'consolidate' );
 		if ( ! in_array( $mode, $valid_modes, true ) ) {
 			$mode = 'chat';

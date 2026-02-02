@@ -1,9 +1,10 @@
-<?php
+<?php // phpcs:disable WordPress.Files.FileName.InvalidClassFileName -- Descriptive file names follow WordPress kebab-case conventions for better readability.
 /**
  * Abstract base class for settings sections.
  *
  * @package WP_MCP_AI
  */
+
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -14,6 +15,13 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 	 * Base class that all settings sections must extend.
 	 */
 	abstract class WP_MCP_AI_Settings_Section {
+		/**
+		 * Federation/mesh checkboxes that need special logging for debugging display issues.
+		 *
+		 * @var array
+		 */
+		const FEDERATION_CHECKBOXES = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+
 		/**
 		 * Get the section ID.
 		 *
@@ -133,9 +141,46 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 
 			// Check if we're actually processing a form submission for this subtab.
 			// Use section-specific subtab field name to avoid conflicts when multiple sections have subtabs.
-			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
 			$subtab_field_name = 'subtab_' . $this->get_id();
-			$submitted_subtab  = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			$submitted_subtab = isset( $_POST[ $subtab_field_name ] ) ? sanitize_key( $_POST[ $subtab_field_name ] ) : '';
+
+			// FALLBACK: Also check the legacy 'subtab' field for backward compatibility.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			if ( empty( $submitted_subtab ) && isset( $_POST['subtab'] ) ) {
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+				$submitted_subtab = sanitize_key( $_POST['subtab'] );
+			}
+
+			// ADDITIONAL FALLBACK: If still empty but we have settings data in POST,
+			// and the active subtab is valid, assume this IS a form submission for the active subtab.
+			// This handles edge cases where the hidden field might not be set correctly.
+			// SECURITY NOTE: This is safe because the nonce is verified by the caller (handle_save_settings)
+			// before this method is ever invoked, so we know this is a legitimate form submission.
+			// We're simply being more tolerant of which specific subtab field is used to indicate the active tab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			//
+			// ENHANCED: Also check if ANY fields from the active subtab are present in POST.
+			// This is a stronger indicator that this is a form submission for this subtab.
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+			if ( empty( $submitted_subtab ) && ! empty( $_POST['wp_mcp_ai_settings'] ) && isset( $subtab_groups[ $active_subtab ] ) ) {
+				// Check if any fields from this subtab are in the POST data.
+				$has_subtab_fields = false;
+				$active_field_keys = $subtab_groups[ $active_subtab ]['fields'];
+				foreach ( $active_field_keys as $field_key ) {
+					// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+					if ( isset( $_POST['wp_mcp_ai_settings'][ $field_key ] ) ) {
+						$has_subtab_fields = true;
+						break;
+					}
+				}
+
+				// If we have fields from this subtab in POST, it's definitely a submission for this subtab.
+				if ( $has_subtab_fields ) {
+					$submitted_subtab = $active_subtab;
+				}
+			}
 
 			// Only consider this a form submit if the submitted subtab matches the active subtab.
 			// AND the submitted subtab actually exists in this section's subtab groups.
@@ -143,31 +188,95 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$is_form_submit = ( $submitted_subtab === $active_subtab ) && isset( $subtab_groups[ $submitted_subtab ] );
 
 			// Debug logging for subtab sanitization.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
-				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
-				if ( $enable_logging ) {
-					error_log(
-						sprintf(
-							'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s',
-							$this->get_id(),
-							$active_subtab,
-							$submitted_subtab,
-							$is_form_submit ? 'YES' : 'NO',
-							count( $active_field_keys ),
-							implode( ', ', array_slice( $active_field_keys, 0, 10 ) )
-						)
-					);
+			// ENHANCED: Always log for debugging checkbox persistence issues.
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				// Enhanced logging: Also log the actual POST subtab field values.
+				$post_subtab_fields = array();
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified by caller (handle_save_settings).
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 ) {
+						$post_subtab_fields[ $key ] = $value;
+					}
 				}
+				error_log(
+					sprintf(
+						'[NV oOS Subtab Sanitize] Section: %s, Active: %s, Submitted: %s, Is Form Submit: %s, Field Count: %d, Fields: %s, POST field name: %s, POST subtab fields: %s',
+						$this->get_id(),
+						$active_subtab,
+						$submitted_subtab,
+						$is_form_submit ? 'YES' : 'NO',
+						count( $active_field_keys ),
+						implode( ', ', array_slice( $active_field_keys, 0, 10 ) ),
+						$subtab_field_name,
+						wp_json_encode( $post_subtab_fields )
+					)
+				);
 			}
 
 			// If this is not the subtab being submitted, return empty array to avoid.
 			// processing fields from inactive subtabs and preserve their existing values.
 			if ( ! $is_form_submit ) {
+				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] NOT processing section %s - not a form submit for this subtab',
+							$this->get_id()
+						)
+					);
+				}
 				return array();
 			}
 
-			return $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+			$result = $this->sanitize_fields( $input, $active_fields, $is_form_submit );
+
+			// DEBUG: Log what's being returned from sanitize_with_subtabs.
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$result_checkboxes = array();
+				foreach ( $checkbox_keys as $key ) {
+					if ( isset( $result[ $key ] ) ) {
+						$result_checkboxes[ $key ] = $result[ $key ] ? 'true' : 'false';
+					}
+				}
+				if ( ! empty( $result_checkboxes ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Subtab Sanitize] Section %s returning checkboxes: %s',
+							$this->get_id(),
+							wp_json_encode( $result_checkboxes )
+						)
+					);
+				}
+			}
+
+			// CRITICAL: Always log federation checkbox sanitization for debugging.
+			// This helps diagnose the persistent issue where enable_federation_directory doesn't save.
+			if ( 'advanced' === $this->get_id() && ! empty( $result ) ) {
+				$fed_keys     = array( 'enable_mesh', 'enable_federation', 'enable_federation_directory' );
+				$has_fed_keys = false;
+				$fed_values   = array();
+				foreach ( $fed_keys as $key ) {
+					if ( isset( $result[ $key ] ) ) {
+						$has_fed_keys       = true;
+						$fed_values[ $key ] = var_export( $result[ $key ], true );
+					}
+				}
+				if ( $has_fed_keys ) {
+					error_log(
+						sprintf(
+							'[NV oOS FEDERATION DEBUG] Section: %s, Subtab: %s, Is Form Submit: %s, Checkboxes: %s',
+							$this->get_id(),
+							$active_subtab,
+							$is_form_submit ? 'YES' : 'NO',
+							wp_json_encode( $fed_values )
+						)
+					);
+				}
+			}
+
+			return $result;
 		}
 
 		/**
@@ -191,6 +300,28 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 				}
 			}
 
+			// DEBUG: Log filtered input for checkboxes to trace the issue.
+			$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+			$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+			if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+				$checkbox_fields = array();
+				foreach ( $fields as $key => $field ) {
+					if ( isset( $field['type'] ) && 'checkbox' === $field['type'] ) {
+						$checkbox_fields[ $key ] = isset( $input[ $key ] ) ? $input[ $key ] : 'NOT_IN_INPUT';
+					}
+				}
+				if ( ! empty( $checkbox_fields ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Debug] Section: %s, Is Form Submit: %s, Checkbox values in input: %s',
+							$this->get_id(),
+							$is_form_submit ? 'YES' : 'NO',
+							wp_json_encode( $checkbox_fields )
+						)
+					);
+				}
+			}
+
 			foreach ( $fields as $key => $field ) {
 				$type = isset( $field['type'] ) ? $field['type'] : 'text';
 
@@ -205,8 +336,34 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					// Only process checkboxes if this is actually the form being submitted.
 					// This prevents checkboxes from other subtabs from being set to false.
 					if ( $is_form_submit ) {
-						// Checkbox is checked if present in input, unchecked otherwise.
-						$sanitized[ $key ] = isset( $filtered_input[ $key ] ) ? (bool) $filtered_input[ $key ] : false;
+						// Checkbox is checked if present in input with truthy value, unchecked otherwise.
+						// Explicitly check for '0' string (from hidden fields) and treat it as false.
+						$checkbox_value  = false;
+						$raw_value_debug = 'NOT SET';
+						if ( isset( $filtered_input[ $key ] ) ) {
+							$raw_value       = $filtered_input[ $key ];
+							$raw_value_debug = var_export( $raw_value, true );
+							// Convert '0' string to false, '1' string to true, and use bool cast for other values.
+							$checkbox_value = ( '0' === $raw_value || 0 === $raw_value ) ? false : (bool) $raw_value;
+						}
+						$sanitized[ $key ] = $checkbox_value;
+
+						// Enhanced logging for checkbox processing - especially for federation/mesh checkboxes.
+						$settings               = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+						$enable_logging         = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+						$is_federation_checkbox = in_array( $key, self::FEDERATION_CHECKBOXES, true );
+						if ( ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) && $is_federation_checkbox ) {
+							error_log(
+								sprintf(
+									'[NV oOS Checkbox Save] Key: %s, In Input: %s, Raw Value: %s, Final Value: %s (boolean %s)',
+									$key,
+									isset( $filtered_input[ $key ] ) ? 'YES' : 'NO',
+									$raw_value_debug,
+									$checkbox_value ? 'true' : 'false',
+									var_export( $checkbox_value, true )
+								)
+							);
+						}
 					}
 					// If not the submitted form, skip this checkbox entirely to preserve existing value.
 					continue;
@@ -259,6 +416,36 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 						// Handle array values to prevent warnings.
 						if ( is_array( $value ) ) {
 							$sanitized[ $key ] = wp_json_encode( $value );
+						} elseif ( 'mesh_peer_sites' === $key ) {
+							// Special handling for mesh_peer_sites: decode JSON string to array.
+							// This field stores peer site configurations as JSON in a textarea.
+							// Empty or invalid JSON should default to empty array (not validation error).
+							$trimmed = trim( $value );
+							if ( empty( $trimmed ) ) {
+								// Empty textarea = empty array (valid, no peers configured yet).
+								$sanitized[ $key ] = array();
+							} else {
+								// Attempt to decode JSON string to array.
+								$decoded = json_decode( $trimmed, true );
+								if ( is_array( $decoded ) ) {
+									// Valid JSON array - will be further sanitized by sanitize_mesh_peer_sites().
+									$sanitized[ $key ] = $decoded;
+								} else {
+									// Invalid JSON - log error and default to empty array.
+									$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+									$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+									if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+										error_log(
+											sprintf(
+												'[NV oOS Settings] Invalid JSON in mesh_peer_sites field. Value: %s, JSON Error: %s',
+												substr( $trimmed, 0, 100 ),
+												json_last_error_msg()
+											)
+										);
+									}
+									$sanitized[ $key ] = array();
+								}
+							}
 						} else {
 							$sanitized[ $key ] = sanitize_textarea_field( $value );
 						}
@@ -276,15 +463,15 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 					case 'number':
 						// Handle empty strings differently based on field definition:
 						// 1. If field explicitly allows empty string (e.g., filter fields with default=''),
-						// preserve the empty string for "use auto-detection" functionality
-						// 2. Otherwise, skip empty values to prevent overwriting existing settings
+						// preserve the empty string for "use auto-detection" functionality.
+						// 2. Otherwise, skip empty values to prevent overwriting existing settings.
 						if ( '' === $value ) {
-							// Check if this field explicitly allows empty strings by checking if default is ''
+							// Check if this field explicitly allows empty strings by checking if default is ''.
 							if ( isset( $fields[ $key ]['default'] ) && '' === $fields[ $key ]['default'] ) {
-								// Field intentionally uses empty string (e.g., filter fields for auto-detection)
+								// Field intentionally uses empty string (e.g., filter fields for auto-detection).
 								$sanitized[ $key ] = '';
 							}
-							// Otherwise skip - don't overwrite existing value with empty string
+							// Otherwise skip - don't overwrite existing value with empty string.
 							break;
 						}
 						$sanitized[ $key ] = absint( $value );
@@ -310,8 +497,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								$typed_value = absint( $value );
 							}
 						}
-						// Use non-strict comparison to handle string/int type juggling.
-						if ( in_array( $typed_value, $options, false ) ) {
+						// Use strict comparison for in_array check.
+						if ( in_array( $typed_value, $options, true ) ) {
 							$sanitized[ $key ] = $typed_value;
 						}
 						break;
@@ -347,6 +534,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 			$autocomplete = isset( $field['autocomplete'] ) ? $field['autocomplete'] : '';
 			$disabled     = isset( $field['disabled'] ) ? $field['disabled'] : false;
 			$pro_badge    = isset( $field['pro_badge'] ) ? $field['pro_badge'] : false;
+
+			// Enhanced logging for federation/mesh checkboxes to help debug display issues.
+			if ( 'checkbox' === $type && in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
+				$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+				$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+				if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+					error_log(
+						sprintf(
+							'[NV oOS Checkbox Render] Key: %s, Raw Value: %s (type: %s), Default: %s',
+							$key,
+							var_export( $value, true ),
+							gettype( $value ),
+							var_export( isset( $field['default'] ) ? $field['default'] : '', true )
+						)
+					);
+				}
+			}
 
 			?>
 			<tr>
@@ -402,6 +606,14 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 							break;
 
 						case 'textarea':
+							// Handle array values - convert to JSON string for display.
+							if ( is_array( $value ) ) {
+								$json_value = wp_json_encode( $value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+								// Handle encoding failure gracefully.
+								$textarea_value = ( false !== $json_value ) ? $json_value : wp_json_encode( $value );
+							} else {
+								$textarea_value = $value;
+							}
 							?>
 							<textarea
 								id="<?php echo esc_attr( $key ); ?>"
@@ -410,23 +622,51 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Section' ) ) {
 								class="large-text code"
 								placeholder="<?php echo esc_attr( $placeholder ); ?>"
 								<?php echo esc_attr( $required ? 'required' : '' ); ?>
-							><?php echo esc_textarea( $value ); ?></textarea>
+							><?php echo esc_textarea( $textarea_value ); ?></textarea>
 							<?php
 							break;
 
 						case 'checkbox':
+							// CRITICAL FIX: Normalize checkbox value to boolean for reliable checked() comparison.
+							// The value might be stored as string "1", integer 1, boolean true, or other truthy values.
+							// Convert to proper boolean to ensure checked() works correctly.
+							$is_checked     = ! empty( $value ) && '0' !== $value && 0 !== $value;
+							$checkbox_label = isset( $field['checkbox_label'] ) ? $field['checkbox_label'] : '';
+
+							// Enhanced logging for federation/mesh checkboxes to verify render state.
+							if ( in_array( $key, self::FEDERATION_CHECKBOXES, true ) ) {
+								$settings       = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
+								$enable_logging = ! empty( $settings['enable_logging'] ) || ! empty( $settings['enable_extended_logging'] );
+								if ( $enable_logging || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+									error_log(
+										sprintf(
+											'[NV oOS Federation Mesh] Checkbox Render: %s, $is_checked: %s, Will render checked attr: %s',
+											$key,
+											$is_checked ? 'true' : 'false',
+											checked( $is_checked, true, false )
+										)
+									);
+								}
+							}
 							?>
-							<label>
-								<input
-									type="checkbox"
-									id="<?php echo esc_attr( $key ); ?>"
-									name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
-									value="1"
-									<?php checked( $value, true ); ?>
-									<?php disabled( $disabled ); ?>
-								/>
-								<?php echo isset( $field['checkbox_label'] ) ? esc_html( $field['checkbox_label'] ) : ''; ?>
-							</label>
+							<div class="wp-mcp-ai-settings-toggle-wrapper">
+								<label class="wp-mcp-ai-settings-toggle-switch" for="<?php echo esc_attr( $key ); ?>">
+									<input
+										type="checkbox"
+										id="<?php echo esc_attr( $key ); ?>"
+										name="wp_mcp_ai_settings[<?php echo esc_attr( $key ); ?>]"
+										value="1"
+										<?php checked( $is_checked, true ); ?>
+										<?php disabled( $disabled ); ?>
+									/>
+									<span class="wp-mcp-ai-settings-toggle-slider"></span>
+								</label>
+								<?php if ( ! empty( $checkbox_label ) ) : ?>
+									<label class="wp-mcp-ai-settings-toggle-label" for="<?php echo esc_attr( $key ); ?>">
+										<?php echo esc_html( $checkbox_label ); ?>
+									</label>
+								<?php endif; ?>
+							</div>
 							<?php
 							break;
 

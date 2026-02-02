@@ -25,16 +25,31 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return isset( $settings['ollama_network_interface'] ) ? sanitize_text_field( $settings['ollama_network_interface'] ) : '';
 		}
 
+		/**
+		 * Get the Ollama endpoint URL.
+		 *
+		 * @return string Endpoint URL.
+		 */
 		public function get_endpoint_url() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['ollama_endpoint_url'] ) ? $settings['ollama_endpoint_url'] : '';
 		}
 
+		/**
+		 * Get the Ollama model.
+		 *
+		 * @return string Model name.
+		 */
 		public function get_model() {
 			$settings = WP_MCP_AI_Admin_Settings::get_settings();
 			return isset( $settings['ollama_model'] ) ? $settings['ollama_model'] : '';
 		}
 
+		/**
+		 * Test the Ollama connection.
+		 *
+		 * @return array|WP_Error Connection test result or error.
+		 */
 		public function test_connection() {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
@@ -64,6 +79,11 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			);
 		}
 
+		/**
+		 * List available models.
+		 *
+		 * @return array|WP_Error Array of models or error.
+		 */
 		public function list_models() {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
@@ -102,6 +122,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $models;
 		}
 
+		/**
+		 * Create a chat completion.
+		 *
+		 * @param array $messages Messages to send.
+		 * @param array $options  Optional configuration.
+		 * @return array|WP_Error Chat completion result or error.
+		 */
 		public function create_chat_completion( array $messages, array $options = array() ) {
 			$endpoint_url = $this->get_endpoint_url();
 			if ( empty( $endpoint_url ) ) {
@@ -198,7 +225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 				if ( isset( $chunk['message']['content'] ) ) {
 					// Ollama sends incremental content deltas in each chunk.
 					// We need to append (concatenate) each delta to build the full response.
-					// See: https://docs.ollama.com/api/streaming
+					// See: https://docs.ollama.com/api/streaming.
 					$accumulated_content .= (string) $chunk['message']['content'];
 				}
 
@@ -239,10 +266,24 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $this->normalize_response( $normalized_response, $model );
 		}
 
+		/**
+		 * Resolve the model to use.
+		 *
+		 * @param array $options Options array.
+		 * @return string Model name.
+		 */
 		protected function resolve_model( array $options ) {
 			return ! empty( $options['model'] ) ? sanitize_text_field( $options['model'] ) : $this->get_model();
 		}
 
+		/**
+		 * Build the payload for the Ollama API.
+		 *
+		 * @param array  $messages Messages to send.
+		 * @param array  $options  Optional configuration.
+		 * @param string $model    Model to use.
+		 * @return array|WP_Error Payload array or error.
+		 */
 		protected function build_payload( array $messages, array $options, $model ) {
 			if ( empty( $messages ) ) {
 				return new WP_Error( 'wp_mcp_ai_missing_messages', __( 'No messages provided.', 'mcp-ai-wpoos' ), array( 'status' => 400 ) );
@@ -307,7 +348,7 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			// Priority order:
 			// 1. options['max_tokens'] (if set, converted to num_predict for Ollama compatibility)
 			// 2. options['num_predict'] (if set, Ollama native parameter)
-			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier)
+			// 3. Resource manager tier-based limits (2000/8000/32000 based on workload tier).
 			if ( ! isset( $options['max_tokens'] ) && ! isset( $options['num_predict'] ) ) {
 				$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
 				$num_predict  = $resource_mgr->get_max_tokens();
@@ -352,24 +393,28 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 						)
 					);
 				}
-			} else {
+			} elseif ( class_exists( 'WP_MCP_AI_Logger' ) ) {
 				// Log warning if system prompt is missing.
-				if ( class_exists( 'WP_MCP_AI_Logger' ) ) {
-					WP_MCP_AI_Logger::log_event(
-						'ollama_system_prompt_missing',
-						'Ollama: No system prompt in options',
-						array(
-							'model'            => $model,
-							'has_options_key'  => isset( $options['system_prompt'] ),
-							'options_is_empty' => empty( $options['system_prompt'] ),
-						)
-					);
-				}
+				WP_MCP_AI_Logger::log_event(
+					'ollama_system_prompt_missing',
+					'Ollama: No system prompt in options',
+					array(
+						'model'            => $model,
+						'has_options_key'  => isset( $options['system_prompt'] ),
+						'options_is_empty' => empty( $options['system_prompt'] ),
+					)
+				);
 			}
 
 			return $payload;
 		}
 
+		/**
+		 * Resolve the timeout value.
+		 *
+		 * @param array $options Options array.
+		 * @return int Timeout in seconds.
+		 */
 		protected function resolve_timeout( array $options ) {
 			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
 			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
@@ -387,6 +432,13 @@ if ( ! class_exists( 'WP_MCP_AI_Ollama_Client' ) ) {
 			return $timeout;
 		}
 
+		/**
+		 * Normalize the Ollama response.
+		 *
+		 * @param array  $response Response from Ollama.
+		 * @param string $model    Model used.
+		 * @return array Normalized response.
+		 */
 		protected function normalize_response( array $response, $model ) {
 			$message = array( 'role' => 'assistant' );
 			$content = isset( $response['message']['content'] ) ? (string) $response['message']['content'] : '';

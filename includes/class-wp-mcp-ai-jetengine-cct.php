@@ -52,9 +52,9 @@ class WP_MCP_AI_JetEngine_CCT {
 				'warning',
 				'JetEngine CCT: get_item_handler() failed - CCT module not available',
 				array(
-					'slug'              => self::SLUG,
-					'jetengine_active'  => function_exists( 'jet_engine' ),
-					'reason'            => 'get_cct_module() returned null',
+					'slug'             => self::SLUG,
+					'jetengine_active' => function_exists( 'jet_engine' ),
+					'reason'           => 'get_cct_module() returned null',
 				)
 			);
 			return null;
@@ -94,8 +94,8 @@ class WP_MCP_AI_JetEngine_CCT {
 				$cct_exists_after ? 'info' : 'warning',
 				'JetEngine CCT: Registration attempt completed',
 				array(
-					'slug'     => self::SLUG,
-					'success'  => $cct_exists_after,
+					'slug'           => self::SLUG,
+					'success'        => $cct_exists_after,
 					'existed_before' => $cct_exists_before,
 				)
 			);
@@ -108,8 +108,8 @@ class WP_MCP_AI_JetEngine_CCT {
 				'info',
 				'JetEngine CCT: Content type not loaded in manager, forcing reload',
 				array(
-					'slug'         => self::SLUG,
-					'cct_exists'   => self::cct_exists( $module ),
+					'slug'       => self::SLUG,
+					'cct_exists' => self::cct_exists( $module ),
 				)
 			);
 
@@ -254,9 +254,9 @@ class WP_MCP_AI_JetEngine_CCT {
 				'warning',
 				'JetEngine CCT: maybe_register_cct() failed - manager or data not available',
 				array(
-					'slug'          => self::SLUG,
-					'has_manager'   => ! empty( $module->manager ),
-					'has_data'      => ! empty( $module->manager ) && ! empty( $module->manager->data ),
+					'slug'        => self::SLUG,
+					'has_manager' => ! empty( $module->manager ),
+					'has_data'    => ! empty( $module->manager ) && ! empty( $module->manager->data ),
 				)
 			);
 			return;

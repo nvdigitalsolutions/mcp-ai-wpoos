@@ -404,7 +404,7 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 	 */
 	public function test_agentic_workflow_multi_country_registration() {
 		// Create registrations for multiple countries.
-		$countries = array( 'LK', 'AE', 'SA' );
+		$countries        = array( 'LK', 'AE', 'SA' );
 		$registration_ids = array();
 
 		$create_reg_tool = $this->registry->get_tool( 'create_registration' );
@@ -450,11 +450,11 @@ class Test_Regulatory_Registration_Agentic_Workflow extends WP_UnitTestCase {
 	 */
 	public function test_tools_return_proper_structure_for_agentic_loop() {
 		$tools_to_test = array(
-			'list_reg_products'  => array(),
-			'get_reg_product'    => array( 'product_id' => $this->test_product_id ),
-			'validate_reg_product' => array( 'product_id' => $this->test_product_id ),
+			'list_reg_products'         => array(),
+			'get_reg_product'           => array( 'product_id' => $this->test_product_id ),
+			'validate_reg_product'      => array( 'product_id' => $this->test_product_id ),
 			'validate_inci_ingredients' => array( 'ingredients' => 'Aqua, Glycerin' ),
-			'check_hs_code'      => array( 'hs_code' => '3304.99.00' ),
+			'check_hs_code'             => array( 'hs_code' => '3304.99.00' ),
 		);
 
 		foreach ( $tools_to_test as $tool_slug => $args ) {

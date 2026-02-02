@@ -44,7 +44,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 		 *
 		 * @param mixed ...$args Variable arguments passed by WordPress hooks (not used).
 		 */
-		public function safe_ajax_handler( ...$args ) {
+		public function safe_ajax_handler( ...$args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter accepts variable WordPress hook arguments.
 			// Clean any previous output.
 			$this->clean_all_buffers();
 

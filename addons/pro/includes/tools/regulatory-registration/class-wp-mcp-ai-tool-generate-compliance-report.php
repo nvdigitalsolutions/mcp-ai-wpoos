@@ -44,28 +44,28 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 		return array(
 			'type'                 => 'object',
 			'properties'           => array(
-				'date_range'   => array(
+				'date_range' => array(
 					'type'        => 'string',
 					'description' => __( 'Date range for report (optional, default: "all")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'all', 'last_30_days', 'last_90_days', 'last_year', 'custom' ),
 					'default'     => 'all',
 				),
-				'start_date'   => array(
+				'start_date' => array(
 					'type'        => 'string',
 					'description' => __( 'Start date for custom range (format: YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'end_date'     => array(
+				'end_date'   => array(
 					'type'        => 'string',
 					'description' => __( 'End date for custom range (format: YYYY-MM-DD)', 'mcp-ai-wpoos-pro' ),
 					'pattern'     => '^\d{4}-\d{2}-\d{2}$',
 				),
-				'countries'    => array(
+				'countries'  => array(
 					'type'        => 'array',
 					'description' => __( 'Filter by specific countries (optional)', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
 				),
-				'format'       => array(
+				'format'     => array(
 					'type'        => 'string',
 					'description' => __( 'Report format (optional, default: "json")', 'mcp-ai-wpoos-pro' ),
 					'enum'        => array( 'json', 'pdf', 'excel' ),
@@ -173,23 +173,23 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 
 		// Initialize metrics.
 		$metrics = array(
-			'total_registrations'  => 0,
-			'by_status'            => array(),
-			'by_country'           => array(),
-			'expiring_soon'        => 0,
-			'expired'              => 0,
-			'active'               => 0,
-			'pending'              => 0,
-			'approval_rate'        => 0,
+			'total_registrations'   => 0,
+			'by_status'             => array(),
+			'by_country'            => array(),
+			'expiring_soon'         => 0,
+			'expired'               => 0,
+			'active'                => 0,
+			'pending'               => 0,
+			'approval_rate'         => 0,
 			'average_approval_days' => 0,
 		);
 
 		$approval_days = array();
-		$today = time();
+		$today         = time();
 
 		if ( $registrations_query->have_posts() ) {
 			foreach ( $registrations_query->posts as $post ) {
-				$metrics['total_registrations']++;
+				++$metrics['total_registrations'];
 
 				// Count by status.
 				$statuses = wp_get_post_terms( $post->ID, 'mcp_ai_reg_status' );
@@ -198,14 +198,14 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 					if ( ! isset( $metrics['by_status'][ $status ] ) ) {
 						$metrics['by_status'][ $status ] = 0;
 					}
-					$metrics['by_status'][ $status ]++;
+					++$metrics['by_status'][ $status ];
 
 					// Count active/pending.
 					$status_slug = $statuses[0]->slug;
 					if ( in_array( $status_slug, array( 'approved', 'active' ), true ) ) {
-						$metrics['active']++;
+						++$metrics['active'];
 					} elseif ( in_array( $status_slug, array( 'submitted', 'pending', 'under-review' ), true ) ) {
-						$metrics['pending']++;
+						++$metrics['pending'];
 					}
 				}
 
@@ -215,19 +215,19 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 					if ( ! isset( $metrics['by_country'][ $country ] ) ) {
 						$metrics['by_country'][ $country ] = 0;
 					}
-					$metrics['by_country'][ $country ]++;
+					++$metrics['by_country'][ $country ];
 				}
 
 				// Check expiry.
 				$expiry_date = get_post_meta( $post->ID, 'expiry_date', true );
 				if ( $expiry_date ) {
-					$expiry = strtotime( $expiry_date );
+					$expiry         = strtotime( $expiry_date );
 					$days_to_expiry = floor( ( $expiry - $today ) / DAY_IN_SECONDS );
 
 					if ( $days_to_expiry < 0 ) {
-						$metrics['expired']++;
+						++$metrics['expired'];
 					} elseif ( $days_to_expiry <= 90 ) {
-						$metrics['expiring_soon']++;
+						++$metrics['expiring_soon'];
 					}
 				}
 
@@ -252,13 +252,13 @@ class WP_MCP_AI_Tool_Generate_Compliance_Report implements WP_MCP_AI_Tool_Interf
 		}
 
 		$report_data = array(
-			'success'       => true,
-			'report_type'   => 'compliance',
-			'generated_at'  => current_time( 'mysql' ),
-			'date_range'    => $date_range,
+			'success'          => true,
+			'report_type'      => 'compliance',
+			'generated_at'     => current_time( 'mysql' ),
+			'date_range'       => $date_range,
 			'filter_countries' => $countries,
-			'metrics'       => $metrics,
-			'format'        => $format,
+			'metrics'          => $metrics,
+			'format'           => $format,
 		);
 
 		return $report_data;

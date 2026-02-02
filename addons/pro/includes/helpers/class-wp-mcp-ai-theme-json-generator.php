@@ -52,16 +52,16 @@ class WP_MCP_AI_Theme_JSON_Generator {
 	 */
 	public static function generate( $args = array() ) {
 		$defaults = array(
-			'theme_name'        => 'Custom Theme',
-			'theme_type'        => 'block', // 'classic', 'block', 'hybrid'.
-			'color_palette'     => self::get_default_color_palette(),
-			'typography'        => self::get_default_typography(),
-			'spacing'           => self::get_default_spacing(),
-			'custom_templates'  => array(),
-			'template_parts'    => self::get_default_template_parts(),
-			'patterns'          => array(),
-			'enable_features'   => array(),
-			'disable_features'  => array(),
+			'theme_name'       => 'Custom Theme',
+			'theme_type'       => 'block', // 'classic', 'block', 'hybrid'.
+			'color_palette'    => self::get_default_color_palette(),
+			'typography'       => self::get_default_typography(),
+			'spacing'          => self::get_default_spacing(),
+			'custom_templates' => array(),
+			'template_parts'   => self::get_default_template_parts(),
+			'patterns'         => array(),
+			'enable_features'  => array(),
+			'disable_features' => array(),
 		);
 
 		$args = wp_parse_args( $args, $defaults );
@@ -105,40 +105,40 @@ class WP_MCP_AI_Theme_JSON_Generator {
 	 */
 	private static function generate_settings( $args ) {
 		$settings = array(
-			'appearanceTools' => true,
+			'appearanceTools'               => true,
 			'useRootPaddingAwareAlignments' => true,
 		);
 
 		// Color settings.
 		$settings['color'] = array(
-			'palette'      => $args['color_palette'],
-			'custom'       => ! in_array( 'custom-colors', $args['disable_features'], true ),
-			'customGradient' => ! in_array( 'custom-gradients', $args['disable_features'], true ),
-			'defaultPalette' => false,
+			'palette'          => $args['color_palette'],
+			'custom'           => ! in_array( 'custom-colors', $args['disable_features'], true ),
+			'customGradient'   => ! in_array( 'custom-gradients', $args['disable_features'], true ),
+			'defaultPalette'   => false,
 			'defaultGradients' => false,
 		);
 
 		// Typography settings.
 		$settings['typography'] = array(
-			'fontFamilies' => $args['typography']['font_families'],
-			'fontSizes'    => $args['typography']['font_sizes'],
+			'fontFamilies'   => $args['typography']['font_families'],
+			'fontSizes'      => $args['typography']['font_sizes'],
 			'customFontSize' => ! in_array( 'custom-font-sizes', $args['disable_features'], true ),
-			'fluid'        => true,
-			'lineHeight'   => true,
-			'letterSpacing' => true,
+			'fluid'          => true,
+			'lineHeight'     => true,
+			'letterSpacing'  => true,
 			'textDecoration' => true,
-			'textTransform' => true,
-			'dropCap'      => false,
+			'textTransform'  => true,
+			'dropCap'        => false,
 		);
 
 		// Spacing settings.
 		$settings['spacing'] = array(
-			'spacingScale' => $args['spacing']['scale'],
-			'units'        => array( 'px', 'em', 'rem', '%', 'vh', 'vw' ),
+			'spacingScale'      => $args['spacing']['scale'],
+			'units'             => array( 'px', 'em', 'rem', '%', 'vh', 'vw' ),
 			'customSpacingSize' => true,
-			'padding'      => true,
-			'margin'       => true,
-			'blockGap'     => true,
+			'padding'           => true,
+			'margin'            => true,
+			'blockGap'          => true,
 		);
 
 		// Layout settings.
@@ -179,7 +179,7 @@ class WP_MCP_AI_Theme_JSON_Generator {
 	 */
 	private static function generate_styles( $args ) {
 		$styles = array(
-			'color' => array(
+			'color'      => array(
 				'background' => 'var(--wp--preset--color--base)',
 				'text'       => 'var(--wp--preset--color--contrast)',
 			),
@@ -188,15 +188,15 @@ class WP_MCP_AI_Theme_JSON_Generator {
 				'fontFamily' => 'var(--wp--preset--font-family--body)',
 				'lineHeight' => '1.6',
 			),
-			'spacing' => array(
+			'spacing'    => array(
 				'blockGap' => 'var(--wp--preset--spacing--medium)',
 			),
 		);
 
 		// Element styles.
 		$styles['elements'] = array(
-			'link' => array(
-				'color' => array(
+			'link'    => array(
+				'color'  => array(
 					'text' => 'var(--wp--preset--color--primary)',
 				),
 				':hover' => array(
@@ -212,12 +212,12 @@ class WP_MCP_AI_Theme_JSON_Generator {
 					'lineHeight' => '1.2',
 				),
 			),
-			'button' => array(
-				'color' => array(
+			'button'  => array(
+				'color'   => array(
 					'background' => 'var(--wp--preset--color--primary)',
 					'text'       => 'var(--wp--preset--color--base)',
 				),
-				'border' => array(
+				'border'  => array(
 					'radius' => '4px',
 				),
 				'spacing' => array(
@@ -228,7 +228,7 @@ class WP_MCP_AI_Theme_JSON_Generator {
 						'left'   => 'var(--wp--preset--spacing--medium)',
 					),
 				),
-				':hover' => array(
+				':hover'  => array(
 					'color' => array(
 						'background' => 'var(--wp--preset--color--primary-hover)',
 					),
@@ -245,7 +245,7 @@ class WP_MCP_AI_Theme_JSON_Generator {
 					),
 				),
 			),
-			'core/heading' => array(
+			'core/heading'   => array(
 				'spacing' => array(
 					'margin' => array(
 						'top'    => 'var(--wp--preset--spacing--large)',
@@ -253,7 +253,7 @@ class WP_MCP_AI_Theme_JSON_Generator {
 					),
 				),
 			),
-			'core/image' => array(
+			'core/image'     => array(
 				'border' => array(
 					'radius' => '8px',
 				),
@@ -389,44 +389,44 @@ class WP_MCP_AI_Theme_JSON_Generator {
 					'fontFamily' => 'ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace',
 				),
 			),
-			'font_sizes' => array(
+			'font_sizes'    => array(
 				array(
-					'name' => 'Small',
-					'slug' => 'small',
-					'size' => '0.875rem',
+					'name'  => 'Small',
+					'slug'  => 'small',
+					'size'  => '0.875rem',
 					'fluid' => array(
 						'min' => '0.875rem',
 						'max' => '1rem',
 					),
 				),
 				array(
-					'name' => 'Medium',
-					'slug' => 'medium',
-					'size' => '1rem',
+					'name'  => 'Medium',
+					'slug'  => 'medium',
+					'size'  => '1rem',
 					'fluid' => false,
 				),
 				array(
-					'name' => 'Large',
-					'slug' => 'large',
-					'size' => '1.25rem',
+					'name'  => 'Large',
+					'slug'  => 'large',
+					'size'  => '1.25rem',
 					'fluid' => array(
 						'min' => '1.125rem',
 						'max' => '1.5rem',
 					),
 				),
 				array(
-					'name' => 'Extra Large',
-					'slug' => 'x-large',
-					'size' => '1.75rem',
+					'name'  => 'Extra Large',
+					'slug'  => 'x-large',
+					'size'  => '1.75rem',
 					'fluid' => array(
 						'min' => '1.5rem',
 						'max' => '2rem',
 					),
 				),
 				array(
-					'name' => '2X Large',
-					'slug' => 'xx-large',
-					'size' => '2.5rem',
+					'name'  => '2X Large',
+					'slug'  => 'xx-large',
+					'size'  => '2.5rem',
 					'fluid' => array(
 						'min' => '2rem',
 						'max' => '3rem',
@@ -602,36 +602,132 @@ class WP_MCP_AI_Theme_JSON_Generator {
 	public static function get_industry_color_palette( $industry ) {
 		$palettes = array(
 			'technology' => array(
-				array( 'name' => 'Base', 'slug' => 'base', 'color' => '#ffffff' ),
-				array( 'name' => 'Contrast', 'slug' => 'contrast', 'color' => '#0a0a0a' ),
-				array( 'name' => 'Primary', 'slug' => 'primary', 'color' => '#0066cc' ),
-				array( 'name' => 'Primary Hover', 'slug' => 'primary-hover', 'color' => '#0052a3' ),
-				array( 'name' => 'Secondary', 'slug' => 'secondary', 'color' => '#00cc99' ),
-				array( 'name' => 'Accent', 'slug' => 'accent', 'color' => '#ff6600' ),
+				array(
+					'name'  => 'Base',
+					'slug'  => 'base',
+					'color' => '#ffffff',
+				),
+				array(
+					'name'  => 'Contrast',
+					'slug'  => 'contrast',
+					'color' => '#0a0a0a',
+				),
+				array(
+					'name'  => 'Primary',
+					'slug'  => 'primary',
+					'color' => '#0066cc',
+				),
+				array(
+					'name'  => 'Primary Hover',
+					'slug'  => 'primary-hover',
+					'color' => '#0052a3',
+				),
+				array(
+					'name'  => 'Secondary',
+					'slug'  => 'secondary',
+					'color' => '#00cc99',
+				),
+				array(
+					'name'  => 'Accent',
+					'slug'  => 'accent',
+					'color' => '#ff6600',
+				),
 			),
 			'healthcare' => array(
-				array( 'name' => 'Base', 'slug' => 'base', 'color' => '#ffffff' ),
-				array( 'name' => 'Contrast', 'slug' => 'contrast', 'color' => '#1a1a1a' ),
-				array( 'name' => 'Primary', 'slug' => 'primary', 'color' => '#0077be' ),
-				array( 'name' => 'Primary Hover', 'slug' => 'primary-hover', 'color' => '#005a8f' ),
-				array( 'name' => 'Secondary', 'slug' => 'secondary', 'color' => '#00a86b' ),
-				array( 'name' => 'Accent', 'slug' => 'accent', 'color' => '#e74c3c' ),
+				array(
+					'name'  => 'Base',
+					'slug'  => 'base',
+					'color' => '#ffffff',
+				),
+				array(
+					'name'  => 'Contrast',
+					'slug'  => 'contrast',
+					'color' => '#1a1a1a',
+				),
+				array(
+					'name'  => 'Primary',
+					'slug'  => 'primary',
+					'color' => '#0077be',
+				),
+				array(
+					'name'  => 'Primary Hover',
+					'slug'  => 'primary-hover',
+					'color' => '#005a8f',
+				),
+				array(
+					'name'  => 'Secondary',
+					'slug'  => 'secondary',
+					'color' => '#00a86b',
+				),
+				array(
+					'name'  => 'Accent',
+					'slug'  => 'accent',
+					'color' => '#e74c3c',
+				),
 			),
-			'finance' => array(
-				array( 'name' => 'Base', 'slug' => 'base', 'color' => '#ffffff' ),
-				array( 'name' => 'Contrast', 'slug' => 'contrast', 'color' => '#1c1c1c' ),
-				array( 'name' => 'Primary', 'slug' => 'primary', 'color' => '#003366' ),
-				array( 'name' => 'Primary Hover', 'slug' => 'primary-hover', 'color' => '#002244' ),
-				array( 'name' => 'Secondary', 'slug' => 'secondary', 'color' => '#006699' ),
-				array( 'name' => 'Accent', 'slug' => 'accent', 'color' => '#d4af37' ),
+			'finance'    => array(
+				array(
+					'name'  => 'Base',
+					'slug'  => 'base',
+					'color' => '#ffffff',
+				),
+				array(
+					'name'  => 'Contrast',
+					'slug'  => 'contrast',
+					'color' => '#1c1c1c',
+				),
+				array(
+					'name'  => 'Primary',
+					'slug'  => 'primary',
+					'color' => '#003366',
+				),
+				array(
+					'name'  => 'Primary Hover',
+					'slug'  => 'primary-hover',
+					'color' => '#002244',
+				),
+				array(
+					'name'  => 'Secondary',
+					'slug'  => 'secondary',
+					'color' => '#006699',
+				),
+				array(
+					'name'  => 'Accent',
+					'slug'  => 'accent',
+					'color' => '#d4af37',
+				),
 			),
-			'ecommerce' => array(
-				array( 'name' => 'Base', 'slug' => 'base', 'color' => '#ffffff' ),
-				array( 'name' => 'Contrast', 'slug' => 'contrast', 'color' => '#000000' ),
-				array( 'name' => 'Primary', 'slug' => 'primary', 'color' => '#e91e63' ),
-				array( 'name' => 'Primary Hover', 'slug' => 'primary-hover', 'color' => '#c2185b' ),
-				array( 'name' => 'Secondary', 'slug' => 'secondary', 'color' => '#ff9800' ),
-				array( 'name' => 'Accent', 'slug' => 'accent', 'color' => '#4caf50' ),
+			'ecommerce'  => array(
+				array(
+					'name'  => 'Base',
+					'slug'  => 'base',
+					'color' => '#ffffff',
+				),
+				array(
+					'name'  => 'Contrast',
+					'slug'  => 'contrast',
+					'color' => '#000000',
+				),
+				array(
+					'name'  => 'Primary',
+					'slug'  => 'primary',
+					'color' => '#e91e63',
+				),
+				array(
+					'name'  => 'Primary Hover',
+					'slug'  => 'primary-hover',
+					'color' => '#c2185b',
+				),
+				array(
+					'name'  => 'Secondary',
+					'slug'  => 'secondary',
+					'color' => '#ff9800',
+				),
+				array(
+					'name'  => 'Accent',
+					'slug'  => 'accent',
+					'color' => '#4caf50',
+				),
 			),
 		);
 

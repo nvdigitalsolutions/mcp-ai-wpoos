@@ -67,7 +67,7 @@ $all_passed = true;
 foreach ( $test_cases as $input => $expected ) {
 	$result = test_normalise_aspect_ratio( $input );
 	$status = ( $result === $expected ) ? '✓ PASS' : '✗ FAIL';
-	echo sprintf( "%-15s => %-10s (expected: %-10s) %s\n", "'$input'", "'$result'", "'$expected'", $status );
+	printf( "%-15s => %-10s (expected: %-10s) %s\n", "'$input'", "'$result'", "'$expected'", $status );
 
 	if ( $result !== $expected ) {
 		$all_passed = false;
@@ -86,19 +86,19 @@ function test_should_include_aspect_ratio( $aspect_ratio ) {
 }
 
 $payload_tests = array(
-	'auto'  => false,
-	'16:9'  => true,
-	'1:1'   => true,
-	'4:3'   => true,
-	''      => false,
-	'9:16'  => true,
+	'auto' => false,
+	'16:9' => true,
+	'1:1'  => true,
+	'4:3'  => true,
+	''     => false,
+	'9:16' => true,
 );
 
 foreach ( $payload_tests as $ratio => $should_include ) {
 	$will_include = test_should_include_aspect_ratio( $ratio );
 	$status       = ( $will_include === $should_include ) ? '✓ PASS' : '✗ FAIL';
 	$action       = $will_include ? 'INCLUDE' : 'OMIT   ';
-	echo sprintf( "%-10s => %s in payload (expected: %s) %s\n", "'$ratio'", $action, $should_include ? 'INCLUDE' : 'OMIT   ', $status );
+	printf( "%-10s => %s in payload (expected: %s) %s\n", "'$ratio'", $action, $should_include ? 'INCLUDE' : 'OMIT   ', $status );
 
 	if ( $will_include !== $should_include ) {
 		$all_passed = false;

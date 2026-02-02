@@ -94,7 +94,11 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array Tool execution result.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Validate file_id.
@@ -348,7 +352,7 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
-		if ( $line_count > 0 && $valid_json === 0 ) {
+		if ( $line_count > 0 && 0 === $valid_json ) {
 			$warnings[] = __( 'JSONL file does not appear to contain valid JSON lines.', 'mcp-ai-wpoos' );
 		} elseif ( $valid_json < $line_count ) {
 			$warnings[] = __( 'Some lines in JSONL file may not be valid JSON.', 'mcp-ai-wpoos' );
@@ -366,17 +370,11 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -394,7 +392,6 @@ class WP_MCP_AI_Tool_Analyze_File_Suitability implements WP_MCP_AI_Tool_Interfac
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

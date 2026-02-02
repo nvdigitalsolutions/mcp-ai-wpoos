@@ -738,17 +738,17 @@ class WP_MCP_AI_Enhanced_Workflow_Coordinator {
 	 */
 	public function get_workflows_health() {
 		$health = array(
-			'total'                => count( $this->active_workflows ),
-			'by_state'             => array(
+			'total'             => count( $this->active_workflows ),
+			'by_state'          => array(
 				'initialized' => 0,
 				'running'     => 0,
 				'completed'   => 0,
 				'failed'      => 0,
 			),
-			'stale_initialized'    => array(),
-			'status'               => 'healthy',
-			'warnings'             => array(),
-			'recommendations'      => array(),
+			'stale_initialized' => array(),
+			'status'            => 'healthy',
+			'warnings'          => array(),
+			'recommendations'   => array(),
 		);
 
 		// Count workflows by state.

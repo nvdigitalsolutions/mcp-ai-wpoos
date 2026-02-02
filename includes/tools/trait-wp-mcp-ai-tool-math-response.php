@@ -290,9 +290,9 @@ trait WP_MCP_AI_Tool_Math_Response {
 		$katex_url  = $plugin_url . '/addons/pro/assets/vendor/katex';
 
 		$html  = '<!-- KaTeX CSS -->';
-		$html .= '<link rel="stylesheet" href="' . esc_url( $katex_url . '/katex.min.css' ) . '">';
+		$html .= '<link rel="stylesheet" href="' . esc_url( $katex_url . '/katex.min.css' ) . '">'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- Inline HTML for API response, not a WordPress theme context.
 		$html .= '<!-- KaTeX JS -->';
-		$html .= '<script defer src="' . esc_url( $katex_url . '/katex.min.js' ) . '"></script>';
+		$html .= '<script defer src="' . esc_url( $katex_url . '/katex.min.js' ) . '"></script>'; // phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- Inline HTML for API response, not a WordPress theme context.
 
 		return $html;
 	}

@@ -394,7 +394,7 @@ class WP_MCP_AI_Job_Queue_Manager {
 	 *
 	 * @return bool True on success.
 	 */
-	protected static function mark_job_complete( $job_id, $result ) {
+	protected static function mark_job_complete( $job_id, $result ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for result logging.
 		$queue = self::get_queue_state();
 
 		if ( isset( $queue[ $job_id ] ) ) {

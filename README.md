@@ -93,9 +93,9 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **70 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management and 4 new Social Media Analytics tools added January 2026) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **197 built-in tools**.
+The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 70 Pro tools (total 221 tool files across base and Pro).
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 79 Pro tools (total 230 tool files across base and Pro).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
@@ -256,39 +256,28 @@ The Process Service (`WP_MCP_AI_Process_Service`) provides WordPress-friendly wr
 
 ## 🆕 Latest Updates (January 2026)
 
-### Repository Organization & Documentation Cleanup (January 30, 2026) ⭐ **NEW**
+### Repository Organization & Documentation Cleanup (January 31, 2026) ⭐ **NEW**
 
-**Major Cleanup: Root directory organized + proposals status tracking**
+**Major Cleanup: Root directory fully organized + documentation consolidated**
 
 **Root Directory Organization:**
-- Moved 7 implementation/summary files from root to `docs/implementation-history/2026/january/`:
-  - `IMPLEMENTATION_COMPLETE.md` - Toolkit Enhancement System completion report
-  - `IMPLEMENTATION_SUMMARY.md` - Regulatory Registration Toolkit implementation
-  - `PR_SUMMARY.md` - PR completion summaries
-  - `ORCHESTRATION_MODES_ENHANCEMENT_SUMMARY.md` - Teams dashboard enhancement
-  - `REGULATORY_TOOLKIT_ENHANCEMENT.md` - Settings page enhancement
-  - `TOOLKIT_ENHANCEMENT_README.md` - Toolkit enhancement overview
-  - `VISUAL_GUIDE.md` - Admin menu and UI guides
-- Moved `test-toolkit-registry.php` to `tests/manual/` for proper test organization
-- Moved `wpcode-snippet.php` to `examples/` as reference implementation
-- Moved `verify-wpcs-compliance.sh` to `bin/` with other verification scripts
-- Removed duplicate `PRODUCTION_READY.md` (already exists in `docs/deployment/`)
-- **Root now contains only essential documentation** (README, CHANGELOG, CONTRIBUTING, SECURITY, LICENSE, BUILD, DEPENDENCIES_BUNDLING)
+- Moved 5 additional documentation files from root to appropriate docs/ subdirectories:
+  - `FEDERATION_SETUP_GUIDE.md` → `docs/guides/admin/` (admin setup guide)
+  - `FEDERATION_DIRECTORY_DEBUG.md` → `docs/fixes/federation/` (bug fix documentation)
+  - `README-MULTI-AGENT-SYSTEM.md` → `docs/features/multi-agent/` (feature documentation)
+  - `PRODUCTION_COMPOSER.md` → `docs/deployment/` (deployment guide)
+  - Removed duplicate `FIX_SUMMARY.md` (multiple versions exist in docs/fixes/)
+- **Root now contains only 3 essential files**: README.md, CHANGELOG.md, CONTRIBUTING.md
+- All configuration files remain in root (package.json, composer.json, phpunit.xml.dist, etc.)
+- Supporting documentation organized by type: guides, fixes, features, deployment
+- Complete organization documented in [REPOSITORY_ORGANIZATION.md](docs/REPOSITORY_ORGANIZATION.md)
 
-**Proposals Status Tracking:**
-- Created comprehensive [PROPOSALS_COMPLETION_STATUS.md](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
+**Previous Cleanup (January 30, 2026):**
+- Moved 7 implementation files to `docs/implementation-history/2026/january/`
+- Created [PROPOSALS_COMPLETION_STATUS.md](docs/proposals/PROPOSALS_COMPLETION_STATUS.md)
 - **64 total proposals tracked**: 18 complete (28%), 6 in progress (9%), 40 pending (63%)
-- **Completed in January 2026**: DeepSeek V4 (all phases), Web Browser Pro Tool, WebLLM (phases 1-3), Toolkit Enhancement System, Phase 5
-- **In Progress**: WordPress Integration (42-82%), Bitwarden Integration (research phase), Ralph Wiggum CCT Orchestration
-- **High Priority Pending**: Toolkit Enhancement extended features, Firefly III Integration, WordPress Core Integration Enhancement
-- Identified action items: Reconcile DeepSeek V4 completion status discrepancy, complete WordPress Integration, review pending proposals
 
-**Dependencies Documentation:**
-- Confirmed [DEPENDENCIES_BUNDLING.md](DEPENDENCIES_BUNDLING.md) in root per user request
-- Documents two-tier dependency management (Base + Pro addon)
-- Explains bundling strategy and build commands for NPM packages
-
-**Files Changed**: 10 files moved/organized  
+**Files Changed**: 5 files moved, 3 documentation files updated  
 **Impact**: Cleaner repository structure, better documentation discovery, improved maintainability
 
 ### Security Hardening & Entity Tracking (January 29, 2026)
@@ -893,9 +882,9 @@ Status labels are displayed as **3-letter abbreviations** (e.g., "STA" for stabl
 
 **Important:** Tools marked with the `bug` status are **automatically disabled** when the plugin loads. This prevents problematic tools from being used until issues are resolved. Administrators can manually re-enable them from the Tools Manager if needed for testing.
 
-Status labels are managed via the [`tool-status.txt`](tool-status.txt) file in the repository root. To assign a status label to a tool:
+Status labels are managed via the [`tool-status.txt`](docs/tool-status.txt) file in the repository. To assign a status label to a tool:
 
-1. Open `tool-status.txt` in a text editor
+1. Open `docs/tool-status.txt` in a text editor
 2. Add a line in the format: `tool_slug = status_label`
 3. Save the file - changes appear immediately in the Tools Manager
 
@@ -981,7 +970,10 @@ See [docs/chat-history-persistence.md](docs/guides/user/chat/chat-history-persis
 
 ### For Developers (GitHub Clone)
 
-If you're cloning from GitHub for development:
+> **✅ Production-Ready Repository**  
+> This repository includes production-optimized vendor dependencies with classmap-authoritative autoloading. You can clone and activate immediately without running composer. The `composer install` command is only needed if you want to update dependencies or add development tools.
+
+If you're cloning from GitHub:
 
 #### Option 1: Cloudways and Managed Hosting (Recommended)
 
@@ -992,15 +984,18 @@ For Cloudways and similar managed hosting platforms, clone directly into the Wor
 # Navigate to WordPress plugins directory
 cd /home/master/applications/YOURAPP/public_html/wp-content/plugins/
 
-# Clone the repository
+# Clone the repository (production-ready, no composer needed!)
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
 
 # Verify you're in the correct directory
 pwd  # Should show the plugins path
 
-# Install dependencies
-npm install && composer install --no-dev --optimize-autoloader
+# Optional: Only needed for frontend asset rebuilding or development
+# npm install && npm run build
+
+# Optional: Only run if you need to update dependencies or add dev tools
+# composer install --no-dev --classmap-authoritative
 ```
 
 **⚠️ Cloudways Important Notes:**
@@ -1013,17 +1008,23 @@ npm install && composer install --no-dev --optimize-autoloader
 For local development or standard VPS hosting:
 
 ```bash
-# Option A: Clone directly into WordPress plugins directory (recommended)
+# Option A: Clone directly into WordPress plugins directory (recommended, production-ready!)
 cd /path/to/wordpress/wp-content/plugins/
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
+# Ready to activate! No composer or npm needed for production use.
 
-# Option B: Clone, install, then copy
+# Option B: Clone and copy (also production-ready!)
 git clone https://github.com/nvdigitalsolutions/mcp-ai-wpoos.git
 cd mcp-ai-wpoos
-npm install && composer install --no-dev --optimize-autoloader
 cp -r . /path/to/wordpress/wp-content/plugins/mcp-ai-wpoos/
+```
+
+**For Development Only:**
+```bash
+# Only if you need to rebuild assets or modify dependencies:
+npm install && npm run build
+composer install --no-dev --classmap-authoritative
 ```
 
 #### Final Steps

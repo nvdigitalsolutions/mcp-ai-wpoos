@@ -72,9 +72,9 @@ class WP_MCP_AI_Gemini_Music_Service {
 	 *                        - genre: string (optional genre specification)
 	 *                        - mood: string (optional mood specification)
 	 *                        - instrumentation: string (optional instruments)
-	 *                        - key: string (optional musical key)
+	 *                        - key: string (optional musical key).
 	 *                        - model: string (optional model override)
-	 *                        - timeout: int (request timeout in seconds)
+	 *                        - timeout: int (request timeout in seconds).
 	 *
 	 * @return array|WP_Error Array with audio data or WP_Error on failure.
 	 *                        Success array contains:
@@ -86,7 +86,7 @@ class WP_MCP_AI_Gemini_Music_Service {
 	 *                        - prompt: string (the prompt used)
 	 *                        - model: string (the model used)
 	 */
-	public function generate_music( $prompt, array $options = array() ) {
+	public function generate_music( $prompt, array $options = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for advanced music options.
 		$prompt = trim( (string) $prompt );
 
 		if ( empty( $prompt ) ) {

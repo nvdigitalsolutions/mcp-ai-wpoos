@@ -83,12 +83,12 @@ class WP_MCP_AI_Tool_Profiler {
 
 		// Build profile.
 		$profile = array(
-			'tool_slug'      => $tool_slug,
-			'performance'    => $this->analyze_performance( $executions ),
-			'specialization' => $this->analyze_specialization( $executions, $tool_slug ),
+			'tool_slug'       => $tool_slug,
+			'performance'     => $this->analyze_performance( $executions ),
+			'specialization'  => $this->analyze_specialization( $executions, $tool_slug ),
 			'recommendations' => $this->generate_recommendations( $executions, $tool_slug ),
-			'last_updated'   => current_time( 'mysql' ),
-			'sample_size'    => count( $executions ),
+			'last_updated'    => current_time( 'mysql' ),
+			'sample_size'     => count( $executions ),
 		);
 
 		// Cache profile.
@@ -124,10 +124,10 @@ class WP_MCP_AI_Tool_Profiler {
 			$score = $this->calculate_tool_task_fit( $tool_slug, $task_features );
 			if ( $score > 0 ) {
 				$scored_tools[] = array(
-					'tool_slug'   => $tool_slug,
-					'tool_name'   => $tool->get_name(),
-					'confidence'  => $score,
-					'reason'      => $this->get_recommendation_reason( $tool_slug, $task_features ),
+					'tool_slug'  => $tool_slug,
+					'tool_name'  => $tool->get_name(),
+					'confidence' => $score,
+					'reason'     => $this->get_recommendation_reason( $tool_slug, $task_features ),
 				);
 			}
 		}
@@ -302,6 +302,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @return array Recommendations.
 	 */
 	protected function generate_recommendations( $executions, $tool_slug ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific profiling. 
 		$performance = $this->analyze_performance( $executions );
 
 		$recommendations = array(
@@ -334,6 +335,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 * @return array Task features.
 	 */
 	protected function analyze_task_features( $task_description, $context ) {
+		// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for future implementation. 
 		$features = array(
 			'keywords'      => array(),
 			'task_type'     => 'general',
@@ -429,7 +431,7 @@ class WP_MCP_AI_Tool_Profiler {
 	 */
 	protected function get_recommendation_reason( $tool_slug, $task_features ) {
 		return sprintf(
-			/* translators: 1: tool slug, 2: task type */
+		/* translators: 1: tool slug, 2: task type */
 			__( '%1$s is recommended for %2$s tasks based on keyword matching and historical performance.', 'mcp-ai-wpoos' ),
 			$tool_slug,
 			$task_features['task_type']

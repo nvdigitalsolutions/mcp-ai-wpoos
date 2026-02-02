@@ -94,7 +94,7 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 			return array(
 				'success'     => true,
 				'count'       => count( $professions_data ),
-				'category'    => $category ?: 'all',
+				'category'    => $category ? $category : 'all',
 				'professions' => $professions_data,
 			);
 		}
@@ -111,7 +111,7 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 		return array(
 			'success'     => true,
 			'count'       => count( $detailed_professions ),
-			'category'    => $category ?: 'all',
+			'category'    => $category ? $category : 'all',
 			'professions' => $detailed_professions,
 		);
 	}
@@ -120,17 +120,11 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 	/**
 
 	 * Get extended tool definition including toolkit metadata.
-
 	 *
-
 	 * @since 1.1.0
-
 	 *
-
 	 * @return array Tool definition with metadata.
-
 	 */
-
 	public function get_definition() {
 
 		return array(
@@ -148,7 +142,6 @@ class WP_MCP_AI_Tool_List_Professions implements WP_MCP_AI_Tool_Interface, WP_MC
 			'risk_level'            => 'info',
 
 		);
-
 	}
 
 

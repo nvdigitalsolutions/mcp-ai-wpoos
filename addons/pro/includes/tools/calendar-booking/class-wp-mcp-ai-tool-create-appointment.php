@@ -215,8 +215,8 @@ class WP_MCP_AI_Tool_Create_Appointment implements WP_MCP_AI_Tool_Interface, WP_
 			}
 
 			// Check permissions: must be author or have manage_options capability.
-			$is_author       = absint( $existing_appointment->post_author ) === $current_user_id;
-			$can_manage      = user_can( $current_user_id, 'manage_options' );
+			$is_author  = absint( $existing_appointment->post_author ) === $current_user_id;
+			$can_manage = user_can( $current_user_id, 'manage_options' );
 
 			if ( ! $is_author && ! $can_manage ) {
 				return new WP_Error( 'wp_mcp_ai_forbidden', __( 'You do not have permission to update this appointment.', 'mcp-ai-wpoos-pro' ) );

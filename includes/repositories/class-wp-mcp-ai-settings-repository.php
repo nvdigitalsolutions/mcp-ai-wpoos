@@ -117,7 +117,7 @@ class WP_MCP_AI_Settings_Repository {
 			$wpdb->esc_like( $this->prefix ) . '%'
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$results  = $wpdb->get_results( $query );
 		$settings = array();
 
@@ -311,7 +311,7 @@ class WP_MCP_AI_Settings_Repository {
 			$wpdb->esc_like( $this->prefix ) . '%'
 		);
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Query is properly prepared above
 		$deleted = $wpdb->query( $query );
 
 		// Clear cache.

@@ -128,30 +128,30 @@ function wp_mcp_ai_load_architectural_design_tools() {
 
 	if ( $registry ) {
 		// Floor Planning & Space Design.
-		$registry->register( new WP_MCP_AI_Tool_Generate_Floor_Plan() );
-		$registry->register( new WP_MCP_AI_Tool_Optimize_Space_Layout() );
-		$registry->register( new WP_MCP_AI_Tool_Create_Floor_Plan_Variations() );
-		$registry->register( new WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Floor_Plan() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Optimize_Space_Layout() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Floor_Plan_Variations() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Convert_Sketch_To_Floor_Plan() );
 
 		// 3D Modeling & Visualization.
-		$registry->register( new WP_MCP_AI_Tool_Generate_3d_Model() );
-		$registry->register( new WP_MCP_AI_Tool_Render_Architectural_View() );
-		$registry->register( new WP_MCP_AI_Tool_Create_Walkthrough_Animation() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_3d_Model() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Render_Architectural_View() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Create_Walkthrough_Animation() );
 
 		// Documentation & Blueprints.
-		$registry->register( new WP_MCP_AI_Tool_Generate_Construction_Drawings() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Detail_Drawings() );
-		$registry->register( new WP_MCP_AI_Tool_Export_Architectural_Documents() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Construction_Drawings() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Detail_Drawings() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Export_Architectural_Documents() );
 
 		// Analysis & Compliance.
-		$registry->register( new WP_MCP_AI_Tool_Check_Building_Code_Compliance() );
-		$registry->register( new WP_MCP_AI_Tool_Analyze_Structural_Feasibility() );
-		$registry->register( new WP_MCP_AI_Tool_Calculate_Sustainability_Metrics() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Check_Building_Code_Compliance() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Analyze_Structural_Feasibility() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Calculate_Sustainability_Metrics() );
 
 		// Estimation & Scheduling.
-		$registry->register( new WP_MCP_AI_Tool_Generate_Material_Schedule() );
-		$registry->register( new WP_MCP_AI_Tool_Estimate_Construction_Cost() );
-		$registry->register( new WP_MCP_AI_Tool_Generate_Construction_Timeline() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Material_Schedule() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Estimate_Construction_Cost() );
+		$registry->register_tool( new WP_MCP_AI_Tool_Generate_Construction_Timeline() );
 	}
 }
 

@@ -160,7 +160,8 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 			$title_output = $this->format_text_inline( $title );
 
 			if ( '' !== $title_output ) {
-				echo '<h3 class="wp-mcp-ai-assistant-base-knowledge__title">' . $title_output . '</h3>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
+				echo '<h3 class="wp-mcp-ai-assistant-base-knowledge__title">' . wp_kses_post( $title_output ) . '</h3>';
 			}
 		}
 
@@ -168,7 +169,8 @@ class WP_MCP_AI_Elementor_Assistant_Base_Knowledge_Widget extends \Elementor\Wid
 			$empty_output = $this->format_text_inline( $empty_message );
 
 			if ( '' !== $empty_output ) {
-				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . $empty_output . '</p>';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output already escaped in format_text_inline().
+				echo '<p class="wp-mcp-ai-assistant-base-knowledge__notice">' . wp_kses_post( $empty_output ) . '</p>';
 			}
 
 			echo '</div>';

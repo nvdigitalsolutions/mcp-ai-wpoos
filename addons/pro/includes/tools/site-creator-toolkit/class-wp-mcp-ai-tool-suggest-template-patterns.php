@@ -715,14 +715,14 @@ class WP_MCP_AI_Tool_Suggest_Template_Patterns {
 		} elseif ( $page_count > 5 ) {
 			$complexity_score += 2;
 		} else {
-			$complexity_score++;
+			++$complexity_score;
 		}
 
 		// Budget level complexity.
 		if ( 'high' === $budget_level ) {
 			$complexity_score += 2;
 		} elseif ( 'medium' === $budget_level ) {
-			$complexity_score++;
+			++$complexity_score;
 		}
 
 		// Determine level.

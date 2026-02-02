@@ -248,7 +248,7 @@ class WP_MCP_AI_File_Service {
 	 * @param array $context       Download context.
 	 * @return array|WP_Error File data or error.
 	 */
-	public function handle_file_download( $attachment_id, $context = array() ) {
+	public function handle_file_download( $attachment_id, $context = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for context-aware downloading.
 		$attachment = get_post( $attachment_id );
 
 		if ( ! $attachment || 'attachment' !== $attachment->post_type ) {

@@ -46,11 +46,11 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 */
 	public function get_definition() {
 		return array(
-			'name'                 => __( 'Login Security Monitor', 'mcp-ai-wpoos' ),
-			'description'          => __( 'Monitors login attempts and detects security threats including brute force attacks, suspicious patterns, and geographic anomalies.', 'mcp-ai-wpoos' ),
-			'category'             => 'security',
-			'required_capability'  => 'manage_options',
-			'parameters'           => array(
+			'name'                => __( 'Login Security Monitor', 'mcp-ai-wpoos' ),
+			'description'         => __( 'Monitors login attempts and detects security threats including brute force attacks, suspicious patterns, and geographic anomalies.', 'mcp-ai-wpoos' ),
+			'category'            => 'security',
+			'required_capability' => 'manage_options',
+			'parameters'          => array(
 				'time_period'      => array(
 					'type'        => 'string',
 					'description' => __( 'Time period to analyze: 1hour, 24hours, 7days, 30days, or custom', 'mcp-ai-wpoos' ),
@@ -147,14 +147,14 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			'success'         => true,
 			'time_range'      => $time_range,
 			'summary'         => array(
-				'total_attempts'       => $login_data['total'],
-				'successful_logins'    => $login_data['successful'],
-				'failed_attempts'      => $login_data['failed'],
-				'blocked_attempts'     => $login_data['blocked'],
-				'unique_users'         => $login_data['unique_users'],
-				'unique_ips'           => $login_data['unique_ips'],
-				'threat_level'         => $threat_analysis['threat_level'],
-				'risk_score'           => $threat_analysis['risk_score'],
+				'total_attempts'    => $login_data['total'],
+				'successful_logins' => $login_data['successful'],
+				'failed_attempts'   => $login_data['failed'],
+				'blocked_attempts'  => $login_data['blocked'],
+				'unique_users'      => $login_data['unique_users'],
+				'unique_ips'        => $login_data['unique_ips'],
+				'threat_level'      => $threat_analysis['threat_level'],
+				'risk_score'        => $threat_analysis['risk_score'],
 			),
 			'threats'         => $threat_analysis['threats'],
 			'recommendations' => $recommendations,
@@ -216,11 +216,11 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 		}
 
 		return array(
-			'start'       => $start,
-			'end'         => $end,
-			'start_date'  => gmdate( 'Y-m-d H:i:s', $start ),
-			'end_date'    => gmdate( 'Y-m-d H:i:s', $end ),
-			'duration'    => $end - $start,
+			'start'      => $start,
+			'end'        => $end,
+			'start_date' => gmdate( 'Y-m-d H:i:s', $start ),
+			'end_date'   => gmdate( 'Y-m-d H:i:s', $end ),
+			'duration'   => $end - $start,
 		);
 	}
 
@@ -293,7 +293,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array Login data.
 	 */
-	private function get_wordpress_login_data( $time_range, $username, $ip_address ) {
+	private function get_wordpress_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future implementation.
 		global $wpdb;
 
 		$data = array(
@@ -344,8 +344,8 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 			$last_login = isset( $user_meta['last_login'] ) ? (int) $user_meta['last_login'] : 0;
 
 			if ( $last_login >= $time_range['start'] && $last_login <= $time_range['end'] ) {
-				$data['successful']++;
-				$data['total']++;
+				++$data['successful'];
+				++$data['total'];
 
 				$data['attempts'][] = array(
 					'timestamp'  => $last_login,
@@ -371,7 +371,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array Wordfence data.
 	 */
-	private function get_wordfence_data( $time_range, $username, $ip_address ) {
+	private function get_wordfence_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future Wordfence integration.
 		// Placeholder for Wordfence integration.
 		$this->log( 'Wordfence integration available but not implemented yet' );
 
@@ -395,7 +395,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array iThemes data.
 	 */
-	private function get_ithemes_data( $time_range, $username, $ip_address ) {
+	private function get_ithemes_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future iThemes Security integration.
 		// Placeholder for iThemes integration.
 		$this->log( 'iThemes Security integration available but not implemented yet' );
 
@@ -419,7 +419,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @param string $ip_address IP filter.
 	 * @return array WPS Hide Login data.
 	 */
-	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) {
+	private function get_wps_hide_login_data( $time_range, $username, $ip_address ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed,Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameters reserved for future WPS Hide Login integration.
 		// Placeholder for WPS Hide Login integration.
 		$this->log( 'WPS Hide Login integration available but not implemented yet' );
 
@@ -443,9 +443,9 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	 * @return array Threat analysis.
 	 */
 	private function analyze_threats( $login_data, $threats_only = false ) {
-		$threats     = array();
-		$risk_score  = 0;
-		$max_score   = 100;
+		$threats    = array();
+		$risk_score = 0;
+		$max_score  = 100;
 
 		// Brute force detection.
 		if ( $login_data['failed'] > 20 ) {
@@ -678,6 +678,7 @@ class WP_MCP_AI_Tool_Login_Security_Monitor {
 	public function erase_privacy_data( $user_id ) {
 		// Login monitoring data is typically kept for security/audit purposes.
 		// We don't erase it, but anonymize the username.
+		// Note: $user_id would be used if we implemented erasure logic.
 		return true;
 	}
 }

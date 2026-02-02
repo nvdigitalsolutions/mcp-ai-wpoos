@@ -58,7 +58,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 */
 	protected static $tool_categories = array(
 		// High resource tools - complex operations, large outputs.
-		// 2026 Standard: 2.5x multiplier (was 2.0x) - AI models now handle more context efficiently
+		// 2026 Standard: 2.5x multiplier (was 2.0x) - AI models now handle more context efficiently.
 		'high_resource'      => array(
 			'multiplier'      => 2.5,
 			'preferred_model' => 'gpt-4o',
@@ -84,7 +84,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Medium resource tools - moderate complexity.
-		// 2026 Standard: 1.7x multiplier (was 1.5x) - Better model efficiency allows slight increase
+		// 2026 Standard: 1.7x multiplier (was 1.5x) - Better model efficiency allows slight increase.
 		'medium_resource'    => array(
 			'multiplier'      => 1.7,
 			'preferred_model' => 'gpt-4o-mini',
@@ -119,7 +119,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Low resource tools - simple operations.
-		// 2026 Standard: 1.0x multiplier (unchanged) - Simple operations remain efficient
+		// 2026 Standard: 1.0x multiplier (unchanged) - Simple operations remain efficient.
 		'low_resource'       => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
@@ -158,7 +158,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Image/Media generation tools - specialized models.
-		// 2026 Standard: 1.8x multiplier (was 1.5x) - More complex image generation workflows
+		// 2026 Standard: 1.8x multiplier (was 1.5x) - More complex image generation workflows.
 		'image_generation'   => array(
 			'multiplier'      => 1.8,
 			'preferred_model' => 'default', // Let assistant handle model selection.
@@ -191,7 +191,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Video generation and processing - high complexity.
-		// 2026 Standard: 2.2x multiplier (NEW category)
+		// 2026 Standard: 2.2x multiplier (NEW category).
 		'video_processing'   => array(
 			'multiplier'      => 2.2,
 			'preferred_model' => 'default',
@@ -208,7 +208,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Audio/Speech tools.
-		// 2026 Standard: 1.6x multiplier (was 1.5x) - Better audio processing
+		// 2026 Standard: 1.6x multiplier (was 1.5x) - Better audio processing.
 		'audio_processing'   => array(
 			'multiplier'      => 1.6,
 			'preferred_model' => 'default',
@@ -224,7 +224,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Content creation tools - need good quality models.
-		// 2026 Standard: 1.8x multiplier (was 1.5x) - More sophisticated content generation
+		// 2026 Standard: 1.8x multiplier (was 1.5x) - More sophisticated content generation.
 		'content_creation'   => array(
 			'multiplier'      => 1.8,
 			'preferred_model' => 'gpt-4o',
@@ -252,7 +252,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// API/External tools - variable complexity.
-		// 2026 Standard: 1.4x multiplier (was 1.2x) - More complex API integrations
+		// 2026 Standard: 1.4x multiplier (was 1.2x) - More complex API integrations.
 		'api_operations'     => array(
 			'multiplier'      => 1.4,
 			'preferred_model' => 'gpt-4o-mini',
@@ -279,7 +279,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Messaging/Communication tools.
-		// 2026 Standard: 1.0x multiplier (unchanged) - Lightweight operations
+		// 2026 Standard: 1.0x multiplier (unchanged) - Lightweight operations.
 		'messaging'          => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
@@ -297,7 +297,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Security/Auth tools - lightweight but critical.
-		// 2026 Standard: 1.0x multiplier (unchanged)
+		// 2026 Standard: 1.0x multiplier (unchanged).
 		'security_auth'      => array(
 			'multiplier'      => 1.0,
 			'preferred_model' => 'gpt-4o-mini',
@@ -311,7 +311,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Cache/Performance tools - minimal token usage.
-		// 2026 Standard: 0.8x multiplier (unchanged)
+		// 2026 Standard: 0.8x multiplier (unchanged).
 		'cache_performance'  => array(
 			'multiplier'      => 0.8,
 			'preferred_model' => 'gpt-4o-mini',
@@ -324,7 +324,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Scheduling/Automation tools.
-		// 2026 Standard: 1.1x multiplier (was 1.0x) - More complex automation workflows
+		// 2026 Standard: 1.1x multiplier (was 1.0x) - More complex automation workflows.
 		'scheduling'         => array(
 			'multiplier'      => 1.1,
 			'preferred_model' => 'gpt-4o-mini',
@@ -341,7 +341,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Dataset/Data operations - HuggingFace and external data sources.
-		// 2026 Standard: 1.5x multiplier (was 1.3x) - Larger dataset operations
+		// 2026 Standard: 1.5x multiplier (was 1.3x) - Larger dataset operations.
 		'dataset_operations' => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o-mini',
@@ -362,7 +362,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Agent coordination tools - DeepSeek V4 orchestration (NEW).
-		// 2026 Standard: 2.0x multiplier - Complex multi-agent operations
+		// 2026 Standard: 2.0x multiplier - Complex multi-agent operations.
 		'agent_coordination' => array(
 			'multiplier'      => 2.0,
 			'preferred_model' => 'gpt-4o',
@@ -378,7 +378,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// E-commerce operations (NEW).
-		// 2026 Standard: 1.6x multiplier - Product management complexity
+		// 2026 Standard: 1.6x multiplier - Product management complexity.
 		'ecommerce'          => array(
 			'multiplier'      => 1.6,
 			'preferred_model' => 'gpt-4o-mini',
@@ -400,7 +400,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// AI Model management (NEW).
-		// 2026 Standard: 1.3x multiplier - Model research and configuration
+		// 2026 Standard: 1.3x multiplier - Model research and configuration.
 		'model_management'   => array(
 			'multiplier'      => 1.3,
 			'preferred_model' => 'gpt-4o-mini',
@@ -414,7 +414,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Vector and embeddings operations (NEW).
-		// 2026 Standard: 1.7x multiplier - Complex vector operations
+		// 2026 Standard: 1.7x multiplier - Complex vector operations.
 		'vector_operations'  => array(
 			'multiplier'      => 1.7,
 			'preferred_model' => 'gpt-4o-mini',
@@ -427,7 +427,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Site and plugin management (NEW).
-		// 2026 Standard: 1.2x multiplier - Installation and configuration
+		// 2026 Standard: 1.2x multiplier - Installation and configuration.
 		'site_management'    => array(
 			'multiplier'      => 1.2,
 			'preferred_model' => 'gpt-4o-mini',
@@ -442,7 +442,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// GitHub operations (NEW).
-		// 2026 Standard: 1.5x multiplier - Code repository management
+		// 2026 Standard: 1.5x multiplier - Code repository management.
 		'github_operations'  => array(
 			'multiplier'      => 1.5,
 			'preferred_model' => 'gpt-4o-mini',
@@ -455,7 +455,7 @@ class WP_MCP_AI_Tool_Recommendations {
 		),
 
 		// Charts and visualization (NEW).
-		// 2026 Standard: 1.4x multiplier - Data visualization complexity
+		// 2026 Standard: 1.4x multiplier - Data visualization complexity.
 		'visualization'      => array(
 			'multiplier'      => 1.4,
 			'preferred_model' => 'gpt-4o-mini',
@@ -589,7 +589,7 @@ class WP_MCP_AI_Tool_Recommendations {
 	 * @param string $tool_slug Tool identifier.
 	 * @return string Explanation of recommendation.
 	 */
-	protected static function get_recommendation_reason( $category, $tool_slug ) {
+	protected static function get_recommendation_reason( $category, $tool_slug ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Parameter reserved for tool-specific reasons.
 		$reasons = array(
 			'high_resource'      => __( 'This tool performs complex operations or generates large outputs, requiring higher token limits for optimal performance.', 'mcp-ai-wpoos' ),
 			'medium_resource'    => __( 'This tool handles moderate complexity operations. A balanced token limit provides good performance without excessive resource usage.', 'mcp-ai-wpoos' ),

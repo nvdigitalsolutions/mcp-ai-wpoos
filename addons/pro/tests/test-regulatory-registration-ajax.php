@@ -89,12 +89,12 @@ class Test_Regulatory_Registration_AJAX extends WP_Ajax_UnitTestCase {
 		$request->set_param(
 			'arguments',
 			array(
-				'title'              => 'New Test Product',
-				'brand'              => 'New Brand',
-				'manufacturer'       => 'New Manufacturer',
-				'origin_country'     => 'AE',
-				'inci_ingredients'   => 'Aqua, Glycerin, Parfum',
-				'hs_code'            => '3303.00.00',
+				'title'            => 'New Test Product',
+				'brand'            => 'New Brand',
+				'manufacturer'     => 'New Manufacturer',
+				'origin_country'   => 'AE',
+				'inci_ingredients' => 'Aqua, Glycerin, Parfum',
+				'hs_code'          => '3303.00.00',
 			)
 		);
 

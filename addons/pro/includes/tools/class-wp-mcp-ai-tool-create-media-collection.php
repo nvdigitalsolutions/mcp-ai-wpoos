@@ -46,15 +46,15 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 					'type'        => 'integer',
 					'description' => __( 'Optional collection ID. If provided, updates the existing collection instead of creating a new one.', 'mcp-ai-wpoos-pro' ),
 				),
-				'title'        => array(
+				'title'         => array(
 					'type'        => 'string',
 					'description' => __( 'Collection title', 'mcp-ai-wpoos-pro' ),
 				),
-				'description'  => array(
+				'description'   => array(
 					'type'        => 'string',
 					'description' => __( 'Optional collection description', 'mcp-ai-wpoos-pro' ),
 				),
-				'items'        => array(
+				'items'         => array(
 					'type'        => 'array',
 					'description' => __( 'Array of attachment IDs to include in the collection', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -62,7 +62,7 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 						'minimum' => 1,
 					),
 				),
-				'template_ids' => array(
+				'template_ids'  => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of template IDs to assign to this collection', 'mcp-ai-wpoos-pro' ),
 					'items'       => array(
@@ -70,7 +70,7 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 						'minimum' => 1,
 					),
 				),
-				'categories'   => array(
+				'categories'    => array(
 					'type'        => 'array',
 					'description' => __( 'Optional array of category slugs or names to assign', 'mcp-ai-wpoos-pro' ),
 					'items'       => array( 'type' => 'string' ),
@@ -110,7 +110,11 @@ class WP_MCP_AI_Tool_Create_Media_Collection implements WP_MCP_AI_Tool_Interface
 	}
 
 	/**
-	 * {@inheritdoc}
+	 * Execute the tool to create a media collection.
+	 *
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @return array|WP_Error Result array or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
 		// Check if media toolkit is enabled.

@@ -19,11 +19,11 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 
 		// Create chat controller without main controller (null)
 		$chat_controller = new WP_MCP_AI_REST_Chat_Controller( null );
-		
+
 		// Register the chat controller routes
 		add_action(
 			'rest_api_init',
-			function() use ( $chat_controller ) {
+			function () use ( $chat_controller ) {
 				$chat_controller->register_routes();
 			}
 		);
@@ -55,7 +55,7 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 
 		// Verify response
 		$this->assertInstanceOf( WP_REST_Response::class, $response );
-		
+
 		// Should return 503 Service Unavailable, not 500 Internal Server Error
 		$this->assertSame( 503, $response->get_status(), 'Expected 503 Service Unavailable status' );
 
@@ -130,7 +130,7 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 		// Verify filters were properly removed after request
 		// The filters should have been added and then removed
 		$filters_after = $GLOBALS['wp_filter']['wp_mcp_ai_max_agentic_iterations'] ?? null;
-		
+
 		// If filters existed before, they should be the same after
 		// If they didn't exist before, they should not exist after
 		if ( $filters_before === null ) {
@@ -157,10 +157,10 @@ class WP_MCP_AI_REST_Chat_Client_Error_Handling_Test extends WP_UnitTestCase {
 		$this->assertSame( 123, $result );
 
 		// Test with valid array options
-		$options = array( 'tools' => array( 'tool1', 'tool2' ) );
+		$options          = array( 'tools' => array( 'tool1', 'tool2' ) );
 		$assistant_config = array( 'provider' => 'cloudflare' );
-		$result = $chat_controller->set_chat_client_tool_choice_default( $options, $assistant_config, array() );
-		
+		$result           = $chat_controller->set_chat_client_tool_choice_default( $options, $assistant_config, array() );
+
 		// For cloudflare provider with tools, tool_choice should be set to 'auto'
 		$this->assertIsArray( $result );
 		$this->assertArrayHasKey( 'tool_choice', $result );
