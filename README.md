@@ -93,9 +93,9 @@
 
 Real-time AI Orchestration Toolkit for Wordpress - **NV oOS** is a modular AI framework (Object-Oriented System) for WordPress that connects your site's data with OpenAI's GPT models, Gemini, Anthropic, Hugging Face, Cloudflare Worker AI, and Ollama (Local).  It allows you to create and manage AI Assistants that can interact with users, access WordPress data, and perform custom tool functions.  
 
-The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **70 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management and 4 new Social Media Analytics tools added January 2026) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **197 built-in tools**.
+The plugin works standalone with **127 unique base tools** and optionally extends through the **Pro addon**, which adds **79 Pro tools** (including 21 Pro CPT tools for Events/Quizzes/Places management, 4 new Social Media Analytics tools added January 2026, and 9 Fantasy Football tools) for advanced integrations (WooCommerce, social media APIs, GitHub, Google services, Yahoo Fantasy Sports) and exec-based tools (FFmpeg, WP-CLI, Python rembg, Jukebox), bringing the total to **206 built-in tools**.
 
-> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 70 Pro tools (total 221 tool files across base and Pro).
+> **Note on Tool Count:** Some tools have "-validated" variants that use Symfony Validator for enhanced input validation. These variants are counted separately. The base includes 127 unique tools plus 24 validated variants (151 base tool files) and 79 Pro tools (total 230 tool files across base and Pro).
 
 ### 🎯 Mission: Modernizing Small to Medium Business Websites
 
