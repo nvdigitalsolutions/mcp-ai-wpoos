@@ -648,7 +648,7 @@ class WP_MCP_AI_Tool_Password_Strength_Analyzer implements WP_MCP_AI_Tool_Interf
 	 */
 	private function calculate_audit_risk_score( $audit_results ) {
 		$total = $audit_results['total_users'];
-		if ( $total === 0 ) {
+		if ( 0 === $total ) {
 			return 0;
 		}
 

@@ -216,7 +216,7 @@ class WP_MCP_AI_Efficiency_Monitor {
 
 		// Async ratio recommendations.
 		$sync_async_ratio = $metrics['load_balancing']['sync_async_ratio'] ?? 1.0;
-		if ( $sync_async_ratio > 0.9 && $health_status !== 'excellent' ) {
+		if ( $sync_async_ratio > 0.9 && 'excellent' !== $health_status ) {
 			$recommendations[] = array(
 				'priority'    => 'low',
 				'title'       => __( 'High Synchronous Execution Ratio', 'mcp-ai-wpoos' ),

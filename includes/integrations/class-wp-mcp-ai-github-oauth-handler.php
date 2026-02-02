@@ -118,7 +118,7 @@ if ( ! class_exists( 'WP_MCP_AI_Github_OAuth_Handler' ) ) {
 
 			delete_transient( $transient_key );
 
-			if ( empty( $state ) || ! $state_data || (int) $state_data['user_id'] !== get_current_user_id() ) {
+			if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
 				$this->add_settings_redirect_notice(
 					'github_oauth_state_mismatch',
 					__( 'The GitHub authorisation request could not be verified. Please try again.', 'mcp-ai-wpoos' )

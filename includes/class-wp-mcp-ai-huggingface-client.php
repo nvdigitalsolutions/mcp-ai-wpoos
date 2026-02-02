@@ -1647,7 +1647,7 @@ if ( ! class_exists( 'WP_MCP_AI_Huggingface_Client' ) ) {
 					$desc_words = explode( ' ', $tool_desc );
 					foreach ( $desc_words as $word ) {
 						if ( strlen( $word ) > 3 && false !== strpos( $last_user_message, $word ) ) {
-							$score += 1;
+							++$score;
 						}
 					}
 				}

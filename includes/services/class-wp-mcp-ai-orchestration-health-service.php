@@ -205,7 +205,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			}
 		}
 
-		if ( $total_count === 0 ) {
+		if ( 0 === $total_count ) {
 			return 0.0;
 		}
 
@@ -237,7 +237,7 @@ class WP_MCP_AI_Orchestration_Health_Service {
 			}
 		}
 
-		if ( $count === 0 ) {
+		if ( 0 === $count ) {
 			return 0.0;
 		}
 

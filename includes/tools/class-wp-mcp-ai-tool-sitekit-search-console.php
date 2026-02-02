@@ -288,7 +288,7 @@ class WP_MCP_AI_Tool_SiteKit_Search_Console implements WP_MCP_AI_Tool_Interface,
 			/* translators: 1: total results, 2: dimension name, 3: date range, 4: total clicks, 5: total impressions */
 			__( 'Found %1$d %2$s in the %3$s with %4$d total clicks and %5$d total impressions', 'mcp-ai-wpoos' ),
 			count( $results ),
-			$dimension === 'query' ? __( 'queries', 'mcp-ai-wpoos' ) : $dimension . 's',
+			'query' === $dimension ? __( 'queries', 'mcp-ai-wpoos' ) : $dimension . 's',
 			str_replace( '_', ' ', $date_range ),
 			$total_clicks,
 			$total_impressions

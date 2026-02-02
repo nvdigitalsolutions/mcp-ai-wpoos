@@ -446,7 +446,7 @@ class WP_MCP_AI_REST_Analytics_Manager {
 
 		// Check if user exists.
 		$user = get_userdata( $user_id );
-		return ( $user !== false );
+		return ( false !== $user );
 	}
 
 	/**

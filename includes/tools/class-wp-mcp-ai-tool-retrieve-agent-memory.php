@@ -441,7 +441,7 @@ class WP_MCP_AI_Tool_Retrieve_Agent_Memory implements WP_MCP_AI_Tool_Interface, 
 			'expires_at'   => $context_record['expires_at'],
 		);
 
-		if ( $relevance_score !== null ) {
+		if ( null !== $relevance_score ) {
 			$result['relevance_score'] = round( $relevance_score, 2 );
 		}
 
