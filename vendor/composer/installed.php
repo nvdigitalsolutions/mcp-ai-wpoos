@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/wpcs-restorations-phase-four',
-        'version' => 'dev-copilot/wpcs-restorations-phase-four',
-        'reference' => '651c199eaa177cec852c0cb49961e6d875548287',
+        'pretty_version' => 'dev-copilot/create-fantasy-football-toolkit',
+        'version' => 'dev-copilot/create-fantasy-football-toolkit',
+        'reference' => 'fe1210d1e819ca3a6b50b6e3718f832b86587b62',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/wpcs-restorations-phase-four',
-            'version' => 'dev-copilot/wpcs-restorations-phase-four',
-            'reference' => '651c199eaa177cec852c0cb49961e6d875548287',
+            'pretty_version' => 'dev-copilot/create-fantasy-football-toolkit',
+            'version' => 'dev-copilot/create-fantasy-football-toolkit',
+            'reference' => 'fe1210d1e819ca3a6b50b6e3718f832b86587b62',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
