@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/integrate-espn-api-for-users',
-        'version' => 'dev-copilot/integrate-espn-api-for-users',
-        'reference' => 'e12f6da72fe7d4d1fd309511ccb9060d3a223b8a',
+        'pretty_version' => 'dev-copilot/continue-openclaw-enhancements',
+        'version' => 'dev-copilot/continue-openclaw-enhancements',
+        'reference' => 'a1f6caaae23d4d887e855b9b477cb855bcfe33cc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/integrate-espn-api-for-users',
-            'version' => 'dev-copilot/integrate-espn-api-for-users',
-            'reference' => 'e12f6da72fe7d4d1fd309511ccb9060d3a223b8a',
+            'pretty_version' => 'dev-copilot/continue-openclaw-enhancements',
+            'version' => 'dev-copilot/continue-openclaw-enhancements',
+            'reference' => 'a1f6caaae23d4d887e855b9b477cb855bcfe33cc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
