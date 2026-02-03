@@ -275,6 +275,44 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+// Load WebChat integration system if enabled.
+if ( ! empty( $settings['enable_webchat_integration'] ) ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
+WP_MCP_AI_WebChat_CPT::init();
+// Load JetEngine WebChat Messages CCT if JetEngine is active.
+if ( function_exists( 'jet_engine' ) ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
+WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
+}
+// Load WebChat Settings page.
+if ( is_admin() ) {
+// Check if not in base version.
+$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+if ( ! $is_base ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
+}
+}
+}
+
+		// Load WebChat integration system if enabled.
+		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
+			WP_MCP_AI_WebChat_CPT::init();
+			// Load JetEngine WebChat Messages CCT if JetEngine is active.
+			if ( function_exists( 'jet_engine' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
+				WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
+			}
+			// Load WebChat Settings page.
+			if ( is_admin() ) {
+				// Check if not in base version.
+				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+				if ( ! $is_base ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
+				}
+			}
+		}
+
 		// Load Fantasy Football toolkit if enabled.
 		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football-toolkit-init.php';
