@@ -209,15 +209,15 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'mailjet_api_key'                   => array(
 					'type'         => 'password',
 					'label'        => __( 'Mailjet API Key', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API key for Mailjet email service integration.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description'  => __( 'Get this from your Mailjet account under API Keys.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
 				),
 				'mailjet_api_secret'                => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet API Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'API secret for Mailjet email service.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'Mailjet Secret Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Mailjet uses Basic Authentication (API Key + Secret Key), not OAuth.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -225,7 +225,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'mailjet_from_email'                => array(
 					'type'        => 'email',
 					'label'       => __( 'Mailjet From Email', 'mcp-ai-wpoos' ),
-					'description' => __( 'Default "from" email address for Mailjet messages.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'description' => __( 'Default "from" email address for Mailjet messages. Must be a verified sender in your Mailjet account.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder' => 'noreply@example.com',
 					'disabled'    => ! $is_pro_active,
 				),
@@ -236,17 +236,10 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'placeholder' => 'My Site',
 					'disabled'    => ! $is_pro_active,
 				),
-				'mailjet_client_id'                 => array(
-					'type'        => 'text',
-					'label'       => __( 'Mailjet OAuth Client ID', 'mcp-ai-wpoos' ),
-					'description' => __( 'OAuth 2.0 Client ID from Mailjet developer portal for 1-click connection.', 'mcp-ai-wpoos' ) . $pro_notice,
-					'placeholder' => '',
-					'disabled'    => ! $is_pro_active,
-				),
-				'mailjet_client_secret'             => array(
+				'mailjet_webhook_secret'            => array(
 					'type'         => 'password',
-					'label'        => __( 'Mailjet OAuth Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret from Mailjet developer portal for 1-click connection.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'label'        => __( 'Mailjet Webhook Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Optional secret for verifying webhook requests from Mailjet.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -435,7 +428,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'id'     => 'mailjet',
 					'label'  => $is_pro_active ? __( 'Mailjet', 'mcp-ai-wpoos' ) : __( 'Mailjet (Pro)', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-email-alt',
-					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_client_id', 'mailjet_client_secret' ),
+					'fields' => array( 'mailjet_api_key', 'mailjet_api_secret', 'mailjet_from_email', 'mailjet_from_name', 'mailjet_webhook_secret' ),
 					'pro'    => true,
 				),
 				// QuickBooks and iSAMS moved to Remote Sites.
@@ -1450,97 +1443,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Mailjet footer content.
 		 */
-		private function render_mailjet_footer() {
-			$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-			$mailjet_connected = ! empty( $settings['mailjet_connected'] );
-			$has_credentials   = ! empty( $settings['mailjet_client_id'] ) && ! empty( $settings['mailjet_client_secret'] );
-			$oauth_connect_url = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_oauth_start' ),
-				'wp_mcp_ai_mailjet_oauth_start'
-			);
-			$disconnect_url    = wp_nonce_url(
-				admin_url( 'admin-post.php?action=wp_mcp_ai_mailjet_disconnect' ),
-				'wp_mcp_ai_mailjet_disconnect'
-			);
-			?>
-			<tr>
-				<th scope="row"><?php esc_html_e( 'Mailjet Connection', 'mcp-ai-wpoos' ); ?></th>
-				<td>
-					<?php if ( $mailjet_connected ) : ?>
-						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #155724;">
-								<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-								<strong><?php esc_html_e( 'Connected to Mailjet', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button">
-								<?php esc_html_e( 'Reconnect Mailjet Account', 'mcp-ai-wpoos' ); ?>
-							</a>
-							<a href="<?php echo esc_url( $disconnect_url ); ?>" class="button" style="margin-left: 5px;">
-								<?php esc_html_e( 'Disconnect', 'mcp-ai-wpoos' ); ?>
-							</a>
-						</p>
-						<p class="description">
-							<?php
-							echo wp_kses_post(
-								__(
-									'Your Mailjet account is connected. You can now use email sending and campaign management tools.',
-									'mcp-ai-wpoos'
-								)
-							);
-							?>
-						</p>
-					<?php elseif ( $has_credentials ) : ?>
-						<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #856404;">
-								<span class="dashicons dashicons-warning" style="color: #856404;"></span>
-								<strong><?php esc_html_e( 'Mailjet Not Connected', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p>
-							<a href="<?php echo esc_url( $oauth_connect_url ); ?>" class="button button-primary">
-								<?php esc_html_e( 'Connect Mailjet Account', 'mcp-ai-wpoos' ); ?>
-							</a>
-						</p>
-						<p class="description">
-							<?php
-							echo wp_kses_post(
-								__(
-									'Click the button above to authorize WP MCP AI to access your Mailjet account. You will be redirected to Mailjet to grant permissions.',
-									'mcp-ai-wpoos'
-								)
-							);
-							?>
-						</p>
-					<?php else : ?>
-						<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-							<p style="margin: 0; color: #721c24;">
-								<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-								<strong><?php esc_html_e( 'Mailjet OAuth Credentials Required', 'mcp-ai-wpoos' ); ?></strong>
-							</p>
-						</div>
-						<p class="description">
-							<?php esc_html_e( 'Enter your Mailjet OAuth Client ID and Client Secret in the fields above, then save settings. After that, you can connect using the button that will appear here.', 'mcp-ai-wpoos' ); ?>
-						</p>
-					<?php endif; ?>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"></th>
-				<td>
-					<p class="description">
-						<strong><?php esc_html_e( 'Mailjet Integration:', 'mcp-ai-wpoos' ); ?></strong>
-					</p>
-					<ul style="list-style: disc; margin-left: 20px;">
-						<li><?php esc_html_e( 'Create an OAuth app in your Mailjet developer portal', 'mcp-ai-wpoos' ); ?></li>
-						<li><?php esc_html_e( 'Access tokens are automatically refreshed when expired', 'mcp-ai-wpoos' ); ?></li>
-						<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
-					</ul>
-				</td>
-			</tr>
-			<?php
-		}
+private function render_mailjet_footer() {
+$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
+$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
+?>
+<tr>
+<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
+<td>
+<?php if ( $has_credentials ) : ?>
+<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+<p style="margin: 0; color: #155724;">
+<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
+</p>
+</div>
+<p class="description">
+<?php
+echo wp_kses_post(
+__(
+'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
+'mcp-ai-wpoos'
+)
+);
+?>
+</p>
+<?php else : ?>
+<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+<p style="margin: 0; color: #721c24;">
+<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+</p>
+</div>
+<p class="description">
+<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
+</p>
+<?php endif; ?>
+</td>
+</tr>
+<tr>
+<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
+<td>
+<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
+<button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById('mailjet_webhook_url').value); this.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>'; setTimeout(() => this.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>', 2000);">
+<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+</button>
+<p class="description">
+<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
+</p>
+</td>
+</tr>
+<tr>
+<th scope="row"></th>
+<td>
+<p class="description">
+<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
+</p>
+<ul style="list-style: disc; margin-left: 20px;">
+<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
+<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
+</ul>
+</td>
+</tr>
+<?php
+}
 
 		/**
 		 * Render Cloudways footer content.
