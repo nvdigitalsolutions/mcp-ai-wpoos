@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
-        'version' => 'dev-copilot/fix-save-background-key-issue',
-        'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
+        'pretty_version' => 'dev-copilot/add-clickable-link-button',
+        'version' => 'dev-copilot/add-clickable-link-button',
+        'reference' => '175fb6fe8545679f4a02f60c33ded47406fceb52',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
-            'version' => 'dev-copilot/fix-save-background-key-issue',
-            'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
+            'pretty_version' => 'dev-copilot/add-clickable-link-button',
+            'version' => 'dev-copilot/add-clickable-link-button',
+            'reference' => '175fb6fe8545679f4a02f60c33ded47406fceb52',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
