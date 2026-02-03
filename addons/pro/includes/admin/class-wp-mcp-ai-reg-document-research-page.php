@@ -231,9 +231,27 @@ class WP_MCP_AI_Reg_Document_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive document tools.
+							// Render chat interface with comprehensive regulatory document tools.
+							$reg_doc_tools = array(
+								// Document management.
+								'upload_reg_document',
+								'get_reg_document',
+								'list_reg_documents',
+								'update_reg_document',
+								// Document validation.
+								'validate_document_checklist',
+								'check_document_expiry',
+								'track_document_version',
+								// Registration access.
+								'list_registrations',
+								'get_registration',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="upload_reg_document,list_reg_documents,get_reg_document,validate_document_checklist,list_registrations,get_registration,web_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_doc_tools ) ) . '"]'
 							);
 							?>
 						</div>

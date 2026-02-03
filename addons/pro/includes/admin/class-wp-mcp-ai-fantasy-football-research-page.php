@@ -268,6 +268,13 @@ class WP_MCP_AI_Fantasy_Football_Research_Page {
 								'yahoo_ff_get_roster',
 								'yahoo_ff_get_player_stats',
 								'yahoo_ff_trade_analyzer',
+								// ESPN Fantasy Football API tools.
+								'espn_fantasy_get_league',
+								'espn_fantasy_get_roster',
+								'espn_fantasy_get_standings',
+								'espn_fantasy_get_teams',
+								'espn_fantasy_analyze_lineup',
+								'espn_fantasy_sync_league',
 								// Fantasy Football specific tools.
 								'ff_generate_team_logo',
 								'ff_create_league_report',

@@ -254,9 +254,46 @@ class WP_MCP_AI_Financial_Account_Research_Page {
 						<div class="wp-mcp-ai-research-chat">
 							<?php
 							// Render chat interface with comprehensive financial planning tools.
-							// Includes research, account management, calculators, and analysis tools.
+							// Includes calculators, analyzers, trackers, and planners.
+							$financial_tools = array(
+								// Retirement and long-term planning.
+								'retirement_calculator',
+								'ira_roth_comparison',
+								'social_security_optimizer',
+								'pension_analyzer',
+								'withdrawal_strategy_planner',
+								// Budgeting and cash management.
+								'budget_planner',
+								'savings_goal_planner',
+								'emergency_fund_calculator',
+								'cash_flow_analyzer',
+								'expense_tracker',
+								// Debt and credit management.
+								'debt_payoff_calculator',
+								'mortgage_calculator',
+								'credit_score_tracker',
+								// Investment tools.
+								'investment_return_calculator',
+								'asset_allocation_planner',
+								'portfolio_visualizer',
+								'rebalancing_analyzer',
+								// Tax and insurance planning.
+								'tax_estimator',
+								'tax_loss_harvesting_tracker',
+								'insurance_needs_analyzer',
+								// Education and net worth.
+								'college_savings_calculator',
+								'net_worth_calculator',
+								// Account management.
+								'bank_account_sync',
+								'financial_health_score',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="retirement_calculator,ira_roth_comparison,social_security_optimizer,budget_planner,net_worth_calculator,investment_return_calculator,debt_payoff_calculator,mortgage_calculator,savings_goal_planner,emergency_fund_calculator,tax_estimator,insurance_needs_analyzer,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $financial_tools ) ) . '"]'
 							);
 							?>
 						</div>

@@ -229,10 +229,34 @@ class WP_MCP_AI_Task_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive task tools.
-							// Includes task creation, management, and project association tools.
+							// Render chat interface with comprehensive task and project management tools.
+							$task_tools = array(
+								// Task management.
+								'create_task',
+								'list_tasks',
+								'update_task',
+								'delete_task',
+								// Task planning (Pro).
+								'create_task_plan',
+								'get_task_plan',
+								'update_task_plan',
+								// Project management.
+								'create_project',
+								'list_projects',
+								'update_project',
+								'delete_project',
+								'research_project',
+								// Template management.
+								'create_template',
+								'list_templates',
+								'instantiate_template',
+								// Research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_task,list_tasks,update_task,delete_task,create_project,list_projects,web_search,search_content"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $task_tools ) ) . '"]'
 							);
 							?>
 						</div>
