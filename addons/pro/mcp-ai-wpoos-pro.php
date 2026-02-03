@@ -407,14 +407,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
 		}
 
-		// Load Regulatory Registration Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
-		}
+	// Load Regulatory Registration Toolkit if enabled (Pro feature).
+	if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
+	}
 
-		// ========================================================================
-		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
-		// ========================================================================
+	// Load Chat Channels Integration Toolkit if enabled (Pro feature).
+	if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
+	}
+
+	// ========================================================================
+	// PHASE 6: FRONTEND COMPONENTS INTEGRATION
+	// ========================================================================
 		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
 		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
