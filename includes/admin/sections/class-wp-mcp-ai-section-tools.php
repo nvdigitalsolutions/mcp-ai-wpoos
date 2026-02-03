@@ -1080,6 +1080,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Tools' ) ) {
 							'input[name="wp_mcp_ai_settings[enable_ai_tool_builder_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_architect_agent_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_architectural_design_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_site_creator_toolkit]"],' +
+							'input[name="wp_mcp_ai_settings[enable_regulatory_registration_toolkit]"],' +
 							'input[name="wp_mcp_ai_settings[enable_webchat_integration]"],' +
 							'input[name="wp_mcp_ai_settings[enable_fantasy_football]"]'
 						);
