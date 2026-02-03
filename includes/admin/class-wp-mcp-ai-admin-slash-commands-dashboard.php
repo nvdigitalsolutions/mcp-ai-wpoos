@@ -20,6 +20,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 	/**
+	 * Maximum number of history entries to keep.
+	 *
+	 * @var int
+	 */
+	const MAX_HISTORY_ENTRIES = 100;
+
+	/**
+	 * Length to truncate history output preview.
+	 *
+	 * @var int
+	 */
+	const HISTORY_OUTPUT_PREVIEW_LENGTH = 500;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -677,13 +691,13 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			'user'          => $user->display_name,
 			'user_id'       => $user->ID,
 			'status'        => is_wp_error( $result ) ? 'error' : 'success',
-			'output'        => is_wp_error( $result ) ? $result->get_error_message() : substr( $result, 0, 500 ),
+			'output'        => is_wp_error( $result ) ? $result->get_error_message() : substr( $result, 0, self::HISTORY_OUTPUT_PREVIEW_LENGTH ),
 		);
 
 		array_unshift( $history, $entry );
 
-		// Keep only last 100 entries.
-		$history = array_slice( $history, 0, 100 );
+		// Keep only last MAX_HISTORY_ENTRIES entries.
+		$history = array_slice( $history, 0, self::MAX_HISTORY_ENTRIES );
 
 		update_option( 'wp_mcp_ai_slash_command_history', $history );
 	}
