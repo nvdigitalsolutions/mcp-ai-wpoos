@@ -359,6 +359,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Yahoo Fantasy Sports.
+				'yahoo_client_id'                   => array(
+					'type'         => 'text',
+					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Yahoo Developer */
+						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.' . $pro_notice, 'mcp-ai-wpoos' ),
+						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
+					),
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'yahoo_client_secret'               => array(
+					'type'         => 'password',
+					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.' . $pro_notice, 'mcp-ai-wpoos' ),
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
 				// Use admin.php?page=wp-mcp-ai-remote-sites to manage these connections.
 			);
@@ -457,6 +479,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'yahoo_sports'     => array(
+					'id'     => 'yahoo_sports',
+					'label'  => $is_pro_active ? __( 'Yahoo Sports', 'mcp-ai-wpoos' ) : __( 'Yahoo Sports (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-awards',
+					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret' ),
+					'pro'    => true,
 				),
 				// iSAMS moved to Remote Sites.
 			);

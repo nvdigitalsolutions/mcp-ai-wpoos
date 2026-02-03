@@ -91,37 +91,12 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		// Call parent to register base fields (assistant).
 		parent::register_settings();
 
-		// Add Yahoo API Credentials section.
+		// Add Yahoo API Credentials notice section - credentials now managed in Connections.
 		add_settings_section(
 			$this->option_name . '_yahoo_api_section',
 			__( 'Yahoo Fantasy Sports API', 'mcp-ai-wpoos-pro' ),
 			array( $this, 'render_yahoo_api_section' ),
 			$this->option_name
-		);
-
-		add_settings_field(
-			'yahoo_client_id',
-			__( 'Yahoo Client ID', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_text_field' ),
-			$this->option_name,
-			$this->option_name . '_yahoo_api_section',
-			array(
-				'id'          => 'yahoo_client_id',
-				'placeholder' => __( 'Consumer Key from Yahoo Developer', 'mcp-ai-wpoos-pro' ),
-			)
-		);
-
-		add_settings_field(
-			'yahoo_client_secret',
-			__( 'Yahoo Client Secret', 'mcp-ai-wpoos-pro' ),
-			array( $this, 'render_text_field' ),
-			$this->option_name,
-			$this->option_name . '_yahoo_api_section',
-			array(
-				'id'          => 'yahoo_client_secret',
-				'type'        => 'password',
-				'placeholder' => __( 'Consumer Secret from Yahoo Developer', 'mcp-ai-wpoos-pro' ),
-			)
 		);
 
 		// Default Preferences section.
@@ -235,8 +210,9 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		<p>
 			<?php
 			printf(
-				/* translators: %s: Yahoo Developer URL */
-				esc_html__( 'Enter your Yahoo Fantasy Sports API credentials. Get them from %s.', 'mcp-ai-wpoos-pro' ),
+				/* translators: %1$s: URL to connections settings, %2$s: Yahoo Developer URL */
+				esc_html__( 'Yahoo Fantasy Sports API credentials are now managed in the %1$s. Once configured there, the credentials will be automatically available to all Fantasy Football tools. To create your Yahoo application and get credentials, visit %2$s.', 'mcp-ai-wpoos-pro' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=yahoo_sports' ) ) . '">' . esc_html__( 'Connections Settings', 'mcp-ai-wpoos-pro' ) . '</a>',
 				'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
 			);
 			?>
@@ -366,8 +342,8 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 	public function sanitize_settings( $input ) {
 		$sanitized = parent::sanitize_settings( $input );
 
-		// Text fields.
-		$text_fields = array( 'yahoo_client_id', 'yahoo_client_secret', 'default_season', 'default_logo_style' );
+		// Text fields (yahoo credentials removed - now in Connections settings).
+		$text_fields = array( 'default_season', 'default_logo_style' );
 		foreach ( $text_fields as $field ) {
 			if ( isset( $input[ $field ] ) ) {
 				$sanitized[ $field ] = sanitize_text_field( $input[ $field ] );
