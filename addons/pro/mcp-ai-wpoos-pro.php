@@ -542,6 +542,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
 			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
 			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
+			// Enhanced Telegram tools.
+			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+			// Enhanced WhatsApp tools.
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
+			'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
+			// Unified broadcast tool.
+			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
@@ -1236,6 +1244,14 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'send_messenger_message'          => 'external-tools',
 			'get_messenger_conversations'     => 'external-tools',
 			'create_messenger_broadcast'      => 'external-tools',
+			// Enhanced Telegram tools - Require external API credentials.
+			'get_telegram_updates'            => 'external-tools',
+			'manage_telegram_webhook'         => 'external-tools',
+			// Enhanced WhatsApp tools - Require external API credentials.
+			'send_whatsapp_template'          => 'external-tools',
+			'get_whatsapp_messages'           => 'external-tools',
+			// Unified broadcast tool - Requires external API credentials.
+			'unified_channel_broadcast'       => 'external-tools',
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                    => 'external-tools',
 			'send_mailjet_email'              => 'external-tools',
