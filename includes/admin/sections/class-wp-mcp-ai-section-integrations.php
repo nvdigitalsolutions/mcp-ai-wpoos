@@ -365,9 +365,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'        => __( 'Yahoo Client ID', 'mcp-ai-wpoos' ),
 					'description'  => sprintf(
 						/* translators: %s: URL to Yahoo Developer */
-						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.' . $pro_notice, 'mcp-ai-wpoos' ),
+						__( 'OAuth 2.0 Client ID (Consumer Key) from Yahoo Developer Network for Yahoo Fantasy Sports API. Get your credentials from %s. Used for fantasy football league management, roster analysis, and player statistics.', 'mcp-ai-wpoos' ),
 						'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
-					),
+					) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'off',
 					'disabled'     => ! $is_pro_active,
@@ -375,7 +375,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'yahoo_client_secret'               => array(
 					'type'         => 'password',
 					'label'        => __( 'Yahoo Client Secret', 'mcp-ai-wpoos' ),
-					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.' . $pro_notice, 'mcp-ai-wpoos' ),
+					'description'  => __( 'OAuth 2.0 Client Secret (Consumer Secret) from Yahoo Developer Network.', 'mcp-ai-wpoos' ) . $pro_notice,
 					'placeholder'  => '',
 					'autocomplete' => 'new-password',
 					'disabled'     => ! $is_pro_active,
@@ -1472,73 +1472,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Mailjet footer content.
 		 */
-private function render_mailjet_footer() {
-$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
-$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
-?>
-<tr>
-<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
-<td>
-<?php if ( $has_credentials ) : ?>
-<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-<p style="margin: 0; color: #155724;">
-<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
+	private function render_mailjet_footer() {
+		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+		$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
+		$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<?php if ( $has_credentials ) : ?>
+					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+					<p style="margin: 0; color: #155724;">
+					<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+					<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					</div>
+					<p class="description">
+					<?php
+						echo wp_kses_post(
+							__(
+								'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
+								'mcp-ai-wpoos'
+							)
+							);
+					?>
 </p>
-</div>
+				<?php else : ?>
+					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+					<p style="margin: 0; color: #721c24;">
+					<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+					<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					</div>
 <p class="description">
-<?php
-echo wp_kses_post(
-__(
-'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
-'mcp-ai-wpoos'
-)
-);
-?>
+					<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
 </p>
-<?php else : ?>
-<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-<p style="margin: 0; color: #721c24;">
-<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
-</p>
-</div>
-<p class="description">
-<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
-</p>
-<?php endif; ?>
-</td>
-</tr>
-<tr>
-<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
-<td>
-<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
-<button type="button" class="button" onclick="(function(btn){try{var input=document.getElementById('mailjet_webhook_url');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(input.value).then(function(){btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}).catch(function(){input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);});}else{input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}}catch(e){console.error('Copy failed:',e);alert('<?php esc_attr_e( 'Failed to copy. Please copy manually.', 'mcp-ai-wpoos' ); ?>');}})(this);">
-<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
+				<button type="button" class="button" onclick="(function(btn){try{var input=document.getElementById('mailjet_webhook_url');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(input.value).then(function(){btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}).catch(function(){input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);});}else{input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}}catch(e){console.error('Copy failed:',e);alert('<?php esc_attr_e( 'Failed to copy. Please copy manually.', 'mcp-ai-wpoos' ); ?>');}})(this);">
+					<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
 </button>
-<p class="description">
-<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
+				<p class="description">
+					<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
 </p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<p class="description">
+					<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
+				</p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
+				</ul>
 </td>
-</tr>
-<tr>
-<th scope="row"></th>
-<td>
-<p class="description">
-<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
-</p>
-<ul style="list-style: disc; margin-left: 20px;">
-<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
-</ul>
-</td>
-</tr>
-<?php
-}
+			</td>
+		<?php
+	}
 
 		/**
 		 * Render Cloudways footer content.
@@ -1761,6 +1761,17 @@ __(
 
 					<!-- Hidden field to preserve subtab during form submission -->
 					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					
+					<?php
+					// If accessed via connection parameter (e.g., from Tools > Connections),
+					// preserve it for redirect after save.
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
+					if ( isset( $_GET['connection'] ) ) :
+						?>
+						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<?php
+					endif;
+					?>
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">
