@@ -122,6 +122,55 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load ship command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-ship.php';
+
+	// Register /ship command.
+	$ship_command = new WP_MCP_AI_Slash_Command_Ship();
+	$wp_mcp_ai_slash_command_handler->register(
+		'ship',
+		array(
+			'handler'     => array( $ship_command, 'execute' ),
+			'description' => __( 'Automated content review, optimization, and publishing workflow', 'mcp-ai-wpoos' ),
+			'usage'       => '/ship [post_id...] [--dry-run|-n] [--publish|-p] [--schedule=<date>] [--skip-checks|-s] [--skip-seo] [--skip-images] [--skip-links]',
+			'capability'  => 'publish_posts',
+			'parameters'  => array(
+				'post_id' => array(
+					'description' => __( 'Post ID(s) to ship. If omitted, finds draft posts ready to ship.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Preview checks without publishing', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--publish' => array(
+					'description' => __( 'Automatically publish posts that pass checks (70%+ score)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--schedule' => array(
+					'description' => __( 'Schedule publication for a future date (YYYY-MM-DD HH:MM)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-checks' => array(
+					'description' => __( 'Skip all pre-flight, SEO, and quality checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-seo' => array(
+					'description' => __( 'Skip SEO verification checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-images' => array(
+					'description' => __( 'Skip image optimization checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-links' => array(
+					'description' => __( 'Skip internal linking suggestions', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
