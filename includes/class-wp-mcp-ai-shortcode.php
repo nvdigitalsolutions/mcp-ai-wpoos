@@ -1011,7 +1011,9 @@ class WP_MCP_AI_Shortcode {
 
 			// Get tool shortcuts - for profession tests, get them from the profession's associated assistant if available.
 			$shortcuts_assistant_id = $is_profession_test && isset( $permissions_assistant_id ) ? $permissions_assistant_id : $assistant_id;
-			$tool_shortcuts         = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id );
+			// Pass additional_tools so shortcuts can be generated for them too.
+			$additional_tools_for_shortcuts = ! empty( $additional_tools ) ? $additional_tools : array();
+			$tool_shortcuts                 = self::get_assistant_tool_shortcuts( $shortcuts_assistant_id, $additional_tools_for_shortcuts );
 			if ( ! empty( $tool_shortcuts ) ) {
 				$config['toolShortcuts'] = $tool_shortcuts;
 			}
@@ -1506,10 +1508,11 @@ class WP_MCP_AI_Shortcode {
 	/**
 	 * Retrieve tool shortcut metadata for the supplied assistant.
 	 *
-	 * @param int $assistant_id Assistant post ID.
+	 * @param int   $assistant_id    Assistant post ID.
+	 * @param array $additional_tools Optional array of additional tool slugs to include shortcuts for.
 	 * @return array[]
 	 */
-	public static function get_assistant_tool_shortcuts( $assistant_id ) {
+	public static function get_assistant_tool_shortcuts( $assistant_id, $additional_tools = array() ) {
 		$assistant_id = absint( $assistant_id );
 
 		if ( ! $assistant_id ) {
@@ -1534,6 +1537,24 @@ class WP_MCP_AI_Shortcode {
 				}
 
 				$selected_tools[] = $tool_slug;
+			}
+
+			$selected_tools = array_values( array_unique( $selected_tools ) );
+		}
+
+		// Merge in additional tools from shortcode parameter.
+		if ( ! empty( $additional_tools ) && is_array( $additional_tools ) ) {
+			foreach ( $additional_tools as $tool_slug ) {
+				$tool_slug = sanitize_key( $tool_slug );
+
+				if ( '' === $tool_slug ) {
+					continue;
+				}
+
+				// Only add if not already in the list.
+				if ( ! in_array( $tool_slug, $selected_tools, true ) ) {
+					$selected_tools[] = $tool_slug;
+				}
 			}
 
 			$selected_tools = array_values( array_unique( $selected_tools ) );

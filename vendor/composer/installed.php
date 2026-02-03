@@ -1,6 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
+        'pretty_version' => 'dev-copilot/fix-date-search-issue',
+        'version' => 'dev-copilot/fix-date-search-issue',
+        'reference' => '60c4d95aea65ac2266bede824f0af29d3e0b1c0a',
         'pretty_version' => 'dev-copilot/add-clickable-link-button',
         'version' => 'dev-copilot/add-clickable-link-button',
         'reference' => '175fb6fe8545679f4a02f60c33ded47406fceb52',
@@ -65,6 +68,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
+            'pretty_version' => 'dev-copilot/fix-date-search-issue',
+            'version' => 'dev-copilot/fix-date-search-issue',
+            'reference' => '60c4d95aea65ac2266bede824f0af29d3e0b1c0a',
             'pretty_version' => 'dev-copilot/add-clickable-link-button',
             'version' => 'dev-copilot/add-clickable-link-button',
             'reference' => '175fb6fe8545679f4a02f60c33ded47406fceb52',
