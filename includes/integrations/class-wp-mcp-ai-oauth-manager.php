@@ -720,11 +720,11 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				wp_safe_redirect(
 					add_query_arg(
 						array(
-							'page'         => 'wp-mcp-ai-dashboard',
-							'tab'          => 'tools',
-							'subtab'       => 'connections',
-							'connection'   => 'yahoo_sports',
-							'yahoo_error'  => rawurlencode( __( 'Please save your Yahoo Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+							'page'        => 'wp-mcp-ai-dashboard',
+							'tab'         => 'tools',
+							'subtab'      => 'connections',
+							'connection'  => 'yahoo_sports',
+							'yahoo_error' => rawurlencode( __( 'Please save your Yahoo Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
 						),
 						admin_url( 'admin.php' )
 					)

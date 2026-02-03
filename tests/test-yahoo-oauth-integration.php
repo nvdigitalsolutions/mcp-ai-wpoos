@@ -44,7 +44,7 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	 */
 	public function test_yahoo_footer_rendering() {
 		// Set Yahoo credentials in settings.
-		$settings                      = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                        = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['yahoo_client_id']     = 'test_client_id';
 		$settings['yahoo_client_secret'] = 'test_client_secret';
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -85,7 +85,7 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	 */
 	public function test_yahoo_footer_shows_connected_status() {
 		// Set Yahoo credentials.
-		$settings                      = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                        = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['yahoo_client_id']     = 'test_client_id';
 		$settings['yahoo_client_secret'] = 'test_client_secret';
 		update_option( 'wp_mcp_ai_settings', $settings );
