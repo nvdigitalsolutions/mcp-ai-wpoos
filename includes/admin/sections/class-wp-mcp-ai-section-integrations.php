@@ -1103,7 +1103,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'client_id'     => rawurlencode( $settings['yahoo_client_id'] ),
 					'redirect_uri'  => rawurlencode( $redirect_uri ),
 					'response_type' => 'code',
-					'scope'         => 'fspt-r', // Fantasy Sports Read access.
+					'scope'         => 'fspt-r', // Fantasy Sports Read access - required for reading user's fantasy football leagues, rosters, and stats. Yahoo uses 'fspt-w' for write access if needed in the future.
 					'state'         => $state,
 				),
 				'https://api.login.yahoo.com/oauth2/request_auth'

@@ -807,7 +807,7 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 
 			delete_transient( $transient_key );
 
-			if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
+			if ( empty( $state ) || ! is_array( $state_data ) || ! isset( $state_data['user_id'] ) || get_current_user_id() !== (int) $state_data['user_id'] ) {
 				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
 				exit;
 			}
