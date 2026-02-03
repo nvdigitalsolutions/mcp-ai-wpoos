@@ -330,9 +330,84 @@ class WP_MCP_AI_Registration_Research_Page {
 					<?php if ( $assistant_id > 0 ) : ?>
 						<div class="wp-mcp-ai-research-chat">
 							<?php
-							// Render chat interface with comprehensive registration tools.
+							// Render chat interface with comprehensive regulatory registration tools.
+							// Include all regulatory registration toolkit tools to enable full management capabilities.
+							$reg_tools = array(
+								// Core product management.
+								'create_reg_product',
+								'update_reg_product',
+								'delete_reg_product',
+								'duplicate_reg_product',
+								'get_reg_product',
+								'list_reg_products',
+								'search_reg_products',
+								'validate_reg_product',
+								// Registration management.
+								'create_registration',
+								'get_registration',
+								'list_registrations',
+								'list_registrations_by_country',
+								'list_expiring_registrations',
+								'update_registration_status',
+								'approve_registration',
+								'submit_registration',
+								'renew_registration',
+								'get_registration_timeline',
+								'submit_to_authority',
+								// Document management.
+								'upload_reg_document',
+								'get_reg_document',
+								'update_reg_document',
+								'list_reg_documents',
+								'validate_document_checklist',
+								'track_document_version',
+								'check_document_expiry',
+								// Excel import/export.
+								'import_products_from_excel',
+								'export_products_to_excel',
+								'validate_excel_import',
+								'import_registrations_from_excel',
+								'export_registrations_to_excel',
+								// Compliance & validation.
+								'check_product_compliance',
+								'validate_inci_ingredients',
+								'check_hs_code',
+								'get_regulatory_requirements',
+								'get_regulatory_updates',
+								'add_regulatory_requirement',
+								'check_authority_status',
+								// Reports & analytics.
+								'generate_compliance_report',
+								'generate_compliance_certificate',
+								'generate_cost_analysis',
+								'generate_country_performance',
+								'generate_expiry_forecast',
+								'generate_pipeline_report',
+								'generate_pdf_dossier',
+								'generate_submission_pack',
+								'generate_cover_letter',
+								// Notifications.
+								'configure_email_notifications',
+								'send_expiry_alerts',
+								'send_status_change_notification',
+								'get_notification_history',
+								// Workflow automation.
+								'create_workflow_rule',
+								'update_workflow_rule',
+								'delete_workflow_rule',
+								'list_workflow_rules',
+								'test_workflow_rule',
+								'get_workflow_execution_log',
+								// Authority integrations.
+								'sync_with_mohap',
+								'sync_with_nmra',
+								// General research tools.
+								'web_search',
+								'search_content',
+								'semantic_content_search',
+							);
 							echo do_shortcode(
-								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="create_registration,list_registrations,get_registration,list_reg_products,get_reg_product,check_product_compliance,web_search"]'
+								'[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" additional_tools="' . esc_attr( implode( ',', $reg_tools ) ) . '"]'
 							);
 							?>
 						</div>
