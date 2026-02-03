@@ -359,6 +359,40 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'autocomplete' => 'new-password',
 				),
 
+				// Plaid (Financial Services).
+				'plaid_client_id'                   => array(
+					'type'         => 'text',
+					'label'        => __( 'Plaid Client ID', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to Plaid Dashboard */
+						__( 'Client ID from Plaid dashboard for financial account integration. Get your credentials from %s. Used for optional bank account sync in Financial Planner Toolkit.', 'mcp-ai-wpoos' ),
+						'<a href="https://dashboard.plaid.com/" target="_blank">Plaid Dashboard</a>'
+					) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'off',
+					'disabled'     => ! $is_pro_active,
+				),
+				'plaid_secret'                      => array(
+					'type'         => 'password',
+					'label'        => __( 'Plaid Secret Key', 'mcp-ai-wpoos' ),
+					'description'  => __( 'Secret key from Plaid dashboard. Keep this secure and never share publicly.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+				'plaid_environment'                 => array(
+					'type'        => 'select',
+					'label'       => __( 'Plaid Environment', 'mcp-ai-wpoos' ),
+					'description' => __( 'Select Plaid environment: Sandbox for testing, Development for development, Production for live use.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'options'     => array(
+						'sandbox'     => __( 'Sandbox (Testing)', 'mcp-ai-wpoos' ),
+						'development' => __( 'Development', 'mcp-ai-wpoos' ),
+						'production'  => __( 'Production', 'mcp-ai-wpoos' ),
+					),
+					'default'     => 'sandbox',
+					'disabled'    => ! $is_pro_active,
+				),
+
 				// Yahoo Fantasy Sports.
 				'yahoo_client_id'                   => array(
 					'type'         => 'text',
@@ -479,6 +513,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'label'  => __( 'TikTok', 'mcp-ai-wpoos' ),
 					'icon'   => 'dashicons-video-alt3',
 					'fields' => array( 'tiktok_access_token', 'tiktok_client_key', 'tiktok_client_secret' ),
+				),
+				'plaid'            => array(
+					'id'     => 'plaid',
+					'label'  => $is_pro_active ? __( 'Plaid', 'mcp-ai-wpoos' ) : __( 'Plaid (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-money-alt',
+					'fields' => array( 'plaid_client_id', 'plaid_secret', 'plaid_environment' ),
+					'pro'    => true,
 				),
 				'yahoo_sports'     => array(
 					'id'     => 'yahoo_sports',
