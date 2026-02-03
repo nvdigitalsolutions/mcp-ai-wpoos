@@ -539,6 +539,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Send_Teams_Message'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-teams-message.php',
 			'WP_MCP_AI_Pro_Tool_Get_Teams_Channels'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-channels.php',
 			'WP_MCP_AI_Pro_Tool_Get_Teams_Messages'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-messages.php',
+			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
+			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
@@ -1230,6 +1233,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'send_teams_message'              => 'external-tools',
 			'get_teams_channels'              => 'external-tools',
 			'get_teams_messages'              => 'external-tools',
+			'send_messenger_message'          => 'external-tools',
+			'get_messenger_conversations'     => 'external-tools',
+			'create_messenger_broadcast'      => 'external-tools',
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                    => 'external-tools',
 			'send_mailjet_email'              => 'external-tools',
