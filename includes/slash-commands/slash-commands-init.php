@@ -84,6 +84,44 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load next-task command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-next-task.php';
+
+	// Register /next-task command.
+	$next_task_command = new WP_MCP_AI_Slash_Command_Next_Task();
+	$wp_mcp_ai_slash_command_handler->register(
+		'next-task',
+		array(
+			'handler'     => array( $next_task_command, 'execute' ),
+			'description' => __( 'Autonomous task discovery and execution for WordPress content', 'mcp-ai-wpoos' ),
+			'usage'       => '/next-task [--filter=<type>] [--type=<task-type>] [--limit=<number>] [--dry-run|-n] [--auto|-a]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'next' ),
+			'parameters'  => array(
+				'--filter' => array(
+					'description' => __( 'Filter tasks by type (all, drafts, seo, updates)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--type' => array(
+					'description' => __( 'Specific task type to focus on', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--limit' => array(
+					'description' => __( 'Maximum number of tasks to process (default: 5)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Show what would be done without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto' => array(
+					'description' => __( 'Execute without waiting for approval', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
