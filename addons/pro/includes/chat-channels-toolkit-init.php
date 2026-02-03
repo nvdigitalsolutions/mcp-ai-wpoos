@@ -26,7 +26,10 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Load Chat Channels admin pages.
 	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
+		$admin_page_file = WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-chat-channels-settings-page.php';
+		if ( file_exists( $admin_page_file ) ) {
+			require_once $admin_page_file;
+		}
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
