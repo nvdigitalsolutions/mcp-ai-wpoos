@@ -1237,6 +1237,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'send_telegram_message'           => 'external-tools',
 			// Chat channel tools - Require external API credentials.
 			'send_slack_message'              => 'external-tools',
+			'get_slack_channels'              => 'external-tools',
+			'get_slack_messages'              => 'external-tools',
+			'create_slack_channel'            => 'external-tools',
 			'send_discord_message'            => 'external-tools',
 			'get_discord_channels'            => 'external-tools',
 			'get_discord_messages'            => 'external-tools',

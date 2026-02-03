@@ -219,7 +219,7 @@ class WP_MCP_AI_Pro_Tool_Get_Slack_Channels implements WP_MCP_AI_Tool_Interface,
 	public function get_capability_flags() {
 		return array(
 			'pro',                  // Pro tier tool.
-			'read',                 // Reads Slack channels.
+			'read-only',            // Reads Slack channels.
 			'external-api',         // Calls Slack Web API.
 			'network-dependent',    // Requires internet connectivity.
 			'requires-capability',  // Requires user capabilities.
