@@ -28,12 +28,14 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that Yahoo OAuth action is registered.
+	 * Test that Yahoo OAuth action is no longer registered (deprecated).
+	 *
+	 * @since 1.0.0 Yahoo OAuth now uses direct link to Yahoo (like Gmail).
 	 */
-	public function test_yahoo_oauth_action_registered() {
-		$this->assertTrue(
+	public function test_yahoo_oauth_action_not_registered() {
+		$this->assertFalse(
 			has_action( 'admin_post_wp_mcp_ai_yahoo_oauth_start' ),
-			'Yahoo OAuth start action should be registered'
+			'Yahoo OAuth start action should not be registered (now uses direct link)'
 		);
 	}
 
@@ -42,7 +44,7 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	 */
 	public function test_yahoo_footer_rendering() {
 		// Set Yahoo credentials in settings.
-		$settings                      = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                        = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['yahoo_client_id']     = 'test_client_id';
 		$settings['yahoo_client_secret'] = 'test_client_secret';
 		update_option( 'wp_mcp_ai_settings', $settings );
@@ -66,9 +68,9 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 		);
 
 		$this->assertStringContainsString(
-			'wp_mcp_ai_yahoo_oauth_start',
+			'api.login.yahoo.com/oauth2/request_auth',
 			$output,
-			'Yahoo Sports footer should contain OAuth start action'
+			'Yahoo Sports footer should contain direct link to Yahoo OAuth'
 		);
 
 		$this->assertStringContainsString(
@@ -83,7 +85,7 @@ class Test_Yahoo_OAuth_Integration extends WP_UnitTestCase {
 	 */
 	public function test_yahoo_footer_shows_connected_status() {
 		// Set Yahoo credentials.
-		$settings                      = WP_MCP_AI_Admin_Settings::get_settings();
+		$settings                        = WP_MCP_AI_Admin_Settings::get_settings();
 		$settings['yahoo_client_id']     = 'test_client_id';
 		$settings['yahoo_client_secret'] = 'test_client_secret';
 		update_option( 'wp_mcp_ai_settings', $settings );
