@@ -2,6 +2,22 @@
 /**
  * Tool for Yahoo Fantasy Football OAuth authentication.
  *
+ * This tool manages OAuth authentication for Yahoo Fantasy Sports API access.
+ * It provides three actions:
+ *
+ * 1. get_auth_url: Generates OAuth authorization URL with clickable markdown links
+ *    - Returns a clickable "Connect to Yahoo" link for OAuth flow
+ *    - Returns a clickable "Research Page" link for easy access post-auth
+ *
+ * 2. get_status: Checks current authentication status
+ *    - Returns connection status and expiration details
+ *    - Includes clickable research page link when authenticated
+ *
+ * 3. revoke: Removes stored credentials
+ *
+ * The tool returns user-friendly messages with markdown-formatted links that
+ * are rendered as clickable buttons/links in the chat interface.
+ *
  * @package WP_MCP_AI
  */
 
@@ -145,12 +161,22 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'https://api.login.yahoo.com/oauth2/request_auth'
 		);
 
+		// Get research page URL for easy access.
+		$research_page_url = admin_url( 'edit.php?post_type=ff_team&page=research-fantasy-football' );
+
+		// Create a user-friendly message with clickable links using markdown format.
+		$message = __( 'To connect your Yahoo Fantasy Football account, click the button below:', 'mcp-ai-wpoos' ) . "\n\n";
+		$message .= '[**🔗 Connect to Yahoo Fantasy Football**](' . esc_url( $auth_url ) . ')' . "\n\n";
+		$message .= __( 'After authorization, you can use the Fantasy Football Research page:', 'mcp-ai-wpoos' ) . "\n\n";
+		$message .= '[**📊 Open Fantasy Football Research**](' . esc_url( $research_page_url ) . ')';
+
 		return array(
 			'action'       => 'get_auth_url',
 			'status'       => 'success',
 			'auth_url'     => $auth_url,
 			'callback_url' => $callback_url,
 			'state'        => $state,
+			'message'      => $message,
 			'instructions' => __( 'Visit the authorization URL to grant access to your Yahoo Fantasy Football data. After authorization, Yahoo will redirect you to the callback URL with an authorization code.', 'mcp-ai-wpoos' ),
 		);
 	}
@@ -186,12 +212,27 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$client_secret_set = ! empty( get_option( 'wp_mcp_ai_yahoo_client_secret' ) );
 		}
 
+		// Get research page URL.
+		$research_page_url = admin_url( 'edit.php?post_type=ff_team&page=research-fantasy-football' );
+
+		// Create user-friendly status message.
+		$message = '';
+		if ( $is_authenticated && ! $is_expired ) {
+			$message = __( 'Your Yahoo Fantasy Football account is connected and ready to use!', 'mcp-ai-wpoos' ) . "\n\n";
+			$message .= '[**📊 Open Fantasy Football Research**](' . esc_url( $research_page_url ) . ')';
+		} elseif ( $is_authenticated && $is_expired ) {
+			$message = __( 'Your Yahoo Fantasy Football authentication token has expired. Please reconnect.', 'mcp-ai-wpoos' );
+		} else {
+			$message = __( 'You are not currently connected to Yahoo Fantasy Football. Use the get_auth_url action to connect.', 'mcp-ai-wpoos' );
+		}
+
 		return array(
 			'action'        => 'get_status',
 			'authenticated' => $is_authenticated,
 			'token_expired' => $is_expired,
 			'expires_at'    => $expires_at ? gmdate( 'Y-m-d H:i:s', (int) $expires_at ) : null,
 			'has_refresh'   => ! empty( $refresh_token ),
+			'message'       => $message,
 			'configuration' => array(
 				'client_id_set'     => $client_id_set,
 				'client_secret_set' => $client_secret_set,
