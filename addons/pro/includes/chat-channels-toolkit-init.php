@@ -34,6 +34,7 @@ if ( $is_enabled && ! $is_base ) {
 
 	// Register tools will be loaded automatically via the tools directory structure.
 	// Tools are located in: addons/pro/includes/src/Tools/ChatChannels/.
+	add_action( 'wp_mcp_ai_load_pro_tools', 'wp_mcp_ai_load_chat_channels_tools' );
 }
 
 /**
@@ -60,3 +61,43 @@ function wp_mcp_ai_enqueue_chat_channels_toolkit_admin_styles( $hook ) {
 	}
 }
 add_action( 'admin_enqueue_scripts', 'wp_mcp_ai_enqueue_chat_channels_toolkit_admin_styles' );
+
+/**
+ * Load and register Chat Channels Toolkit tools.
+ *
+ * Registers chat channel tools including WebChat message handling.
+ *
+ * @since 1.0.0
+ */
+function wp_mcp_ai_load_chat_channels_tools() {
+	if ( ! class_exists( 'WP_MCP_AI_Tool_Registry' ) ) {
+		return;
+	}
+
+	$registry = WP_MCP_AI_Tool_Registry::get_instance();
+
+	// WebChat message tools (require JetEngine for CCT).
+	$webchat_tools = array(
+		'WP_MCP_AI_Tool_Save_WebChat_Message' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-webchat-message.php',
+		'WP_MCP_AI_Tool_Get_WebChat_Messages' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-get-webchat-messages.php',
+	);
+
+	foreach ( $webchat_tools as $class => $file ) {
+		if ( file_exists( $file ) ) {
+			require_once $file;
+
+			if ( class_exists( $class ) ) {
+				$should_register = true;
+
+				// Check if tool declares an availability check.
+				if ( method_exists( $class, 'is_available' ) ) {
+					$should_register = (bool) call_user_func( array( $class, 'is_available' ) );
+				}
+
+				if ( $should_register ) {
+					$registry->register_tool( new $class() );
+				}
+			}
+		}
+	}
+}

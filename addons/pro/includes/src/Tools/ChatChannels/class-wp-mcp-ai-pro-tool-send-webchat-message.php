@@ -204,12 +204,17 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			return new WP_Error( 'wp_mcp_ai_webchat_api_error', esc_html( $message ), array( 'code' => $code, 'response' => $decoded ) );
 		}
 
-		return array(
+		$result = array(
 			'success'    => true,
 			'method'     => 'rest_api',
 			'recipients' => isset( $decoded['recipients'] ) ? $decoded['recipients'] : 0,
 			'room'       => $payload['room'],
 		);
+
+		// Save message to CCT if available.
+		$this->save_to_cct( $payload, $arguments, $context, $result );
+
+		return $result;
 	}
 
 	/**
@@ -234,13 +239,85 @@ class WP_MCP_AI_Pro_Tool_Send_WebChat_Message implements WP_MCP_AI_Tool_Interfac
 			array( 'transient_key' => $transient_key )
 		);
 
-		return array(
+		$result = array(
 			'success' => true,
 			'method'  => 'websocket',
 			'queued'  => true,
 			'room'    => $payload['room'],
 			'message' => __( 'Message queued for WebSocket broadcast. Ensure WebSocket server is running.', 'mcp-ai-wpoos-pro' ),
 		);
+
+		// Save message to CCT if available.
+		$this->save_to_cct( $payload, $arguments, $context, $result );
+
+		return $result;
+	}
+
+	/**
+	 * Save message to CCT if available.
+	 *
+	 * @param array $payload   Message payload.
+	 * @param array $arguments Tool arguments.
+	 * @param array $context   Execution context.
+	 * @param array &$result   Result array to append save status to.
+	 * @return void
+	 */
+	protected function save_to_cct( $payload, $arguments, $context, &$result ) {
+		// Check if save tool is available.
+		$tool_file = WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-save-webchat-message.php';
+		if ( ! file_exists( $tool_file ) ) {
+			return;
+		}
+
+		require_once $tool_file;
+
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Save_WebChat_Message' ) ) {
+			return;
+		}
+
+		if ( ! WP_MCP_AI_Tool_Save_WebChat_Message::is_available() ) {
+			return;
+		}
+
+		// Extract room_id from room identifier (may be numeric ID or site URL).
+		$room_id = 0;
+		if ( isset( $arguments['room_id'] ) && is_numeric( $arguments['room_id'] ) ) {
+			$room_id = absint( $arguments['room_id'] );
+		}
+
+		// Skip CCT save if no valid room ID.
+		if ( ! $room_id ) {
+			return;
+		}
+
+		// Prepare save arguments.
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : get_current_user_id();
+
+		$save_args = array(
+			'room_id'     => $room_id,
+			'peer_id'     => 'assistant', // Assistant peer ID.
+			'user_id'     => $user_id,
+			'sender_name' => isset( $payload['sender'] ) ? $payload['sender'] : 'WordPress Assistant',
+			'message'     => isset( $payload['content'] ) ? $payload['content'] : '',
+		);
+
+		// Initialize save tool.
+		$save_tool = new WP_MCP_AI_Tool_Save_WebChat_Message();
+		$save_result = $save_tool->execute( $save_args, $context );
+
+		if ( is_wp_error( $save_result ) ) {
+			WP_MCP_AI_Logger::log_error(
+				'Failed to save WebChat message to CCT after broadcast.',
+				array(
+					'error_code'    => $save_result->get_error_code(),
+					'error_message' => $save_result->get_error_message(),
+				)
+			);
+			$result['cct_save_error'] = $save_result->get_error_message();
+		} else {
+			$result['saved_to_cct'] = true;
+			$result['message_id'] = isset( $save_result['message_id'] ) ? $save_result['message_id'] : null;
+		}
 	}
 
 	/**
