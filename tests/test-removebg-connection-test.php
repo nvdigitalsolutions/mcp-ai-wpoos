@@ -182,6 +182,99 @@ class Test_Removebg_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test that RemoveBG API key persists after save.
+	 *
+	 * This test verifies the fix for the issue where connection settings
+	 * were not being saved properly due to incorrect subtab detection.
+	 */
+	public function test_removebg_api_key_persists_after_save() {
+		// Clear any existing settings.
+		delete_option( 'wp_mcp_ai_settings' );
+
+		// Simulate form submission for RemoveBG connection.
+		$_POST['wp_mcp_ai_settings'] = array(
+			'removebg_api_key' => 'test-api-key-12345',
+		);
+		$_POST['active_tab']          = 'tools';
+		$_POST['subtab']              = 'connections';
+		$_POST['connection']          = 'removebg';
+		$_POST['subtab_integrations_gmail_crawl4ai'] = 'removebg';
+		$_POST['_wpnonce']            = wp_create_nonce( 'wp_mcp_ai_save_settings' );
+		$_POST['action']              = 'wp_mcp_ai_save_settings';
+
+		// Get the settings dashboard instance.
+		$dashboard = new WP_MCP_AI_Settings_Dashboard();
+
+		// Call sanitize_settings directly to test the sanitization.
+		$sanitized = $dashboard->sanitize_settings( $_POST['wp_mcp_ai_settings'], 'tools' );
+
+		// Verify the API key was sanitized.
+		$this->assertArrayHasKey( 'removebg_api_key', $sanitized, 'RemoveBG API key should be in sanitized array' );
+		$this->assertEquals( 'test-api-key-12345', $sanitized['removebg_api_key'], 'RemoveBG API key should match the submitted value' );
+
+		// Now simulate the full save process.
+		update_option( 'wp_mcp_ai_settings', $sanitized );
+
+		// Verify the settings were saved to the database.
+		$saved_settings = get_option( 'wp_mcp_ai_settings', array() );
+		$this->assertArrayHasKey( 'removebg_api_key', $saved_settings, 'RemoveBG API key should be saved in database' );
+		$this->assertEquals( 'test-api-key-12345', $saved_settings['removebg_api_key'], 'Saved RemoveBG API key should match' );
+
+		// Cleanup.
+		unset( $_POST['wp_mcp_ai_settings'] );
+		unset( $_POST['active_tab'] );
+		unset( $_POST['subtab'] );
+		unset( $_POST['connection'] );
+		unset( $_POST['subtab_integrations_gmail_crawl4ai'] );
+		unset( $_POST['_wpnonce'] );
+		unset( $_POST['action'] );
+	}
+
+	/**
+	 * Test that the active subtab is correctly determined from connection parameter.
+	 */
+	public function test_active_subtab_from_connection_parameter() {
+		$section = new WP_MCP_AI_Section_Integrations();
+
+		// Simulate being on the removebg connection page.
+		$_GET['connection'] = 'removebg';
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_active_subtab' );
+		$method->setAccessible( true );
+		$active_subtab = $method->invoke( $section );
+
+		$this->assertEquals( 'removebg', $active_subtab, 'Active subtab should be determined from connection parameter' );
+
+		// Cleanup.
+		unset( $_GET['connection'] );
+	}
+
+	/**
+	 * Test that the active subtab prioritizes POST connection over GET subtab.
+	 */
+	public function test_active_subtab_prioritizes_connection() {
+		$section = new WP_MCP_AI_Section_Integrations();
+
+		// Simulate conflicting parameters (this was the bug).
+		$_GET['subtab']      = 'connections'; // Tools section's subtab.
+		$_POST['connection'] = 'removebg';    // Integration section's connection.
+
+		// Use reflection to call the protected method.
+		$reflection = new ReflectionClass( $section );
+		$method     = $reflection->getMethod( 'get_active_subtab' );
+		$method->setAccessible( true );
+		$active_subtab = $method->invoke( $section );
+
+		$this->assertEquals( 'removebg', $active_subtab, 'Active subtab should prioritize POST connection over GET subtab' );
+
+		// Cleanup.
+		unset( $_GET['subtab'] );
+		unset( $_POST['connection'] );
+	}
+
+	/**
 	 * Tear down the test.
 	 */
 	public function tearDown(): void {

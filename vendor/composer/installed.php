@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
-        'version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
-        'reference' => 'dfac02f8d3d42ee1e57cf3a03a2e7964fbcd4639',
+        'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
+        'version' => 'dev-copilot/fix-save-background-key-issue',
+        'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
-            'version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
-            'reference' => 'dfac02f8d3d42ee1e57cf3a03a2e7964fbcd4639',
+            'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
+            'version' => 'dev-copilot/fix-save-background-key-issue',
+            'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

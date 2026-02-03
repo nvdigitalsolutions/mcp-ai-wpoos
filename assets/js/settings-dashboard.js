@@ -462,6 +462,7 @@
 			// correct field sanitization in subtab-aware sections.
 			const urlParams = new URLSearchParams(window.location.search);
 			const currentSubtab = urlParams.get('subtab');
+			const currentConnection = urlParams.get('connection');
 			
 			// Find all subtab hidden fields in the form.
 			const $subtabFields = $form.find('input[type="hidden"][name^="subtab_"]');
@@ -474,10 +475,11 @@
 					const oldValue = $hiddenField.val();
 					
 					// Determine the correct subtab value to use:
-					// 1. If URL has subtab parameter, use it
-					// 2. Otherwise, keep the existing field value (from PHP rendering)
-					// 3. As last resort, try to detect from active subtab link
-					let newValue = currentSubtab;
+					// 1. If URL has connection parameter, use it (for Integrations section)
+					// 2. If URL has subtab parameter, use it (for other sections)
+					// 3. Otherwise, keep the existing field value (from PHP rendering)
+					// 4. As last resort, try to detect from active subtab link
+					let newValue = currentConnection || currentSubtab;
 					
 					if (!newValue) {
 						// No URL parameter - check if field already has a valid value.
