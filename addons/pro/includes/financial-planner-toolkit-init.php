@@ -28,6 +28,9 @@ if ( $is_enabled && ! $is_base ) {
 	// Uses CPT-based pattern like Quiz, Project, and other toolkits.
 	if ( is_admin() ) {
 		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-financial-planner-cpt-settings-page.php';
+		
+		// Load Research & Add page for financial account research and creation.
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-financial-account-research-page.php';
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.

@@ -59,6 +59,7 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				'wp_ajax_wp_mcp_ai_test_cloudflare_connection' => 'handle_test_cloudflare_connection',
 				'wp_ajax_wp_mcp_ai_test_brave_search_connection' => 'handle_test_brave_search_connection',
 				'wp_ajax_wp_mcp_ai_test_mubert_connection' => 'handle_test_mubert_connection',
+				'wp_ajax_wp_mcp_ai_test_plaid_connection' => 'handle_test_plaid_connection',
 				'wp_ajax_wp_mcp_ai_test_yahoo_connection' => 'handle_test_yahoo_connection',
 				'wp_ajax_wp_mcp_ai_test_removebg_connection' => 'handle_test_removebg_connection',
 				'wp_ajax_wp_mcp_ai_test_flowhub_connection' => 'handle_test_flowhub_connection',
@@ -868,6 +869,129 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 			wp_send_json_success(
 				array(
 					'message' => $result['message'],
+				)
+			);
+		}
+
+		/**
+		 * Handle AJAX request to test Plaid API connection.
+		 *
+		 * Tests the Plaid connection by attempting to create a link token, which validates
+		 * the client ID and secret without requiring actual bank linking.
+		 */
+		public function handle_test_plaid_connection() {
+			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
+
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			$client_id   = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
+			$secret      = isset( $_POST['secret'] ) ? sanitize_text_field( wp_unslash( $_POST['secret'] ) ) : '';
+			$environment = isset( $_POST['environment'] ) ? sanitize_text_field( wp_unslash( $_POST['environment'] ) ) : 'sandbox';
+
+			if ( empty( $client_id ) || empty( $secret ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please provide both Plaid Client ID and Secret.', 'mcp-ai-wpoos' ) ) );
+				return;
+			}
+
+			// Validate environment.
+			if ( ! in_array( $environment, array( 'sandbox', 'development', 'production' ), true ) ) {
+				$environment = 'sandbox';
+			}
+
+			// Determine Plaid API base URL based on environment.
+			$base_urls = array(
+				'sandbox'     => 'https://sandbox.plaid.com',
+				'development' => 'https://development.plaid.com',
+				'production'  => 'https://production.plaid.com',
+			);
+
+			$base_url = $base_urls[ $environment ];
+
+			// Get timeout from settings.
+			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
+			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
+			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
+			$timeout      = max( 10, $timeout );
+
+			// Test the connection by creating a link token.
+			// This validates credentials without requiring actual bank linking.
+			$api_url = $base_url . '/link/token/create';
+
+			$body = wp_json_encode(
+				array(
+					'client_id'    => $client_id,
+					'secret'       => $secret,
+					'user'         => array(
+						'client_user_id' => 'test_user_' . uniqid(),
+					),
+					'client_name'  => get_bloginfo( 'name' ),
+					'products'     => array( 'transactions' ),
+					'country_codes' => array( 'US' ),
+					'language'     => 'en',
+				)
+			);
+
+			$response = wp_remote_post(
+				$api_url,
+				array(
+					'headers' => array(
+						'Content-Type' => 'application/json',
+					),
+					'body'    => $body,
+					'timeout' => $timeout,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Error message */
+							__( 'Connection failed: %s', 'mcp-ai-wpoos' ),
+							$response->get_error_message()
+						),
+					)
+				);
+				return;
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+			$response_body = wp_remote_retrieve_body( $response );
+			$response_data = json_decode( $response_body, true );
+
+			if ( 200 === $response_code && isset( $response_data['link_token'] ) ) {
+				wp_send_json_success(
+					array(
+						'message' => sprintf(
+							/* translators: %s: Environment name */
+							__( 'Successfully connected to Plaid %s environment! Your credentials are valid.', 'mcp-ai-wpoos' ),
+							ucfirst( $environment )
+						),
+					)
+				);
+				return;
+			}
+
+			// Handle error response.
+			$error_message = __( 'Invalid credentials or connection error.', 'mcp-ai-wpoos' );
+
+			if ( isset( $response_data['error_message'] ) ) {
+				$error_message = sanitize_text_field( $response_data['error_message'] );
+			} elseif ( isset( $response_data['error_code'] ) ) {
+				$error_message = sprintf(
+					/* translators: %s: Error code */
+					__( 'Plaid error: %s', 'mcp-ai-wpoos' ),
+					sanitize_text_field( $response_data['error_code'] )
+				);
+			}
+
+			wp_send_json_error(
+				array(
+					'message'       => $error_message,
+					'response_code' => $response_code,
 				)
 			);
 		}
