@@ -146,11 +146,21 @@ class WP_MCP_AI_JetEngine_WebChat_Messages_CCT {
 
 		$engine = jet_engine();
 
-		if ( empty( $engine->modules ) ) {
+		if ( empty( $engine->modules ) || ! method_exists( $engine->modules, 'is_module_active' ) ) {
 			return null;
 		}
 
-		return $engine->modules->modules['custom-content-types'];
+		if ( ! $engine->modules->is_module_active( 'custom-content-types' ) ) {
+			return null;
+		}
+
+		$module_wrapper = $engine->modules->get_module( 'custom-content-types' );
+
+		if ( empty( $module_wrapper ) || empty( $module_wrapper->instance ) ) {
+			return null;
+		}
+
+		return $module_wrapper->instance;
 	}
 
 	/**
