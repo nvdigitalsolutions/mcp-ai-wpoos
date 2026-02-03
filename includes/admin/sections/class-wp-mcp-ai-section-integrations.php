@@ -1075,10 +1075,42 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		$yahoo_connected   = ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', true ) ) && ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', true ) );
 		$has_credentials   = ! empty( $settings['yahoo_client_id'] ) && ! empty( $settings['yahoo_client_secret'] );
 		$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
-		$oauth_connect_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_yahoo_oauth_start' ),
-			'wp_mcp_ai_yahoo_oauth_start'
-		);
+
+		// Generate OAuth state and build direct link to Yahoo OAuth (similar to Gmail).
+		if ( $has_credentials ) {
+			$state     = wp_generate_uuid4();
+			$transient = 'wp_mcp_ai_yahoo_oauth_state_' . md5( $state );
+
+			set_transient(
+				$transient,
+				array(
+					'user_id' => $user_id,
+					'time'    => time(),
+				),
+				10 * MINUTE_IN_SECONDS
+			);
+
+			// Build redirect URI.
+			$base_url     = admin_url( 'admin.php' );
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'yahoo_callback' ),
+				$base_url
+			);
+
+			// Build Yahoo OAuth authorization URL.
+			$oauth_connect_url = add_query_arg(
+				array(
+					'client_id'     => rawurlencode( $settings['yahoo_client_id'] ),
+					'redirect_uri'  => rawurlencode( $redirect_uri ),
+					'response_type' => 'code',
+					'scope'         => 'fspt-r', // Fantasy Sports Read access.
+					'state'         => $state,
+				),
+				'https://api.login.yahoo.com/oauth2/request_auth'
+			);
+		} else {
+			$oauth_connect_url = '';
+		}
 
 		// Check for success or error messages.
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.

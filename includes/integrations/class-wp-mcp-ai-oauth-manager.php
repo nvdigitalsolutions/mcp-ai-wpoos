@@ -695,6 +695,9 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 		/**
 		 * Handle Yahoo OAuth start request.
 		 *
+		 * @deprecated No longer used in production code. Button now links directly to Yahoo OAuth.
+		 *             Kept for backward compatibility and test support only.
+		 *
 		 * Implements OAuth flow for Yahoo Fantasy Sports API.
 		 */
 		public function handle_yahoo_oauth_start() {
@@ -798,15 +801,16 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				exit;
 			}
 
-			$user_id            = get_current_user_id();
-			$stored_state       = get_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_state', true );
-			$stored_timestamp   = get_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_timestamp', true );
+			// Verify state using transient (similar to Gmail OAuth flow).
+			$transient_key = 'wp_mcp_ai_yahoo_oauth_state_' . md5( $state );
+			$state_data    = get_transient( $transient_key );
 
-			// Verify state and check if it's not too old (10 minutes max).
-			if ( empty( $state ) || $state !== $stored_state || empty( $stored_timestamp ) || ( time() - $stored_timestamp ) > 600 ) {
+			if ( empty( $state ) || ! $state_data || ! isset( $state_data['user_id'] ) ) {
 				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
 				exit;
 			}
+
+			$user_id = $state_data['user_id'];
 
 			if ( empty( $code ) ) {
 				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'No authorization code received from Yahoo.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
@@ -888,9 +892,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			$expires_in = isset( $data['expires_in'] ) ? intval( $data['expires_in'] ) : 3600;
 			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_token_expires', time() + $expires_in );
 
-			// Clean up state.
-			delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_state' );
-			delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_timestamp' );
+			// Clean up state transient.
+			delete_transient( $transient_key );
 
 			$success_message = __( 'Yahoo Sports connected successfully! You can now use Yahoo Fantasy Football tools.', 'mcp-ai-wpoos' );
 
