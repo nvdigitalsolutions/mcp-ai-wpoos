@@ -107,12 +107,19 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 	 * @return array|WP_Error Authorization URL or error.
 	 */
 	protected function get_authorization_url( array $arguments, $user_id ) {
-		$client_id = get_option( 'wp_mcp_ai_yahoo_client_id' );
+		// Get credentials from centralized settings.
+		$settings  = WP_MCP_AI_Admin_Settings::get_settings();
+		$client_id = isset( $settings['yahoo_client_id'] ) ? trim( $settings['yahoo_client_id'] ) : '';
+
+		// Fallback to legacy option for backward compatibility.
+		if ( empty( $client_id ) ) {
+			$client_id = get_option( 'wp_mcp_ai_yahoo_client_id' );
+		}
 
 		if ( empty( $client_id ) ) {
 			return new WP_Error(
 				'wp_mcp_ai_missing_credentials',
-				__( 'Yahoo API credentials are not configured. Please add your Yahoo Client ID and Client Secret in Settings → NV oOS → Integrations.', 'mcp-ai-wpoos' )
+				__( 'Yahoo API credentials are not configured. Please add your Yahoo Client ID and Client Secret in Settings → NV oOS → Tools → Connections → Yahoo Sports.', 'mcp-ai-wpoos' )
 			);
 		}
 
@@ -166,6 +173,19 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			$is_expired = time() > (int) $expires_at;
 		}
 
+		// Check credentials from centralized settings.
+		$settings         = WP_MCP_AI_Admin_Settings::get_settings();
+		$client_id_set    = ! empty( $settings['yahoo_client_id'] );
+		$client_secret_set = ! empty( $settings['yahoo_client_secret'] );
+
+		// Fallback to legacy options for backward compatibility.
+		if ( ! $client_id_set ) {
+			$client_id_set = ! empty( get_option( 'wp_mcp_ai_yahoo_client_id' ) );
+		}
+		if ( ! $client_secret_set ) {
+			$client_secret_set = ! empty( get_option( 'wp_mcp_ai_yahoo_client_secret' ) );
+		}
+
 		return array(
 			'action'        => 'get_status',
 			'authenticated' => $is_authenticated,
@@ -173,8 +193,8 @@ class WP_MCP_AI_Tool_Yahoo_FF_Auth implements WP_MCP_AI_Tool_Interface, WP_MCP_A
 			'expires_at'    => $expires_at ? gmdate( 'Y-m-d H:i:s', (int) $expires_at ) : null,
 			'has_refresh'   => ! empty( $refresh_token ),
 			'configuration' => array(
-				'client_id_set'     => ! empty( get_option( 'wp_mcp_ai_yahoo_client_id' ) ),
-				'client_secret_set' => ! empty( get_option( 'wp_mcp_ai_yahoo_client_secret' ) ),
+				'client_id_set'     => $client_id_set,
+				'client_secret_set' => $client_secret_set,
 			),
 		);
 	}
