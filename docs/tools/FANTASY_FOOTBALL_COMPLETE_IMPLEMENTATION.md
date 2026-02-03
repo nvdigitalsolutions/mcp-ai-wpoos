@@ -47,19 +47,27 @@ The Fantasy Football Toolkit for the NV oOS WordPress plugin is now a comprehens
 ### Directory Structure
 ```
 mcp-ai-wpoos/
+├── addons/
+│   └── pro/
+│       ├── includes/
+│       │   ├── fantasy-football/
+│       │   │   └── class-wp-mcp-ai-fantasy-team-cpt.php
+│       │   ├── fantasy-football-toolkit-init.php
+│       │   ├── admin/
+│       │   │   ├── class-wp-mcp-ai-fantasy-football-settings.php
+│       │   │   └── class-wp-mcp-ai-fantasy-football-research-page.php
+│       │   └── tools/
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-auth.php
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-get-roster.php
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php
+│       │       ├── class-wp-mcp-ai-tool-yahoo-ff-league-standings.php
+│       │       ├── class-wp-mcp-ai-tool-ff-generate-team-logo.php
+│       │       ├── class-wp-mcp-ai-tool-ff-create-league-report.php
+│       │       └── class-wp-mcp-ai-tool-ff-player-research.php
+│       └── mcp-ai-wpoos-pro.php (modified)
 ├── includes/
-│   ├── fantasy-football/
-│   │   ├── fantasy-football-init.php
-│   │   └── class-wp-mcp-ai-fantasy-team-cpt.php
-│   ├── tools/
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-auth.php
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-get-leagues.php
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-get-roster.php
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php
-│   │   ├── class-wp-mcp-ai-tool-yahoo-ff-league-standings.php
-│   │   ├── class-wp-mcp-ai-tool-ff-generate-team-logo.php
-│   │   └── class-wp-mcp-ai-tool-ff-create-league-report.php
 │   └── class-wp-mcp-ai-tool-registry.php (modified)
 ├── mcp-ai-wpoos.php (modified)
 └── docs/
@@ -68,6 +76,7 @@ mcp-ai-wpoos/
         ├── yahoo-fantasy-football-quick-reference.md
         ├── FANTASY_FOOTBALL_IMPLEMENTATION_SUMMARY.md
         ├── fantasy-football-extended-features.md
+        ├── fantasy-football-settings-and-research.md
         └── FANTASY_FOOTBALL_COMPLETE_IMPLEMENTATION.md (this file)
 ```
 
