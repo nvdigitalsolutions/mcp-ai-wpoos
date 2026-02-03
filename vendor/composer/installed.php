@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/review-mailjet-authentication',
-        'version' => 'dev-copilot/review-mailjet-authentication',
-        'reference' => '874048b76b2c32eea509d14af5bbae5cd22ed155',
+        'pretty_version' => 'dev-copilot/fix-yahoo-sports-connection',
+        'version' => 'dev-copilot/fix-yahoo-sports-connection',
+        'reference' => '448377e55f33417369c935a9bc1fd909a2a9c5e5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/review-mailjet-authentication',
-            'version' => 'dev-copilot/review-mailjet-authentication',
-            'reference' => '874048b76b2c32eea509d14af5bbae5cd22ed155',
+            'pretty_version' => 'dev-copilot/fix-yahoo-sports-connection',
+            'version' => 'dev-copilot/fix-yahoo-sports-connection',
+            'reference' => '448377e55f33417369c935a9bc1fd909a2a9c5e5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
