@@ -254,6 +254,78 @@ class WP_MCP_AI_Yahoo_Sports_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test Yahoo FF auth tool returns clickable links in message field.
+	 */
+	public function test_yahoo_ff_auth_tool_returns_clickable_links() {
+		// Skip if Pro addon not available.
+		if ( ! class_exists( 'WP_MCP_AI_Tool_Yahoo_FF_Auth' ) ) {
+			$this->markTestSkipped( 'Yahoo FF Auth tool not available (Pro addon required)' );
+		}
+
+		// Set credentials in centralized settings.
+		$settings = array(
+			'yahoo_client_id'     => 'test_client_with_links',
+			'yahoo_client_secret' => 'test_secret_with_links',
+		);
+		update_option( 'wp_mcp_ai_settings', $settings );
+
+		// Create user for testing.
+		$user_id = $this->factory->user->create( array( 'role' => 'administrator' ) );
+
+		// Instantiate tool.
+		$tool = new WP_MCP_AI_Tool_Yahoo_FF_Auth();
+
+		// Test get_auth_url action - should include clickable links.
+		$result = $tool->execute(
+			array( 'action' => 'get_auth_url' ),
+			array( 'user_id' => $user_id )
+		);
+
+		// Verify result structure.
+		$this->assertIsArray( $result );
+		$this->assertArrayHasKey( 'message', $result, 'Result should include message field' );
+		$this->assertArrayHasKey( 'auth_url', $result, 'Result should include auth_url field' );
+
+		// Verify message contains markdown-formatted links.
+		$this->assertStringContainsString( '[', $result['message'], 'Message should contain markdown link opening bracket' );
+		$this->assertStringContainsString( ']', $result['message'], 'Message should contain markdown link closing bracket' );
+		$this->assertStringContainsString( '(', $result['message'], 'Message should contain markdown URL opening parenthesis' );
+		$this->assertStringContainsString( ')', $result['message'], 'Message should contain markdown URL closing parenthesis' );
+
+		// Verify message contains OAuth link.
+		$this->assertStringContainsString( 'Connect to Yahoo Fantasy Football', $result['message'], 'Message should reference OAuth connection' );
+
+		// Verify message contains research page link.
+		$this->assertStringContainsString( 'research-fantasy-football', $result['message'], 'Message should include research page URL' );
+		$this->assertStringContainsString( 'Fantasy Football Research', $result['message'], 'Message should reference research page' );
+
+		// Test get_status action with authenticated user - should include research page link.
+		// Set up authenticated tokens.
+		update_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', 'test_access_token' );
+		update_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', 'test_refresh_token' );
+		update_user_meta( $user_id, 'wp_mcp_ai_yahoo_token_expires', time() + 3600 );
+
+		$status_result = $tool->execute(
+			array( 'action' => 'get_status' ),
+			array( 'user_id' => $user_id )
+		);
+
+		// Verify status result includes message with research page link.
+		$this->assertIsArray( $status_result );
+		$this->assertArrayHasKey( 'message', $status_result, 'Status result should include message field' );
+		$this->assertTrue( $status_result['authenticated'], 'User should be authenticated' );
+		$this->assertStringContainsString( 'research-fantasy-football', $status_result['message'], 'Status message should include research page URL' );
+		$this->assertStringContainsString( 'Fantasy Football Research', $status_result['message'], 'Status message should reference research page' );
+
+		// Clean up.
+		delete_option( 'wp_mcp_ai_settings' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token' );
+		delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_token_expires' );
+		wp_delete_user( $user_id );
+	}
+
+	/**
 	 * Tear down the test.
 	 */
 	public function tearDown(): void {
