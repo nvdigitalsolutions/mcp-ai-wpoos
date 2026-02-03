@@ -805,7 +805,9 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			$transient_key = 'wp_mcp_ai_yahoo_oauth_state_' . md5( $state );
 			$state_data    = get_transient( $transient_key );
 
-			if ( empty( $state ) || ! $state_data || ! isset( $state_data['user_id'] ) ) {
+			delete_transient( $transient_key );
+
+			if ( empty( $state ) || ! $state_data || get_current_user_id() !== (int) $state_data['user_id'] ) {
 				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
 				exit;
 			}
@@ -891,9 +893,6 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			// Calculate expiration time.
 			$expires_in = isset( $data['expires_in'] ) ? intval( $data['expires_in'] ) : 3600;
 			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_token_expires', time() + $expires_in );
-
-			// Clean up state transient.
-			delete_transient( $transient_key );
 
 			$success_message = __( 'Yahoo Sports connected successfully! You can now use Yahoo Fantasy Football tools.', 'mcp-ai-wpoos' );
 

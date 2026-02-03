@@ -1109,7 +1109,7 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				'https://api.login.yahoo.com/oauth2/request_auth'
 			);
 		} else {
-			$oauth_connect_url = '';
+			$oauth_connect_url = '#';
 		}
 
 		// Check for success or error messages.
