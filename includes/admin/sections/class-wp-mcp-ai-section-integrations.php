@@ -415,6 +415,28 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'disabled'     => ! $is_pro_active,
 				),
 
+				// ESPN Fantasy Sports.
+				'espn_fantasy_espn_s2'              => array(
+					'type'         => 'password',
+					'label'        => __( 'ESPN S2 Cookie', 'mcp-ai-wpoos' ),
+					'description'  => sprintf(
+						/* translators: %s: URL to ESPN authentication docs */
+						__( 'ESPN S2 authentication cookie for accessing private leagues. Required along with SWID cookie. See %s for how to obtain these cookies from your browser.', 'mcp-ai-wpoos' ),
+						'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
+					) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+				'espn_fantasy_swid'                 => array(
+					'type'         => 'password',
+					'label'        => __( 'ESPN SWID Cookie', 'mcp-ai-wpoos' ),
+					'description'  => __( 'ESPN SWID authentication cookie for accessing private leagues. Required along with S2 cookie. Extract from browser after logging into ESPN Fantasy.', 'mcp-ai-wpoos' ) . $pro_notice,
+					'placeholder'  => '',
+					'autocomplete' => 'new-password',
+					'disabled'     => ! $is_pro_active,
+				),
+
 				// iSAMS, PayHere, Flowhub, and QuickBooks have been moved to Remote Sites.
 				// Use admin.php?page=wp-mcp-ai-remote-sites to manage these connections.
 			);
@@ -528,6 +550,13 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					'fields' => array( 'yahoo_client_id', 'yahoo_client_secret' ),
 					'pro'    => true,
 				),
+				'espn_sports'      => array(
+					'id'     => 'espn_sports',
+					'label'  => $is_pro_active ? __( 'ESPN Sports', 'mcp-ai-wpoos' ) : __( 'ESPN Sports (Pro)', 'mcp-ai-wpoos' ),
+					'icon'   => 'dashicons-awards',
+					'fields' => array( 'espn_fantasy_espn_s2', 'espn_fantasy_swid' ),
+					'pro'    => true,
+				),
 				// iSAMS moved to Remote Sites.
 			);
 		}
@@ -630,6 +659,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 					break;
 				case 'yahoo_sports':
 					$this->render_yahoo_sports_footer();
+					break;
+				case 'espn_sports':
+					$this->render_espn_sports_footer();
 					break;
 				case 'removebg':
 					$this->render_removebg_footer();
@@ -1247,6 +1279,102 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</div>
 		</td>
 	</tr>
+		<?php
+		}
+
+		/**
+		 * Render ESPN Sports footer content.
+		 */
+		private function render_espn_sports_footer() {
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_espn_s2   = ! empty( $settings['espn_fantasy_espn_s2'] );
+			$has_swid      = ! empty( $settings['espn_fantasy_swid'] );
+			$has_both      = $has_espn_s2 && $has_swid;
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'ESPN Sports Connection', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+				<?php if ( $has_both ) : ?>
+					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #155724;">
+							<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+							<strong><?php esc_html_e( 'ESPN Credentials Configured', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php
+						echo wp_kses_post(
+							__(
+								'Your ESPN S2 and SWID cookies are saved. ESPN Fantasy tools can now access private leagues.',
+								'mcp-ai-wpoos'
+							)
+						);
+						?>
+					</p>
+				<?php elseif ( $has_espn_s2 || $has_swid ) : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-warning" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'Incomplete ESPN Configuration', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php esc_html_e( 'Both ESPN S2 and SWID cookies are required to access private leagues. Please provide both values.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php else : ?>
+					<div style="padding: 10px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #856404;">
+							<span class="dashicons dashicons-info" style="color: #856404;"></span>
+							<strong><?php esc_html_e( 'ESPN Credentials Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+					</div>
+					<p class="description">
+						<?php esc_html_e( 'ESPN S2 and SWID cookies are only required for private leagues. Public leagues can be accessed without authentication.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<div style="margin: 1rem 0;">
+					<h4><?php esc_html_e( 'About ESPN Sports Integration', 'mcp-ai-wpoos' ); ?></h4>
+					<p class="description" style="margin-bottom: 10px;">
+						<?php esc_html_e( 'Connect to ESPN Fantasy Football API to access league information, team rosters, standings, and player statistics. Public leagues work without authentication; private leagues require ESPN S2 and SWID cookies.', 'mcp-ai-wpoos' ); ?>
+					</p>
+					<p class="description">
+						<strong><?php esc_html_e( 'Setup Instructions for Private Leagues:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ol style="margin-left: 20px;">
+						<li><?php esc_html_e( 'Log in to ESPN Fantasy at fantasy.espn.com in your browser', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Open your browser\'s Developer Tools (F12)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Go to the Application/Storage tab and find Cookies', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Locate the "espn_s2" cookie and copy its value', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Locate the "SWID" cookie and copy its value (includes curly braces)', 'mcp-ai-wpoos' ); ?></li>
+						<li><?php esc_html_e( 'Paste both values into the fields above and save', 'mcp-ai-wpoos' ); ?></li>
+					</ol>
+					<?php if ( $is_pro_active ) : ?>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Available Tools:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><strong>espn_fantasy_get_league</strong> - <?php esc_html_e( 'Retrieve ESPN Fantasy Football league information', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_teams</strong> - <?php esc_html_e( 'Get all teams in an ESPN league', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_roster</strong> - <?php esc_html_e( 'Get a team\'s roster with player details', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_get_standings</strong> - <?php esc_html_e( 'Get league standings with win/loss records', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_analyze_lineup</strong> - <?php esc_html_e( 'Analyze optimal lineup configurations', 'mcp-ai-wpoos' ); ?></li>
+							<li><strong>espn_fantasy_sync_league</strong> - <?php esc_html_e( 'Sync ESPN league data to WordPress', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
+					<?php else : ?>
+						<p class="description" style="margin-top: 1rem; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107;">
+							<strong><?php esc_html_e( 'Pro Feature:', 'mcp-ai-wpoos' ); ?></strong>
+							<?php esc_html_e( 'ESPN Sports integration requires the Pro addon to be active.', 'mcp-ai-wpoos' ); ?>
+						</p>
+					<?php endif; ?>
+				</div>
+			</td>
+		</tr>
 		<?php
 		}
 
