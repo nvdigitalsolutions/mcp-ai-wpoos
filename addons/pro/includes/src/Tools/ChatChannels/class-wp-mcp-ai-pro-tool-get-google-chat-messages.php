@@ -114,6 +114,10 @@ class WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages implements WP_MCP_AI_Tool_Inte
 			return new WP_Error( 'wp_mcp_ai_missing_space', __( 'A space name is required.', 'mcp-ai-wpoos-pro' ) );
 		}
 
+		if ( ! preg_match( '/^spaces\/[a-zA-Z0-9_-]+$/', $space ) ) {
+			return new WP_Error( 'wp_mcp_ai_invalid_space', __( 'Invalid space format. Expected format: spaces/SPACE_ID', 'mcp-ai-wpoos-pro' ) );
+		}
+
 		$page_size = isset( $arguments['page_size'] ) ? absint( $arguments['page_size'] ) : 50;
 		$page_size = max( 1, min( 100, $page_size ) );
 

@@ -173,7 +173,7 @@ class WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space implements WP_MCP_AI_Tool_Inte
 			$decoded = array();
 		}
 
-		if ( 200 !== $code ) {
+		if ( 200 !== $code && 201 !== $code ) {
 			$message = isset( $decoded['error']['message'] ) ? $decoded['error']['message'] : __( 'Google Chat API returned an error.', 'mcp-ai-wpoos-pro' );
 
 			WP_MCP_AI_Logger::log_error(
