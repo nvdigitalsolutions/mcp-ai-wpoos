@@ -293,6 +293,43 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load workflow command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-workflow.php';
+
+	// Register /workflow command.
+	$workflow_command = new WP_MCP_AI_Slash_Command_Workflow();
+	$wp_mcp_ai_slash_command_handler->register(
+		'workflow',
+		array(
+			'handler'     => array( $workflow_command, 'execute' ),
+			'description' => __( 'Execute and manage custom automation workflows', 'mcp-ai-wpoos' ),
+			'usage'       => '/workflow <name> [--action=<run|list|show>] [--dry-run|-n] [--list|-l] [--show|-s]',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'name' => array(
+					'description' => __( 'Workflow name to execute', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--action' => array(
+					'description' => __( 'Action to perform: run, list, show (default: run)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Preview workflow without executing steps', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--list' => array(
+					'description' => __( 'List available workflows', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--show' => array(
+					'description' => __( 'Show workflow definition', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
