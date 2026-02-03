@@ -293,7 +293,7 @@ class WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast implements WP_MCP_AI_Tool_Int
 						'token'      => $credentials['token'],
 						'team_id'    => $credentials['team_id'],
 						'channel_id' => $credentials['channel_id'],
-						'message'    => $message,
+						'content'    => $message,
 					),
 					$context
 				);
