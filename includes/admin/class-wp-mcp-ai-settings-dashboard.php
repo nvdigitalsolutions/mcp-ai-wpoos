@@ -285,7 +285,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				);
 			}
 
-			// Find subtab from section-specific subtab fields (subtab_sectionid format).
+			// Find subtab from explicit 'subtab' field first (for parent-level subtabs),
+			// then from section-specific subtab fields (subtab_sectionid format).
 			// Multiple sections on same tab may have subtabs, so we check all subtab_* fields.
 			// IMPORTANT: Many sections use subtabs with critical data tables:
 			// - Providers tab: Each provider (OpenAI, Gemini, Ollama, etc.) has its own subtab
@@ -294,16 +295,23 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// - Tools tab: Tool categories and individual tool configurations
 			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
-			foreach ( $_POST as $key => $value ) {
-				if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
-					$active_subtab = sanitize_key( $value );
-					break; // Use the first subtab found.
-				}
-			}
-
-			// Fallback to legacy 'subtab' field for backward compatibility.
-			if ( empty( $active_subtab ) && isset( $_POST['subtab'] ) ) {
+			
+			// PRIORITY 1: Check for explicit 'subtab' field first (used for parent-level subtabs).
+			// This ensures that when nested sections are present (e.g., Tools > Connections > Google Drive),
+			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
+			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
 				$active_subtab = sanitize_key( $_POST['subtab'] );
+			}
+			
+			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
+			if ( empty( $active_subtab ) ) {
+				foreach ( $_POST as $key => $value ) {
+					if ( strpos( $key, 'subtab_' ) === 0 && ! empty( $value ) ) {
+						$active_subtab = sanitize_key( $value );
+						break; // Use the first subtab found.
+					}
+				}
 			}
 
 			// Check for 'connection' parameter (used in Integrations section).
