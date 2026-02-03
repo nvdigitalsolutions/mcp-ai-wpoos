@@ -1443,73 +1443,73 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Mailjet footer content.
 		 */
-private function render_mailjet_footer() {
-$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
-$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
-?>
-<tr>
-<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
-<td>
-<?php if ( $has_credentials ) : ?>
-<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-<p style="margin: 0; color: #155724;">
-<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
-</p>
-</div>
-<p class="description">
-<?php
+	private function render_mailjet_footer() {
+		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+		$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
+		$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
+		?>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+		<?php if ( $has_credentials ) : ?>
+				<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+				<p style="margin: 0; color: #155724;">
+					<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+					<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					</div>
+				<p class="description">
+		<?php
 echo wp_kses_post(
 __(
 'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
 'mcp-ai-wpoos'
 )
 );
-?>
-</p>
-<?php else : ?>
-<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
-<p style="margin: 0; color: #721c24;">
-<span class="dashicons dashicons-info" style="color: #721c24;"></span>
-<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
-</p>
-</div>
-<p class="description">
-<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
-</p>
-<?php endif; ?>
-</td>
-</tr>
-<tr>
-<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
-<td>
-<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
-<button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById('mailjet_webhook_url').value); this.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>'; setTimeout(() => this.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>', 2000);">
-<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
-</button>
-<p class="description">
-<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
-</p>
-</td>
-</tr>
-<tr>
-<th scope="row"></th>
-<td>
-<p class="description">
-<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
-</p>
-<ul style="list-style: disc; margin-left: 20px;">
-<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
-<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
-</ul>
-</td>
-</tr>
-<?php
-}
+		?>
+					</p>
+		<?php else : ?>
+				<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
+				<p style="margin: 0; color: #721c24;">
+					<span class="dashicons dashicons-info" style="color: #721c24;"></span>
+					<strong><?php esc_html_e( 'Mailjet Not Configured', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					</div>
+				<p class="description">
+		<?php esc_html_e( 'Enter your Mailjet API Key and Secret Key in the fields above, then save settings.', 'mcp-ai-wpoos' ); ?>
+					</p>
+		<?php endif; ?>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
+			<td>
+					<input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
+					<button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById('mailjet_webhook_url').value); this.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>'; setTimeout(() => this.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>', 2000);">
+		<?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
+					</button>
+				<p class="description">
+		<?php esc_html_e( 'Use this URL to configure webhooks in your Mailjet account for receiving event notifications (opens, clicks, bounces, etc.).', 'mcp-ai-wpoos' ); ?>
+					</p>
+			</td>
+		</tr>
+		<tr>
+			<th scope="row"></th>
+			<td>
+				<p class="description">
+					<strong><?php esc_html_e( 'Mailjet Integration Setup:', 'mcp-ai-wpoos' ); ?></strong>
+					</p>
+					<ul style="list-style: disc; margin-left: 20px;">
+					<li><?php esc_html_e( 'Mailjet uses Basic Authentication (API Key + Secret Key) - no OAuth required', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Get your API credentials from Mailjet account under Account Settings → REST API → API Key Management', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Verify your "From Email" address in Mailjet before sending emails', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Configure webhooks in Mailjet to receive real-time event notifications', 'mcp-ai-wpoos' ); ?></li>
+					<li><?php esc_html_e( 'Supports transactional emails, campaigns, and contact management', 'mcp-ai-wpoos' ); ?></li>
+					</ul>
+			</td>
+		</tr>
+		<?php
+	}
 
 		/**
 		 * Render Cloudways footer content.
