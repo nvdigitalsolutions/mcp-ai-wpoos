@@ -135,6 +135,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_architect_agent_toolkit'         => __( 'Architect Agent Toolkit', 'mcp-ai-wpoos' ),
 				'enable_architectural_design_toolkit'    => __( 'Architectural Design Toolkit', 'mcp-ai-wpoos' ),
 				'enable_calendar_booking_toolkit'        => __( 'Calendar Booking Toolkit', 'mcp-ai-wpoos' ),
+				'enable_chat_channels_toolkit'           => __( 'Chat Channels Toolkit', 'mcp-ai-wpoos' ),
 				'enable_dj_management_toolkit'           => __( 'DJ Management Toolkit', 'mcp-ai-wpoos' ),
 				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
