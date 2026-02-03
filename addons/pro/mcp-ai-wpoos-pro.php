@@ -680,6 +680,13 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 				'WP_MCP_AI_Tool_Yahoo_FF_Get_Player_Stats'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-get-player-stats.php',
 				'WP_MCP_AI_Tool_Yahoo_FF_Trade_Analyzer'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-trade-analyzer.php',
 				'WP_MCP_AI_Tool_Yahoo_FF_League_Standings'   => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-yahoo-ff-league-standings.php',
+				// ESPN Fantasy Football API tools.
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_League'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-league.php',
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams'      => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-teams.php',
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Roster'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-roster.php',
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings'  => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-get-standings.php',
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Analyze_Lineup' => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-analyze-lineup.php',
+				'WP_MCP_AI_Tool_ESPN_Fantasy_Sync_League'    => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-espn-fantasy-sync-league.php',
 				// AI-powered FF tools.
 				'WP_MCP_AI_Tool_FF_Generate_Team_Logo'       => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-generate-team-logo.php',
 				'WP_MCP_AI_Tool_FF_Create_League_Report'     => WP_MCP_AI_PRO_PATH . 'includes/tools/class-wp-mcp-ai-tool-ff-create-league-report.php',
