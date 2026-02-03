@@ -1,6 +1,14 @@
 <?php
 /**
- * Financial Planner Toolkit Settings Page
+ * Financial Planner Toolkit Settings Page (DEPRECATED)
+ *
+ * @deprecated 1.1.1 Replaced by class-wp-mcp-ai-financial-planner-cpt-settings-page.php
+ * @see WP_MCP_AI_Financial_Planner_CPT_Settings_Page
+ *
+ * This file is deprecated and no longer loaded. It has been replaced with a
+ * CPT-based settings page that follows the same pattern as Quiz, Project,
+ * and other toolkits. The new settings page appears under the Financial Accounts
+ * CPT menu instead of under "NV oOS Pro" menu.
  *
  * @package WP_MCP_AI_Pro
  */

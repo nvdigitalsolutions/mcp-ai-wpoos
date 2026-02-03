@@ -62,8 +62,8 @@ class WP_MCP_AI_Financial_Account_CPT {
 			'public'              => false,
 			'publicly_queryable'  => false,
 			'show_ui'             => true,
-			'show_in_menu'        => true,
-			'menu_icon'           => 'dashicons-bank',
+			'show_in_menu'        => true, // Show in main admin menu (creates parent menu).
+			'menu_icon'           => 'dashicons-money-alt', // Financial icon.
 			'menu_position'       => 56,
 			'query_var'           => true,
 			'rewrite'             => false,

@@ -21,11 +21,13 @@ $is_base    = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_bas
 if ( $is_enabled && ! $is_base ) {
 
 	// Load Financial Account CPT (works independently, no API required).
+	// CPT creates its own menu automatically.
 	require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-financial-account-cpt.php';
 
-	// Load Financial Planner admin pages.
+	// Load Financial Planner settings page (appears under CPT menu).
+	// Uses CPT-based pattern like Quiz, Project, and other toolkits.
 	if ( is_admin() ) {
-		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-financial-planner-settings-page.php';
+		require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-financial-planner-cpt-settings-page.php';
 	}
 
 	// Register tools will be loaded automatically via the tools directory structure.
