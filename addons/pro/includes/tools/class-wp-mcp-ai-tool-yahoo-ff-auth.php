@@ -2,6 +2,22 @@
 /**
  * Tool for Yahoo Fantasy Football OAuth authentication.
  *
+ * This tool manages OAuth authentication for Yahoo Fantasy Sports API access.
+ * It provides three actions:
+ *
+ * 1. get_auth_url: Generates OAuth authorization URL with clickable markdown links
+ *    - Returns a clickable "Connect to Yahoo" link for OAuth flow
+ *    - Returns a clickable "Research Page" link for easy access post-auth
+ *
+ * 2. get_status: Checks current authentication status
+ *    - Returns connection status and expiration details
+ *    - Includes clickable research page link when authenticated
+ *
+ * 3. revoke: Removes stored credentials
+ *
+ * The tool returns user-friendly messages with markdown-formatted links that
+ * are rendered as clickable buttons/links in the chat interface.
+ *
  * @package WP_MCP_AI
  */
 
