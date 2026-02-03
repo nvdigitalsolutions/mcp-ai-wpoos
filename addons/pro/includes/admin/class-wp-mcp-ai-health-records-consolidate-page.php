@@ -61,6 +61,7 @@ class WP_MCP_AI_Health_Records_Consolidate_Page {
 		// Allergies.
 		'create_allergy',
 		'get_allergy',
+		'list_allergies',
 		'update_allergy',
 		'delete_allergy',
 		// Health tools.
