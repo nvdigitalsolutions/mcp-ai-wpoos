@@ -202,7 +202,7 @@ class WP_MCP_AI_Fantasy_Football_Research_Page {
 						<?php
 					} else {
 						// Render the chat interface using shortcode.
-						echo do_shortcode( '[mcp_ai_chat assistant_id="' . absint( $assistant_id ) . '" height="600" show_title="false"]' );
+						echo do_shortcode( '[mcp_ai_chat assistant="' . absint( $assistant_id ) . '" height="600" show_title="false"]' );
 					}
 					?>
 				</div>

@@ -419,7 +419,7 @@ Fantasy Football Settings
 
 ### Settings Page Class
 
-**File:** `includes/admin/class-wp-mcp-ai-fantasy-football-settings.php`  
+**File:** `addons/pro/includes/admin/class-wp-mcp-ai-fantasy-football-settings.php`  
 **Class:** `WP_MCP_AI_Fantasy_Football_Settings`
 
 **Hooks:**
@@ -436,7 +436,7 @@ Fantasy Football Settings
 
 ### Research Tool Class
 
-**File:** `includes/tools/class-wp-mcp-ai-tool-ff-player-research.php`  
+**File:** `addons/pro/includes/tools/class-wp-mcp-ai-tool-ff-player-research.php`  
 **Class:** `WP_MCP_AI_Tool_FF_Player_Research`
 
 **Implements:**
