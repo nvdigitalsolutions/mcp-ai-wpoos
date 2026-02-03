@@ -32,6 +32,9 @@ function wp_mcp_ai_init_slash_commands() {
 	// Load default commands.
 	wp_mcp_ai_load_default_slash_commands();
 
+	// Register JavaScript files.
+	wp_mcp_ai_register_slash_command_scripts();
+
 	/**
 	 * Fires after slash commands are initialized
 	 *
@@ -185,3 +188,40 @@ function wp_mcp_ai_get_slash_commands( $filter_by_capability = false ) {
 
 	return $handler->get_commands( $filter_by_capability );
 }
+
+/**
+ * Register slash command JavaScript files
+ *
+ * @since 1.2.0
+ */
+function wp_mcp_ai_register_slash_command_scripts() {
+	// Register autocomplete script.
+	wp_register_script(
+		'mcp-ai-command-autocomplete',
+		WP_MCP_AI_URL . 'assets/js/command-autocomplete.js',
+		array(),
+		WP_MCP_AI_VERSION,
+		true
+	);
+
+	// Register slash commands integration script.
+	wp_register_script(
+		'mcp-ai-slash-commands',
+		WP_MCP_AI_URL . 'assets/js/slash-commands.js',
+		array( 'mcp-ai-command-autocomplete' ),
+		WP_MCP_AI_VERSION,
+		true
+	);
+
+	// Enqueue with chat bundle if it's loaded.
+	add_action(
+		'wp_enqueue_scripts',
+		function() {
+			if ( wp_script_is( 'wp-mcp-ai-chat', 'enqueued' ) ) {
+				wp_enqueue_script( 'mcp-ai-slash-commands' );
+			}
+		},
+		20
+	);
+}
+
