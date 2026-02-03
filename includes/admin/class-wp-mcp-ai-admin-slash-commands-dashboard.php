@@ -49,6 +49,12 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 	/**
 	 * Add admin menu page.
 	 *
+	 * Note: The menu uses 'edit_posts' capability (Contributor+) because individual
+	 * slash commands enforce their own capability requirements. The command handler
+	 * checks each command's required capability before execution, providing granular
+	 * access control. For example, /optimize-perf requires 'manage_options' while
+	 * /next-task requires 'edit_posts'.
+	 *
 	 * @return void
 	 */
 	public function add_menu_page() {
@@ -122,7 +128,12 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		// Get recent execution history.
 		$history = $this->get_execution_history( 10 );
 
-		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'commands';
+		// Sanitize and validate active tab.
+		$allowed_tabs = array( 'commands', 'workflows', 'history', 'test' );
+		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'commands';
+		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
+			$active_tab = 'commands';
+		}
 
 		?>
 		<div class="wrap wp-mcp-ai-slash-commands-dashboard">
@@ -691,7 +702,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 			'user'          => $user->display_name,
 			'user_id'       => $user->ID,
 			'status'        => is_wp_error( $result ) ? 'error' : 'success',
-			'output'        => is_wp_error( $result ) ? $result->get_error_message() : substr( $result, 0, self::HISTORY_OUTPUT_PREVIEW_LENGTH ),
+			'output'        => is_wp_error( $result ) ? $result->get_error_message() : ( is_string( $result ) ? substr( $result, 0, self::HISTORY_OUTPUT_PREVIEW_LENGTH ) : wp_json_encode( $result ) ),
 		);
 
 		array_unshift( $history, $entry );
