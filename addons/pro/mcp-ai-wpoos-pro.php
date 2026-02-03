@@ -550,6 +550,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
 			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
 			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
+			// Google Chat tools.
+			'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
 			// Enhanced Telegram tools.
 			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
 			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
@@ -1255,6 +1260,11 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			'send_messenger_message'          => 'external-tools',
 			'get_messenger_conversations'     => 'external-tools',
 			'create_messenger_broadcast'      => 'external-tools',
+			// Google Chat tools - Require external API credentials.
+			'send_google_chat_message'        => 'external-tools',
+			'get_google_chat_spaces'          => 'external-tools',
+			'get_google_chat_messages'        => 'external-tools',
+			'create_google_chat_space'        => 'external-tools',
 			// Enhanced Telegram tools - Require external API credentials.
 			'get_telegram_updates'            => 'external-tools',
 			'manage_telegram_webhook'         => 'external-tools',
