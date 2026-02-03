@@ -44,6 +44,8 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 				$this->handle_gmail_oauth_callback();
 			} elseif ( 'google_drive_callback' === $handler ) {
 				$this->handle_google_drive_oauth_callback();
+			} elseif ( 'yahoo_callback' === $handler ) {
+				$this->handle_yahoo_oauth_callback();
 			}
 		}
 
@@ -687,6 +689,212 @@ if ( ! class_exists( 'WP_MCP_AI_OAuth_Manager' ) ) {
 			}
 
 			wp_safe_redirect( add_query_arg( 'drive_success', rawurlencode( $success_message ), $redirect_base ) );
+			exit;
+		}
+
+		/**
+		 * Handle Yahoo OAuth start request.
+		 *
+		 * Implements OAuth flow for Yahoo Fantasy Sports API.
+		 */
+		public function handle_yahoo_oauth_start() {
+			// Check nonce for security.
+			if ( ! isset( $_GET['_wpnonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'wp_mcp_ai_yahoo_oauth_start' ) ) {
+				wp_die( esc_html__( 'Security check failed.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Check user capability.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_die( esc_html__( 'You do not have permission to access this page.', 'mcp-ai-wpoos' ) );
+			}
+
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['yahoo_client_id'] ) ? trim( $settings['yahoo_client_id'] ) : '';
+			$client_secret = isset( $settings['yahoo_client_secret'] ) ? trim( $settings['yahoo_client_secret'] ) : '';
+
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						array(
+							'page'         => 'wp-mcp-ai-dashboard',
+							'tab'          => 'tools',
+							'subtab'       => 'connections',
+							'connection'   => 'yahoo_sports',
+							'yahoo_error'  => rawurlencode( __( 'Please save your Yahoo Client ID and Client Secret before connecting.', 'mcp-ai-wpoos' ) ),
+						),
+						admin_url( 'admin.php' )
+					)
+				);
+				exit;
+			}
+
+			$user_id = get_current_user_id();
+
+			// Generate state token for CSRF protection.
+			$state = wp_generate_password( 32, false );
+			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_state', $state );
+			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_timestamp', time() );
+
+			// Build redirect URI.
+			$base_url     = admin_url( 'admin.php' );
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'yahoo_callback' ),
+				$base_url
+			);
+
+			// Build Yahoo OAuth authorization URL.
+			$auth_url = add_query_arg(
+				array(
+					'client_id'     => rawurlencode( $client_id ),
+					'redirect_uri'  => rawurlencode( $redirect_uri ),
+					'response_type' => 'code',
+					'scope'         => 'fspt-r', // Fantasy Sports Read access.
+					'state'         => $state,
+				),
+				'https://api.login.yahoo.com/oauth2/request_auth'
+			);
+
+			wp_safe_redirect( $auth_url );
+			exit;
+		}
+
+		/**
+		 * Handle Yahoo OAuth callback.
+		 */
+		protected function handle_yahoo_oauth_callback() {
+			// OAuth callback parameters from Yahoo. No nonce verification required as state parameter provides CSRF protection.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$code = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state parameter verifies request authenticity.
+			$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
+
+			$redirect_base = add_query_arg(
+				array(
+					'page'       => 'wp-mcp-ai-dashboard',
+					'tab'        => 'tools',
+					'subtab'     => 'connections',
+					'connection' => 'yahoo_sports',
+				),
+				admin_url( 'admin.php' )
+			);
+
+			if ( $error ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'yahoo_error',
+						rawurlencode(
+							sprintf(
+								/* translators: %s: Error message from Yahoo OAuth */
+								__( 'Yahoo OAuth error: %s', 'mcp-ai-wpoos' ),
+								$error
+							)
+						),
+						$redirect_base
+					)
+				);
+				exit;
+			}
+
+			$user_id            = get_current_user_id();
+			$stored_state       = get_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_state', true );
+			$stored_timestamp   = get_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_timestamp', true );
+
+			// Verify state and check if it's not too old (10 minutes max).
+			if ( empty( $state ) || $state !== $stored_state || empty( $stored_timestamp ) || ( time() - $stored_timestamp ) > 600 ) {
+				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'OAuth state verification failed. Please try again.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			if ( empty( $code ) ) {
+				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'No authorization code received from Yahoo.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Get settings.
+			$settings      = WP_MCP_AI_Admin_Settings::get_settings();
+			$client_id     = isset( $settings['yahoo_client_id'] ) ? trim( $settings['yahoo_client_id'] ) : '';
+			$client_secret = isset( $settings['yahoo_client_secret'] ) ? trim( $settings['yahoo_client_secret'] ) : '';
+
+			if ( empty( $client_id ) || empty( $client_secret ) ) {
+				wp_safe_redirect( add_query_arg( 'yahoo_error', rawurlencode( __( 'Yahoo credentials not found in settings.', 'mcp-ai-wpoos' ) ), $redirect_base ) );
+				exit;
+			}
+
+			// Build redirect_uri - must match exactly what was sent in the authorization request.
+			$base_url     = admin_url( 'admin.php' );
+			$redirect_uri = add_query_arg(
+				array( 'wp_mcp_ai_oauth' => 'yahoo_callback' ),
+				$base_url
+			);
+
+			// Exchange authorization code for tokens.
+			$token_url = 'https://api.login.yahoo.com/oauth2/get_token';
+
+			$response = wp_remote_post(
+				$token_url,
+				array(
+					'headers' => array(
+						'Authorization' => 'Basic ' . base64_encode( $client_id . ':' . $client_secret ), // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+						'Content-Type'  => 'application/x-www-form-urlencoded',
+					),
+					'body'    => array(
+						'code'         => $code,
+						'redirect_uri' => $redirect_uri,
+						'grant_type'   => 'authorization_code',
+					),
+					'timeout' => 30,
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'yahoo_error',
+						rawurlencode(
+							sprintf(
+								/* translators: %s: Error message */
+								__( 'Failed to exchange authorization code: %s', 'mcp-ai-wpoos' ),
+								$response->get_error_message()
+							)
+						),
+						$redirect_base
+					)
+				);
+				exit;
+			}
+
+			$body = wp_remote_retrieve_body( $response );
+			$data = json_decode( $body, true );
+
+			if ( empty( $data['access_token'] ) || empty( $data['refresh_token'] ) ) {
+				wp_safe_redirect(
+					add_query_arg(
+						'yahoo_error',
+						rawurlencode( __( 'Invalid token response from Yahoo.', 'mcp-ai-wpoos' ) ),
+						$redirect_base
+					)
+				);
+				exit;
+			}
+
+			// Store tokens in user meta.
+			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', $data['access_token'] );
+			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', $data['refresh_token'] );
+
+			// Calculate expiration time.
+			$expires_in = isset( $data['expires_in'] ) ? intval( $data['expires_in'] ) : 3600;
+			update_user_meta( $user_id, 'wp_mcp_ai_yahoo_token_expires', time() + $expires_in );
+
+			// Clean up state.
+			delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_state' );
+			delete_user_meta( $user_id, 'wp_mcp_ai_yahoo_oauth_timestamp' );
+
+			$success_message = __( 'Yahoo Sports connected successfully! You can now use Yahoo Fantasy Football tools.', 'mcp-ai-wpoos' );
+
+			wp_safe_redirect( add_query_arg( 'yahoo_success', rawurlencode( $success_message ), $redirect_base ) );
 			exit;
 		}
 	}
