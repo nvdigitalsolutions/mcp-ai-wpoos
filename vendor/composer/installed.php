@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/create-chat-channel-toolkit',
-        'version' => 'dev-copilot/create-chat-channel-toolkit',
-        'reference' => '625a0a1f0471b6e25b901f4ae72987a598fd3bab',
+        'pretty_version' => 'dev-copilot/integrate-espn-api-for-users',
+        'version' => 'dev-copilot/integrate-espn-api-for-users',
+        'reference' => 'e12f6da72fe7d4d1fd309511ccb9060d3a223b8a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/create-chat-channel-toolkit',
-            'version' => 'dev-copilot/create-chat-channel-toolkit',
-            'reference' => '625a0a1f0471b6e25b901f4ae72987a598fd3bab',
+            'pretty_version' => 'dev-copilot/integrate-espn-api-for-users',
+            'version' => 'dev-copilot/integrate-espn-api-for-users',
+            'reference' => 'e12f6da72fe7d4d1fd309511ccb9060d3a223b8a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
