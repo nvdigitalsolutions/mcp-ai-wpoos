@@ -1069,22 +1069,54 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Yahoo Sports footer content.
 		 */
-	private function render_yahoo_sports_footer() {
-		$settings          = WP_MCP_AI_Admin_Settings::get_settings();
-		$user_id           = get_current_user_id();
-		$yahoo_connected   = ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', true ) ) && ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', true ) );
-		$has_credentials   = ! empty( $settings['yahoo_client_id'] ) && ! empty( $settings['yahoo_client_secret'] );
-		$is_pro_active     = defined( 'WP_MCP_AI_PRO_VERSION' );
-		$oauth_connect_url = wp_nonce_url(
-			admin_url( 'admin-post.php?action=wp_mcp_ai_yahoo_oauth_start' ),
-			'wp_mcp_ai_yahoo_oauth_start'
-		);
+		private function render_yahoo_sports_footer() {
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$user_id         = get_current_user_id();
+			$yahoo_connected = ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_access_token', true ) ) && ! empty( get_user_meta( $user_id, 'wp_mcp_ai_yahoo_refresh_token', true ) );
+			$has_credentials = ! empty( $settings['yahoo_client_id'] ) && ! empty( $settings['yahoo_client_secret'] );
+			$is_pro_active   = defined( 'WP_MCP_AI_PRO_VERSION' );
 
-		// Check for success or error messages.
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$yahoo_success = isset( $_GET['yahoo_success'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_success'] ) ) : '';
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
-		$yahoo_error = isset( $_GET['yahoo_error'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_error'] ) ) : '';
+			// Generate OAuth state and build direct link to Yahoo OAuth (similar to Gmail).
+			if ( $has_credentials ) {
+				$state     = wp_generate_uuid4();
+				$transient = 'wp_mcp_ai_yahoo_oauth_state_' . md5( $state );
+
+				set_transient(
+					$transient,
+					array(
+						'user_id' => $user_id,
+						'time'    => time(),
+					),
+					10 * MINUTE_IN_SECONDS
+				);
+
+				// Build redirect URI.
+				$base_url     = admin_url( 'admin.php' );
+				$redirect_uri = add_query_arg(
+					array( 'wp_mcp_ai_oauth' => 'yahoo_callback' ),
+					$base_url
+				);
+
+				// Build Yahoo OAuth authorization URL.
+				$oauth_connect_url = add_query_arg(
+					array(
+						'client_id'     => rawurlencode( $settings['yahoo_client_id'] ),
+						'redirect_uri'  => rawurlencode( $redirect_uri ),
+						'response_type' => 'code',
+						'scope'         => 'fspt-r', // Fantasy Sports Read access - required for reading user's fantasy football leagues, rosters, and stats. Yahoo uses 'fspt-w' for write access if needed in the future.
+						'state'         => $state,
+					),
+					'https://api.login.yahoo.com/oauth2/request_auth'
+				);
+			} else {
+				$oauth_connect_url = '#';
+			}
+
+			// Check for success or error messages.
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$yahoo_success = isset( $_GET['yahoo_success'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_success'] ) ) : '';
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter check.
+			$yahoo_error = isset( $_GET['yahoo_error'] ) ? sanitize_text_field( wp_unslash( $_GET['yahoo_error'] ) ) : '';
 		?>
 		<?php if ( $yahoo_success ) : ?>
 		<tr>
@@ -1215,8 +1247,8 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 			</div>
 		</td>
 	</tr>
-	<?php
-	}
+		<?php
+		}
 
 		/**
 		 * Render remove.bg footer content.
@@ -1732,31 +1764,31 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 		/**
 		 * Render Mailjet footer content.
 		 */
-	private function render_mailjet_footer() {
-		$settings        = WP_MCP_AI_Admin_Settings::get_settings();
-		$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
-		$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
-		?>
-		<tr>
-			<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
-			<td>
-				<?php if ( $has_credentials ) : ?>
-					<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
-					<p style="margin: 0; color: #155724;">
-					<span class="dashicons dashicons-yes" style="color: #155724;"></span>
-					<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
-					</p>
-					</div>
-					<p class="description">
-					<?php
-						echo wp_kses_post(
-							__(
-								'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
-								'mcp-ai-wpoos'
-							)
+		private function render_mailjet_footer() {
+			$settings        = WP_MCP_AI_Admin_Settings::get_settings();
+			$has_credentials = ! empty( $settings['mailjet_api_key'] ) && ! empty( $settings['mailjet_api_secret'] );
+			$webhook_url     = rest_url( 'mcp-ai/v1/webhooks/mailjet' );
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Mailjet Status', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<?php if ( $has_credentials ) : ?>
+						<div style="padding: 10px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 10px;">
+						<p style="margin: 0; color: #155724;">
+						<span class="dashicons dashicons-yes" style="color: #155724;"></span>
+						<strong><?php esc_html_e( 'Mailjet API Configured', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						</div>
+						<p class="description">
+						<?php
+							echo wp_kses_post(
+								__(
+									'Your Mailjet API credentials are configured. You can now use email sending and campaign management tools.',
+									'mcp-ai-wpoos'
+								)
 							);
-					?>
-</p>
+						?>
+					</p>
 				<?php else : ?>
 					<div style="padding: 10px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 10px;">
 					<p style="margin: 0; color: #721c24;">
@@ -1797,8 +1829,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				</ul>
 </td>
 			</td>
-		<?php
-	}
+		</tr>
+			<?php
+		}
 
 		/**
 		 * Render Cloudways footer content.
