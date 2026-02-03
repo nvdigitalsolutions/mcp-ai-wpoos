@@ -19,9 +19,14 @@ class Test_Google_Drive_Settings_Subtab_Preservation extends WP_UnitTestCase {
 	 * When there are multiple subtab_* fields (from nested sections),
 	 * the explicit 'subtab' field should take priority to preserve
 	 * the parent-level subtab value.
+	 *
+	 * Note: This test directly manipulates $_POST to simulate form submission.
+	 * This is appropriate for unit testing the subtab detection logic in isolation
+	 * without requiring full WordPress request/response cycle setup.
 	 */
 	public function test_explicit_subtab_field_priority() {
 		// Simulate POST data from Google Drive connection page.
+		// Direct $_POST manipulation is intentional for isolated unit testing.
 		$_POST = array(
 			'wp_mcp_ai_settings' => array(),
 			'active_tab'         => 'tools',
@@ -58,9 +63,13 @@ class Test_Google_Drive_Settings_Subtab_Preservation extends WP_UnitTestCase {
 	 *
 	 * For backward compatibility, section-specific subtab_* fields should
 	 * still work when there's no explicit 'subtab' field.
+	 *
+	 * Note: This test directly manipulates $_POST to simulate form submission.
+	 * This is appropriate for unit testing the fallback logic in isolation.
 	 */
 	public function test_section_specific_subtab_fallback() {
 		// Simulate POST data without explicit subtab field.
+		// Direct $_POST manipulation is intentional for isolated unit testing.
 		$_POST = array(
 			'wp_mcp_ai_settings'       => array(),
 			'active_tab'               => 'providers',
