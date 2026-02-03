@@ -111,13 +111,13 @@ class WP_MCP_AI_JetEngine_WebChat_CCT_Module_Access_Test extends WP_UnitTestCase
 	}
 
 	/**
-	 * Test that get_cct_module uses public API instead of private property.
+	 * Test that get_cct_module returns module instance when available.
 	 *
 	 * This test verifies that the WebChat Messages CCT class correctly uses
 	 * $engine->modules->get_module() (public method) instead of accessing
 	 * the private $engine->modules->modules property directly.
 	 */
-	public function test_get_cct_module_uses_public_api() {
+	public function test_get_cct_module_returns_module_instance_when_available() {
 		// Verify JetEngine is available.
 		$this->assertTrue( function_exists( 'jet_engine' ), 'jet_engine() function should be available' );
 
