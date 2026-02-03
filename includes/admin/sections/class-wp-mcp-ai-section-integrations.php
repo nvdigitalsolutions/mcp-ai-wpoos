@@ -590,6 +590,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'yahoo_sports':
 					$this->render_yahoo_sports_footer();
 					break;
+				case 'removebg':
+					$this->render_removebg_footer();
+					break;
 				// PayHere, Flowhub, QuickBooks, and iSAMS moved to Remote Sites.
 				case 'meta':
 					$this->render_meta_footer();
@@ -1085,6 +1088,67 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 								<?php esc_html_e( 'Yahoo Sports integration requires the Pro addon to be active.', 'mcp-ai-wpoos' ); ?>
 							</p>
 						<?php endif; ?>
+					</div>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render remove.bg footer content.
+		 */
+		private function render_removebg_footer() {
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'remove.bg Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-removebg-connection" class="button button-secondary">
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-removebg-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your remove.bg API key in the field above, then click "Test Connection" to verify it works. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'About remove.bg Integration', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description" style="margin-bottom: 10px;">
+							<?php esc_html_e( 'Automatically remove backgrounds from images using AI-powered background removal service.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: URL to remove.bg API */
+										__( 'Get your API key from <a href="%s" target="_blank">remove.bg API</a>', 'mcp-ai-wpoos' ),
+										'https://www.remove.bg/api'
+									)
+								);
+								?>
+							</li>
+							<li><?php esc_html_e( 'Free tier includes 50 API calls per month', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Paste your API key into the field above and save', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click "Test Connection" to verify your API key', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Use the background removal tools with your images', 'mcp-ai-wpoos' ); ?></li>
+						</ol>
+						<p class="description" style="margin-top: 1rem;">
+							<strong><?php esc_html_e( 'Features:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ul style="list-style: disc; margin-left: 20px;">
+							<li><?php esc_html_e( 'AI-powered background removal for images', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Supports various image formats (PNG, JPG, etc.)', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Alternative: Free Python rembg library (no API key needed)', 'mcp-ai-wpoos' ); ?></li>
+						</ul>
 					</div>
 				</td>
 			</tr>

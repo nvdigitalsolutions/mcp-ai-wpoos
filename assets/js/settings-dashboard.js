@@ -1429,6 +1429,7 @@
 		if (typeof wpMcpAiAdmin !== 'undefined') {
 			initBraveSearchHandlers();
 			initYahooHandlers();
+			initRemovebgHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
 			initISAMSHandlers();

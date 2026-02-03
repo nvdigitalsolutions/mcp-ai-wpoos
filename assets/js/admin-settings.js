@@ -619,6 +619,52 @@ window.wpMcpAiSaveExpandedState = function() {
     }
 
     /**
+     * Initialize remove.bg connection test handler
+     */
+    function initRemovebgHandlers() {
+        // Test remove.bg connection
+        $('#wp-mcp-ai-test-removebg-connection').on('click', function (e) {
+            e.preventDefault();
+            const $button = $(this);
+            const $result = $('#wp-mcp-ai-removebg-test-result');
+            const apiKey = $('input[name="wp_mcp_ai_settings[removebg_api_key]"]').val();
+
+            if (!apiKey) {
+                $result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+                return;
+            }
+
+            $button.prop('disabled', true).text('Testing...');
+            $result.html('<span style="color: #3c434a;">Connecting to remove.bg...</span>');
+
+            // Use the error service for consistent error handling
+            $.wpMcpAiAjax({
+                url: wpMcpAiAdmin.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'wp_mcp_ai_test_removebg_connection',
+                    nonce: wpMcpAiAdmin.nonce,
+                    api_key: apiKey
+                }
+            }, {
+                success: function (response) {
+                    if (response.success) {
+                        $result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+                    } else {
+                        $result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+                    }
+                },
+                error: function (error) {
+                    $result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+                },
+                complete: function () {
+                    $button.prop('disabled', false).text('Test Connection');
+                }
+            });
+        });
+    }
+
+    /**
      * Initialize Flowhub connection test handler
      */
     function initFlowhubHandlers() {
@@ -804,6 +850,7 @@ window.wpMcpAiSaveExpandedState = function() {
         initBraveSearchHandlers();
         initMubertHandlers();
         initYahooHandlers();
+        initRemovebgHandlers();
         initFlowhubHandlers();
         initTokenUsageHandlers();
         initProviderPriorityList();
