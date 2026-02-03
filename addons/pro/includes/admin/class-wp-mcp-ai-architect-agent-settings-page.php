@@ -29,17 +29,18 @@ class WP_MCP_AI_Architect_Agent_Settings_Page {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 31 );
+		// Priority 35 ensures this runs after Remote Connections menu registration (priority 30).
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 35 );
 	}
 
 	/**
-	 * Add settings page to admin menu under Pro Dashboard.
+	 * Add settings page as submenu under Remote Connections.
 	 *
 	 * @since 1.1.0
 	 */
 	public function add_settings_page() {
 		add_submenu_page(
-			'nvoos-pro-dashboard',
+			'wp-mcp-ai-remote-connections',
 			__( 'Architect Agent Toolkit', 'mcp-ai-wpoos-pro' ),
 			__( 'Architect Agent', 'mcp-ai-wpoos-pro' ),
 			'manage_options',

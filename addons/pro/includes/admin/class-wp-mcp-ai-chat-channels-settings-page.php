@@ -24,11 +24,14 @@ class WP_MCP_AI_Chat_Channels_Settings_Page extends WP_MCP_AI_Toolkit_Settings_B
 		$this->toolkit_name     = __( 'Chat Channels Toolkit', 'mcp-ai-wpoos-pro' );
 		$this->option_name      = 'wp_mcp_ai_chat_channels_toolkit_settings';
 		$this->page_slug        = 'wp-mcp-ai-chat-channels-toolkit-settings';
+		$this->parent_slug      = 'wp-mcp-ai-remote-connections';  // Add under Remote Connections menu.
 		$this->has_research     = false;
 		$this->has_remote_sites = true;  // Enable remote sites support for external platform connections.
 		$this->icon             = 'dashicons-format-chat';
 
-		parent::__construct();
+		// Override parent constructor to set correct priority.
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 36 );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	/**
