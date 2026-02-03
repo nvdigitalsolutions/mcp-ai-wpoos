@@ -43,11 +43,12 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 		?>
 		<h2><?php esc_html_e( 'Fantasy Football Toolkit Overview', 'mcp-ai-wpoos-pro' ); ?></h2>
 		
-		<p><?php esc_html_e( 'Comprehensive fantasy football management system with Yahoo Fantasy Sports API integration, AI-powered team logo generation, league reports, and player research.', 'mcp-ai-wpoos-pro' ); ?></p>
+		<p><?php esc_html_e( 'Comprehensive fantasy football management system with Yahoo Fantasy Sports and ESPN Fantasy Football API integrations, AI-powered team logo generation, league reports, and player research.', 'mcp-ai-wpoos-pro' ); ?></p>
 
 		<h3><?php esc_html_e( 'Key Features', 'mcp-ai-wpoos-pro' ); ?></h3>
 		<ul>
 			<li><?php esc_html_e( 'Yahoo Fantasy Sports Integration: Connect with Yahoo Fantasy Sports API to sync leagues, rosters, and player data', 'mcp-ai-wpoos-pro' ); ?></li>
+			<li><?php esc_html_e( 'ESPN Fantasy Football Integration: Access ESPN leagues with support for both public and private leagues', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'League Management: Track team standings, win/loss records, and points for/against', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'Trade Analysis: AI-powered trade analyzer to evaluate potential trades', 'mcp-ai-wpoos-pro' ); ?></li>
 			<li><?php esc_html_e( 'Team Branding: Generate custom team logos with AI assistance', 'mcp-ai-wpoos-pro' ); ?></li>
@@ -79,6 +80,13 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 			'yahoo_ff_get_player_stats' => __( 'Get Player Statistics', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_trade_analyzer'   => __( 'Analyze Trade Proposals', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_league_standings' => __( 'Get League Standings', 'mcp-ai-wpoos-pro' ),
+			// ESPN Fantasy Football API tools.
+			'espn_fantasy_get_league'     => __( 'ESPN: Get League Info', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_teams'      => __( 'ESPN: Get Teams', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_roster'     => __( 'ESPN: Get Team Roster', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_get_standings'  => __( 'ESPN: Get League Standings', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_analyze_lineup' => __( 'ESPN: Analyze Lineup', 'mcp-ai-wpoos-pro' ),
+			'espn_fantasy_sync_league'    => __( 'ESPN: Sync League Data', 'mcp-ai-wpoos-pro' ),
 			// Fantasy Football specific tools.
 			'ff_generate_team_logo'     => __( 'Generate Team Logo', 'mcp-ai-wpoos-pro' ),
 			'ff_create_league_report'   => __( 'Create League Report', 'mcp-ai-wpoos-pro' ),
@@ -103,6 +111,14 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 			$this->option_name . '_yahoo_api_section',
 			__( 'Yahoo Fantasy Sports API', 'mcp-ai-wpoos-pro' ),
 			array( $this, 'render_yahoo_api_section' ),
+			$this->option_name
+		);
+
+		// Add ESPN API Credentials notice section - credentials now managed in Connections.
+		add_settings_section(
+			$this->option_name . '_espn_api_section',
+			__( 'ESPN Fantasy Football API', 'mcp-ai-wpoos-pro' ),
+			array( $this, 'render_espn_api_section' ),
 			$this->option_name
 		);
 
@@ -221,6 +237,24 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 				esc_html__( 'Yahoo Fantasy Sports API credentials are now managed in the %1$s. Once configured there, the credentials will be automatically available to all Fantasy Football tools. To create your Yahoo application and get credentials, visit %2$s.', 'mcp-ai-wpoos-pro' ),
 				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=yahoo_sports' ) ) . '">' . esc_html__( 'Connections Settings', 'mcp-ai-wpoos-pro' ) . '</a>',
 				'<a href="https://developer.yahoo.com/apps/" target="_blank">Yahoo Developer Network</a>'
+			);
+			?>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Render ESPN API section description.
+	 */
+	public function render_espn_api_section() {
+		?>
+		<p>
+			<?php
+			printf(
+				/* translators: %1$s: URL to connections settings, %2$s: ESPN authentication guide URL */
+				esc_html__( 'ESPN Fantasy Football API credentials (S2 and SWID cookies) are now managed in the %1$s. Once configured there, they will be automatically available to all ESPN Fantasy tools. ESPN works with both public and private leagues - authentication is only required for private leagues. For instructions on obtaining these cookies, see %2$s.', 'mcp-ai-wpoos-pro' ),
+				'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-dashboard&tab=tools&subtab=connections&connection=espn_sports' ) ) . '">' . esc_html__( 'Connections Settings', 'mcp-ai-wpoos-pro' ) . '</a>',
+				'<a href="https://github.com/cwendt94/espn-api/blob/master/README.md#espn-s2-and-swid" target="_blank">ESPN API Authentication Guide</a>'
 			);
 			?>
 		</p>
