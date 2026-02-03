@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-google-drive-oauth-error',
-        'version' => 'dev-copilot/fix-google-drive-oauth-error',
-        'reference' => '30de7f9cabb490de9be4fa8777eb1e1aaf24fa5a',
+        'pretty_version' => 'dev-copilot/run-composer-install-production-7ed3735a-3e1f-48ff-a7c8-40d4f4b5a1cc',
+        'version' => 'dev-copilot/run-composer-install-production-7ed3735a-3e1f-48ff-a7c8-40d4f4b5a1cc',
+        'reference' => 'f66e4bfa72d1016d1f9548f26f8289e94a9cfc1a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-google-drive-oauth-error',
-            'version' => 'dev-copilot/fix-google-drive-oauth-error',
-            'reference' => '30de7f9cabb490de9be4fa8777eb1e1aaf24fa5a',
+            'pretty_version' => 'dev-copilot/run-composer-install-production-7ed3735a-3e1f-48ff-a7c8-40d4f4b5a1cc',
+            'version' => 'dev-copilot/run-composer-install-production-7ed3735a-3e1f-48ff-a7c8-40d4f4b5a1cc',
+            'reference' => 'f66e4bfa72d1016d1f9548f26f8289e94a9cfc1a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
