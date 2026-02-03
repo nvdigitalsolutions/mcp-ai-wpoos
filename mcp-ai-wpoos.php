@@ -582,6 +582,9 @@ if ( ! defined( 'WP_MCP_AI_PRO_VERSION' ) ) {
 // Provides 9 core orchestration tools for autonomous AI workflows.
 require_once WP_MCP_AI_PATH . 'includes/orchestration-init.php';
 
+// Load slash commands system (Phase 1 PRO_PLUGIN_ENHANCEMENT).
+require_once WP_MCP_AI_PATH . 'includes/slash-commands/slash-commands-init.php';
+
 require_once WP_MCP_AI_PATH . 'includes/tools-init.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/remove-background.php';
 
