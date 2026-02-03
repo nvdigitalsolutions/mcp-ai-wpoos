@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-research-registration-page',
-        'version' => 'dev-copilot/update-research-registration-page',
-        'reference' => '5b8087113f2d68243c05aa97affb28889b58d517',
+        'pretty_version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
+        'version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
+        'reference' => 'dfac02f8d3d42ee1e57cf3a03a2e7964fbcd4639',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-research-registration-page',
-            'version' => 'dev-copilot/update-research-registration-page',
-            'reference' => '5b8087113f2d68243c05aa97affb28889b58d517',
+            'pretty_version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
+            'version' => 'dev-copilot/fix-yahoo-fantasy-connection-error',
+            'reference' => 'dfac02f8d3d42ee1e57cf3a03a2e7964fbcd4639',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
