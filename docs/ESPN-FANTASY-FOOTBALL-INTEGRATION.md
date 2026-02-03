@@ -17,9 +17,9 @@ The toolkit now supports both ESPN and Yahoo Fantasy Football platforms with a u
 
 ## Components
 
-### 1. ESPN Fantasy Client (`class-wp-mcp-ai-espn-fantasy-client.php`)
+### 1. ESPN Fantasy Client (`addons/pro/includes/class-wp-mcp-ai-espn-fantasy-client.php`)
 
-Core HTTP client for ESPN Fantasy Football v3 API.
+Core HTTP client for ESPN Fantasy Football v3 API. **Located in Pro addon.**
 
 **Features:**
 - Base endpoint: `https://fantasy.espn.com/apis/v3/games/ffl/`

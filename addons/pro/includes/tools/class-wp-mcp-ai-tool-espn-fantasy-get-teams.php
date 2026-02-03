@@ -1,6 +1,6 @@
 <?php
 /**
- * Tool to retrieve ESPN Fantasy Football league standings.
+ * Tool to retrieve all teams in an ESPN Fantasy Football league.
  *
  * @package WP_MCP_AI
  */
@@ -15,34 +15,34 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
- * Tool for retrieving ESPN Fantasy Football league standings.
+ * Tool for retrieving all teams in an ESPN Fantasy Football league.
  */
-class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
+class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Teams implements WP_MCP_AI_Tool_Interface, WP_MCP_AI_Tool_Capability_Flags_Interface {
 	use WP_MCP_AI_Tool_Chat_Response;
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_slug() {
-		return 'espn_fantasy_get_standings';
+		return 'espn_fantasy_get_teams';
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_name() {
-		return __( 'ESPN Fantasy Get Standings', 'mcp-ai-wpoos' );
+		return __( 'ESPN Fantasy Get Teams', 'mcp-ai-wpoos' );
 	}
 
 	/**
 	 * {@inheritdoc}
 	 */
 	public function get_description() {
-		return __( 'Retrieve current ESPN Fantasy Football league standings sorted by wins and points, including rankings, records, and playoff positions.', 'mcp-ai-wpoos' );
+		return __( 'Retrieve all teams in an ESPN Fantasy Football league including team names, owners, win/loss records, points for/against, and playoff positions.', 'mcp-ai-wpoos' );
 	}
 
 	/**
@@ -99,7 +99,7 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interf
 	 * @return array|WP_Error Tool results or error.
 	 */
 	public function execute( array $arguments = array(), array $context = array() ) {
-		$user_id   = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
+		$user_id = isset( $context['user_id'] ) ? absint( $context['user_id'] ) : 0;
 		$has_token = ! empty( $context['token_authenticated'] );
 
 		if ( ! $user_id && ! $has_token ) {
@@ -135,69 +135,67 @@ class WP_MCP_AI_Tool_ESPN_Fantasy_Get_Standings implements WP_MCP_AI_Tool_Interf
 			$credentials['swid'] = sanitize_text_field( $arguments['swid'] );
 		}
 
-		$client    = new WP_MCP_AI_ESPN_Fantasy_Client( $credentials );
-		$standings = $client->get_standings( $league_id, $season );
+		$client = new WP_MCP_AI_ESPN_Fantasy_Client( $credentials );
+		$teams  = $client->get_teams( $league_id, $season );
 
-		if ( is_wp_error( $standings ) ) {
-			return $standings;
+		if ( is_wp_error( $teams ) ) {
+			return $teams;
 		}
 
-		$formatted_standings = array();
-		$rank                = 1;
-
-		foreach ( $standings as $team ) {
-			$formatted_standings[] = $this->format_standing( $team, $rank );
-			$rank++;
-		}
+		$formatted_teams = array_map( array( $this, 'format_team_data' ), $teams );
 
 		/* translators: %d: number of teams */
 		$message = sprintf(
-			__( 'Retrieved standings for %d teams.', 'mcp-ai-wpoos' ),
-			count( $formatted_standings )
+			__( 'Retrieved %d teams from the league.', 'mcp-ai-wpoos' ),
+			count( $formatted_teams )
 		);
 
-		return array_merge(
-			array(
-				'message'   => $message,
-				'summary'   => $message,
-				'standings' => $formatted_standings,
-				'count'     => count( $formatted_standings ),
-			)
+		return $this->format_collection_response( $formatted_teams, $message );
+	}
+
+	/**
+	 * Format team data.
+	 *
+	 * @param array $team Raw team data.
+	 * @return array Formatted team data.
+	 */
+	protected function format_team_data( $team ) {
+		$record = isset( $team['record']['overall'] ) ? $team['record']['overall'] : array();
+
+		return array(
+			'team_id'        => isset( $team['id'] ) ? absint( $team['id'] ) : 0,
+			'name'           => isset( $team['name'] ) ? sanitize_text_field( $team['name'] ) : '',
+			'abbreviation'   => isset( $team['abbrev'] ) ? sanitize_text_field( $team['abbrev'] ) : '',
+			'logo_url'       => isset( $team['logo'] ) ? esc_url_raw( $team['logo'] ) : '',
+			'owner'          => $this->get_owner_name( $team ),
+			'wins'           => isset( $record['wins'] ) ? absint( $record['wins'] ) : 0,
+			'losses'         => isset( $record['losses'] ) ? absint( $record['losses'] ) : 0,
+			'ties'           => isset( $record['ties'] ) ? absint( $record['ties'] ) : 0,
+			'points_for'     => isset( $record['pointsFor'] ) ? floatval( $record['pointsFor'] ) : 0.0,
+			'points_against' => isset( $record['pointsAgainst'] ) ? floatval( $record['pointsAgainst'] ) : 0.0,
+			'streak_length'  => isset( $record['streakLength'] ) ? absint( $record['streakLength'] ) : 0,
+			'streak_type'    => isset( $record['streakType'] ) ? sanitize_text_field( $record['streakType'] ) : '',
+			'playoff_seed'   => isset( $team['playoffSeed'] ) ? absint( $team['playoffSeed'] ) : 0,
 		);
 	}
 
 	/**
-	 * Format standing data.
+	 * Get team owner name.
 	 *
-	 * @param array $team Raw team data.
-	 * @param int   $rank Team rank.
-	 * @return array Formatted standing.
+	 * @param array $team Team data.
+	 * @return string Owner name.
 	 */
-	protected function format_standing( $team, $rank ) {
-		$record = isset( $team['record']['overall'] ) ? $team['record']['overall'] : array();
+	protected function get_owner_name( $team ) {
+		if ( empty( $team['owners'] ) || ! is_array( $team['owners'] ) ) {
+			return '';
+		}
 
-		$wins   = isset( $record['wins'] ) ? absint( $record['wins'] ) : 0;
-		$losses = isset( $record['losses'] ) ? absint( $record['losses'] ) : 0;
-		$ties   = isset( $record['ties'] ) ? absint( $record['ties'] ) : 0;
-
-		$win_pct = ( $wins + $losses + $ties ) > 0
-			? round( $wins / ( $wins + $losses + $ties ), 3 )
-			: 0;
-
-		return array(
-			'rank'           => $rank,
-			'team_id'        => isset( $team['id'] ) ? absint( $team['id'] ) : 0,
-			'team_name'      => isset( $team['name'] ) ? sanitize_text_field( $team['name'] ) : '',
-			'abbreviation'   => isset( $team['abbrev'] ) ? sanitize_text_field( $team['abbrev'] ) : '',
-			'wins'           => $wins,
-			'losses'         => $losses,
-			'ties'           => $ties,
-			'win_percentage' => $win_pct,
-			'points_for'     => isset( $record['pointsFor'] ) ? floatval( $record['pointsFor'] ) : 0.0,
-			'points_against' => isset( $record['pointsAgainst'] ) ? floatval( $record['pointsAgainst'] ) : 0.0,
-			'streak_type'    => isset( $record['streakType'] ) ? sanitize_text_field( $record['streakType'] ) : '',
-			'streak_length'  => isset( $record['streakLength'] ) ? absint( $record['streakLength'] ) : 0,
-			'playoff_seed'   => isset( $team['playoffSeed'] ) ? absint( $team['playoffSeed'] ) : 0,
+		// ESPN typically stores owner ID in the owners array.
+		// For privacy, we'll return a generic indicator.
+		return sprintf(
+			/* translators: %d: number of owners */
+			_n( '%d owner', '%d owners', count( $team['owners'] ), 'mcp-ai-wpoos' ),
+			count( $team['owners'] )
 		);
 	}
 }

@@ -15,7 +15,7 @@ if ( version_compare( PHP_VERSION, '7.4.0', '<' ) ) {
 }
 
 require_once WP_MCP_AI_PATH . 'includes/interfaces/interface-wp-mcp-ai-tool.php';
-require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-espn-fantasy-client.php';
 require_once WP_MCP_AI_PATH . 'includes/tools/trait-wp-mcp-ai-tool-chat-response.php';
 
 /**
