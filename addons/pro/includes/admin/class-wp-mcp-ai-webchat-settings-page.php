@@ -25,7 +25,7 @@ class WP_MCP_AI_WebChat_Settings_Page extends WP_MCP_AI_CPT_Settings_Page_Base {
 	 */
 	public function __construct() {
 		$this->option_name = 'wp_mcp_ai_webchat_settings';
-		$this->post_type   = 'mcp_ai_webchat_room';
+		$this->post_type   = 'mcp_ai_webchat';
 		$this->page_title  = __( 'WebChat Settings', 'mcp-ai-wpoos-pro' );
 		$this->menu_title  = __( 'Settings', 'mcp-ai-wpoos-pro' );
 		$this->page_slug   = 'webchat-settings';

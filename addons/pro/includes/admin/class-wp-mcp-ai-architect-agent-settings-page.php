@@ -29,11 +29,11 @@ class WP_MCP_AI_Architect_Agent_Settings_Page {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 20 );
+		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 31 );
 	}
 
 	/**
-	 * Add settings page to admin menu.
+	 * Add settings page to admin menu under Pro Dashboard.
 	 *
 	 * @since 1.1.0
 	 */
