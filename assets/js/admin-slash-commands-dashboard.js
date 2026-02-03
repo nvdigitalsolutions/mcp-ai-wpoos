@@ -293,30 +293,45 @@
 		 * View history details.
 		 */
 		viewHistoryDetails(entryId) {
-			// Find entry in stored history.
-			const entry = this.findHistoryEntry(entryId);
-			if (!entry) {
-				alert('History entry not found.');
-				return;
-			}
-
 			$('#history-details-display').show();
-			$('#history-details-content').html(
-				'<dl>' +
-				'<dt><strong>Timestamp:</strong></dt>' +
-				'<dd>' + this.escapeHtml(entry.timestamp) + '</dd>' +
-				'<dt><strong>Type:</strong></dt>' +
-				'<dd>' + this.escapeHtml(entry.type) + '</dd>' +
-				'<dt><strong>Command:</strong></dt>' +
-				'<dd><code>' + this.escapeHtml(entry.command) + '</code></dd>' +
-				'<dt><strong>User:</strong></dt>' +
-				'<dd>' + this.escapeHtml(entry.user) + '</dd>' +
-				'<dt><strong>Status:</strong></dt>' +
-				'<dd>' + this.escapeHtml(entry.status) + '</dd>' +
-				'<dt><strong>Output:</strong></dt>' +
-				'<dd><pre>' + this.escapeHtml(entry.output) + '</pre></dd>' +
-				'</dl>'
-			);
+			$('#history-details-content').html('<p>Loading...</p>');
+
+			// Fetch entry details from server.
+			$.ajax({
+				url: wpMcpAiSlashCommands.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_get_history_entry',
+					nonce: wpMcpAiSlashCommands.nonce,
+					entry_id: entryId
+				},
+				success: (response) => {
+					if (response.success && response.data.entry) {
+						const entry = response.data.entry;
+						$('#history-details-content').html(
+							'<dl>' +
+							'<dt><strong>Timestamp:</strong></dt>' +
+							'<dd>' + this.escapeHtml(entry.timestamp) + '</dd>' +
+							'<dt><strong>Type:</strong></dt>' +
+							'<dd>' + this.escapeHtml(entry.type) + '</dd>' +
+							'<dt><strong>Command:</strong></dt>' +
+							'<dd><code>' + this.escapeHtml(entry.command) + '</code></dd>' +
+							'<dt><strong>User:</strong></dt>' +
+							'<dd>' + this.escapeHtml(entry.user) + '</dd>' +
+							'<dt><strong>Status:</strong></dt>' +
+							'<dd>' + this.escapeHtml(entry.status) + '</dd>' +
+							'<dt><strong>Output:</strong></dt>' +
+							'<dd><pre>' + this.escapeHtml(entry.output) + '</pre></dd>' +
+							'</dl>'
+						);
+					} else {
+						$('#history-details-content').html('<p style="color: red;">Error: ' + this.escapeHtml(response.data?.message || 'Failed to load entry') + '</p>');
+					}
+				},
+				error: (xhr) => {
+					$('#history-details-content').html('<p style="color: red;">Error: ' + this.escapeHtml(xhr.statusText) + '</p>');
+				}
+			});
 		}
 
 		/**
@@ -350,32 +365,6 @@
 
 				$tbody.append(row);
 			});
-		}
-
-		/**
-		 * Find history entry by ID.
-		 */
-		findHistoryEntry(entryId) {
-			// This is a simplified version. In a real implementation, you'd store
-			// the history data or fetch it from the server.
-			const rows = $('#history-table tbody tr');
-			let found = null;
-
-			rows.each(function() {
-				const btn = $(this).find('.view-history-details');
-				if (btn.data('entry-id') === entryId) {
-					found = {
-						timestamp: $(this).find('td:eq(0)').text(),
-						type: $(this).find('td:eq(1)').text().toLowerCase(),
-						command: $(this).find('td:eq(2)').text(),
-						user: $(this).find('td:eq(3)').text(),
-						status: $(this).find('td:eq(4) .status-badge').text().toLowerCase(),
-						output: 'Full output preview...'
-					};
-				}
-			});
-
-			return found;
 		}
 
 		/**

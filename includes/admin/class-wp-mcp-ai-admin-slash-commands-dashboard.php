@@ -27,6 +27,7 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_command', array( $this, 'ajax_execute_command' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_get_command_history', array( $this, 'ajax_get_history' ) );
+		add_action( 'wp_ajax_wp_mcp_ai_get_history_entry', array( $this, 'ajax_get_history_entry' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_clear_command_history', array( $this, 'ajax_clear_history' ) );
 		add_action( 'wp_ajax_wp_mcp_ai_execute_workflow', array( $this, 'ajax_execute_workflow' ) );
 	}
@@ -595,6 +596,44 @@ class WP_MCP_AI_Admin_Slash_Commands_Dashboard {
 
 		wp_send_json_success( array(
 			'history' => $history,
+		) );
+	}
+
+	/**
+	 * AJAX handler: Get single history entry.
+	 *
+	 * @return void
+	 */
+	public function ajax_get_history_entry() {
+		check_ajax_referer( 'wp_mcp_ai_slash_commands', 'nonce' );
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$entry_id = isset( $_POST['entry_id'] ) ? sanitize_text_field( wp_unslash( $_POST['entry_id'] ) ) : '';
+
+		if ( empty( $entry_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'No entry ID provided.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		$history = get_option( 'wp_mcp_ai_slash_command_history', array() );
+
+		// Find entry by ID.
+		$entry = null;
+		foreach ( $history as $item ) {
+			if ( $item['id'] === $entry_id ) {
+				$entry = $item;
+				break;
+			}
+		}
+
+		if ( ! $entry ) {
+			wp_send_json_error( array( 'message' => __( 'History entry not found.', 'mcp-ai-wpoos' ) ) );
+		}
+
+		wp_send_json_success( array(
+			'entry' => $entry,
 		) );
 	}
 
