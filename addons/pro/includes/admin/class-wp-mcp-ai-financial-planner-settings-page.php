@@ -28,15 +28,10 @@ class WP_MCP_AI_Financial_Planner_Settings_Page extends WP_MCP_AI_Toolkit_Settin
 		$this->has_remote_sites = true;
 		$this->icon             = 'dashicons-money-alt';
 
-		// Call parent constructor which sets up admin hooks.
-		parent::__construct();
-		
-		// Remove the default admin_menu hook added by parent at priority 10.
-		remove_action( 'admin_menu', array( $this, 'add_settings_page' ), 10 );
-		
-		// Re-add at priority 30 (after Pro Dashboard at priority 25).
-		// This ensures the parent menu 'nvoos-pro-dashboard' exists before we try to add submenu.
+		// Don't call parent constructor yet - we need to set up hooks first.
+		// Register admin hooks at priority 30 (after Pro Dashboard at priority 25).
 		add_action( 'admin_menu', array( $this, 'add_settings_page' ), 30 );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
 	}
 
 	/**
