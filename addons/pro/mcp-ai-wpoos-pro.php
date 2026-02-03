@@ -532,6 +532,9 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php',
 			// Chat channels tools (Discord, Slack, Teams).
 			'WP_MCP_AI_Pro_Tool_Send_Slack_Message'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-slack-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Slack_Channel'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-slack-channel.php',
 			'WP_MCP_AI_Pro_Tool_Send_Discord_Message'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-discord-message.php',
 			'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-channels.php',
 			'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-messages.php',
