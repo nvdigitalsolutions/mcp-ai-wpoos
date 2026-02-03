@@ -7,7 +7,7 @@
  * Facebook Messenger, and other major chat platforms.
  *
  * This toolkit provides comprehensive chat channel integration following
- * industry best practices from OpenClaw.ai and other leading platforms.
+ * industry best practices for multi-platform messaging.
  *
  * @package WP_MCP_AI_Pro
  */
