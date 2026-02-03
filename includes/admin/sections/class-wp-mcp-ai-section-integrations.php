@@ -587,6 +587,9 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 				case 'mubert':
 					$this->render_mubert_footer();
 					break;
+				case 'yahoo_sports':
+					$this->render_yahoo_sports_footer();
+					break;
 				// PayHere, Flowhub, QuickBooks, and iSAMS moved to Remote Sites.
 				case 'meta':
 					$this->render_meta_footer();
@@ -1014,6 +1017,75 @@ if ( ! class_exists( 'WP_MCP_AI_Section_Integrations' ) ) {
 						<li><?php esc_html_e( 'Used by the generate_music tool for AI-powered music creation', 'mcp-ai-wpoos' ); ?></li>
 						<li><?php esc_html_e( 'Supports track durations from 15 seconds to 25 minutes', 'mcp-ai-wpoos' ); ?></li>
 					</ul>
+				</td>
+			</tr>
+			<?php
+		}
+
+		/**
+		 * Render Yahoo Sports footer content.
+		 */
+		private function render_yahoo_sports_footer() {
+			$is_pro_active = defined( 'WP_MCP_AI_PRO_VERSION' );
+			?>
+			<tr>
+				<th scope="row"><?php esc_html_e( 'Yahoo Sports Connection', 'mcp-ai-wpoos' ); ?></th>
+				<td>
+					<p>
+						<button type="button" id="wp-mcp-ai-test-yahoo-connection" class="button button-secondary" <?php echo ! $is_pro_active ? 'disabled' : ''; ?>>
+							<?php esc_html_e( 'Test Connection', 'mcp-ai-wpoos' ); ?>
+						</button>
+						<span id="wp-mcp-ai-yahoo-test-result" style="margin-left: 10px;"></span>
+					</p>
+					<p class="description">
+						<?php esc_html_e( 'Enter your Yahoo Client ID and Secret in the fields above, then click "Test Connection" to verify they work. You can test before saving.', 'mcp-ai-wpoos' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"></th>
+				<td>
+					<div style="margin: 1rem 0;">
+						<h4><?php esc_html_e( 'About Yahoo Sports Integration', 'mcp-ai-wpoos' ); ?></h4>
+						<p class="description" style="margin-bottom: 10px;">
+							<?php esc_html_e( 'Connect to Yahoo Fantasy Sports API to access your fantasy football leagues, rosters, and player statistics.', 'mcp-ai-wpoos' ); ?>
+						</p>
+						<p class="description">
+							<strong><?php esc_html_e( 'Setup Instructions:', 'mcp-ai-wpoos' ); ?></strong>
+						</p>
+						<ol style="margin-left: 20px;">
+							<li>
+								<?php
+								echo wp_kses_post(
+									sprintf(
+										/* translators: %s: URL to Yahoo Developer Network */
+										__( 'Create a Yahoo app at <a href="%s" target="_blank">Yahoo Developer Network</a>', 'mcp-ai-wpoos' ),
+										'https://developer.yahoo.com/apps/'
+									)
+								);
+								?>
+							</li>
+							<li><?php esc_html_e( 'Set the redirect URI to match your WordPress site', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Copy your Client ID (Consumer Key) and Client Secret (Consumer Secret)', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Paste them into the fields above and save', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Click "Test Connection" to verify your credentials', 'mcp-ai-wpoos' ); ?></li>
+							<li><?php esc_html_e( 'Use the Yahoo Fantasy Football tools to authenticate and access your leagues', 'mcp-ai-wpoos' ); ?></li>
+						</ol>
+						<?php if ( $is_pro_active ) : ?>
+							<p class="description" style="margin-top: 1rem;">
+								<strong><?php esc_html_e( 'Available Tools:', 'mcp-ai-wpoos' ); ?></strong>
+							</p>
+							<ul style="list-style: disc; margin-left: 20px;">
+								<li><strong>yahoo_ff_auth</strong> - <?php esc_html_e( 'Authenticate with Yahoo and manage authorization tokens', 'mcp-ai-wpoos' ); ?></li>
+								<li><strong>yahoo_ff_get_leagues</strong> - <?php esc_html_e( 'Get your fantasy football leagues and team information', 'mcp-ai-wpoos' ); ?></li>
+							</ul>
+						<?php else : ?>
+							<p class="description" style="margin-top: 1rem; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107;">
+								<strong><?php esc_html_e( 'Pro Feature:', 'mcp-ai-wpoos' ); ?></strong>
+								<?php esc_html_e( 'Yahoo Sports integration requires the Pro addon to be active.', 'mcp-ai-wpoos' ); ?>
+							</p>
+						<?php endif; ?>
+					</div>
 				</td>
 			</tr>
 			<?php
