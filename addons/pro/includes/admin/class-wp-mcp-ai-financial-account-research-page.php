@@ -312,10 +312,54 @@ class WP_MCP_AI_Financial_Account_Research_Page {
 			wp_send_json_error( array( 'message' => __( 'Invalid research data. Account title is required.', 'mcp-ai-wpoos-pro' ) ) );
 		}
 
+		$title       = sanitize_text_field( $research_data['title'] );
+		$institution = isset( $research_data['institution'] ) ? sanitize_text_field( $research_data['institution'] ) : '';
+
+		// Check for duplicate accounts based on title and institution.
+		$existing_query_args = array(
+			'post_type'      => 'mcp_ai_fin_account',
+			'post_status'    => 'any',
+			'posts_per_page' => 1,
+			'fields'         => 'ids',
+			'title'          => $title,
+		);
+
+		// If institution is provided, also check by institution meta.
+		if ( ! empty( $institution ) ) {
+			$existing_query_args['meta_query'] = array(
+				array(
+					'key'     => '_institution',
+					'value'   => $institution,
+					'compare' => '=',
+				),
+			);
+		}
+
+		$existing_accounts = get_posts( $existing_query_args );
+
+		if ( ! empty( $existing_accounts ) ) {
+			$existing_id  = $existing_accounts[0];
+			$existing_url = admin_url( 'post.php?post=' . $existing_id . '&action=edit' );
+
+			wp_send_json_error(
+				array(
+					'message'      => sprintf(
+						/* translators: 1: Account title, 2: Institution name */
+						__( 'A financial account with the title "%1$s"%2$s already exists. Please use a different title or update the existing account.', 'mcp-ai-wpoos-pro' ),
+						$title,
+						! empty( $institution ) ? ' ' . sprintf( __( 'at %s', 'mcp-ai-wpoos-pro' ), $institution ) : ''
+					),
+					'duplicate'    => true,
+					'existing_id'  => $existing_id,
+					'existing_url' => $existing_url,
+				)
+			);
+		}
+
 		// Create financial account post.
 		$account_data = array(
 			'post_type'   => 'mcp_ai_fin_account',
-			'post_title'  => sanitize_text_field( $research_data['title'] ),
+			'post_title'  => $title,
 			'post_status' => 'publish',
 			'post_author' => get_current_user_id(),
 		);
@@ -327,8 +371,8 @@ class WP_MCP_AI_Financial_Account_Research_Page {
 		}
 
 		// Save account metadata.
-		if ( isset( $research_data['institution'] ) ) {
-			update_post_meta( $account_id, '_institution', sanitize_text_field( $research_data['institution'] ) );
+		if ( ! empty( $institution ) ) {
+			update_post_meta( $account_id, '_institution', $institution );
 		}
 		if ( isset( $research_data['account_number'] ) ) {
 			update_post_meta( $account_id, '_account_number', sanitize_text_field( $research_data['account_number'] ) );
