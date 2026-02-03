@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/update-default-to-base-version',
-        'version' => 'dev-copilot/update-default-to-base-version',
-        'reference' => 'a942a5fcf1d98fc10a6c281ad7b51cae910d681c',
+        'pretty_version' => 'dev-copilot/update-dependencies-for-security',
+        'version' => 'dev-copilot/update-dependencies-for-security',
+        'reference' => '3be00db8baa8ab9c50a1df26582669727fa514e5',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/update-default-to-base-version',
-            'version' => 'dev-copilot/update-default-to-base-version',
-            'reference' => 'a942a5fcf1d98fc10a6c281ad7b51cae910d681c',
+            'pretty_version' => 'dev-copilot/update-dependencies-for-security',
+            'version' => 'dev-copilot/update-dependencies-for-security',
+            'reference' => '3be00db8baa8ab9c50a1df26582669727fa514e5',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -290,9 +290,9 @@
             'dev_requirement' => false,
         ),
         'symfony/process' => array(
-            'pretty_version' => 'v6.4.31',
-            'version' => '6.4.31.0',
-            'reference' => '8541b7308fca001320e90bca8a73a28aa5604a6e',
+            'pretty_version' => 'v6.4.33',
+            'version' => '6.4.33.0',
+            'reference' => 'c46e854e79b52d07666e43924a20cb6dc546644e',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/process',
             'aliases' => array(),
