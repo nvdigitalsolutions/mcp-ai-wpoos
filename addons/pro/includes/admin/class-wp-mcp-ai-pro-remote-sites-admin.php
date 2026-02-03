@@ -357,6 +357,31 @@ class WP_MCP_AI_Pro_Remote_Sites_Admin {
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Remote Site Connections', 'mcp-ai-wpoos-pro' ); ?></h1>
 
+			<div class="notice notice-info" style="margin: 20px 0;">
+				<h3 style="margin-top: 10px;"><?php esc_html_e( 'Connection Types in Remote Connections Menu', 'mcp-ai-wpoos-pro' ); ?></h3>
+				<p><?php esc_html_e( 'This menu organizes all connection-related features:', 'mcp-ai-wpoos-pro' ); ?></p>
+				<ul style="list-style: disc; margin-left: 20px;">
+					<li>
+						<strong><?php esc_html_e( 'Remote Sites (this page):', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Connect to other WordPress/WooCommerce sites in your mesh network for cross-site data queries and operations.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Architect Agent:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php esc_html_e( ' Self-editing capabilities with file management, shell commands, and Git operations.', 'mcp-ai-wpoos-pro' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Chat Channels Toolkit:', 'mcp-ai-wpoos-pro' ); ?></strong>
+						<?php
+						printf(
+							/* translators: %s: Link to Chat Channels settings */
+							esc_html__( ' Configure connections to external chat platforms (Telegram, WhatsApp, Slack, Discord, Microsoft Teams, Facebook Messenger). %s', 'mcp-ai-wpoos-pro' ),
+							'<a href="' . esc_url( admin_url( 'admin.php?page=wp-mcp-ai-chat-channels-toolkit-settings' ) ) . '">' . esc_html__( 'Set up chat platform connections here →', 'mcp-ai-wpoos-pro' ) . '</a>'
+						);
+						?>
+					</li>
+				</ul>
+			</div>
+
 			<?php if ( isset( $_GET['saved'] ) ) : ?>
 				<div class="notice notice-success is-dismissible">
 					<p><?php esc_html_e( 'Connection saved successfully.', 'mcp-ai-wpoos-pro' ); ?></p>
