@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-yahoo-connect-error',
-        'version' => 'dev-copilot/fix-yahoo-connect-error',
-        'reference' => '6058dc8068f5d3f5d56c2529643493881245013a',
+        'pretty_version' => 'dev-copilot/create-chat-channel-toolkit',
+        'version' => 'dev-copilot/create-chat-channel-toolkit',
+        'reference' => '625a0a1f0471b6e25b901f4ae72987a598fd3bab',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -47,9 +47,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-yahoo-connect-error',
-            'version' => 'dev-copilot/fix-yahoo-connect-error',
-            'reference' => '6058dc8068f5d3f5d56c2529643493881245013a',
+            'pretty_version' => 'dev-copilot/create-chat-channel-toolkit',
+            'version' => 'dev-copilot/create-chat-channel-toolkit',
+            'reference' => '625a0a1f0471b6e25b901f4ae72987a598fd3bab',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

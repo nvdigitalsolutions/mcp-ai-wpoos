@@ -275,6 +275,44 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			}
 		}
 
+// Load WebChat integration system if enabled.
+if ( ! empty( $settings['enable_webchat_integration'] ) ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
+WP_MCP_AI_WebChat_CPT::init();
+// Load JetEngine WebChat Messages CCT if JetEngine is active.
+if ( function_exists( 'jet_engine' ) ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
+WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
+}
+// Load WebChat Settings page.
+if ( is_admin() ) {
+// Check if not in base version.
+$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+if ( ! $is_base ) {
+require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
+}
+}
+}
+
+		// Load WebChat integration system if enabled.
+		if ( ! empty( $settings['enable_webchat_integration'] ) ) {
+			require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-webchat-cpt.php';
+			WP_MCP_AI_WebChat_CPT::init();
+			// Load JetEngine WebChat Messages CCT if JetEngine is active.
+			if ( function_exists( 'jet_engine' ) ) {
+				require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-jetengine-webchat-messages-cct.php';
+				WP_MCP_AI_JetEngine_WebChat_Messages_CCT::bootstrap();
+			}
+			// Load WebChat Settings page.
+			if ( is_admin() ) {
+				// Check if not in base version.
+				$is_base = function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version();
+				if ( ! $is_base ) {
+					require_once WP_MCP_AI_PRO_PATH . 'includes/admin/class-wp-mcp-ai-webchat-settings-page.php';
+				}
+			}
+		}
+
 		// Load Fantasy Football toolkit if enabled.
 		if ( ! empty( $settings['enable_fantasy_football'] ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/fantasy-football-toolkit-init.php';
@@ -407,14 +445,19 @@ if ( ! function_exists( 'wp_mcp_ai_pro_init' ) ) {
 			require_once WP_MCP_AI_PRO_PATH . 'includes/crm-toolkit-init.php';
 		}
 
-		// Load Regulatory Registration Toolkit if enabled (Pro feature).
-		if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
-			require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
-		}
+	// Load Regulatory Registration Toolkit if enabled (Pro feature).
+	if ( ! empty( $settings['enable_regulatory_registration_toolkit'] ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/regulatory-registration-toolkit-init.php';
+	}
 
-		// ========================================================================
-		// PHASE 6: FRONTEND COMPONENTS INTEGRATION
-		// ========================================================================
+	// Load Chat Channels Integration Toolkit if enabled (Pro feature).
+	if ( ! empty( $settings['enable_chat_channels_toolkit'] ) ) {
+		require_once WP_MCP_AI_PRO_PATH . 'includes/chat-channels-toolkit-init.php';
+	}
+
+	// ========================================================================
+	// PHASE 6: FRONTEND COMPONENTS INTEGRATION
+	// ========================================================================
 		// Initialize toolkit shortcodes, Elementor widgets, and Gutenberg blocks.
 		require_once WP_MCP_AI_PRO_PATH . 'includes/class-wp-mcp-ai-pro-toolkit-integration.php';
 		WP_MCP_AI_Pro_Toolkit_Integration::get_instance();
@@ -530,6 +573,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_register_tools' ) ) {
 			'WP_MCP_AI_Pro_Tool_Send_Whatsapp_Message'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-whatsapp-message.php',
 			'WP_MCP_AI_Pro_Tool_Send_Telegram_Message'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-send-telegram-message.php',
 			'WP_MCP_AI_Pro_Tool_Schedule_Notify_SMS'      => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-schedule-notify-sms.php',
+			// Chat channels tools (Discord, Slack, Teams).
+			'WP_MCP_AI_Pro_Tool_Send_Slack_Message'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-slack-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Channels'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Slack_Messages'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-slack-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Slack_Channel'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-slack-channel.php',
+			'WP_MCP_AI_Pro_Tool_Send_Discord_Message'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-discord-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Channels'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Discord_Messages'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-discord-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Discord_Channel'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-discord-channel.php',
+			'WP_MCP_AI_Pro_Tool_Send_Teams_Message'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-teams-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Channels'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-channels.php',
+			'WP_MCP_AI_Pro_Tool_Get_Teams_Messages'       => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-teams-messages.php',
+			'WP_MCP_AI_Pro_Tool_Send_Messenger_Message'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-messenger-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Messenger_Conversations' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-messenger-conversations.php',
+			'WP_MCP_AI_Pro_Tool_Create_Messenger_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-messenger-broadcast.php',
+			// Google Chat tools.
+			'WP_MCP_AI_Pro_Tool_Send_Google_Chat_Message' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-google-chat-message.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Spaces'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-spaces.php',
+			'WP_MCP_AI_Pro_Tool_Get_Google_Chat_Messages' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-google-chat-messages.php',
+			'WP_MCP_AI_Pro_Tool_Create_Google_Chat_Space' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-create-google-chat-space.php',
+			// Enhanced Telegram tools.
+			'WP_MCP_AI_Pro_Tool_Get_Telegram_Updates'     => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-telegram-updates.php',
+			'WP_MCP_AI_Pro_Tool_Manage_Telegram_Webhook'  => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-manage-telegram-webhook.php',
+			// Enhanced WhatsApp tools.
+			'WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template'   => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-send-whatsapp-template.php',
+			'WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages'    => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-get-whatsapp-messages.php',
+			// Unified broadcast tool.
+			'WP_MCP_AI_Pro_Tool_Unified_Channel_Broadcast' => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/ChatChannels/class-wp-mcp-ai-pro-tool-unified-channel-broadcast.php',
 			// Email and communication tools.
 			'WP_MCP_AI_Pro_Tool_Search_Gmail'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-gmail.php',
 			'WP_MCP_AI_Pro_Tool_Search_Drive'             => WP_MCP_AI_PRO_PATH . 'includes/src/Tools/class-wp-mcp-ai-pro-tool-search-drive.php',
@@ -1212,6 +1283,34 @@ if ( ! function_exists( 'wp_mcp_ai_pro_tool_group_map' ) ) {
 			// Messaging tools - Require external API credentials.
 			'send_whatsapp_message'           => 'external-tools',
 			'send_telegram_message'           => 'external-tools',
+			// Chat channel tools - Require external API credentials.
+			'send_slack_message'              => 'external-tools',
+			'get_slack_channels'              => 'external-tools',
+			'get_slack_messages'              => 'external-tools',
+			'create_slack_channel'            => 'external-tools',
+			'send_discord_message'            => 'external-tools',
+			'get_discord_channels'            => 'external-tools',
+			'get_discord_messages'            => 'external-tools',
+			'create_discord_channel'          => 'external-tools',
+			'send_teams_message'              => 'external-tools',
+			'get_teams_channels'              => 'external-tools',
+			'get_teams_messages'              => 'external-tools',
+			'send_messenger_message'          => 'external-tools',
+			'get_messenger_conversations'     => 'external-tools',
+			'create_messenger_broadcast'      => 'external-tools',
+			// Google Chat tools - Require external API credentials.
+			'send_google_chat_message'        => 'external-tools',
+			'get_google_chat_spaces'          => 'external-tools',
+			'get_google_chat_messages'        => 'external-tools',
+			'create_google_chat_space'        => 'external-tools',
+			// Enhanced Telegram tools - Require external API credentials.
+			'get_telegram_updates'            => 'external-tools',
+			'manage_telegram_webhook'         => 'external-tools',
+			// Enhanced WhatsApp tools - Require external API credentials.
+			'send_whatsapp_template'          => 'external-tools',
+			'get_whatsapp_messages'           => 'external-tools',
+			// Unified broadcast tool - Requires external API credentials.
+			'unified_channel_broadcast'       => 'external-tools',
 			// Email and communication tools - Require external API credentials.
 			'search_gmail'                    => 'external-tools',
 			'send_mailjet_email'              => 'external-tools',
