@@ -51,7 +51,8 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 			// Verify signature if secret is configured.
 			$signature = $request->get_header( 'X-Mailjet-Signature' );
 			if ( empty( $signature ) ) {
-				WP_MCP_AI_Admin_Settings::log( 'Mailjet webhook rejected: missing signature', array( 'ip' => $_SERVER['REMOTE_ADDR'] ) );
+				$remote_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? filter_var( wp_unslash( $_SERVER['REMOTE_ADDR'] ), FILTER_VALIDATE_IP ) : 'unknown';
+				WP_MCP_AI_Admin_Settings::log( 'Mailjet webhook rejected: missing signature', array( 'ip' => $remote_ip ) );
 				return false;
 			}
 
@@ -59,7 +60,8 @@ if ( ! class_exists( 'WP_MCP_AI_Mailjet_Webhook_Handler' ) ) {
 			$expected_hash = hash_hmac( 'sha256', $body, $secret );
 
 			if ( ! hash_equals( $expected_hash, $signature ) ) {
-				WP_MCP_AI_Admin_Settings::log( 'Mailjet webhook rejected: invalid signature', array( 'ip' => $_SERVER['REMOTE_ADDR'] ) );
+				$remote_ip = isset( $_SERVER['REMOTE_ADDR'] ) ? filter_var( wp_unslash( $_SERVER['REMOTE_ADDR'] ), FILTER_VALIDATE_IP ) : 'unknown';
+				WP_MCP_AI_Admin_Settings::log( 'Mailjet webhook rejected: invalid signature', array( 'ip' => $remote_ip ) );
 				return false;
 			}
 

@@ -1485,7 +1485,7 @@ __(
 <th scope="row"><?php esc_html_e( 'Webhook URL', 'mcp-ai-wpoos' ); ?></th>
 <td>
 <input type="text" readonly value="<?php echo esc_url( $webhook_url ); ?>" style="width: 100%; max-width: 500px;" id="mailjet_webhook_url" />
-<button type="button" class="button" onclick="navigator.clipboard.writeText(document.getElementById('mailjet_webhook_url').value); this.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>'; setTimeout(() => this.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>', 2000);">
+<button type="button" class="button" onclick="(function(btn){try{var input=document.getElementById('mailjet_webhook_url');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(input.value).then(function(){btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}).catch(function(){input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);});}else{input.select();document.execCommand('copy');btn.textContent='<?php esc_attr_e( 'Copied!', 'mcp-ai-wpoos' ); ?>';setTimeout(function(){btn.textContent='<?php esc_attr_e( 'Copy', 'mcp-ai-wpoos' ); ?>';},2000);}}catch(e){console.error('Copy failed:',e);alert('<?php esc_attr_e( 'Failed to copy. Please copy manually.', 'mcp-ai-wpoos' ); ?>');}})(this);">
 <?php esc_html_e( 'Copy', 'mcp-ai-wpoos' ); ?>
 </button>
 <p class="description">

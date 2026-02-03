@@ -249,7 +249,6 @@ class WP_MCP_AI_Pro_Tool_Manage_Mailjet_Contacts implements WP_MCP_AI_Tool_Inter
 		// First, find the contact ID.
 		$find_url  = add_query_arg( array( 'Email' => $email ), self::API_BASE . '/contact' );
 		$response  = $this->make_api_request( $find_url, 'GET', null, $api_key, $api_secret, $settings );
-		
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
