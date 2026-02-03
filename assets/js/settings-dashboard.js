@@ -1136,6 +1136,52 @@
 	}
 
 	/**
+	 * Initialize Remove.bg connection test handlers.
+	 */
+	function initRemovebgHandlers() {
+		// Test remove.bg connection
+		$('#wp-mcp-ai-test-removebg-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-removebg-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[removebg_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to remove.bg...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_removebg_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
 	 * Initialize Cloudflare connection test handlers.
 	 */
 	function initCloudflareHandlers() {
@@ -1420,6 +1466,104 @@
 		});
 	}
 
+	/**
+	 * Initialize Mubert connection test handlers.
+	 */
+	function initMubertHandlers() {
+		// Test Mubert connection
+		$('#wp-mcp-ai-test-mubert-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-mubert-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[mubert_api_key]"]').val();
+
+			if (!apiKey) {
+				$result.html('<span style="color: #d63638;">Please enter an API key first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Mubert...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_mubert_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
+	/**
+	 * Initialize Flowhub connection test handlers.
+	 */
+	function initFlowhubHandlers() {
+		// Test Flowhub connection
+		$('#wp-mcp-ai-test-flowhub-connection').on('click', function (e) {
+			e.preventDefault();
+			const $button = $(this);
+			const $result = $('#wp-mcp-ai-flowhub-test-result');
+			const apiKey = $('input[name="wp_mcp_ai_settings[flowhub_api_key]"]').val();
+			const clientId = $('input[name="wp_mcp_ai_settings[flowhub_client_id]"]').val();
+			const clientSecret = $('input[name="wp_mcp_ai_settings[flowhub_client_secret]"]').val();
+			const locationId = $('input[name="wp_mcp_ai_settings[flowhub_location_id]"]').val();
+
+			if (!apiKey || !clientId || !clientSecret || !locationId) {
+				$result.html('<span style="color: #d63638;">Please enter all Flowhub credentials first.</span>');
+				return;
+			}
+
+			$button.prop('disabled', true).text('Testing...');
+			$result.html('<span style="color: #3c434a;">Connecting to Flowhub...</span>');
+
+			// Use the error service for consistent error handling
+			$.wpMcpAiAjax({
+				url: wpMcpAiAdmin.ajaxUrl,
+				type: 'POST',
+				data: {
+					action: 'wp_mcp_ai_test_flowhub_connection',
+					nonce: wpMcpAiAdmin.nonce,
+					api_key: apiKey,
+					client_id: clientId,
+					client_secret: clientSecret,
+					location_id: locationId
+				}
+			}, {
+				success: function (response) {
+					if (response.success) {
+						$result.html('<span style="color: #00a32a;">✓ ' + response.data.message + '</span>');
+					} else {
+						$result.html('<span style="color: #d63638;">✗ ' + response.data.message + '</span>');
+					}
+				},
+				error: function (error) {
+					$result.html('<span style="color: #d63638;">✗ ' + (error.userMessage || 'Connection failed') + '</span>');
+				},
+				complete: function () {
+					$button.prop('disabled', false).text('Test Connection');
+				}
+			});
+		});
+	}
+
 	// Initialize when DOM is ready.
 	$(document).ready(function() {
 		// eslint-disable-next-line camelcase
@@ -1430,6 +1574,8 @@
 			initBraveSearchHandlers();
 			initYahooHandlers();
 			initRemovebgHandlers();
+			initMubertHandlers();
+			initFlowhubHandlers();
 			initCloudflareHandlers();
 			initCloudwaysHandlers();
 			initISAMSHandlers();
