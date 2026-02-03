@@ -1319,6 +1319,11 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once WP_MCP_AI_PATH . 'includes/professions/class-wp-mcp-ai-profession-orchestration-cli.php';
 	}
 
+	// Load Slash Command CLI commands.
+	if ( file_exists( WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-slash-command.php' ) ) {
+		require_once WP_MCP_AI_PATH . 'includes/cli/class-wp-mcp-ai-cli-slash-command.php';
+	}
+
 	WP_CLI::add_command( 'mcp-ai', 'WP_MCP_AI_CLI_Command' );
 	WP_CLI::add_command( 'mcp-ai plugins', 'WP_MCP_AI_CLI_Plugins_Command' );
 	WP_CLI::add_command( 'mcp-ai queue', 'WP_MCP_AI_CLI_Queue_Command' );
