@@ -1149,6 +1149,7 @@ Essential files only (reduced from 30 to 5 files):
 
 ### Plugin Dependencies
 - [JetEngine Documentation](https://crocoblock.com/knowledge-base/jetengine/)
+- [Elementor](https://be.elementor.com/visit/?bta=229888&brand=elementor)
 - [Elementor Developer Documentation](https://developers.elementor.com/)
 - [WooCommerce Documentation](https://woocommerce.com/documentation/)
 
