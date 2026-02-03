@@ -43,6 +43,9 @@
         "patches": {
             "wp-phpunit/wp-phpunit": {
                 "Add guard check for WP_LANG_DIR constant": "patches/wp-phpunit-wp-lang-dir-guard.patch"
+            },
+            "league/oauth2-client": {
+                "Remove deprecated approval_prompt parameter to fix Google OAuth conflict": "patches/league-oauth2-client-remove-approval-prompt.patch"
             }
         },
         "php_codesniffer": {
