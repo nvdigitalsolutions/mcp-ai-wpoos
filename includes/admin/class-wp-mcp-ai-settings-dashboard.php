@@ -305,6 +305,10 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 				$active_subtab = sanitize_key( $_POST['subtab'] );
 			}
 
+			// Check for 'connection' parameter (used in Integrations section).
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only parameter check.
+			$active_connection = isset( $_POST['connection'] ) ? sanitize_key( $_POST['connection'] ) : '';
+
 			// Check if logging is enabled for diagnostic purposes.
 			$existing_for_logging = get_option( WP_MCP_AI_Admin_Settings::OPTION_NAME, array() );
 			$enable_logging       = ! empty( $existing_for_logging['enable_logging'] ) || ! empty( $existing_for_logging['enable_extended_logging'] );
@@ -755,6 +759,11 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// Preserve subtab parameter for sections with sub-navigation (e.g., Authentication).
 			if ( ! empty( $active_subtab ) ) {
 				$redirect_args['subtab'] = $active_subtab;
+			}
+
+			// Preserve connection parameter for Integrations section connections.
+			if ( ! empty( $active_connection ) ) {
+				$redirect_args['connection'] = $active_connection;
 			}
 
 			// Preserve view parameter for sections with view-based navigation (e.g., Orchestration, Token Manager).

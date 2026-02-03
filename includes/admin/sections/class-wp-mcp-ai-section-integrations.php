@@ -1761,6 +1761,17 @@ __(
 
 					<!-- Hidden field to preserve subtab during form submission -->
 					<input type="hidden" name="subtab_<?php echo esc_attr( $this->get_id() ); ?>" value="<?php echo esc_attr( $active_subtab ); ?>" />
+					
+					<?php
+					// If accessed via connection parameter (e.g., from Tools > Connections),
+					// preserve it for redirect after save.
+					// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only parameter for UI state.
+					if ( isset( $_GET['connection'] ) ) :
+						?>
+						<input type="hidden" name="connection" value="<?php echo esc_attr( sanitize_key( $_GET['connection'] ) ); ?>" />
+						<?php
+					endif;
+					?>
 
 					<div class="wp-mcp-ai-subtab-content">
 						<table class="form-table" role="presentation">
