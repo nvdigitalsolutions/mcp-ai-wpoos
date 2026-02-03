@@ -84,6 +84,252 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load next-task command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-next-task.php';
+
+	// Register /next-task command.
+	$next_task_command = new WP_MCP_AI_Slash_Command_Next_Task();
+	$wp_mcp_ai_slash_command_handler->register(
+		'next-task',
+		array(
+			'handler'     => array( $next_task_command, 'execute' ),
+			'description' => __( 'Autonomous task discovery and execution for WordPress content', 'mcp-ai-wpoos' ),
+			'usage'       => '/next-task [--filter=<type>] [--type=<task-type>] [--limit=<number>] [--dry-run|-n] [--auto|-a]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'next' ),
+			'parameters'  => array(
+				'--filter' => array(
+					'description' => __( 'Filter tasks by type (all, drafts, seo, updates)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--type' => array(
+					'description' => __( 'Specific task type to focus on', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--limit' => array(
+					'description' => __( 'Maximum number of tasks to process (default: 5)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Show what would be done without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto' => array(
+					'description' => __( 'Execute without waiting for approval', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load ship command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-ship.php';
+
+	// Register /ship command.
+	$ship_command = new WP_MCP_AI_Slash_Command_Ship();
+	$wp_mcp_ai_slash_command_handler->register(
+		'ship',
+		array(
+			'handler'     => array( $ship_command, 'execute' ),
+			'description' => __( 'Automated content review, optimization, and publishing workflow', 'mcp-ai-wpoos' ),
+			'usage'       => '/ship [post_id...] [--dry-run|-n] [--publish|-p] [--schedule=<date>] [--skip-checks|-s] [--skip-seo] [--skip-images] [--skip-links]',
+			'capability'  => 'publish_posts',
+			'parameters'  => array(
+				'post_id' => array(
+					'description' => __( 'Post ID(s) to ship. If omitted, finds draft posts ready to ship.', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Preview checks without publishing', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--publish' => array(
+					'description' => __( 'Automatically publish posts that pass checks (70%+ score)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--schedule' => array(
+					'description' => __( 'Schedule publication for a future date (YYYY-MM-DD HH:MM)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-checks' => array(
+					'description' => __( 'Skip all pre-flight, SEO, and quality checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-seo' => array(
+					'description' => __( 'Skip SEO verification checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-images' => array(
+					'description' => __( 'Skip image optimization checks', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-links' => array(
+					'description' => __( 'Skip internal linking suggestions', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load clean-content command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-clean-content.php';
+
+	// Register /clean-content command.
+	$clean_content_command = new WP_MCP_AI_Slash_Command_Clean_Content();
+	$wp_mcp_ai_slash_command_handler->register(
+		'clean-content',
+		array(
+			'handler'     => array( $clean_content_command, 'execute' ),
+			'description' => __( 'Content quality assurance with 3-phase detection (HIGH/MEDIUM/LOW certainty)', 'mcp-ai-wpoos' ),
+			'usage'       => '/clean-content [post_id|recent|all] [--phase=<1-3>] [--limit=<number>] [--dry-run|-n] [--auto-fix|-a] [--post-type=<type>] [--verbose|-v]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'clean' ),
+			'parameters'  => array(
+				'target' => array(
+					'description' => __( 'Post ID, "recent" (default), or "all"', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--phase' => array(
+					'description' => __( 'Run specific phase only: 1 (regex), 2 (analysis), 3 (AI review)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--limit' => array(
+					'description' => __( 'Maximum number of posts to check (default: 10)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Show issues without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-fix' => array(
+					'description' => __( 'Automatically fix HIGH certainty issues', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--post-type' => array(
+					'description' => __( 'Post type to check (default: post)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--verbose' => array(
+					'description' => __( 'Show detailed output', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load optimize-perf command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-optimize-perf.php';
+
+	// Register /optimize-perf command.
+	$optimize_perf_command = new WP_MCP_AI_Slash_Command_Optimize_Perf();
+	$wp_mcp_ai_slash_command_handler->register(
+		'optimize-perf',
+		array(
+			'handler'     => array( $optimize_perf_command, 'execute' ),
+			'description' => __( 'Automated performance analysis and optimization for WordPress sites', 'mcp-ai-wpoos' ),
+			'usage'       => '/optimize-perf [--phases=<1-10>] [--url=<url>] [--dry-run|-n] [--auto-apply|-a] [--detailed|-v]',
+			'capability'  => 'manage_options',
+			'aliases'     => array( 'perf' ),
+			'parameters'  => array(
+				'--phases' => array(
+					'description' => __( 'Comma-separated phase numbers to run (1-10, default: all)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--url' => array(
+					'description' => __( 'URL to analyze (default: home page)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Analyze without applying optimizations', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-apply' => array(
+					'description' => __( 'Automatically apply safe optimizations', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--detailed' => array(
+					'description' => __( 'Show detailed analysis output', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load sync-docs command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-sync-docs.php';
+
+	// Register /sync-docs command.
+	$sync_docs_command = new WP_MCP_AI_Slash_Command_Sync_Docs();
+	$wp_mcp_ai_slash_command_handler->register(
+		'sync-docs',
+		array(
+			'handler'     => array( $sync_docs_command, 'execute' ),
+			'description' => __( 'Documentation drift detection and synchronization', 'mcp-ai-wpoos' ),
+			'usage'       => '/sync-docs [--type=<all|posts|pages|readme>] [--dry-run|-n] [--auto-fix|-a] [--skip-links] [--skip-code]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'docs' ),
+			'parameters'  => array(
+				'--type' => array(
+					'description' => __( 'Type of documentation to sync (all, posts, pages, readme)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Check without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-fix' => array(
+					'description' => __( 'Automatically fix detected issues', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-links' => array(
+					'description' => __( 'Skip broken link checking', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-code' => array(
+					'description' => __( 'Skip code example validation', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load workflow command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-workflow.php';
+
+	// Register /workflow command.
+	$workflow_command = new WP_MCP_AI_Slash_Command_Workflow();
+	$wp_mcp_ai_slash_command_handler->register(
+		'workflow',
+		array(
+			'handler'     => array( $workflow_command, 'execute' ),
+			'description' => __( 'Execute and manage custom automation workflows', 'mcp-ai-wpoos' ),
+			'usage'       => '/workflow <name> [--action=<run|list|show>] [--dry-run|-n] [--list|-l] [--show|-s]',
+			'capability'  => 'edit_posts',
+			'parameters'  => array(
+				'name' => array(
+					'description' => __( 'Workflow name to execute', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--action' => array(
+					'description' => __( 'Action to perform: run, list, show (default: run)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Preview workflow without executing steps', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--list' => array(
+					'description' => __( 'List available workflows', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--show' => array(
+					'description' => __( 'Show workflow definition', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *

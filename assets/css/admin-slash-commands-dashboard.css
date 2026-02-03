@@ -1,0 +1,304 @@
+/**
+ * Slash Commands Dashboard Styles
+ *
+ * @package WP_MCP_AI
+ * @since 1.10.0
+ */
+
+.wp-mcp-ai-slash-commands-dashboard {
+	max-width: 1400px;
+}
+
+.wp-mcp-ai-slash-commands-dashboard .nav-tab-wrapper {
+	margin: 20px 0;
+}
+
+/* Commands Tab */
+.commands-tab .wp-list-table {
+	margin-top: 20px;
+}
+
+.command-help-box {
+	margin-top: 20px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.command-help-box h3 {
+	margin-top: 0;
+}
+
+#command-help-content {
+	margin-top: 15px;
+	max-height: 500px;
+	overflow-y: auto;
+}
+
+#command-help-content pre {
+	background: #f6f7f7;
+	padding: 10px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	overflow-x: auto;
+}
+
+/* Workflows Tab */
+.workflows-tab .wp-list-table {
+	margin-top: 20px;
+}
+
+.workflow-type-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.workflow-type-badge.built-in {
+	background: #d5e8f7;
+	color: #0073aa;
+}
+
+.workflow-type-badge.custom {
+	background: #f0e5ff;
+	color: #7f54b3;
+}
+
+.workflow-details-box,
+.workflow-execution-box {
+	margin-top: 20px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.workflow-details-box h3,
+.workflow-execution-box h3 {
+	margin-top: 0;
+}
+
+#workflow-details-content,
+#workflow-execution-content {
+	margin-top: 15px;
+}
+
+#workflow-details-content pre,
+#workflow-execution-content pre {
+	background: #f6f7f7;
+	padding: 15px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	overflow-x: auto;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.workflow-execution-box.executing #workflow-execution-content {
+	position: relative;
+	min-height: 100px;
+}
+
+.workflow-execution-box.executing #workflow-execution-content::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 30px;
+	height: 30px;
+	margin: -15px 0 0 -15px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #2271b1;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* History Tab */
+.history-tab .history-actions {
+	margin: 20px 0;
+}
+
+.history-tab .history-actions button {
+	margin-right: 10px;
+}
+
+.history-tab .wp-list-table {
+	margin-top: 20px;
+}
+
+.status-badge {
+	display: inline-block;
+	padding: 3px 8px;
+	border-radius: 3px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-badge.status-success {
+	background: #d5f4e6;
+	color: #007017;
+}
+
+.status-badge.status-error {
+	background: #f8d7da;
+	color: #721c24;
+}
+
+.history-details-box {
+	margin-top: 20px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.history-details-box h3 {
+	margin-top: 0;
+}
+
+#history-details-content {
+	margin-top: 15px;
+}
+
+#history-details-content pre {
+	background: #f6f7f7;
+	padding: 15px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+/* Test Tab */
+.test-tab {
+	max-width: 1000px;
+}
+
+.command-tester {
+	margin-top: 20px;
+	background: #fff;
+	padding: 20px;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.test-input-section {
+	margin-bottom: 30px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #ddd;
+}
+
+.test-input-section label {
+	display: block;
+	margin-bottom: 10px;
+}
+
+.test-input-section #command-input {
+	width: 100%;
+	max-width: 600px;
+	margin-right: 10px;
+	font-family: 'Courier New', monospace;
+	font-size: 14px;
+}
+
+.test-input-section #execute-command-btn {
+	vertical-align: top;
+}
+
+.test-input-section .description {
+	margin-top: 10px;
+	font-style: italic;
+}
+
+.test-output-section h3 {
+	margin-top: 0;
+	margin-bottom: 15px;
+}
+
+.command-output-box {
+	background: #f6f7f7;
+	padding: 20px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
+	min-height: 200px;
+	max-height: 600px;
+	overflow-y: auto;
+	font-family: 'Courier New', monospace;
+	font-size: 13px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.command-output-box .no-output {
+	color: #666;
+	font-style: italic;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.command-output-box.executing {
+	position: relative;
+	opacity: 0.6;
+}
+
+.command-output-box.executing::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 30px;
+	height: 30px;
+	margin: -15px 0 0 -15px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #2271b1;
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+}
+
+.command-output-box.error {
+	background: #f8d7da;
+	border-color: #f5c6cb;
+	color: #721c24;
+}
+
+.command-output-box.success {
+	background: #d4edda;
+	border-color: #c3e6cb;
+	color: #155724;
+}
+
+/* Dashicons in buttons */
+.button .dashicons {
+	width: 16px;
+	height: 16px;
+	font-size: 16px;
+	vertical-align: text-top;
+	margin-right: 3px;
+}
+
+/* Responsive */
+@media (max-width: 782px) {
+	.test-input-section #command-input {
+		width: 100%;
+		margin-bottom: 10px;
+	}
+
+	.test-input-section #execute-command-btn {
+		width: 100%;
+	}
+}

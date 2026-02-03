@@ -698,6 +698,10 @@ if ( is_admin() ) {
 	// Load Multi-Agent Dashboard.
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-multi-agent-dashboard.php';
 
+	// Load Slash Commands Dashboard.
+	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-admin-slash-commands-dashboard.php';
+	new WP_MCP_AI_Admin_Slash_Commands_Dashboard();
+
 	// Load ISO 27001 Asset Inventory System (Control A.5.9).
 	require_once WP_MCP_AI_PATH . 'includes/class-wp-mcp-ai-asset-inventory.php';
 	require_once WP_MCP_AI_PATH . 'includes/admin/class-wp-mcp-ai-asset-inventory-admin.php';
