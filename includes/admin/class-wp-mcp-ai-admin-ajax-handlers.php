@@ -873,6 +873,10 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 
 		/**
 		 * Handle AJAX request to test Yahoo Sports API connection.
+		 *
+		 * Note: This performs basic validation only. Yahoo uses OAuth 1.0a which requires
+		 * request signing for full API validation. Complete OAuth verification is handled
+		 * by the Yahoo FF Auth tool during the actual authentication flow.
 		 */
 		public function handle_test_yahoo_connection() {
 			check_ajax_referer( 'wp-mcp-ai-settings', 'nonce' );
@@ -890,7 +894,8 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Validate credentials format (basic check).
+			// Perform basic format validation: Check minimum credential length.
+			// Yahoo credentials are typically 50+ characters, but we use a conservative check.
 			if ( strlen( $client_id ) < 10 ) {
 				wp_send_json_error( array( 'message' => __( 'Yahoo Client ID appears to be too short. Please check your credentials.', 'mcp-ai-wpoos' ) ) );
 				return;
@@ -901,32 +906,18 @@ if ( ! class_exists( 'WP_MCP_AI_Admin_AJAX_Handlers' ) ) {
 				return;
 			}
 
-			// Get timeout from settings.
-			$settings     = WP_MCP_AI_Admin_Settings::get_settings();
-			$resource_mgr = WP_MCP_AI_Resource_Manager::instance();
-			$timeout      = isset( $settings['request_timeout'] ) ? absint( $settings['request_timeout'] ) : $resource_mgr->get_request_timeout();
-			$timeout      = max( 5, $timeout );
-
-			// Test the credentials by attempting to get an OAuth request token.
-			// Yahoo OAuth 1.0a requires a request token before user authorization.
-			// We'll test if the credentials are valid by making a request to the token endpoint.
-			$request_token_url = 'https://api.login.yahoo.com/oauth/v2/get_request_token';
-
-			// Yahoo uses OAuth 1.0a, which requires signing requests.
-			// For this test, we'll use a simple approach to validate credentials exist.
-			// A full OAuth flow would require request signing with oauth_signature.
-			
-			// Since we can't fully test OAuth 1.0a without a signature library,
-			// we'll do a basic validation and provide guidance.
+			// Basic validation passed - credentials format looks correct.
+			// Full OAuth 1.0a validation (which requires request signing) happens during
+			// the actual authentication flow via the Yahoo FF Auth tool.
 			wp_send_json_success(
 				array(
 					'message' => sprintf(
 						/* translators: 1: Client ID length, 2: Client Secret length */
-						__( 'Credentials appear valid (Client ID: %1$d chars, Secret: %2$d chars). To complete setup, use the Yahoo Fantasy Football tools to authenticate and verify the full OAuth flow.', 'mcp-ai-wpoos' ),
+						__( 'Credentials format validated (Client ID: %1$d chars, Secret: %2$d chars). Use the Yahoo Fantasy Football tools to complete OAuth authentication.', 'mcp-ai-wpoos' ),
 						strlen( $client_id ),
 						strlen( $client_secret )
 					),
-					'note'    => __( 'Note: Full OAuth validation requires the Yahoo FF Auth tool. These credentials have passed basic validation.', 'mcp-ai-wpoos' ),
+					'note'    => __( 'Note: These credentials passed format validation. Full OAuth verification occurs during authentication via the Yahoo FF Auth tool.', 'mcp-ai-wpoos' ),
 				)
 			);
 		}
