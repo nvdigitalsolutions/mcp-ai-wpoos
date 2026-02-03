@@ -140,6 +140,7 @@ if ( ! class_exists( 'WP_MCP_AI_Pro_Settings' ) ) {
 				'enable_financial_planner_toolkit'       => __( 'Financial Planner Toolkit', 'mcp-ai-wpoos' ),
 				'enable_image_production_toolkit'        => __( 'Image Production Toolkit', 'mcp-ai-wpoos' ),
 				'enable_regulatory_registration_toolkit' => __( 'Regulatory Registration Toolkit', 'mcp-ai-wpoos' ),
+				'enable_webchat_integration'             => __( 'WebChat Integration', 'mcp-ai-wpoos' ),
 				'enable_woocommerce_tools'               => __( 'WooCommerce Tools', 'mcp-ai-wpoos' ),
 				'enable_jetengine_tools'                 => __( 'JetEngine Tools', 'mcp-ai-wpoos' ),
 				'enable_site_creator'                    => __( 'Site Creator', 'mcp-ai-wpoos' ),
