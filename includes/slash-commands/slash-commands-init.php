@@ -217,6 +217,82 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load optimize-perf command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-optimize-perf.php';
+
+	// Register /optimize-perf command.
+	$optimize_perf_command = new WP_MCP_AI_Slash_Command_Optimize_Perf();
+	$wp_mcp_ai_slash_command_handler->register(
+		'optimize-perf',
+		array(
+			'handler'     => array( $optimize_perf_command, 'execute' ),
+			'description' => __( 'Automated performance analysis and optimization for WordPress sites', 'mcp-ai-wpoos' ),
+			'usage'       => '/optimize-perf [--phases=<1-10>] [--url=<url>] [--dry-run|-n] [--auto-apply|-a] [--detailed|-v]',
+			'capability'  => 'manage_options',
+			'aliases'     => array( 'perf' ),
+			'parameters'  => array(
+				'--phases' => array(
+					'description' => __( 'Comma-separated phase numbers to run (1-10, default: all)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--url' => array(
+					'description' => __( 'URL to analyze (default: home page)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Analyze without applying optimizations', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-apply' => array(
+					'description' => __( 'Automatically apply safe optimizations', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--detailed' => array(
+					'description' => __( 'Show detailed analysis output', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
+	// Load sync-docs command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-sync-docs.php';
+
+	// Register /sync-docs command.
+	$sync_docs_command = new WP_MCP_AI_Slash_Command_Sync_Docs();
+	$wp_mcp_ai_slash_command_handler->register(
+		'sync-docs',
+		array(
+			'handler'     => array( $sync_docs_command, 'execute' ),
+			'description' => __( 'Documentation drift detection and synchronization', 'mcp-ai-wpoos' ),
+			'usage'       => '/sync-docs [--type=<all|posts|pages|readme>] [--dry-run|-n] [--auto-fix|-a] [--skip-links] [--skip-code]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'docs' ),
+			'parameters'  => array(
+				'--type' => array(
+					'description' => __( 'Type of documentation to sync (all, posts, pages, readme)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Check without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-fix' => array(
+					'description' => __( 'Automatically fix detected issues', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-links' => array(
+					'description' => __( 'Skip broken link checking', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--skip-code' => array(
+					'description' => __( 'Skip code example validation', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
