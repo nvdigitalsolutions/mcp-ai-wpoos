@@ -295,7 +295,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			// - Tools tab: Tool categories and individual tool configurations
 			// The subtab value is used to determine which specific fields to sanitize during save.
 			$active_subtab = '';
-			
+
 			// PRIORITY 1: Check for explicit 'subtab' field first (used for parent-level subtabs).
 			// This ensures that when nested sections are present (e.g., Tools > Connections > Google Drive),
 			// the parent subtab value ('connections') is preserved for redirect, not the nested value ('google_drive').
@@ -303,7 +303,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 			if ( isset( $_POST['subtab'] ) && ! empty( $_POST['subtab'] ) ) {
 				$active_subtab = sanitize_key( $_POST['subtab'] );
 			}
-			
+
 			// PRIORITY 2: Fall back to section-specific subtab fields if no explicit subtab is provided.
 			if ( empty( $active_subtab ) ) {
 				foreach ( $_POST as $key => $value ) {
