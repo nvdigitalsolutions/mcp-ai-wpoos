@@ -482,6 +482,7 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'cloudflare_api_token',
 					'brave_search_api_key',
 					'mubert_api_key',
+					'removebg_api_key',
 					// Add more sensitive keys from integrations.
 					'gmail_client_secret',
 					'gmail_refresh_token',
@@ -492,6 +493,8 @@ if ( ! class_exists( 'WP_MCP_AI_Settings_Dashboard' ) ) {
 					'meta_access_token',
 					'tiktok_access_token',
 					'tiktok_client_secret',
+					'yahoo_client_id',
+					'yahoo_client_secret',
 				);
 
 				foreach ( $sensitive_keys as $key ) {
