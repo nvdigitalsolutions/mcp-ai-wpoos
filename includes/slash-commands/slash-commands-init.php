@@ -171,6 +171,52 @@ function wp_mcp_ai_load_default_slash_commands() {
 		)
 	);
 
+	// Load clean-content command.
+	require_once WP_MCP_AI_PATH . 'includes/slash-commands/commands/class-wp-mcp-ai-slash-command-clean-content.php';
+
+	// Register /clean-content command.
+	$clean_content_command = new WP_MCP_AI_Slash_Command_Clean_Content();
+	$wp_mcp_ai_slash_command_handler->register(
+		'clean-content',
+		array(
+			'handler'     => array( $clean_content_command, 'execute' ),
+			'description' => __( 'Content quality assurance with 3-phase detection (HIGH/MEDIUM/LOW certainty)', 'mcp-ai-wpoos' ),
+			'usage'       => '/clean-content [post_id|recent|all] [--phase=<1-3>] [--limit=<number>] [--dry-run|-n] [--auto-fix|-a] [--post-type=<type>] [--verbose|-v]',
+			'capability'  => 'edit_posts',
+			'aliases'     => array( 'clean' ),
+			'parameters'  => array(
+				'target' => array(
+					'description' => __( 'Post ID, "recent" (default), or "all"', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--phase' => array(
+					'description' => __( 'Run specific phase only: 1 (regex), 2 (analysis), 3 (AI review)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--limit' => array(
+					'description' => __( 'Maximum number of posts to check (default: 10)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--dry-run' => array(
+					'description' => __( 'Show issues without making changes', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--auto-fix' => array(
+					'description' => __( 'Automatically fix HIGH certainty issues', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--post-type' => array(
+					'description' => __( 'Post type to check (default: post)', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+				'--verbose' => array(
+					'description' => __( 'Show detailed output', 'mcp-ai-wpoos' ),
+					'required'    => false,
+				),
+			),
+		)
+	);
+
 	/**
 	 * Fires after default slash commands are loaded
 	 *
