@@ -72,15 +72,22 @@ class WP_MCP_AI_Fantasy_Football_Settings extends WP_MCP_AI_CPT_Settings_Page_Ba
 	 */
 	protected function get_tools_list() {
 		return array(
-			'yahoo_ff_auth'           => __( 'Yahoo Fantasy Sports Authentication', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_get_leagues'    => __( 'Get User Leagues', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_get_roster'     => __( 'Get Team Roster', 'mcp-ai-wpoos-pro' ),
+			// Yahoo Fantasy Football API tools.
+			'yahoo_ff_auth'             => __( 'Yahoo Fantasy Sports Authentication', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_get_leagues'      => __( 'Get User Leagues', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_get_roster'       => __( 'Get Team Roster', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_get_player_stats' => __( 'Get Player Statistics', 'mcp-ai-wpoos-pro' ),
-			'yahoo_ff_trade_analyzer' => __( 'Analyze Trade Proposals', 'mcp-ai-wpoos-pro' ),
+			'yahoo_ff_trade_analyzer'   => __( 'Analyze Trade Proposals', 'mcp-ai-wpoos-pro' ),
 			'yahoo_ff_league_standings' => __( 'Get League Standings', 'mcp-ai-wpoos-pro' ),
-			'ff_generate_team_logo'   => __( 'Generate Team Logo', 'mcp-ai-wpoos-pro' ),
-			'ff_create_league_report' => __( 'Create League Report', 'mcp-ai-wpoos-pro' ),
-			'ff_player_research'      => __( 'Player Research & Watchlist', 'mcp-ai-wpoos-pro' ),
+			// Fantasy Football specific tools.
+			'ff_generate_team_logo'     => __( 'Generate Team Logo', 'mcp-ai-wpoos-pro' ),
+			'ff_create_league_report'   => __( 'Create League Report', 'mcp-ai-wpoos-pro' ),
+			'ff_player_research'        => __( 'Player Research & Watchlist', 'mcp-ai-wpoos-pro' ),
+			// Research and analysis tools.
+			'web_search'                => __( 'Web Search', 'mcp-ai-wpoos-pro' ),
+			'deep_research'             => __( 'Deep Research', 'mcp-ai-wpoos-pro' ),
+			'search_content'            => __( 'Search Site Content', 'mcp-ai-wpoos-pro' ),
+			'semantic_content_search'   => __( 'Semantic Content Search', 'mcp-ai-wpoos-pro' ),
 		);
 	}
 

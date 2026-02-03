@@ -212,6 +212,7 @@ class WP_MCP_AI_Fantasy_Football_Research_Page {
 							'yahoo_ff_trade_analyzer',
 							// General research tools.
 							'web_search',
+							'deep_research',
 							'search_content',
 							'semantic_content_search',
 						);

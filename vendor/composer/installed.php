@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'mcp-ai-wpoos/mcp-ai-wpoos',
-        'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
-        'version' => 'dev-copilot/fix-save-background-key-issue',
-        'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
+        'pretty_version' => 'dev-copilot/fix-date-search-issue',
+        'version' => 'dev-copilot/fix-date-search-issue',
+        'reference' => '60c4d95aea65ac2266bede824f0af29d3e0b1c0a',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -65,9 +65,9 @@
             'dev_requirement' => false,
         ),
         'mcp-ai-wpoos/mcp-ai-wpoos' => array(
-            'pretty_version' => 'dev-copilot/fix-save-background-key-issue',
-            'version' => 'dev-copilot/fix-save-background-key-issue',
-            'reference' => '14e958c10c9dc56e11888a57b76c4650a1ccb6c9',
+            'pretty_version' => 'dev-copilot/fix-date-search-issue',
+            'version' => 'dev-copilot/fix-date-search-issue',
+            'reference' => '60c4d95aea65ac2266bede824f0af29d3e0b1c0a',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
