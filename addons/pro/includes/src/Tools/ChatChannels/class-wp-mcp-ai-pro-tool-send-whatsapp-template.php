@@ -238,7 +238,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * Sanitise the WhatsApp access token.
+	 * Sanitize the WhatsApp access token.
 	 *
 	 * @param mixed $token Raw token value.
 	 * @return string
@@ -257,7 +257,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * Sanitise a WhatsApp phone number ID.
+	 * Sanitize a WhatsApp phone number ID.
 	 *
 	 * @param mixed $phone_number_id Raw phone number ID value.
 	 * @return string
@@ -276,7 +276,7 @@ class WP_MCP_AI_Pro_Tool_Send_WhatsApp_Template implements WP_MCP_AI_Tool_Interf
 	}
 
 	/**
-	 * Sanitise a phone number while preserving the leading plus.
+	 * Sanitize a phone number while preserving the leading plus.
 	 *
 	 * @param mixed $phone Raw phone value.
 	 * @return string

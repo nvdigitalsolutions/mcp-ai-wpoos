@@ -215,7 +215,7 @@ class WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * Sanitise the WhatsApp access token.
+	 * Sanitize the WhatsApp access token.
 	 *
 	 * @param mixed $token Raw token value.
 	 * @return string
@@ -234,7 +234,7 @@ class WP_MCP_AI_Pro_Tool_Get_WhatsApp_Messages implements WP_MCP_AI_Tool_Interfa
 	}
 
 	/**
-	 * Sanitise a WhatsApp phone number ID.
+	 * Sanitize a WhatsApp phone number ID.
 	 *
 	 * @param mixed $phone_number_id Raw phone number ID value.
 	 * @return string
