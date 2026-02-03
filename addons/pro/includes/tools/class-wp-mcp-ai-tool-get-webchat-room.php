@@ -63,7 +63,7 @@ class WP_MCP_AI_Tool_Get_WebChat_Room implements WP_MCP_AI_Tool_Interface, WP_MC
 		if ( function_exists( 'wp_mcp_ai_is_base_version' ) && wp_mcp_ai_is_base_version() ) {
 			return false;
 		}
-		$settings = get_option( 'wp_mcp_ai_webchat_settings', array() );
+		$settings = get_option( 'wp_mcp_ai_settings', array() );
 		return ! empty( $settings['enable_webchat_integration'] );
 	}
 
